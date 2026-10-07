@@ -325,11 +325,15 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
       - name: Deterministic meaning-unit safety and baseline evidence
-        run: node experiments/meaning-unit/stress.mjs
+        run: |
+          node experiments/meaning-unit/stress.mjs
+          node experiments/meaning-unit/original-adapter-test.mjs
       - name: Same synthetic rendering matrix in Chromium and WebKit
         env:
           REQUIRE_ALL_ENGINES: '1'
-        run: timeout --kill-after=5s 180s node experiments/meaning-unit/browser.mjs
+        run: |
+          timeout --kill-after=5s 180s node experiments/meaning-unit/browser.mjs
+          timeout --kill-after=5s 180s node experiments/meaning-unit/original-browser.mjs
       - name: Meaning-unit experiment evidence (zero model calls)
         if: always()
         uses: actions/upload-artifact@v4

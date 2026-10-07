@@ -1,0 +1,3047 @@
+{
+  "synthetic": true,
+  "provider": "full-target stub, not AI selection accuracy",
+  "coordinateProbes": true,
+  "extractions": [
+    {
+      "engine": "chromium",
+      "extractionMs": 1.6000000000931323,
+      "glyphCount": 275,
+      "blocks": 8
+    }
+  ],
+  "runs": [
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 8.310911999999917,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 6.402157999999872,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 11.187323000000106,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 3.8666709999999966,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 4
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 6.920269000000189,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 5
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 4.00028199999997,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 3.845730000000003,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 7
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 3.731156999999939,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 4.741267999999991,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 7.743227000000161,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 3.5758230000001276,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 4.301385999999866,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 5.169732999999951,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 7.2692930000000615,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 4.633325999999897,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 4.279422999999952,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 3.643004999999903,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 3.381651000000147,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 5.576616000000058,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 3.692929999999933,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333346161,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 3.6860290000001896,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 4.056958000000122,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 7.611639000000196,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 3.718789000000015,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015583333333307081,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 3.925600999999915,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 8.66532600000005,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 3.8570270000000164,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 3.61242900000002,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.02337500000001924,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 5.954514000000017,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 3.3043139999999767,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 3.221369999999979,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 3.9530919999999696,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.023374999999962398,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 10.322901000000002,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 8.2050720000002,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 8.170139999999947,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 3.8304259999999886,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 10.250802000000022,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 4.771293000000014,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 3.66686999999979,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 4.190057999999908,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 3.5432240000000093,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 3.8704569999999876,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 4.161094999999932,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 3.5949920000000475,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 6.438223000000107,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 3.487088999999969,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 3.5375759999999445,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "light",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 5.630677000000105,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 3.8169459999999162,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 3.3655370000001312,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 5.1100430000001325,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 4.496349000000009,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015312091503233205,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 4.253703999999743,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 3.4056980000000294,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 7.791709999999966,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 4.214764999999716,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.015323529411716663,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "beginning",
+      "durationMs": 3.9889250000001084,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "increase",
+      "expectedWord": "increase",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "middle",
+      "durationMs": 3.6348620000003393,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "repeated",
+      "durationMs": 5.828063999999813,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 0,
+      "probe": "end",
+      "durationMs": 3.4231440000003204,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) increase oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c0:choice:1",
+      "tap": {
+        "blockId": "p1:c0:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c0:choice:1",
+      "context": [
+        {
+          "id": "p1:c0:choice:0",
+          "column": 0
+        },
+        {
+          "id": "p1:c0:choice:2",
+          "column": 0
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022968137254849808,
+      "selectedColumns": [
+        0
+      ],
+      "selectedLines": [
+        2,
+        3
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "beginning",
+      "durationMs": 3.6624329999999645,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "decrease",
+      "expectedWord": "decrease",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 3,
+        "end": 11
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "middle",
+      "durationMs": 5.417325999999775,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 12,
+        "end": 18
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "repeated",
+      "durationMs": 3.8337219999998524,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "oxygen",
+      "expectedWord": "oxygen",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 48,
+        "end": 54
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1180,
+        "height": 820
+      },
+      "theme": "dark",
+      "zoom": 1.5,
+      "column": 1,
+      "probe": "end",
+      "durationMs": 3.743196000000353,
+      "baselineExact": false,
+      "adapterExact": true,
+      "mode": "original",
+      "baselineHit": "pressure",
+      "expectedWord": "pressure",
+      "baselineSource": "Choose the best statement A) reduce oxygen consumption B) increase oxygen consumption without changing oxygen pressure C) preserve oxygen pressure Another question A) reduce oxygen consumption B) decrease oxygen consumption without changing oxygen pressure C) preserve oxygen pressure",
+      "source": "B) decrease oxygen consumption\nwithout changing oxygen pressure",
+      "blockId": "p1:c1:choice:1",
+      "tap": {
+        "blockId": "p1:c1:choice:1",
+        "start": 55,
+        "end": 63
+      },
+      "translation": "합성 검증 번역 — p1:c1:choice:1",
+      "context": [
+        {
+          "id": "p1:c1:choice:0",
+          "column": 1
+        },
+        {
+          "id": "p1:c1:choice:2",
+          "column": 1
+        }
+      ],
+      "sourceMapped": true,
+      "maxPaintError": 0.022985294117574995,
+      "selectedColumns": [
+        1
+      ],
+      "selectedLines": [
+        7,
+        8
+      ],
+      "selectedGlyphs": 62,
+      "providerCalls": 8
+    }
+  ],
+  "rejections": [
+    {
+      "engine": "chromium",
+      "name": "missing-label",
+      "rejected": true,
+      "reason": "unsupported_grouping:noncontiguous_or_multiple_groups",
+      "before": 8,
+      "after": 8
+    },
+    {
+      "engine": "chromium",
+      "name": "rotated-pdf",
+      "rejected": true,
+      "reason": "unsupported_grouping:orientation_or_mapping",
+      "before": 8,
+      "after": 8
+    }
+  ],
+  "blocked": [
+    {
+      "engine": "webkit",
+      "error": "browserType.launchPersistentContext: Executable doesn't exist at /tmp/breeze-browser/browsers/webkit-2359/pw_run.sh\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     npx playwright install                                 ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
+    }
+  ]
+}
