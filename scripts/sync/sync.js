@@ -274,14 +274,23 @@ function renderSyncModal(){
       <button class="sm-btn primary" onclick="sbPasswordLogin()">비밀번호로 로그인</button>
       <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
-    body.innerHTML=`<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
-      로그인하면 단어장이 기기 간에 자동으로 동기화됩니다.</div>
-      <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email" oninput="emailLoginChanged()">
-      <button id="sm-send-link" class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
-      <div id="sm-codewrap"><div class="hint">메일에 온 <b>6자리 코드</b>를 입력해도 로그인돼요</div>
-      <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
-      <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
-      <button class="sm-linkish neutral" onclick="openPasswordLogin()">비밀번호로 로그인</button>`;
+    body.innerHTML=`<p class="settings-sync-note">로그인하면 단어장을 다른 기기에서도 볼 수 있어요.</p>
+      <div class="settings-signin-choices">
+        <details id="sm-email-login" ${emailLogin.email?'open':''}>
+          <summary>이메일 로그인</summary>
+          <div class="settings-email-form">
+            <label for="sm-email">이메일 주소</label>
+            <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email" oninput="emailLoginChanged()">
+            <button id="sm-send-link" class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
+            <div id="sm-codewrap"><div class="hint">메일의 링크를 누르거나 <b>6자리 코드</b>를 입력하세요.</div>
+            <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······" aria-label="이메일 로그인 코드">
+            <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
+          </div>
+        </details>
+        <button id="sm-apple-login" class="settings-apple-signin" type="button" disabled aria-describedby="sm-apple-note">Apple로 로그인</button>
+        <p id="sm-apple-note" class="settings-signin-note">Apple 로그인은 아직 지원하지 않아요.</p>
+        <button id="sm-password-login" class="sm-linkish neutral settings-password-link" onclick="openPasswordLogin()">비밀번호 로그인</button>
+      </div>`;
   }
   syncStatus('');
   updateEmailLoginControls();

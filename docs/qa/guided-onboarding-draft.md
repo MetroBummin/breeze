@@ -1,64 +1,86 @@
 # Guided onboarding draft review
 
-Base: main `3e299d96` (#121). This draft does not include #120 or sentence
-extraction/truncation changes. No release version or auth/security configuration
-is changed.
+Base: main `3e299d96` (#121). Separate branch `codex/guided-onboarding-draft`.
+No #120 integration, sentence extraction/truncation, release version,
+auth request methods or security/provider configuration changes.
 
-The welcome has the existing standalone mascot and one bottom Start action.
-One word grows into its original source sentence; each step waits for the real
-Reader interaction. Local answers avoid quota/network dependencies and durable
-demo records. Tutorial Back and an isolated progress marker support reopening.
-The existing completion marker, returning-reader bypass, replay, guest/skip and
-previous Reader restoration remain in place.
-
-The final chooser reuses email and password forms. Apple is visibly disabled:
-main contains no Apple client flow or Apple sign-in entitlement on web, iOS or
-Android. Enabling it is separate work; no credentials/settings were invented.
-The small password link retains a 44px tap target for reviewer/existing accounts.
+The welcome uses the existing mascot and one bottom action. A minimal lesson
+hides Reader chrome while sharing its actual word mini pill, expansion, sentence
+translation and easy explanation. The reveal reduces the large word into its
+source sentence. One instruction per step and only font size initially keep
+choices limited. The final screen offers book import or Later; login lives in
+normal Settings. Local answers avoid paid calls and durable demo records.
 
 ## Rendered captures
 
-All captures below are real system Chromium renders at 390×844, with external
-requests blocked. The walkthrough uses a real long press and the production word,
-sentence and Aa surfaces. It is not an image mockup or physical iOS recording.
+These are actual system Chromium renders with external requests blocked,
+including a real long press in the video. They are not image mockups or native
+iOS recordings. Screenshots and video are also saved in ChatGPT Library.
 
 | Surface | Capture |
 | --- | --- |
 | Mascot welcome | [welcome](guided-onboarding/welcome.png) |
-| One large word | [word](guided-onboarding/word.png) |
-| Actual word mini pill | [mini pill](guided-onboarding/word-mini.png) |
-| Actual chevron expansion | [expanded word](guided-onboarding/word-expanded.png) |
+| Large word | [word](guided-onboarding/word.png) |
+| Production mini pill | [mini pill](guided-onboarding/word-mini.png) |
+| Chevron expansion | [expanded word](guided-onboarding/word-expanded.png) |
 | Revealed sentence | [sentence](guided-onboarding/sentence.png) |
-| Actual sentence translation | [translation](guided-onboarding/translation.png) |
-| Actual sentence easy explanation | [easy explanation](guided-onboarding/easy.png) |
-| Reader Aa | [reader settings](guided-onboarding/reader-settings.png) |
-| Email / unsupported Apple / secondary password / guest | [account choices](guided-onboarding/account.png) |
-| Actual interaction recording | [walkthrough video](guided-onboarding/walkthrough.webm) |
-| Tablet dark account | [820px dark](guided-onboarding/tablet-dark-account.png) |
-| Desktop light sentence | [1440px light](guided-onboarding/desktop-light-sentence.png) |
-| Short viewport account | [844×390](guided-onboarding/short-account.png) |
+| Sentence translation | [translation](guided-onboarding/translation.png) |
+| Easy explanation | [easy explanation](guided-onboarding/easy.png) |
+| Font-size preview | [reader settings](guided-onboarding/reader-settings.png) |
+| Book import / Later | [finish](guided-onboarding/finish.png) |
+| Normal Settings login choices | [Settings](guided-onboarding/settings-login.png) |
+| Existing email form | [email](guided-onboarding/settings-email.png) |
+| Actual interaction recording | [video](guided-onboarding/walkthrough.webm) |
+| Tablet dark finish | [820px dark](guided-onboarding/tablet-dark-finish.png) |
+| Desktop sentence | [1440px light](guided-onboarding/desktop-light-sentence.png) |
+| Short finish | [844×390](guided-onboarding/short-finish.png) |
+
+## Sources and access limits
+
+[Apple's Sign in with Apple guidance](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple)
+was checked: monochrome light/dark variants, approved localized title, minimum
+size and accessible spacing. [Apple Design Resources](https://developer.apple.com/design/resources/)
+links its approved logo. The official
+[logo download](https://devimages-cdn.apple.com/design/resources/download/Logo-Sign-in-with-Apple.dmg)
+and hosted button-image endpoint returned HTTP 403 in this environment, including
+a direct public download attempt. The disabled Settings button is a **provisional
+text-only appearance**, not a completed official Apple component. Its approved
+logo/asset still needs access. Repository inspection found no Apple auth flow
+or entitlement on any supported platform; the UI explicitly says unsupported.
+
+Requested Pinterest research could not be completed. Public search pages and
+exact-domain searches were attempted for
+[minimal onboarding](https://www.pinterest.com/search/pins/?q=minimal%20app%20onboarding),
+[reading apps](https://www.pinterest.com/search/pins/?q=reading%20app%20onboarding),
+and [language learning](https://www.pinterest.com/search/pins/?q=language%20learning%20app%20onboarding).
+Pinterest access returned HTTP 403; image search returned no usable pins and web
+search yielded unrelated results. No Pinterest pin is claimed as reviewed or
+used. The repository design system and primary
+[Figma UI hierarchy reference](https://www.figma.com/resource-library/what-is-ui-design/)
+informed spacing and focus. No third-party artwork was copied.
 
 ## Validation
 
 Passed on 2026-10-07:
 
-- `npm test` (full repository suite), `npm run typecheck`, `npm run www`,
-  `git diff --check`.
-- `PLAYWRIGHT_BROWSERS_PATH=/tmp/breeze-browsers BREEZE_CHROMIUM=/usr/bin/chromium npm run test:onboarding`:
-  actual word tap/chevron, actual long-press release gate, local sentence help,
-  Aa, interrupted/reopened, Back, Skip, guest success, replay restoration,
-  stale-result cancellation, Enter/Space word lookup and chevron, keyboard long-press alternative, zero dictionary
-  calls, durable data/appearance isolation, preserved local vocabulary,
-  email/password handoff, reduced motion. Browser offline mode covers word and
-  sentence/easy-help interactions. Web and native-shell emulation pass.
-- Chromium production word presentation, sentence presentation, sentence help,
-  and shared Home/Reader controls regressions.
-- All five stages captured and checked for viewport overflow in light/dark at
-  390×844, 820×1180, 1440×900, 320×568 and 844×390.
+- Full `npm test`, typecheck (34 existing baseline diagnostics, no increase),
+  `npm run www`, and whitespace checks.
+- Chromium onboarding: real word/chevron, long-press release gate, local help,
+  live font preview, interrupted/reopened, Back, Skip, Later, import success,
+  replay restoration, stale-result cancellation, keyboard word/chevron and
+  long-press alternative, reduced motion, returning vocabulary, durable data
+  and appearance isolation, zero dictionary calls, web/native-shell emulation.
+  Browser offline mode covers word, sentence and easy-help interactions.
+- All five stages checked for overflow in both themes at five viewports.
+- Existing email request, duplicate-send gate, reopening and password return
+  with mocked auth, keyboard email disclosure and 44px password target in
+  light/dark at narrow, phone, tablet, desktop and short sizes.
+- Production word, sentence, sentence-help and shared Home/Reader controls
+  browser regressions.
 
-Limitations: Playwright browser downloads returned 403 “Domain forbidden”. Tests
-use installed system Chromium; WebKit could not be run. Native-shell emulation
-is not physical iPhone/iPad safe-area, keyboard, gesture or WebView verification.
-Live email/password authentication was not exercised and Apple is unsupported.
-No server deployment, native archive, App Review submission or release change
-was made. The local build's pre-existing “빠짐: public” note is unchanged.
+Playwright Chromium/WebKit downloads returned 403 “Domain forbidden”; installed
+system Chromium was used. WebKit and physical iPhone/iPad safe-area, keyboard,
+gesture and WebView verification remain unperformed. Live email/password login
+was not exercised. Apple artwork and Pinterest access remain blocked as above.
+The local build's existing “빠짐: public” note remains. This is a draft only:
+no merge, deployment, native archive, App Review submission or active release change.

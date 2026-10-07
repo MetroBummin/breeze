@@ -33,7 +33,7 @@ async function wordInteraction(page,capture=false){
  if(capture)await page.waitForTimeout(400);
  if(capture)await page.screenshot({path:`${artifact}/web-word-expanded.png`});
  await page.locator('#onboard-return').click();
- assert.equal(await page.locator('#onboard-next').isEnabled(),true);
+ assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'2');
 }
 try{
  for(const native of [false,true]){
@@ -55,7 +55,6 @@ try{
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-word.png`});
   await context.setOffline(true);
   await wordInteraction(page,!native);
-  await page.locator('#onboard-next').click();
   await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].every(node=>node.getBoundingClientRect().width>0));
   await page.waitForTimeout(650);
   assert.equal(await page.locator('#rtext .w:visible').count(),5);
@@ -81,17 +80,18 @@ try{
   await page.waitForFunction(()=>onboardingSession.easySeen);
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-easy.png`});
   await page.locator('#onboard-return').click();
-  await page.locator('#onboard-next').click();
   assert.equal(await page.locator('#onboard-next').isDisabled(),true);
-  await page.locator('#aafab').click();
-  await page.locator('#aa-pop button').first().click();
+  const initialFont=await page.locator('#rtext p').evaluate(n=>getComputedStyle(n).fontSize);
+  await page.locator('#onboard-font-larger').click();
+  await page.waitForTimeout(650);
+  assert.notEqual(await page.locator('#rtext p').evaluate(n=>getComputedStyle(n).fontSize),initialFont);
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-settings.png`});
-  await page.locator('#onboard-return').click();
   await page.locator('#onboard-next').click();
-  assert.equal(await page.locator('#onboard-login').textContent(),'이메일 로그인');
-  assert.equal(await page.locator('#onboard-apple').isDisabled(),true);
-  assert.equal(await page.locator('#onboard-password').isVisible(),true);
-  await page.screenshot({path:`${artifact}/${native?'native':'web'}-account.png`});
+  assert.equal(await page.locator('#onboard-next').textContent(),'책 추가하기');
+  assert.equal(await page.locator('#onboard-finish').textContent(),'나중에');
+  assert.equal(await page.locator('#onboarding button:visible').count(),2);
+  assert.doesNotMatch(await page.locator('#onboarding').innerText(),/로그인|Apple/);
+  await page.screenshot({path:`${artifact}/${native?'native':'web'}-finish.png`});
   assert.equal(await page.evaluate(()=>window.demoCalls),0);
   await page.locator('#onboard-finish').click();
   assert.equal(await page.locator('#onboarding').isVisible(),false);
@@ -108,7 +108,7 @@ try{
   await page.waitForTimeout(1100);
   assert.equal(await page.locator('#word-peek').isVisible(),false);
   await page.evaluate(()=>startOnboarding(true));await page.locator('#onboard-next').click();
-  await wordInteraction(page);await page.locator('#onboard-next').click();
+  await wordInteraction(page);
   // Keyboard-accessible alternative invokes the same Reader sentence adapter.
   await page.locator('#onboard-sentence').focus();await page.keyboard.press('Enter');
   await page.locator('#ps-easy-button').waitFor({state:'visible'});await page.locator('#ps-easy-button').click();
@@ -144,11 +144,15 @@ try{
  await page.locator('#onboard-return').focus();await page.keyboard.press('Enter');
 
  await page.evaluate(()=>{onboardingSession.stage=4;drawOnboarding();});
- await page.locator('#onboard-password').click();
- assert.equal(await page.locator('#sm-password').isVisible(),true,'existing reviewer/password route missing');
- await page.evaluate(()=>{closeSettings();closePasswordLogin();startOnboarding(true);});
- await page.evaluate(()=>{onboardingSession.stage=4;drawOnboarding();});
- await page.locator('#onboard-login').click();
+ await page.locator('#onboard-next').click();
+ assert.equal(await page.locator('#add-modal').evaluate(n=>n.open),true,'existing book import route missing');
+ await page.evaluate(()=>{closeAddModal();openSyncModal();});
+ assert.equal(await page.locator('#sm-apple-login').isDisabled(),true);
+ assert.equal(await page.locator('#sm-password-login').evaluate(n=>n.getBoundingClientRect().height>=44),true);
+ await page.locator('#sm-password-login').click();
+ assert.equal(await page.locator('#sm-password').isVisible(),true,'existing password route missing');
+ await page.evaluate(()=>closePasswordLogin());
+ await page.locator('#sm-email-login summary').click();
  assert.equal(await page.locator('#sm-email').isVisible(),true,'existing email route missing');
  await page.evaluate(()=>closeSettings());
  // Existing local data suppresses first-time onboarding without deleting it.
@@ -204,5 +208,5 @@ try{
  assert.equal(await page.locator('#settings-modal').evaluate(node=>node.classList.contains('on')),true);
  assert.equal(await page.evaluate(()=>window.onboardingTestDictCalls),0,'login action sent a doomed dictionary request');
  await context.close();
- console.log('Guided onboarding: real word/sentence/Aa, reopening, back, skip, completion, keyboard alternative, cancellation, storage isolation and responsive themes passed');
+ console.log('Guided onboarding: word/sentence, font preview, book import and Settings login, reopening, back, skip, completion, keyboard alternative, cancellation, storage isolation and responsive themes passed');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

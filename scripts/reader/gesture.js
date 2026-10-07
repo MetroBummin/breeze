@@ -265,6 +265,9 @@ function beginGesture(event){
   const target = event.target;
   if(!target || typeof target.closest !== 'function') return;
 
+  // Explicit tutorial controls own their taps even while a lookup is open.
+  if(target.closest('#onboarding')) return;
+
   const pendingReaderSurface=readerSurfaceFor(event);
 
 
@@ -503,6 +506,7 @@ function cancelGesture(reason){
    뒤 그 손가락을 떼면서 나오는 click 이 "바깥을 눌렀다"가 되어 창을 도로
    닫아 버리는 일이 없습니다 — 예전에 열리자마자 닫히던 자리입니다. */
 function clickGesture(event){
+  if(event.target?.closest?.('#onboarding')) return;
   if(typeof readerManipulationConsumes === 'function' && readerManipulationConsumes(event)){
     event.preventDefault();
     event.stopPropagation();

@@ -84,9 +84,13 @@ async function startOnboarding(replay){
     const found=surface?.sentenceAt(rect.x+rect.width/2,rect.y+rect.height/2);
     if(found){closePanel();found.paint();void openSentence(found.sentence,found);}
   },{signal});
-  document.getElementById('onboard-return').addEventListener('click',()=>{closePanel();closeSentence();closeAa();drawOnboarding();document.getElementById('onboard-next').focus({preventScroll:true});},{signal});
-  document.getElementById('onboard-password').addEventListener('click',()=>{endOnboarding(true);openSyncModal();openPasswordLogin();},{signal});
-  document.getElementById('onboard-login').addEventListener('click',()=>{endOnboarding(true);openSyncModal();},{signal});
+  document.getElementById('onboard-return').addEventListener('click',()=>{
+    if((session.stage===1&&session.wordExpanded)||(session.stage===2&&session.easySeen))advanceOnboarding();
+    else{closePanel();closeSentence();drawOnboarding();document.getElementById('onboard-prompt').focus({preventScroll:true});}
+  },{signal});
+  for(const [id,delta] of [['onboard-font-smaller',-1],['onboard-font-larger',1]]){
+    document.getElementById(String(id)).addEventListener('click',()=>{fontSize(Number(delta));session.aaSeen=true;persistOnboarding();drawOnboarding();},{signal});
+  }
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape' && !wordLookupOpen() && !sentenceLookupOpen()
         && !document.getElementById('aa-pop').classList.contains('on') && !event.defaultPrevented){
@@ -113,6 +117,7 @@ function persistOnboarding(){
 }
 function advanceOnboarding(){
   const session=onboardingSession;if(!session)return;
+  if(session.stage===4){endOnboarding(true);openAddModal();return;}
   if((session.stage===1&&!session.wordExpanded)||(session.stage===2&&!session.easySeen)||(session.stage===3&&!session.aaSeen))return;
   closePanel();closeSentence();closeAa();
   session.stage=Math.min(4,session.stage+1);persistOnboarding();drawOnboarding();
@@ -134,24 +139,26 @@ function drawOnboarding(){
   document.getElementById('onboard-overlay-prompt').textContent=stage===1
     ?(session.wordExpanded?'단어를 더 자세히 볼 수 있어요.':'뜻 옆의 꺾쇠를 눌러보세요.')
     :stage===2?'번역 아래 ‘쉬운 설명’을 눌러보세요.':'글자 크기부터 맞춰보세요.';
-  document.getElementById('onboard-skip').hidden=stage===0||overlay;
-  document.getElementById('onboard-back').hidden=stage===0||overlay;
-  document.getElementById('onboard-welcome').hidden=stage!==0;
+  document.getElementById('onboard-skip').hidden=stage===0||stage===4||overlay;
+  document.getElementById('onboard-back').hidden=stage===0||stage===4||overlay;
+  document.getElementById('onboard-welcome').hidden=stage!==0&&stage!==4;
   const prompts=[
     '브리즈에 오신 걸 환영해요',
     session.wordSeen?'뜻 옆의 꺾쇠를 눌러 더 알아보세요.':'Breeze를 눌러보세요.',
     session.sentenceSeen?'번역 아래 ‘쉬운 설명’을 눌러보세요.':'문장을 길게 눌러보세요.',
-    'Aa에서 글자 크기를 맞춰보세요.',
-    sbUser?'읽을 준비가 됐어요.':'로그인하면 단어장을 이어서 볼 수 있어요.',
+    '내 눈에 편하게 맞춰보세요.',
+    '이제 내 책으로 읽어볼까요?',
   ];
   document.getElementById('onboard-step').textContent=stage===0?'':`${stage} / 4`;
   document.getElementById('onboard-prompt').textContent=prompts[stage];
   const next=/** @type {HTMLButtonElement} */(document.getElementById('onboard-next'));
-  next.hidden=stage===4;next.textContent=stage===0?'시작하기':'다음';
+  next.hidden=false;next.textContent=stage===0?'시작하기':stage===4?'책 추가하기':'다음';
   next.disabled=(stage===1&&!session.wordExpanded)||(stage===2&&!session.easySeen)||(stage===3&&!session.aaSeen);
   document.getElementById('onboard-finish').hidden=stage!==4;
-  document.getElementById('onboard-finish').textContent=sbUser?'읽기 시작':'로그인 없이 시작';
-  for(const id of ['onboard-login','onboard-apple','onboard-apple-note','onboard-password'])document.getElementById(id).hidden=stage!==4||!!sbUser;
+  document.getElementById('onboard-finish').textContent='나중에';
+  document.getElementById('onboard-reader-settings').hidden=stage!==3;
+  document.getElementById('onboard-font-value').textContent=String(fs);
+  document.getElementById('onboard-return').textContent=((stage===1&&session.wordExpanded)||(stage===2&&session.easySeen))?'다음':'닫기';
   document.getElementById('onboard-sentence').hidden=stage!==2;
   document.getElementById('onboard-note').hidden=stage!==3;
   document.getElementById('aafab').classList.toggle('onboard-target',stage===3&&!aaOpen);
