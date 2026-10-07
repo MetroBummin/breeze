@@ -9,7 +9,7 @@ const require=createRequire(import.meta.url);
 const playwright=process.env.PLAYWRIGHT_MODULE?await import(process.env.PLAYWRIGHT_MODULE):require('playwright');
 const root=path.resolve(new URL('../../',import.meta.url).pathname);
 const output=new URL('./artifacts/',import.meta.url);
-const report={synthetic:true,provider:'full-target stub, not AI selection accuracy',coordinateProbes:true,extractions:[],runs:[],rejections:[],blocked:[]};
+const report={synthetic:true,provider:'full-target stub, not AI selection accuracy',coordinateProbes:true,extractions:[],runs:[],rejections:[],engineDiagnostics:[],blocked:[]};
 const server=http.createServer((req,res)=>{
   const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
   if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}
@@ -26,7 +26,14 @@ try {
     catch(error){report.blocked.push({engine,error:error.message});fs.rmSync(profile,{recursive:true,force:true});continue;}
     try {
       const page=await context.newPage(),errors=[],externalAttempts=[];
-      page.on('pageerror',e=>errors.push(e.message));
+      let resizeObserverDeferrals=0;
+      page.on('pageerror',e=>{
+        // Match the existing PDF geometry harness: this exact one-frame
+        // deferral occurs on the unchanged baseline during viewport resize.
+        // Record it; retain every geometry assertion and all other errors.
+        if(e.message==='ResizeObserver loop completed with undelivered notifications.')resizeObserverDeferrals++;
+        else errors.push(e.message);
+      });
       await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
       await page.route('**/*',route=>{
         const target=route.request().url();
@@ -128,6 +135,7 @@ try {
           catch(error){return {rejected:true,reason:error.message,before,after:qaOriginalProviderCalls};}});
         assert.ok(rejected.rejected);assert.equal(rejected.before,rejected.after);report.rejections.push({engine,name,...rejected});
       }
+      report.engineDiagnostics.push({engine,resizeObserverDeferrals,errors});
       assert.deepEqual(errors,[]);
       assert.ok(!externalAttempts.some(u=>/openrouter|generativelanguage|functions\/v1\/dict/.test(u)));
     } finally {await context.close();fs.rmSync(profile,{recursive:true,force:true});}

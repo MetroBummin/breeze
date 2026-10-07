@@ -21,6 +21,10 @@ This experiment connects to the actual Breeze PDF ORIGINAL-mode path in a headle
 - The 64 probes produced eight stub requests; subsequent configurations used the occurrence-scoped complete cache. External provider requests are blocked. The app's non-billable startup `warm` request is fulfilled by a local stub. No real inference, private source or provider credential access.
 - JSON records actual extraction and browser-case timings. They include browser/overlay work with an immediate stub and exclude live inference/network. They are single-machine measurements, not production latency guarantees.
 
+## CI diagnostic correction
+
+The first connected run at `2cd7b9e` completed all 128 Chromium/WebKit coordinate cases and four unsupported-layout rejections, but the job failed at final browser-error collection on WebKit’s exact `ResizeObserver loop completed with undelivered notifications.` diagnostic. Artifact `11461064768` (SHA-256 `5a3a005790a407990f6e7a5ad4ba76a8840aa2cee3c6be4ff4c70fedcd69fac3`) preserves that failed run. The harness now follows the existing production PDF geometry test: count this exact baseline resize deferral separately per engine, keep all geometry assertions, and fail on every other page exception. This corrects error classification; it does not loosen mapping checks or establish AI accuracy. A new exact-head CI pass is required.
+
 ## Deliberate limits and failures
 
 This is a narrow structural recognizer, not a general exam parser. Same-line options, separated grammar subcolumns, multiple question groups in one column, missing/noncontiguous markers, unclear gutters, missing/nonmonotonic cells, loose continuations and rotated PDF glyph axes are rejected as `unsupported_grouping:<reason>`. Rotating the viewport is tested and supported; rotating the PDF text itself is not. Circled-marker and ligature mapping is currently unit evidence, not actual rendered font coverage. Supported fixtures use horizontal Helvetica operators and conventional wrapped indentation.
