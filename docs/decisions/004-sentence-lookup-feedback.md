@@ -196,3 +196,10 @@ anchored success instead of switching it into a bottom sheet. Actual reader
 scroll/pinch/navigation/close still ends the existing lifetime; internal card
 scroll cannot move the underlying Reader. Cancellation stops animation, observer
 and queued placement, so late callbacks cannot revive it.
+
+The active iPad rotation proof caught an inherited cue-cache invalidation gap:
+a capped Text paragraph moved180px when viewport width changed820→1180, without
+its own size changing. The existing cue ResizeObserver now also observes its
+containing surface and document root. It refreshes cached local offsets only
+for real layout changes; ordinary scroll still performs no Range measurement.
+Sentence extraction and request text are unchanged.

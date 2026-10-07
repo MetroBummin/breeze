@@ -403,6 +403,12 @@ try{
     }
     await settle();
     videoTimeline.push({label,event:'result-settled',offsetMs:Date.now()-videoStartedAt,startMs:videoStartMs});
+    if(preview&&capture){
+      // Keep real recording at the settled result long enough to review; this
+      // is video presentation time, not an assertion's readiness condition.
+      await page.waitForTimeout(1400);
+      videoTimeline.push({label,event:'result-hold-end',offsetMs:Date.now()-videoStartedAt,startMs:videoStartMs});
+    }
     return page.evaluate(()=>qaPill.measure());
   };
   const validateResult=async(label,{reduced=false,long=false}={})=>{
