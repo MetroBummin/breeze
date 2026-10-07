@@ -1,7 +1,9 @@
 # Guided onboarding draft review
 
-Base: main `3e299d96` (#121). Separate branch `codex/guided-onboarding-draft`.
-No #120 integration, sentence extraction/truncation, release version,
+Base: current main `c649047d` (#120), including responsive sentence pill #121.
+Separate branch `codex/guided-onboarding-draft`; main was merged into this draft
+for combined verification. Both #120 auth deadlines and #121 presentation are
+preserved. No sentence extraction/truncation, release version,
 existing email/password request or security/provider configuration changes.
 
 The welcome uses the existing mascot and one bottom action. A minimal lesson
@@ -76,7 +78,7 @@ informed spacing and focus. No third-party artwork was copied.
 
 Passed on 2026-10-07:
 
-- Full `npm test`, typecheck (34 existing baseline diagnostics, no increase),
+- Full combined `npm test` (including #120 auth deadline tests), typecheck (34 existing baseline diagnostics, no increase),
   `npm run www`, and whitespace checks.
 - Chromium onboarding: real word/chevron, long-press release gate, local help,
   live font preview, interrupted/reopened, Back, Skip, Later, import success,

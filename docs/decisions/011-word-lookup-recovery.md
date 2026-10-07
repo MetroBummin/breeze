@@ -106,3 +106,32 @@ For an explicitly approved future deployment, preserve repository-relative paths
 in the bundle: entrypoint `server/dict/index.ts`, all its sibling imports, and
 `modules/lexical/core.js`. The new shared-core import must not be omitted or
 flattened. This change itself does not deploy the function or publish an app.
+
+
+## Authentication-inclusive deadlines (2026-10-07)
+
+A caller's AbortSignal previously cancelled fetch only. `dictCall` first awaited
+`getSession()`, so a session refresh that never settled could keep a lookup loading
+past its deadline; a late auth result could still dispatch an already-cancelled
+request. This is a separately reproduced loading defect, not proof of the cause
+of a reported error-pill/retry failure.
+
+The shared transport now races the entire auth/fetch/body operation against
+cancellation. Each call has a 30-second maximum; the existing nine-second word
+attempt and opening cancellation win sooner. Sentence translation and both
+explicit help callers use the same transport boundary. No auth SDK state is
+cancelled or changed. Once the call is cancelled, late auth cannot dispatch and
+late fetch/body results cannot return to its consumer. Deadline failure remains
+`null`, preserving technical recovery, IDs, quota and existing error surfaces.
+
+Word fetch and dictionary-load wrappers own their loading flags with per-record
+request tokens. An older cancelled wrapper cannot clear a newer same-record or
+replacement-card request. Already arrived usable answers keep the existing
+cache/storage contract and never regain authority over a closed surface.
+
+`tests/verify-word-auth-deadline.mjs` executes the real transport, recovery and
+word wrappers with deterministic deadlines. It covers never-settling/late auth,
+pre-aborted signals, close/navigation, same-record reopen, replacement cards,
+ignored fetch/body aborts, shared auth completion, normal auth, anonymous fallback,
+HTTP errors and manual retry. Providers and credentials are synthetic; these tests
+make no paid or production requests.

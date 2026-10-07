@@ -37,6 +37,7 @@ jobs:
           node tests/verify-word-lemma-validation.mjs
           node tests/verify-lookup-contract.mjs
           node tests/verify-word-lookup-recovery.mjs
+          node --test tests/verify-word-auth-deadline.mjs
           node tests/verify-word-lookup-quota.mjs
           node tests/verify-word-lifecycle.mjs
           node tests/verify-lemma.mjs
