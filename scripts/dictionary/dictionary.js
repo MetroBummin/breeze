@@ -1332,23 +1332,37 @@ function rememberAiLeft(left){
 }
 
 async function dictCall(payload, signal){
-  if(!sb || navigator.onLine === false) return null;
-  let token = SB_KEY;
-  try{ const { data:{ session } } = await sb.auth.getSession(); if(session) token = session.access_token; }catch(e){}
-  const opt = {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SB_KEY },
-    body: JSON.stringify(payload)
+  if(!sb || navigator.onLine === false || signal?.aborted) return null;
+  // Authentication can refresh a session before fetch even begins. Bound the
+  // whole call, not just fetch, and let the opening's shorter deadline win.
+  const controller=new AbortController();
+  let cancel;
+  const cancelled=new Promise(resolve=>{cancel=()=>{controller.abort();resolve(null);};});
+  signal?.addEventListener('abort',cancel,{once:true});
+  const timeout=setTimeout(cancel,30000);
+  const request=async()=>{
+    let token = SB_KEY;
+    try{ const { data:{ session } } = await sb.auth.getSession(); if(session) token = session.access_token; }catch(e){}
+    // getSession cannot be aborted. A late completion must never start a request
+    // for a timed-out or closed lookup, even if another lookup is now active.
+    if(controller.signal.aborted)return null;
+    const opt = {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SB_KEY },
+      body: JSON.stringify(payload),signal:controller.signal
+    };
+    try{
+      const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
+      const j = await r.json().catch(()=>null);
+      if(controller.signal.aborted)return null;
+      if(!r.ok || !j) console.warn('dict', r.status, j && j.error);
+      /* 오류도 답입니다. 한도 초과와 서버 장애는 화면에서 다르게 말해야 하므로
+         null 로 뭉개지 않고 그대로 올려 보냅니다. */
+      return payload.op==='look_v2'?{...(j||{error:'invalid_response'}),httpStatus:r.status}:j||null;
+    }catch(e){ console.warn('dict failed', e); return null; }
   };
-  if(signal) opt.signal = signal;
-  try{
-    const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
-    const j = await r.json().catch(()=>null);
-    if(!r.ok || !j) console.warn('dict', r.status, j && j.error);
-    /* 오류도 답입니다. 한도 초과와 서버 장애는 화면에서 다르게 말해야 하므로
-       null 로 뭉개지 않고 그대로 올려 보냅니다. */
-    return payload.op==='look_v2'?{...(j||{error:'invalid_response'}),httpStatus:r.status}:j||null;
-  }catch(e){ console.warn('dict failed', e); return null; }
+  try{return await Promise.race([request(),cancelled]);}
+  finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
 
 const wordLookupRecoveries=new Map();
@@ -1583,6 +1597,8 @@ async function loadCachedLook(k, began, life, node){
 
 /* 낱말 하나 · 문장 하나 · 왕복 한 번. 뜻과 이 문장에서의 설명과 다른 뜻 후보가
    같이 옵니다. 예전에는 entry(700토큰) → pick → explain 로 세 번 다녀왔습니다. */
+const wordLookRequests=new WeakMap();
+const wordDictRequests=new WeakMap();
 async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
   opt = opt || {};
@@ -1617,7 +1633,8 @@ async function fetchLook(k, opt){
      더 이상 여기서 막지 않습니다 — 맛보기 횟수는 서버가 셉니다. */
   if(!sb){ w.aiOff = 'login'; renderIfAlive(life); return false; }
 
-  const began = Date.now();
+  const began = Date.now(),request={};
+  wordLookRequests.set(w,request);
   w.aiLoading = true;
   delete w.aiSlow; delete w.aiOff;
   renderIfAlive(life);
@@ -1671,7 +1688,7 @@ async function fetchLook(k, opt){
     return true;
   }finally{
     if(feedback&&!responseRecorded)feedback.response(requestTicket,!wordLookupAlive(life)?'cancelled':'error');
-    delete w.aiLoading;
+    if(wordLookRequests.get(w)===request){wordLookRequests.delete(w);delete w.aiLoading;}
     renderIfAlive(life);
   }
 }
@@ -1679,7 +1696,8 @@ async function fetchLook(k, opt){
 function applyLook(w, j, k, opt){
   opt = opt || {};
   const initial=!!(pendingWord&&pendingWord.key===k&&!String(w.ko||'').trim());
-  delete w.aiLoading; delete w.aiOff;
+  if(!wordLookRequests.has(w))delete w.aiLoading;
+  delete w.aiOff;
   /* 사람이 이미 뜻을 정해 놨으면 AI 가 갈아 끼우지 않습니다. 직접 적은 뜻도,
      한도가 걸린 사이에 후보에서 고른 뜻도 마찬가지입니다 — 고르자마자 늦은 답이
      도착해 방금 고른 뜻이 바뀌던 자리입니다. 답은 버리지 않고 후보 줄 맨 앞에
@@ -1780,12 +1798,17 @@ async function fillDictionaryMetadata(k,life,force=false){
 
 async function fetchDict(k,node){
   const w=words[k];if(!w)return;
-  const life=wordLookupLife,began=Date.now();
+  const life=wordLookupLife,began=Date.now(),request={};
+  wordDictRequests.set(w,request);
   w.loading=true;w.aiLoading=true;renderIfAlive(life);
   const cached=await loadCachedLook(k,began,life,node);
   if(!cached&&wordLookupAlive(life)){delete w.aiLoading;await fetchLook(k,{life,node});}
-  if(!words[k]&&selKey!==k)return;
-  if(words[k]){delete words[k].loading;delete words[k].aiLoading;words[k].up=Date.now();}
+  if(wordDictRequests.get(w)!==request)return;
+  wordDictRequests.delete(w);
+  if(words[k]!==w)return;
+  delete w.loading;
+  if(!wordLookRequests.has(w))delete w.aiLoading;
+  w.up=Date.now();
   saveWords(k);if(words[k]&&hasResolvedMeaning(words[k]))queueSync(true);renderIfAlive(life);
 }
 

@@ -73,7 +73,7 @@ for(const hold of [false,true]){
  const cache=new Promise(resolve=>{resolveCache=resolve;});
  const w={word:'patient',clicked:'patient',forms:['patient'],ko:'',example:'patient reader'};
  const answer={kind:'word',canonical:'patient',members:[0],ko:'참을성 있는',left:10};
- const c={words:{patient:w},pendingWord:null,wordLookupLife:1,activeSelectedWordNode:null,
+ const c={wordLookRequests:new WeakMap(),words:{patient:w},pendingWord:null,wordLookupLife:1,activeSelectedWordNode:null,
   navigator:{onLine:true},sb:{},sbUser:{id:'test'},AI_MIN_WAIT:0,
   lookupSentenceTokens:()=>[{text:'patient'},{text:'reader'}],entryKeys:()=>['patient'],
   wordLookupAlive:()=>true,renderIfAlive(){},rememberAiLeft(){},
@@ -103,7 +103,7 @@ for(const hold of [false,true]){
 }
 {
  let metadata=0;const saved=[];
- const c={words:{patient:{ko:'뜻'}},wordLookupLife:1,selKey:'patient',
+ const c={wordLookRequests:new WeakMap(),wordDictRequests:new WeakMap(),words:{patient:{ko:'뜻'}},wordLookupLife:1,selKey:'patient',
   renderIfAlive(){},loadCachedLook:async()=>true,wordLookupAlive:()=>true,
   fillDictionaryMetadata(){metadata++;},saveWords:key=>saved.push(key),
   hasResolvedMeaning:()=>true,queueSync(){}};
