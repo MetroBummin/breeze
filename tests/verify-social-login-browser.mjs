@@ -36,8 +36,12 @@ try{
     return route.continue();
    }
    if(address.origin!==project)return route.abort();
+   const headers={'access-control-allow-origin':origin,
+    'access-control-allow-headers':route.request().headers()['access-control-request-headers']||'apikey,authorization,x-client-info,content-type,prefer',
+    'access-control-allow-methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS'};
+   if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
    requests.push(address.pathname);
-   if(address.pathname==='/auth/v1/settings')return route.fulfill({json:{external:{apple:true,google:true}}});
+   if(address.pathname==='/auth/v1/settings')return route.fulfill({headers,json:{external:{apple:true,google:true}}});
    if(address.pathname==='/auth/v1/authorize'){
     assert.equal(address.searchParams.get('provider'),provider);
     assert.equal(address.searchParams.get('redirect_to'),origin+'/');
@@ -48,8 +52,8 @@ try{
     // page navigation exercises the same real app callback on both engines.
     return route.fulfill({contentType:'text/html',body:'<!doctype html><script>location.replace('+JSON.stringify(callback)+')</script>'});
    }
-   if(address.pathname==='/auth/v1/user')return route.fulfill({json:user});
-   if(address.pathname.startsWith('/rest/v1/'))return route.fulfill({json:[]});
+   if(address.pathname==='/auth/v1/user')return route.fulfill({headers,json:user});
+   if(address.pathname.startsWith('/rest/v1/'))return route.fulfill({headers,json:[]});
    return route.abort();
   });
   const page=await context.newPage(),pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));await page.goto(origin);await page.evaluate(()=>homeReady);await page.evaluate(()=>openSettings());
