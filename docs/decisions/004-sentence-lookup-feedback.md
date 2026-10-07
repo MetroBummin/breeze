@@ -171,3 +171,28 @@ and narrower moving-reflection proposals are discarded. The shared token is
 only a material transfer to the owned Text/PDF/EPUB marker, not a new palette.
 The browser parity fixture pins the original values and requires identical
 computed styles and screenshot bytes in both themes and motion preferences.
+
+## Responsive anchored success (2026-10-07)
+
+Supersedes only the Reader success-sheet/modal presentation. The existing
+`#p-sentence` and sentence lifetime own a responsive result, retaining translation
+and the shared explicit easy-explanation renderer. No mini result is fabricated
+before success. Pending/error surfaces and source-free sheet/modal calls remain.
+
+The whole-sentence cached cue/glyph union is the anchor. Width is bounded by the
+visual viewport and horizontal safe areas, starts near the word detail's 360px
+phone width, grows at64% of viewport width, and caps at600px. Natural height is
+capped at520px and the available viewport above Reader controls. Full-height
+below is preferred, then above. If neither fits, a side offering at least
+min(natural bounded height,160px) can hold an internally scrolling result; below
+is preferred there too. Only when neither side offers that useful space does
+the shared viewport clamp permit overlap. Source layout and scroll are untouched.
+
+Entrance is220ms opacity plus6px translation from the sentence-facing edge, laid
+out at final dimensions. Text never scales, and reduced motion is static. The
+result content ResizeObserver schedules placement for help/translation reflow;
+no source Range read or new gesture listener is introduced. Rotation resizes an
+anchored success instead of switching it into a bottom sheet. Actual reader
+scroll/pinch/navigation/close still ends the existing lifetime; internal card
+scroll cannot move the underlying Reader. Cancellation stops animation, observer
+and queued placement, so late callbacks cannot revive it.

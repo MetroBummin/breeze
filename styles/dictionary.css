@@ -275,6 +275,20 @@ body.dark :is(#word-peek,#sentence-peek)::before{
     @keyframes sentence-surface-fade{from{opacity:0}to{opacity:1}}
     @keyframes sentence-sheet-in{from{opacity:0}to{opacity:1}}
   }
+
+/* A successful Reader sentence uses the expanded word surface material, with
+   responsive final geometry owned by sentence.js. It never becomes a mini pill. */
+body.sentence-result-anchored #sentence-modal{display:block;padding:0;}
+body.sentence-result-anchored #p-sentence{--word-safe-top:env(safe-area-inset-top,0px);
+  --word-safe-left:env(safe-area-inset-left,0px);--word-safe-right:env(safe-area-inset-right,0px);
+  position:fixed;box-sizing:border-box;margin:0;padding:16px 18px 18px;
+  max-width:calc(100vw - 32px);border-radius:24px;background:var(--sentence-glass-solid);
+  transform:none;animation:none;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;overflow-wrap:anywhere;}
+#ps-content{display:flow-root;min-width:0;}
+body.sentence-result-anchored #ps-ko{font-size:17px;line-height:1.65;}
+body.sentence-result-anchored #ps-easy{margin:12px 0 0;}
+
   .p-sec{font-size:10.5px; font-weight:600; color:var(--soft2); letter-spacing:.06em; margin:15px 0 7px;}
   /* 머리글 오른쪽 끝에 그 칸의 유일한 단추가 붙습니다 — 저장된 뜻의 ＋, 모르는 정도의 색칠. */
   .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}
@@ -380,7 +394,7 @@ body.dark :is(#word-peek,#sentence-peek)::before{
 #p-ex-preview{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:italic 14px/1.55 var(--ui);color:var(--ink-body);margin-top:4px;}
 #p-ex-fold[open] #p-ex-preview{display:none;}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  #panel.anchored{background:var(--sentence-glass-pill);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}
+  #panel.anchored,body.sentence-result-anchored #p-sentence{background:var(--sentence-glass-pill);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}
 }
 @media(prefers-reduced-motion:reduce){#panel .inner{transition:none;}}
 
@@ -408,8 +422,8 @@ body.dark :is(#word-peek,#sentence-peek)::before{
 #panel #p-mark.on i{background:color-mix(in srgb,var(--sentence-glass-ink) 25%,transparent);}
 #p-mark.on i::after{transform:translateX(16px);background:var(--sentence-glass-ink);}
 /* Keep scrolling inside the glass surface without a protruding scroll indicator. */
-#panel,#panel.anchored{scrollbar-width:none;overscroll-behavior:contain;}
-#panel::-webkit-scrollbar{display:none;width:0;height:0;}
+#panel,#panel.anchored,body.sentence-result-anchored #p-sentence{scrollbar-width:none;overscroll-behavior:contain;}
+#panel::-webkit-scrollbar,body.sentence-result-anchored #p-sentence::-webkit-scrollbar{display:none;width:0;height:0;}
 /* A restrained hint of the matching reading highlight, only for the selected level. */
 :is(#panel,.aa-legend,#vstars) .stbtn[data-s="1"].on{color:var(--s1-ink);background:color-mix(in srgb,var(--s1) 36%,var(--sentence-glass-solid));border-color:color-mix(in srgb,var(--s1-line) 55%,var(--sentence-glass-line));}
 :is(#panel,.aa-legend,#vstars) .stbtn[data-s="2"].on{color:var(--s2-ink);background:color-mix(in srgb,var(--s2) 36%,var(--sentence-glass-solid));border-color:color-mix(in srgb,var(--s2-line) 55%,var(--sentence-glass-line));}

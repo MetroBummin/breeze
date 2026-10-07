@@ -1,0 +1,59 @@
+name: Sentence responsive success pill
+on:
+  pull_request:
+    paths:
+      - 'scripts/dictionary/**'
+      - 'scripts/reader/**'
+      - 'styles/dictionary.css'
+      - 'index.html'
+      - 'tests/verify-sentence-success-pill*'
+      - '.github/workflows/sentence-success-pill.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sentence-success-pill-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/verify-sentence-success-pill.mjs
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Phone and iPad rendered previews
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_QA_PREVIEW: '1'
+          BREEZE_QA_OUTPUT: /tmp/breeze-sentence-success-preview
+        run: node tests/verify-sentence-success-pill-browser.mjs
+      - name: Early preview screenshots and real video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentence-success-preview-${{ matrix.engine }}
+          path: /tmp/breeze-sentence-success-preview/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Format, responsive geometry and lifetime matrix
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_QA_OUTPUT: /tmp/breeze-sentence-success-proof
+        run: node tests/verify-sentence-success-pill-browser.mjs
+      - name: Full responsive proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentence-success-proof-${{ matrix.engine }}
+          path: /tmp/breeze-sentence-success-proof/
+          if-no-files-found: warn
+          retention-days: 7
