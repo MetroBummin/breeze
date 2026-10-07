@@ -36,7 +36,11 @@ async function wordInteraction(page,capture=false){
  await page.locator('#word-peek-more').click();
  await page.waitForFunction(()=>onboardingSession.wordExpanded);
  assert.equal(await page.locator('#word-peek-more').evaluate(node=>node.classList.contains('onboard-target')),false);
+ // Lookup visibility is observed on the next animation frame. Expansion state
+ // alone does not mean that the cue has rendered, particularly on a busy runner.
+ await page.waitForFunction(()=>document.getElementById('onboard-return').classList.contains('onboard-target'),null,{timeout:1000});
  assert.equal(await page.locator('#onboard-return').evaluate(node=>node.classList.contains('onboard-target')),true);
+ assert.equal(await page.locator('.onboard-target').count(),1);
  if(capture)await page.waitForTimeout(400);
  if(capture)await page.screenshot({path:`${artifact}/web-word-expanded.png`});
  await page.locator('#onboard-return').click();

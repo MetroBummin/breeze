@@ -162,3 +162,11 @@ sentence #121 and all other workflows passed. Integrity reached its configured
 30-minute job limit during final WebKit reopening, after Chromium reopening passed.
 The serial suite keeps every case and receives a 35-minute job budget; exact
 revision-head CI must finish before claiming complete verification.
+
+The broad Integrity run at `93ba3c0` found a cue-assertion timing race: expansion
+state changes synchronously, while the visibility observer paints its next cue
+on the following animation frame. The dedicated guided runs had passed in both
+engines. The regression now waits up to one second for the rendered cue, while
+preserving immediate old-cue removal and asserting exactly one active target.
+This changes test synchronization only; runtime behavior and Library video v5
+remain unchanged. The revision still requires terminal exact-head CI.
