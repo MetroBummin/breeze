@@ -17,6 +17,9 @@ try{
       await page.setContent(`<html class="${dark?'dark':''}"><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body class="${dark?'dark':''}"><button id="reopen" onclick="openSettings()">설정 열기</button><div id="settings-modal" class="on"><div id="set-card"><button id="set-close" class="task-close" onclick="closeSettings()">×</button><h2>설정</h2><div class="set-panel"><div id="sm-body"></div><div id="sm-status"></div></div></div></div><input id="recovery-fileinput" hidden><input id="reading-backup-input" hidden></body></html>`);
       await page.addScriptTag({content:`window.load=(_key,fallback)=>fallback;window.words={};window.dead={};window.esc=value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;');window.closeSettings=()=>document.getElementById('settings-modal').classList.remove('on');window.openSettings=()=>{document.getElementById('settings-modal').classList.add('on');renderSyncModal();};${source}\nwindow.requests=[];sb={auth:{signInWithOtp:args=>new Promise(resolve=>window.requests.push({args,resolve}))}};renderSyncModal();`});
       assert.equal(await page.locator('#sm-apple-login').isDisabled(),true);
+      assert.equal(await page.locator('#sm-google-login').isDisabled(),true);
+      const apple=await page.locator('#sm-apple-login').boundingBox(),google=await page.locator('#sm-google-login').boundingBox();
+      assert.ok(google.y>apple.y && google.height>=44);
       assert.equal(await page.locator('#sm-password-login').evaluate(n=>n.getBoundingClientRect().height>=44),true);
       await page.screenshot({path:`${proof}/${name}-${dark?'dark':'light'}-choices.png`});
       await page.locator('#sm-email-login summary').focus();await page.keyboard.press('Enter');

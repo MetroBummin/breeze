@@ -41,7 +41,7 @@ async function requestSentenceEasyExplanation(){
   if(sentenceEasyDemoActive()){
     const session=onboardingSession;state.loading=true;renderSentenceEasyExplanation();
     if(!(await onboardingDelay(session,ONBOARD_DELAY_MS)) || sentenceEasyState!==state || !sentenceAlive(state.life))return;
-    state.loading=false;state.text='읽다가 모르는 단어나 문장을 만나도 뜻을 바로 확인하며 계속 읽을 수 있다는 말이에요.';
+    state.loading=false;state.text='독서가 자연스럽게 이어지도록 해 보라는 뜻이에요. 모르는 부분에서 도움을 받고 다시 읽어 나가세요.';
     session.easySeen=true;persistOnboarding();renderSentenceEasyExplanation();drawOnboarding();return;
   }
   if(navigator.onLine===false){state.error=easyExplanationError(null);renderSentenceEasyExplanation();return;}

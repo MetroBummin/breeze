@@ -24,7 +24,7 @@ async function ready(page){
 }
 async function wordInteraction(page,capture=false){
  await page.locator('#rtext .onboard-focus-word').click();
- await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='브리즈');
+ await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='산들바람');
  if(capture)await page.waitForTimeout(400);
  if(capture)await page.screenshot({path:`${artifact}/web-word-mini.png`});
  assert.equal(await page.evaluate(()=>onboardingSession.wordExpanded),false);
@@ -55,9 +55,9 @@ try{
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-word.png`});
   await context.setOffline(true);
   await wordInteraction(page,!native);
-  await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].every(node=>node.getBoundingClientRect().width>0));
+  await page.waitForFunction(()=>[...document.querySelectorAll('#rtext .w')].filter(node=>getComputedStyle(node).visibility==='visible').length===4);
   await page.waitForTimeout(650);
-  assert.equal(await page.locator('#rtext .w:visible').count(),5);
+  assert.equal(await page.locator('#rtext .w:visible').count(),4);
   // Interrupt and reopen: prepared completion survives, no history/book survives.
   await context.setOffline(false);
   await page.reload();await page.evaluate(()=>homeReady);
@@ -67,13 +67,13 @@ try{
   assert.equal(await page.locator('#onboard-next').isEnabled(),true);
   await page.locator('#onboard-next').click();
   await context.setOffline(true);
-  const word=page.locator('#rtext .onboard-focus-word'),rect=await word.boundingBox();
+  const word=page.locator('#rtext p:last-child .w').first(),rect=await word.boundingBox();
   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
   await page.mouse.down();await page.waitForTimeout(820);
   assert.equal(await page.locator('#sentence-modal').isVisible(),false,'long press must wait for release');
   await page.mouse.up();
   await page.locator('#ps-ko').waitFor({state:'visible'});
-  assert.equal(await page.locator('#ps-ko').textContent(),'브리즈와 함께 막힘없이 읽어 나가세요.');
+  assert.equal(await page.locator('#ps-ko').textContent(),'자연스럽게 읽어 나가세요.');
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-translation.png`});
   assert.equal(await page.evaluate(()=>onboardingSession.easySeen),false);
   await page.locator('#ps-easy-button').click();
@@ -81,10 +81,10 @@ try{
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-easy.png`});
   await page.locator('#onboard-return').click();
   assert.equal(await page.locator('#onboard-next').isDisabled(),true);
-  const initialFont=await page.locator('#rtext p').evaluate(n=>getComputedStyle(n).fontSize);
+  const initialFont=await page.locator('#rtext p:last-child').evaluate(n=>getComputedStyle(n).fontSize);
   await page.locator('#onboard-font-larger').click();
   await page.waitForTimeout(650);
-  assert.notEqual(await page.locator('#rtext p').evaluate(n=>getComputedStyle(n).fontSize),initialFont);
+  assert.notEqual(await page.locator('#rtext p:last-child').evaluate(n=>getComputedStyle(n).fontSize),initialFont);
   await page.screenshot({path:`${artifact}/${native?'native':'web'}-settings.png`});
   await page.locator('#onboard-next').click();
   assert.equal(await page.locator('#onboard-next').textContent(),'책 추가하기');

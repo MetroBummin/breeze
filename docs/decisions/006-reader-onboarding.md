@@ -6,7 +6,12 @@ First-time readers see the existing mascot, “브리즈에 오신 걸 환영해
 one bottom “시작하기” button. The lesson uses a quiet interactive illustration:
 Reader chrome is hidden and only the large word Breeze is visible. Tapping it
 opens the production mini pill. Its chevron opens the production word detail;
-“다음” then reveals “Breeze lets your reading flow.” with a font-size transition.
+“다음” then reveals “Let your reading flow.” with a gentle fade/scale handoff.
+Breeze means “산들바람”. The two phrases are separate illustrations; the reveal
+does not pretend Breeze is a word in the sentence. Neutral colors, generous space
+and a left-aligned welcome follow the supplied visual references. The unchanged
+repository app icon contains the requested green-leaf character; standalone
+Library artwork could not be downloaded and remains a visual refinement gap.
 
 The existing Reader long press, sentence selection cue, responsive translation
 pill and easy-explanation surface remain authoritative. “길게 누르기 대신 문장
@@ -19,14 +24,24 @@ Appearance changes are session-only and restored on exit.
 The final screen offers only “책 추가하기” and “나중에”. The former opens the
 existing book-import dialog. Authentication belongs in normal Settings: email
 opens the existing link/code form; password is a subdued secondary link with a
-44px target. Web Apple login uses the existing Supabase client and the same return URL as
+44px target. Google follows Apple. Web Apple/Google login uses the existing Supabase client and the same return URL as
 email login. A read-only provider check runs only on an explicit login tap; an
 unconfigured provider or network failure leaves Settings usable. Consent then
 uses `signInWithOAuth`, with the existing session listener owning completion.
-Native Apple remains disabled because the app has no AuthenticationServices
-bridge or Sign in with Apple entitlement. No provider, credentials, security
-settings or existing email/password requests change. Approved Apple artwork
-is still an access blocker (see QA notes).
+The five-second preparation deadline covers the settings response, JSON and SDK
+URL preparation. Closing Settings cancels the operation; stale or cancelled
+results cannot navigate or release a newer operation's controls.
+
+The iOS draft adds an AuthenticationServices system consent browser bridge to
+the existing WebView owner. It accepts only the local main frame, this project's
+HTTPS authorize endpoint and Apple/Google, with a UUID-bound callback. Consent
+has a separate two-minute deadline. The validated callback reloads the existing
+app document with its token fragment so the same bundled SDK, auth listener and
+persistent store own session acceptance. There is no second auth client or late
+`setSession` write. Android and native shells without the bridge remain unavailable.
+No provider, credentials, entitlements, provisioning, security settings or existing
+email/password requests change. Native compilation and real provider login are
+unverified; provider and callback setup need owner handoff (see QA notes).
 
 Guidance yields to lookup surfaces. Its explicit controls own their taps, so the
 Reader's outside-tap dismissal cannot consume the tutorial's Next action. Next
@@ -67,6 +82,9 @@ existing request/reopen/password-return flow with mocked auth at five sizes in
 both themes. Captures and remaining validation limits are in
 [QA notes](../qa/guided-onboarding-draft.md).
 
-Apple web tests cover configured/unconfigured providers, native capability absence,
-pending-click coalescing, timeout/retry, stale sessions and unsafe redirect rejection.
+Apple/Google tests cover configured/unconfigured providers, native bridge absence,
+whole-operation timeout/retry, cancel/new request, late SDK replies, stale sessions,
+unsafe redirects and native callback binding. A real bundled SDK browser test
+substitutes the provider server, then verifies callback acceptance and persistence
+after app reload. This does not prove real consent, provider setup or native execution.
 Live provider configuration cannot be inferred from this repository.

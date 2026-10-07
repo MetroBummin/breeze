@@ -3,11 +3,11 @@
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_DELAY_MS=1000;
 const ONBOARD_PROGRESS_KEY='breeze.onboarding.guided-progress';
-const ONBOARD_PASSAGES=[['Breeze lets your reading flow.','브리즈와 함께 막힘없이 읽어 나가세요.']];
+const ONBOARD_PASSAGES=[['Let your reading flow.','자연스럽게 읽어 나가세요.']];
 // Each tappable word has an authored meaning and short English definition.
 const ONBOARD_WORDS={
-  breeze:['브리즈','proper noun','The name of this reading app; a breeze is also a gentle wind.'],
-  lets:['~하게 해 주다','verb','Allows something to happen.'],
+  breeze:['산들바람','noun','A gentle, light wind.'],
+  let:['~하게 하다','verb','Allow something to happen.'],
   your:['당신의','determiner','Belonging to the person being addressed.'],
   reading:['독서','noun','The activity of reading written words.'],
   flow:['자연스럽게 이어지다','verb','Continue smoothly and easily.'],
@@ -25,7 +25,7 @@ async function startOnboarding(replay){
   saveReadingState(); closePanel(); closeSentence(); closeAa(); closeSettings();
   const session={
     book:{id:'breeze-onboarding',title:'Breeze Tutorial',kind:'txt',transient:true,
-      paras:ONBOARD_PASSAGES.map(part=>part[0]),textAvailable:true},
+      paras:['Breeze',...ONBOARD_PASSAGES.map(part=>part[0])],textAvailable:true},
     previousBook:curBook,previousView:activeAppView(),
     appearance:{fs,darkMode,readMargin},controller:new AbortController(),
     timers:new Map(),seen:new Set(),wordSeen:false,wordExpanded:false,sentenceSeen:false,easySeen:false,aaSeen:false,stage:0,replay:!!replay,
@@ -78,7 +78,7 @@ async function startOnboarding(replay){
     focusChevron();
   },{signal});
   document.getElementById('onboard-sentence').addEventListener('click',()=>{
-    const node=document.querySelector('#rtext .w');if(!node)return;
+    const node=document.querySelector('#rtext p:last-child .w');if(!node)return;
     const rect=node.getBoundingClientRect();
     const surface=READER_SURFACES.find(surface=>surface.name==='text');
     const found=surface?.sentenceAt(rect.x+rect.width/2,rect.y+rect.height/2);
@@ -160,7 +160,8 @@ function drawOnboarding(){
   document.getElementById('onboard-font-value').textContent=String(fs);
   document.getElementById('onboard-return').textContent=((stage===1&&session.wordExpanded)||(stage===2&&session.easySeen))?'다음':'닫기';
   document.getElementById('onboard-sentence').hidden=stage!==2;
-  document.getElementById('onboard-note').hidden=stage!==3;
+  document.getElementById('onboard-note').hidden=stage!==0&&stage!==3;
+  document.getElementById('onboard-note').textContent=stage===0?'막힘없이 읽는 새로운 방법.':'나머지 설정은 읽으면서 바꿔도 돼요.';
   document.getElementById('aafab').classList.toggle('onboard-target',stage===3&&!aaOpen);
   document.querySelectorAll('#rtext .w').forEach(node=>{
     node.classList.toggle('onboard-focus-word',node.textContent==='Breeze');

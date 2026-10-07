@@ -3,6 +3,7 @@ import UIKit.UIGestureRecognizerSubclass
 import Capacitor
 import WebKit
 import AVFoundation
+import AuthenticationServices
 
 // BEGIN PDF_CONTACT_POLICY
 // Native identities only: never compare these with DOM Touch/Pointer IDs.
@@ -236,7 +237,7 @@ private final class BreezeRefreshControl: UIRefreshControl {
     }
 }
 
-final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate {
+final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate, ASWebAuthenticationPresentationContextProviding {
     #if DEBUG
     private let pdfMotionProbe = BreezePdfMotionProbe()
     private var pdfMotionTraceEnabled = false
@@ -278,6 +279,11 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private static let libraryRefreshHandler = "breezeRefresh"
     private static let pencilAdmissionHandler = "breezePencilAdmission"
     private static let shareInboxHandler = "breezeShareInbox"
+    private static let authHandler = "breezeAuth"
+    private var authSession: ASWebAuthenticationSession?
+    private var authRequest: String?
+    private var authReply: ((Any?, String?) -> Void)?
+    private var authDeadline: DispatchWorkItem?
     private static let sharedFileHandler = "breezeSharedFile"
     private let sharedFileQueue = DispatchQueue(label: "kr.io.breeze.shared-files", qos: .userInitiated)
     private static let readerSelectionHandler = "breezeReaderSelection"
@@ -420,6 +426,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
         webView.configuration.userContentController.add(self, name: Self.libraryRefreshHandler)
         webView.configuration.userContentController.add(self, name: Self.shareInboxHandler)
+        webView.configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.authHandler)
         webView.configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.sharedFileHandler)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
@@ -438,6 +445,80 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                 forMainFrameOnly: true
             )
         )
+    }
+
+    // System consent browser only; credentials stay with Apple/Google and
+    // Supabase. No OAuth client, entitlement, provider or provisioning changes.
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        view.window ?? ASPresentationAnchor()
+    }
+
+    private func finishAuth(request: String, callback: URL? = nil, error: String? = nil) {
+        guard authRequest == request else { return }
+        let reply = authReply
+        let session = authSession
+        authRequest = nil
+        authReply = nil
+        authSession = nil
+        authDeadline?.cancel()
+        authDeadline = nil
+        if callback == nil { session?.cancel() }
+        reply?(callback?.absoluteString, error)
+    }
+
+    private func handleAuthMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        guard message.frameInfo.isMainFrame,
+              message.frameInfo.securityOrigin.protocol == "breeze",
+              message.frameInfo.securityOrigin.host == "localhost",
+              let body = message.body as? [String: Any],
+              let request = body["request"] as? String, UUID(uuidString: request) != nil,
+              let action = body["action"] as? String else {
+            replyHandler(nil, "로그인 요청을 확인할 수 없어요.")
+            return
+        }
+        if action == "cancel" {
+            finishAuth(request: request, error: "로그인을 취소했어요.")
+            replyHandler(true, nil)
+            return
+        }
+        guard action == "start", view.window != nil,
+              let rawURL = body["url"] as? String, let url = URL(string: rawURL),
+              url.scheme == "https", url.host == "hrtfhojbhqvaoiulspto.supabase.co",
+              url.user == nil, url.password == nil, url.port == nil,
+              url.path == "/auth/v1/authorize",
+              let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let provider = parts.queryItems?.first(where: { $0.name == "provider" })?.value,
+              ["apple", "google"].contains(provider),
+              let redirect = parts.queryItems?.first(where: { $0.name == "redirect_to" })?.value,
+              redirect == "kr.io.breeze.app://auth/callback?request=\(request)" else {
+            replyHandler(nil, "로그인 연결을 확인할 수 없어요.")
+            return
+        }
+        if let previous = authRequest {
+            finishAuth(request: previous, error: "새 로그인 요청으로 바뀌었어요.")
+        }
+        authRequest = request
+        authReply = replyHandler
+        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "kr.io.breeze.app") { [weak self] callback, _ in
+            DispatchQueue.main.async {
+                guard let self, self.authRequest == request else { return }
+                guard let callback,
+                      callback.scheme == "kr.io.breeze.app", callback.host == "auth", callback.path == "/callback",
+                      URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "request" })?.value == request else {
+                    self.finishAuth(request: request, error: "로그인을 마치지 못했어요.")
+                    return
+                }
+                self.finishAuth(request: request, callback: callback)
+            }
+        }
+        session.presentationContextProvider = self
+        authSession = session
+        let timeout = DispatchWorkItem { [weak self] in
+            self?.finishAuth(request: request, error: "로그인 시간이 지났어요. 다시 시도해 주세요.")
+        }
+        authDeadline = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 120, execute: timeout)
+        if !session.start() { finishAuth(request: request, error: "로그인 창을 열지 못했어요.") }
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -593,6 +674,10 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping (Any?, String?) -> Void) {
+        if message.name == Self.authHandler {
+            handleAuthMessage(message, replyHandler: replyHandler)
+            return
+        }
         if message.name == Self.sharedFileHandler {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",
