@@ -2,7 +2,7 @@
 
 Base: main `3e299d96` (#121). Separate branch `codex/guided-onboarding-draft`.
 No #120 integration, sentence extraction/truncation, release version,
-auth request methods or security/provider configuration changes.
+existing email/password request or security/provider configuration changes.
 
 The welcome uses the existing mascot and one bottom action. A minimal lesson
 hides Reader chrome while sharing its actual word mini pill, expansion, sentence
@@ -43,10 +43,23 @@ size and accessible spacing. [Apple Design Resources](https://developer.apple.co
 links its approved logo. The official
 [logo download](https://devimages-cdn.apple.com/design/resources/download/Logo-Sign-in-with-Apple.dmg)
 and hosted button-image endpoint returned HTTP 403 in this environment, including
-a direct public download attempt. The disabled Settings button is a **provisional
-text-only appearance**, not a completed official Apple component. Its approved
-logo/asset still needs access. Repository inspection found no Apple auth flow
-or entitlement on any supported platform; the UI explicitly says unsupported.
+a direct public download attempt. The Settings button is a **provisional text-only appearance**, not a completed
+official Apple component. Its approved logo/asset still needs access. Web login
+is wired to the existing Supabase OAuth client with a read-only provider check.
+Native login remains disabled: the repository has neither an AuthenticationServices
+bridge nor the Sign in with Apple entitlement.
+
+[Supabase Apple documentation](https://supabase.com/docs/guides/auth/social-login/auth-apple)
+and [Apple web setup](https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web/)
+were inspected. Production provider state is **unverified**, not known disabled:
+the read-only public settings request failed in this environment and no auth
+configuration read tool is exposed. The smallest web setup gap is owner verification
+that the existing Apple provider is enabled with the correct Services ID and current
+secret, and that the existing web return URL is allowed. The registered Apple web
+callback must be `https://hrtfhojbhqvaoiulspto.supabase.co/auth/v1/callback`. No key
+was fetched, created or changed. Native completion additionally needs the app
+capability/provisioning and native authentication bridge; those are outside the
+current no-configuration-change scope.
 
 Requested Pinterest research could not be completed. Public search pages and
 exact-domain searches were attempted for
@@ -75,6 +88,9 @@ Passed on 2026-10-07:
 - Existing email request, duplicate-send gate, reopening and password return
   with mocked auth, keyboard email disclosure and 44px password target in
   light/dark at narrow, phone, tablet, desktop and short sizes.
+- Web Apple mocked tests: configured provider opens SDK consent; unconfigured
+  provider stays in Settings; native support is gated; duplicate clicks coalesce;
+  timeout permits retry; stale sessions and off-project redirects cannot navigate.
 - Production word, sentence, sentence-help and shared Home/Reader controls
   browser regressions.
 
@@ -84,3 +100,7 @@ gesture and WebView verification remain unperformed. Live email/password login
 was not exercised. Apple artwork and Pinterest access remain blocked as above.
 The local build's existing “빠짐: public” note remains. This is a draft only:
 no merge, deployment, native archive, App Review submission or active release change.
+
+Exact-head GitHub CI read-back is blocked in the terminal: `gh pr checks`
+and the check-runs API return “Forbidden”. The connector workflow lookup
+returned no runs for the inspected head; no remote green status is claimed.

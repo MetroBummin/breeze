@@ -147,7 +147,18 @@ try{
  await page.locator('#onboard-next').click();
  assert.equal(await page.locator('#add-modal').evaluate(n=>n.open),true,'existing book import route missing');
  await page.evaluate(()=>{closeAddModal();openSyncModal();});
- assert.equal(await page.locator('#sm-apple-login').isDisabled(),true);
+ assert.equal(await page.locator('#sm-apple-login').isEnabled(),true,'web Apple handler missing');
+ await page.evaluate(()=>{
+   window.appleProviderReads=0;const realFetch=window.fetch;
+   window.fetch=(...args)=>{
+     if(String(args[0]).endsWith('/auth/v1/settings')){window.appleProviderReads++;return Promise.resolve(new Response(JSON.stringify({external:{apple:false}}),{status:200,headers:{'Content-Type':'application/json'}}));}
+     return realFetch(...args);
+   };
+ });
+ await page.locator('#sm-apple-login').click();
+ await page.waitForFunction(()=>document.getElementById('sm-status').textContent.includes('아직 설정되지'));
+ assert.equal(await page.locator('#sm-apple-login').isEnabled(),true,'provider error left login stuck');
+ assert.equal(await page.evaluate(()=>window.appleProviderReads),1);
  assert.equal(await page.locator('#sm-password-login').evaluate(n=>n.getBoundingClientRect().height>=44),true);
  await page.locator('#sm-password-login').click();
  assert.equal(await page.locator('#sm-password').isVisible(),true,'existing password route missing');

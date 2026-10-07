@@ -19,10 +19,14 @@ Appearance changes are session-only and restored on exit.
 The final screen offers only “책 추가하기” and “나중에”. The former opens the
 existing book-import dialog. Authentication belongs in normal Settings: email
 opens the existing link/code form; password is a subdued secondary link with a
-44px target. This main revision contains no Apple client flow or native sign-in
-entitlement on web, iOS or Android. Apple remains disabled and explicitly
-unsupported. No provider, credentials, security settings or auth request methods
-change. Approved Apple artwork is still an access blocker (see QA notes).
+44px target. Web Apple login uses the existing Supabase client and the same return URL as
+email login. A read-only provider check runs only on an explicit login tap; an
+unconfigured provider or network failure leaves Settings usable. Consent then
+uses `signInWithOAuth`, with the existing session listener owning completion.
+Native Apple remains disabled because the app has no AuthenticationServices
+bridge or Sign in with Apple entitlement. No provider, credentials, security
+settings or existing email/password requests change. Approved Apple artwork
+is still an access blocker (see QA notes).
 
 Guidance yields to lookup surfaces. Its explicit controls own their taps, so the
 Reader's outside-tap dismissal cannot consume the tutorial's Next action. Next
@@ -62,3 +66,7 @@ Web and native-shell emulation exercise five stages in light/dark at 390×844,
 existing request/reopen/password-return flow with mocked auth at five sizes in
 both themes. Captures and remaining validation limits are in
 [QA notes](../qa/guided-onboarding-draft.md).
+
+Apple web tests cover configured/unconfigured providers, native capability absence,
+pending-click coalescing, timeout/retry, stale sessions and unsafe redirect rejection.
+Live provider configuration cannot be inferred from this repository.

@@ -28,6 +28,7 @@ let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progre
 let pendingRecoveryKey='', vaultInfoOpen=false, vaultRecoveryError='', recoveryRotateOpen=false;
 let pendingPair=null, pairingPoll=null, pairingError='';
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
+let appleLoginPending=false;
 // Keep the current email step across settings dismissal/auth rerenders. Never
 // persist a password or OTP; Supabase continues to own session verification.
 const emailLogin={email:'',sentTo:'',message:'',sending:false,request:0,retryAt:0,retryEmail:'',timer:null};
@@ -242,6 +243,9 @@ function recoveryPanel(){
     <details class="sm-fold"><summary><b>다른 기기 연결</b><span>6자리 코드 또는 QR</span></summary><div class="sm-device-move"><span>새 기기에 표시된 6자리 코드를 입력해 열쇠를 보내세요.</span><input id="sm-pair-code" inputmode="numeric" maxlength="6" placeholder="6자리 코드"><button onclick="approvePairingCode()">코드로 동기화</button><small>새 기기가 QR을 띄우면 이 기기의 카메라로 스캔해도 됩니다.</small></div></details></section>`;
 }
 
+function appleLoginWebSupported(){
+  return !!(sb && !isNativeShell() && typeof sb.auth.signInWithOAuth==='function');
+}
 function renderSyncModal(){
   rememberLoginEmail();
   const body=document.getElementById('sm-body');
@@ -287,13 +291,50 @@ function renderSyncModal(){
             <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
           </div>
         </details>
-        <button id="sm-apple-login" class="settings-apple-signin" type="button" disabled aria-describedby="sm-apple-note">Apple로 로그인</button>
-        <p id="sm-apple-note" class="settings-signin-note">Apple 로그인은 아직 지원하지 않아요.</p>
+        <button id="sm-apple-login" class="settings-apple-signin" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||appleLoginPending?'disabled':''} aria-describedby="sm-apple-note">Apple로 로그인</button>
+        <p id="sm-apple-note" class="settings-signin-note">${isNativeShell()?'이 앱의 Apple 로그인 연결은 아직 준비되지 않았어요.':'Apple 계정으로 웹에서 로그인해요.'}</p>
         <button id="sm-password-login" class="sm-linkish neutral settings-password-link" onclick="openPasswordLogin()">비밀번호 로그인</button>
       </div>`;
   }
   syncStatus('');
   updateEmailLoginControls();
+}
+
+/* Web Apple consent uses the existing Supabase session owner. No provider or
+   credentials are configured here; a read-only settings check avoids sending
+   users to an unconfigured provider's error page. Native needs its own bridge. */
+async function sbAppleLogin(){
+  if(!appleLoginWebSupported() || sbUser || appleLoginPending) return;
+  appleLoginPending=true;
+  const client=sb,epoch=syncSessionEpoch,controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),5000);
+  const button=/** @type {HTMLButtonElement} */(document.getElementById('sm-apple-login'));
+  if(button)button.disabled=true;
+  syncStatus('Apple 로그인 준비 중…');
+  try{
+    const response=await fetch(SB_URL.replace(/\/$/,'')+'/auth/v1/settings',{
+      headers:{apikey:SB_KEY},signal:controller.signal,credentials:'omit',
+    });
+    if(!response.ok)throw Error('provider_settings');
+    const settings=await response.json();
+    if(sbUser || epoch!==syncSessionEpoch || client!==sb)return;
+    if(settings.external?.apple!==true){syncStatus('Apple 로그인이 아직 설정되지 않았어요. 이메일로 로그인해 주세요.');return;}
+    const {data,error}=await client.auth.signInWithOAuth({provider:'apple',options:{
+      redirectTo:location.origin+location.pathname,skipBrowserRedirect:true,
+    }});
+    if(sbUser || epoch!==syncSessionEpoch || client!==sb)return;
+    if(error || !data?.url)throw Error('apple_signin');
+    // The SDK's authorization URL must stay on this project's Auth origin.
+    const target=new URL(data.url),project=new URL(SB_URL);
+    if(target.protocol!=='https:' || target.origin!==project.origin || target.pathname!=='/auth/v1/authorize')throw Error('apple_url');
+    location.assign(target.href);
+  }catch(error){
+    if(epoch===syncSessionEpoch && client===sb && !sbUser)syncStatus('Apple 로그인에 연결하지 못했어요. 다시 시도하거나 이메일로 로그인해 주세요.');
+  }finally{
+    clearTimeout(timer);appleLoginPending=false;
+    const current=/** @type {HTMLButtonElement} */(document.getElementById('sm-apple-login'));
+    if(current)current.disabled=!appleLoginWebSupported();
+  }
 }
 
 async function sbSendLink(){
