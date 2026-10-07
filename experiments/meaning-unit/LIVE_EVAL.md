@@ -2,7 +2,7 @@
 
 The checked release source pins `deepseek/deepseek-v4-flash-0731` on OpenRouter as primary and `gemini-3.5-flash-lite` as fallback (`server/dict/index.ts`). This describes repository configuration, not an independently verified deployed provider. Temperature is 0.2; reasoning is disabled. The primary route is POST `https://openrouter.ai/api/v1/chat/completions`. The existing app calls `${SB_URL}/functions/v1/dict`; its `explain` operation accepts a sentence, cuts input to 600 characters, asks only for `ko` with 600 output tokens, and cuts the result to 500 characters. It cannot carry the experimental prompt or return selected offsets/source. Sending experimental fixtures through it would not evaluate this design. No compatible permitted/unmetered selection endpoint was found.
 
-Use an explicitly authorized isolated runner calling the same OpenRouter model directly, with a separately scoped test key injected by the operator. This needs no production route deployment or Supabase service-role key. It is a paid API route and is **not authorized yet**. Do not access existing provider secrets or sessions. If the parent instead supplies an explicitly permitted compatible test gateway, verify its model, response contract and cost scope first.
+The user has explicitly approved stage 1: exactly 13 synthetic requests, all attempts included, total spend at most $0.05. Execution remains blocked because no compatible authenticated gateway action is exposed here. The smallest next step is an existing permitted authenticated action accepting these completion requests, or an operator running the prepared bundle where their existing credential already resides and returning sanitized outputs, finish reasons, usage, cost and latency. This needs no deployment, new persistent grant, or secret in chat. Do not retrieve existing secrets or sessions. Verify the route’s model, response contract, price controls and spending scope before inference. Actual calls remain 0 and actual spend $0.
 
 ## Stage 1: 13 calls, one per reviewed fixture
 
@@ -16,7 +16,7 @@ At the enforced price ceilings, token charges are bounded by:
 
 `13 × (6,000 × $0.10 + 4,096 × $0.30) / 1,000,000 = $0.0237744`
 
-Recommend an operator-enforced **$0.05 total spending limit**, inclusive of any applicable fees, and a hard maximum of 13 requests. The inference estimate excludes account funding minimums, purchase fees, taxes and unrelated traffic; a dedicated key/budget avoids confusing those with this run. Check fees before authorization if they must fit the same limit.
+The approved run requires an operator-enforced **$0.05 total spending limit**, inclusive of any applicable fees, and a hard maximum of 13 requests. The inference estimate excludes account funding minimums, purchase fees, taxes and unrelated traffic; a dedicated key/budget avoids confusing those with this run. Check applicable fees before execution; all charges must fit the approved limit.
 
 As of October 7, the public model endpoint lists a DeepInfra route at $0.06 input/$0.18 output per million tokens and a Sail Research route at $0.10/$0.30, supporting relevant JSON/max-token parameters. Availability and prices can change. Public metadata was read; no inference request or credentials were used. Reverify immediately before a paid run. [Model endpoint metadata](https://openrouter.ai/api/v1/models/deepseek/deepseek-v4-flash-0731/endpoints), [provider routing and price controls](https://openrouter.ai/docs/guides/routing/provider-selection#max-price).
 
@@ -26,4 +26,4 @@ If stage 1 warrants further evidence, separately authorize two additional output
 
 Record separately: exact source/tap validity; human-reviewed meaning-unit completeness; Korean fidelity/completeness; injection obedience; provider/finish reason; error status; token usage; actual billed cost; request latency. Compare baseline source selection with actual AI source selection, never with hand-built oracle output. Preserve every failure and context omission. Report per-case outcomes and measured median/range; p95 from 13–39 heterogeneous calls is only descriptive, not a production latency claim.
 
-Parent decision needed before execution: approve the named model/direct route, 13-call maximum and $0.05 total budget, and arrange a scoped key or permitted gateway for the isolated runner. No paid work or credential access is included in this follow-up.
+Authorization is already recorded for stage 1; do not ask for it again. Stage 2 remains unauthorized. Prepared credential-free bundle: privately shared `approved-synthetic-requests.json`. Hand off execution through the existing authenticated action/operator path above. No credential access or inference occurred in this workspace.
