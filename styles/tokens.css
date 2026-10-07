@@ -509,8 +509,8 @@ body.dark{
 
 /* Penpot Home / Settings palette, scoped by home-shell.css. */
 /* Home settings alone use opaque matte material: no cover bleed, reflection or backdrop blur. */
-:root{--settings-sheet-surface:#F2F2F7;--home-background:#F2F2F7;--settings-group:#FFF;--settings-ink:#1C1C1E;--settings-muted:#6D6D72;--settings-line:#D1D1D6;--settings-close:#E5E5EA;--settings-handle:#C7C7CC;--settings-scrim:rgba(0,0,0,.18);--settings-danger:#FF6B6B;}
-html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;--settings-group:#363638;--settings-ink:#F2F2F7;--settings-muted:#AEAEB2;--settings-line:#48484A;--settings-close:#48484A;--settings-handle:#636366;}
+:root{--settings-sheet-surface:#F2F2F7;--home-background:#F2F2F7;--settings-group:#FFF;--settings-ink:#1C1C1E;--settings-muted:#6D6D72;--brand-home-ink:rgba(104,104,109,.92);--settings-line:#D1D1D6;--settings-close:#E5E5EA;--settings-handle:#C7C7CC;--settings-scrim:rgba(0,0,0,.18);--settings-danger:#FF6B6B;}
+html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;--settings-group:#363638;--settings-ink:#F2F2F7;--settings-muted:#AEAEB2;--brand-home-ink:var(--settings-ink);--settings-line:#48484A;--settings-close:#48484A;--settings-handle:#636366;}
 
 :root{--completion-blue:#1689f5;}
 

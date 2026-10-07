@@ -1,4 +1,30 @@
-# Breeze Dark01 brand — screenshot draft
+# Home neutral gray refinement — review draft
+
+Compared with PR #124 head 37c4b992. Light Home is brighter neutral gray with
+subtle alpha and thin reflections inside the unchanged letter contours; no
+drop shadow, plate or blur. Dark Home retains its appearance. Opaque reduced
+transparency/motion/contrast fallback retains the original stronger ink.
+Phone/iPad actual screens and enlarged exact CSS rendering are in
+docs/brand/drafts/home-before-after.png. Both icon directions share the original
+wordmark b contour, two counters, scale and light source; 60/40/29/20px examples
+are in icon-two-directions.png. These are static SVG mockups, not iOS automatic
+Liquid Glass previews; no shipped icon assets are replaced. No design selected.
+
+The full local npm test passed (existing typecheck baseline unchanged).
+The existing Chromium guided onboarding suite also passed word/sentence,
+keyboard alternative, interruption/reopening, Back, Skip, completion, cancellation,
+storage isolation and responsive themes.
+Local Chromium brand checks passed all ten light/dark layouts (390/820/1440/320
+and short landscape), cold launch, proportions, overflow, motion, contrast and
+actual CDP reduced-transparency emulation. Real native icon installation,
+physical-device accessibility appearance and local WebKit are unverified.
+First-entry colors, auth PR #122 head 0e6ed20, extraction and release remain
+untouched. PR #124 stays draft. New exact-head CI evidence will be recorded
+after push; historical evidence below belongs to earlier heads.
+
+---
+
+## Earlier brand draft evidence
 
 Final reviewed direction: original cursive r (08:15), WHITE palette B (08:48),
 and monochrome Home with letter-only Liquid Glass highlights/shallow depth.

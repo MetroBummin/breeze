@@ -10,7 +10,8 @@ body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar{position:relative;trans
 body.dark .breeze-wordmark{background-image:url('../assets/brand/wordmark-dark.svg');}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo{gap:10px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark{width:132px;background:none;}
-body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark::before{background:var(--control-light-reflection),linear-gradient(180deg,transparent 45%,var(--sentence-glass-scrim) 80%,transparent),var(--settings-ink);background-blend-mode:soft-light,normal;opacity:1;}
+body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark::before{background:var(--control-light-reflection),linear-gradient(180deg,transparent 45%,var(--sentence-glass-scrim) 80%,transparent),var(--brand-home-ink);background-blend-mode:soft-light,normal;opacity:1;}
+body:not(.dark):has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark{filter:none;}
 @media(prefers-reduced-transparency:reduce),(prefers-reduced-motion:reduce),(prefers-contrast:more){.breeze-wordmark{filter:none;}.breeze-wordmark::before{opacity:0;}.breeze-wordmark::after{display:none;}body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .breeze-wordmark::before{background:var(--settings-ink);background-blend-mode:normal;opacity:1;}}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings{margin-left:auto;flex:none;width:44px;height:44px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}

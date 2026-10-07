@@ -58,3 +58,20 @@ clears the splash, no aspect distortion/overflow, and reduced-motion layouts at
 phone, iPad, desktop, narrow and short sizes in both themes. All brand marks have
 an accessible Breeze name; decorative boot imagery is hidden from accessibility.
 See the current QA record for exact head, checks and limitations.
+
+## Home neutral gray and icon comparison draft (2026-10-07)
+
+The next review compares Home against 37c4b992. Light Home uses
+--brand-home-ink (neutral gray at .92 alpha) in the original letter mask,
+retaining shared thin reflection and directional rim. Its drop shadow is removed.
+Dark Home keeps the existing ink/material. Reduced transparency, motion and
+increased contrast restore opaque --settings-ink with no letter effect.
+The connected wordmark and original cursive r are unchanged. Welcome colors
+await the user's reference; onboarding, splash and shipped icons are untouched.
+
+The files under docs/brand/drafts are review assets only. Both icon directions
+use the same lowercase b extracted from the original wordmark, closing only
+the outgoing connection, with identical size and lighting: neutral glass and
+subtle teal-to-blue glass. These are static SVG highlight mockups, not evidence
+of Apple's automatic iOS Liquid Glass icon rendering. The existing br icon
+remains installed. No new direction is selected.
