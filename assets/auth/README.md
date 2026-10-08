@@ -9,6 +9,9 @@ runtime requests to Google, Apple or a font CDN are needed to render choices.
   native padding 16px/gap 12px. Buttons share width and 48px touch height.
 - [Apple guidance](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple):
   official generated full Korean buttons, black on light and white on dark.
+  The existing two buttons use the [official image API](https://developer.apple.com/documentation/signinwithapplerestapi/get-a-sign-in-with-apple-button-that-is-center-aligned.)
+  with `scale=3`: 750×144 source pixels at the unchanged 250×48 CSS size.
+  All other generation parameters, logo and Korean title remain unchanged.
   Full image remains uncropped at its original 250:48 aspect ratio. The accessible
   button name is explicit; decorative images are hidden from assistive technology.
 - Google Sans comes from `google/fonts` commit

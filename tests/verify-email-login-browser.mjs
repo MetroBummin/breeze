@@ -36,6 +36,7 @@ try{
         return {appleRatio:ar.width/ar.height,appleNatural:[a.naturalWidth,a.naturalHeight],logo:[lr.width,lr.height],logoFit:getComputedStyle(logo).objectFit,font:style.fontSize,line:style.lineHeight,gap:style.gap,fill:style.backgroundColor,stroke:style.borderColor,color:style.color,fontLoaded:document.fonts.check('500 14px "Breeze Google Sign-in"','Google')};
       });
       assert.ok(Math.abs(artwork.appleRatio-250/48)<0.01);
+      assert.deepEqual(artwork.appleNatural,[750,144]);
       assert.deepEqual(artwork.logo,[20,20]);assert.equal(artwork.logoFit,'contain');assert.equal(artwork.font,'14px');assert.equal(artwork.line,'20px');assert.equal(artwork.gap,'10px');assert.equal(artwork.fontLoaded,true);
       assert.equal(artwork.fill,dark?'rgb(19, 19, 20)':'rgb(255, 255, 255)');
       assert.equal(artwork.stroke,dark?'rgb(142, 145, 143)':'rgb(116, 119, 117)');

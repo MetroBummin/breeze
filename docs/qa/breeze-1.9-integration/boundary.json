@@ -13,7 +13,7 @@
     "approved-writing": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
   },
   "version": "1.9",
-  "build": "252",
+  "build": "253",
   "files": {
     ".github/workflows/design-brand.yml": {
       "owners": [
@@ -183,10 +183,11 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "70d721a6c456a05eca3c9f79c5436359cd7b9cfc418006ce9e14f5963edeefe0",
+      "kind": "combined-reviewed",
+      "sha256": "e5ca75e66cf486c6d4edaaad2ac03911de59acdbb89151e0d02611b3f76fa3c4",
       "sourceSha256": {
-        "127": "70d721a6c456a05eca3c9f79c5436359cd7b9cfc418006ce9e14f5963edeefe0"
+        "127": "70d721a6c456a05eca3c9f79c5436359cd7b9cfc418006ce9e14f5963edeefe0",
+        "approved-253": "e5ca75e66cf486c6d4edaaad2ac03911de59acdbb89151e0d02611b3f76fa3c4"
       }
     },
     "assets/auth/google-g.png": {
@@ -203,30 +204,33 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "fc710b67928e4903ed5f18dd4d7cc73989042dcc294470b5e0ebe3cb72926eaf",
+      "kind": "combined-reviewed",
+      "sha256": "ba536974b301b8d79182c5a2595e82925a8f5acaee4303e12f9f16b75d69c8cd",
       "sourceSha256": {
-        "127": "fc710b67928e4903ed5f18dd4d7cc73989042dcc294470b5e0ebe3cb72926eaf"
+        "127": "fc710b67928e4903ed5f18dd4d7cc73989042dcc294470b5e0ebe3cb72926eaf",
+        "approved-253": "ba536974b301b8d79182c5a2595e82925a8f5acaee4303e12f9f16b75d69c8cd"
       }
     },
     "assets/auth/signin-ko-black.png": {
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "0a9f00ffb6a7439cf73054ffa28df942946470544bdd88e6092b0e36c405fec8",
+      "kind": "combined-reviewed",
+      "sha256": "b62ad8549062ba84434273881a964b9be3298bf44b54cedd891a20dabf9dd9f6",
       "sourceSha256": {
-        "127": "0a9f00ffb6a7439cf73054ffa28df942946470544bdd88e6092b0e36c405fec8"
+        "127": "0a9f00ffb6a7439cf73054ffa28df942946470544bdd88e6092b0e36c405fec8",
+        "approved-253": "b62ad8549062ba84434273881a964b9be3298bf44b54cedd891a20dabf9dd9f6"
       }
     },
     "assets/auth/signin-ko-white.png": {
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "bf32055f2baf48b98711ddf50216a6ce462282c53f0c235db89bc9b548914208",
+      "kind": "combined-reviewed",
+      "sha256": "30dac95a55719dcd791fd64653cd2e651825fbb805b567e24b12c3c128fc18f8",
       "sourceSha256": {
-        "127": "bf32055f2baf48b98711ddf50216a6ce462282c53f0c235db89bc9b548914208"
+        "127": "bf32055f2baf48b98711ddf50216a6ce462282c53f0c235db89bc9b548914208",
+        "approved-253": "30dac95a55719dcd791fd64653cd2e651825fbb805b567e24b12c3c128fc18f8"
       }
     },
     "assets/fonts/OFL-GoogleSans.txt": {
@@ -371,20 +375,22 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "7a5d4b909000671ff64fff3bd2aa3486aa623c4ac703e48c287f72e8746c6e6f",
+      "kind": "combined-reviewed",
+      "sha256": "825a182fedf69a714ab42fb178f4aaa577978b7ca7380907be7860be173a5d15",
       "sourceSha256": {
-        "127": "7a5d4b909000671ff64fff3bd2aa3486aa623c4ac703e48c287f72e8746c6e6f"
+        "127": "7a5d4b909000671ff64fff3bd2aa3486aa623c4ac703e48c287f72e8746c6e6f",
+        "approved-253": "825a182fedf69a714ab42fb178f4aaa577978b7ca7380907be7860be173a5d15"
       }
     },
     "tests/verify-provider-artwork.mjs": {
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "61922b094d8d692069fac55d99c0e048b1db64ce927b9b2d19f59e3ae496ed18",
+      "kind": "combined-reviewed",
+      "sha256": "c22ba531b9a05077d7f204e97ec340941ad7d812bc2278ec533be1330b73cfec",
       "sourceSha256": {
-        "127": "61922b094d8d692069fac55d99c0e048b1db64ce927b9b2d19f59e3ae496ed18"
+        "127": "61922b094d8d692069fac55d99c0e048b1db64ce927b9b2d19f59e3ae496ed18",
+        "approved-253": "c22ba531b9a05077d7f204e97ec340941ad7d812bc2278ec533be1330b73cfec"
       }
     },
     "tests/verify-social-auth-boundary.mjs": {
@@ -1827,5 +1833,10 @@
     "docs/qa/pdf-pending-pinch-20261008.md"
   ],
   "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680",
-  "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
+  "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c",
+  "approved253": {
+    "base": "003a6ff3705293b119200055902328f819ca33b7",
+    "scope": "Only the two existing official Apple button PNGs at scale 3, matching provenance and verification, and App/Share 1.9 (253) release metadata. Existing OAuth and all other runtime/design bytes are preserved.",
+    "officialAssetFetch": "https://github.com/MetroBummin/breeze/actions/runs/37802941003"
+  }
 }

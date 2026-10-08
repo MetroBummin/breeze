@@ -8,13 +8,13 @@
     },
     {
       "file": "signin-ko-black.png",
-      "source": "https://appleid.cdn-apple.com/appleid/button?type=sign-in&color=black&border=false&height=48&width=250&locale=ko_KR",
-      "sha256": "0a9f00ffb6a7439cf73054ffa28df942946470544bdd88e6092b0e36c405fec8"
+      "source": "https://appleid.cdn-apple.com/appleid/button?type=sign-in&color=black&border=false&height=48&width=250&locale=ko_KR&scale=3",
+      "sha256": "b62ad8549062ba84434273881a964b9be3298bf44b54cedd891a20dabf9dd9f6"
     },
     {
       "file": "signin-ko-white.png",
-      "source": "https://appleid.cdn-apple.com/appleid/button?type=sign-in&color=white&border=false&height=48&width=250&locale=ko_KR",
-      "sha256": "bf32055f2baf48b98711ddf50216a6ce462282c53f0c235db89bc9b548914208"
+      "source": "https://appleid.cdn-apple.com/appleid/button?type=sign-in&color=white&border=false&height=48&width=250&locale=ko_KR&scale=3",
+      "sha256": "30dac95a55719dcd791fd64653cd2e651825fbb805b567e24b12c3c128fc18f8"
     }
   ]
 }

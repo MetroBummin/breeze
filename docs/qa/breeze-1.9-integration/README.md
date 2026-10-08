@@ -1,5 +1,31 @@
 # Breeze 1.9 integration checkpoint
 
+## Approved 1.9 (253) cloud preparation
+
+Base: `003a6ff3705293b119200055902328f819ca33b7`. Only the existing black/white
+official Apple Korean button PNGs move from 250×48 to 750×144 using `scale=3`;
+CSS/HTML display stays 250×48. [Official fetch and byte validation](https://github.com/MetroBummin/breeze/actions/runs/37802941003).
+Google artwork, all production JavaScript/CSS, onboarding/PDF/native auth policies,
+index and generated worker remain byte-identical. App/Share Debug/Release and
+release/cloud-counter verifiers agree on checked-in 1.9 (253). Xcode Cloud still
+applies Apple's `CI_BUILD_NUMBER`; the parent must align that counter to 253.
+
+Full npm tests passed on Node 22.23.3. Typecheck retains its 32-diagnostic baseline.
+Existing artwork/email and real-SDK social callback/persistence/reload regressions,
+plus local logout/guest reload for Apple/Google web and emulated iOS, pass on system
+Chromium 151. Retina captures cover light/dark at 320, 390, 820, 1440 and short
+896×414 viewports, DPR 2/3: 24 screens have unchanged geometry and zero changed
+pixels outside the Apple artwork. 3× integer-position crops equal the composited
+official PNG pixels. These are browser fixtures, not new physical-device consent.
+All 226 www assets match native public bytes; Apple source/www/native match exactly.
+`stamp-version` changes neither index nor worker. Exact source CI and final SHA are
+tracked in [PR132 checks](https://github.com/MetroBummin/breeze/pull/132/checks).
+Final SHA, original screenshots, pixel/preservation/package hashes and test logs
+are saved to Library. Signing, upload and review are coordinated by the parent.
+No main merge, credentials or provider/permission changes are part of this patch.
+
+## Historical checkpoints
+
 Isolated checkout: `/Users/kosangbum/Documents/Codex/2026-10-08/task-4/release-integration`.
 Branch: `integration/breeze-1.9-20261008`. Final local candidate after offline artwork repair: **1.9 (247)**. Build 246 remains preserved as an earlier candidate.
 No main mutation, deployment, upload, TestFlight or App Review action occurred.
