@@ -81,3 +81,23 @@ exact head by executing the full workflow, rather than waiving the cancelled job
 Evidence: [previous successful WebKit run](https://github.com/MetroBummin/breeze/actions/runs/37648227003/job/112884745580),
 [first installation timeout](https://github.com/MetroBummin/breeze/actions/runs/37711418664/job/113098143218),
 [retry installation timeout](https://github.com/MetroBummin/breeze/actions/runs/37711418664/job/113102531952).
+
+
+The expanded-budget WebKit run completed setup, original palette/geometry checks
+and all 60 inline state cases. Its final gesture test exposed a synthetic input
+bug: PDF repaint detached the canvas saved at pointerdown, and pointerup was
+sent to that detached node, outside the document's capture listener. Diagnostic
+`releaseTarget.connected` was false and `held` remained true.
+
+The WebKit synthetic release now hit-tests the unchanged release coordinates
+against the current document and dispatches to a connected element. This models
+an uncaptured native pointer release and still requires the real document gesture
+owner to clear the hold. Chromium's trusted touch path and every existing
+assertion remain unchanged; no application gesture code is modified.
+Evidence: [WebKit input failure after real test execution](https://github.com/MetroBummin/breeze/actions/runs/37714396500/job/113107448309).
+
+Local causal verification forced canvas replacement during a held synthetic
+PDF touch: dispatch to the detached old target reproduced the unchanged hold
+assertion failure (exit 1); current-point dispatch passed the complete existing
+Text/PDF/EPUB assertions at both widths (exit 0). Temporary QA scripts were
+removed. The ordinary Chromium trusted-touch suite also passed.
