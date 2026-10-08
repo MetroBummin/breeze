@@ -79,3 +79,13 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           -derivedDataPath /tmp/breeze-social-auth-ios
           CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+
+  button-artwork-source:
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read official downloadable provider artwork for offline packaging
+        run: python3 tools/fetch-provider-button-artwork.py
