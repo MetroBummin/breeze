@@ -36,8 +36,10 @@ try{
     return route.continue();
    }
    if(address.origin!==project)return route.abort();
+   // The real PostgREST SDK sends profile headers; WebKit enforces their CORS
+   // allowance even for intercepted local provider responses.
    const headers={'access-control-allow-origin':origin,
-    'access-control-allow-headers':route.request().headers()['access-control-request-headers']||'apikey,authorization,x-client-info,content-type,prefer',
+    'access-control-allow-headers':route.request().headers()['access-control-request-headers']||'apikey,authorization,x-client-info,content-type,prefer,accept-profile,content-profile',
     'access-control-allow-methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS'};
    if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
    requests.push(address.pathname);
@@ -67,7 +69,9 @@ try{
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('sb-')&&key.endsWith('-auth-token'))),true);
   await page.reload();await page.evaluate(()=>homeReady);await page.waitForFunction(()=>typeof sbUser!=='undefined'&&sbUser?.email==='reader@example.com');
   await page.evaluate(()=>openSettings());assert.equal(await page.locator('.sm-account b').textContent(),'reader@example.com');
-  assert.equal(await page.evaluate(()=>sbUser.id),user.id);assert.deepEqual(pageErrors,[]);
+  assert.equal(await page.evaluate(()=>sbUser.id),user.id);
+  if(pageErrors.length)console.error({provider,native,pageErrors,requests});
+  assert.deepEqual(pageErrors,[]);
   assert.equal(await page.locator('#sm-'+provider+'-login').count(),0);
   assert.equal(requests.filter(path=>path==='/auth/v1/authorize').length,native?0:1);
   if(native){
