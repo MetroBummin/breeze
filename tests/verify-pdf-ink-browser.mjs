@@ -90,6 +90,27 @@ try{
     window.qaStrokeBoundsReads=(window.qaBoundsReads||0)-readsBefore;
     return prevented;
    },{points,pageNumber,type,cancel,noncancel,palm});
+   for(const theme of ['light','dark']){
+    await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
+    let readGeometry;
+    for(const tool of ['read','pen','highlighter']){
+     await mode(tool);await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(350);
+     const geometry=await page.locator('#readpill').evaluate(node=>{
+      const box=node.getBoundingClientRect(),css=getComputedStyle(node);return {width:box.width,height:box.height,padding:css.padding,radius:css.borderRadius};
+     });
+     if(tool==='read')readGeometry=geometry;else{
+      assert.deepEqual(geometry,readGeometry,'expanded reading and writing pills share outer geometry');
+      const selected=await page.locator(`[data-ink-mode="${tool}"]`).evaluate(node=>{
+       const css=getComputedStyle(node),marker=getComputedStyle(node,'::after'),box=node.getBoundingClientRect();
+       return {width:box.width,height:box.height,background:css.backgroundColor,shadow:css.boxShadow,markerHeight:marker.height};
+      });
+      assert.ok(selected.width>=44&&selected.height>=44);
+      assert.equal(selected.background,'rgba(0, 0, 0, 0)');assert.equal(selected.shadow,'none');assert.equal(selected.markerHeight,'2px','short underline replaces the tool selection circle');
+     }
+     if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`reader-tools-${engine.name()}-${theme}-${tool}-820x1180.png`)});}
+    }
+   }
+   await page.evaluate(()=>{darkMode=false;applyDark();});await mode('pen');
    assert.equal(await page.locator('[data-ink-mode="pen"]').getAttribute('aria-pressed'),'true');
    const penButton=page.locator('[data-ink-mode="pen"]'),eraserButton=page.locator('[data-ink-mode="erase"]');
    const settings=page.locator('#pdf-ink-settings');

@@ -292,6 +292,14 @@ or add-color action. Colors are circular 44px hit targets in a horizontally
 scrollable row, with a visible selected ring and aria-pressed; color names are
 accessibility labels only. Eraser settings contain no color row.
 
+Tool selection uses the brand-colored icon and a short underline, without a
+filled circle or selection ring. This is separate from the circular color
+chips. Expanded read/write modes share the reader pill's 44px height, 24px
+corners, padding and responsive width (400px maximum). Tool targets remain
+44px and the internal strip scrolls horizontally when space is limited;
+controls are not shrunk or removed. The existing read-mode collapse and
+writing-mode expanded behavior are unchanged.
+
 The tool order is pen, highlighter, eraser. Notability's Android reference shows
 Pen/Pencil/Highlighter/Eraser, and Apple Markup shows Pen/Monoline/Marker/Eraser.
 Goodnotes groups writing tools separately from eraser and permits customization;
