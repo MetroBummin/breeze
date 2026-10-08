@@ -1,0 +1,248 @@
+{
+  "sourceRoot": "/workspace/breeze-memory-latest",
+  "source": "real app UI, authored demo TXT/PDF, prepared Korean answers, no external API",
+  "clips": [
+    {
+      "key": "word-light",
+      "region": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 200
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": null,
+      "rect": {
+        "x": 102.171875,
+        "y": 228.390625,
+        "width": 93,
+        "height": 29
+      },
+      "frames": 26,
+      "duration": 2.265
+    },
+    {
+      "key": "sentence-light",
+      "region": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 400
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": null,
+      "rect": {
+        "x": 48,
+        "y": 179,
+        "width": 64.09375,
+        "height": 29
+      },
+      "frames": 35,
+      "duration": 3.059
+    },
+    {
+      "key": "easy-light",
+      "region": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 400
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "ps-easy-button",
+      "rect": {
+        "x": 35,
+        "y": 320.390625,
+        "width": 320,
+        "height": 36
+      },
+      "frames": 26,
+      "duration": 2.25
+    },
+    {
+      "key": "settings-light",
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "aafab",
+      "rect": {
+        "x": 334,
+        "y": 583,
+        "width": 42,
+        "height": 42
+      },
+      "frames": 28,
+      "duration": 2.45
+    },
+    {
+      "key": "pdf-light",
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": null,
+      "rect": {
+        "x": 268,
+        "y": 581,
+        "width": 44,
+        "height": 44
+      },
+      "frames": 33,
+      "duration": 2.876
+    },
+    {
+      "key": "memory-light",
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "nav-vocab",
+      "rect": {
+        "x": 14,
+        "y": 583,
+        "width": 42,
+        "height": 42
+      },
+      "frames": 25,
+      "duration": 2.181
+    },
+    {
+      "key": "word-dark",
+      "region": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 200
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": null,
+      "rect": {
+        "x": 102.171875,
+        "y": 228.390625,
+        "width": 93,
+        "height": 29
+      },
+      "frames": 26,
+      "duration": 2.268
+    },
+    {
+      "key": "sentence-dark",
+      "region": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 400
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": null,
+      "rect": {
+        "x": 48,
+        "y": 179,
+        "width": 64.09375,
+        "height": 29
+      },
+      "frames": 34,
+      "duration": 2.97
+    },
+    {
+      "key": "easy-dark",
+      "region": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 400
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "ps-easy-button",
+      "rect": {
+        "x": 35,
+        "y": 320.390625,
+        "width": 320,
+        "height": 36
+      },
+      "frames": 26,
+      "duration": 2.268
+    },
+    {
+      "key": "settings-dark",
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "aafab",
+      "rect": {
+        "x": 334,
+        "y": 583,
+        "width": 42,
+        "height": 42
+      },
+      "frames": 28,
+      "duration": 2.436
+    },
+    {
+      "key": "pdf-dark",
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": null,
+      "rect": {
+        "x": 268,
+        "y": 581,
+        "width": 44,
+        "height": 44
+      },
+      "frames": 33,
+      "duration": 2.882
+    },
+    {
+      "key": "memory-dark",
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "nav-vocab",
+      "rect": {
+        "x": 14,
+        "y": 583,
+        "width": 42,
+        "height": 42
+      },
+      "frames": 26,
+      "duration": 2.25
+    },
+    {
+      "key": "details-light",
+      "region": {
+        "x": 8,
+        "y": 132,
+        "width": 374,
+        "height": 450
+      },
+      "contentBounds": {
+        "x": 16,
+        "y": 265.390625,
+        "width": 358,
+        "height": 309.609375
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "word-peek-more",
+      "rect": {
+        "x": 182.640625,
+        "y": 266,
+        "width": 44,
+        "height": 44
+      },
+      "frames": 26,
+      "duration": 2.25
+    },
+    {
+      "key": "details-dark",
+      "region": {
+        "x": 8,
+        "y": 132,
+        "width": 374,
+        "height": 450
+      },
+      "contentBounds": {
+        "x": 16,
+        "y": 265.390625,
+        "width": 358,
+        "height": 309.609375
+      },
+      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
+      "target": "word-peek-more",
+      "rect": {
+        "x": 182.640625,
+        "y": 266,
+        "width": 44,
+        "height": 44
+      },
+      "frames": 26,
+      "duration": 2.267
+    }
+  ]
+}

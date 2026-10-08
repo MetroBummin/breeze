@@ -1,0 +1,88 @@
+{
+  "clips": [
+    {
+      "scene": "word",
+      "light": {
+        "mp4": 6998,
+        "jpg": 8857
+      },
+      "dark": {
+        "mp4": 6788,
+        "jpg": 8924
+      }
+    },
+    {
+      "scene": "details",
+      "light": {
+        "mp4": 14760,
+        "jpg": 17768
+      },
+      "dark": {
+        "mp4": 14833,
+        "jpg": 18538
+      }
+    },
+    {
+      "scene": "sentence",
+      "light": {
+        "mp4": 11407,
+        "jpg": 12944
+      },
+      "dark": {
+        "mp4": 11706,
+        "jpg": 12606
+      }
+    },
+    {
+      "scene": "easy",
+      "light": {
+        "mp4": 11315,
+        "jpg": 19625
+      },
+      "dark": {
+        "mp4": 11523,
+        "jpg": 19290
+      }
+    },
+    {
+      "scene": "settings",
+      "light": {
+        "mp4": 17175,
+        "jpg": 26500
+      },
+      "dark": {
+        "mp4": 17820,
+        "jpg": 27246
+      }
+    },
+    {
+      "scene": "pdf",
+      "light": {
+        "mp4": 10252,
+        "jpg": 15089
+      },
+      "dark": {
+        "mp4": 10337,
+        "jpg": 16856
+      }
+    },
+    {
+      "scene": "memory",
+      "light": {
+        "mp4": 23090,
+        "jpg": 19661
+      },
+      "dark": {
+        "mp4": 21226,
+        "jpg": 19632
+      }
+    }
+  ],
+  "media_total_bytes": 432766,
+  "base_www_bytes": 20811775,
+  "new_www_bytes": 21246572,
+  "www_added_bytes": 434797,
+  "base_www_zip_bytes": 17792522,
+  "new_www_zip_bytes": 18170374,
+  "www_zip_added_bytes": 377852
+}

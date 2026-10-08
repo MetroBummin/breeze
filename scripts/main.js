@@ -5,12 +5,12 @@ const homeReady=loadBooks().then(async()=>{
   migrateLibraryFolders();
   await upgradeHomewardLongRead();
   await maybeShowOnboarding();
-  // First-time readers are in the tutorial, not Home. Do not build its hidden
-  // recommendation cards or start their image/feed work behind the Reader.
-  if(!onboardingOwnsReader())renderHome();
+  // The first-time guide owns the visible overlay. Do not build hidden Home
+  // recommendation cards or start their image/feed work behind the guide.
+  if(!onboardingSession)renderHome();
 }).catch(error=>{
   console.error('첫 화면을 준비하지 못했습니다:',error);
-  if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) endOnboarding(false);
+  if(onboardingSession) endOnboarding(false);
   renderHome();
 }).finally(()=>document.documentElement.classList.remove('boot-pending'));
 homeReady.then(()=>startSharedFileImports());

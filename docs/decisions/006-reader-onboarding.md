@@ -1,77 +1,67 @@
-# Onboarding in the real Reader
+# Passive onboarding carousel
 
 ## Decision
 
-First-time web and native readers open the same temporary TXT book in `#v-read`.
-The normal Reader body renderer, gesture owner, floating controls, Aa, word pill,
-detail popup and translation-only sentence result are authoritative. Onboarding
-adds only a guidance card and Skip. No copied Reader controls or lookup surfaces
-remain. The existing completion marker is retained; returning readers with local
-books, vocabulary, tombstones or reading positions are not interrupted. Settings
-provides replay on both platforms. Startup waits for the local library and chooses
-the initial Reader or Home before revealing the app, without a post-Home delay.
-A boot error or an eight-second script-load watchdog reveals the app so a failed
-startup cannot leave the interface permanently hidden.
+The approved PR124 welcome is selectively preserved: original flow wordmark,
+‘브리즈에 오신 걸 환영해요’, ‘막힘없이 읽는 새로운 방법.’ and ‘시작하기’.
+Fresh sessions always show it first; replay also starts there. Interrupted first
+runs resume their saved explanation page. The original completion key
+`breeze.onboarding.v1` remains authoritative. Readers with existing local books,
+vocabulary, tombstones or positions are not interrupted.
 
-The short authored story has a prepared Korean meaning and English definition
-for every tappable word, plus translations for every sentence. The first lookup
-of an occurrence waits 1000 ms using the real loading UI; a repeat is immediate.
-The normal 750 ms long-press threshold and release-before-result rule remain.
-The word detail can open during that same pending lookup. No AI request, metadata
-request, quota charge or dictionary-cache write is made for these answers.
+The former action-gated temporary Reader is replaced by a passive overlay.
+Seven authored scenes describe word tap, chevron, sentence hold, easy explanation,
+right-side Aa settings, PDF annotation and finally Home bookmark → Breeze Memory.
+PDF is conditional on the annotation owner's capability. Until its shared public
+capability is available, the verified native iPad flag is the conservative fallback;
+web/phones do not receive a pen lesson based on viewport or touch guesses.
 
-The book is transient, never inserted into the library. Word cards are owned by
-the presentation, never inserted into `words`. Existing vocabulary cannot merge
-words into saved phrases or color the tutorial. Progress/history persistence and
-dictionary warmup are skipped for transient books. Aa uses real controls with
-session-only changes, restored on exit. Timers and stale replies are invalidated
-on skip, navigation, another lookup, replay, and completion. A settings replay
-can return to the user's existing book without deleting or replacing its data.
+Each scene uses a silent H264 Baseline/AVC MP4 of the real production UI, plus a
+JPEG poster. Word/sentence clips contain a single authored sentence and the real
+result surfaces, cropped at capture time. Settings/PDF/Home retain their actual
+controls to teach their locations. No user, student or private document is used.
+Capture response fixtures supply authored Korean meanings and explanations;
+no AI request, auth change, quota charge or durable user-data write is performed
+by the guide. The film is not a simulated interactive Reader.
 
-Guidance advances on completed actions and yields while lookup/Aa is open.
-Each step names and outlines its target: tap “curiosity”, press and hold “Reading”,
-then tap Aa. Korean guidance uses short action-first instructions. The Reader
-Back button is disabled throughout the tutorial, including lookups and Aa, and
-the Home-return action also rejects tutorial requests. Exit restores the button's
-previous state; Skip, completion and Escape remain available. Settings labels
-the replay action “튜토리얼 다시보기”.
-Completion offers the existing Add dialog or a later exit. The final note reminds
-readers of tap/long-press gestures; it makes no login claim. The tutorial grants no
-extra production access.
+Selected layout 1 owns media above caption, compact centered progress and one
+wide bottom Next/Complete. Seven progress marks occupy exactly 96px (5px dot,
+18px active mark, 8px gaps), matching the selected original. Dots are indicators,
+not seven 44px buttons. Next, horizontal swipe, keyboard arrows and an accessible
+previous control own navigation. There is no Skip. Escape/browser Back cancels
+without recording completion; returning from Settings replays from welcome.
 
-Signed-out and signed-in lookups share the same renderer. Successful anonymous
-lookups show no legacy explanations or repeated trial counters. Login/exhaustion
-is an actionable state only when a lookup is blocked; the pill retry opens login
-instead of issuing another doomed request. A new pending result clears the old
-meaning/part-of-speech/notice before painting. Production authentication and quota
-rules are unchanged.
+The overlay never opens a book or changes its appearance, scroll, words, sync,
+cache or history. Existing Reader and dialog controls become inert during the
+guide and restore their exact previous inert state on exit. External navigation
+cancels the guide rather than covering the newly opened view. Startup does not
+render/feed-fetch hidden Home beneath the welcome. Completion reveals the prior
+view through its existing renderer and persists the original ‘done’ marker.
+
+Only the visible video receives a source. Navigation pauses and unloads every
+other video; session cancellation invalidates outstanding play promises. Nothing
+is loaded during welcome. Background/pagehide pauses playback, pageshow resumes.
+Reduced motion shows posters without downloading video; autoplay/codec failures
+fall back to the poster. Media tap or Space/Enter pauses/replays without adding
+a visible playback bar. Image/video assets are loaded only for the current theme
+and current explanation. Native packaging contains both themes.
 
 ## Verification
 
-`npm run test:onboarding` covers fresh web/native sessions, prepared word coverage,
-1000 ms first lookup, immediate repeats, shared detail and real long-press behavior,
-Aa, completion, replay, cancellation, history/storage isolation and zero lookup
-requests. Screenshots include phone, desktop and dark completion. Normal Reader,
-word/sentence lifecycle, signed-out states, shared controls and full-suite checks
-remain required. Browser/native-shell emulation does not prove physical iOS behavior.
+`npm run test:onboarding` exercises web/native-shell emulation, six/seven-page
+capability selection, real Next taps, pointer swipe/cancel, keyboard previous,
+rapid navigation, first-run cancellation/reload/resume, completion persistence,
+replay, visibility interruption, autoplay failure, reduced motion, decoder source
+ownership and an existing Reader's data/position/appearance/history isolation.
+It checks phone, narrow, tablet, desktop and short/landscape in both themes and
+pins the approved progress geometry. The original light phone welcome is compared
+with PR124's saved approved PNG and matches every pixel.
 
-## Visible-only startup (2026-09-29)
-
-After local data loads, choose onboarding before rendering Home. A first-time
-Reader does not build recommendation cards or begin their image/feed work for a
-hidden Home. Returning readers still render Home, and leaving onboarding renders
-it through normal navigation. The one-second authored tutorial feedback policy,
-boot failure fallback and local storage ordering are unchanged.
-
-## Compact targets and optional completion (214)
-
-Word guidance uses the existing pale-blue selection fill on the actual span,
-without an outline or expansion into neighboring text. Aa retains a separate
-control outline. The temporary book is titled “Breeze Tutorial”.
-The final coach offers both Add Book and “나중에 할게요”; either completes the
-same transient session, but the latter exits without opening the Add dialog.
+Production Reader/gesture/auth/native-launch boundaries remain pinned; full
+`npm test`, www packaging and exact-remote-SHA CI are required for this draft.
+Browser emulation and codec metadata do not prove physical iOS/Android playback
+or pen hardware acceptance. No merge, deployment or native upload is authorized.
 
 ## Independent Settings authentication
 
-Settings social login is documented in [016](016-social-auth.md). It does not
-change this tutorial, its completion/guest rules, or Reader lookup policy.
+Settings social login is documented in [016](016-social-auth.md). Its request/session owner remains independent of the passive guide. The integration boundary verifies both approved scopes.

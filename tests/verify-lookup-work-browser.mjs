@@ -21,7 +21,7 @@ try{for(const engine of [chromium,webkit]){
   await page.route('**/scripts/main.js*',r=>r.fulfill({contentType:'text/javascript',body:
    'window.auditHomeRenders=0;const auditHome=renderHome;renderHome=(...args)=>{auditHomeRenders++;return auditHome(...args);};\n'+readFileSync(resolve(root,'scripts/main.js'),'utf8')}));
   await page.goto(url);await page.evaluate(()=>homeReady);
-  assert.equal(await page.evaluate(()=>onboardingOwnsReader()),true);
+  assert.equal(await page.evaluate(()=>!!onboardingSession),true);
   assert.equal(await page.evaluate(()=>auditHomeRenders),0,'startup built hidden Home');
   await page.evaluate(()=>endOnboarding(true));
   assert.equal(await page.evaluate(()=>activeAppView()),'home');

@@ -1,227 +1,154 @@
 import assert from 'node:assert/strict';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
 import {chromium,webkit} from 'playwright';
-const root=fileURLToPath(new URL('../',import.meta.url));
-const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2','.svg':'image/svg+xml'};
-const server=createServer((req,res)=>{
-  const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/^\/$/,'/index.html'));
-  if(!path.startsWith(root)){res.writeHead(403).end();return;}
-  try{res.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}
-  catch{res.writeHead(404).end();}
-});
-await new Promise(done=>server.listen(0,'127.0.0.1',done));
-const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch();
-const artifact='/tmp/breeze-onboarding-review'+(process.env.BROWSER==='webkit'?'-webkit':'');mkdirSync(artifact,{recursive:true});
+const root=resolve('.'),out=process.env.BREEZE_ONBOARD_PROOF||'/tmp/breeze-onboarding-carousel';mkdirSync(out,{recursive:true});
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg','.mp4':'video/mp4','.woff2':'font/woff2'};
+const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{const data=readFileSync(p);res.setHeader('Content-Type',mime[extname(p)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
+const engine=process.env.BROWSER==='webkit'?webkit:chromium;
+const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const errors=[];const receipts=[];
+async function setup(options={}){
+ const {annotation=false,...browserOptions}=options;
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block',...browserOptions});
+ if(annotation)await context.addInitScript(()=>{window.breezeInkIPad=true;});
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
+ return {context,page};
+}
+const dataSnapshot=page=>page.evaluate(()=>JSON.stringify({words,dead,positions,books,curBook,fs,darkMode,readMargin,history:history.length,storage:Object.fromEntries(Object.entries(localStorage).filter(([k])=>!k.startsWith('breeze.onboarding.')))}));
 try{
- for(const native of [false,true]){
-  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
-  if(native) await context.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true};});
-  await context.addInitScript(()=>{
-    window.homePaintedBeforeOnboarding=false;
-    const inspect=()=>{
-      const home=document.getElementById('v-home');
-      if(document.body && document.body.classList.contains('onboarding-active')) return;
-      if(home && home.classList.contains('on') && getComputedStyle(home).visibility==='visible') window.homePaintedBeforeOnboarding=true;
-      requestAnimationFrame(inspect);
-    };
-    requestAnimationFrame(inspect);
-  });
-  const page=await context.newPage(),requests=[],errors=[];
-  page.on('pageerror',error=>errors.push(error.message));
-  await page.route('**/*',route=>{
-    const href=route.request().url();
-    if(href.includes('/scripts/main.js')) return new Promise(resolve=>setTimeout(resolve,250)).then(()=>route.continue());
-    if(href.startsWith(url)||href.startsWith('blob:'))return route.continue();
-    requests.push(href);return route.abort();
-  });
-  await page.goto(url,{waitUntil:'domcontentloaded',timeout:120000});
-  await page.locator('#onboarding').waitFor({state:'visible'});
-  await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
-  await page.evaluate(()=>homeReady);
-  assert.equal(await page.evaluate(()=>window.homePaintedBeforeOnboarding),false,'Home painted before the tutorial');
-  assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('boot-pending')),false);
-  assert.equal(await page.locator('#v-read').isVisible(),true);
-  assert.equal(await page.locator('#readpill-title').textContent(),'Breeze Tutorial');
-  assert.equal(await page.locator('#readback').isDisabled(),true);
-  assert.match(await page.locator('#onboard-prompt').textContent(),/curiosity.*눌러보세요/);
-  assert.equal(await page.locator('#rtext .onboard-target').textContent(),'curiosity');
-  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#rtext .onboard-target')).backgroundColor!=='rgba(0, 0, 0, 0)');
-  const cue=await page.locator('#rtext .onboard-target').evaluate(node=>{
-    const before=node.getBoundingClientRect(),style=getComputedStyle(node);
-    const paint={outline:style.outlineStyle,shadow:style.boxShadow,fill:style.backgroundColor};
-    node.classList.remove('onboard-target');const after=node.getBoundingClientRect();
-    node.classList.add('onboard-target');
-    return {...paint,widthDelta:before.width-after.width,heightDelta:before.height-after.height};
-  });
-  assert.equal(cue.outline,'none');assert.equal(cue.shadow,'none');
-  assert.notEqual(cue.fill,'rgba(0, 0, 0, 0)');
-  assert.equal(cue.widthDelta,0);assert.equal(cue.heightDelta,0);
-
-  const backRect=await page.locator('#readback').boundingBox();
-  await page.mouse.click(backRect.x+backRect.width/2,backRect.y+backRect.height/2);
-  await page.evaluate(()=>returnHomeFromReader());
-  assert.equal(await page.locator('#onboarding').isVisible(),true,'Back ended the tutorial');
-  assert.equal(await page.locator('#v-read').isVisible(),true);
-  assert.equal(await page.locator('#modefab').isVisible(),false);
-  assert.equal(await page.locator('#onboard-chrome').count(),0);
-  assert.equal(await page.locator('#onboard-word-peek').count(),0);
-  const snapshot=()=>page.evaluate(()=>({words:JSON.stringify(words),dead:JSON.stringify(dead),positions:JSON.stringify(positions),books:JSON.stringify(books),stored:Object.fromEntries(Object.entries(localStorage).filter(([key])=>key!=='breeze.onboarding.v1')),history:history.length}));
-  const before=await snapshot();
-  assert.deepEqual(await page.evaluate(()=>[...new Set([...document.querySelectorAll('#rtext .w')].map(n=>n.textContent.toLowerCase()))].filter(word=>!ONBOARD_WORDS[word])),[]);
-  await page.screenshot({path:`${artifact}/${native?'native':'web'}-start.png`});
-  const word=page.locator('#rtext .w').filter({hasText:/^curiosity$/}).first();
-  const start=Date.now();await word.tap();
-  await page.waitForTimeout(180);
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'뜻 찾는 중');
-  await page.waitForFunction(()=>document.getElementById('word-peek-meaning').textContent==='호기심');
-  assert.ok(Date.now()-start>=950,'prepared answer skipped its first lookup delay');
-  await page.locator('#word-peek-more').tap();
-  assert.equal(await page.locator('#p-ai-ko').textContent(),'호기심');
-  assert.equal(await page.locator('#p-ai-saved').isVisible(),false);
-  assert.equal(await page.locator('#p-word-tools').isVisible(),false);
-  assert.doesNotMatch(await page.locator('#panel').innerText(),/이 문장에서는|무료 체험|로그인|옛 설명/);
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#onboarding').isVisible(),true,'detail Escape ended tutorial');
-  await page.locator('#onboarding[data-stage="1"]').waitFor();
-  assert.match(await page.locator('#onboard-prompt').textContent(),/Reading.*길게 눌러보세요/);
-  assert.equal(await page.locator('#rtext .onboard-target').textContent(),'Reading');
-  await word.tap();
-  assert.equal(await page.locator('#word-peek-meaning').textContent(),'호기심','repeat lookup was not immediate');
-  await page.keyboard.press('Escape');
-  const sentence=page.locator('#rtext .w').filter({hasText:/^Reading$/}).first();
-  const rect=await sentence.boundingBox();
-  await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
-  await page.mouse.down();await page.waitForTimeout(820);
-  assert.equal(await page.locator('#sentence-pill-status').count(),0);
-  await page.mouse.up();
-  await page.locator('#sentence-modal').waitFor({state:'visible'});
-  assert.equal(await page.locator('#readback').isDisabled(),true,'sentence controls re-enabled Back');
-  assert.equal(await page.locator('#ps-ko').textContent(),'독서는 편안해야 하니까요.');
-  await page.screenshot({path:`${artifact}/${native?'native':'web'}-sentence.png`});
-  await page.keyboard.press('Escape');
-  await page.locator('#onboarding[data-stage="2"]').waitFor();
-  await page.locator('#aafab').tap();
-  assert.equal(await page.locator('#readback').isDisabled(),true);
-  await page.evaluate(()=>{fontSize(1);toggleDark();setReadMargin('wide');});
-  assert.equal(await page.evaluate(()=>fs),20);
-  assert.equal(await page.evaluate(()=>darkMode),true);
-  await page.evaluate(()=>closeAa());
-  await page.locator('#onboarding[data-stage="3"]').waitFor();
-  assert.doesNotMatch(await page.locator('#onboard-coach').innerText(),/로그인/);
-  await page.locator('#onboard-finish').waitFor({state:'visible'});
-  await page.screenshot({path:`${artifact}/${native?'native':'web'}-finish.png`});
-  assert.deepEqual(await snapshot(),before,'tutorial changed storage, history or library');
-  await page.locator(native?'#onboard-finish':'#onboard-next').tap();
-  assert.equal(await page.locator('#readback').isEnabled(),true,'completion left Back disabled');
-  assert.equal(await page.locator('#add-modal').evaluate(el=>el.open),!native);
-  assert.deepEqual(await page.evaluate(()=>({fs,darkMode,readMargin,curBook,previewWordCard})),{fs:19,darkMode:false,readMargin:'normal',curBook:null,previewWordCard:null});
-  assert.deepEqual(await snapshot(),before,'completion leaked tutorial data');
-  assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
-  await page.reload({waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
-  assert.equal(await page.locator('#onboarding').isVisible(),false);
-  // Replay works on both platforms and preserves an existing vocabulary/tombstone.
-  await page.evaluate(()=>{words.curiosity={word:'curiosity',ko:'기존 뜻',status:2,mark:true,addedAt:1,up:1};words['phrase:little curiosity']={word:'little curiosity',ko:'기존 표현',status:2,mark:true,phraseParts:['little','curiosity'],addedAt:1,up:1};dead.unfamiliar=42;saveWords();save(LS_DEAD,dead);});
-  await page.evaluate(()=>openSettings());
-  await page.locator('#set-card').evaluate(async card=>{await Promise.allSettled(card.getAnimations().map(a=>a.finished));});
-  const replayBefore=await snapshot();
-  await page.getByRole('button',{name:'튜토리얼 다시보기',exact:true}).tap();
-  await page.waitForFunction(()=>document.querySelector('#rtext .w'));
-  assert.equal(await page.locator('#rtext .phrase,#rtext .s2').count(),0,'personal highlights leaked into the tutorial');
-  await page.locator('#rtext .w').first().tap();
-  await page.evaluate(()=>endOnboarding(true));
-  assert.equal(await page.locator('#readback').isEnabled(),true,'exit left Back disabled');
-  await page.waitForTimeout(1150);
-  assert.equal(await page.locator('#word-peek').isVisible(),false,'late word reopened after exit');
-  assert.deepEqual(await snapshot(),replayBefore,'replay modified personal data');
+ // The companion owner resolves Android classification asynchronously. Do not
+ // choose pages from the synchronous pending=false value or revive cancelled work.
+ for(const capability of [true,false,'error']){
+  const {context,page}=await setup();await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.evaluate(()=>endOnboarding(false));
+  await page.evaluate(capability=>{
+   Reflect.set(BreezePdfInk,'availability',()=>new Promise((resolve,reject)=>setTimeout(()=>capability==='error'?reject(Error('bridge failed')):resolve(capability),80)));
+  },capability);
   await page.evaluate(()=>startOnboarding(true));
-  await page.evaluate(()=>openSentence(ONBOARD_PASSAGES[0][0]));
-  // Awaiting openSentence finishes the prepared answer; a second pending lookup is cancelled on Back.
-  await page.evaluate(()=>{closeSentence();openSentence(ONBOARD_PASSAGES[1][0]);show('home');});
-  await page.waitForTimeout(1150);
-  assert.equal(await page.locator('#sentence-modal').isVisible(),false,'late sentence reopened after Back');
-  assert.equal(await page.locator('#onboarding').isVisible(),false);
-  assert.equal(await page.evaluate(()=>positions['breeze-onboarding']),undefined);
-  assert.equal(requests.filter(href=>/functions\/v1\/dict|dictionaryapi|translate\.googleapis/.test(href)).length,0,'tutorial made a dictionary request');
-  assert.deepEqual(errors,[]);
+  assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),capability===true);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+  const count=capability===true?7:6;
+  assert.equal(await page.locator('#onboard-pages i').count(),count);
+  await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length));
+  assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+  assert.equal(await page.locator('#onboard-step').textContent(),`${count} / ${count}`);
+  assert.equal(await page.locator('#onboard-next').textContent(),'완료');
+  await page.evaluate(()=>{endOnboarding(false);startOnboarding(true);endOnboarding(false);});
+  await wait(120);assert.equal(await page.evaluate(()=>onboardingSession),null,'pending capability revived cancelled guide');
+  await page.evaluate(()=>{startOnboarding(true);show('read');});await wait(120);
+  assert.equal(await page.evaluate(()=>onboardingSession),null,'pending capability displaced navigation');
   await context.close();
  }
- // Existing data skips first run on web; this has no dependency on arbitrary storage keys.
- const page=await browser.newPage({viewport:{width:1100,height:800},serviceWorkers:'block'});
- await page.addInitScript(()=>localStorage.setItem('breeze.pos',JSON.stringify({existing:{p:.4,t:1}})));
- await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
- await page.goto(url,{waitUntil:'domcontentloaded'});await page.waitForTimeout(1100);
+ for(const native of [false,true]){
+ const {context,page}=await setup();if(native)await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true};window.breezeInkIPad=true;});
+ const requests=[];page.on('request',r=>{if(/assets\/onboarding/.test(r.url()))requests.push(r.url());});
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboarding').waitFor({state:'visible'});
+ assert.equal(await page.locator('#onboard-prompt').textContent(),'브리즈에 오신 걸 환영해요');
+ assert.equal(await page.locator('#onboard-next').textContent(),'시작하기');assert.equal(await page.locator('#onboard-skip').count(),0);
+ assert.equal(requests.length,0,'welcome prefetched guide media');
+ const before=await dataSnapshot(page);assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
+ await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
+ assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),native,'PDF guide does not follow native capability');
+ const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?96:83);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,738);
+ await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
+ assert.ok(requests.filter(u=>u.endsWith('.mp4')).every(u=>u.includes('word-light')),'offscreen media downloaded');
+ const media=page.locator('#onboard-carousel');const b=await media.boundingBox();
+ await page.dispatchEvent('#onboard-carousel','pointerdown',{pointerId:1,isPrimary:true,clientX:b.x+b.width-10,clientY:b.y+100});
+ await page.dispatchEvent('#onboard-carousel','pointerup',{pointerId:1,isPrimary:true,clientX:b.x+10,clientY:b.y+100});
+ assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'2');
+ await page.dispatchEvent('#onboard-carousel','pointerdown',{pointerId:2,isPrimary:true,clientX:100,clientY:100});
+ await page.dispatchEvent('#onboard-carousel','pointercancel',{pointerId:2});
+ await page.dispatchEvent('#onboard-carousel','pointerup',{pointerId:2,isPrimary:true,clientX:10,clientY:100});
+ assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'2','cancelled swipe advanced');
+ await page.locator('#onboard-back').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'1');
+ await page.locator('#onboard-back').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#onboard-next').textContent(),'시작하기','Back skipped welcome');
+ await page.evaluate(()=>{for(let i=0;i<50;i++)document.getElementById('onboard-next').click();});
+ assert.equal(await page.locator('#onboarding').isVisible(),false);assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
+ await page.reload();await page.evaluate(()=>homeReady);assert.equal(await page.locator('#onboarding').isVisible(),false);
+ await page.evaluate(()=>startOnboarding(true));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','replay skipped welcome');
+ await page.locator('#onboard-next').tap();await page.evaluate(()=>goOnboardingPage(4));await page.keyboard.press('Escape');
  assert.equal(await page.locator('#onboarding').isVisible(),false);
- await page.evaluate(()=>startOnboarding(true));
- for(const [name,width,height] of [['phone',390,844],['narrow',320,640],['tablet',820,1180],['desktop',1440,900],['short',844,390]]){
-  await page.setViewportSize({width,height});
-  for(const dark of [false,true]){
-   await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
-   for(const stage of [0,1,2,3]){
-    await page.evaluate(stage=>{
-      onboardingSession.wordSeen=stage>0;onboardingSession.sentenceSeen=stage>1;onboardingSession.aaSeen=stage>2;
-      drawOnboarding();
-    },stage);
-    const coach=await page.locator('#onboard-coach').boundingBox();
-    assert.ok(coach.x>=0 && coach.y>=0 && coach.x+coach.width<=width+1 && coach.y+coach.height<=height+1,`${name} stage ${stage} coach overflow`);
-    const prompt=await page.locator('#onboard-prompt').boundingBox();
-    assert.ok(prompt.x>=coach.x && prompt.x+prompt.width<=coach.x+coach.width+1,`${name} prompt overflow`);
-    await page.screenshot({path:`${artifact}/${name}-${dark?'dark':'light'}-step-${stage+1}.png`});
-   }
-  }
+ await page.evaluate(()=>startOnboarding(false));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+ await page.evaluate(()=>endOnboarding(false));
+ receipts.push({native,initialMediaRequests:requests.length});await context.close();
  }
- await page.setViewportSize({width:1100,height:800});
- await page.screenshot({path:`artifact-desktop.png`.replace('artifact',artifact+'/web')});
- await page.locator('#onboard-skip').click();
- assert.equal(await page.locator('#readback').isEnabled(),true,'Skip left Back disabled');
- assert.equal(await page.locator('#onboarding').isVisible(),false);
- // Signed-out UI is the current renderer, including legacy cached data and blocked contexts.
- await page.evaluate(()=>openBook({id:'signedout-ui',title:'Signed-out reader',kind:'txt',paras:['This is a demo.']}));
- await page.waitForFunction(()=>document.querySelector('#rtext .w'));
- // A replay returns to the original Reader and restores normal Back navigation.
- await page.evaluate(()=>startOnboarding(true));
- await page.locator('#onboard-skip').click();
- await page.waitForFunction(()=>curBook && curBook.id==='signedout-ui');
- assert.equal(await page.locator('#readback').isEnabled(),true);
- await page.evaluate(()=>returnHomeFromReader());
- await page.locator('#v-home').waitFor({state:'visible'});
- await page.evaluate(()=>openBook({id:'signedout-ui',title:'Signed-out reader',kind:'txt',paras:['This is a demo.']}));
- await page.evaluate(()=>{
-   sbUser=null;anonLooksLeft=1;
-   words.demo={word:'demo',clicked:'demo',ko:'체험',example:'This is a demo.',status:1,mark:true,
-     ai:{ko:'체험',pos:'noun',done:true,note:'이 문장에서는 옛 설명',gloss:'retired AI gloss'},defs:[]};
-   selectWord('demo',null,false);
- });
- assert.equal(await page.locator('#p-ai-ko').textContent(),'체험');
- assert.equal(await page.locator('#p-aihint').isVisible(),false,'successful anonymous lookup still nags about remaining trials');
- assert.doesNotMatch(await page.locator('#panel').innerText(),/이 문장에서는|retired AI gloss|무료 체험|로그인/);
- await page.evaluate(()=>{
-   words.demo.ko='';words.demo.ai.ko='';words.demo.aiLoading=true;
-   document.getElementById('p-ai-note').textContent='이 문장에서는 옛 설명';
-   renderPanel();
- });
- assert.equal(await page.locator('#p-ai-ko').textContent(),'');
- assert.equal(await page.locator('#p-ai-pos').textContent(),'');
- assert.equal(await page.locator('#p-ai-note').textContent(),'');
- await page.evaluate(()=>{
-   words.demo.aiLoading=false;words.demo.aiOff='trial';renderPanel();
- });
- assert.equal(await page.locator('#p-aibtn-t').textContent(),'로그인하고 계속 쓰기');
- assert.equal(await page.locator('#p-aihint').isVisible(),false,'exhaustion message is duplicated');
- assert.equal(await page.locator('#p-ai-note').textContent(),'무료 체험을 다 썼어요');
- await page.evaluate(()=>{
-   closePanel();words.demo.ko='체험';words.demo.ai.ko='체험';delete words.demo.aiOff;
-   contextView={key:'demo',sentence:'Another demo.',error:'login'};
-   selectWord('demo',document.querySelector('#rtext .w'),true);
-   window.onboardingTestDictCalls=0;
-   dictCall=async()=>{window.onboardingTestDictCalls++;return {error:'login_required'};};
- });
- assert.equal(await page.locator('#word-peek-meaning').textContent(),'로그인하고 뜻 보기','blocked reused meaning produced an empty pill');
- await page.locator('#word-peek-retry').click();
- assert.equal(await page.locator('#settings-modal').evaluate(node=>node.classList.contains('on')),true);
- assert.equal(await page.evaluate(()=>window.onboardingTestDictCalls),0,'login action sent a doomed dictionary request');
- console.log('Web/native real Reader onboarding: delay, real gestures, detail, Aa, replay, cancellation and storage isolation verified');
-}finally{await browser.close();await new Promise(done=>server.close(done));}
+ // Interrupted first run resumes its explanation page, but never skips welcome on replay.
+ {
+ const {context,page}=await setup();await page.goto(url);await page.evaluate(()=>homeReady);
+ const before=await dataSnapshot(page);await page.evaluate(()=>goOnboardingPage(3));await page.reload();await page.evaluate(()=>homeReady);
+ assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'3');
+ await page.keyboard.press('Escape');assert.notEqual(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
+ await page.evaluate(()=>startOnboarding(false));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'3');
+ await page.evaluate(()=>window.dispatchEvent(new PopStateEvent('popstate',{state:{breeze:true,view:'home'}})));
+ assert.equal(await page.locator('#onboarding').isVisible(),false);assert.notEqual(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
+ assert.equal(await dataSnapshot(page),before,'guide mutated app data/preferences/history');await context.close();
+ }
+ // Existing Reader survives replay, including scroll, appearance and data.
+ {
+ const {context,page}=await setup();await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+ await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.locator('#fileinput').setInputFiles({name:'Existing Reading.txt',mimeType:'text/plain',buffer:Buffer.from('Reading should feel easy.\n\n'.repeat(60))});
+ await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
+ await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
+ await page.evaluate(()=>{readerScroller().scrollTop=100;});const before=await dataSnapshot(page),scroll=await page.evaluate(()=>readerScrollTop());
+ await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(7));await page.locator('#onboard-next').tap();
+ assert.equal(await page.evaluate(()=>activeAppView()),'read');assert.equal(await dataSnapshot(page),before);assert.equal(await page.evaluate(()=>readerScrollTop()),scroll);
+ assert.equal(await page.locator('#v-read').getAttribute('inert'),null);
+  await page.locator('#rtext .w').first().tap();await page.waitForFunction(()=>wordLookupOpen());
+  await page.evaluate(()=>startOnboarding(true));await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>wordLookupOpen()),true,'guide Escape closed the existing Reader lookup');
+  await page.evaluate(()=>closePanel());
+ await page.evaluate(()=>{startOnboarding(true);goOnboardingPage(2);show('home');});
+ await page.waitForFunction(()=>!onboardingSession);assert.equal(await page.locator('#v-home').getAttribute('inert'),null);
+ await context.close();
+ }
+ // Layout and fallback at phone/tablet/desktop/short sizes, both themes.
+ for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
+ const {context,page}=await setup({viewport:{width,height},reducedMotion:'reduce',annotation:true});await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
+ await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-welcome.png`)});
+ await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) img').complete);
+ assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#onboard-carousel video')].some(v=>v.hasAttribute('src'))),false,'reduced motion downloaded loops');
+ assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
+ for(let i=1;i<=7;i++){await page.evaluate(i=>goOnboardingPage(i),i);await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-${i}.png`)});}
+ await context.close();
+ }
+ // Play rejection uses poster, and media has one owner despite rapid changes.
+ {
+ const {context,page}=await setup();await page.addInitScript(()=>{HTMLMediaElement.prototype.play=function(){return Promise.reject(Error('blocked autoplay'));};});
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboard-next').tap();await wait(100);
+ assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.classList.contains('poster-only')),true);
+ await context.close();
+ }
+ {
+ const {context,page}=await setup({annotation:true});await page.addInitScript(()=>{window.qaHidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.qaHidden});});
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboard-next').tap();
+ await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
+ await page.evaluate(()=>{qaHidden=true;document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await page.locator('#onboard-carousel video[src]').evaluate(v=>v.paused),true);
+ await page.evaluate(()=>{qaHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>!document.querySelector('#onboard-carousel video[src]').paused);
+ await page.locator('#onboard-carousel').press('Space');assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
+ await page.locator('#onboard-carousel').press('Space');await page.locator('#onboard-next').tap();
+ assert.equal(await page.locator('#onboard-carousel video[src]').count(),1,'offscreen decoder retained');
+ await page.emulateMedia({reducedMotion:'reduce'});await wait(50);assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.paused),true);
+ await context.close();
+ }
+ assert.deepEqual(errors,[]);writeFileSync(resolve(out,'test-receipt.json'),JSON.stringify(receipts,null,2));
+ // One coherent, final review video: welcome -> all seven pages -> normal completion.
+ if(process.env.BREEZE_ONBOARD_VIDEO==='1'){
+ const {context,page}=await setup({annotation:true});await page.goto(url);await page.evaluate(()=>homeReady);
+ const frames=resolve(out,'flow-frames');mkdirSync(frames,{recursive:true});let running=true,rows=[];
+ const recording=(async()=>{let i=0;while(running){const p=resolve(frames,String(i++).padStart(5,'0')+'.png');await page.screenshot({path:p});rows.push({p,t:Date.now()});await wait(100);}})();
+ await wait(1800);await page.locator('#onboard-next').tap();
+ for(let i=1;i<=7;i++){await wait(3600);await page.locator('#onboard-next').tap();}
+ await wait(1600);running=false;await recording;await context.close();
+ writeFileSync(resolve(frames,'frames.txt'),rows.map((r,i)=>`file '${r.p}'\nduration ${i<rows.length-1?(rows[i+1].t-r.t)/1000:.1}`).join('\n'));
+ const r=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',resolve(out,'Breeze-onboarding-full-flow.mp4')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+ }
+ console.log('Passive onboarding verified: welcome, swipe/tap/cancel/back, rapid navigation, completion, interruption/resume, replay, Reader isolation, responsive themes, reduced motion and autoplay fallback.');
+}finally{await browser.close();server.close();}
