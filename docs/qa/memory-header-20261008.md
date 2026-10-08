@@ -60,3 +60,24 @@ it verifies inset propagation, not a physical iPhone or native status bar.
 Onboarding remains idea-only here; PR122/124 remain untouched. A separate
 onboarding concept task owns any proposal. This PR is draft; no merge, deployment
 or TestFlight upload is authorized by this feedback task.
+
+
+## CI installation budget follow-up
+
+The original sentence-inline WebKit job on head 1857659 exhausted its 15-minute
+job budget during `playwright install --with-deps`, twice, before any UI checks.
+The first attempt downloaded 126 MB from the Ubuntu mirror in 14m23s (146 kB/s);
+the retry was still downloading packages when cancelled. PR125’s successful
+WebKit job installed dependencies/browser in about 46s and ran the unchanged
+checks/artifact steps in about 4m17s. The old budget covers fast mirrors but not
+these observed cold installs plus the actual tests.
+
+Increase only this workflow’s job budget to 30 minutes, retaining its official
+Playwright install command, both engines, all assertions and artifact steps.
+Runner type, matrix size and tests are unchanged; jobs still stop as soon as they
+finish. No application behavior or release settings change. Validate the new
+exact head by executing the full workflow, rather than waiving the cancelled job.
+
+Evidence: [previous successful WebKit run](https://github.com/MetroBummin/breeze/actions/runs/37648227003/job/112884745580),
+[first installation timeout](https://github.com/MetroBummin/breeze/actions/runs/37711418664/job/113098143218),
+[retry installation timeout](https://github.com/MetroBummin/breeze/actions/runs/37711418664/job/113102531952).
