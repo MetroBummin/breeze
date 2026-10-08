@@ -65,7 +65,7 @@ try{
  }
  {
   failHomeward=true;
-  const {context,page,remote,errors}=await fresh({native:true});
+  const {context,page,requests,remote,errors}=await fresh({native:true});
   try{
    await page.evaluate(async raw=>{const book={id:'deferred-homeward',title:'Local Homeward',kind:'txt',longReadId:'backroom-homeward-bound',paras:parseTXT(raw,{preserveParagraphs:true}),addedAt:1};books.push(book);await bookPut(book);await openBook(book);},source);
    assert.equal(await page.evaluate(()=>activeAppView()),'read','optional lookup failure must keep local reading');
@@ -73,11 +73,37 @@ try{
    await page.waitForFunction(()=>words[selKey]?.aiOff==='error');
    await page.evaluate(async()=>{await fillDictionaryMetadata(selKey,wordLookupLife,true);await fetchLook(selKey,{life:wordLookupLife});closePanel();await openSentence('I snapped out of my reverie.',{pi:2});});
    assert.equal(remote.filter(href=>/functions\/v1\/dict|freedictionaryapi/.test(href)).length,0,'missing local data must not trigger AI or metadata fallback');
+   const beforeCache=requests.filter(href=>href.includes('homeward-lookup-data')).length;
+   const cached=await page.evaluate(async()=>{
+    closeSentence();
+    const node=[...document.querySelectorAll('#rtext [data-pi="2"] .w')].find(n=>n.textContent==='reverie');
+    const input=lookupRequestFor(words[node.dataset.w]||{word:node.dataset.w},node,false);
+    await dictPut(lookKey(node.dataset.w,input.sentence,input.clickedIndex),{ko:'저장된 단어 풀이',pos:'noun'});
+    await dictPut('en:v2:reverie',{defs:[{pos:'noun',def:'A stored dreamlike state.'}],expires:Date.now()+60000});
+    openWord(node.dataset.w,node);
+    const k=selKey;
+    await loadCachedLook(k,Date.now(),wordLookupLife,node);
+    await fillDictionaryMetadata(k,wordLookupLife);
+    const word=words[k].ko,english=words[k].defs[0]?.def;
+    closePanel();
+    await dictPut(sentKey('I snapped out of my reverie.'),{ko:'저장된 문장 풀이'});
+    await openSentence('I snapped out of my reverie.',{pi:2});
+    return {word,english,sentence:document.getElementById('ps-ko').textContent};
+   });
+   assert.deepEqual(cached,{word:'저장된 단어 풀이',english:'A stored dreamlike state.',sentence:'저장된 문장 풀이'});
+   assert.equal(await page.evaluate(async()=>{
+    const original=dictGet,book=curBook;let release;
+    dictGet=()=>new Promise(resolve=>{release=resolve;});
+    try{const job=fetchEnMetadata('uncachedfixture');curBook=null;release(null);return await job;}
+    finally{dictGet=original;curBook=book;}
+   }),null,'leaving Homeward during cache read must not start a metadata request');
+   assert.equal(requests.filter(href=>href.includes('homeward-lookup-data')).length,beforeCache,'cached answers must not wait for an optional download');
+   assert.equal(remote.filter(href=>/functions\/v1\/dict|freedictionaryapi/.test(href)).length,0);
    failHomeward=false;
    await page.evaluate(async()=>{closeSentence();await ensureHomewardLookupData();await openSentence('I snapped out of my reverie.',{pi:2});});
    assert.equal(await page.locator('#ps-ko').textContent(),'나는 상념에서 깨어났다.');
    assert.equal(await page.evaluate(()=>{curBook.paras=curBook.paras.slice(0,61);return !!homewardLookupChapter(2)&&!!homewardSentenceAnswer('I snapped out of my reverie.',2);}),true,'unchanged legacy chapter keeps local answers');
-   assert.deepEqual(errors,[]);results.push('missing Homeward data retains reading, prevents paid fallback, retries and serves exact legacy chapter');
+   assert.deepEqual(errors,[]);results.push('missing Homeward data retains reading and cached word/sentence/English answers, prevents paid fallback, retries and serves exact legacy chapter');
   }finally{failHomeward=false;await context.close();}
  }
  console.log(JSON.stringify({engine:engine.name(),version:browser.version(),results}));

@@ -8,16 +8,16 @@ requests. [Machine-readable evidence](lightweight-runtime-20261008.json).
 
 | Boundary | Before | After | Saved |
 |---|---:|---:|---:|
-| Unpacked native `www`, bytes | 20,811,775 (205 files) | 15,604,417 (190 files) | 5,207,358 (25.02%) |
-| Native files, individual gzip-9 sum | 17,772,107 | 12,750,290 | 5,021,817 |
-| Native files, individual Brotli-11 sum | 17,537,819 | 12,531,951 | 5,005,868 |
-| Synthetic `www` ZIP, DEFLATE-9 | 17,792,522 | 12,769,868 | 5,022,654 |
-| Eager JavaScript, raw bytes | 1,656,530 (62 files) | 1,352,621 (57 files) | 303,909 |
-| Eager JavaScript, gzip-9 sum | 523,849 | 441,065 | 82,784 |
-| Eager JavaScript, Brotli-11 sum | 444,760 | 376,308 | 68,452 |
-| Worker shell including fonts, raw bytes | 2,046,535 (82 files) | 1,741,983 (77 files) | 304,552 |
-| Fresh onboarding, local response bytes | 2,814,563 (87 responses) | 1,787,158 (81 responses) | 1,027,405 |
-| Returning Home, local response bytes | 3,492,419 (92 responses) | 2,465,014 (86 responses) | 1,027,405 |
+| Unpacked native `www`, bytes | 20,811,775 (205 files) | 15,604,782 (190 files) | 5,206,993 (25.02%) |
+| Native files, individual gzip-9 sum | 17,772,107 | 12,750,402 | 5,021,705 |
+| Native files, individual Brotli-11 sum | 17,537,819 | 12,531,965 | 5,005,854 |
+| Synthetic `www` ZIP, DEFLATE-9 | 17,792,522 | 12,769,976 | 5,022,546 |
+| Eager JavaScript, raw bytes | 1,656,530 (62 files) | 1,352,986 (57 files) | 303,544 |
+| Eager JavaScript, gzip-9 sum | 523,849 | 441,177 | 82,672 |
+| Eager JavaScript, Brotli-11 sum | 444,760 | 376,372 | 68,388 |
+| Worker shell including fonts, raw bytes | 2,046,535 (82 files) | 1,742,348 (77 files) | 304,187 |
+| Fresh onboarding, local response bytes | 2,814,563 (87 responses) | 1,787,523 (81 responses) | 1,027,040 |
+| Returning Home, local response bytes | 3,492,419 (92 responses) | 2,465,379 (86 responses) | 1,027,040 |
 
 The shell is HTML, eager scripts/styles and CSS font dependencies. Startup CSS
 is unchanged at 251,212 raw bytes. Browser measurements use Chromium
@@ -31,7 +31,7 @@ or signed IPA/APK sizes. ZIP and per-file compression are separate estimates.
 1. **Exclude dormant assets from native packaging.** Five stage PNGs and their
    manifest (3,953,057 bytes), unreferenced round Thunderhead (1,128,989), parked
    exam/dictionary-seed modules (37,311), and dormant FSRS/engine scripts (95,211)
-   total 5,214,568 excluded bytes. Added runtime safeguards leave a net 5,207,358
+   total 5,214,568 excluded bytes. Added runtime safeguards leave a net 5,206,993
    saving. All source assets remain. No approved b/br/monochrome/logo alternative
    was removed. `tools/build-www.mjs` refuses an advanced-review ON package until
    its required entry scripts/assets are deliberately restored.
@@ -48,7 +48,9 @@ or signed IPA/APK sizes. ZIP and per-file compression are separate estimates.
    permit retry. Version stamping updates deferred URLs before hashing the loader.
    New/old worker caches retain exact Homeward and Readability addresses, without
    carrying obsolete application scripts. Missing Homeward data keeps reading
-   available and does not silently fall back to paid AI/metadata requests.
+   available and does not silently fall back to paid AI/metadata requests. Existing
+   IndexedDB word, sentence and English-definition cache hits remain available
+   without awaiting the optional download, including navigation during a cache miss.
 4. **Remove legacy Homeward migration from launch.** Only the selected local
    61-paragraph edition is considered. A 3-second source timeout, exact source
    comparison, transactional durable-record comparison, navigation/account/book

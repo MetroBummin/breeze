@@ -520,6 +520,11 @@ This recovers interruption between IndexedDB text commit and localStorage positi
 write without overwriting subsequent reading. It adds no store or remote migration.
 The original paragraph anchor remains unchanged; the fraction uses the new total.
 
+Optional Homeward lookup data is prepared at this same opening boundary. Failure
+keeps local reading and existing IndexedDB word/sentence/English-definition answers
+available. Cache misses may retry the data load; missing data never silently starts
+an AI or external metadata request, including navigation during an awaited cache read.
+
 `verify-homeward-open-preparation-browser.mjs` covers nonblocking startup, exact
 source migration, failed/ interrupted persistence, timeout, edited copies and stale
 navigation/account/delete/replacement completion, including cancellation just

@@ -31,15 +31,15 @@
     "method": "Per-file raw/gzip-9/Brotli-11; unpacked www and shell, not IPA/APK/network transfer or speed.",
     "native": {
       "files": 190,
-      "raw": 15604417,
-      "gzip9": 12750290,
-      "brotli11": 12531951
+      "raw": 15604782,
+      "gzip9": 12750402,
+      "brotli11": 12531965
     },
     "startupJS": {
       "files": 57,
-      "raw": 1352621,
-      "gzip9": 441065,
-      "brotli11": 376308
+      "raw": 1352986,
+      "gzip9": 441177,
+      "brotli11": 376372
     },
     "startupCSS": {
       "files": 16,
@@ -49,15 +49,15 @@
     },
     "shell": {
       "files": 77,
-      "raw": 1741983,
-      "gzip9": 617601,
-      "brotli11": 539584
+      "raw": 1742348,
+      "gzip9": 617713,
+      "brotli11": 539598
     }
   },
   "zip": {
     "before": 17792522,
-    "after": 12769868,
-    "saved": 5022654,
+    "after": 12769976,
+    "saved": 5022546,
     "method": "Synthetic ZIP DEFLATE-9 of actual www, same relative file names; not a signed native binary."
   },
   "browser": {
@@ -84,13 +84,13 @@
         {
           "onboardingDone": false,
           "responses": 81,
-          "rawResponseBytes": 1787158,
+          "rawResponseBytes": 1787523,
           "errors": []
         },
         {
           "onboardingDone": true,
           "responses": 86,
-          "rawResponseBytes": 2465014,
+          "rawResponseBytes": 2465379,
           "errors": []
         }
       ]
