@@ -14,7 +14,8 @@ Browser and Swift results are verified separately on the PR commit in CI.
   Home/Memory/brand CSS and native release configuration remain intact.
 - `BROWSER=chromium/webkit node tests/verify-email-login-browser.mjs`: narrow phone,
   phone, tablet, desktop and short viewport, light/dark, keyboard activation,
-  44px targets, pending email, close/reopen and password return. Reduced motion.
+  48px provider targets, official local artwork, theme colors, equal prominence,
+  accessible names, focus outline, zero external assets, pending email, close/reopen and password return. Reduced motion.
 - `BROWSER=chromium/webkit node tests/verify-social-login-browser.mjs`: both
   providers on web and simulated iOS. Actual app, bundled Supabase SDK, callback
   acceptance, persistent store, auth listener and reload; provider and OS consent
@@ -73,10 +74,21 @@ results must be taken from the exact-head GitHub checks, not claimed locally.
 5. Confirm email link/code and password fallback, unsupported Android behavior,
    logout/relogin and guest access. The existing tutorial and its returning-user
    completion marker must behave exactly as before.
-6. Review official provider button branding, real-device accessibility, keyboard,
+6. Retain packaged official provider artwork and verify real-device accessibility, keyboard,
    contrast and safe areas before a separately approved production release.
 
 Official references: [Google](https://supabase.com/docs/guides/auth/social-login/auth-google),
 [Apple](https://supabase.com/docs/guides/auth/social-login/auth-apple),
 [redirect patterns](https://supabase.com/docs/guides/auth/redirect-urls).
 No live provider configuration or real consent outcome is established by this PR.
+
+## Provider artwork review
+
+The prior text-only Apple/Google buttons omitted required logos; Google also used
+the app font and colors. The draft now packages unchanged official Apple Korean
+black/white button images and Google's current gradient G, with the Google Sans
+Medium subset and prescribed light/dark colors. [Provenance](../../assets/auth/README.md)
+and hashes record the downloaded sources. Google localization uses the existing
+Korean fallback because Google Sans contains no Hangul. No auth SDK, provider
+settings or credentials changed. Screenshots show enabled choices using a local
+SDK availability stub; no live consent is attempted.

@@ -45,6 +45,11 @@ Foundation policy tests execute production Swift URL validation; the unsigned
 Simulator build checks compilation only. Live consent, physical devices and actual
 provider configuration require the checklist in [QA](../qa/social-auth-only.md).
 
-Provider button artwork remains provisional in this draft. Official Apple/Google
-brand compliance and physical keyboard/safe-area behavior remain release review
+Provider choices package the official gradient Google G and official generated
+Korean Apple buttons locally. Google uses its prescribed Medium 14/20 type,
+light/dark colors, border and platform padding; Apple uses uncropped black/white
+artwork. Both have equal width and 48px targets with accessible names. Asset
+provenance and the scoped font license are in [assets](../../assets/auth/README.md).
+Browser checks cover theme, dimensions, focus and zero external asset requests.
+Physical keyboard/safe-area behavior and provider approval remain release review
 items; browser geometry does not establish those outcomes.
