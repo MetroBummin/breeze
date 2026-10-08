@@ -122,3 +122,17 @@ The integration receipt pins the exact workflow change and its previous hash.
 Runtime, assets, native projects and build metadata remain identical to the
 preserved signed1.9(252) archive source. No new archive or upload is performed.
 Exact updated-head CI must complete before parent-coordinated upload.
+
+
+## Approved complete onboarding media integration (2026-10-08)
+
+Source `981bd754c2b983af2029ee9e45dfb083ecdb8680` replaces14clips and14posters
+with the user-approved 2x/actual30fps versions. Capture/provenance tooling and
+documentation are included unchanged. The boundary receipt pins the new exact
+asset/decision/tool hashes and retains previous hashes where present. Production
+JS/CSS, UI text/layout, welcome animation, auth and native/version metadata remain
+byte-identical to `2dec555`. Existing1.9(252) has no distribution/upload event;
+rebuild252 under a distinct source-named archive path, preserving the old archive.
+Full/type/media/onboarding/pending-pinch/native-asset/signature checks and final
+exact-head CI are required before the authorized TestFlight upload. No main merge
+or App Review submission is permitted.
