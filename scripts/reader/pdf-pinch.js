@@ -215,7 +215,7 @@ function cancelOriginalPinch(){
   }
   resumeOriginalPdfPaint();
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
-  resumeOriginalPinchLookup();
+  if(pinch)resumeOriginalPinchLookup();
 }
 function resumeOriginalPinchLookup(){
   if(typeof wordPeekOpen==='function'&&wordPeekOpen())renderWordLookup();

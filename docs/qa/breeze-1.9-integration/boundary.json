@@ -1556,7 +1556,7 @@
         "pending-pinch-baseline": "dfc710bfcf933677b187305aa902f21f5791bf978b0fd6f4cbabc16f3124234a"
       },
       "kind": "combined-reviewed",
-      "sha256": "add9f57fa5859ae5cb09c81ac1e4b8bc4621d02de7503a6016393a825638a74a"
+      "sha256": "5e90e0471b3b7617c3e2e5bc4bcd2d6df08142b002fa7b98b3c110ff692325b1"
     },
     "docs/decisions/002-dictionary-panel-reading-anchor.md": {
       "owners": [
