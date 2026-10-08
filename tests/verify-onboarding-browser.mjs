@@ -33,6 +33,12 @@ try{
   await page.evaluate(()=>startOnboarding(true));
   assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),capability===true);
   assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+  const count=capability===true?7:6;
+  assert.equal(await page.locator('#onboard-pages i').count(),count);
+  await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length));
+  assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+  assert.equal(await page.locator('#onboard-step').textContent(),`${count} / ${count}`);
+  assert.equal(await page.locator('#onboard-next').textContent(),'완료');
   await page.evaluate(()=>{endOnboarding(false);startOnboarding(true);endOnboarding(false);});
   await wait(120);assert.equal(await page.evaluate(()=>onboardingSession),null,'pending capability revived cancelled guide');
   await page.evaluate(()=>{startOnboarding(true);show('read');});await wait(120);
@@ -94,6 +100,10 @@ try{
  await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(7));await page.locator('#onboard-next').tap();
  assert.equal(await page.evaluate(()=>activeAppView()),'read');assert.equal(await dataSnapshot(page),before);assert.equal(await page.evaluate(()=>readerScrollTop()),scroll);
  assert.equal(await page.locator('#v-read').getAttribute('inert'),null);
+  await page.locator('#rtext .w').first().tap();await page.waitForFunction(()=>wordLookupOpen());
+  await page.evaluate(()=>startOnboarding(true));await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>wordLookupOpen()),true,'guide Escape closed the existing Reader lookup');
+  await page.evaluate(()=>closePanel());
  await page.evaluate(()=>{startOnboarding(true);goOnboardingPage(2);show('home');});
  await page.waitForFunction(()=>!onboardingSession);assert.equal(await page.locator('#v-home').getAttribute('inert'),null);
  await context.close();

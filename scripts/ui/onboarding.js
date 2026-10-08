@@ -66,6 +66,7 @@ function startOnboardingResolved(replay,pdfAvailable){
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
   carousel.addEventListener('click',()=>{if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
   root.addEventListener('keydown',event=>{
+    event.stopPropagation();
     if(event.key==='Escape'){event.preventDefault();endOnboarding(false);return;}
     if(session.page>0&&['ArrowLeft','ArrowRight'].includes(event.key)){
       event.preventDefault();goOnboardingPage(session.page+(event.key==='ArrowRight'?1:-1));
