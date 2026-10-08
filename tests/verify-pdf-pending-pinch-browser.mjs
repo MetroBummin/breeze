@@ -31,7 +31,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.evaluate(()=>{
   sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-pinch'};
   window.qaCache=new Map();dictGet=async key=>qaCache.get(key)||null;dictPut=async(key,value)=>qaCache.set(key,value);fillDictionaryMetadata=async()=>{};
-  window.qaRequests=[];
+  window.qaRequests=[];window.qaAnimationIds=new WeakMap();window.qaAnimationSerial=0;
   // Match dictCall's production abort contract: an aborted transport returns null.
   // Resolving its delayed gate later still exercises the obsolete completion path.
   dictCall=(payload,signal)=>new Promise(resolve=>{
@@ -62,8 +62,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    pending:kind==='word'?wordPeekPending():sentenceWaitingActive(),connected:qaNode.isConnected,
    shimmer:qaNode.classList.contains(kind==='word'?'breeze-lookup-pending':'is-pending'),
    requests:qaRequests.length,aborted:!!qaRequests.at(-1)?.signal?.aborted,
-   animation:qaNode.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations===Infinity).map(a=>({state:a.playState,time:a.currentTime})),
+   animation:qaNode.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations===Infinity).map(a=>{
+    const sample={state:a.playState,time:a.currentTime};
+    if(!qaAnimationIds.has(a))qaAnimationIds.set(a,++qaAnimationSerial);
+    return {...sample,id:qaAnimationIds.get(a)};
+   }),
    result:kind==='word'?!document.getElementById('word-peek').hidden:!document.getElementById('sentence-modal').hidden});
+  // A CSS animation can report running while its start is still pending in WebKit.
+  // Observe rendered frames, including when pinch began before the cue's first paint.
+  window.qaAnimationFrame=()=>Promise.race([
+   Promise.all(qaNode.getAnimations({subtree:true}).filter(a=>a.effect.getTiming().iterations===Infinity).map(a=>a.ready)).then(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))),
+   new Promise((_,reject)=>setTimeout(()=>reject(Error('pending shimmer did not reach a rendered frame')),1000))
+  ]);
   window.qaResolve=(index,ko='테스트 뜻')=>{
    const req=qaRequests[index],p=req.payload;
    req.resolve(p.op==='explain'?{ko}:{kind:'word',canonical:p.word,members:[p.clickedIndex],ko});
@@ -81,21 +91,37 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  for(const kind of ['word','sentence']){
   const request=await open(kind);
   await page.evaluate(()=>qaTouch('touchstart',[1,2]));
-  const before=await page.evaluate(kind=>qaState(kind),kind);
+  let before=await page.evaluate(kind=>qaState(kind),kind);
   reports.push({engine:engine.name(),width,height,dark,kind,phase:'pinch-start',...before});
   if(process.env.BREEZE_QA_EXPECT_BROKEN){
    assert.equal(before.alive,false);assert.equal(before.shimmer,false);
    await page.evaluate(index=>{qaTouch('touchend',[]);qaResolve(index);},request);continue;
   }
   assert.equal(before.alive,true);assert.equal(before.shimmer,true);assert.equal(before.aborted,false);
+  await page.evaluate(()=>qaAnimationFrame());
+  before=await page.evaluate(kind=>qaState(kind),kind);
+  assert.ok(before.animation.length>0&&before.animation.every(a=>a.state==='running'&&Number.isFinite(a.time)));
+  let previous=before;
   await page.waitForTimeout(100);
   for(const spread of [150,65,170,80]){
    await page.evaluate(spread=>qaTouch('touchmove',[1,2],spread),spread);
    await page.waitForTimeout(100);
+   await page.evaluate(()=>qaAnimationFrame());
    const state=await page.evaluate(kind=>qaState(kind),kind);
    assert.equal(state.connected,true);assert.equal(state.shimmer,true);assert.equal(state.requests,request+1);
    assert.ok(state.animation.length>0&&state.animation.every(a=>a.state==='running'));
-   assert.ok(state.animation[0].time>before.animation[0].time,'pending reflection kept advancing');
+   reports.push({engine:engine.name(),width,height,dark,kind,phase:'pinch-move',spread,before,previous,...state});
+   if(!(state.animation[0].time>previous.animation[0].time)){
+    const clocks=await page.evaluate(()=>({timeline:document.timeline.currentTime,now:performance.now(),visibility:document.visibilityState,animation:qaNode.getAnimations({subtree:true}).map(a=>({id:qaAnimationIds.get(a),name:a.animationName,state:a.playState,time:a.currentTime,pending:a.pending,start:a.startTime}))}));
+    console.log('PINCH_ANIMATION_FAILURE',JSON.stringify({...reports.at(-1),clocks}));
+   }
+   assert.equal(state.animation.length,previous.animation.length,'pinch replaced pending animations');
+   for(const animation of state.animation){
+    const prior=previous.animation.find(a=>a.id===animation.id);
+    assert.ok(prior,'pinch replaced a pending animation');
+    assert.ok(animation.time>prior.time,'pending reflection kept advancing');
+   }
+   previous=state;
   }
   await page.evaluate(()=>qaTouch('touchend',[]));
   await page.waitForTimeout(300);
