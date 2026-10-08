@@ -76,14 +76,18 @@ function hydrateWordSpanBatch(elements){
   const starts=savedPhraseStarts();
   elements.forEach(el=>{
     if(!el || el.dataset.wordSpans==='1') return;
-    el.innerHTML=wordSpans(el.textContent,starts,!!(curBook && curBook.transient));
+    const parts=el.querySelectorAll(':scope > .holmes-paragraph-part');
+    if(parts.length)parts.forEach(part=>{part.innerHTML=wordSpans(part.textContent,starts,!!(curBook && curBook.transient));});
+    else el.innerHTML=wordSpans(el.textContent,starts,!!(curBook && curBook.transient));
     decorateArticleWords(el);
     el.dataset.wordSpans='1';
   });
 }
 function dehydrateWordSpan(el){
   if(!el || el.dataset.wordSpans!=='1' || el.querySelector('.sel')) return;
-  el.textContent=el.textContent;
+  const parts=el.querySelectorAll(':scope > .holmes-paragraph-part');
+  if(parts.length)parts.forEach(part=>{part.textContent=part.textContent;});
+  else el.textContent=el.textContent;
   delete el.dataset.wordSpans;
 }
 function beginLazyWordSpans(elements){
@@ -243,6 +247,17 @@ function renderBookBody(b){
     el.dataset.pi = bl.f;
     if(bl.bookRole)el.classList.add('holmes-'+bl.bookRole);
     el.textContent = bl.v || bl.t;
+    const parts=holmes&&holmesParagraphParts(b,bl);
+    if(parts){
+      el.textContent='';
+      parts.forEach((text,index)=>{
+        // The separating space keeps textContent and sentence/selection offsets
+        // byte-for-byte identical to the saved paragraph through lazy hydration.
+        if(index)el.appendChild(document.createTextNode(' '));
+        const part=document.createElement('span');
+        part.className='holmes-paragraph-part';part.textContent=text;el.appendChild(part);
+      });
+    }
     if(bl.bookRole==='contents'){
       const entries=bl.t.match(/Chapter \d+ [\s\S]*?(?=Chapter \d+ |$)/g);
       if(entries&&entries.join('')===bl.t){
