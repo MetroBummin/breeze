@@ -1,0 +1,33 @@
+{
+  "approved_source": {
+    "library_file_id": "libfile_dc6af2d0818881918b40467fc9685787",
+    "file": "Breeze-onboarding-option-1.png",
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "approved": {
+    "x": 147,
+    "y": 738,
+    "width": 96,
+    "height": 5,
+    "active_width": 18,
+    "inactive_width": 5,
+    "gap": 8
+  },
+  "previous_video": {
+    "group_width": 308,
+    "cause": "seven 44px page buttons"
+  },
+  "restored": {
+    "x": 147,
+    "y": 738,
+    "width": 96,
+    "height": 5,
+    "active_width": 18,
+    "inactive_width": 5,
+    "gap": 8,
+    "verified": "Chromium native-capability onboarding test"
+  }
+}
