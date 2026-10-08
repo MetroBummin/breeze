@@ -25,9 +25,10 @@ four explanations; those surfaces are unchanged in the actual app.
 
 Memory capture uses companion PR126 source 18576591a5096a217e52793c7627b699dd5bfdef
 in a detached capture checkout. None of that branch's Memory CSS/DOM is included
-in this branch. PDF capability integration awaits the companion annotation owner;
-the current guide uses its public `supported()` when present and otherwise the
-verified native iPad flag, failing closed for other platforms. Existing ink data
+in this branch. PDF capability uses PR128's public async `availability()` before
+selecting pages, including pending Android native classification and the safe
+input adapter. Until that companion lands, the verified native iPad flag is the
+conservative fallback. Rejected capability queries fail closed. Existing ink data
 read/write behavior is not changed by this PR.
 
 Local Chromium onboarding and full npm tests pass. The latest source also passes

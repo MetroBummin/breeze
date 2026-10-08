@@ -22,6 +22,23 @@ async function setup(options={}){
 }
 const dataSnapshot=page=>page.evaluate(()=>JSON.stringify({words,dead,positions,books,curBook,fs,darkMode,readMargin,history:history.length,storage:Object.fromEntries(Object.entries(localStorage).filter(([k])=>!k.startsWith('breeze.onboarding.')))}));
 try{
+ // The companion owner resolves Android classification asynchronously. Do not
+ // choose pages from the synchronous pending=false value or revive cancelled work.
+ for(const capability of [true,false,'error']){
+  const {context,page}=await setup();await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.evaluate(()=>endOnboarding(false));
+  await page.evaluate(capability=>{
+   Reflect.set(BreezePdfInk,'availability',()=>new Promise((resolve,reject)=>setTimeout(()=>capability==='error'?reject(Error('bridge failed')):resolve(capability),80)));
+  },capability);
+  await page.evaluate(()=>startOnboarding(true));
+  assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),capability===true);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+  await page.evaluate(()=>{endOnboarding(false);startOnboarding(true);endOnboarding(false);});
+  await wait(120);assert.equal(await page.evaluate(()=>onboardingSession),null,'pending capability revived cancelled guide');
+  await page.evaluate(()=>{startOnboarding(true);show('read');});await wait(120);
+  assert.equal(await page.evaluate(()=>onboardingSession),null,'pending capability displaced navigation');
+  await context.close();
+ }
  for(const native of [false,true]){
  const {context,page}=await setup();if(native)await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true};window.breezeInkIPad=true;});
  const requests=[];page.on('request',r=>{if(/assets\/onboarding/.test(r.url()))requests.push(r.url());});

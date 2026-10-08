@@ -2,9 +2,9 @@
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
 function onboardingPdfAvailable(){
-  // Prefer the annotation owner's public capability when the companion change lands.
-  const supported=typeof BreezePdfInk!=='undefined'?Reflect.get(BreezePdfInk,'supported'):null;
-  if(typeof supported==='function')return supported();
+  // PR128 owns native classification and the safe input adapter.
+  const availability=typeof BreezePdfInk!=='undefined'?Reflect.get(BreezePdfInk,'availability'):null;
+  if(typeof availability==='function')return Promise.resolve().then(()=>availability()).then(value=>value===true,()=>false);
   return Reflect.get(window,'breezeInkIPad')===true;
 }
 const ONBOARD_PAGES=[
@@ -17,6 +17,7 @@ const ONBOARD_PAGES=[
   ['memory','홈의 북마크 아이콘을 눌러보세요.','Breeze Memory에서 만난 단어를 다시 봐요.'],
 ];
 let onboardingSession=null;
+let onboardingRequest=0;
 // Retained integration hooks: this guide never opens or owns a live Reader.
 function onboardingOwnsReader(){return false;}
 function onboardingAppearanceOpened(){}
@@ -28,12 +29,19 @@ function persistOnboarding(){
 }
 function startOnboarding(replay){
   if(onboardingSession)endOnboarding(false);
+  const request=++onboardingRequest,previousView=activeAppView(),available=onboardingPdfAvailable();
+  if(available instanceof Promise)return available.then(value=>{
+    if(request===onboardingRequest&&activeAppView()===previousView)startOnboardingResolved(replay,value);
+  });
+  return startOnboardingResolved(replay,available);
+}
+function startOnboardingResolved(replay,pdfAvailable){
   closeSettings();
   const progress=load(ONBOARD_PROGRESS_KEY,null);
   const session={page:replay?0:Math.max(0,Math.min(7,Number.isInteger(progress?.page)?progress.page:0)),replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],paused:false,mediaToken:0,pointer:null,
     motion:matchMedia('(prefers-reduced-motion: reduce)')};
-  session.pages=ONBOARD_PAGES.filter(item=>item[0]!=='pdf'||onboardingPdfAvailable());
+  session.pages=ONBOARD_PAGES.filter(item=>item[0]!=='pdf'||pdfAvailable);
   session.page=Math.min(session.pages.length,session.page);
   onboardingSession=session;
   for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
@@ -130,6 +138,7 @@ function syncOnboardingMedia(){
   }
 }
 function endOnboarding(remember,returnToPrevious=true){
+  ++onboardingRequest;
   const session=onboardingSession;if(!session)return;
   persistOnboarding();session.controller.abort();session.theme.disconnect();
   for(const video of document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))){video.pause();video.removeAttribute('src');video.load();}
