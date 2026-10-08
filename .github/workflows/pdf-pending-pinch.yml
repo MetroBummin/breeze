@@ -6,6 +6,7 @@ on:
       - scripts/dictionary/dictionary.js
       - scripts/dictionary/sentence.js
       - tests/verify-pdf-pending-pinch-browser.mjs
+      - tests/verify-sentence-help-browser.mjs
       - .github/workflows/pdf-pending-pinch.yml
 permissions:
   contents: read
@@ -29,8 +30,9 @@ jobs:
       - name: Pending word and sentence pinch ownership and stale replies
         env:
           BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BROWSER: ${{ matrix.engine }}
           BREEZE_QA_OUTPUT: /tmp/breeze-pending-pinch-proof
-        run: node tests/verify-pdf-pending-pinch-browser.mjs
+        run: node tests/verify-pdf-pending-pinch-browser.mjs && node tests/verify-sentence-help-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

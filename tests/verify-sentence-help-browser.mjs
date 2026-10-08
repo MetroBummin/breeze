@@ -101,7 +101,7 @@ try{
  await page.evaluate(sentence=>openSentence(sentence),sentence);assert.equal(await page.locator('#ps-source').isVisible(),true);assert.equal(await page.locator('#p-sentence').getAttribute('aria-modal'),'true');
  await page.evaluate(()=>{readerScroller().scrollTop+=20;scrollGesture();});assert.equal(await page.evaluate(()=>sentenceLookupOpen()),true,'source-free modal dismissed as anchored');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),await page.evaluate(()=>qaWords));
- // PDF's existing pinch owner dismisses pending/result/help; endings cannot revive UI.
+ // PDF pinch retains pending requests; ready result/help still dismiss and stay closed.
  await page.evaluate(()=>closeSentence());await page.locator('#fileinput').setInputFiles({name:'sentence-pinch.pdf',mimeType:'application/pdf',buffer:pdfGeometryFixture()});
  await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
  await page.waitForSelector('.pdf-source-page canvas');await page.waitForFunction(()=>!readerPositionPending());
@@ -113,14 +113,32 @@ try{
   await page.evaluate(({mode,ending})=>{closeSentence();cancelOriginalPinch();dictGet=mode==='pending'?async()=>null:async()=>({ko:'PDF 번역'});window.qaOpening=openSentence('A PDF sentence '+mode+ending,qaOrigin);},{mode,ending});
   if(mode==='pending')await page.waitForFunction(()=>qaCalls.at(-1)?.op==='explain');
   else {await page.evaluate(()=>qaOpening);if(mode==='help')await page.locator('#ps-easy-button').click();}
-  await page.evaluate(()=>qaTouch('touchstart',[1,2]));assert.equal(await page.evaluate(()=>originalPinchBusy()),true);await closed();
+  await page.evaluate(()=>{qaPinchLife=sentenceLife;qaPinchCalls=qaCalls.length;qaPinchRequest=qaPending.at(-1);qaTouch('touchstart',[1,2]);});
+  assert.equal(await page.evaluate(()=>originalPinchBusy()),true);
+  if(mode==='pending'){
+   assert.equal(await page.evaluate(()=>sentenceWaitingActive()&&sentenceLife===qaPinchLife),true,'pinch lost pending lifetime');
+   assert.equal(await page.evaluate(()=>qaPinchRequest.signal.aborted),false,'pinch aborted pending request');
+   assert.equal(await page.locator('#sentence-modal').isVisible(),false,'pending pinch displayed result');
+  }else {
+   await closed();
+   if(mode==='help')assert.equal(await page.evaluate(()=>qaPinchRequest.signal.aborted),true,'pinch did not abort ready help');
+  }
   await page.evaluate(ending=>{
    if(ending==='release'){qaTouch('touchmove',[1,2],150);qaTouch('touchend',[2],150,true,[1]);qaTouch('touchend',[],150,true,[2]);}
    if(ending==='cancel'){qaTouch('touchcancel',[],100,true,[1,2]);}
    if(ending==='blur')window.dispatchEvent(new Event('blur'));
    if(ending==='noncancelable')qaTouch('touchmove',[1,2],150,false);
    qaPending.at(-1)?.resolve({ko:'늦은 번역',explanation:'늦은 설명은 닫힌 화면을 다시 열 수 없습니다.'});sentenceGestureReleased();
-  },ending);await page.waitForTimeout(30);await closed();
+  },ending);await page.waitForTimeout(30);
+  assert.equal(await page.evaluate(()=>originalPinchBusy()),false,'pinch did not release');
+  if(mode==='pending'){
+   await page.waitForFunction(()=>sentenceModalOpen());
+   assert.equal(await page.evaluate(()=>sentenceLife),await page.evaluate(()=>qaPinchLife),'pending owner changed');
+   assert.equal(await page.evaluate(()=>qaCalls.length),await page.evaluate(()=>qaPinchCalls),'pinch duplicated request');
+   assert.equal(await page.locator('#ps-ko').textContent(),'늦은 번역','pending result was lost');
+   await page.evaluate(()=>closeSentence());
+  }
+  await closed();
  }
  // Text and EPUB leave PDF pinch ownership alone, while real scroll dismisses.
  for(const format of ['text','epub']){

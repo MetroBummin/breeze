@@ -31,7 +31,7 @@ No change to viewport, ink, palette/keyframes, onboarding, brand or release meta
 `index.html`/`sw.js` receive the normal generated content-version stamps.
 
 The integration receipt pins precisely the changed runtime/decision files and
-retains their previous baseline hashes. The existing sentence-success test now
+retains their previous baseline hashes. The existing sentence-success and sentence-help tests now
 asserts the authorized pending-retention contract (same life/cue/request, no abort,
 result after release, pending cleanup). Its ready-result/help dismissal and stale
 reply checks remain intact; no timeout, skip or assertion is weakened.
@@ -71,3 +71,9 @@ Browser video/JSON evidence: `/tmp/breeze-pending-pinch-proof/` (fixed) and
 engine-specific evidence as `pdf-pending-pinch-chromium` / `pdf-pending-pinch-webkit`.
 Physical iPhone/iPad TestFlight acceptance remains open: native finger pinch,
 Pencil/ink coexistence, viewport/safe areas and actual installed-build identity.
+
+Final CI found the sentence-help fixture still expected pending cancellation at
+pinch acquisition. Its pending assertions now require retained lifetime/request,
+no abort/duplicate call and the reply after release. Ready/help cancellation
+and stale completion assertions remain; the focused workflow also runs this
+existing help suite in both engines. Production code is unchanged.

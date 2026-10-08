@@ -1587,6 +1587,16 @@
       },
       "kind": "combined-reviewed",
       "sha256": "896f660460e10f906e9e67eeb4360de25804bf96c034367ef459d12d16e059df"
+    },
+    "tests/verify-sentence-help-browser.mjs": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "6e24a97b1044e69e50a9c0f4ac568958a2d5afde0a6dc55399a2480bc54baabc"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "fbbfb2ebf9a75cc48be59dce5ac743bcc9a66152c24a29e36e32bc75fc05940c"
     }
   },
   "integrationScope": [
