@@ -37,5 +37,5 @@ assert.ok(read('scripts/ui/onboarding.js').includes("Reflect.get(BreezePdfInk,'a
 assert.ok(read('scripts/reader/pdf-ink.js').includes('breeze-ink-platform'));
 const project=read('ios/App/App.xcodeproj/project.pbxproj');
 const baselineProject=git('show',receipt.base+':ios/App/App.xcodeproj/project.pbxproj');
-assert.equal(project.replaceAll('MARKETING_VERSION = 1.9;','MARKETING_VERSION = 1.8.1;').replaceAll('CURRENT_PROJECT_VERSION = 250;','CURRENT_PROJECT_VERSION = 236;').trim(),baselineProject,'Release scope changed settings beyond explicit version/build');
+assert.equal(project.replaceAll('MARKETING_VERSION = 1.9;','MARKETING_VERSION = 1.8.1;').replaceAll('CURRENT_PROJECT_VERSION = 251;','CURRENT_PROJECT_VERSION = 236;').trim(),baselineProject,'Release scope changed settings beyond explicit version/build');
 console.log('Combined 1.9 boundary passed: approved six-PR scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');
