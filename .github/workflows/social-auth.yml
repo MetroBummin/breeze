@@ -10,6 +10,7 @@ on:
       - 'ios/**'
       - 'package*.json'
       - 'tests/verify-email-login-browser.mjs'
+      - 'tests/verify-provider-artwork.mjs'
       - 'tests/verify-social-login-browser.mjs'
       - 'tests/verify-apple-login.mjs'
       - 'tests/verify-auth-native-policy.mjs'
@@ -35,6 +36,7 @@ jobs:
         browser: [chromium, webkit]
     env:
       BROWSER: ${{ matrix.browser }}
+      BREEZE_AUTH_INLINE_PROOF: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +47,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
-      - run: node --test tests/verify-apple-login.mjs
+      - run: node --test tests/verify-apple-login.mjs tests/verify-provider-artwork.mjs
       - run: node tests/verify-social-auth-boundary.mjs
       - run: node tests/verify-email-login-browser.mjs
       - run: node tests/verify-social-login-browser.mjs
@@ -79,13 +81,3 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           -derivedDataPath /tmp/breeze-social-auth-ios
           CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
-
-  button-artwork-source:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Read official downloadable provider artwork for offline packaging
-        run: python3 tools/fetch-provider-button-artwork.py

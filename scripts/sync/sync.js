@@ -312,9 +312,9 @@ function renderSyncModal(){
             <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
           </div>
         </details>
-        <button id="sm-apple-login" class="settings-apple-signin" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-apple-note">Apple로 로그인</button>
+        <button id="sm-apple-login" class="settings-apple-signin" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-apple-note" aria-label="Apple로 로그인"><img class="settings-apple-art light" src="assets/auth/signin-ko-black.png" width="250" height="48" alt="" aria-hidden="true"><img class="settings-apple-art dark" src="assets/auth/signin-ko-white.png" width="250" height="48" alt="" aria-hidden="true"></button>
         <span id="sm-apple-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Apple 로그인 연결은 아직 준비되지 않았어요.':''}</span>
-        <button id="sm-google-login" class="settings-google-signin" type="button" onclick="sbGoogleLogin()" ${!socialLoginSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-google-note">Google로 로그인</button>
+        <button id="sm-google-login" class="settings-google-signin ${isNativeShell()?'native':''}" type="button" onclick="sbGoogleLogin()" ${!socialLoginSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-google-note"><img class="settings-google-logo" src="assets/auth/google-g.png" width="20" height="20" alt="" aria-hidden="true"><span>Google로 로그인</span></button>
         <span id="sm-google-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Google 로그인 연결은 아직 준비되지 않았어요.':''}</span>
         <button id="sm-password-login" class="sm-linkish neutral settings-password-link" onclick="openPasswordLogin()">비밀번호 로그인</button>
       </div>`;

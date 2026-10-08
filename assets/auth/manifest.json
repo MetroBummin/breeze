@@ -1,0 +1,20 @@
+{
+  "retrieved": "2026-10-08",
+  "files": [
+    {
+      "file": "google-g.png",
+      "source": "https://developers.google.com/static/identity/images/g-logo.png",
+      "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a"
+    },
+    {
+      "file": "signin-ko-black.png",
+      "source": "https://appleid.cdn-apple.com/appleid/button?type=sign-in&color=black&border=false&height=48&width=250&locale=ko_KR",
+      "sha256": "0a9f00ffb6a7439cf73054ffa28df942946470544bdd88e6092b0e36c405fec8"
+    },
+    {
+      "file": "signin-ko-white.png",
+      "source": "https://appleid.cdn-apple.com/appleid/button?type=sign-in&color=white&border=false&height=48&width=250&locale=ko_KR",
+      "sha256": "bf32055f2baf48b98711ddf50216a6ce462282c53f0c235db89bc9b548914208"
+    }
+  ]
+}
