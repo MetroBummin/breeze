@@ -67,7 +67,7 @@
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=01738380"></script>
-  <script defer src="scripts/core/lazy-lib.js?v=b9e52b27"></script>
+  <script defer src="scripts/core/lazy-lib.js?v=152792fc"></script>
   <script defer src="scripts/core/storage.js?v=b78b85d3"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
@@ -85,28 +85,24 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=dfc710bf"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=96463494"></script>
+  <script defer src="scripts/library/library.js?v=b05c7311"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=14fe2693"></script>
-  <script defer src="scripts/library/longreads.js?v=b1224dd1"></script>
-  <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
-  <script defer src="scripts/library/homeward-lookup.js?v=0b110c50"></script>
+  <script defer src="scripts/library/longreads.js?v=902909ef"></script>
+  <script defer src="scripts/library/homeward-lookup.js?v=24ab4083"></script>
   <script defer src="scripts/importers/importers.js?v=38179a18"></script>
-  <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
-  <script defer src="scripts/importers/article.js?v=dbf953fb"></script>
+  <script defer src="scripts/importers/article.js?v=e33592ae"></script>
   <script defer src="scripts/importers/social.js?v=888fa510"></script>
-  <script defer src="scripts/importers/rss.js?v=b1ba05ea"></script>
+  <script defer src="scripts/importers/rss.js?v=156b7309"></script>
   <script defer src="scripts/library/article-preview.js?v=f431f4b9"></script>
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=f796cb0b"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=8ea287da"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=c9655b45"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=f5f58b81"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
-  <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
-  <script defer src="scripts/core/vocabulary-review.js?v=e3c93ea7"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=0aca3ea6"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=bdeefbb7"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
@@ -117,7 +113,7 @@
   <script defer src="scripts/reader/epub-original.js?v=c5347589"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=3db30939"></script>
-  <script defer src="scripts/reader/reader.js?v=b344dfbb"></script>
+  <script defer src="scripts/reader/reader.js?v=3a148729"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
   <script defer src="scripts/ui/preferences.js?v=f1e9ebd6"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -130,11 +126,8 @@
   <script defer src="scripts/reader/pdf-navigation.js?v=1ea70870"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
-  <script defer src="scripts/main.js?v=274d54ad"></script>
-  <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
-       것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
-  <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=5c493f55">
+  <script defer src="scripts/main.js?v=e19060c6"></script>
+  <link rel="stylesheet" href="styles/study.css?v=acf24142">
   <link rel="stylesheet" href="styles/surfaces.css?v=838a8c6e">
 </head>
 <body>
@@ -485,7 +478,7 @@
   <nav id="simple-word-navigation" aria-label="단어 카드 이동" hidden><button id="simple-word-previous" type="button">이전</button><button id="simple-word-next" type="button">다음</button></nav>
   <section id="review-result" hidden>
     <div id="review-celebration" hidden>
-      <div id="review-mascot-scene" hidden><img id="review-stage-mascot" src="assets/brand/review/thunderhead-stage-1.png" alt="" width="260" height="260" hidden></div>
+      <div id="review-mascot-scene" hidden><img id="review-stage-mascot" alt="" width="260" height="260" hidden></div>
       <svg class="review-complete-mark" viewBox="0 0 160 160" fill="none" aria-hidden="true">
         <circle class="review-complete-halo" cx="80" cy="80" r="54"/>
         <circle class="review-complete-ring" cx="80" cy="80" r="40"/>

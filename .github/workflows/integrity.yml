@@ -28,6 +28,8 @@ jobs:
       - name: Verify integrated native asset sync
         run: |
           npm run ios:sync
+          node tests/verify-native-package.mjs
+          node tests/verify-native-service-worker.mjs
           cmp scripts/importers/rss.js www/scripts/importers/rss.js
           cmp scripts/importers/rss.js ios/App/App/public/scripts/importers/rss.js
           cmp index.html www/index.html
@@ -48,6 +50,29 @@ jobs:
           for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs tests/verify-pdf-ink-geometry.mjs; do
             if test -f "$test"; then node --test "$test"; fi
           done
+  deferred-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Deferred import, debug and local lookup boundaries
+        env:
+          BROWSER: ${{ matrix.engine }}
+        run: |
+          node tests/verify-deferred-resources-browser.mjs
+          node tests/verify-homeward-open-preparation-browser.mjs
+      - name: Existing offline import and shell upgrade
+        if: matrix.engine == 'chromium'
+        run: node tests/verify-deferred-offline-browser.mjs
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 30

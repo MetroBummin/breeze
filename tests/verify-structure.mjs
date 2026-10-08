@@ -1883,7 +1883,7 @@ assert.match(pdfOriginalSource, /releaseDistantPdfPages\(session,pageNumber\)/,
 const lazyLibSource = readFileSync(resolve(root, 'scripts/core/lazy-lib.js'), 'utf8');
 assert.doesNotMatch(lazyLibSource, /https?:\/\//,
   'scripts/core/lazy-lib.js 가 라이브러리를 남의 서버에서 받고 있습니다 — npm run libs 로 가져와 주세요');
-const lazyLibFiles = [...lazyLibSource.matchAll(/'(assets\/lib\/[^']+)'/g)].map(match => match[1]);
+const lazyLibFiles = [...lazyLibSource.matchAll(/'(assets\/lib\/[^']+)'/g)].map(match => match[1].split('?')[0]);
 assert.ok(lazyLibFiles.length >= 4,
   'scripts/core/lazy-lib.js 가 가리키는 라이브러리가 모자랍니다 (pdf · pdf worker · zip · qr)');
 for(const file of lazyLibFiles){

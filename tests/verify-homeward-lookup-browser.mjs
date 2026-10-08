@@ -18,7 +18,7 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 try{
   for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
-    const browser=await engine.launch();
+    const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
     try{
       const page=await browser.newPage({viewport:{width:320,height:568},hasTouch:true,isMobile:true,serviceWorkers:'block'});
       await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));

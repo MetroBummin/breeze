@@ -404,8 +404,8 @@ window.addEventListener('storage',event=>{
 
 // Update due/limit copy across minute and local-date boundaries without revealing
 // answers or replacing an active card. Starting and grading always re-read time.
-setInterval(()=>{
-  if(!ADVANCED_VOCABULARY_REVIEW_ENABLED||document.hidden)return;
+if(ADVANCED_VOCABULARY_REVIEW_ENABLED)setInterval(()=>{
+  if(document.hidden)return;
   if(activeAppView()==='vocab')refreshVocabularyReviewEntry();
   if(activeAppView()==='study'&&vocabularyReviewView){
     try{const latest=BreezeReview.view(readVocabularyReview(),words,Date.now());

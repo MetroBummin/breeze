@@ -1,13 +1,20 @@
 /* Curated local answers for the exact bundled Homeward Bound Text book.
    The source paragraph comparison is intentional: a different edition, a
    changed paragraph, or a user-imported copy must use the ordinary lookup. */
+function homewardNeedsLookupData(book){
+  return !!book&&book.longReadId==='backroom-homeward-bound'&&book.kind==='txt'&&!globalThis.HOMEWARD_LOOKUP_DATA;
+}
 function homewardLookupChapter(pi){
   const book=typeof curBook==='undefined'?null:curBook;
   if(!book||book.longReadId!=='backroom-homeward-bound'||book.kind!=='txt')return null;
   const data=globalThis.HOMEWARD_LOOKUP_DATA;
   if(!data||!Array.isArray(book.paras))return null;
   const chapter=data.chapters.find(item=>pi>=item.start&&pi<item.end);
-  if(!chapter||book.paras.length!==data.paragraphCount)return null;
+  // A timed-out edition update may leave the exact original first chapter.
+  // Verify every paragraph just as for the complete edition; arbitrary edits
+  // or imported lookalikes still use ordinary lookup.
+  if(!chapter||![data.paragraphCount,data.chapters[0].end].includes(book.paras.length)
+    ||chapter.end>book.paras.length)return null;
   for(let index=chapter.start;index<chapter.end;index++){
     if(book.paras[index]!==chapter.paragraphs[index-chapter.start])return null;
   }

@@ -21,7 +21,11 @@ const server=createServer((req,res)=>{
   if(!path.startsWith(root.endsWith(sep)?root:root+sep)){res.writeHead(403).end();return;}
   try{res.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');const contents=readFileSync(path);
     // Explicit 1.8 fixture; shipped 1.7 simple cards are tested separately.
-    res.end(path.endsWith('/scripts/ui/vocabulary-review.js')?contents.toString().replace('const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;','const ADVANCED_VOCABULARY_REVIEW_ENABLED=true;'):contents);}
+    const fixture=path.endsWith('/index.html')?contents.toString().replace(
+      /(?=<script defer src="scripts\/ui\/vocabulary-review\.js)/,
+      '<script defer src="scripts/vendor/ts-fsrs-5.4.2.js"></script><script defer src="scripts/core/vocabulary-review.js"></script>'):
+      path.endsWith('/scripts/ui/vocabulary-review.js')?contents.toString().replace('const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;','const ADVANCED_VOCABULARY_REVIEW_ENABLED=true;'):contents;
+    res.end(fixture);}
   catch{res.writeHead(404).end();}
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));

@@ -820,31 +820,71 @@ const longReadAttribution = read => ({
   license:read.license, licenseUrl:read.licenseUrl,
   editionNote:read.editionNote, glossary:read.glossary,
 });
-/* Upgrade the bundled Chapter 1 copy in place. The first 61 paragraph indices
-   stay identical, so saved Text anchors and lookup context remain meaningful. */
-async function upgradeHomewardLongRead(){
-  const read=LONG_READS[0];
-  const book=books.find(item=>item.longReadId===read.id);
-  if(!book||book.kind!=='txt'||book.paras.length!==61)return;
-  const response=await fetch(read.file);
-  if(!response.ok)return;
-  const text=await response.text();
-  const combined=parseTXT(text,{preserveParagraphs:true});
-  if(combined.length!==107||!book.paras.every((paragraph,index)=>paragraph===combined[index]))return;
-  const oldLength=book.paras.length;
-  book.paras=combined;
-  book.formatting=null;
-  book.fingerprint=bookContentFingerprint(combined);
-  book.originalTitle=read.originalTitle;
-  book.attribution=longReadAttribution(read);
-  const position=positions[book.id];
-  if(position){
-    const oldIndex=position.pi==null?(position.p||0)*(oldLength-1):position.pi;
-    position.p=Math.max(0,Math.min(1,oldIndex/(combined.length-1)));
-    positions[book.id]=position;
-    save(LS_POS,positions);
+/* The legacy extension is optional preparation for the selected book, never a
+   launch dependency. A durable checkpoint keeps its old text anchor recoverable
+   if termination falls between the IndexedDB commit and local position write. */
+function restoreHomewardUpgradePosition(book){
+  const checkpoint=book.homewardUpgradePosition;
+  if(!checkpoint||book.paras.length!==107)return;
+  if(JSON.stringify(positions[book.id])!==JSON.stringify(checkpoint.before))return;
+  positions[book.id]={...checkpoint.after};
+  save(LS_POS,positions);
+}
+async function upgradeHomewardLongRead(book,alive=()=>true,signal){
+  const read=LONG_READS.find(item=>item.id==='backroom-homeward-bound');
+  if(!read||!book||book.longReadId!==read.id||book.kind!=='txt'||!alive())return;
+  if(books.find(item=>item.id===book.id)!==book)return;
+  // Do not replace a source already on screen, even if opened again by a caller.
+  if(curBook===book&&activeAppView()==='read')return;
+  restoreHomewardUpgradePosition(book);
+  if(book.paras.length!==61)return;
+  const source=JSON.stringify(book),position=JSON.stringify(positions[book.id]);
+  const accountEpoch=typeof syncSessionEpoch==='number'?syncSessionEpoch:null;
+  const unchanged=()=>books.find(item=>item.id===book.id)===book
+    &&(typeof syncSessionEpoch!=='number'||syncSessionEpoch===accountEpoch)
+    &&JSON.stringify(book)===source&&JSON.stringify(positions[book.id])===position
+    &&!(curBook===book&&activeAppView()==='read');
+  const current=()=>alive()&&!signal?.aborted&&unchanged();
+  const controller=new AbortController(),cancel=()=>controller.abort();
+  const timer=setTimeout(cancel,3000);
+  signal?.addEventListener('abort',cancel,{once:true});
+  try{
+    const response=await fetch(read.file,{signal:controller.signal});
+    if(!response.ok||!current())return;
+    const combined=parseTXT(await response.text(),{preserveParagraphs:true});
+    if(!current()||controller.signal.aborted||combined.length!==107
+        ||!book.paras.every((paragraph,index)=>paragraph===combined[index]))return;
+    const upgraded={...book,paras:combined,formatting:null,
+      fingerprint:bookContentFingerprint(combined),originalTitle:read.originalTitle,
+      attribution:longReadAttribution(read)};
+    const before=positions[book.id];
+    if(before){
+      const oldIndex=before.pi==null?(before.p||0)*(book.paras.length-1):before.pi;
+      upgraded.homewardUpgradePosition={before:{...before},after:{...before,
+        p:Math.max(0,Math.min(1,oldIndex/(combined.length-1)))}};
+    }
+    const db=await idb();
+    if(!current()||controller.signal.aborted)return;
+    const committed=await localTransaction(db,'books','readwrite',(tx,done)=>{
+      const store=tx.objectStore('books'),request=store.get(book.id);
+      request.onsuccess=()=>{
+        // A concurrent delete, edit or replacement owns the stored record.
+        if(!current()||controller.signal.aborted||JSON.stringify(request.result)!==source){done(false);return;}
+        store.put(upgraded,book.id);done(true);
+      };
+    });
+    // Navigation can cancel presentation after the transaction has committed.
+    // Reflect that durable result only in unchanged, inactive local memory; a
+    // changed account, replacement or already visible Reader remains untouched.
+    if(!committed||!unchanged())return;
+    Object.assign(book,upgraded);
+    restoreHomewardUpgradePosition(book);
+  }catch(error){
+    // Offline, timeout or failed persistence keeps the local chapter readable.
+    if(error?.name!=='AbortError')console.warn('Local Homeward edition retained:',error);
+  }finally{
+    clearTimeout(timer);signal?.removeEventListener('abort',cancel);
   }
-  await bookPut(book);
 }
 function pendingLongReads(){
   const owned=new Set(books.map(book=>book.longReadId).filter(Boolean));

@@ -1,0 +1,140 @@
+{
+  "base": "e7b61d5304d20d639d45fc8dd23116db5d6446e5",
+  "before": {
+    "method": "Per-file raw/gzip-9/Brotli-11; unpacked www and shell, not IPA/APK/network transfer or speed.",
+    "native": {
+      "files": 205,
+      "raw": 20811775,
+      "gzip9": 17772107,
+      "brotli11": 17537819
+    },
+    "startupJS": {
+      "files": 62,
+      "raw": 1656530,
+      "gzip9": 523849,
+      "brotli11": 444760
+    },
+    "startupCSS": {
+      "files": 16,
+      "raw": 251212,
+      "gzip9": 73255,
+      "brotli11": 62412
+    },
+    "shell": {
+      "files": 82,
+      "raw": 2046535,
+      "gzip9": 700582,
+      "brotli11": 608196
+    }
+  },
+  "after": {
+    "method": "Per-file raw/gzip-9/Brotli-11; unpacked www and shell, not IPA/APK/network transfer or speed.",
+    "native": {
+      "files": 190,
+      "raw": 15604782,
+      "gzip9": 12750402,
+      "brotli11": 12531965
+    },
+    "startupJS": {
+      "files": 57,
+      "raw": 1352986,
+      "gzip9": 441177,
+      "brotli11": 376372
+    },
+    "startupCSS": {
+      "files": 16,
+      "raw": 251212,
+      "gzip9": 73255,
+      "brotli11": 62412
+    },
+    "shell": {
+      "files": 77,
+      "raw": 1742348,
+      "gzip9": 617713,
+      "brotli11": 539598
+    }
+  },
+  "zip": {
+    "before": 17792522,
+    "after": 12769976,
+    "saved": 5022546,
+    "method": "Synthetic ZIP DEFLATE-9 of actual www, same relative file names; not a signed native binary."
+  },
+  "browser": {
+    "before": {
+      "version": "151.0.7922.173",
+      "cases": [
+        {
+          "onboardingDone": false,
+          "responses": 87,
+          "rawResponseBytes": 2814563,
+          "errors": []
+        },
+        {
+          "onboardingDone": true,
+          "responses": 92,
+          "rawResponseBytes": 3492419,
+          "errors": []
+        }
+      ]
+    },
+    "after": {
+      "version": "151.0.7922.173",
+      "cases": [
+        {
+          "onboardingDone": false,
+          "responses": 81,
+          "rawResponseBytes": 1787523,
+          "errors": []
+        },
+        {
+          "onboardingDone": true,
+          "responses": 86,
+          "rawResponseBytes": 2465379,
+          "errors": []
+        }
+      ]
+    },
+    "method": "Chromium 151; 390x844; empty contexts; SW blocked; local no-store HTTP; remote requests blocked; homeReady then 1500ms. Bytes are local uncompressed responses; no network speed or CDN claim."
+  },
+  "scale": {
+    "engine": "chromium",
+    "version": "151.0.7922.173",
+    "scope": "IndexedDB getAll + loadBooks, 100 roughly 1KB ASCII paragraphs per book, three warm reads; excludes rendering, native device and end-to-end launch",
+    "measurements": [
+      {
+        "books": 10,
+        "paragraphs": 1000,
+        "asciiTextBytes": 1021900,
+        "metadataJsonBytes": 950,
+        "loadBooksMs": [
+          15.199999999953434,
+          7,
+          4.900000000139698
+        ]
+      },
+      {
+        "books": 100,
+        "paragraphs": 10000,
+        "asciiTextBytes": 10228000,
+        "metadataJsonBytes": 9860,
+        "loadBooksMs": [
+          17.300000000046566,
+          13.900000000139698,
+          20.699999999953434
+        ]
+      },
+      {
+        "books": 500,
+        "paragraphs": 50000,
+        "asciiTextBytes": 51184000,
+        "metadataJsonBytes": 51060,
+        "loadBooksMs": [
+          74.0999999998603,
+          50.9000000001397,
+          62.0999999998603
+        ]
+      }
+    ]
+  }
+}

@@ -705,6 +705,7 @@ function rssStoryKey(raw){
   return url.pathname.match(/-([a-f0-9]{12})\/?$/i)?.[1] || articleUrlKey(raw);
 }
 async function rssPublicArticle(entry){
+  await ensureReadabilityLib();
   if(parseFeedArticle(entry))return entry;
   if(!rssOnline())return null;
   const url=rssPublicFeedUrl(entry);if(!url)return null;

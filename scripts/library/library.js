@@ -308,6 +308,7 @@ async function restoreVaultArticle(row,manual){
   const meta=row.meta||{}; if(!meta.sourceUrl||cardBusy.has(row.book_id)) return false;
   cardBusy.add(row.book_id); if(manual) toast('기사를 다시 가져오는 중…');
   try{
+    await ensureReadabilityLib();
     const html=await fetchArticleHtml(meta.sourceUrl),parsed=/** @type {any} */(parseArticleHtml(html,meta.sourceUrl));
     if(!parsed) throw new Error('본문을 찾지 못했어요');
     await attachArticleImages(parsed);
@@ -555,9 +556,15 @@ function pickBookFile(){
   closeAddModal(); finput.click();
 }
 
-function updatePastePreview(){
-  const parsed = parsePastedText(document.getElementById('am-text').value);
+async function updatePastePreview(){
+  const input=/** @type {HTMLTextAreaElement} */(document.getElementById('am-text')),text=input.value;
   const preview = document.getElementById('am-preview');
+  if(looksHtml(text)){
+    try{await ensureReadabilityLib();}
+    catch{if(input.value===text)preview.textContent='HTML 읽기 준비를 다시 시도해 주세요.';return;}
+    if(input.value!==text)return;
+  }
+  const parsed = parsePastedText(text);
   if(!parsed){ preview.textContent = ''; return; }
   const bodies = parsed.paras.length - (parsed.paras.length > 1 ? 1 : 0);
   preview.innerHTML = parsed.paras.length > 1
@@ -601,10 +608,16 @@ async function saveCasualBook(parsed, extra, options={}){
 }
 
 async function importPastedText(){
-  const parsed = parsePastedText(document.getElementById('am-text').value);
-  if(!parsed){ toast('읽을 영어 글이 없어요'); return; }
   const input=/** @type {HTMLTextAreaElement} */(document.getElementById('am-text')),original=input.value;
-  try{await saveCasualBook(parsed,null,{folderId:addImportFolder});if(input.value===original)input.value='';}
+  const folderId=addImportFolder;
+  const intent=readerOpenIntent,wasOpen=/** @type {HTMLDialogElement} */(addModal()).open;
+  try{
+    if(looksHtml(original))await ensureReadabilityLib();
+    if(intent!==readerOpenIntent||(wasOpen&&!/** @type {HTMLDialogElement} */(addModal()).open))return;
+    const parsed=parsePastedText(original);
+    if(!parsed){toast('읽을 영어 글이 없어요');return;}
+    await saveCasualBook(parsed,null,{folderId});if(input.value===original)input.value='';
+  }
   catch(error){console.error(error);toast('글을 저장하지 못했어요. 입력한 내용은 남겨 두었어요.');}
 }
 
