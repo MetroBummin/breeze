@@ -173,3 +173,36 @@ normalized index and worker contents are unchanged. Build metadata remains 252
 in this local preparation. The pending-pinch WebKit CI assertion has a separate
 owner and is not fixed or waived here. Shared branches, main, build upload and
 deployment are untouched by this preparation.
+
+
+## Approved 1.9 (252) PDF integration — 2026-10-08
+
+The final candidate starts from PR132 `09f84b50c3637337dee856bccb4bb12fdd7d8a5f`
+and combines approved PR134 `ea2184bfc80b31560bcf9266683a3f76bec4024f`, the
+prepared approval/boundary changes from `4ca5f3053b7efc99fef29a759801beb5a73ab151`,
+and PR135 `faf06f810b5fcc9003587f2c2a3d8c924449022c`. Four PDF runtime files
+match PR134 exactly; the pending-pinch test matches PR135 exactly. The boundary
+records those exact approved files; its assertions are unchanged. Generated
+cache stamps preserve index DOM and all existing onboarding asset URLs.
+
+Local validation passed: full `npm test` on temporary Node 22.23.3 (CI major),
+standalone typecheck with the unchanged 32-diagnostic baseline, integration
+boundary, 1.9 (252) App/Share metadata and whitespace checks. The first full run
+on system Node 24 exited with a native process fault in the unchanged word
+lifecycle test; that test passed separately and the full Node 22 run passed.
+No test source or assertion was changed for this process fault.
+
+Chromium/WebKit passed PDF pinch, pending lookup, ink and onboarding suites.
+The pinch suite covers the 120-page fixture and 12 cycles at Chromium widths
+390/768/1180 plus WebKit 390, with resistance, return, logical anchor preservation,
+rapid reentry, cancellation, navigation and reduced motion. Pending lookup tests
+retain the full light/dark responsive word/sentence matrix; ink tests retain
+durable writing and add elastic alignment/fresh Pencil input. Onboarding keeps
+its writing, b route, media, interruption, lifetime, themes and motion checks.
+
+Byte comparison preserved 87 onboarding/brand/native/gesture files and the
+normalized index DOM against `09f84b5`. App and Share remain 1.9 (252). CLI and
+independent headless profiles were used; no user browser or Xcode UI, native
+build, main merge, deployment or build upload was performed. Exact published
+head CI remains a separate checkpoint. Test logs and preservation hashes are
+in `/tmp/breeze-pdf-final-proof-20261009` on the Mac.
