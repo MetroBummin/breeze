@@ -1,9 +1,10 @@
 /* Penpot Wordbook: 390 / 768 / 1024 / 1440. Material belongs to control-glass. */
 html:has(:is(#v-vocab,#v-study).on),body:has(:is(#v-vocab,#v-study).on){background:var(--home-background);}
 body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) #topbar{display:none;}
-#v-vocab{max-width:1160px;margin:0 auto;padding:calc(52px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));background:var(--home-background);color:var(--settings-ink);min-height:100svh;}
+#v-vocab{max-width:1160px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));background:var(--home-background);color:var(--settings-ink);min-height:100svh;}
 #v-vocab .wordbook-brand{display:flex;align-items:center;gap:10px;margin:0 0 32px;min-height:38px;}
-.wordbook-brand img{border-radius:9px;flex:none;}
+/* Match Home’s 44px header row; compensate the text ink inside its line box. */
+#v-vocab .wordbook-brand h1{transform:translateY(-4px);}
 #v-vocab h1{font:700 26px/32px var(--ui);letter-spacing:-.4px;}
 #v-vocab .cnt{font:600 13px/20px var(--ui);color:var(--settings-muted);font-variant-numeric:tabular-nums;}
 .wordbook-search{display:flex;align-items:center;gap:12px;height:46px;background:var(--wordbook-field);border-radius:17px;padding:0 16px;color:var(--settings-muted);}
@@ -105,7 +106,8 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 @media(max-height:500px){#review-progress{margin-bottom:12px;}#review-source,#review-expression,#review-meaning{margin-bottom:12px;}}
 
 /* Actions use existing dock slots; selection is optional, per Meaning. */
-.wordbook-brand #wordbook-add{margin-left:auto;flex:none;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--settings-ink);cursor:pointer;}
+.wordbook-brand #wordbook-add{margin-left:auto;flex:none;width:44px;height:44px;position:relative;display:grid;place-items:center;border-radius:50%;cursor:pointer;}
+.wordbook-brand #wordbook-add:focus-visible{outline:2px solid var(--selection-ink);outline-offset:4px;}
 .wordbook-brand #wordbook-add svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
 .wordbook-review-entry button{min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--settings-ink);font:500 12px/1.5 var(--ui);cursor:pointer;}
 .wordbook-review-entry [hidden]{display:none!important;}

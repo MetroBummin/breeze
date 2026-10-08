@@ -48,7 +48,7 @@ try{
    return {sortGap:sort.left-label.right,bookGap:books.left-stars.right};
   });
   assert.ok(alignment.sortGap<=16);assert.ok(alignment.bookGap<=12);
-  assert.ok(await page.locator('.wordbook-brand img').evaluate(e=>e.complete&&e.naturalWidth>0));
+  assert.equal(await page.locator('.wordbook-brand img').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const exportBox=await page.locator('#btn-export').boundingBox();
   assert.ok(exportBox.x>width*3/4,'Export must remain in the right control slot');

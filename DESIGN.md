@@ -296,3 +296,10 @@ bookmark for Memory without a visible Home label. Existing dock geometry,
 accessible name and navigation stay intact. Onboarding, Reader/auth and native
 launch remain exactly at main; the guided proposal is preserved in PR124.
 See docs/decisions/014-design-only-brand-release.md.
+
+2026-10-08 Memory feedback: remove the decorative Thunder header image; retain
+Breeze Memory and all controls. Header starts at safe-area + 24px like Home;
+its text has a -4px optical correction to align visible ink centers with the
+neutral Home wordmark. Manual add uses the existing `.control-glass` material
+in a visible 44px circle with keyboard focus. Dock geometry, review mascots and
+onboarding stay unchanged. See docs/qa/memory-header-20261008.md.

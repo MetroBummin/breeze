@@ -30,11 +30,14 @@ jobs:
       - run: node tests/verify-design-only-boundary.mjs
       - run: npm run test:brand-icons
       - run: node tests/verify-design-home-browser.mjs
+      - run: node tests/verify-design-memory-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: design-brand-${{ matrix.browser }}
-          path: /tmp/breeze-design-only-final*/
+          path: |
+            /tmp/breeze-design-only-final*/
+            /tmp/breeze-memory-proof/
           if-no-files-found: ignore
           retention-days: 7
   ios-compile:

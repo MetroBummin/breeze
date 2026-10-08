@@ -1,0 +1,374 @@
+[
+  {
+    "key": "iphone-light",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 326,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "iphone-dark",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 326,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "iphone-safe-light",
+    "safe": 59,
+    "home": {
+      "x": 20,
+      "y": 84.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 117,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 326,
+      "y": 111,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 84.75,
+      "bottom": 125.234375
+    },
+    "titleInk": {
+      "top": 128,
+      "bottom": 148
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "iphone-safe-dark",
+    "safe": 59,
+    "home": {
+      "x": 20,
+      "y": 84.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 117,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 326,
+      "y": 111,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 84.75,
+      "bottom": 125.234375
+    },
+    "titleInk": {
+      "top": 128,
+      "bottom": 148
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "narrow-light",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 256,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "narrow-dark",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 256,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "tablet-light",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 756,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "tablet-dark",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 756,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "desktop-light",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 208,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 1236,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "desktop-dark",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 208,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 1236,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "short-light",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 780,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  },
+  {
+    "key": "short-dark",
+    "safe": 0,
+    "home": {
+      "x": 20,
+      "y": 25.75,
+      "width": 132,
+      "height": 40.484375
+    },
+    "title": {
+      "x": 68,
+      "y": 58,
+      "width": 163.53125,
+      "height": 32
+    },
+    "button": {
+      "x": 780,
+      "y": 52,
+      "width": 44,
+      "height": 44
+    },
+    "homeInk": {
+      "top": 25.75,
+      "bottom": 66.234375
+    },
+    "titleInk": {
+      "top": 69,
+      "bottom": 89
+    },
+    "opticalCenterDelta": 33.0078125
+  }
+]
