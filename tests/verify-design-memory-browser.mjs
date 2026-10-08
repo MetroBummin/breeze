@@ -27,15 +27,16 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
  await page.locator('#nav-vocab').click();await page.evaluate(()=>document.fonts.ready);
  const title=await page.locator('.wordbook-brand h1').boundingBox(),button=await page.locator('#wordbook-add').boundingBox();
  const titleInk=await page.locator('.wordbook-brand h1').evaluate(e=>{
-  const style=getComputedStyle(e),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=style.font;
+  const style=getComputedStyle(e),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   const metrics=ctx.measureText(e.textContent),marker=document.createElement('span');marker.style.cssText='display:inline-block;width:0;height:0';e.append(marker);
-  const baseline=marker.getBoundingClientRect().top;marker.remove();return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent};
+  const baseline=marker.getBoundingClientRect().top;marker.remove();return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent,baseline,font:ctx.font};
  });
  const opticalCenterDelta=(titleInk.top+titleInk.bottom-homeInk.top-homeInk.bottom)/2;
  measurements.push({key,safe,home,title,button,homeInk,titleInk,opticalCenterDelta});
+ writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
  await page.screenshot({path:`${out}/${key}-memory.png`});await page.locator('.wordbook-brand h1').screenshot({path:`${out}/${key}-memory-ink.png`});
  if(phase==='after'){
-  assert.ok(Math.abs(opticalCenterDelta)<=2,`Visible header ink centers differ by ${opticalCenterDelta}px`);
+  assert.ok(Math.abs(opticalCenterDelta)<=2,`Visible header ink centers differ by ${opticalCenterDelta}px: ${JSON.stringify(titleInk)}`);
   assert.equal(await page.locator('.wordbook-brand img').count(),0);
   assert.equal(await page.locator('.wordbook-brand h1').textContent(),'Breeze Memory');
   assert.equal(button.width,44);assert.equal(button.height,44);assert.ok(Math.abs(button.y-(24+safe))<1);
