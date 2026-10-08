@@ -8,6 +8,7 @@
     "130": "8b91fa076fbb3c4d31054acd52aac80e6cbe3200",
     "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb",
     "134": "ea2184bfc80b31560bcf9266683a3f76bec4024f",
+    "135": "faf06f810b5fcc9003587f2c2a3d8c924449022c",
     "welcome": "231c4d9c759d4b4b15f5039596dbf0fc98a6185c",
     "approved-writing": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
   },
@@ -1792,6 +1793,16 @@
       "sourceSha256": {
         "134": "142038d3846d6bf69ef3e3d26e2d52910c83688573795628d3d863292bb72220",
         "integration-baseline": "98d04b25e6e58f4c5b4ef797528c75cb271d78ee1f90bff3f95723414520c434"
+      }
+    },
+    "tests/verify-pdf-pending-pinch-browser.mjs": {
+      "owners": [
+        "135"
+      ],
+      "kind": "single-source",
+      "sha256": "edbaec66820f24eaa1a0d7eecc78d7bd6a7de7593dd6fec4b6492d6966232182",
+      "sourceSha256": {
+        "135": "edbaec66820f24eaa1a0d7eecc78d7bd6a7de7593dd6fec4b6492d6966232182"
       }
     }
   },
