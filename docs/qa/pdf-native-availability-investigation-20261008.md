@@ -121,7 +121,7 @@ new restriction works. Log: `/tmp/pdf-availability-baseline.log`.
 
 Validation:
 
-- 113 PDF/Android/input regression tests passed; typecheck passed without raising
+- 114 PDF/Android/input regression tests passed; typecheck passed without raising
   its existing baseline; structure checks passed.
 - Full `npm test` passed.
 - Installed Chromium passed `verify-pdf-availability-browser.mjs`: real PDF.js /
@@ -130,7 +130,8 @@ Validation:
   adapter. Stored ink remained identical after hidden tool clicks, public undo,
   keyboard input and attempted pen events. Persisted last eraser tool did not
   activate writing; native capability revocation reset writing. Eligible clients
-  retained eligibility across responsive/orientation changes. Restricted clients
+  retained eligibility across responsive/orientation changes. A denied capability
+  reply does not close unrelated read-mode lookups. Restricted clients
   remained read-only at 320/390/820/1440 widths, portrait/landscape and short light /
   dark layouts. Native signals are mocked; this is not physical hardware evidence.
 - Existing Chromium native-iPad ink suite and Android pointer ink suite passed,

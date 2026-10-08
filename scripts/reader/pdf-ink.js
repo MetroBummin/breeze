@@ -778,7 +778,7 @@ const BreezePdfInk = (()=>{
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){pointerScrolling=false;trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{
-    if(!supported())setMode('read');
+    if(!supported()&&mode!=='read')setMode('read');
     if(originalSession?.kind==='pdf'){
       session=originalSession;controls();update();
       const current=session;

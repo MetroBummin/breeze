@@ -404,6 +404,13 @@ test('availability: pending native classification rejects activation; resolving 
  assert.equal(f.engine.writing(),false);
  f.qa.setMode('pen');assert.equal(f.engine.writing(),true);
 });
+test('availability: denied platform reply does not interrupt an unrelated read-mode lookup',()=>{
+ const f=fixture({pointer:true,native:false});f.qa.setMode('read');
+ f.context.originalSession=null;let interrupted=0;
+ f.context.closePanel=f.context.closeSentence=f.context.cancelGesture=()=>{interrupted++;};
+ f.emit('breeze-ink-platform',f.document);
+ assert.equal(interrupted,0);
+});
 test('pointer ink: only pen writes; mouse, finger, hover and right button do not',()=>{
  const f=fixture({pointer:true});
  for(const type of ['touch','mouse']){f.pointerEvent('pointerdown',20,20,4,type);f.pointerEvent('pointermove',60,60,4,type);f.pointerEvent('pointerup',60,60,4,type);}
