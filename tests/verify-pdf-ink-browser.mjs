@@ -102,10 +102,12 @@ try{
       assert.deepEqual(geometry,readGeometry,'expanded reading and writing pills share outer geometry');
       const selected=await page.locator(`[data-ink-mode="${tool}"]`).evaluate(node=>{
        const css=getComputedStyle(node),marker=getComputedStyle(node,'::after'),box=node.getBoundingClientRect();
-       return {width:box.width,height:box.height,background:css.backgroundColor,shadow:css.boxShadow,markerHeight:marker.height};
+       const inactive=node.parentElement.querySelector('[data-ink-mode][aria-pressed="false"]');
+       return {width:box.width,height:box.height,background:css.backgroundColor,shadow:css.boxShadow,markerContent:marker.content,color:css.color,inactiveColor:getComputedStyle(inactive).color};
       });
       assert.ok(selected.width>=44&&selected.height>=44);
-      assert.equal(selected.background,'rgba(0, 0, 0, 0)');assert.equal(selected.shadow,'none');assert.equal(selected.markerHeight,'2px','short underline replaces the tool selection circle');
+      assert.equal(selected.background,'rgba(0, 0, 0, 0)');assert.equal(selected.shadow,'none');assert.equal(selected.markerContent,'none','selected tools have no underline or decorative marker');
+      assert.notEqual(selected.color,selected.inactiveColor,'icon color alone identifies the selected tool');
      }
      if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`reader-tools-${engine.name()}-${theme}-${tool}-820x1180.png`)});}
     }
