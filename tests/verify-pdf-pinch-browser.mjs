@@ -105,6 +105,13 @@ try{
      for(let i=1;i<=10;i++) await touch('touchMove',points(from+(to-from)*i/10,dx*i/10,dy*i/10));
      await page.evaluate(()=>new Promise(requestAnimationFrame));
      const preview=await snapshot();
+     const landing=await page.evaluate(()=>({...originalPinch.position}));
+     const undershoot=before.zoom*to/from<1;
+     if(undershoot){
+       const scale=await page.evaluate(()=>new DOMMatrix(getComputedStyle(originalZoomLayer()).transform).a);
+       assert.ok(scale>.88&&scale<1,'minimum has bounded visual resistance');
+       assert.equal(preview.zoom,before.zoom,'elastic preview changed committed zoom');
+     }
      assert.equal(preview.busy,true,'pinch did not acquire touch');
      if(preview.top!==before.top) console.log('SCROLL_DRIFT',{from,to,before,preview},await page.evaluate(()=>({pinch:originalPinch&&{top:originalPinch.top,position:originalPinch.position},writes:window.qaScrollWrites.slice(-5),events:window.qaEvents.slice(-15)})));
      assert.equal(preview.top,before.top,'preview changed native scrollTop');
@@ -122,10 +129,16 @@ try{
        await touch('touchMove',[{...points(to,dx,dy)[0],y:center.y+dy+20}]);
        await touch('touchEnd',[]);
      }else await touch('touchEnd',[]);
+     if(undershoot)await page.waitForFunction(()=>!originalPinchBusy());
      const after=await snapshot();
      assert.ok(Math.abs(after.zoom-Math.max(1,Math.min(4,before.zoom*to/from)))<.002);
-     assert.ok(Math.abs(preview.rect.top-after.rect.top)<1.2,'release jumped vertically');
-     assert.ok(Math.abs(preview.rect.left-after.rect.left)<1.2,'release jumped horizontally');
+     if(undershoot){
+       assert.ok(Math.abs(after.top-landing.y)<1.2,'elasticity changed logical vertical landing');
+       assert.ok(Math.abs(after.left-landing.x)<1.2,'elasticity changed logical horizontal landing');
+     }else{
+       assert.ok(Math.abs(preview.rect.top-after.rect.top)<1.2,'release jumped vertically');
+       assert.ok(Math.abs(preview.rect.left-after.rect.left)<1.2,'release jumped horizontally');
+     }
      if(after.busy||after.owned) console.log('UNRELEASED',await page.evaluate(()=>window.qaEvents.slice(-18)));
      assert.equal(after.busy,false);assert.equal(after.owned,false);
      assert.equal(after.panel,before.panel,'pinch changed the dictionary panel state');
@@ -145,6 +158,41 @@ try{
    await pinch(100,100,{dx:25,dy:30}); // two-finger pan at max zoom
    await pinch(300,40); // lower clamp
    assert.equal((await snapshot()).zoom,1);
+   // Inspect the actual return animation, then interrupt it with fresh input.
+   await touch('touchStart',points(160));await touch('touchMove',points(60));
+   await touch('touchEnd',[]);
+   assert.equal(await page.evaluate(()=>!!originalPinchReturn),true);
+   const rebound=await page.evaluate(()=>{
+     const a=originalPinchReturn;a.pause();a.currentTime=0;
+     const start=new DOMMatrix(getComputedStyle(originalZoomLayer()).transform).a;
+     const anchor=capturePdfAnchor(topInset());
+     const rects=pdfPageLayout().rects.map(r=>r.slice());
+     a.currentTime=110;
+     const middle=new DOMMatrix(getComputedStyle(originalZoomLayer()).transform).a;
+     invalidatePdfPageLayout();
+     const stable=JSON.stringify(anchor)===JSON.stringify(capturePdfAnchor(topInset()))
+       &&JSON.stringify(rects)===JSON.stringify(pdfPageLayout().rects);
+     window.qaOldReturn=a;return {start,middle,stable};
+   });
+   assert.ok(rebound.start<rebound.middle&&rebound.middle<1,'return smoothly approaches minimum');
+   assert.equal(rebound.stable,true,'return must not change logical page/anchor coordinates');
+   await touch('touchStart',points(100));await touch('touchMove',points(130));
+   await page.evaluate(()=>qaOldReturn.onfinish()); // stale completion cannot clear new input
+   assert.equal((await snapshot()).busy,true);
+   await touch('touchEnd',[]);assert.ok(Math.abs((await snapshot()).zoom-1.3)<.002);
+   await page.evaluate(()=>resetOriginalZoom());
+   await touch('touchStart',points(160));await touch('touchMove',points(60));
+   await touch('touchCancel',[]);await page.waitForFunction(()=>!originalPinchBusy());
+   assert.equal((await snapshot()).zoom,1);
+   await touch('touchStart',points(160));await touch('touchMove',points(60));await touch('touchEnd',[]);
+   await page.evaluate(()=>goPdfPage(2));
+   assert.equal(await page.evaluate(()=>originalPinchReturn),null,'page navigation cancels return');
+   await page.evaluate(()=>goPdfPage(1));
+   await page.emulateMedia({reducedMotion:'reduce'});
+   await touch('touchStart',points(160));await touch('touchMove',points(60));await touch('touchEnd',[]);
+   assert.equal(await page.evaluate(()=>originalPinchReturn),null,'reduced motion restores immediately');
+   assert.equal((await snapshot()).zoom,1);
+   await page.emulateMedia({reducedMotion:'no-preference'});
    // Cancellation releases preview and the next gesture still works.
    await touch('touchStart',points(90));await touch('touchMove',points(180));
    await touch('touchCancel',[]);
@@ -210,6 +258,12 @@ try{
    // A fresh long press after a pinch must still enter the shared pending pill.
    // If the result is already ready, it stays hidden until the held finger lifts.
    if(cdp){
+     // The offline fixture must return a translation: unauthenticated errors
+     // now use an error pill and intentionally never open the success surface.
+     await page.evaluate(()=>{
+       sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-pinch'};
+       dictCall=async()=>({ko:'테스트 번역'});
+     });
      await touch('touchStart',[{id:1,...word}]);
      await page.waitForTimeout(900);
      assert.equal(await page.evaluate(()=>sentenceWaitingActive()),true,'fresh long press was swallowed');

@@ -206,6 +206,21 @@ try{
      return Math.max(Math.abs(p.x-s.x),Math.abs(p.y-s.y),Math.abs(p.width-s.width),Math.abs(p.height-s.height));
     });assert.ok(delta<1,`alignment ${delta}`);
    }
+   await page.evaluate(()=>{
+    beginOriginalPinch({x:300,y:300},160,[81,82]);
+    moveOriginalPinch(.4,{x:300,y:300});previewOriginalPinch();finishOriginalPinch();
+    originalPinchReturn.pause();originalPinchReturn.currentTime=80;
+   });
+   const elasticAlignment=await page.evaluate(()=>{
+    const p=originalSession.pages[0].getBoundingClientRect(),s=originalSession.pages[0].querySelector('svg.pdf-ink-layer').getBoundingClientRect();
+    return Math.max(Math.abs(p.x-s.x),Math.abs(p.y-s.y),Math.abs(p.width-s.width),Math.abs(p.height-s.height));
+   });
+   assert.ok(elasticAlignment<1,'ink follows elastic paper without coordinate edits');
+   await stroke([[.25,.4],[.3,.45]]);
+   assert.equal(await page.evaluate(()=>originalPinchReturn),null,'fresh Pencil settles return before drawing');
+   assert.equal(await count(),2);
+   assert.equal(await page.locator('.pdf-ink-layer polyline').first().getAttribute('points'),points);
+   await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    await page.setViewportSize({width:1180,height:820});
    assert.equal(await page.locator('.pdf-ink-layer polyline').first().getAttribute('points'),points);
    await page.evaluate(async()=>{releaseOriginalPdfPage(originalSession,1);await renderOriginalPdfPage(originalSession,1);});
