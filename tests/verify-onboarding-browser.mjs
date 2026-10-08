@@ -31,11 +31,42 @@ try{
   if(action==='finish'){
    await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#onboard-welcome svg')).getPropertyValue('--onboard-pen'))>.55);
    assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'0','caption appeared before writing/hold finished');
-   const progress=await page.evaluate(()=>[...document.querySelectorAll('#onboard-ink-reveal path')].map(p=>getComputedStyle(p).strokeDashoffset));
-   assert.ok(progress.some(p=>parseFloat(p.replace('calc(',''))===0)&&progress.some(p=>parseFloat(p.replace('calc(',''))===1),'letter reveal was not sequential: '+JSON.stringify(progress));
    await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#onboard-welcome svg')).getPropertyValue('--onboard-pen'))===1);
    assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'0','completed word had no hold');
    await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome==='ready');
+   // Keep deterministic seeks in a separate fresh fixture so the real-time
+   // writing/hold/caption assertions above retain their original clock.
+   const {context:sampleContext,page:samplePage}=await setup();
+   await samplePage.goto(url);await samplePage.evaluate(()=>homeReady);
+   // Sample the actual CSS animation at fixed times in one browser task. An
+   // unbounded >.55 wait can return during the last letter on a busy CI runner.
+   const samples=await samplePage.evaluate(async()=>{
+    const svg=document.querySelector('#onboard-welcome svg');
+    const animation=svg.getAnimations().find(a=>a.animationName==='onboard-write');
+    if(!animation)throw Error('welcome writing animation missing');
+    const resumeTime=animation.currentTime,duration=animation.effect.getTiming().duration;
+    animation.pause();const result=[];
+    try{
+     for(let step=0;step<=40;step++){
+      animation.currentTime=duration*step/40;
+      await new Promise(requestAnimationFrame);
+      result.push([...document.querySelectorAll('#onboard-ink-reveal path')].map(p=>parseFloat(getComputedStyle(p).strokeDashoffset.replace('calc(',''))));
+     }
+    }finally{animation.currentTime=resumeTime;animation.play();}
+    return result;
+   });
+   assert.equal(samples[0].length,6,'expected six writing masks');
+   assert.deepEqual(samples[0],[1,1,1,1,1,1],'letters already revealed at timeline start');
+   assert.deepEqual(samples.at(-1),[0,0,0,0,0,0],'letters unfinished at timeline end');
+   for(const [i,progress] of samples.entries()){
+    assert.ok(progress.every((p,j)=>Number.isFinite(p)&&p>=0&&p<=1&&(!j||progress[j-1]<=p)),'letters revealed out of order: '+JSON.stringify(progress));
+    assert.ok(progress.filter(p=>p>0&&p<1).length<=1,'multiple letters writing at once: '+JSON.stringify(progress));
+    if(i)assert.ok(progress.every((p,j)=>p<=samples[i-1][j]),'letter reveal moved backwards');
+   }
+   assert.ok(samples.some(progress=>progress.some(p=>p===0)&&progress.some(p=>p>0&&p<1)&&progress.some(p=>p===1)),'no completed, writing and untouched letters observed together');
+   for(let letter=0;letter<6;letter++)assert.ok(samples.some(progress=>progress[letter]>0&&progress[letter]<1),'letter '+letter+' jumped without continuous writing');
+   console.log('Welcome writing: 41 fixed-time samples, six continuous ordered letters; last writing sample '+JSON.stringify(samples.findLast(progress=>progress.some(p=>p>0&&p<1))));
+   await sampleContext.close();
   }
   if(action==='tap'){
    await page.locator('#onboarding').tap({position:{x:10,y:10}});

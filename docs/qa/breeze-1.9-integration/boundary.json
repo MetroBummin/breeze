@@ -984,8 +984,8 @@
       "owners": [
         "welcome"
       ],
-      "kind": "single-source",
-      "sha256": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf",
+      "kind": "combined-reviewed",
+      "sha256": "b9b3ea433a164786681faab33ec66c843f13804229ac82167df1edbf19453ec7",
       "sourceSha256": {
         "welcome": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf"
       }
