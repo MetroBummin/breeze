@@ -3,7 +3,7 @@
   "sources": {
     "126": "9afbaf499ed3a747d839e982a8dca4704bb9f7fe",
     "127": "e388efd509a47361fcc201faa73282c2dab0e0f9",
-    "128": "98fa83fd9fbfb420ac9abce295fa86f1327409f6",
+    "128": "1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c",
     "129": "116d3adda261e9dd9e13223b30abcde155f8a4ad",
     "130": "82a18849fd6699feb53606e42ab510c1a9769357",
     "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb"
@@ -484,9 +484,9 @@
         "128"
       ],
       "kind": "single-source",
-      "sha256": "dec8a19073c26c834d9164413519d3f4bf9a0d13aa3955ae0ec87379df2b419f",
+      "sha256": "18cf1ca2e376b3479a7d32a27ae92900f4f758bd144031a564615cb233b9b376",
       "sourceSha256": {
-        "128": "dec8a19073c26c834d9164413519d3f4bf9a0d13aa3955ae0ec87379df2b419f"
+        "128": "18cf1ca2e376b3479a7d32a27ae92900f4f758bd144031a564615cb233b9b376"
       }
     },
     "docs/qa/pdf-native-availability-investigation-20261008.md": {
@@ -514,9 +514,9 @@
         "128"
       ],
       "kind": "single-source",
-      "sha256": "eb7604613c7c562f6140253df815625d50be5cfb6e372c3bf34b674941f7f2d6",
+      "sha256": "f4dac3fbca70a14f393058e5d23a95edacb9338ed6c329e1f45117de58a9bcb4",
       "sourceSha256": {
-        "128": "eb7604613c7c562f6140253df815625d50be5cfb6e372c3bf34b674941f7f2d6"
+        "128": "f4dac3fbca70a14f393058e5d23a95edacb9338ed6c329e1f45117de58a9bcb4"
       }
     },
     "styles/study.css": {
@@ -564,9 +564,9 @@
         "128"
       ],
       "kind": "single-source",
-      "sha256": "5a5d95a795ae07c9c6deec48148e919826d7d4a1df52f4d23891afd7d5d947c6",
+      "sha256": "715b000d857bb0f50eece02dc01db7a2c09c6ab2a3d2a0cb923798a6cdde7136",
       "sourceSha256": {
-        "128": "5a5d95a795ae07c9c6deec48148e919826d7d4a1df52f4d23891afd7d5d947c6"
+        "128": "715b000d857bb0f50eece02dc01db7a2c09c6ab2a3d2a0cb923798a6cdde7136"
       }
     },
     "tests/verify-pdf-ink-regressions.mjs": {

@@ -17,7 +17,7 @@ Keep PR130's deferred startup, Homeward open preparation and keepRuntimeAsset
 carry-over alongside PR129's passive-overlay guard and PR131's display splits.
 PDF capability belongs to PR128: asynchronous availability, sync false pending,
 native iPad/Android tablet only and breeze-ink-platform resolution. Preserve six
-round presets, selected icon color/short underline and tablet 400×44 read/write.
+round presets, selected icon color only (no underline) and tablet 400×44 read/write.
 
 Local candidate metadata is 1.9 (246), greater than the observed build-245 QA
 record and local archive maximum 202. This is a local candidate, not a guessed
