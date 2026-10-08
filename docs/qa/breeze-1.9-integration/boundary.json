@@ -5,7 +5,7 @@
     "127": "e388efd509a47361fcc201faa73282c2dab0e0f9",
     "128": "98fa83fd9fbfb420ac9abce295fa86f1327409f6",
     "129": "116d3adda261e9dd9e13223b30abcde155f8a4ad",
-    "130": "6bb32dc115d656d51cc49dc0408a9724a6097630",
+    "130": "82a18849fd6699feb53606e42ab510c1a9769357",
     "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb"
   },
   "version": "1.9",
@@ -414,7 +414,7 @@
         "127"
       ],
       "kind": "combined-reviewed",
-      "sha256": "344df4409a94d238b3c2eb0ee2e26d722752597eef50ea2c2bd48c6106a90d76",
+      "sha256": "0bb80b253788baca47053004bc81baf9f39dca276ae5be0dbad8089419c3b84d",
       "sourceSha256": {
         "127": "cd83da4142b4b16baf3a38999860cc75181c5a0aff18a85d68c8b07965571b78"
       }
@@ -1245,6 +1245,16 @@
         "130": "dc30bb1f34cb177d23584abf28b460ad7c3cacd2bd24fe2ad548746e5cf8a3e0"
       }
     },
+    "tests/verify-client-polish-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "5d4520736862165a2eb984599f19230e90f47e463a97668f013d7d01a6624430",
+      "sourceSha256": {
+        "130": "5d4520736862165a2eb984599f19230e90f47e463a97668f013d7d01a6624430"
+      }
+    },
     "tests/verify-deferred-offline-browser.mjs": {
       "owners": [
         "130"
@@ -1293,6 +1303,16 @@
       "sha256": "45f6945f8ac94ca19dfd4193139e31208dfbdabc24c1aeff6b888ed2e102f86f",
       "sourceSha256": {
         "130": "45f6945f8ac94ca19dfd4193139e31208dfbdabc24c1aeff6b888ed2e102f86f"
+      }
+    },
+    "tests/verify-longreads-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "44f8ff09e092669310d39d8584cb8db4c3bd898367452c3c28ac0652d6977add",
+      "sourceSha256": {
+        "130": "44f8ff09e092669310d39d8584cb8db4c3bd898367452c3c28ac0652d6977add"
       }
     },
     "tests/verify-native-package.mjs": {

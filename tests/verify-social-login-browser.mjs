@@ -60,7 +60,15 @@ try{
    if(address.pathname.startsWith('/rest/v1/'))return route.fulfill({headers,json:[]});
    return route.abort();
   });
-  const page=await context.newPage(),pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));await page.goto(origin);await page.evaluate(()=>homeReady);await page.evaluate(()=>openSettings());
+  const page=await context.newPage(),pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));await page.goto(origin);await page.evaluate(()=>homeReady);
+  await page.evaluate(()=>openSettings());
+  // Mac WebKit can report the button stable while its sheet still translates.
+  // The recorded down/up targets crossed from Apple artwork to the email form.
+  // Wait for the actual opening transform, retaining real animation and input.
+  await page.waitForFunction(()=>{
+    const transform=getComputedStyle(document.getElementById('set-card')).transform;
+    return transform==='none'||new DOMMatrixReadOnly(transform).m42===0;
+  });
   assert.equal(await page.locator('#sm-'+provider+'-login').isEnabled(),true);
   await page.locator('#sm-'+provider+'-login').click();
   try{await page.waitForFunction(()=>typeof sbUser!=='undefined'&&sbUser?.email==='reader@example.com');}
