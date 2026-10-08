@@ -75,3 +75,31 @@ User requests continuing with GPT-6.1 Sol and no further scope expansion.
 Final PDF source `2dd2384` initially failed Integrity and failed the single browser-job retry at the same WebKit Red-Headed League anchor (saved 174, visible 193). Investigation found that `img.onerror` removed failed bundled illustrations without preserving a source anchor. The exact removal path was reproduced with browser automatic anchoring disabled: paragraph 174 moved to 184. The repair explicitly captures/restores the current source anchor around removal, including pending initial restoration. The same probe now retains paragraph 174. A strict additional assertion covers this path for every Holmes story; the original real offline paragraph assertion is unchanged.
 
 A new archive uses build 247, above the actual locally preserved 246 archive, without claiming ASC reservation or Cloud counter uniqueness. No source paragraphs, stored IDs, auth, PDF tools or other onboarding media change in this repair.
+
+
+## Cloud CI timeout correction (2026-10-08)
+
+On validation source `556f539ca598f8f5912040e8d43217fde5a66556`, Integrity
+[run 37738471453 / browser job 113183526533](https://github.com/MetroBummin/breeze/actions/runs/37738471453/job/113183526533)
+ran from 06:37:45 UTC to the cancellation at 07:07:51 UTC. Full decoded logs
+contain no assertion failure, ERR_ASSERTION, TimeoutError or failed test; the only
+error annotation is `The operation was canceled.` Steps 1–33 succeeded; sentence
+help/lifecycle step 34 was cancelled, proof upload 35 succeeded, and saved original
+reopening step 36 did not run. Step 34 began at 07:06:24 UTC and was still making
+progress through WebKit cases when the job budget expired.
+
+Only Integrity's browser job timeout increases from 30 to 45 minutes, providing
+15 minutes for the remaining checks and runner variability. Every test, assertion,
+step condition and other job budget is preserved. Final-head CI results will be
+recorded in PR #132 after completion.
+
+Source comparison against signed archive source
+`7490ba3457acd8771d8100319be3a837448e5f2d`: the only paths changed before this
+correction were `tests/verify-onboarding-browser.mjs` and its
+`docs/qa/breeze-1.9-integration/boundary.json` receipt. This correction adds only
+`.github/workflows/integrity.yml`, its exact boundary hash and this verification
+record. Runtime source,
+assets, native projects and version/build metadata remain byte-identical. The
+existing 1.9 (251) archive remains the runtime build; no new build number or
+archive is needed for these test/CI/documentation changes. Archive creation,
+signing, upload, review submission and main merge are outside this task.
