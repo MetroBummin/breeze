@@ -60,3 +60,14 @@ Composition references, without copying outside artwork:
 - https://dribbble.com/shots/11399759-App-onboarding-design-by-milkinside — dark media-first composition.
 
 No merge, deployment, release upload or production activation performed.
+
+
+## Approved 2x / 30fps media refresh — 2026-10-08
+
+The historical draft observations above are superseded for media quality by
+[30fps verification](30fps-media.md), [capture receipt](capture-receipt.json),
+[player verification](30fps-player-verification.json) and [exact size report](size-report.json).
+All fourteen videos and matching posters now use new production-UI frames,
+with unchanged carousel layout/copy/welcome/order and original OpenStax page.
+Chromium and WebKit onboarding regression suites passed unchanged locally.
+No runtime/native/release code, build upload or main merge is part of this patch.

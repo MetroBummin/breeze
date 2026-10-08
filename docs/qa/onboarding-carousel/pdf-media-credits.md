@@ -1,7 +1,8 @@
 # PDF onboarding media credit
 
 Only `pdf-light.mp4`, `pdf-dark.mp4` and their JPEG posters use this source.
-Other onboarding scenes and their media remain unchanged.
+All onboarding scenes now use the separately authorized 30fps media refresh;
+this source remains exclusive to the PDF scene.
 
 **Source:** *Writing Guide with Handbook*, OpenStax / Rice University, 2021.
 [Original downloadable PDF](https://documents.coastline.edu/Distance%20Learning/Open-Edu-Resources/ENGL%20C100%20Writing%20Guide%20with%20Handbook.pdf).
@@ -15,8 +16,9 @@ in the PDF page and recorded Reader image. No cover or logo is used.
 
 **Changes:** extract this one source page without rewriting its text or footer;
 show it in the actual Breeze PDF Reader; toggle the existing writing mode and
-add a pen stroke using the production ink owner. Video is half-size H264 Baseline,
-silent and preserves recorded timing. Light/dark app chrome uses the final
+add a pen stroke using the production ink owner. Video is rendered directly at 820×1180, twice the former 410×590 encoded
+width/height, at 30fps with one new production frame per 1/30s. It is silent
+fast-start H264 Baseline. The former half-size/downsample encoding is removed. Light/dark app chrome uses the final
 PR128 `1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c` UI: icon color only, no
 underline, six round preset chips and their existing selection rings.
 

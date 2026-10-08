@@ -36,7 +36,13 @@ capability is available, the verified native iPad flag is the conservative fallb
 web/phones do not receive a pen lesson based on viewport or touch guesses.
 
 Each scene uses a silent H264 Baseline/AVC MP4 of the real production UI, plus a
-JPEG poster. Word/sentence clips contain a single authored sentence and the real
+high-resolution JPEG poster. The approved 2026-10-08 refresh renders one new
+production frame at each 1/30s timeline sample, without old-video input, pixel
+upscaling or duplicated motion frames. Phone UI clips are captured at device
+scale2; the existing 820×1180 PDF viewport is encoded directly at its native
+resolution instead of the former 410×590 downsample. Encoding preserves each
+source frame once at30fps with adequate bitrate and fast-start metadata.
+Word/sentence clips contain a single authored sentence and the real
 result surfaces, cropped at capture time. Settings/PDF/Home retain their actual
 controls to teach their locations. No user, student or private document is used.
 Capture response fixtures supply authored Korean meanings and explanations;

@@ -1,310 +1,914 @@
 {
-  "sourceRoot": "/workspace/breeze-memory-latest",
-  "source": "real app UI, authored demo TXT/PDF, prepared Korean answers, no external API",
+  "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+  "runtimeSHA": "a342409f84fca61fd1474ed8afe985fdfaac6c04",
+  "source": "real app UI, unchanged original authored demo text/answers, verified OpenStax page28 printed14; no external API",
+  "method": "one newly rendered source PNG per 1/30s; controlled JS timers and native animation samples; no existing MP4 input/rescaling/fps duplication",
+  "framePTS": "every adjacent encoded PTS differs by 1/30s; entire MP4 decoded with AVAssetReader",
+  "sourceDuplicates": "pixel-identical static holds are intentional; invisible/completed animations may remain registered without pixel motion",
   "clips": [
     {
       "key": "word-light",
-      "region": {
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
         "x": 12,
         "y": 140,
         "width": 366,
         "height": 200
       },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": null,
-      "rect": {
-        "x": 102.171875,
-        "y": 228.390625,
-        "width": 93,
-        "height": 29
+      "targetRect": {
+        "x": 107.296875,
+        "y": 225.390625,
+        "width": 101.671875,
+        "height": 30
       },
-      "frames": 26,
-      "duration": 2.265
-    },
-    {
-      "key": "sentence-light",
-      "region": {
-        "x": 12,
-        "y": 140,
-        "width": 366,
-        "height": 400
+      "contentBounds": {
+        "x": 85.796875,
+        "y": 582,
+        "width": 218.390625,
+        "height": 44,
+        "visible": true
       },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": null,
-      "rect": {
-        "x": 48,
-        "y": 179,
-        "width": 64.09375,
-        "height": 29
-      },
-      "frames": 35,
-      "duration": 3.059
-    },
-    {
-      "key": "easy-light",
-      "region": {
-        "x": 12,
-        "y": 140,
-        "width": 366,
-        "height": 400
-      },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "ps-easy-button",
-      "rect": {
-        "x": 35,
-        "y": 320.390625,
-        "width": 320,
-        "height": 36
-      },
-      "frames": 26,
-      "duration": 2.25
-    },
-    {
-      "key": "settings-light",
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "aafab",
-      "rect": {
-        "x": 334,
-        "y": 583,
-        "width": 42,
-        "height": 42
-      },
-      "frames": 28,
-      "duration": 2.45
-    },
-    {
-      "key": "memory-light",
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "nav-vocab",
-      "rect": {
-        "x": 14,
-        "y": 583,
-        "width": 42,
-        "height": 42
-      },
-      "frames": 25,
-      "duration": 2.181
+      "width": 732,
+      "height": 400,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 269136,
+      "posterBytes": 39184,
+      "previousMP4Bytes": 6998,
+      "previousPosterBytes": 8857,
+      "mp4SHA256": "e97b17b2830bde7e9d5b4096663c6041fdbb315ba0d4b167290b81d2073dc01d",
+      "posterSHA256": "b4815706c4d1b138d542604098a25d8093fc0eb3bf51237fac9bfdba57b738d9",
+      "uniqueSourcePixelFrames": 29,
+      "adjacentStaticSourcePairs": 75,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 612203.4375
     },
     {
       "key": "word-dark",
-      "region": {
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
         "x": 12,
         "y": 140,
         "width": 366,
         "height": 200
       },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": null,
-      "rect": {
-        "x": 102.171875,
-        "y": 228.390625,
-        "width": 93,
-        "height": 29
+      "targetRect": {
+        "x": 107.296875,
+        "y": 225.390625,
+        "width": 101.671875,
+        "height": 30
       },
-      "frames": 26,
-      "duration": 2.268
+      "contentBounds": {
+        "x": 85.796875,
+        "y": 582,
+        "width": 218.390625,
+        "height": 44,
+        "visible": true
+      },
+      "width": 732,
+      "height": 400,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 239166,
+      "posterBytes": 37932,
+      "previousMP4Bytes": 6788,
+      "previousPosterBytes": 8924,
+      "mp4SHA256": "915c4ae47455afb0ffdca03862eba44e27c609d127168e97931bf5c8c663d933",
+      "posterSHA256": "2e3c4f7742a0862eb2eb726530b1b5c6bb52e39b2edd4e3b60feaaba7ae477dd",
+      "uniqueSourcePixelFrames": 29,
+      "adjacentStaticSourcePairs": 75,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 543700.5625
+    },
+    {
+      "key": "details-light",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
+        "x": 8,
+        "y": 132,
+        "width": 374,
+        "height": 450
+      },
+      "targetRect": {
+        "x": 191.34375,
+        "y": 264,
+        "width": 44,
+        "height": 44
+      },
+      "contentBounds": {
+        "x": 16,
+        "y": 263.390625,
+        "width": 358,
+        "height": 311.609375,
+        "visible": true
+      },
+      "width": 748,
+      "height": 900,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 234666,
+      "posterBytes": 71187,
+      "previousMP4Bytes": 14760,
+      "previousPosterBytes": 17768,
+      "mp4SHA256": "ca24c0788c787609ebc2deac84322c0c92ad0ad8bdd9541683c8360b98003aa1",
+      "posterSHA256": "afab59ec11e0d7372b68e8c0b9ac5deba2bf5fbfe7997bdd2bb4ca0443cf0c9e",
+      "uniqueSourcePixelFrames": 30,
+      "adjacentStaticSourcePairs": 74,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        },
+        {
+          "motion": "visible panel expansion",
+          "startFrame": 19,
+          "endFrameExclusive": 27,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [
+        91
+      ],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 533412.5625
+    },
+    {
+      "key": "details-dark",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
+        "x": 8,
+        "y": 132,
+        "width": 374,
+        "height": 450
+      },
+      "targetRect": {
+        "x": 191.34375,
+        "y": 264,
+        "width": 44,
+        "height": 44
+      },
+      "contentBounds": {
+        "x": 16,
+        "y": 263.390625,
+        "width": 358,
+        "height": 311.609375,
+        "visible": true
+      },
+      "width": 748,
+      "height": 900,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 214021,
+      "posterBytes": 70017,
+      "previousMP4Bytes": 14833,
+      "previousPosterBytes": 18538,
+      "mp4SHA256": "0f6b3d35587f28b51ea485d73bd9acc0248ee94b46d9d732181c020e92be262c",
+      "posterSHA256": "3dd1489cb2ed19a68fd6a49808a71fe70d5162c0b1a38e999e29832a728c7436",
+      "uniqueSourcePixelFrames": 30,
+      "adjacentStaticSourcePairs": 74,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        },
+        {
+          "motion": "visible panel expansion",
+          "startFrame": 19,
+          "endFrameExclusive": 27,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [
+        91
+      ],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 486224
+    },
+    {
+      "key": "sentence-light",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 400
+      },
+      "targetRect": {
+        "x": 48,
+        "y": 176,
+        "width": 67.921875,
+        "height": 30
+      },
+      "contentBounds": {
+        "x": 16,
+        "y": 263,
+        "width": 358,
+        "height": 110.390625,
+        "visible": true
+      },
+      "width": 732,
+      "height": 800,
+      "fps": 30,
+      "frameCount": 135,
+      "duration": 4.5,
+      "posterIndex": 87,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 344183,
+      "posterBytes": 60438,
+      "previousMP4Bytes": 11407,
+      "previousPosterBytes": 12944,
+      "mp4SHA256": "9379d4fc7c81950057b48b470ac7d99f94192b5d3dc5b0633efaaaf280c0e6fc",
+      "posterSHA256": "fc8523de24d1bdc0a72e08516e874fbb581b171b6464f890c6d6d2bdbb3906f7",
+      "uniqueSourcePixelFrames": 51,
+      "adjacentStaticSourcePairs": 83,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.0333333333333341,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        },
+        {
+          "motion": "visible translation response",
+          "startFrame": 44,
+          "endFrameExclusive": 49,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 609294.25
     },
     {
       "key": "sentence-dark",
-      "region": {
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
         "x": 12,
         "y": 140,
         "width": 366,
         "height": 400
       },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": null,
-      "rect": {
+      "targetRect": {
         "x": 48,
-        "y": 179,
-        "width": 64.09375,
-        "height": 29
+        "y": 176,
+        "width": 67.921875,
+        "height": 30
       },
-      "frames": 34,
-      "duration": 2.97
+      "contentBounds": {
+        "x": 16,
+        "y": 263,
+        "width": 358,
+        "height": 110.390625,
+        "visible": true
+      },
+      "width": 732,
+      "height": 800,
+      "fps": 30,
+      "frameCount": 135,
+      "duration": 4.5,
+      "posterIndex": 87,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 267204,
+      "posterBytes": 56276,
+      "previousMP4Bytes": 11706,
+      "previousPosterBytes": 12606,
+      "mp4SHA256": "01194196ab1ffc1cf043335f394bd27d56e8b13c338197b134af4b60813a7f6d",
+      "posterSHA256": "0f58866fba6a3b83a5cde7cf0b2c21666d8e04483c8363941623d2a0c6163f1e",
+      "uniqueSourcePixelFrames": 51,
+      "adjacentStaticSourcePairs": 83,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.0333333333333341,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        },
+        {
+          "motion": "visible translation response",
+          "startFrame": 44,
+          "endFrameExclusive": 49,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 472442.65625
     },
     {
-      "key": "easy-dark",
-      "region": {
+      "key": "easy-light",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
         "x": 12,
         "y": 140,
         "width": 366,
         "height": 400
       },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "ps-easy-button",
-      "rect": {
+      "targetRect": {
         "x": 35,
-        "y": 320.390625,
+        "y": 318.390625,
         "width": 320,
         "height": 36
       },
-      "frames": 26,
-      "duration": 2.268
+      "contentBounds": {
+        "x": 16,
+        "y": 263,
+        "width": 358,
+        "height": 189.390625,
+        "visible": true
+      },
+      "width": 732,
+      "height": 800,
+      "fps": 30,
+      "frameCount": 135,
+      "duration": 4.5,
+      "posterIndex": 87,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 367989,
+      "posterBytes": 77390,
+      "previousMP4Bytes": 11315,
+      "previousPosterBytes": 19625,
+      "mp4SHA256": "33585b61dada0234faa4f4f2fe4d95710b5bb74fb22b62142033942b8f5c6390",
+      "posterSHA256": "ef35f401b73f464c0268db67c997d56bf8b829a6129572c5ffe2b84200f64a22",
+      "uniqueSourcePixelFrames": 30,
+      "adjacentStaticSourcePairs": 104,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.0333333333333341,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        },
+        {
+          "motion": "visible easy expansion",
+          "startFrame": 19,
+          "endFrameExclusive": 27,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [
+        36,
+        37,
+        38
+      ],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 651616
     },
     {
-      "key": "settings-dark",
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "aafab",
-      "rect": {
+      "key": "easy-dark",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": {
+        "x": 12,
+        "y": 140,
+        "width": 366,
+        "height": 400
+      },
+      "targetRect": {
+        "x": 35,
+        "y": 318.390625,
+        "width": 320,
+        "height": 36
+      },
+      "contentBounds": {
+        "x": 16,
+        "y": 263,
+        "width": 358,
+        "height": 189.390625,
+        "visible": true
+      },
+      "width": 732,
+      "height": 800,
+      "fps": 30,
+      "frameCount": 135,
+      "duration": 4.5,
+      "posterIndex": 87,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 294674,
+      "posterBytes": 72891,
+      "previousMP4Bytes": 11523,
+      "previousPosterBytes": 19290,
+      "mp4SHA256": "68c6c91a959215436ef9486fbad37702dac2fbbce534b163f78d20bf6cf038b1",
+      "posterSHA256": "41a96d9e41cc8f667115872e7ab2b66468c185e265edac7d521886d32943f7d7",
+      "uniqueSourcePixelFrames": 30,
+      "adjacentStaticSourcePairs": 104,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.0333333333333341,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        },
+        {
+          "motion": "visible easy expansion",
+          "startFrame": 19,
+          "endFrameExclusive": 27,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [
+        36,
+        37,
+        38
+      ],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 521278.21875
+    },
+    {
+      "key": "settings-light",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": null,
+      "targetRect": {
         "x": 334,
         "y": 583,
         "width": 42,
         "height": 42
       },
-      "frames": 28,
-      "duration": 2.436
+      "contentBounds": {
+        "x": 85.796875,
+        "y": 582,
+        "width": 218.390625,
+        "height": 44,
+        "visible": true
+      },
+      "width": 780,
+      "height": 1280,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 337022,
+      "posterBytes": 112586,
+      "previousMP4Bytes": 17175,
+      "previousPosterBytes": 26500,
+      "mp4SHA256": "89e2be011c5e11e50e9a670b35c3e9c7ce37794cfe6688cbb09b799f887278f0",
+      "posterSHA256": "48bc0279829a910e788f3ac6fd76185aea96e0d42eb9ea9dd1f31ef64532a654",
+      "uniqueSourcePixelFrames": 25,
+      "adjacentStaticSourcePairs": 79,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 767371.4375
     },
     {
-      "key": "memory-dark",
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "nav-vocab",
-      "rect": {
+      "key": "settings-dark",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": null,
+      "targetRect": {
+        "x": 334,
+        "y": 583,
+        "width": 42,
+        "height": 42
+      },
+      "contentBounds": {
+        "x": 85.796875,
+        "y": 582,
+        "width": 218.390625,
+        "height": 44,
+        "visible": true
+      },
+      "width": 780,
+      "height": 1280,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 260901,
+      "posterBytes": 107217,
+      "previousMP4Bytes": 17820,
+      "previousPosterBytes": 27246,
+      "mp4SHA256": "0f1fda5e910040d47c974edd37533ca27b66f9ff35e7cb60286459c66ddaa479",
+      "posterSHA256": "f6c6c9ac988dcd950e21d6b91fe4383e2d2e22d5421952d98ba701f1a9d71830",
+      "uniqueSourcePixelFrames": 25,
+      "adjacentStaticSourcePairs": 79,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 593380.5625
+    },
+    {
+      "key": "pdf-light",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "deviceScaleFactor": 1,
+      "crop": null,
+      "targetRect": {
+        "x": 556,
+        "y": 1121,
+        "width": 44,
+        "height": 44
+      },
+      "contentBounds": {
+        "x": 210,
+        "y": 1121,
+        "width": 400,
+        "height": 44,
+        "visible": true
+      },
+      "width": 820,
+      "height": 1180,
+      "fps": 30,
+      "frameCount": 120,
+      "duration": 4,
+      "posterIndex": 81,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 905369,
+      "posterBytes": 245112,
+      "previousMP4Bytes": 104267,
+      "previousPosterBytes": 176630,
+      "mp4SHA256": "b2e3dbb0e02d9907ca17fe26eb62a756ba33eda50a66889d302686dfacf806b8",
+      "posterSHA256": "88f96f36e31b38fe530290ebd203ca41a79e13b0f0204948c1ab8ca6f4069628",
+      "uniqueSourcePixelFrames": 46,
+      "adjacentStaticSourcePairs": 73,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "actual pen stroke",
+          "startFrame": 25,
+          "endFrameExclusive": 49,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 1808016
+    },
+    {
+      "key": "pdf-dark",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "deviceScaleFactor": 1,
+      "crop": null,
+      "targetRect": {
+        "x": 556,
+        "y": 1121,
+        "width": 44,
+        "height": 44
+      },
+      "contentBounds": {
+        "x": 210,
+        "y": 1121,
+        "width": 400,
+        "height": 44,
+        "visible": true
+      },
+      "width": 820,
+      "height": 1180,
+      "fps": 30,
+      "frameCount": 120,
+      "duration": 4,
+      "posterIndex": 81,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 906762,
+      "posterBytes": 245631,
+      "previousMP4Bytes": 113320,
+      "previousPosterBytes": 177913,
+      "mp4SHA256": "8c2c0bf71bb32fd3e18fe2f5345ce4e2f3fe0fbc66a77af047eb7e7a512a9003",
+      "posterSHA256": "d8dd55778401c4a65cb4fe404a7a410af8092d4d14cd906a6f5dc4f416af57b7",
+      "uniqueSourcePixelFrames": 45,
+      "adjacentStaticSourcePairs": 74,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "actual pen stroke",
+          "startFrame": 25,
+          "endFrameExclusive": 49,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 1810802
+    },
+    {
+      "key": "memory-light",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": null,
+      "targetRect": {
         "x": 14,
         "y": 583,
         "width": 42,
         "height": 42
       },
-      "frames": 26,
-      "duration": 2.25
+      "contentBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "visible": false
+      },
+      "width": 780,
+      "height": 1280,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 274335,
+      "posterBytes": 68705,
+      "previousMP4Bytes": 23090,
+      "previousPosterBytes": 19661,
+      "mp4SHA256": "cb5ce81de6cc505417fff58044936058e5b984f76ad6412b4eb6a996556a50e2",
+      "posterSHA256": "6c86a2a41162920966dc5576f3eb1655f32effdd885fa28623453de2a7406d01",
+      "uniqueSourcePixelFrames": 25,
+      "adjacentStaticSourcePairs": 79,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 624086.875
     },
     {
-      "key": "details-light",
-      "region": {
-        "x": 8,
-        "y": 132,
-        "width": 374,
-        "height": 450
+      "key": "memory-dark",
+      "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+      "viewport": {
+        "width": 390,
+        "height": 640
+      },
+      "deviceScaleFactor": 2,
+      "crop": null,
+      "targetRect": {
+        "x": 14,
+        "y": 583,
+        "width": 42,
+        "height": 42
       },
       "contentBounds": {
-        "x": 16,
-        "y": 265.390625,
-        "width": 358,
-        "height": 309.609375
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "visible": false
       },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "word-peek-more",
-      "rect": {
-        "x": 182.640625,
-        "y": 266,
-        "width": 44,
-        "height": 44
-      },
-      "frames": 26,
-      "duration": 2.25
-    },
-    {
-      "key": "details-dark",
-      "region": {
-        "x": 8,
-        "y": 132,
-        "width": 374,
-        "height": 450
-      },
-      "contentBounds": {
-        "x": 16,
-        "y": 265.390625,
-        "width": 358,
-        "height": 309.609375
-      },
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": "word-peek-more",
-      "rect": {
-        "x": 182.640625,
-        "y": 266,
-        "width": 44,
-        "height": 44
-      },
-      "frames": 26,
-      "duration": 2.267
-    },
-    {
-      "key": "pdf-light",
-      "source": {
-        "url": "https://documents.coastline.edu/Distance%20Learning/Open-Edu-Resources/ENGL%20C100%20Writing%20Guide%20with%20Handbook.pdf",
-        "sha256": "9a4c00306a07b9d39b049c54a3eedeb321582166c1484c2005661f254007b1b8",
-        "bytes": 65363819,
-        "pdfPage": 28,
-        "pageIndex": 27,
-        "printedPage": 14,
-        "heading": "Words and Images",
-        "excerptSha256": "94c0eb634676c1769ee73afafc0298827b33933a0f2afaa512a4c622df2db259",
-        "footer": "Access for free at openstax.org."
-      },
-      "sourceSHA": "76853e5cbc491fff81961282cccf09354a45ba5f",
-      "nativePDFHead": "1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c",
-      "viewport": {
-        "width": 820,
-        "height": 1180
-      },
-      "encoded": {
-        "width": 410,
-        "height": 590,
-        "profile": "H264 Baseline",
-        "silent": true,
-        "frames": 25,
-        "fps": 24,
-        "seconds": 2.4869999999999997,
-        "bytes": 104267
-      },
-      "readRect": {
-        "x": 210,
-        "y": 1121,
-        "width": 400,
-        "height": 44
-      },
-      "writeRect": {
-        "x": 210,
-        "y": 1121,
-        "width": 400,
-        "height": 44
-      },
-      "capability": "native iPad flag emulated; not physical hardware proof",
-      "changes": "one-page excerpt; native Reader pen stroke; half-size video encoding; original footer unchanged"
-    },
-    {
-      "key": "pdf-dark",
-      "source": {
-        "url": "https://documents.coastline.edu/Distance%20Learning/Open-Edu-Resources/ENGL%20C100%20Writing%20Guide%20with%20Handbook.pdf",
-        "sha256": "9a4c00306a07b9d39b049c54a3eedeb321582166c1484c2005661f254007b1b8",
-        "bytes": 65363819,
-        "pdfPage": 28,
-        "pageIndex": 27,
-        "printedPage": 14,
-        "heading": "Words and Images",
-        "excerptSha256": "94c0eb634676c1769ee73afafc0298827b33933a0f2afaa512a4c622df2db259",
-        "footer": "Access for free at openstax.org."
-      },
-      "sourceSHA": "76853e5cbc491fff81961282cccf09354a45ba5f",
-      "nativePDFHead": "1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c",
-      "viewport": {
-        "width": 820,
-        "height": 1180
-      },
-      "encoded": {
-        "width": 410,
-        "height": 590,
-        "profile": "H264 Baseline",
-        "silent": true,
-        "frames": 24,
-        "fps": 24,
-        "seconds": 2.388,
-        "bytes": 113320
-      },
-      "readRect": {
-        "x": 210,
-        "y": 1121,
-        "width": 400,
-        "height": 44
-      },
-      "writeRect": {
-        "x": 210,
-        "y": 1121,
-        "width": 400,
-        "height": 44
-      },
-      "capability": "native iPad flag emulated; not physical hardware proof",
-      "changes": "one-page excerpt; native Reader pen stroke; half-size video encoding; original footer unchanged"
+      "width": 780,
+      "height": 1280,
+      "fps": 30,
+      "frameCount": 105,
+      "duration": 3.5,
+      "posterIndex": 75,
+      "errors": [],
+      "method": "new production UI frame per 1/30s; controlled JS clock/native CSS and WAAPI sampling; one PNG per encoded frame",
+      "mp4Bytes": 276317,
+      "posterBytes": 68647,
+      "previousMP4Bytes": 21226,
+      "previousPosterBytes": 19632,
+      "mp4SHA256": "70c3ccfeb57c06245882495de284f9f47e5578a05097654b4048dd8554427796",
+      "posterSHA256": "bf1825d6d79cf456fe345d605a545678ed894c21f08cd5c656540efc18c21cb4",
+      "uniqueSourcePixelFrames": 25,
+      "adjacentStaticSourcePairs": 79,
+      "firstLastPixelMAE": 0.0,
+      "ptsDeltaMin": 0.033333333333333215,
+      "ptsDeltaMax": 0.03333333333333366,
+      "motionChecks": [
+        {
+          "motion": "illustrated contact",
+          "startFrame": 7,
+          "endFrameExclusive": 30,
+          "duplicatePairs": []
+        }
+      ],
+      "pausedInvisibleOrCompletedAnimationStaticPairs": [],
+      "atomOrder": [
+        "ftyp",
+        "moov",
+        "mdat"
+      ],
+      "averageVideoBitrate": 628617.125
     }
-  ]
+  ],
+  "pdfSource": {
+    "url": "https://documents.coastline.edu/Distance%20Learning/Open-Edu-Resources/ENGL%20C100%20Writing%20Guide%20with%20Handbook.pdf",
+    "sha256": "9a4c00306a07b9d39b049c54a3eedeb321582166c1484c2005661f254007b1b8",
+    "bytes": 65363819,
+    "pdfPage": 28,
+    "pageIndex": 27,
+    "printedPage": 14,
+    "heading": "Words and Images",
+    "excerptSha256": "94c0eb634676c1769ee73afafc0298827b33933a0f2afaa512a4c622df2db259",
+    "footer": "Access for free at openstax.org.",
+    "excerptBytes": 39957,
+    "sourceTitle": "Writing Guide with Handbook",
+    "sourceAuthor": "OpenStax / Rice University",
+    "year": 2021,
+    "license": "CC BY 4.0",
+    "licenseURL": "https://creativecommons.org/licenses/by/4.0/",
+    "captureInputBundled": false
+  }
 }
