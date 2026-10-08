@@ -227,6 +227,9 @@ const BreezePdfInk = (()=>{
     }else{
       settingsTool=settingsTool===tool?null:tool;
       updateSettings();
+      const row=settingsTool&&settings.querySelector(`[data-ink-panel="${tool}"] .ink-setting-row`);
+      const selected=row?.querySelector('[aria-pressed="true"]');
+      if(selected&&tool!=='erase')row.scrollLeft=Math.max(0,selected.offsetLeft-row.offsetLeft-(row.clientWidth-selected.offsetWidth)/2);
     }
   }
   function icon(path){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;}

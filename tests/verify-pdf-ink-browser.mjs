@@ -516,6 +516,9 @@ try{
    assert.equal(await settings.locator('[data-ink-color="#7c3aed"]').getAttribute('aria-pressed'),'true','new pen preference survives reload');
    await mode('highlighter');await highlighter.click();
    assert.equal(await settings.locator('[data-ink-highlight-color="#a78bfa"]').getAttribute('aria-pressed'),'true','new highlighter preference survives reload');
+   assert.ok(await settings.locator('[data-ink-highlight-color="#a78bfa"]').evaluate(node=>{
+    const chip=node.getBoundingClientRect(),row=node.parentElement.getBoundingClientRect();return chip.left>=row.left&&chip.right<=row.right;
+   }),'reopening reveals the selected chip instead of hiding its ring beyond the scroll edge');
    for(const theme of ['light','dark']){
     await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
     const row=settings.locator('.ink-highlight-colors');
