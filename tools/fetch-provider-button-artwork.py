@@ -14,3 +14,5 @@ for color in ['black','white']:
  data=urllib.request.urlopen(url,timeout=60).read()
  print('APPLE_GENERATOR',color,'bytes',len(data),'signature',repr(data[:8]))
  report('apple/signin-ko-'+color+'.png',data)
+
+report('google/g-logo.png',urllib.request.urlopen('https://developers.google.com/static/identity/images/g-logo.png',timeout=60).read())
