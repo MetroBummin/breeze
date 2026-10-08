@@ -130,6 +130,7 @@ function openSettings(tab){
   document.getElementById('set-close').focus({preventScroll:true});
 }
 function closeSettings(){
+  if(typeof cancelSocialLogin==='function')cancelSocialLogin();
   settingsModal().classList.remove('on');
   settingsModal().inert=true;
   document.body.classList.remove('settings-open');

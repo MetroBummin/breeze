@@ -1,12 +1,30 @@
-name: Design-only brand
+name: Social auth draft
+
 on:
   pull_request:
-    paths: ['index.html', 'styles/**', 'assets/**', 'ios/**', 'android/**', 'tools/**', 'tests/verify-design-*.mjs', 'package*.json', '.github/workflows/design-brand.yml']
+    paths:
+      - 'index.html'
+      - 'scripts/**'
+      - 'styles/**'
+      - 'assets/**'
+      - 'ios/**'
+      - 'package*.json'
+      - 'tests/verify-email-login-browser.mjs'
+      - 'tests/verify-social-login-browser.mjs'
+      - 'tests/verify-apple-login.mjs'
+      - 'tests/verify-auth-native-policy.mjs'
+      - 'tests/auth-native-policy-checks.swift'
+      - 'docs/qa/social-auth-only.md'
+      - 'tests/verify-social-auth-boundary.mjs'
+      - '.github/workflows/social-auth.yml'
+
 permissions:
   contents: read
+
 concurrency:
-  group: design-brand-${{ github.event.pull_request.number }}
+  group: social-auth-${{ github.event.pull_request.number }}
   cancel-in-progress: true
+
 jobs:
   browser:
     runs-on: ubuntu-24.04
@@ -27,23 +45,18 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
-      # The original design release pinned auth to its pre-auth baseline.
-      # An explicit auth-only extraction retains all its non-auth boundaries.
-      - run: |
-          if test -f tests/verify-social-auth-boundary.mjs; then
-            node tests/verify-social-auth-boundary.mjs
-          else
-            node tests/verify-design-only-boundary.mjs
-          fi
-      - run: npm run test:brand-icons
-      - run: node tests/verify-design-home-browser.mjs
+      - run: node --test tests/verify-apple-login.mjs
+      - run: node tests/verify-social-auth-boundary.mjs
+      - run: node tests/verify-email-login-browser.mjs
+      - run: node tests/verify-social-login-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: design-brand-${{ matrix.browser }}
-          path: /tmp/breeze-design-only-final*/
+          name: social-auth-${{ matrix.browser }}
+          path: /tmp/breeze-email-login-proof/
           if-no-files-found: ignore
           retention-days: 7
+
   ios-compile:
     runs-on: macos-26
     timeout-minutes: 20
@@ -56,19 +69,13 @@ jobs:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      # The original design release pinned auth to its pre-auth baseline.
-      # An explicit auth-only extraction retains all its non-auth boundaries.
-      - run: |
-          if test -f tests/verify-social-auth-boundary.mjs; then
-            node tests/verify-social-auth-boundary.mjs
-          else
-            node tests/verify-design-only-boundary.mjs
-          fi
+      - name: Execute production native callback policy with Foundation
+        run: node tests/verify-auth-native-policy.mjs
       - run: npm run ios:sync
-      - name: Compile without signing or upload
+      - name: Compile draft for Simulator without signing or archiving
         run: >-
           xcodebuild -project ios/App/App.xcodeproj -scheme App
           -configuration Debug -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath /tmp/breeze-design-ios
+          -derivedDataPath /tmp/breeze-social-auth-ios
           CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
