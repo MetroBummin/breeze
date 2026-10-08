@@ -59,7 +59,7 @@ jobs:
           git diff --exit-code -- index.html sw.js
       - name: Compile debug APK and unsigned release bundle
         working-directory: android
-        run: ./gradlew --no-daemon :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest :app:bundleRelease
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest :app:bundleRelease
       - name: Verify artifact content and record provenance
         run: python3 tools/verify-android-artifacts.py
       - name: Upload installable debug APK and unsigned AAB

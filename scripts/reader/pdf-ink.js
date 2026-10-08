@@ -39,14 +39,15 @@ const BreezePdfInk = (()=>{
     try{return window.Capacitor?.isNativePlatform?.()===true && window.Capacitor?.getPlatform?.()==='android';}
     catch{return false;}
   };
+  let androidTablet=false; // Pending/missing native classification is read-only.
   // Capability detection, never a screen-width or user-agent guess. TouchEvent
   // cancellation is required to keep pen drawing from becoming native panning;
   // canceling pointerdown alone cannot prevent that browser default action.
   const pointerInk=()=>!nativeIPad() && typeof window.PointerEvent==='function'
     && typeof window.TouchEvent==='function' && window.navigator?.maxTouchPoints>0 && 'onscrollend' in document;
-  // Android hardware eligibility remains a separate, unresolved policy. Retain
-  // its existing native adapter here; browser capabilities never admit web/PWA.
-  const supported=()=>nativeIPad()||(nativeAndroid()&&pointerInk());
+  // A tablet may have no pen. Only the pen input adapter can create ink; native
+  // device classification controls availability independently of pen connection.
+  const supported=()=>nativeIPad()||(nativeAndroid()&&androidTablet&&pointerInk());
   const penPointers=new Set(),fingerPointers=new Set();
   let pointerScrolling=false;
   const visible=()=>supported() && session===originalSession && session?.kind==='pdf'
@@ -806,7 +807,18 @@ const BreezePdfInk = (()=>{
     state.svg.setAttribute('viewBox',`0 0 ${base.width} ${base.height}`);
     state.svg.setAttribute('aria-hidden','true');if(state.svg.parentElement!==element)element.append(state.svg);paint(state);
   }
+  const platformReady=(async()=>{
+    if(!nativeAndroid())return;
+    try{
+      const platform=window.Capacitor.registerPlugin('BreezePdfPlatform');
+      const result=await platform.getCapabilities();
+      androidTablet=result?.tablet===true;
+    }catch{} // Older native wrappers without this narrow plugin stay read-only.
+    window.dispatchEvent(new Event('breeze-ink-platform'));
+  })();
   return {
+    available:supported,
+    availability(){return platformReady.then(supported);},
     open(s){if(!s.hash)return;session=s;mode='read';pointerScrolling=false;undoStack.length=redoStack.length=0;
       controls();update();},
     mount,

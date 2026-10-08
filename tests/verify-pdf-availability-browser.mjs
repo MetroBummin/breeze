@@ -25,9 +25,10 @@ const cases=[
  {name:'installed-pwa',platform:'web',allowed:false,pwa:true},
  {name:'native-iphone',native:true,platform:'ios',allowed:false},
  {name:'native-ipad-no-pencil-event',native:true,platform:'ios',ipad:true,allowed:true},
- // Android form-factor policy is intentionally unresolved in this partial PR.
- {name:'native-android-phone-existing-adapter',native:true,platform:'android',allowed:true},
- {name:'native-android-tablet-no-pen-event',native:true,platform:'android',allowed:true},
+ {name:'native-android-phone-with-pen-adapter',native:true,platform:'android',tablet:false,allowed:false},
+ {name:'native-android-tablet-no-pen-event',native:true,platform:'android',tablet:true,allowed:true},
+ {name:'native-android-tablet-with-pen-adapter',native:true,platform:'android',tablet:true,allowed:true},
+ {name:'native-android-old-wrapper',native:true,platform:'android',pluginMissing:true,allowed:false},
  {name:'native-android-unsafe-input-adapter',native:true,platform:'android',touchPoints:0,allowed:false},
  {name:'missing-native-bridge',allowed:false},
 ];
@@ -44,7 +45,8 @@ try{
    await page.addInitScript(()=>{
     const runtime=JSON.parse(localStorage.getItem('__qa_ink_runtime')||'{}');
     window.breezeInkIPad=runtime.ipad===true;
-    if(runtime.platform)window.Capacitor={isNativePlatform:()=>runtime.native===true,getPlatform:()=>runtime.platform};
+    if(runtime.platform)window.Capacitor={isNativePlatform:()=>runtime.native===true,getPlatform:()=>runtime.platform,
+     registerPlugin:()=>{if(runtime.pluginMissing)throw new Error('Plugin unavailable');return {getCapabilities:async()=>({tablet:runtime.tablet===true})};}};
     Object.defineProperty(navigator,'maxTouchPoints',{get:()=>runtime.touchPoints??5});
     if(runtime.pwa)Object.defineProperty(navigator,'standalone',{value:true});
    });
@@ -53,6 +55,7 @@ try{
    const open=async()=>{
     await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
     await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
+    await page.evaluate(()=>BreezePdfInk.availability());
     await page.waitForSelector('.pdf-source-page .pdf-ink-layer');
    };
    await open();
@@ -114,7 +117,7 @@ try{
     mkdirSync(proof,{recursive:true});await page.screenshot({path:resolve(proof,`${engine.name()}-${runtime.name}.png`)});
    }
    assert.deepEqual(errors,[]);
-   console.log(`${engine.name()}: PASS platform restrictions, native revoke, persisted tool/forced activation, responsive light/dark and real stored ink readback; Android native hardware policy remains unchanged`);
+   console.log(`${engine.name()}: PASS native tablet-only availability, phone/web/PWA restrictions, native revoke, persisted tool/forced activation, responsive light/dark and real stored ink readback`);
   }finally{await browser.close();rmSync(profile,{recursive:true,force:true});}
  }
 }finally{await new Promise(r=>server.close(r));}

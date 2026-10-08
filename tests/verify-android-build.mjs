@@ -51,6 +51,16 @@ test('wrapper preserves local-data privacy and keeps permissions minimal', () =>
     }
   }
 });
+test('annotation tablet classification uses built-in display resources, never current window size or pen connection',()=>{
+ const native=read('android/app/src/main/java/kr/io/breeze/app/BreezePdfPlatformPlugin.java');
+ assert.match(native,/getApplicationContext\(\)/);
+ assert.match(native,/getDisplay\(Display.DEFAULT_DISPLAY\)/);
+ assert.match(native,/createDisplayContext\(builtin\)/);
+ assert.match(native,/device.screenLayout, device.uiMode/);
+ assert.doesNotMatch(native,/getActivity\(|getCurrentWindowMetrics|screenWidthDp|smallestScreenWidthDp|InputDevice|Bluetooth|MotionEvent/);
+ const activity=read('android/app/src/main/java/kr/io/breeze/app/MainActivity.java');
+ assert.ok(activity.indexOf('registerPlugin(BreezePdfPlatformPlugin.class)')<activity.indexOf('super.onCreate(savedInstanceState)'));
+});
 
 test('Android legacy launcher reuses the selected Breeze b artwork', () => {
   const hash = path => createHash('sha256').update(readFileSync(new URL(path, root))).digest('hex');
@@ -66,7 +76,7 @@ test('reproducible wrapper and CI produce explicitly unsigned release artifacts'
   const ci = read('.github/workflows/android-build.yml');
   assert.match(ci, /persist-credentials: false/);
   assert.match(ci, /java-version: '21'/);
-  assert.match(ci, /:app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest :app:bundleRelease/);
+  assert.match(ci, /:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest :app:bundleRelease/);
   assert.match(ci, /python3 tools\/verify-android-artifacts\.py/);
   assert.doesNotMatch(ci, /secrets\.|pull_request_target|sdkmanager --licenses|supply|upload_to_play_store/);
   const ignore = read('android/.gitignore').split('\n');

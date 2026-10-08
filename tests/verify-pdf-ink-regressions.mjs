@@ -13,8 +13,10 @@ const geometrySource=readFileSync(resolve(root,'scripts/reader/pdf-ink-geometry.
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
-function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android'}={}){
+function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false}={}){
   const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
+  let resolveCapabilities;
+  const capabilityPromise=new Promise(resolve=>{resolveCapabilities=resolve;});
   let frameID=0,busy=false,failWrite=false,now=0,timerId=0;const timers=new Map();
   const register=(type,fn)=>{const list=listeners.get(type)||[];list.push(fn);listeners.set(type,list);};
   class Element {
@@ -61,7 +63,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
       else {stored.set(key,snapshot);tx.oncomplete?.();}
     });}})};return tx;
   }};
-  const context={Element,document,window:{Capacitor:{isNativePlatform:()=>native,getPlatform:()=>platform},breezeInkIPad:nativeIPad,PointerEvent:pointer?function(){}:undefined,TouchEvent:pointer?function(){}:undefined,navigator:{maxTouchPoints:touchPoints},addEventListener:register,
+  const context={Element,Event:class {constructor(type){this.type=type;}},document,window:{dispatchEvent(){},Capacitor:{isNativePlatform:()=>native,getPlatform:()=>platform,registerPlugin:()=>({getCapabilities:()=>pending?capabilityPromise:Promise.resolve({tablet})})},breezeInkIPad:nativeIPad,PointerEvent:pointer?function(){}:undefined,TouchEvent:pointer?function(){}:undefined,navigator:{maxTouchPoints:touchPoints},addEventListener:register,
     webkit:{messageHandlers:{breezeInkScope:{postMessage:v=>posted.push(plain(v))}}}},
     MutationObserver:class {constructor(fn){observers.push(fn);}observe(){}},
     requestAnimationFrame:fn=>{frames.set(++frameID,fn);return frameID;},cancelAnimationFrame:id=>frames.delete(id),
@@ -72,12 +74,12 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
     setTimeout(fn,ms){timers.set(++timerId,{fn,at:now+ms});return timerId;},clearTimeout(id){timers.delete(id);},
     crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
-  const needle='  return {\n    open(s)';assert.ok(source.includes(needle),'test hook must bind to production engine');
+  const needle='  return {\n    available:supported,';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
-    qa:{configure(s,state){session=s;mode='pen';pages.set(state.key,state);},
+    qa:{configure(s,state){session=s;mode='pen';androidTablet=${pending?false:tablet};pages.set(state.key,state);},
       valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,supported,pointerInk,
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
-    open(s)`);
+    available:supported,`);
   vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
   const qa=context.engine.qa;qa.configure(session,state);
   const contact=(x,y,id=1,type='stylus')=>({identifier:id,touchType:type,target:canvas,clientX:x,clientY:y});
@@ -101,7 +103,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
     const preview=qa.active()?.preview?.getAttribute('points');
     qa.touchEnd(event('touchend',[],[contact(...end)]));await tick();return preview;
   }
-  return {context,engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,pointerEvent,flush,mutate,changeAttribute,stroke,
+  return {context,resolveCapabilities,engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,pointerEvent,flush,mutate,changeAttribute,stroke,
     advance(ms){now+=ms;for(const [id,t] of timers)if(t.at<=now){timers.delete(id);t.fn();}},timers,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
     admission:v=>{context.window.webkit.messageHandlers.breezePencilAdmission=v;},
@@ -384,6 +386,23 @@ test('availability: native iPad uses UIKit idiom and excludes iOS apps on Mac',(
  assert.match(nativeSource,/window\.breezeInkIPad/);
  assert.equal(fixture({pointer:true,nativeIPad:true,touchPoints:0}).qa.supported(),true,
   'native iPad does not require an attached Pencil or first pen event');
+});
+test('availability: native Android phone denies all tools and undo despite a capable pen adapter',async()=>{
+ const f=fixture({pointer:true,tablet:false});
+ assert.equal(await f.engine.availability(),false);
+ for(const tool of ['pen','highlighter','erase']){
+  f.qa.setMode(tool);assert.equal(f.engine.writing(),false);
+  f.pointerEvent('pointerdown');f.pointerEvent('pointermove',200,200);f.pointerEvent('pointerup',200,200);
+  f.engine.undo();assert.equal(f.state.strokes.length,0);assert.equal(f.writes.length,0);
+ }
+});
+test('availability: pending native classification rejects activation; resolving tablet status keeps read mode',async()=>{
+ const f=fixture({pointer:true,pending:true});
+ assert.equal(f.engine.available(),false);
+ f.qa.setMode('erase');assert.equal(f.engine.writing(),false);
+ f.resolveCapabilities({tablet:true});assert.equal(await f.engine.availability(),true);
+ assert.equal(f.engine.writing(),false);
+ f.qa.setMode('pen');assert.equal(f.engine.writing(),true);
 });
 test('pointer ink: only pen writes; mouse, finger, hover and right button do not',()=>{
  const f=fixture({pointer:true});

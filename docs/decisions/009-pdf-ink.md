@@ -1,17 +1,33 @@
 # iPad PDF Pencil annotation
 
-## Current platform policy (2026-10-08, partial restriction)
+## Current platform policy (2026-10-08)
 
 The original native-iPad-only gate and Touch-only statements below document the
 historical iPad implementation. The October 6 Pointer route described at the end
 adds ink on other touch runtimes with the required event capabilities. The
 October 8 restriction now admits only the existing native iPad idiom signal or
-native Android (Capacitor isNativePlatform + getPlatform) with that input adapter.
+native Android tablet (Capacitor isNativePlatform + getPlatform, native
+BreezePdfPlatform classification) with that input adapter.
 Web/mobile web/PWA, native iPhone and desktop runtimes cannot activate writing;
-their entry is hidden. Android phone/tablet hardware discrimination remains an
-explicit pending compatibility-policy decision; this partial change preserves
-existing Android native adapter behavior without an invented allowlist or OS
-version restriction. It is not release acceptance for the full tablet-only request.
+their entry is hidden. Android's narrow read-only plugin uses the application
+context to create resources for Display.DEFAULT_DISPLAY, then requires native
+LARGE/XLARGE screenLayout and normal UI mode, excluding PC feature devices. It
+does not classify from the Activity window, responsive width, pen connection or
+first pen event. Pending/missing/failed plugin classification is read-only.
+
+The user approved exposing tools on tablet-class Android devices even without a
+pen; only pen pointers can create ink. This is an OS display configuration policy,
+not a universal manufacturer phone/tablet taxonomy or pen hardware detector.
+Unusual density overrides and foldable device configurations may classify a
+device differently; physical configuration/input acceptance remains separate.
+No model allowlist or new permission is added; supported APIs cover the app's
+existing API 24+ range. Classification is resolved once per document load, so
+window resize, split view and orientation do not independently admit a phone.
+
+Onboarding shares `await BreezePdfInk.availability()` (resolves after native
+classification), or synchronous `BreezePdfInk.available()` (false while pending).
+Both include the safe event-delivery adapter requirement. `writing()` describes
+the active editing state and is not a platform capability query.
 
 Stored-ink loading and SVG rendering no longer depend on write eligibility, so
 all PDF readers retain read-only annotations. No schema, key, stroke or preference
