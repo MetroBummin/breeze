@@ -103,3 +103,22 @@ assets, native projects and version/build metadata remain byte-identical. The
 existing 1.9 (251) archive remains the runtime build; no new build number or
 archive is needed for these test/CI/documentation changes. Archive creation,
 signing, upload, review submission and main merge are outside this task.
+
+
+## Build252 Social import installation budget (2026-10-08)
+
+On archive source `a342409f84fca61fd1474ed8afe985fdfaac6c04`,
+[Social import run37762299205 retry job113269076646](https://github.com/MetroBummin/breeze/actions/runs/37762299205/job/113269076646)
+started10:36:49 UTC and was cancelled10:49:33 UTC while downloading Ubuntu
+packages for `playwright install --with-deps chromium webkit`. Setup, npm install,
+type check and server contracts passed. Browser, ingestion and full npm tests
+were not run; there is no assertion failure in the retry log.
+
+Only the verify job budget increases from12 to25 minutes, the lower authorized
+budget, to accommodate the observed installation delay and remaining suites.
+Every test command/assertion/condition and the live-media job remain unchanged.
+The integration receipt pins the exact workflow change and its previous hash.
+
+Runtime, assets, native projects and build metadata remain identical to the
+preserved signed1.9(252) archive source. No new archive or upload is performed.
+Exact updated-head CI must complete before parent-coordinated upload.

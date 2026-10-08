@@ -1597,6 +1597,16 @@
       },
       "kind": "combined-reviewed",
       "sha256": "fbbfb2ebf9a75cc48be59dce5ac743bcc9a66152c24a29e36e32bc75fc05940c"
+    },
+    ".github/workflows/social-import.yml": {
+      "owners": [
+        "release-ci"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "852ccb9d34d78b47c666cf31a034c422b7430f6667311a912dc62303bd30cb0b",
+      "sourceSha256": {
+        "252-archive-source": "7f5ee6d573154dc28d19097514b6ea5c56eab1be7aadb9a09e95096f75388d0e"
+      }
     }
   },
   "integrationScope": [
