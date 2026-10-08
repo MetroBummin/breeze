@@ -56,10 +56,17 @@ try{
  {
   const {context,page,requests,errors}=await fresh();
   try{
+   // These reloads exercise debug persistence, not RSS cancellation. Let the
+   // intercepted Home feed work finish before replacing its WebKit document.
+   const settledHome=()=>page.evaluate(async()=>{await homeReady;await rssLoading;});
+   await settledHome();
    await page.goto(url+'?frames=1');await page.waitForFunction(()=>typeof window.breezeFrameSummary==='function');
    assert.ok(requests.some(href=>/frame-trace\.js\?v=[a-f0-9]{8}$/.test(href)));
+   await settledHome();
    await page.goto(url);await page.waitForFunction(()=>typeof window.breezeFrameSummary==='function');
+   await settledHome();
    await page.goto(url+'?frames=0');await page.evaluate(()=>homeReady);
+   await settledHome();
    assert.equal(await page.evaluate(()=>typeof window.breezeFrameSummary),'undefined');
    assert.deepEqual(errors,[]);results.push('debug opt-in, persisted opt-in and explicit opt-out');
   }finally{await context.close();}
