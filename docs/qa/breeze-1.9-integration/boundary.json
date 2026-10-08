@@ -7,7 +7,8 @@
     "129": "116d3adda261e9dd9e13223b30abcde155f8a4ad",
     "130": "8b91fa076fbb3c4d31054acd52aac80e6cbe3200",
     "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb",
-    "welcome": "231c4d9c759d4b4b15f5039596dbf0fc98a6185c"
+    "welcome": "231c4d9c759d4b4b15f5039596dbf0fc98a6185c",
+    "approved-writing": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
   },
   "version": "1.9",
   "build": "252",
@@ -106,12 +107,14 @@
     },
     "index.html": {
       "owners": [
-        "welcome"
+        "welcome",
+        "approved-writing"
       ],
-      "kind": "single-source",
-      "sha256": "1a827c496dbd3e019b861ecd722997e2d69a79de0c13fe92b12781ece577d8f0",
+      "kind": "combined-reviewed",
+      "sha256": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093",
       "sourceSha256": {
-        "welcome": "1a827c496dbd3e019b861ecd722997e2d69a79de0c13fe92b12781ece577d8f0"
+        "welcome": "1a827c496dbd3e019b861ecd722997e2d69a79de0c13fe92b12781ece577d8f0",
+        "approved-writing": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093"
       }
     },
     "styles/wordbook.css": {
@@ -246,14 +249,16 @@
     },
     "docs/decisions/006-reader-onboarding.md": {
       "owners": [
-        "welcome"
+        "welcome",
+        "approved-writing"
       ],
       "kind": "combined-reviewed",
-      "sha256": "4c1ec0a691ee1415dc3e5babf2dc26c16e84edbd32fccede755527444c405db2",
+      "sha256": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9",
       "sourceSha256": {
         "welcome": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
         "pre-approved-media": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
-        "approved-2x-30fps": "4c1ec0a691ee1415dc3e5babf2dc26c16e84edbd32fccede755527444c405db2"
+        "approved-2x-30fps": "4c1ec0a691ee1415dc3e5babf2dc26c16e84edbd32fccede755527444c405db2",
+        "approved-writing": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9"
       }
     },
     "docs/decisions/016-social-auth.md": {
@@ -996,22 +1001,26 @@
     },
     "scripts/ui/onboarding.js": {
       "owners": [
-        "welcome"
+        "welcome",
+        "approved-writing"
       ],
-      "kind": "single-source",
-      "sha256": "ff22202d52584f255fd9c7deb3dd25cb30232c7ddc076e37f5d1f60e4a27e59c",
+      "kind": "combined-reviewed",
+      "sha256": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d",
       "sourceSha256": {
-        "welcome": "ff22202d52584f255fd9c7deb3dd25cb30232c7ddc076e37f5d1f60e4a27e59c"
+        "welcome": "ff22202d52584f255fd9c7deb3dd25cb30232c7ddc076e37f5d1f60e4a27e59c",
+        "approved-writing": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d"
       }
     },
     "styles/onboarding.css": {
       "owners": [
-        "welcome"
+        "welcome",
+        "approved-writing"
       ],
-      "kind": "single-source",
-      "sha256": "1382548283dc756347dca805c4e246f0a4d39bd4b2e64dcdb185c7617447a179",
+      "kind": "combined-reviewed",
+      "sha256": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b",
       "sourceSha256": {
-        "welcome": "1382548283dc756347dca805c4e246f0a4d39bd4b2e64dcdb185c7617447a179"
+        "welcome": "1382548283dc756347dca805c4e246f0a4d39bd4b2e64dcdb185c7617447a179",
+        "approved-writing": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b"
       }
     },
     "tests/verify-design-only-boundary.mjs": {
@@ -1046,12 +1055,14 @@
     },
     "tests/verify-onboarding-browser.mjs": {
       "owners": [
-        "welcome"
+        "welcome",
+        "approved-writing"
       ],
       "kind": "combined-reviewed",
-      "sha256": "b9b3ea433a164786681faab33ec66c843f13804229ac82167df1edbf19453ec7",
+      "sha256": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20",
       "sourceSha256": {
-        "welcome": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf"
+        "welcome": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf",
+        "approved-writing": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20"
       }
     },
     "tools/capture-onboarding-media.mjs": {
@@ -1711,6 +1722,26 @@
       "sourceSha256": {
         "approved-2x-30fps": "4b6c88ddd5f26417f4dc31f6355df4adfb022184e7d2e0bd14891b81e1944657"
       }
+    },
+    "tools/capture-welcome-connected.mjs": {
+      "owners": [
+        "approved-writing"
+      ],
+      "sourceSha256": {
+        "approved-writing": "7e94e3c1125ee67e504f08098996801ad978561a7a30edf6a0cf8814a6a35986"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "7e94e3c1125ee67e504f08098996801ad978561a7a30edf6a0cf8814a6a35986"
+    },
+    "tools/capture-b-order-review.mjs": {
+      "owners": [
+        "approved-writing"
+      ],
+      "sourceSha256": {
+        "approved-writing": "2b3d47ed6a3ea40ceb8c73d0a3834a4ca64361760f056408b4f1fbd27ca72d4f"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "2b3d47ed6a3ea40ceb8c73d0a3834a4ca64361760f056408b4f1fbd27ca72d4f"
     }
   },
   "integrationScope": [
@@ -1733,5 +1764,6 @@
     "tests/verify-pdf-pending-pinch-browser.mjs",
     "docs/qa/pdf-pending-pinch-20261008.md"
   ],
-  "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680"
+  "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680",
+  "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
 }

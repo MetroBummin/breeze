@@ -136,3 +136,26 @@ rebuild252 under a distinct source-named archive path, preserving the old archiv
 Full/type/media/onboarding/pending-pinch/native-asset/signature checks and final
 exact-head CI are required before the authorized TestFlight upload. No main merge
 or App Review submission is permitted.
+
+## Approved connected welcome and initial b integration (2026-10-08)
+
+The user accepted the revised first-b preview at 13:09:41 UTC and requested
+resumed 1.9(252) preparation. Approved preview source is
+`647615c9cc2bc540ba2fc49b3e453236b4a9140c`, replacing six disconnected image-mask
+paths with one visible writing centerline. Its first loop rises on the right,
+turns left at the top and descends the stem before the bowl and existing r join.
+The existing brand's looped b form is preserved; no textbook two-bowl capital
+redesign is introduced. The source decision records the formation references.
+
+Writing/hold/caption timings stay4200/750/900ms; scene order, UI text/layout,
+auth, App/Share1.9(252) metadata and all14HQ clips/14posters remain unchanged.
+The boundary receipt refreshes only the approved welcome files and adds the two
+review-capture helpers; previous source hashes remain available.
+
+Build from the final posted commit, regenerate www and native public assets,
+and preserve prior252 archives using a distinct SHA-named output directory.
+This source changes runtime and needs a new archive; old252 archives do not
+contain the accepted handwriting or necessarily the approved HQ media.
+Before upload, confirm live ASC252 uniqueness and final exact-head CI. Mac is
+offline; this cloud task does not archive, sign, upload, merge main, deploy or
+submit review. Local tests and remote CI states are reported with the final SHA.
