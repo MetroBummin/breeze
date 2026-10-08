@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="styles/wordbook.css?v=991cfadf">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=7bb723de">
-  <link rel="stylesheet" href="styles/onboarding.css?v=5646bfb8">
+  <link rel="stylesheet" href="styles/onboarding.css?v=13825482">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -121,7 +121,7 @@
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=11110a0e"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=7622b60c"></script>
+  <script defer src="scripts/ui/onboarding.js?v=ff22202d"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=1ea70870"></script>
@@ -534,7 +534,21 @@
 <!-- Passive guide: recorded real app interactions; no Reader session or data writes. -->
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="브리즈 시작 안내" hidden>
   <section id="onboard-coach" aria-labelledby="onboard-prompt">
-    <div id="onboard-welcome"><span class="breeze-wordmark" role="img" aria-label="Breeze"></span></div>
+    <div id="onboard-welcome"><span class="breeze-wordmark" role="img" aria-label="Breeze">
+      <svg viewBox="0 0 841 258" aria-hidden="true" focusable="false">
+        <defs><mask id="onboard-ink-reveal" maskUnits="userSpaceOnUse" x="0" y="0" width="841" height="258">
+          <g fill="none" stroke="white" stroke-width="42" stroke-linecap="round" stroke-linejoin="round">
+            <path pathLength="1" d="M10 225 Q60 195 77 171 Q76 64 120 26 Q162 -9 164 41 Q161 91 80 171 Q121 124 160 145 Q201 177 161 228 Q121 267 87 230 Q65 203 81 175"/>
+            <path pathLength="1" d="M174 208 Q214 202 235 139 L230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 339 211"/>
+            <path pathLength="1" d="M335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 L443 211"/>
+            <path pathLength="1" d="M450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 L556 171"/>
+            <path pathLength="1" d="M546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 L684 212"/>
+            <path pathLength="1" d="M685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162"/>
+          </g>
+        </mask></defs>
+        <g class="onboard-ink"><image class="onboard-ink-light" href="assets/brand/wordmarks/breeze-flow-light.svg" width="841" height="258"/><image class="onboard-ink-dark" href="assets/brand/wordmarks/breeze-flow-dark.svg" width="841" height="258"/></g>
+      </svg>
+    </span></div>
     <div id="onboard-carousel" role="region" aria-roledescription="캐러셀" aria-label="브리즈 기능 안내" tabindex="0" hidden></div>
     <span id="onboard-step" aria-live="polite"></span>
     <p id="onboard-prompt" role="status" aria-live="polite"></p>

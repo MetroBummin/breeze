@@ -3,6 +3,10 @@
 /* Passive onboarding owns only its overlay and media. The Reader keeps its own state. */
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
+const ONBOARD_WELCOME_KEY='breeze.onboarding.welcome-seen';
+// Apple macOS hello's runtime hold is 750ms; writing/fade are Breeze's
+// review candidate, not a claimed frame-for-frame match to Apple's animation.
+const ONBOARD_WELCOME_TIMING={write:4200,hold:750,fade:900};
 function onboardingPdfAvailable(){
   // PR128 owns native classification and the safe input adapter.
   const availability=typeof BreezePdfInk!=='undefined'?Reflect.get(BreezePdfInk,'availability'):null;
@@ -28,6 +32,11 @@ function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
 function persistOnboarding(){
   if(onboardingSession&&!onboardingSession.replay)save(ONBOARD_PROGRESS_KEY,{page:onboardingSession.page});
+}
+function finishOnboardingWelcome(){
+  const session=onboardingSession;if(!session)return;
+  clearTimeout(session.welcomeTimer);session.welcomeTimer=null;
+  document.getElementById('onboarding').dataset.welcome='ready';
 }
 function startOnboarding(replay){
   if(onboardingSession)endOnboarding(false);
@@ -64,6 +73,30 @@ function startOnboardingResolved(replay,pdfAvailable){
     const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');pages.append(dot);
   }
   const signal=session.controller.signal;
+  root.dataset.welcome='ready';
+  if(session.page===0&&!session.replay&&!load(ONBOARD_WELCOME_KEY,false)){
+    // Mark on entry: closing/reloading never forces another animation wait.
+    save(ONBOARD_WELCOME_KEY,true);
+    if(!session.motion.matches&&typeof CSS.registerProperty==='function'){
+      const paths=[...root.querySelectorAll('#onboard-ink-reveal path')].filter(path=>path instanceof SVGPathElement);
+      const lengths=paths.map(path=>path.getTotalLength());
+      const total=lengths.reduce((sum,length)=>sum+length,0);let distance=0;
+      for(const [i,path] of paths.entries()){
+        path.style.setProperty('--draw-start',String(distance/total));
+        path.style.setProperty('--draw-share',String(lengths[i]/total));distance+=lengths[i];
+      }
+      const {write,hold,fade}=ONBOARD_WELCOME_TIMING;
+      root.style.setProperty('--welcome-write',write+'ms');
+      root.style.setProperty('--welcome-copy-delay',(write+hold)+'ms');
+      root.style.setProperty('--welcome-fade',fade+'ms');
+      root.dataset.welcome='drawing';session.welcomeTimer=setTimeout(finishOnboardingWelcome,write+hold+fade);
+    }
+  }
+  root.addEventListener('click',event=>{
+    if(session.page===0&&root.dataset.welcome==='drawing'){
+      event.preventDefault();event.stopImmediatePropagation();finishOnboardingWelcome();
+    }
+  },{signal,capture:true});
   document.getElementById('onboard-next').addEventListener('click',()=>session.page===session.pages.length?endOnboarding(true):goOnboardingPage(session.page+1),{signal});
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
   carousel.addEventListener('click',()=>{if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
@@ -92,11 +125,11 @@ function startOnboardingResolved(replay,pdfAvailable){
     if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){session.swiped=true;goOnboardingPage(session.page+(dx<0?1:-1));}
   },{signal});
   carousel.addEventListener('pointercancel',()=>{session.pointer=null;},{signal});
-  document.addEventListener('visibilitychange',syncOnboardingMedia,{signal});
-  window.addEventListener('pagehide',()=>{persistOnboarding();for(const v of carousel.querySelectorAll('video'))v.pause();},{signal});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)finishOnboardingWelcome();syncOnboardingMedia();},{signal});
+  window.addEventListener('pagehide',()=>{finishOnboardingWelcome();persistOnboarding();for(const v of carousel.querySelectorAll('video'))v.pause();},{signal});
   window.addEventListener('pageshow',syncOnboardingMedia,{signal});
   window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
-  session.motion.addEventListener('change',syncOnboardingMedia,{signal});
+  session.motion.addEventListener('change',()=>{if(session.motion.matches)finishOnboardingWelcome();syncOnboardingMedia();},{signal});
   session.theme=new MutationObserver(()=>{
     if(activeAppView()!==session.previousView){endOnboarding(false);return;}
     syncOnboardingMedia();
@@ -107,6 +140,7 @@ function startOnboardingResolved(replay,pdfAvailable){
 }
 function goOnboardingPage(page){
   if(!onboardingSession)return;
+  finishOnboardingWelcome();
   onboardingSession.page=Math.max(0,Math.min(onboardingSession.pages.length,page));persistOnboarding();drawOnboarding();
 }
 function drawOnboarding(){
@@ -145,7 +179,7 @@ function syncOnboardingMedia(){
 function endOnboarding(remember,returnToPrevious=true){
   ++onboardingRequest;
   const session=onboardingSession;if(!session)return;
-  persistOnboarding();session.controller.abort();session.theme.disconnect();
+  finishOnboardingWelcome();persistOnboarding();session.controller.abort();session.theme.disconnect();
   for(const video of document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))){video.pause();video.removeAttribute('src');video.load();}
   onboardingSession=null;document.getElementById('onboarding').hidden=true;
   document.body.classList.remove('onboarding-active');

@@ -4,7 +4,26 @@
 
 The approved PR124 welcome is selectively preserved: original flow wordmark,
 ‘브리즈에 오신 걸 환영해요’, ‘막힘없이 읽는 새로운 방법.’ and ‘시작하기’.
-Fresh sessions always show it first; replay also starts there. Interrupted first
+Fresh sessions always show it first; replay also starts there. The first welcome
+reveals the existing Breeze flow asset with six hand-authored centerline masks.
+A single inherited pen timeline traverses their cumulative geometric lengths
+with one cubic-bezier(.35,.02,.25,1) envelope, without resetting speed per letter.
+The review candidate writes for 4.2s, holds the complete word for 750ms, then
+shows the existing caption, note and Start button together over 900ms (opacity
+and 8px translation). Total: 5.85s. This replaces the rejected 2s preview.
+No Apple glyph, logo, font, path or shader is included in the app.
+
+The 750ms hold follows the installed Apple macOS HelloMetrics writeInHold
+runtime value. Apple's actual full English hello playback could not be measured
+without launching a visible setup screen; writing duration and easing are
+Breeze's review candidate, not a claim of identical Apple speed.
+
+A tap anywhere completes the reveal immediately and consumes that tap without
+navigating. The independent `breeze.onboarding.welcome-seen` marker is set on
+first entry (including reduced motion), so cancellation/reload and Settings
+replay show the static welcome. Reduced motion, backgrounding, leaving welcome
+and cancellation finish/cancel the same session timer; replay never waits.
+Existing guide completion/progress keys and the rest of the carousel are unchanged. Interrupted first
 runs resume their saved explanation page. The original completion key
 `breeze.onboarding.v1` remains authoritative. Readers with existing local books,
 vocabulary, tombstones or positions are not interrupted.
@@ -54,8 +73,9 @@ rapid navigation, first-run cancellation/reload/resume, completion persistence,
 replay, visibility interruption, autoplay failure, reduced motion, decoder source
 ownership and an existing Reader's data/position/appearance/history isolation.
 It checks phone, narrow, tablet, desktop and short/landscape in both themes and
-pins the approved progress geometry. The original light phone welcome is compared
-with PR124's saved approved PNG and matches every pixel.
+pins the approved progress geometry. The finished welcome preserves PR124's asset, geometry, copy and materials.
+Actual intermediate pen progress, delayed caption and completed-word hold are
+checked along with tap completion, close/restart/reload and live reduced motion.
 
 Production Reader/gesture/auth/native-launch boundaries remain pinned; full
 `npm test`, www packaging and exact-remote-SHA CI are required for this draft.

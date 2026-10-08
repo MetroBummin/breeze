@@ -22,6 +22,52 @@ async function setup(options={}){
 }
 const dataSnapshot=page=>page.evaluate(()=>JSON.stringify({words,dead,positions,books,curBook,fs,darkMode,readMargin,history:history.length,storage:Object.fromEntries(Object.entries(localStorage).filter(([k])=>!k.startsWith('breeze.onboarding.')))}));
 try{
+ // The first welcome has one cancellable continuous pen owner, independent of guide media.
+ for(const action of ['finish','tap','close','restart','motion','background']){
+  const {context,page}=await setup();await page.goto(url);await page.evaluate(()=>homeReady);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'drawing');
+  assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'0');
+  assert.equal(await page.evaluate(()=>load(ONBOARD_WELCOME_KEY,false)),true);
+  if(action==='finish'){
+   await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#onboard-welcome svg')).getPropertyValue('--onboard-pen'))>.55);
+   assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'0','caption appeared before writing/hold finished');
+   const progress=await page.evaluate(()=>[...document.querySelectorAll('#onboard-ink-reveal path')].map(p=>getComputedStyle(p).strokeDashoffset));
+   assert.ok(progress.some(p=>parseFloat(p.replace('calc(',''))===0)&&progress.some(p=>parseFloat(p.replace('calc(',''))===1),'letter reveal was not sequential: '+JSON.stringify(progress));
+   await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#onboard-welcome svg')).getPropertyValue('--onboard-pen'))===1);
+   assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'0','completed word had no hold');
+   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome==='ready');
+  }
+  if(action==='tap'){
+   await page.locator('#onboarding').tap({position:{x:10,y:10}});
+   assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','skip tap navigated');
+   assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'1');
+   await page.locator('#onboarding').tap({position:{x:10,y:10}});
+  }
+  if(action==='close'){await page.keyboard.press('Escape');await page.evaluate(()=>startOnboarding(false));}
+  if(action==='restart')await page.evaluate(()=>{endOnboarding(false);startOnboarding(false);endOnboarding(false);startOnboarding(false);});
+  if(action==='motion')await page.emulateMedia({reducedMotion:'reduce'});
+  if(action==='background')await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+  await page.waitForFunction(()=>onboardingSession&&document.getElementById('onboarding').dataset.welcome==='ready');
+  await page.evaluate(()=>startOnboarding(true));
+  await page.waitForFunction(()=>onboardingSession?.replay);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'ready','replay delayed');
+  assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+  await page.reload();await page.evaluate(()=>homeReady);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'ready','reload replayed handwriting');
+  await context.close();
+ }
+ {
+  const {context,page}=await setup({reducedMotion:'reduce'});await page.goto(url);await page.evaluate(()=>homeReady);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'ready');
+  await page.emulateMedia({reducedMotion:'no-preference'});await page.reload();await page.evaluate(()=>homeReady);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'ready');await context.close();
+ }
+ {
+  const {context,page}=await setup();await page.addInitScript(()=>Reflect.set(CSS,'registerProperty',undefined));
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'ready','older WebKit waited on unsupported pen interpolation');
+  assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'1');await context.close();
+ }
  // The companion owner resolves Android classification asynchronously. Do not
  // choose pages from the synchronous pending=false value or revive cancelled work.
  for(const capability of [true,false,'error']){
@@ -53,7 +99,7 @@ try{
  assert.equal(await page.locator('#onboard-next').textContent(),'시작하기');assert.equal(await page.locator('#onboard-skip').count(),0);
  assert.equal(requests.length,0,'welcome prefetched guide media');
  const before=await dataSnapshot(page);assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
- await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
+ await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
  assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),native,'PDF guide does not follow native capability');
  const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?96:83);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,738);
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
@@ -72,7 +118,7 @@ try{
  assert.equal(await page.locator('#onboarding').isVisible(),false);assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
  await page.reload();await page.evaluate(()=>homeReady);assert.equal(await page.locator('#onboarding').isVisible(),false);
  await page.evaluate(()=>startOnboarding(true));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','replay skipped welcome');
- await page.locator('#onboard-next').tap();await page.evaluate(()=>goOnboardingPage(4));await page.keyboard.press('Escape');
+ await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.evaluate(()=>goOnboardingPage(4));await page.keyboard.press('Escape');
  assert.equal(await page.locator('#onboarding').isVisible(),false);
  await page.evaluate(()=>startOnboarding(false));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
  await page.evaluate(()=>endOnboarding(false));
@@ -97,7 +143,7 @@ try{
  await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
  await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
  await page.evaluate(()=>{readerScroller().scrollTop=100;});const before=await dataSnapshot(page),scroll=await page.evaluate(()=>readerScrollTop());
- await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(7));await page.locator('#onboard-next').tap();
+ await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(7));await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  assert.equal(await page.evaluate(()=>activeAppView()),'read');assert.equal(await dataSnapshot(page),before);assert.equal(await page.evaluate(()=>readerScrollTop()),scroll);
  assert.equal(await page.locator('#v-read').getAttribute('inert'),null);
   await page.locator('#rtext .w').first().tap();await page.waitForFunction(()=>wordLookupOpen());
@@ -113,7 +159,7 @@ try{
  const {context,page}=await setup({viewport:{width,height},reducedMotion:'reduce',annotation:true});await page.goto(url);await page.evaluate(()=>homeReady);
  await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
  await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-welcome.png`)});
- await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) img').complete);
+ await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) img').complete);
  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#onboard-carousel video')].some(v=>v.hasAttribute('src'))),false,'reduced motion downloaded loops');
  assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
  for(let i=1;i<=7;i++){await page.evaluate(i=>goOnboardingPage(i),i);await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-${i}.png`)});}
@@ -122,18 +168,18 @@ try{
  // Play rejection uses poster, and media has one owner despite rapid changes.
  {
  const {context,page}=await setup();await page.addInitScript(()=>{HTMLMediaElement.prototype.play=function(){return Promise.reject(Error('blocked autoplay'));};});
- await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboard-next').tap();await wait(100);
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await wait(100);
  assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.classList.contains('poster-only')),true);
  await context.close();
  }
  {
  const {context,page}=await setup({annotation:true});await page.addInitScript(()=>{window.qaHidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.qaHidden});});
- await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboard-next').tap();
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
  await page.evaluate(()=>{qaHidden=true;document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await page.locator('#onboard-carousel video[src]').evaluate(v=>v.paused),true);
  await page.evaluate(()=>{qaHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>!document.querySelector('#onboard-carousel video[src]').paused);
  await page.locator('#onboard-carousel').press('Space');assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
- await page.locator('#onboard-carousel').press('Space');await page.locator('#onboard-next').tap();
+ await page.locator('#onboard-carousel').press('Space');await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  assert.equal(await page.locator('#onboard-carousel video[src]').count(),1,'offscreen decoder retained');
  await page.emulateMedia({reducedMotion:'reduce'});await wait(50);assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.paused),true);
  await context.close();
@@ -144,8 +190,8 @@ try{
  const {context,page}=await setup({annotation:true});await page.goto(url);await page.evaluate(()=>homeReady);
  const frames=resolve(out,'flow-frames');mkdirSync(frames,{recursive:true});let running=true,rows=[];
  const recording=(async()=>{let i=0;while(running){const p=resolve(frames,String(i++).padStart(5,'0')+'.png');await page.screenshot({path:p});rows.push({p,t:Date.now()});await wait(100);}})();
- await wait(1800);await page.locator('#onboard-next').tap();
- for(let i=1;i<=7;i++){await wait(3600);await page.locator('#onboard-next').tap();}
+ await wait(1800);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
+ for(let i=1;i<=7;i++){await wait(3600);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();}
  await wait(1600);running=false;await recording;await context.close();
  writeFileSync(resolve(frames,'frames.txt'),rows.map((r,i)=>`file '${r.p}'\nduration ${i<rows.length-1?(rows[i+1].t-r.t)/1000:.1}`).join('\n'));
  const r=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',resolve(out,'Breeze-onboarding-full-flow.mp4')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
