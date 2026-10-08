@@ -7,6 +7,7 @@
     "129": "116d3adda261e9dd9e13223b30abcde155f8a4ad",
     "130": "8b91fa076fbb3c4d31054acd52aac80e6cbe3200",
     "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb",
+    "134": "ea2184bfc80b31560bcf9266683a3f76bec4024f",
     "welcome": "231c4d9c759d4b4b15f5039596dbf0fc98a6185c",
     "approved-writing": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
   },
@@ -487,12 +488,14 @@
     },
     "scripts/reader/pdf-ink.js": {
       "owners": [
-        "128"
+        "128",
+        "134"
       ],
-      "kind": "single-source",
-      "sha256": "e117b0ffa6b40c52dc5c924b432123cfdb699247a34c8803f81dc64a57ea1d76",
+      "kind": "combined-reviewed",
+      "sha256": "fe80bddeacb6f775c9246c9d4ef51c2afefc27f4aa548f2d298fd9e55639447f",
       "sourceSha256": {
-        "128": "e117b0ffa6b40c52dc5c924b432123cfdb699247a34c8803f81dc64a57ea1d76"
+        "128": "e117b0ffa6b40c52dc5c924b432123cfdb699247a34c8803f81dc64a57ea1d76",
+        "134": "fe80bddeacb6f775c9246c9d4ef51c2afefc27f4aa548f2d298fd9e55639447f"
       }
     },
     "styles/pdf-ink.css": {
@@ -547,12 +550,14 @@
     },
     "tests/verify-pdf-ink-browser.mjs": {
       "owners": [
-        "128"
+        "128",
+        "134"
       ],
-      "kind": "single-source",
-      "sha256": "715b000d857bb0f50eece02dc01db7a2c09c6ab2a3d2a0cb923798a6cdde7136",
+      "kind": "combined-reviewed",
+      "sha256": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
       "sourceSha256": {
-        "128": "715b000d857bb0f50eece02dc01db7a2c09c6ab2a3d2a0cb923798a6cdde7136"
+        "128": "715b000d857bb0f50eece02dc01db7a2c09c6ab2a3d2a0cb923798a6cdde7136",
+        "134": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950"
       }
     },
     "tests/verify-pdf-ink-regressions.mjs": {
@@ -1625,13 +1630,15 @@
     },
     "scripts/reader/pdf-pinch.js": {
       "owners": [
-        "pdf-pending-pinch"
+        "pdf-pending-pinch",
+        "134"
       ],
-      "sourceSha256": {
-        "pending-pinch-baseline": "dfc710bfcf933677b187305aa902f21f5791bf978b0fd6f4cbabc16f3124234a"
-      },
       "kind": "combined-reviewed",
-      "sha256": "5e90e0471b3b7617c3e2e5bc4bcd2d6df08142b002fa7b98b3c110ff692325b1"
+      "sha256": "7e46e232acd250d59a03ba716dd4b1eebee415751b215296c46607938391c93b",
+      "sourceSha256": {
+        "134": "7e46e232acd250d59a03ba716dd4b1eebee415751b215296c46607938391c93b",
+        "pending-pinch-baseline": "dfc710bfcf933677b187305aa902f21f5791bf978b0fd6f4cbabc16f3124234a"
+      }
     },
     "docs/decisions/002-dictionary-panel-reading-anchor.md": {
       "owners": [
@@ -1742,6 +1749,50 @@
       },
       "kind": "combined-reviewed",
       "sha256": "2b3d47ed6a3ea40ceb8c73d0a3834a4ca64361760f056408b4f1fbd27ca72d4f"
+    },
+    "scripts/reader/pdf-original.js": {
+      "owners": [
+        "134"
+      ],
+      "kind": "single-source",
+      "sha256": "dafa70b88b6af1bc4f2bd64d7ddf7975bdf8a92365d1dd94d7e12d002e7180cd",
+      "sourceSha256": {
+        "134": "dafa70b88b6af1bc4f2bd64d7ddf7975bdf8a92365d1dd94d7e12d002e7180cd",
+        "integration-baseline": "c5620583fe3213e060495f97fb8e5d719e8dd1ce9f5b5c38e9a98be8aaad3160"
+      }
+    },
+    "scripts/reader/pdf-navigation.js": {
+      "owners": [
+        "134"
+      ],
+      "kind": "single-source",
+      "sha256": "6b72e0775f146bdd0e10d3713edd55d34d945af2258bcd94dc0242f7d167520c",
+      "sourceSha256": {
+        "134": "6b72e0775f146bdd0e10d3713edd55d34d945af2258bcd94dc0242f7d167520c",
+        "integration-baseline": "1ea70870f13baa2793ed7767d336ce050d60f937e135d95a45b9a4cceba7756a"
+      }
+    },
+    "tests/verify-pdf-pinch-browser.mjs": {
+      "owners": [
+        "134"
+      ],
+      "kind": "single-source",
+      "sha256": "26b0c0e924688cede3c5214915395c6285f1b9a9a1f228e0ac9056e0c22b9336",
+      "sourceSha256": {
+        "134": "26b0c0e924688cede3c5214915395c6285f1b9a9a1f228e0ac9056e0c22b9336",
+        "integration-baseline": "67ec732897dfbda5e1a9f8a32751b79e6b940d65081cf8620ae9b6c60e6d9f5e"
+      }
+    },
+    "docs/decisions/003-pdf-highlight-geometry.md": {
+      "owners": [
+        "134"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "c28aa273b5987bfaea370caaa08f330ae8a234fc54fabd8aec97997c4d91d7ab",
+      "sourceSha256": {
+        "134": "142038d3846d6bf69ef3e3d26e2d52910c83688573795628d3d863292bb72220",
+        "integration-baseline": "98d04b25e6e58f4c5b4ef797528c75cb271d78ee1f90bff3f95723414520c434"
+      }
     }
   },
   "integrationScope": [

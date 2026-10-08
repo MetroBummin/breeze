@@ -159,3 +159,17 @@ contain the accepted handwriting or necessarily the approved HQ media.
 Before upload, confirm live ASC252 uniqueness and final exact-head CI. Mac is
 offline; this cloud task does not archive, sign, upload, merge main, deploy or
 submit review. Local tests and remote CI states are reported with the final SHA.
+
+
+## Local rubber-band integration preparation (2026-10-08)
+
+The user approved PR134 for the next 1.9 build after its original exclusion.
+Source: `ea2184bfc80b31560bcf9266683a3f76bec4024f`; test baseline:
+`09f84b50c3637337dee856bccb4bb12fdd7d8a5f`. The runtime changes applied
+without conflict. The sole conflict was generated `sw.js` VERSION; retain the
+integration source and run `node tools/stamp-version.mjs` to recompute it.
+The receipt records the seven changed source/test/decision files explicitly;
+normalized index and worker contents are unchanged. Build metadata remains 252
+in this local preparation. The pending-pinch WebKit CI assertion has a separate
+owner and is not fixed or waived here. Shared branches, main, build upload and
+deployment are untouched by this preparation.
