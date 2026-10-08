@@ -73,19 +73,6 @@
       "duration": 2.45
     },
     {
-      "key": "pdf-light",
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": null,
-      "rect": {
-        "x": 268,
-        "y": 581,
-        "width": 44,
-        "height": 44
-      },
-      "frames": 33,
-      "duration": 2.876
-    },
-    {
       "key": "memory-light",
       "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
       "target": "nav-vocab",
@@ -169,19 +156,6 @@
       "duration": 2.436
     },
     {
-      "key": "pdf-dark",
-      "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
-      "target": null,
-      "rect": {
-        "x": 268,
-        "y": 581,
-        "width": 44,
-        "height": 44
-      },
-      "frames": 33,
-      "duration": 2.882
-    },
-    {
       "key": "memory-dark",
       "sourceSHA": "18576591a5096a217e52793c7627b699dd5bfdef",
       "target": "nav-vocab",
@@ -243,6 +217,94 @@
       },
       "frames": 26,
       "duration": 2.267
+    },
+    {
+      "key": "pdf-light",
+      "source": {
+        "url": "https://documents.coastline.edu/Distance%20Learning/Open-Edu-Resources/ENGL%20C100%20Writing%20Guide%20with%20Handbook.pdf",
+        "sha256": "9a4c00306a07b9d39b049c54a3eedeb321582166c1484c2005661f254007b1b8",
+        "bytes": 65363819,
+        "pdfPage": 28,
+        "pageIndex": 27,
+        "printedPage": 14,
+        "heading": "Words and Images",
+        "excerptSha256": "94c0eb634676c1769ee73afafc0298827b33933a0f2afaa512a4c622df2db259",
+        "footer": "Access for free at openstax.org."
+      },
+      "sourceSHA": "76853e5cbc491fff81961282cccf09354a45ba5f",
+      "nativePDFHead": "1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "encoded": {
+        "width": 410,
+        "height": 590,
+        "profile": "H264 Baseline",
+        "silent": true,
+        "frames": 25,
+        "fps": 24,
+        "seconds": 2.4869999999999997,
+        "bytes": 104267
+      },
+      "readRect": {
+        "x": 210,
+        "y": 1121,
+        "width": 400,
+        "height": 44
+      },
+      "writeRect": {
+        "x": 210,
+        "y": 1121,
+        "width": 400,
+        "height": 44
+      },
+      "capability": "native iPad flag emulated; not physical hardware proof",
+      "changes": "one-page excerpt; native Reader pen stroke; half-size video encoding; original footer unchanged"
+    },
+    {
+      "key": "pdf-dark",
+      "source": {
+        "url": "https://documents.coastline.edu/Distance%20Learning/Open-Edu-Resources/ENGL%20C100%20Writing%20Guide%20with%20Handbook.pdf",
+        "sha256": "9a4c00306a07b9d39b049c54a3eedeb321582166c1484c2005661f254007b1b8",
+        "bytes": 65363819,
+        "pdfPage": 28,
+        "pageIndex": 27,
+        "printedPage": 14,
+        "heading": "Words and Images",
+        "excerptSha256": "94c0eb634676c1769ee73afafc0298827b33933a0f2afaa512a4c622df2db259",
+        "footer": "Access for free at openstax.org."
+      },
+      "sourceSHA": "76853e5cbc491fff81961282cccf09354a45ba5f",
+      "nativePDFHead": "1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "encoded": {
+        "width": 410,
+        "height": 590,
+        "profile": "H264 Baseline",
+        "silent": true,
+        "frames": 24,
+        "fps": 24,
+        "seconds": 2.388,
+        "bytes": 113320
+      },
+      "readRect": {
+        "x": 210,
+        "y": 1121,
+        "width": 400,
+        "height": 44
+      },
+      "writeRect": {
+        "x": 210,
+        "y": 1121,
+        "width": 400,
+        "height": 44
+      },
+      "capability": "native iPad flag emulated; not physical hardware proof",
+      "changes": "one-page excerpt; native Reader pen stroke; half-size video encoding; original footer unchanged"
     }
   ]
 }

@@ -45,15 +45,7 @@ external setup unfinished. No Android signing material or task-2 was touched.
 
 ## Remaining work / verified blockers
 
-Final archive **not produced**: user-required PR129 OpenStax PDF clip/poster/credit
-refresh is still unpublished (latest observed head 116d3ad). Freeze only after
-that owner's final media matches PR128 icon-only tools. Preserve all other scenes.
-
-Then sync native assets, verify complete packaged parity, rerun onboarding/media
-and the relevant final PDF tests, and archive with Xcode 27 and `/tmp` derived
-data/archive path. Recheck all current owner heads and integration CI. PR126 and
-PR131 exact-head workflows were confirmed all successful; other final heads
-were running/queued at their last read. No all-CI-green claim.
+Final PDF media captured directly on the Mac from the verified OpenStax source. Only PDF clips/posters changed; source footer and all other scenes are preserved. Credits and capture limits are in `../onboarding-carousel/pdf-media-credits.md`. Final archive validation follows native sync. Active checkout is `/tmp/breeze-1.9-integration` because Documents File Provider stalled reads.
 
 Previous-main Holmes worker migration **passed on settled sources**: real e7b61d5
 old Reader remains active through update, then the new complete worker shell

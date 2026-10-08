@@ -723,8 +723,8 @@
       "owners": [
         "129"
       ],
-      "kind": "single-source",
-      "sha256": "e4739b8a985dd0c7246814e97fd3df53ec522844bd3889770be6b32b4064fa96",
+      "kind": "combined-reviewed",
+      "sha256": "622b763944270db79d7092a1db579782cfbc71d3fd2d3688fd9bd85bf4917a0b",
       "sourceSha256": {
         "129": "e4739b8a985dd0c7246814e97fd3df53ec522844bd3889770be6b32b4064fa96"
       }
@@ -733,8 +733,8 @@
       "owners": [
         "129"
       ],
-      "kind": "single-source",
-      "sha256": "3de5411c31b948b815d9a3a47a42f40cfaefa31568eb2b8beaa00725fa351f73",
+      "kind": "combined-reviewed",
+      "sha256": "bf14d098e17f89d8d4b926f2a9c8bcf9fcf67036c41192bfd0ae40d110751ca4",
       "sourceSha256": {
         "129": "3de5411c31b948b815d9a3a47a42f40cfaefa31568eb2b8beaa00725fa351f73"
       }
@@ -743,8 +743,8 @@
       "owners": [
         "129"
       ],
-      "kind": "single-source",
-      "sha256": "b2c54705cdac57d44b519b423168ef86fce0cf764456d698db39cf8d0d331054",
+      "kind": "combined-reviewed",
+      "sha256": "03056f91b555f822804285c50eae5898cfb6a9c50c93de765d95002079e06993",
       "sourceSha256": {
         "129": "b2c54705cdac57d44b519b423168ef86fce0cf764456d698db39cf8d0d331054"
       }
@@ -753,8 +753,8 @@
       "owners": [
         "129"
       ],
-      "kind": "single-source",
-      "sha256": "a13dbac3fed9fc69a451f9c9a05653c0faacb1ed3148d534cd7f00d0bc1d3cce",
+      "kind": "combined-reviewed",
+      "sha256": "ca6cffca1d296d0af26205e9c1508466b1c8071891649ae17b92cc8fce073b33",
       "sourceSha256": {
         "129": "a13dbac3fed9fc69a451f9c9a05653c0faacb1ed3148d534cd7f00d0bc1d3cce"
       }
@@ -893,8 +893,8 @@
       "owners": [
         "129"
       ],
-      "kind": "single-source",
-      "sha256": "413635fee4606de462c1b389b698afa82311356bd1e83f6e158201f85942ed9a",
+      "kind": "combined-reviewed",
+      "sha256": "b4ffd31794c2e2fe431069e6b078f02195e2960e03d8019db85de4655615f61d",
       "sourceSha256": {
         "129": "413635fee4606de462c1b389b698afa82311356bd1e83f6e158201f85942ed9a"
       }
@@ -923,8 +923,8 @@
       "owners": [
         "129"
       ],
-      "kind": "single-source",
-      "sha256": "0eb83fd509f5e62cd737627bd6a08c9d4940f556ba8ac38c16203414f01e1331",
+      "kind": "combined-reviewed",
+      "sha256": "5f3e8b8788ee7260bbb922da320df2160052e71de1e4655c8c2fd3910290b86f",
       "sourceSha256": {
         "129": "0eb83fd509f5e62cd737627bd6a08c9d4940f556ba8ac38c16203414f01e1331"
       }
@@ -956,7 +956,7 @@
         "129"
       ],
       "kind": "combined-reviewed",
-      "sha256": "47b0b910888c823dfb73dfa0b578cd4f1833d94b37db458c9c086296986d5d54",
+      "sha256": "7622b60c92891c2b614aa415b83d0c072c81c687e6d8b83453159b42bd50e427",
       "sourceSha256": {
         "129": "545924052be69185f13f3eef1c6128b3a919d918f8475acd00362cbc9090ebc4"
       }
@@ -1547,6 +1547,9 @@
     ".github/workflows/design-brand.yml",
     ".github/workflows/social-auth.yml",
     ".github/workflows/integrity.yml",
-    "ios/App/App.xcodeproj/project.pbxproj"
+    "ios/App/App.xcodeproj/project.pbxproj",
+    "docs/qa/onboarding-carousel/pdf-media-credits.md",
+    "docs/qa/onboarding-carousel/pdf-openstax-light.png",
+    "docs/qa/onboarding-carousel/pdf-openstax-dark.png"
   ]
 }

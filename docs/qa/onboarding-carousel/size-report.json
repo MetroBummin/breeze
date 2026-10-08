@@ -58,12 +58,12 @@
     {
       "scene": "pdf",
       "light": {
-        "mp4": 10252,
-        "jpg": 15089
+        "mp4": 104267,
+        "jpg": 176630
       },
       "dark": {
-        "mp4": 10337,
-        "jpg": 16856
+        "mp4": 113320,
+        "jpg": 177913
       }
     },
     {
@@ -78,11 +78,12 @@
       }
     }
   ],
-  "media_total_bytes": 432766,
+  "media_total_bytes": 952362,
   "base_www_bytes": 20811775,
   "new_www_bytes": 21246572,
   "www_added_bytes": 434797,
   "base_www_zip_bytes": 17792522,
   "new_www_zip_bytes": 18170374,
-  "www_zip_added_bytes": 377852
+  "www_zip_added_bytes": 377852,
+  "measurement_note": "Media bytes refreshed after OpenStax capture; www/zip measurements below belong to previous capture and are not final package measurements."
 }

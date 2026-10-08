@@ -1,3 +1,5 @@
+/* PDF media: OpenStax Writing Guide (2021), p. 14; CC BY 4.0.
+   Source and capture changes: docs/qa/onboarding-carousel/pdf-media-credits.md. */
 /* Passive onboarding owns only its overlay and media. The Reader keeps its own state. */
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
