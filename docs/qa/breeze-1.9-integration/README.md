@@ -10,7 +10,7 @@ No main mutation, deployment, upload, TestFlight or App Review action occurred.
 - PR #127: `e388efd509a47361fcc201faa73282c2dab0e0f9`
 - PR #128: `1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c`
 - PR #129: `116d3adda261e9dd9e13223b30abcde155f8a4ad`
-- PR #130: `82a18849fd6699feb53606e42ab510c1a9769357`
+- PR #130: `8b91fa076fbb3c4d31054acd52aac80e6cbe3200`
 - PR #131: `9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb`
 
 PR130's final two commits change browser fixtures only. PR128's final head
@@ -55,12 +55,15 @@ data/archive path. Recheck all current owner heads and integration CI. PR126 and
 PR131 exact-head workflows were confirmed all successful; other final heads
 were running/queued at their last read. No all-CI-green claim.
 
-Previous-main Holmes worker migration has **no completed local pass**: the first
-fixture path was not normalized, and the next run stalled; bounded diagnosis
-reached worker update while sw.js contained active merge markers. That failure
-is not evidence about the settled worker. Rerun after final source freeze using
-`BREEZE_HOLMES_BASELINE=/Users/kosangbum/Documents/Codex/2026-10-08/task-4/previous-main`.
-Whole-story offline and deferred-worker transition suites already passed.
+Previous-main Holmes worker migration **passed on settled sources**: real e7b61d5
+old Reader remains active through update, then the new complete worker shell
+opens cold offline with all five unchanged books/covers/fingerprints and anchors.
+PR130 8b91fa0 is fixture-only and its focused WebKit suite passed.
+
+Initial integration CI contracts and design iOS compilation failed before tests
+because checkout depth 1 omitted the explicitly pinned base commit. Their
+checkout now fetches history; scope assertions remain unchanged. The earlier
+deferred WebKit failure is addressed by PR130's exact fixture update.
 
 Mac UI was locked when inspected, so current ASC build uniqueness remains
 unverified. 246 is a local candidate above observed 245, not a reserved or
