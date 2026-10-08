@@ -24,9 +24,6 @@
   color:var(--sentence-glass-secondary);cursor:pointer;}
 #readpill .ink-pill-toolbar .ink-pill-control svg{width:26px;height:26px;}
 #readpill .ink-pill-toolbar .ink-pill-control[aria-pressed="true"]{color:var(--brand-strong);}
-#readpill .ink-pill-toolbar .ink-pill-control[aria-pressed="true"]::after{
-  content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
-  width:14px;height:2px;border-radius:1px;background:currentColor;pointer-events:none;}
 #readpill .ink-pill-toolbar .ink-pill-control:disabled{opacity:.64;cursor:default;}
 #readpill .ink-pill-separator{flex:none;width:1px;height:22px;margin-inline:4px;
   background:color-mix(in srgb,var(--sentence-glass-ink) 18%,transparent);}
