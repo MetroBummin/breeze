@@ -78,13 +78,6 @@ function startOnboardingResolved(replay,pdfAvailable){
     // Mark on entry: closing/reloading never forces another animation wait.
     save(ONBOARD_WELCOME_KEY,true);
     if(!session.motion.matches&&typeof CSS.registerProperty==='function'){
-      const paths=[...root.querySelectorAll('#onboard-ink-reveal path')].filter(path=>path instanceof SVGPathElement);
-      const lengths=paths.map(path=>path.getTotalLength());
-      const total=lengths.reduce((sum,length)=>sum+length,0);let distance=0;
-      for(const [i,path] of paths.entries()){
-        path.style.setProperty('--draw-start',String(distance/total));
-        path.style.setProperty('--draw-share',String(lengths[i]/total));distance+=lengths[i];
-      }
       const {write,hold,fade}=ONBOARD_WELCOME_TIMING;
       root.style.setProperty('--welcome-write',write+'ms');
       root.style.setProperty('--welcome-copy-delay',(write+hold)+'ms');

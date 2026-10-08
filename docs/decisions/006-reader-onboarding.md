@@ -2,11 +2,14 @@
 
 ## Decision
 
-The approved PR124 welcome is selectively preserved: original flow wordmark,
+The approved PR124 welcome is selectively preserved: flow wordmark proportions and palette,
 ‘브리즈에 오신 걸 환영해요’, ‘막힘없이 읽는 새로운 방법.’ and ‘시작하기’.
 Fresh sessions always show it first; replay also starts there. The first welcome
-reveals the existing Breeze flow asset with six hand-authored centerline masks.
-A single inherited pen timeline traverses their cumulative geometric lengths
+draws one open hand-authored centerline following the Breeze flow lettering.
+The visible stroke replaces the broad image mask, which exposed disconnected
+future ink near letter crossings. The same centerline renders the static welcome.
+Its connected cursive loops and joins replace six independent letter starts.
+A single inherited pen timeline traverses its geometric length
 with one cubic-bezier(.35,.02,.25,1) envelope, without resetting speed per letter.
 The review candidate writes for 4.2s, holds the complete word for 750ms, then
 shows the existing caption, note and Start button together over 900ms (opacity
@@ -79,7 +82,8 @@ rapid navigation, first-run cancellation/reload/resume, completion persistence,
 replay, visibility interruption, autoplay failure, reduced motion, decoder source
 ownership and an existing Reader's data/position/appearance/history isolation.
 It checks phone, narrow, tablet, desktop and short/landscape in both themes and
-pins the approved progress geometry. The finished welcome preserves PR124's asset, geometry, copy and materials.
+pins the approved progress geometry. The welcome preserves PR124's layout, copy and materials; its flow lettering
+uses the connected centerline candidate to avoid wide-mask leakage.
 Actual intermediate pen progress, delayed caption and completed-word hold are
 checked along with tap completion, close/restart/reload and live reduced motion.
 

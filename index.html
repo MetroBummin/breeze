@@ -536,17 +536,12 @@
   <section id="onboard-coach" aria-labelledby="onboard-prompt">
     <div id="onboard-welcome"><span class="breeze-wordmark" role="img" aria-label="Breeze">
       <svg viewBox="0 0 841 258" aria-hidden="true" focusable="false">
-        <defs><mask id="onboard-ink-reveal" maskUnits="userSpaceOnUse" x="0" y="0" width="841" height="258">
-          <g fill="none" stroke="white" stroke-width="42" stroke-linecap="round" stroke-linejoin="round">
-            <path pathLength="1" d="M10 225 Q60 195 77 171 Q76 64 120 26 Q162 -9 164 41 Q161 91 80 171 Q121 124 160 145 Q201 177 161 228 Q121 267 87 230 Q65 203 81 175"/>
-            <path pathLength="1" d="M174 208 Q214 202 235 139 L230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 339 211"/>
-            <path pathLength="1" d="M335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 L443 211"/>
-            <path pathLength="1" d="M450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 L556 171"/>
-            <path pathLength="1" d="M546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 L684 212"/>
-            <path pathLength="1" d="M685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162"/>
-          </g>
-        </mask></defs>
-        <g class="onboard-ink"><image class="onboard-ink-light" href="assets/brand/wordmarks/breeze-flow-light.svg" width="841" height="258"/><image class="onboard-ink-dark" href="assets/brand/wordmarks/breeze-flow-dark.svg" width="841" height="258"/></g>
+        <defs>
+          <linearGradient id="onboard-flow-light" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#aac4c4"/><stop offset=".55" stop-color="#718f9c"/><stop offset="1" stop-color="#94acbf"/></linearGradient>
+          <linearGradient id="onboard-flow-dark" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#d7ece8"/><stop offset=".55" stop-color="#9db8c5"/><stop offset="1" stop-color="#c7dbe9"/></linearGradient>
+        </defs>
+        <!-- A single visible pen centerline; no wide mask exposing nearby future strokes. -->
+        <g class="onboard-ink"><path id="onboard-pen-path" fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" pathLength="1" d="M13 225 Q60 195 77 171 Q76 64 120 26 Q162 -9 164 41 Q161 91 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q106 136 148 144 Q188 153 178 208 Q214 202 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162"/></g>
       </svg>
     </span></div>
     <div id="onboard-carousel" role="region" aria-roledescription="캐러셀" aria-label="브리즈 기능 안내" tabindex="0" hidden></div>

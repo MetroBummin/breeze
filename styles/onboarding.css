@@ -15,20 +15,19 @@ body.dark.onboarding-active{--onboard-paper:#20211e;--onboard-ink:#f3f6f4;--onbo
 #onboarding #onboard-next{width:100%;margin-top:0;border-radius:16px;min-height:52px;font-weight:650;color:var(--sentence-glass-ink);}
 #onboard-welcome .breeze-wordmark{position:relative;display:block;width:min(292px,70vw);aspect-ratio:841/258;}
 #onboard-welcome svg{display:block;width:100%;height:100%;}
-.onboard-ink-dark,body.dark .onboard-ink-light{display:none;}
-body.dark .onboard-ink-dark{display:block;}
-#onboarding[data-welcome="drawing"] .onboard-ink{mask:url(#onboard-ink-reveal);}
-/* One inherited pen timeline keeps velocity continuous across letter joins. */
+#onboard-pen-path{stroke:url(#onboard-flow-light);}
+body.dark #onboard-pen-path{stroke:url(#onboard-flow-dark);}
+/* One open centerline has one advancing tip across every letter join. */
 @property --onboard-pen{syntax:"<number>";inherits:true;initial-value:0;}
 #onboarding[data-welcome="drawing"] #onboard-welcome svg{animation:onboard-write var(--welcome-write) cubic-bezier(.35,.02,.25,1) forwards;}
-#onboarding[data-welcome="drawing"] #onboard-ink-reveal path{stroke-dasharray:1;stroke-dashoffset:clamp(0,calc(1 - (var(--onboard-pen) - var(--draw-start)) / var(--draw-share)),1);}
+#onboarding[data-welcome="drawing"] #onboard-pen-path{stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--onboard-pen));}
 #onboarding[data-welcome="drawing"] #onboard-prompt,
 #onboarding[data-welcome="drawing"] #onboard-note,
 #onboarding[data-welcome="drawing"] #onboard-next{opacity:0;animation:onboard-welcome-copy var(--welcome-fade) cubic-bezier(.22,.61,.36,1) var(--welcome-copy-delay) forwards;}
 @keyframes onboard-write{from{--onboard-pen:0;}to{--onboard-pen:1;}}
 @keyframes onboard-welcome-copy{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 @media(prefers-reduced-motion:reduce){
-  #onboarding[data-welcome="drawing"] .onboard-ink{mask:none;}
+  #onboarding[data-welcome="drawing"] #onboard-pen-path{stroke-dashoffset:0;}
   #onboarding[data-welcome="drawing"] #onboard-welcome svg{animation:none;}
   #onboarding[data-welcome="drawing"] #onboard-prompt,
   #onboarding[data-welcome="drawing"] #onboard-note,

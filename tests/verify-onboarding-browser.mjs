@@ -50,22 +50,30 @@ try{
      for(let step=0;step<=40;step++){
       animation.currentTime=duration*step/40;
       await new Promise(requestAnimationFrame);
-      result.push([...document.querySelectorAll('#onboard-ink-reveal path')].map(p=>parseFloat(getComputedStyle(p).strokeDashoffset.replace('calc(',''))));
+      result.push([...document.querySelectorAll('#onboard-pen-path')].map(p=>parseFloat(getComputedStyle(p).strokeDashoffset.replace('calc(',''))));
      }
     }finally{animation.currentTime=resumeTime;animation.play();}
     return result;
    });
-   assert.equal(samples[0].length,6,'expected six writing masks');
-   assert.deepEqual(samples[0],[1,1,1,1,1,1],'letters already revealed at timeline start');
-   assert.deepEqual(samples.at(-1),[0,0,0,0,0,0],'letters unfinished at timeline end');
-   for(const [i,progress] of samples.entries()){
-    assert.ok(progress.every((p,j)=>Number.isFinite(p)&&p>=0&&p<=1&&(!j||progress[j-1]<=p)),'letters revealed out of order: '+JSON.stringify(progress));
-    assert.ok(progress.filter(p=>p>0&&p<1).length<=1,'multiple letters writing at once: '+JSON.stringify(progress));
-    if(i)assert.ok(progress.every((p,j)=>p<=samples[i-1][j]),'letter reveal moved backwards');
+   assert.equal(samples[0].length,1,'one connected writing centerline required');
+   assert.deepEqual(samples[0],[1],'ink already revealed at start');
+   assert.deepEqual(samples.at(-1),[0],'end stroke unfinished');
+   assert.ok(samples.some(([p])=>p>0&&p<1),'pen jumped to completion');
+   for(let i=1;i<samples.length;i++)assert.ok(samples[i][0]<=samples[i-1][0],'pen moved backwards');
+   const geometry=await samplePage.locator('#onboard-pen-path').evaluate(path=>{
+    const d=path.getAttribute('d'),length=path.getTotalLength();
+    const points=Array.from({length:2001},(_,i)=>{const p=path.getPointAtLength(length*i/2000);return [p.x,p.y];});
+    return {d,length,points};
+   });
+   assert.equal((geometry.d.match(/M/g)||[]).length,1,'subpath lifts the pen');
+   assert.ok(!/[Zz]/.test(geometry.d),'centerline must not close an outline');
+   assert.equal(await samplePage.locator('#onboard-welcome circle').count(),0,'duplicate pen marker');
+   assert.deepEqual(geometry.points[0],[13,225]);assert.deepEqual(geometry.points.at(-1),[828,162]);
+   for(let i=1;i<geometry.points.length;i++){
+    const distance=Math.hypot(...geometry.points[i].map((n,j)=>n-geometry.points[i-1][j]));
+    assert.ok(distance>0&&distance<geometry.length/2000*1.01,'pen stopped or teleported');
    }
-   assert.ok(samples.some(progress=>progress.some(p=>p===0)&&progress.some(p=>p>0&&p<1)&&progress.some(p=>p===1)),'no completed, writing and untouched letters observed together');
-   for(let letter=0;letter<6;letter++)assert.ok(samples.some(progress=>progress[letter]>0&&progress[letter]<1),'letter '+letter+' jumped without continuous writing');
-   console.log('Welcome writing: 41 fixed-time samples, six continuous ordered letters; last writing sample '+JSON.stringify(samples.findLast(progress=>progress.some(p=>p>0&&p<1))));
+   console.log('Welcome writing: 41 actual CSS samples; one open centerline, continuous pen position, one final endpoint.');
    await sampleContext.close();
   }
   if(action==='tap'){
