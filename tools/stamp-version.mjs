@@ -16,6 +16,15 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// Deferred app code must belong to the same generation as its loader. Update
+// these URLs first so the loader's own HTML hash changes with its dependencies.
+const lazyFile=resolve(root,'scripts/core/lazy-lib.js');
+const lazySource=readFileSync(lazyFile,'utf8');
+const lazyNext=lazySource.replace(/'(assets\/lib\/readability-0\.6\.0\.js|assets\/longreads\/homeward-lookup-data\.js|scripts\/reader\/frame-trace\.js)(?:\?v=[a-f0-9]{8})?'/g,(_all,path)=>{
+  const hash=createHash('sha256').update(readFileSync(resolve(root,path))).digest('hex').slice(0,8);
+  return `'${path}?v=${hash}'`;
+});
+if(lazyNext!==lazySource)writeFileSync(lazyFile,lazyNext);
 const page = resolve(root, 'index.html');
 const html = readFileSync(page, 'utf8');
 

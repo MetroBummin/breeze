@@ -492,3 +492,38 @@ interrupted preparation, deletion/reimport, delayed image/font layout, offline
 resumption and phone/tablet/desktop/short light/dark views. The authorized TestFlight candidate is
 1.7(235), RSS OFF; the parent owns final CI review, merge and cloud execution.
 App Store replacement/resubmission still requires the user’s later approval.
+
+
+## Homeward legacy preparation at book opening (2026-10-08)
+
+A saved Chapter 1 Homeward copy no longer extends itself during global startup.
+Home readiness, shared-file imports and missing-cover restoration do not wait for
+its optional network request. Selecting that exact saved Text book prepares the
+61-to-107-paragraph extension before the Reader takes ownership, with a three-second
+fetch deadline. Failure keeps the readable local chapter. The exact first 61
+paragraphs, existing source text, paragraph indices and attribution rules are unchanged.
+Edited copies are not replaced. A book already visible in the Reader is not extended.
+
+The existing reader-open intent, optional abort signal, account-session epoch and
+saved object identity reject obsolete preparation. The IndexedDB read/write
+transaction compares the current stored book before replacement, so a concurrent
+delete or edit cannot be resurrected or overwritten. In-memory source changes only
+after a successful commit and a fresh ownership check. If navigation is canceled
+just after commit, an unchanged inactive book in the same account may still adopt
+its already durable edition; this never presents the canceled Reader. A changed
+account, source, position or currently visible Reader remains untouched.
+
+A small `homewardUpgradePosition` checkpoint is committed with the extended book.
+It contains the exact previous position and its converted progress. On opening,
+replay applies only while the current position still equals that previous snapshot.
+This recovers interruption between IndexedDB text commit and localStorage position
+write without overwriting subsequent reading. It adds no store or remote migration.
+The original paragraph anchor remains unchanged; the fraction uses the new total.
+
+`verify-homeward-open-preparation-browser.mjs` covers nonblocking startup, exact
+source migration, failed/ interrupted persistence, timeout, edited copies and stale
+navigation/account/delete/replacement completion, including cancellation just
+after a durable commit. It uses isolated local browser
+storage and blocks external requests. `measure-library-startup-browser.mjs` reports
+10/100/500-book synthetic IndexedDB read costs separately from rendering and full
+launch time; it does not change the library storage schema.

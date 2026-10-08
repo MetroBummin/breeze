@@ -19,6 +19,8 @@ interface Window {
   BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean; RSS_CATALOG_FEED_IDS?: number[] };
   Capacitor?: any;
   breezeExportDict?: () => Promise<any>;
+  Readability?: any;
+  breezeFrameSummary?: (...args: any[]) => any;
   showSaveFilePicker?: (options?: any) => Promise<any>;
 }
 

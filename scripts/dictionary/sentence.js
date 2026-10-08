@@ -373,6 +373,11 @@ async function openSentence(text,origin){
   }
 
   const localStarted=Date.now();
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
+    try{await ensureHomewardLookupData();}
+    catch{paintSentenceFor(life,{en:clean,retry:true,foot:'읽기 자료를 준비하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'});return;}
+    if(!sentenceAlive(life))return;
+  }
   const local=typeof homewardSentenceAnswer==='function'
     ?homewardSentenceAnswer(clean,origin&&origin.pi):null;
   if(local){

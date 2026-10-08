@@ -86,6 +86,20 @@ function homewardWordFor(w,node,input){
     ||typeof homewardWordAnswer!=='function')return null;
   return homewardWordAnswer(input||lookupRequestFor(w,node,false),node);
 }
+async function prepareHomewardWordLookup(k,life){
+  const book=curBook,w=words[k];
+  try{await ensureHomewardLookupData();}
+  catch{
+    if(wordLookupAlive(life)&&curBook===book&&words[k]===w){
+      w.aiOff=navigator.onLine===false?'offline':'error';delete w.aiLoading;
+      const context=currentContext(k);
+      if(context){context.loading='';context.error=w.aiOff;}
+      renderIfAlive(life);
+    }
+    return false;
+  }
+  return wordLookupAlive(life)&&curBook===book&&words[k]===w;
+}
 
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
@@ -480,6 +494,7 @@ function openWord(k, node, point){
 }
 async function resolveCurrentLookup(k,input,life,node){
   const w=words[k];if(!w)return;
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)&&!await prepareHomewardWordLookup(k,life))return;
   const local=homewardWordFor(w,node,input);
   let answer=local?homewardAnswerAsLook(local):null;
   if(local){
@@ -1562,6 +1577,7 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
       그래서 곧장 내놓고, 창의 머리글도 다르게 답니다. */
 async function loadCachedLook(k, began, life, node){
   const w = words[k]; if(!w) return false;
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)&&!await prepareHomewardWordLookup(k,life))return true;
   const input=lookupRequestFor(w,node,false);
   const local=homewardWordFor(w,node,input);
   if(local){
@@ -1606,6 +1622,8 @@ async function fetchLook(k, opt){
   if(opt.life === undefined) opt.life = wordLookupLife;
   const life = opt.life;
   const node=opt.node||activeSelectedWordNode;
+  // Missing optional local data must not silently become a charged lookup.
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)&&!await prepareHomewardWordLookup(k,life))return false;
   if(!opt.sentence)Object.assign(opt,lookupRequestFor(w,node,!opt.retry&&!opt.wider));
   else if(!opt.retry&&!opt.wider){
     // A fresh AI request may already carry the selected sentence/index from the
@@ -1758,6 +1776,7 @@ addEventListener('offline', () => { if(selKey) renderWordLookup(); });
 
 async function fillDictionaryMetadata(k,life,force=false){
   const w=words[k];if(!w||previewWordCard)return;
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)&&!await prepareHomewardWordLookup(k,life))return;
   const selected=activeSelectedWordNode;
   if(homewardWordFor(w,selected))return;
   if(w.defs&&w.defs.length)return;

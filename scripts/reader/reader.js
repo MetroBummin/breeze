@@ -349,12 +349,29 @@ function renderReaderAttribution(book){
 /** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void, signal?: AbortSignal}} [options] */
 async function openBook(b,options={}){
   const intent=++readerOpenIntent;
-  const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted;
+  const homeward=b.longReadId==='backroom-homeward-bound'&&b.kind==='txt'&&!b.transient;
+  const openingAccount=typeof syncSessionEpoch==='number'?syncSessionEpoch:null;
+  const owned=homeward&&books.includes(b);
+  const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted
+    &&(!homeward||(typeof syncSessionEpoch!=='number'||syncSessionEpoch===openingAccount)
+      &&(!owned||books.find(item=>item.id===b.id)===b));
   if(!alive())return;
   const presented=()=>{
     if(!alive())return;
     if(options.onPresented)options.onPresented();
   };
+  if(homeward){
+    // Complete optional source preparation before taking ownership of the Reader.
+    await upgradeHomewardLongRead(b,alive,options.signal);
+    if(!alive())return;
+    if(typeof ensureHomewardLookupData==='function'){
+      try{await ensureHomewardLookupData();}
+      catch(error){
+        if(alive())toast('이 책의 단어 풀이를 준비하지 못했어요. 읽기는 계속할 수 있어요.');
+      }
+    }
+    if(!alive())return;
+  }
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;

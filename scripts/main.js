@@ -3,7 +3,6 @@ syncHomeNavigation();
    paint Home between the launch screen and the tutorial. */
 const homeReady=loadBooks().then(async()=>{
   migrateLibraryFolders();
-  await upgradeHomewardLongRead();
   await maybeShowOnboarding();
   // First-time readers are in the tutorial, not Home. Do not build its hidden
   // recommendation cards or start their image/feed work behind the Reader.
@@ -22,10 +21,11 @@ homeReady.then(()=>restoreMissingLongReadCovers());
    `load` 뒤에 부릅니다 — 등록도 요청이라, 첫 화면이 다 그려지기 전에 부르면
    지금 필요한 파일들과 자리를 다투게 됩니다.
 
-   네이티브 셸은 http 가 아니라(`capacitor://`) 여기서 걸러집니다. 그쪽은 파일이
-   이미 앱 안에 있어서 캐시가 할 일이 없습니다. 등록에 실패해도 앱은 예전과
+   네이티브 셸은 Capacitor 표시로 걸러냅니다. Android의 https 로컬 주소도
+   이미 앱 안에 파일이 있어서 서비스워커 캐시가 할 일이 없습니다. 등록에 실패해도 앱은 예전과
    똑같이 돕니다 — 없으면 매번 네트워크를 탈 뿐입니다. */
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+if('serviceWorker' in navigator && location.protocol.startsWith('http')
+    && !window.Capacitor?.isNativePlatform?.()){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js', {updateViaCache:'none'})
       .catch(error=>console.warn('오프라인 준비를 건너뜁니다:', error));

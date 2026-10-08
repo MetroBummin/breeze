@@ -20,7 +20,7 @@ const html=`<!doctype html><html><head><title>Reading together</title><meta name
 const xml=`<rss version="2.0"><channel><title>Public essays</title><item><title>Reading together</title><link>https://content.example/article</link><description><![CDATA[<p>A useful essay.</p>]]></description></item><item><title>Bad URL</title><link>javascript:alert(1)</link></item></channel></rss>`;
 try{
  for(const engine of [chromium,webkit].filter(engine=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
-  const browser=await engine.launch();try{
+  const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});try{
    const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
    await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
    await page.route('**/*',route=>{
@@ -37,6 +37,7 @@ try{
    });
    await page.goto(base);await page.evaluate(()=>homeReady);
 
+   await page.evaluate(()=>ensureReadabilityLib());
    const parsed=await page.evaluate(html=>parseArticleHtml(html,'https://content.example/article'),html);
    assert(parsed);assert.equal(parsed.author,'A Writer');
    assert(parsed.blocks.some(b=>b.list));assert(parsed.blocks.some(b=>b.caption));assert(parsed.blocks.some(b=>b.r==='code'));assert(parsed.blocks.some(b=>b.table));assert(parsed.blocks.some(b=>b.r==='quote'));
