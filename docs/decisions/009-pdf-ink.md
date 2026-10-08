@@ -1,10 +1,26 @@
 # iPad PDF Pencil annotation
 
-## Current platform policy (2026-10-06)
+## Current platform policy (2026-10-08, partial restriction)
 
 The original native-iPad-only gate and Touch-only statements below document the
 historical iPad implementation. The October 6 Pointer route described at the end
-adds ink on other touch runtimes with the required event capabilities. Native iPad
+adds ink on other touch runtimes with the required event capabilities. The
+October 8 restriction now admits only the existing native iPad idiom signal or
+native Android (Capacitor isNativePlatform + getPlatform) with that input adapter.
+Web/mobile web/PWA, native iPhone and desktop runtimes cannot activate writing;
+their entry is hidden. Android phone/tablet hardware discrimination remains an
+explicit pending compatibility-policy decision; this partial change preserves
+existing Android native adapter behavior without an invented allowlist or OS
+version restriction. It is not release acceptance for the full tablet-only request.
+
+Stored-ink loading and SVG rendering no longer depend on write eligibility, so
+all PDF readers retain read-only annotations. No schema, key, stroke or preference
+is deleted or migrated. Write-mode activation rechecks eligibility before
+restoring lastTool or saving preferences; native capability revocation returns
+to read mode and cancels unfinished input. No separate writing route or activation
+shortcut exists in the current reader; hidden programmatic tool clicks and public
+undo pass the same mode/visibility guards. The persisted tool preference is not a
+persisted active write mode. Native iPad
 continues to prefer its original Touch owner. Browser synthetic checks remain
 separate from physical Android stylus, palm-rejection and inertia acceptance.
 

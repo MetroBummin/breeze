@@ -24,6 +24,7 @@ try{
  browser=await chromium.launch({headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
  const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
  const page=await context.newPage(),errors=[];
+ await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'android'};});
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.goto(url);

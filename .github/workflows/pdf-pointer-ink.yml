@@ -27,12 +27,15 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       - run: node --test tests/verify-pdf-ink-regressions.mjs
       - run: node tests/verify-pdf-pointer-ink-browser.mjs
+      - run: node tests/verify-pdf-availability-browser.mjs
       - run: node tests/verify-device-polish-browser.mjs
       - run: node tests/verify-pdf-ink-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pdf-pointer-ink-proof
-          path: /tmp/breeze-pdf-pointer-ink/
+          path: |
+            /tmp/breeze-pdf-pointer-ink/
+            /tmp/breeze-pdf-availability/
           if-no-files-found: ignore
           retention-days: 7

@@ -13,7 +13,7 @@ const geometrySource=readFileSync(resolve(root,'scripts/reader/pdf-ink-geometry.
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
-function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5}={}){
+function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android'}={}){
   const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
   let frameID=0,busy=false,failWrite=false,now=0,timerId=0;const timers=new Map();
   const register=(type,fn)=>{const list=listeners.get(type)||[];list.push(fn);listeners.set(type,list);};
@@ -61,7 +61,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5}={}){
       else {stored.set(key,snapshot);tx.oncomplete?.();}
     });}})};return tx;
   }};
-  const context={Element,document,window:{breezeInkIPad:nativeIPad,PointerEvent:pointer?function(){}:undefined,TouchEvent:pointer?function(){}:undefined,navigator:{maxTouchPoints:touchPoints},addEventListener:register,
+  const context={Element,document,window:{Capacitor:{isNativePlatform:()=>native,getPlatform:()=>platform},breezeInkIPad:nativeIPad,PointerEvent:pointer?function(){}:undefined,TouchEvent:pointer?function(){}:undefined,navigator:{maxTouchPoints:touchPoints},addEventListener:register,
     webkit:{messageHandlers:{breezeInkScope:{postMessage:v=>posted.push(plain(v))}}}},
     MutationObserver:class {constructor(fn){observers.push(fn);}observe(){}},
     requestAnimationFrame:fn=>{frames.set(++frameID,fn);return frameID;},cancelAnimationFrame:id=>frames.delete(id),
@@ -101,7 +101,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5}={}){
     const preview=qa.active()?.preview?.getAttribute('points');
     qa.touchEnd(event('touchend',[],[contact(...end)]));await tick();return preview;
   }
-  return {engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,pointerEvent,flush,mutate,changeAttribute,stroke,
+  return {context,engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,pointerEvent,flush,mutate,changeAttribute,stroke,
     advance(ms){now+=ms;for(const [id,t] of timers)if(t.at<=now){timers.delete(id);t.fn();}},timers,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
     admission:v=>{context.window.webkit.messageHandlers.breezePencilAdmission=v;},
@@ -361,6 +361,29 @@ test('pointer ink: requires both event capabilities and touch hardware',()=>{
  assert.equal(fixture({pointer:true}).qa.supported(),true);
  assert.equal(fixture({nativeIPad:false}).qa.supported(),false);
  assert.equal(fixture({pointer:true,touchPoints:0}).qa.supported(),false);
+});
+test('availability: touch-capable web/PWA, native iPhone and desktop cannot activate any write tool',()=>{
+ for(const options of [{native:false},{platform:'ios'},{platform:'windows'}]){
+  const f=fixture({pointer:true,...options});assert.equal(f.qa.supported(),false);
+  for(const tool of ['pen','highlighter','erase']){
+   f.qa.setMode(tool);assert.equal(f.engine.writing(),false);
+   f.pointerEvent('pointerdown');f.pointerEvent('pointermove',200,200);f.pointerEvent('pointerup',200,200);
+   assert.equal(f.state.strokes.length,0);assert.equal(f.writes.length,0);
+  }
+ }
+});
+test('availability: missing or throwing Android bridge fails closed',()=>{
+ const f=fixture({pointer:true});
+ delete f.context.window.Capacitor;assert.equal(f.qa.supported(),false);
+ f.context.window.Capacitor={isNativePlatform(){throw new Error('unavailable');}};
+ assert.equal(f.qa.supported(),false);
+});
+test('availability: native iPad uses UIKit idiom and excludes iOS apps on Mac',()=>{
+ const nativeSource=readFileSync(resolve(root,'ios/App/App/SceneDelegate.swift'),'utf8');
+ assert.match(nativeSource,/let inkPad = UIDevice\.current\.userInterfaceIdiom == \.pad && !ProcessInfo\.processInfo\.isiOSAppOnMac/);
+ assert.match(nativeSource,/window\.breezeInkIPad/);
+ assert.equal(fixture({pointer:true,nativeIPad:true,touchPoints:0}).qa.supported(),true,
+  'native iPad does not require an attached Pencil or first pen event');
 });
 test('pointer ink: only pen writes; mouse, finger, hover and right button do not',()=>{
  const f=fixture({pointer:true});

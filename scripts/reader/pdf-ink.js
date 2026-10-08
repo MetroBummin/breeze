@@ -1,5 +1,5 @@
 /* PDF pen annotation. No finger drawing, export or sync.
-   Native iPad retains WebKit Touch + UIKit admission. Other touch-capable
+   Native iPad retains WebKit Touch + UIKit admission. Native Android
    PointerEvent runtimes use pen pointers and cancel their companion Touch
    defaults. SVG stays display-only; fingers retain the existing PDF scroller.
    Synthetic browser tests do not establish Android hardware acceptance. */
@@ -35,12 +35,18 @@ const BreezePdfInk = (()=>{
   const finger=t=>t.touchType!=='stylus' && !suppressed.has(t.identifier);
   const onPaper=target=>target?.closest?.('.pdf-source-page') && !target.closest('button,input,select,textarea');
   const nativeIPad=()=>Reflect.get(window,'breezeInkIPad')===true;
+  const nativeAndroid=()=>{
+    try{return window.Capacitor?.isNativePlatform?.()===true && window.Capacitor?.getPlatform?.()==='android';}
+    catch{return false;}
+  };
   // Capability detection, never a screen-width or user-agent guess. TouchEvent
   // cancellation is required to keep pen drawing from becoming native panning;
   // canceling pointerdown alone cannot prevent that browser default action.
   const pointerInk=()=>!nativeIPad() && typeof window.PointerEvent==='function'
     && typeof window.TouchEvent==='function' && window.navigator?.maxTouchPoints>0 && 'onscrollend' in document;
-  const supported=()=>nativeIPad()||pointerInk();
+  // Android hardware eligibility remains a separate, unresolved policy. Retain
+  // its existing native adapter here; browser capabilities never admit web/PWA.
+  const supported=()=>nativeIPad()||(nativeAndroid()&&pointerInk());
   const penPointers=new Set(),fingerPointers=new Set();
   let pointerScrolling=false;
   const visible=()=>supported() && session===originalSession && session?.kind==='pdf'
@@ -304,6 +310,9 @@ const BreezePdfInk = (()=>{
     }).observe(document.body,{attributes:true,attributeOldValue:true,attributeFilter:['class']});
   }
   function setMode(next){
+    // Every activation (including restored lastTool and programmatic clicks)
+    // passes the same gate as the toolbar before changing tool preferences.
+    if(next!=='read'&&(!visible()||!['pen','highlighter','erase'].includes(next)))next='read';
     if(typeof cancelOriginalUndoTap==='function')cancelOriginalUndoTap();
     cancel();pendingAdmission=null;suppressed.clear();blockedPointers.clear();nativeOwnedStylus.clear();suppressClick=false;penPointers.clear();fingerPointers.clear(); mode=next;
     if(next!=='read'){lastTool=next;savePreferences();}
@@ -768,14 +777,16 @@ const BreezePdfInk = (()=>{
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){pointerScrolling=false;trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
   window.addEventListener('breeze-ink-platform',()=>{
-    if(supported() && originalSession?.kind==='pdf'){
+    if(!supported())setMode('read');
+    if(originalSession?.kind==='pdf'){
       session=originalSession;controls();update();
       const current=session;
       for(const n of current.settled)void current.pdf.getPage(n).then(p=>mount(current,n,p.getViewport({scale:1}))).catch(error=>console.warn('PDF ink mount failed',error));
     }
   });
   async function mount(s,n,base){
-    if(!supported()||s!==session||!s.hash)return;
+    // Stored annotations are readable on every client, independently of tools.
+    if(s!==session||!s.hash)return;
     const element=s.pages[n-1],key=keyFor(s,n);
     let state=pages.get(key);
     if(!state){
@@ -796,7 +807,7 @@ const BreezePdfInk = (()=>{
     state.svg.setAttribute('aria-hidden','true');if(state.svg.parentElement!==element)element.append(state.svg);paint(state);
   }
   return {
-    open(s){if(!supported()||!s.hash)return;session=s;mode='read';pointerScrolling=false;undoStack.length=redoStack.length=0;
+    open(s){if(!s.hash)return;session=s;mode='read';pointerScrolling=false;undoStack.length=redoStack.length=0;
       controls();update();},
     mount,
     release(s,n,{keepShell=false}={}){
