@@ -276,10 +276,32 @@ ordinary Release builds still contain no input trace handler.
 ### Tool settings, partial erasure and input cost
 The user requested pen/eraser options above the pill. Switching tools selects
 the new tool without opening settings; tapping the already selected tool toggles
-its non-modal settings surface. Pen contains the existing three colors/widths,
+its non-modal settings surface. Pen contains fixed colors and three widths,
 eraser contains page-coordinate radii 4, 8 and 16. Tap outside, start paper
 input or press Escape to close settings. The first Pencil contact on paper closes
 settings and edits with that same contact. Settings never reflow the paper.
+
+### Fixed color chips and tool order (2026-10-08)
+
+Pen offers black, blue, red, green, purple and orange; highlighter offers yellow,
+lime, mint, sky blue, pink and purple. The original three pen color values and
+two highlighter values remain in their palettes, preserving existing strokes
+and preferences. New choices affect only new strokes. Each tool remembers its
+own last color using the existing preference record. There is no custom picker
+or add-color action. Colors are circular 44px hit targets in a horizontally
+scrollable row, with a visible selected ring and aria-pressed; color names are
+accessibility labels only. Eraser settings contain no color row.
+
+The tool order is pen, highlighter, eraser. Notability's Android reference shows
+Pen/Pencil/Highlighter/Eraser, and Apple Markup shows Pen/Monoline/Marker/Eraser.
+Goodnotes groups writing tools separately from eraser and permits customization;
+this order is a Breeze choice, not a universal standard. Existing gesture,
+translucency (0.3), theme/rendering and stored stroke semantics stay unchanged.
+
+References:
+- https://support.gingerlabs.com/en-us/articles/16299999-getting-started-with-notability-on-android
+- https://support.apple.com/en-kw/guide/ipad/ipad6350b8dc/ipados
+- https://support.goodnotes.com/hc/en-us/articles/8900755183631-Customize-the-toolbar
 
 Eraser input cuts only covered polyline segments, using the swept capsule between
 consecutive samples (plus half the ink width). Sparse, fast movements therefore

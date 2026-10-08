@@ -4,8 +4,8 @@
    defaults. SVG stays display-only; fingers retain the existing PDF scroller.
    Synthetic browser tests do not establish Android hardware acceptance. */
 const BreezePdfInk = (()=>{
-  const colors=['#111111','#c43d3d','#2864c5'], widths=[0.75,1.5,3];
-  const eraserRadii=[4,8,16],highlightColors=['#ffe34d','#91df80'],highlightWidths=[12,20],highlightOpacity=0.3;
+  const colors=['#111111','#2864c5','#c43d3d','#15803d','#7c3aed','#c2410c'], widths=[0.75,1.5,3];
+  const eraserRadii=[4,8,16],highlightColors=['#ffe34d','#91df80','#2dd4bf','#38bdf8','#f472b6','#a78bfa'],highlightWidths=[12,20],highlightOpacity=0.3;
   const preferenceKey='__breeze_pdf_ink_tools_v1__';
   const undoStack=[],redoStack=[];
   let color=colors[0],width=widths[1],eraserRadius=eraserRadii[1];
@@ -259,8 +259,6 @@ const BreezePdfInk = (()=>{
     inkTools.append(inkSeparator());
     const eraser=inkControl('지우개','M7.2 20.4 3.8 17a2 2 0 0 1 0-2.8l9.8-9.8a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8l-9.4 9.4H7.2ZM8.7 10.7l6.1 6.1M7.2 20.4H21');
     eraser.dataset.inkMode='erase';eraser.onclick=()=>selectTool('erase');inkTools.append(eraser,inkSeparator());
-    // Keep the two essential writing tools visible before the compact strip scrolls.
-    inkTools.insertBefore(eraser,inkTools.querySelector('[data-ink-mode="highlighter"]'));
     for(const [label,path] of [
       ['실행 취소','M9 5 4 10l5 5M4 10h9a6 6 0 0 1 0 12'],
       ['다시 실행','m15 5 5 5-5 5m5-5h-9a6 6 0 0 0 0 12']
@@ -292,8 +290,8 @@ const BreezePdfInk = (()=>{
         row.append(button);
       });
     };
-    options('color',colors,['검정','빨강','파랑']);options('width',widths,['얇게','보통','굵게']);options('radius',eraserRadii,['작게','보통','크게']);
-    options('highlightColor',highlightColors,['노랑','초록']);options('highlightWidth',highlightWidths,['보통','굵게']);
+    options('color',colors,['검정','파랑','빨강','초록','보라','주황']);options('width',widths,['얇게','보통','굵게']);options('radius',eraserRadii,['작게','보통','크게']);
+    options('highlightColor',highlightColors,['노랑','연두','민트','하늘','분홍','보라']);options('highlightWidth',highlightWidths,['보통','굵게']);
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',settings.id);});
     document.getElementById('readchrome').append(settings);
     document.getElementById('ink-two-finger-undo').onclick=toggleTwoFingerUndo;

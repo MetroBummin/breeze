@@ -86,7 +86,7 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 #pdf-ink-settings button[aria-pressed="true"]{background:var(--sentence-glass-action);border-color:var(--sentence-glass-line);}
 #pdf-ink-settings button:focus-visible{outline:2px solid var(--brand-strong);outline-offset:2px;}
 #pdf-ink-settings i{display:block;flex:none;}
-#pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color]){flex:0 0 38px;width:38px;height:38px;min-width:38px;min-height:38px;
+#pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color]){flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;
   padding:5px;border:2px solid transparent;border-radius:50%;background:transparent;}
 #pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color])[aria-pressed="true"]{background:transparent;border-color:var(--brand-strong);
   box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 18%,transparent);}

@@ -63,12 +63,13 @@ try{
     }
    };
    const setting=async(kind,value)=>{
-    const tool=kind==='radius'?'erase':'pen';
+    const tool=kind==='radius'?'erase':kind.startsWith('highlight')?'highlighter':'pen';
+    const attribute=kind.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase());
     const button=page.locator(`[data-ink-mode="${tool}"]`);
     if(await button.getAttribute('aria-pressed')!=='true')await button.click();
     if(await button.getAttribute('aria-expanded')!=='true')await button.click();
-    await page.locator(`[data-ink-${kind}="${value}"]`).click();
-    assert.equal(await page.locator(`[data-ink-${kind}="${value}"]`).getAttribute('aria-pressed'),'true');
+    await page.locator(`[data-ink-${attribute}="${value}"]`).click();
+    assert.equal(await page.locator(`[data-ink-${attribute}="${value}"]`).getAttribute('aria-pressed'),'true');
    };
    const stroke=async(points,{pageNumber=1,type='stylus',cancel=false,noncancel=false,palm=false}={})=>page.evaluate(({points,pageNumber,type,cancel,noncancel,palm})=>{
     const readsBefore=window.qaBoundsReads||0;
@@ -112,6 +113,29 @@ try{
    }));
    assert.equal(selectedSwatch.border,'rgb(38, 127, 168)','selected color uses the Breeze blue ring');
    assert.equal(selectedSwatch.overflow,'auto','color row can horizontally scroll when the palette grows');
+   assert.deepEqual(await page.locator('[data-ink-mode]').evaluateAll(nodes=>nodes.map(node=>node.dataset.inkMode)),['pen','highlighter','erase']);
+   assert.equal(await settings.locator('[data-ink-color]').count(),6);
+   assert.equal(await settings.locator('[data-ink-highlight-color]').count(),6);
+   assert.equal(await settings.locator('input[type="color"]').count(),0,'only predefined colors are offered');
+   for(const theme of ['light','dark'])for(const viewport of [{width:360,height:740},{width:820,height:1180},{width:1180,height:820},{width:1440,height:900},{width:740,height:360}]){
+    await page.setViewportSize(viewport);await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
+    await page.evaluate(()=>expandReaderChrome());
+    if(!await settings.isVisible())await penButton.click();
+    const row=settings.locator('.ink-colors');
+    const layout=await row.evaluate(node=>{
+     const chip=node.firstElementChild.getBoundingClientRect(),box=node.getBoundingClientRect();
+     node.scrollLeft=node.scrollWidth;return {chipWidth:chip.width,chipHeight:chip.height,overflow:node.scrollWidth>node.clientWidth,scroll:node.scrollLeft,right:box.right,left:box.left,screen:innerWidth};
+    });
+    assert.ok(layout.chipWidth>=44&&layout.chipHeight>=44,'color chip touch targets remain usable');
+    assert.ok(layout.overflow&&layout.scroll>0,'fixed palette scrolls horizontally');
+    assert.ok(layout.left>=0&&layout.right<=layout.screen,'palette stays inside viewport');
+    await row.locator('[data-ink-color="#c2410c"]').click();
+    assert.equal(await row.locator('[aria-pressed="true"]').count(),1,'one selected color ring');
+    assert.match(await row.locator('[aria-pressed="true"]').getAttribute('aria-label'),/주황/);
+    if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`ink-palette-${engine.name()}-${theme}-${viewport.width}x${viewport.height}.png`)});}
+   }
+   await page.setViewportSize({width:820,height:1180});await page.evaluate(()=>{darkMode=false;applyDark();});
+   await settings.locator('[data-ink-color="#111111"]').click();
    await context.setOffline(true);
    assert.equal(await page.locator('[data-ink-toggle]').isVisible(),true);
    assert.equal(await stroke([[.2,.2],[.3,.22],[.4,.2]],{palm:true}),true);
@@ -172,6 +196,12 @@ try{
    await page.reload();await open();assert.equal(await count(),1);
    assert.equal(await page.locator('[data-ink-toggle]').getAttribute('aria-pressed'),'false');
    await mode('pen');assert.equal(await page.locator('[data-ink-undo]').isDisabled(),true);
+   for(const c of ['#15803d','#7c3aed','#c2410c']){
+    await setting('color',c);await stroke([[.5,.5],[.54,.49]]);
+    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('stroke'),c);
+    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1,'new colors do not alter the legacy stroke');
+    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').first().getAttribute('stroke'),'#111111');
+   }
    for(const c of ['#111111','#c43d3d','#2864c5'])for(const w of ['0.75','1.5','3']){
     await setting('color',c);
     await setting('width',w);
@@ -470,6 +500,30 @@ try{
    // Reload only after the serialized redo transaction is durable.
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
+   const storedColors=await page.locator('.pdf-ink-layer polyline').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('stroke')));
+   await mode('highlighter');
+   for(const c of ['#2dd4bf','#38bdf8','#f472b6','#a78bfa']){
+    await setting('highlightColor',c);await stroke([[.3,.6],[.6,.6]]);
+    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').last().getAttribute('stroke'),c);
+    await page.locator('[data-ink-undo]').click();
+   }
+   await setting('highlightColor','#a78bfa');await mode('pen');await setting('color','#7c3aed');
+   await mode('highlighter');await highlighter.click();
+   assert.equal(await settings.locator('[data-ink-highlight-color="#a78bfa"]').getAttribute('aria-pressed'),'true','tool colors stay independent');
+   assert.deepEqual(await page.locator('.pdf-ink-layer polyline').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('stroke'))),storedColors,'palette changes leave stored strokes unchanged');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
+   await page.reload();await open();await mode('pen');await penButton.click();
+   assert.equal(await settings.locator('[data-ink-color="#7c3aed"]').getAttribute('aria-pressed'),'true','new pen preference survives reload');
+   await mode('highlighter');await highlighter.click();
+   assert.equal(await settings.locator('[data-ink-highlight-color="#a78bfa"]').getAttribute('aria-pressed'),'true','new highlighter preference survives reload');
+   for(const theme of ['light','dark']){
+    await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
+    const row=settings.locator('.ink-highlight-colors');
+    assert.ok(await row.evaluate(node=>node.scrollWidth>node.clientWidth),'highlighter fixed palette scrolls');
+    assert.equal(await row.locator('[aria-pressed="true"]').count(),1);
+    if(process.env.BREEZE_QA_OUTPUT)await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`ink-highlighter-palette-${engine.name()}-${theme}.png`)});
+   }
+   await page.evaluate(()=>{darkMode=false;applyDark();});
    console.log(engine.name()+': highlighter pixels '+JSON.stringify(pixels)+', durable settings, partial eraser/undo/redo/reload passed');
    await page.evaluate(()=>{window.breezeInkIPad=false;Object.defineProperty(window,'TouchEvent',{value:undefined});document.body.classList.toggle('qa-platform');});
    await page.waitForFunction(()=>document.getElementById('pdf-ink-status').hidden && window.qaInkScope?.enabled===false);
