@@ -67,7 +67,13 @@ try{
   assert.equal(session?.user.email,'reader@example.com');assert.equal(session?.user.id,user.id);
   assert.equal(new URL(page.url()).searchParams.has('breeze_auth_return'),false);
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('sb-')&&key.endsWith('-auth-token'))),true);
+  // Auth acceptance starts the real wordbook sync. Wait for its actual owner
+  // before a deliberate reload, so WebKit does not abort an intercepted REST
+  // response mid-navigation and report a synthetic access-control page error.
+  await page.waitForFunction(()=>!remoteSyncPromise&&!syncPromise);
+  assert.deepEqual(pageErrors,[],'No errors before deliberate reload');
   await page.reload();await page.evaluate(()=>homeReady);await page.waitForFunction(()=>typeof sbUser!=='undefined'&&sbUser?.email==='reader@example.com');
+  await page.waitForFunction(()=>!remoteSyncPromise&&!syncPromise);
   await page.evaluate(()=>openSettings());assert.equal(await page.locator('.sm-account b').textContent(),'reader@example.com');
   assert.equal(await page.evaluate(()=>sbUser.id),user.id);
   if(pageErrors.length)console.error({provider,native,pageErrors,requests});
