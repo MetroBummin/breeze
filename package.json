@@ -49,6 +49,7 @@
     "test:recommendation": "node --test tests/verify-rss-recommendation.mjs",
     "test:pdf-ink": "node --test tests/verify-pdf-ink-regressions.mjs tests/verify-pdf-session-regressions.mjs && node tests/verify-pdf-ink-browser.mjs && node tests/verify-pdf-pointer-ink-browser.mjs",
     "test:pdf-stability": "node --test tests/verify-pdf-session-regressions.mjs && node tests/verify-pdf-crop-memory-browser.mjs",
+    "test:pdf-availability": "node --test tests/verify-pdf-ink-regressions.mjs && node tests/verify-pdf-availability-browser.mjs",
     "test:easy-explanation": "node --experimental-strip-types --test tests/verify-easy-explanation.mjs && node tests/verify-easy-explanation-browser.mjs && BROWSER=webkit node tests/verify-easy-explanation-browser.mjs",
     "test:shared-files": "node --test tests/verify-shared-files.mjs && node tests/verify-shared-files-browser.mjs && node tests/verify-share-home-browser.mjs",
     "test:vocabulary-review": "node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs && node tests/verify-vocabulary-review-browser.mjs && BROWSER=webkit node tests/verify-vocabulary-review-browser.mjs && node tests/verify-simple-word-cards-browser.mjs && BROWSER=webkit node tests/verify-simple-word-cards-browser.mjs",
