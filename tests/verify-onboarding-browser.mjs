@@ -69,6 +69,10 @@ try{
    assert.ok(!/[Zz]/.test(geometry.d),'centerline must not close an outline');
    assert.equal(await samplePage.locator('#onboard-welcome circle').count(),0,'duplicate pen marker');
    assert.deepEqual(geometry.points[0],[13,225]);assert.deepEqual(geometry.points.at(-1),[828,162]);
+   const nearest=target=>geometry.points.reduce((best,point,i)=>
+    Math.hypot(point[0]-target[0],point[1]-target[1])<Math.hypot(geometry.points[best][0]-target[0],geometry.points[best][1]-target[1])?i:best,0);
+   assert.ok(nearest([164,41])<nearest([120,26]),'B must climb the right ascender and turn left before descending its stem');
+
    for(let i=1;i<geometry.points.length;i++){
     const distance=Math.hypot(...geometry.points[i].map((n,j)=>n-geometry.points[i-1][j]));
     assert.ok(distance>0&&distance<geometry.length/2000*1.01,'pen stopped or teleported');

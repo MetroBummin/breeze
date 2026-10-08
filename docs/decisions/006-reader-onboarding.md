@@ -9,6 +9,16 @@ draws one open hand-authored centerline following the Breeze flow lettering.
 The visible stroke replaces the broad image mask, which exposed disconnected
 future ink near letter crossings. The same centerline renders the static welcome.
 Its connected cursive loops and joins replace six independent letter starts.
+The first glyph retains the brand's single-bowl looped b form, rather than
+redesigning it as a textbook two-bowl capital B. Its entry climbs the right
+side of the ascender loop, turns left at the top and descends the stem, then
+rises through the bowl and exits over the existing lower curve into r.
+This reverses the rejected ascender direction and removes its extra upper-bowl
+circuit. The short lower-curve retrace is intentional connected handwriting.
+Formation references: [Dynamilis](https://dynamilis.com/handwriting/cursive/b)
+and [Scribble](https://scribble.app/cursive/b); school capital B differs and
+Scribble explicitly lifts before the next letter. This brand adaptation keeps
+the required connected hand instead of claiming one universal B form.
 A single inherited pen timeline traverses its geometric length
 with one cubic-bezier(.35,.02,.25,1) envelope, without resetting speed per letter.
 The review candidate writes for 4.2s, holds the complete word for 750ms, then

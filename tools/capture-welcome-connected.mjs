@@ -26,7 +26,11 @@ try{
    const t=frame*1000/30;
    await page.evaluate(t=>{welcomeCaptureAnimations.forEach(a=>a.currentTime=t);if(t>=5850)finishOnboardingWelcome();},t);
    await page.screenshot({path:resolve(frames,String(frame).padStart(5,'0')+'.png')});
-   if(frame%10===0&&t<5850)penSamples.push(await page.evaluate(()=>({pen:Number(getComputedStyle(document.querySelector('#onboard-welcome svg')).getPropertyValue('--onboard-pen')),offset:Number(getComputedStyle(document.getElementById('onboard-pen-path')).strokeDashoffset),caption:Number(getComputedStyle(document.getElementById('onboard-prompt')).opacity)})));
+   if(t<5850)penSamples.push(await page.evaluate(()=>{
+    const pen=Number(getComputedStyle(document.querySelector('#onboard-welcome svg')).getPropertyValue('--onboard-pen'));
+    const path=document.getElementById('onboard-pen-path'),point=path.getPointAtLength(path.getTotalLength()*pen);
+    return {pen,point:[point.x,point.y],offset:Number(getComputedStyle(path).strokeDashoffset),caption:Number(getComputedStyle(document.getElementById('onboard-prompt')).opacity)};
+   }));
   }
   assert.equal(penSamples[0].pen,0);assert.ok(penSamples.some(s=>s.pen===1&&s.caption===0));assert.deepEqual(errors,[]);
   for(let i=1;i<penSamples.length;i++)assert.ok(penSamples[i].pen>=penSamples[i-1].pen);
