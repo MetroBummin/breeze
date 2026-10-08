@@ -220,3 +220,12 @@ uses transparent browser-native tap feedback, like text words and EPUB touch
 skins. The canvas inherits that rule. Breeze's selected-word marker and pending
 word cue remain the only word feedback; touch/scroll and lookup ownership do not
 change. See [scope and device-proof limits](../qa/pdf-native-tap-feedback-20261006.md).
+
+## Pending PDF pinch (2026-10-08)
+
+PDF pinch retains an unresolved mini lookup's lifetime and its paper-relative
+selection/shimmer. A reply during the pinch is stored through the existing owner,
+then presented after release using the existing live-anchor, visibility and
+scroll-idle rules. Already-ready mini/detail/morph surfaces still close when
+pinch starts. Explicit close, different lookup, navigation, mode and exit keep
+their cancellation and stale-reply guards. No automatic request/retry is added.

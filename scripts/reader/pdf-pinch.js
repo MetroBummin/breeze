@@ -129,9 +129,13 @@ function originalPinchDistance(points){
 function beginOriginalPinch(center, distance, ids){
   if(typeof closePdfNavigation==='function')closePdfNavigation();
   if(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored()
+      && !(typeof sentenceWaitingActive==='function'&&sentenceWaitingActive())
       && typeof closeSentence==='function') closeSentence();
-  // The same anchored lookup owner as scroll includes mini, detail and morphing UI.
-  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
+  // Pending cues live on the paper and scale with it. Retain their request owner;
+  // ready mini, detail and morphing surfaces keep their existing dismissal.
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()
+      && !(typeof wordPeekPending==='function'&&wordPeekPending())
+      && typeof closePanel==='function') closePanel();
   if(typeof pinReaderChrome==='function') pinReaderChrome(true,'zoom');
   const box = readerScroller(), layer = originalZoomLayer(), stage = originalZoomStage();
   // A deliberate pinch supersedes delayed mode-landing restores (360/900ms).
@@ -211,6 +215,11 @@ function cancelOriginalPinch(){
   }
   resumeOriginalPdfPaint();
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
+  resumeOriginalPinchLookup();
+}
+function resumeOriginalPinchLookup(){
+  if(typeof wordPeekOpen==='function'&&wordPeekOpen())renderWordLookup();
+  if(typeof revealSentenceResult==='function')revealSentenceResult();
 }
 function originalPinchStart(event){
   // An end/cancel can be lost when UIKit takes a contact. A fresh event's live
@@ -277,6 +286,7 @@ function originalPinchEnd(event){
     originalPinchTouches = false;
     if(undo)BreezePdfInk.undo();
     resumeOriginalPdfPaint();
+    resumeOriginalPinchLookup();
   }
 }
 (function(){

@@ -589,7 +589,7 @@ function wordPeekUserScrolled(userScroll=true){
 }
 function wordPeekOpen(){ return wordPeekActive; }
 /* Request readiness and presentation readiness are separate. A mini lookup
-   survives scrolling; another word/mode/page/zoom/exit ends its one lifetime. */
+   survives scrolling and pending PDF pinch; another word/mode/page/exit ends it. */
 function wordPeekPending(){
   const w=wordPeekActive&&selKey?displayedWord(selKey):null;
   return !!(w&&wordPeekState(w,currentContext(selKey)).loading);
@@ -763,6 +763,9 @@ function renderWordPeek(){
       &&!(currentContext(selKey)&&currentContext(selKey).error)
       &&!(wordPeekRetryState&&wordPeekRetryState.error));
   if(state.loading){wordPeekHadPending=true;wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
+  // A reply can arrive while the paper is being transformed. The request/result
+  // stays owned; pinch release resumes normal live-anchor/scroll-idle reveal.
+  if(typeof originalPinchBusy==='function'&&originalPinchBusy()){pill.hidden=true;cancelWordPeekReveal();return;}
   if(wordPeekPresentation!=='SHOWN')wordPeekPresentation='READY';
   if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
   cancelWordPeekReveal();

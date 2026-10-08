@@ -1084,22 +1084,26 @@
     },
     "scripts/dictionary/dictionary.js": {
       "owners": [
-        "130"
+        "130",
+        "pdf-pending-pinch"
       ],
-      "kind": "single-source",
-      "sha256": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389",
+      "kind": "combined-reviewed",
+      "sha256": "6e7f9af7ebaad7c91a00a83e45d3b1d1156ccbdac32a149e735f43fa8e7aa9fe",
       "sourceSha256": {
-        "130": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389"
+        "130": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389",
+        "pending-pinch-baseline": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389"
       }
     },
     "scripts/dictionary/sentence.js": {
       "owners": [
-        "130"
+        "130",
+        "pdf-pending-pinch"
       ],
-      "kind": "single-source",
-      "sha256": "8ea287da5e2a07ebd687268d9ec62e18d1753cd12aa41bb66cb24f12e75577be",
+      "kind": "combined-reviewed",
+      "sha256": "3f5e51ca1751fad85caa9393932816ca444ca5674e3f90147cc468a01dcef648",
       "sourceSha256": {
-        "130": "8ea287da5e2a07ebd687268d9ec62e18d1753cd12aa41bb66cb24f12e75577be"
+        "130": "8ea287da5e2a07ebd687268d9ec62e18d1753cd12aa41bb66cb24f12e75577be",
+        "pending-pinch-baseline": "8ea287da5e2a07ebd687268d9ec62e18d1753cd12aa41bb66cb24f12e75577be"
       }
     },
     "scripts/importers/article.js": {
@@ -1543,6 +1547,36 @@
       "sourceSha256": {
         "welcome": "706a4fff2653c9f31f3d23ed99947d254c5715db1b2924287bfcd4c9d7d8edec"
       }
+    },
+    "scripts/reader/pdf-pinch.js": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "dfc710bfcf933677b187305aa902f21f5791bf978b0fd6f4cbabc16f3124234a"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "add9f57fa5859ae5cb09c81ac1e4b8bc4621d02de7503a6016393a825638a74a"
+    },
+    "docs/decisions/002-dictionary-panel-reading-anchor.md": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "998ba379107a3f96f986f344386ebdfa4e06ca0ff83655902ffe49c126100454"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "bf3c61d7c5f22eaf3e74c97cac9a226307ce63d7b0136c56f3dc93b3a760c22d"
+    },
+    "docs/decisions/004-sentence-lookup-feedback.md": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "c7a8c6c4eb107752518f1672d7a5688acc25a5f1eebb55c84aec4ead12305fd0"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "f6c5fd4491f1d8da91e47891291b995b1da08c570da9d390a1c9f84eebbda5ba"
     }
   },
   "integrationScope": [
@@ -1560,6 +1594,9 @@
     "docs/qa/onboarding-carousel/pdf-media-credits.md",
     "docs/qa/onboarding-carousel/pdf-openstax-light.png",
     "docs/qa/onboarding-carousel/pdf-openstax-dark.png",
-    "tests/verify-holmes-illustrations-browser.mjs"
+    "tests/verify-holmes-illustrations-browser.mjs",
+    ".github/workflows/pdf-pending-pinch.yml",
+    "tests/verify-pdf-pending-pinch-browser.mjs",
+    "docs/qa/pdf-pending-pinch-20261008.md"
   ]
 }

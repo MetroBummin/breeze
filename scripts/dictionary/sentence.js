@@ -247,6 +247,7 @@ function beginSentenceWaiting(){
 }
 function revealSentenceResult(){
   if(!sentencePendingPaint || !sentenceAlive(sentencePendingPaint.life)) return;
+  if(typeof originalPinchBusy==='function' && originalPinchBusy())return;
   if(typeof sentenceGestureStillPressed==='function' && sentenceGestureStillPressed())return;
   if(sentencePresentationEnded){closeSentence();return;}
   if(sentenceOrigin?.peekTarget && lookupPeekScrollRemaining(sentencePeekLastScroll)>0){deferSentencePeekReveal();return;}
