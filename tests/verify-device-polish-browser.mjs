@@ -51,7 +51,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   const paperBox=await page.locator('.pdf-source-page').first().boundingBox();
   await page.locator('[data-ink-mode="pen"]').tap();
   assert.equal(await page.locator('#pdf-ink-settings').isVisible(),true);
-  assert.equal(await page.locator('[data-ink-color]').count(),3);
+  assert.equal(await page.locator('[data-ink-color]').count(),6);
   assert.equal(await page.locator('[data-ink-width]').count(),3);
   const options=await page.locator('#pdf-ink-settings').boundingBox(),dock=await page.locator('#readpill').boundingBox();
   assert(options.y+options.height<dock.y&&options.x>=0&&options.x+options.width<=width,'options fit above the pill');
