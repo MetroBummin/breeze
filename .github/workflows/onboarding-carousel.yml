@@ -18,7 +18,9 @@ concurrency:
 jobs:
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Ubuntu/Playwright dependency mirrors can take over 14 minutes; keep time
+    # for the unchanged browser assertions after installation completes.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
