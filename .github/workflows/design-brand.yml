@@ -27,7 +27,14 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
-      - run: node tests/verify-design-only-boundary.mjs
+      # The original design release pinned auth to its pre-auth baseline.
+      # An explicit auth-only extraction retains all its non-auth boundaries.
+      - run: |
+          if test -f tests/verify-social-auth-boundary.mjs; then
+            node tests/verify-social-auth-boundary.mjs
+          else
+            node tests/verify-design-only-boundary.mjs
+          fi
       - run: npm run test:brand-icons
       - run: node tests/verify-design-home-browser.mjs
       - run: node tests/verify-design-memory-browser.mjs
@@ -52,7 +59,14 @@ jobs:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node tests/verify-design-only-boundary.mjs
+      # The original design release pinned auth to its pre-auth baseline.
+      # An explicit auth-only extraction retains all its non-auth boundaries.
+      - run: |
+          if test -f tests/verify-social-auth-boundary.mjs; then
+            node tests/verify-social-auth-boundary.mjs
+          else
+            node tests/verify-design-only-boundary.mjs
+          fi
       - run: npm run ios:sync
       - name: Compile without signing or upload
         run: >-

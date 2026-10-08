@@ -70,3 +70,8 @@ without an outline or expansion into neighboring text. Aa retains a separate
 control outline. The temporary book is titled “Breeze Tutorial”.
 The final coach offers both Add Book and “나중에 할게요”; either completes the
 same transient session, but the latter exits without opening the Add dialog.
+
+## Independent Settings authentication
+
+Settings social login is documented in [016](016-social-auth.md). It does not
+change this tutorial, its completion/guest rules, or Reader lookup policy.
