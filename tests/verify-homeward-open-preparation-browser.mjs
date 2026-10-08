@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {resolve,extname} from 'node:path';
 import {chromium,webkit} from 'playwright';
+import {unavailableRemote} from './helpers/unavailable-remote.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const text=readFileSync(resolve(root,'assets/longreads/homewardbound.txt'),'utf8');
 const server=createServer((req,res)=>{try{const file=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));if(!file.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream');res.end(readFileSync(file));}catch{res.writeHead(404).end();}});
@@ -13,7 +14,7 @@ let browser;const results=[];
 try{
  browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  const context=await browser.newContext({serviceWorkers:'block'}),remote=[];
- await context.route('**/*',route=>{if(route.request().url().startsWith(url)||route.request().url().startsWith('blob:'))return route.continue();remote.push(route.request().url());return route.abort();});
+ await context.route('**/*',route=>{if(route.request().url().startsWith(url)||route.request().url().startsWith('blob:'))return route.continue();remote.push(route.request().url());return unavailableRemote(route);});
  await context.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.storage-persist-asked','true');});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(url);await page.evaluate(()=>homeReady);

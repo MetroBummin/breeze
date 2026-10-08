@@ -6,6 +6,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
+import {unavailableRemote} from './helpers/unavailable-remote.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const source=readFileSync(resolve(root,'assets/longreads/homewardbound.txt'),'utf8');
 let failReadability=false,failHomeward=false;
@@ -24,7 +25,7 @@ const results=[];
 async function fresh({native=false}={}){
  const context=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
  const requests=[],remote=[],errors=[];
- await context.route('**/*',r=>{const href=r.request().url();if(href.startsWith(url)||href.startsWith('blob:')){requests.push(href);return r.continue();}remote.push(href);return r.abort();});
+ await context.route('**/*',r=>{const href=r.request().url();if(href.startsWith(url)||href.startsWith('blob:')){requests.push(href);return r.continue();}remote.push(href);return unavailableRemote(r);});
  await context.addInitScript(native=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'android'};},native);
  const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));await page.goto(url);await page.evaluate(()=>homeReady);
  return {context,page,requests,remote,errors};
