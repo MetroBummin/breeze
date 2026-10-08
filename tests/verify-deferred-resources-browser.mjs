@@ -69,10 +69,14 @@ try{
   try{
    await page.evaluate(async raw=>{const book={id:'deferred-homeward',title:'Local Homeward',kind:'txt',longReadId:'backroom-homeward-bound',paras:parseTXT(raw,{preserveParagraphs:true}),addedAt:1};books.push(book);await bookPut(book);await openBook(book);},source);
    assert.equal(await page.evaluate(()=>activeAppView()),'read','optional lookup failure must keep local reading');
+   await page.evaluate(async()=>{await document.fonts.ready;document.querySelector('#rtext [data-pi="2"]').scrollIntoView({block:'center'});await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
    await page.evaluate(()=>{const block=document.querySelector('#rtext [data-pi="2"]');hydrateWordSpanBatch([block]);const node=[...block.querySelectorAll('.w')].find(n=>n.textContent==='reverie');openWord(node.dataset.w,node);});
    await page.waitForFunction(()=>words[selKey]?.aiOff==='error');
    await page.evaluate(async()=>{await fillDictionaryMetadata(selKey,wordLookupLife,true);await fetchLook(selKey,{life:wordLookupLife});closePanel();await openSentence('I snapped out of my reverie.',{pi:2});});
    assert.equal(remote.filter(href=>/functions\/v1\/dict|freedictionaryapi/.test(href)).length,0,'missing local data must not trigger AI or metadata fallback');
+   // Exercise a visible tap target: offscreen peek cleanup correctly cancels
+   // metadata work, which is a different contract from cached-answer reuse.
+   await page.evaluate(async()=>{document.querySelector('#rtext [data-pi="2"]').scrollIntoView({block:'center'});await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
    const beforeCache=requests.filter(href=>href.includes('homeward-lookup-data')).length;
    const cached=await page.evaluate(async()=>{
     closeSentence();
