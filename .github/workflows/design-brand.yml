@@ -30,7 +30,9 @@ jobs:
       # The original design release pinned auth to its pre-auth baseline.
       # An explicit auth-only extraction retains all its non-auth boundaries.
       - run: |
-          if test -f tests/verify-social-auth-boundary.mjs; then
+          if test -f tests/verify-integration-boundary.mjs; then
+            node tests/verify-integration-boundary.mjs
+          elif test -f tests/verify-social-auth-boundary.mjs; then
             node tests/verify-social-auth-boundary.mjs
           else
             node tests/verify-design-only-boundary.mjs
@@ -62,7 +64,9 @@ jobs:
       # The original design release pinned auth to its pre-auth baseline.
       # An explicit auth-only extraction retains all its non-auth boundaries.
       - run: |
-          if test -f tests/verify-social-auth-boundary.mjs; then
+          if test -f tests/verify-integration-boundary.mjs; then
+            node tests/verify-integration-boundary.mjs
+          elif test -f tests/verify-social-auth-boundary.mjs; then
             node tests/verify-social-auth-boundary.mjs
           else
             node tests/verify-design-only-boundary.mjs

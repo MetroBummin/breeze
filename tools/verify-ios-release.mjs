@@ -7,7 +7,7 @@ export function validateBuildNumber(value) {
   return value;
 }
 
-export function verifyRelease(project, expectedBuild = '236') {
+export function verifyRelease(project, expectedBuild = '246') {
   validateBuildNumber(expectedBuild);
   const blocks = [...project.matchAll(/isa = XCBuildConfiguration;([\s\S]*?)name = (Debug|Release);/g)]
     .filter(m => /PRODUCT_BUNDLE_IDENTIFIER = kr\.io\.breeze\.app(?:\.share)?;/.test(m[1]));
@@ -20,7 +20,7 @@ export function verifyRelease(project, expectedBuild = '236') {
     assert.equal(builds.length, 1, 'Missing or duplicate build number');
     validateBuildNumber(builds[0][1]);
     assert.equal(builds[0][1], expectedBuild, 'App and extension build numbers must match expected build');
-    assert.deepEqual(versions.map(m => m[1]), ['1.8.1'], 'Marketing version must remain 1.8.1');
+    assert.deepEqual(versions.map(m => m[1]), ['1.9'], 'Marketing version must remain 1.9');
   }
 }
 
@@ -28,7 +28,7 @@ export function applyCloudBuild(project, build) {
   validateBuildNumber(build);
   // Validate the checked-in release before rewriting; do not hide drift or missing settings.
   verifyRelease(project);
-  const updated = project.replace(/CURRENT_PROJECT_VERSION = 236;/g, `CURRENT_PROJECT_VERSION = ${build};`);
+  const updated = project.replace(/CURRENT_PROJECT_VERSION = 246;/g, `CURRENT_PROJECT_VERSION = ${build};`);
   verifyRelease(updated, build);
   return updated;
 }
@@ -39,7 +39,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (process.argv.includes('--apply-cloud-build')) {
     writeFileSync(path, applyCloudBuild(project, process.env.CI_BUILD_NUMBER));
   } else {
-    verifyRelease(project, process.env.CI_BUILD_NUMBER ?? '236');
+    verifyRelease(project, process.env.CI_BUILD_NUMBER ?? '246');
   }
-  console.log(`Breeze and Share Extension: 1.8.1 (${process.env.CI_BUILD_NUMBER ?? '236'})`);
+  console.log(`Breeze and Share Extension: 1.9 (${process.env.CI_BUILD_NUMBER ?? '246'})`);
 }
