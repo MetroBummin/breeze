@@ -1,0 +1,2434 @@
+{
+  "speckled-band": [
+    {
+      "pi": 49,
+      "sourceCuts": [],
+      "editorialCuts": [
+        333,
+        1273,
+        1669
+      ],
+      "reason": "Separate the sleepless-night setting, the sister's collapse, her final clue, and the attempt to get help; keep Helen's uninterrupted speech and exact quotation punctuation.",
+      "cuts": [
+        333,
+        1273,
+        1669
+      ],
+      "prefix": "\"I could not sleep that night. A vague feeling of impending misfortune impressed"
+    },
+    {
+      "pi": 247,
+      "sourceCuts": [],
+      "editorialCuts": [
+        618,
+        1628
+      ],
+      "reason": "Separate the mistaken hypothesis, the physical mechanism, and the recall/training explanation within Holmes's single speech.",
+      "cuts": [
+        618,
+        1628
+      ],
+      "prefix": "\"I had,\" said he, \"come to an entirely erroneous conclusion which shows, my dear"
+    }
+  ],
+  "scandal-in-bohemia": [
+    {
+      "pi": 187,
+      "sourceCuts": [],
+      "editorialCuts": [
+        756
+      ],
+      "reason": "Separate the staged street quarrel from Holmes's intervention and Adler's response.",
+      "cuts": [
+        756
+      ],
+      "prefix": "As he spoke the gleam of the sidelights of a carriage came round the curve of th"
+    },
+    {
+      "pi": 248,
+      "sourceCuts": [
+        19
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        19
+      ],
+      "prefix": "“Very truly yours, “IRENE NORTON, née ADLER.”"
+    }
+  ],
+  "red-headed-league": [
+    {
+      "pi": 11,
+      "sourceCuts": [],
+      "editorialCuts": [
+        838
+      ],
+      "reason": "Separate Holmes's assessment of the unusual case from his request to hear Wilson's account again; retain the same speaker.",
+      "cuts": [
+        838
+      ],
+      "prefix": "“You did, Doctor, but none the less you must come round to my view, for otherwis"
+    }
+  ],
+  "final-problem": [
+    {
+      "pi": 0,
+      "sourceCuts": [],
+      "editorialCuts": [
+        772,
+        1127
+      ],
+      "reason": "Separate Watson's intended silence, his reason for writing, and his review of the published accounts.",
+      "cuts": [
+        772,
+        1127
+      ],
+      "prefix": "It is with a heavy heart that I take up my pen to write these the last words in "
+    },
+    {
+      "pi": 19,
+      "sourceCuts": [
+        41
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        41
+      ],
+      "prefix": "“Oh, anywhere. It’s all the same to me.” There was something very strange in all"
+    },
+    {
+      "pi": 21,
+      "sourceCuts": [
+        9,
+        892
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        9,
+        892
+      ],
+      "prefix": "“Never.” “Aye, there’s the genius and the wonder of the thing!” he cried. “The m"
+    },
+    {
+      "pi": 23,
+      "sourceCuts": [
+        790
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        790
+      ],
+      "prefix": "“As you are aware, Watson, there is no one who knows the higher criminal world o"
+    },
+    {
+      "pi": 26,
+      "sourceCuts": [
+        642
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        642
+      ],
+      "prefix": "“My nerves are fairly proof, Watson, but I must confess to a start when I saw th"
+    },
+    {
+      "pi": 29,
+      "sourceCuts": [
+        153
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        153
+      ],
+      "prefix": "“‘On the contrary,’ I answered, ‘I think it is fairly evident that I do. Please "
+    },
+    {
+      "pi": 35,
+      "sourceCuts": [
+        45
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        45
+      ],
+      "prefix": "“‘Have you any suggestion to make?’ I asked. “‘You must drop it, Mr. Holmes,’ sa"
+    },
+    {
+      "pi": 47,
+      "sourceCuts": [],
+      "editorialCuts": [
+        463,
+        891
+      ],
+      "reason": "Separate the successive attempts on Holmes's life by change of location, without changing the order or speaker.",
+      "cuts": [
+        463,
+        891
+      ],
+      "prefix": "“My dear Watson, Professor Moriarty is not a man who lets the grass grow under h"
+    },
+    {
+      "pi": 49,
+      "sourceCuts": [
+        41
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        41
+      ],
+      "prefix": "“You will spend the night here?” I said. “No, my friend, you might find me a dan"
+    },
+    {
+      "pi": 54,
+      "sourceCuts": [
+        26
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        26
+      ],
+      "prefix": "“Where shall I meet you?” “At the station. The second first-class carriage from "
+    },
+    {
+      "pi": 64,
+      "sourceCuts": [
+        312
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        312
+      ],
+      "prefix": "The train had already begun to move as Holmes spoke. Glancing back, I saw a tall"
+    },
+    {
+      "pi": 75,
+      "sourceCuts": [
+        35
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        35
+      ],
+      "prefix": "“Did you recognise your coachman?” “No.”"
+    },
+    {
+      "pi": 95,
+      "sourceCuts": [
+        242
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        242
+      ],
+      "prefix": "“There he goes,” said Holmes, as we watched the carriage swing and rock over the"
+    },
+    {
+      "pi": 107,
+      "sourceCuts": [
+        653
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        653
+      ],
+      "prefix": "“I think that I may go so far as to say, Watson, that I have not lived wholly in"
+    },
+    {
+      "pi": 108,
+      "sourceCuts": [
+        612
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        612
+      ],
+      "prefix": "It was on the 3rd of May that we reached the little village of Meiringen, where "
+    },
+    {
+      "pi": 113,
+      "sourceCuts": [
+        119
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        119
+      ],
+      "prefix": "It may have been a little over an hour before I reached Meiringen. Old Steiler w"
+    },
+    {
+      "pi": 119,
+      "sourceCuts": [
+        1099
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        1099
+      ],
+      "prefix": "I stood for a minute or two to collect myself, for I was dazed with the horror o"
+    },
+    {
+      "pi": 121,
+      "sourceCuts": [
+        23
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        23
+      ],
+      "prefix": "“Very sincerely yours, “Sherlock Holmes.”"
+    }
+  ],
+  "hound-of-the-baskervilles": [
+    {
+      "pi": 14,
+      "sourceCuts": [
+        87
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        87
+      ],
+      "prefix": "“How did you know what I was doing? I believe you have eyes in the back of your "
+    },
+    {
+      "pi": 34,
+      "sourceCuts": [
+        63
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        63
+      ],
+      "prefix": "“Do none suggest themselves? You know my methods. Apply them!” “I can only think"
+    },
+    {
+      "pi": 42,
+      "sourceCuts": [
+        15
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        15
+      ],
+      "prefix": "“And the dog?” “Has been in the habit of carrying this stick behind his master. "
+    },
+    {
+      "pi": 57,
+      "sourceCuts": [
+        40
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        40
+      ],
+      "prefix": "“And a man of precise mind, evidently.” “A dabbler in science, Mr. Holmes, a pic"
+    },
+    {
+      "pi": 70,
+      "sourceCuts": [
+        61
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        61
+      ],
+      "prefix": "“I have in my pocket a manuscript,” said Dr. James Mortimer. “I observed it as y"
+    },
+    {
+      "pi": 74,
+      "sourceCuts": [
+        277
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        277
+      ],
+      "prefix": "“You have presented an inch or two of it to my examination all the time that you"
+    },
+    {
+      "pi": 83,
+      "sourceCuts": [
+        1740
+      ],
+      "editorialCuts": [
+        1153
+      ],
+      "reason": "Within the original legend paragraph, separate the abduction and confinement from the captive's escape. The later Hugo pursuit break is source-confirmed.",
+      "cuts": [
+        1153,
+        1740
+      ],
+      "prefix": "“Know then that in the time of the Great Rebellion (the history of which by the "
+    },
+    {
+      "pi": 84,
+      "sourceCuts": [
+        628
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        628
+      ],
+      "prefix": "“Now, for some space the revellers stood agape, unable to understand all that ha"
+    },
+    {
+      "pi": 97,
+      "sourceCuts": [],
+      "editorialCuts": [
+        978,
+        1460,
+        2035
+      ],
+      "reason": "Separate the newspaper's discovery narrative, anomalous witness evidence, medical finding, and estate/heir consequences.",
+      "cuts": [
+        978,
+        1460,
+        2035
+      ],
+      "prefix": "“The facts of the case are simple. Sir Charles Baskerville was in the habit ever"
+    },
+    {
+      "pi": 101,
+      "sourceCuts": [
+        139
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        139
+      ],
+      "prefix": "“Then let me have the private ones.” He leaned back, put his finger-tips togethe"
+    },
+    {
+      "pi": 102,
+      "sourceCuts": [
+        631,
+        1475
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        631,
+        1475
+      ],
+      "prefix": "“The moor is very sparsely inhabited, and those who live near each other are thr"
+    },
+    {
+      "pi": 142,
+      "sourceCuts": [
+        59
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        59
+      ],
+      "prefix": "“Were they on the same side of the path as the moor-gate?” “Yes; they were on th"
+    },
+    {
+      "pi": 152,
+      "sourceCuts": [
+        27
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        27
+      ],
+      "prefix": "“Yes, I examined, myself.” “And found nothing?”"
+    },
+    {
+      "pi": 159,
+      "sourceCuts": [
+        421
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        421
+      ],
+      "prefix": "“If I had only been there!” he cried. “It is evidently a case of extraordinary i"
+    },
+    {
+      "pi": 164,
+      "sourceCuts": [
+        34
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        34
+      ],
+      "prefix": "“No, but you evidently think it.” “Since the tragedy, Mr. Holmes, there have com"
+    },
+    {
+      "pi": 170,
+      "sourceCuts": [
+        103
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        103
+      ],
+      "prefix": "“The original hound was material enough to tug a man’s throat out, and yet he wa"
+    },
+    {
+      "pi": 175,
+      "sourceCuts": [
+        284
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        284
+      ],
+      "prefix": "“Yes. On the death of Sir Charles we inquired for this young gentleman and found"
+    },
+    {
+      "pi": 177,
+      "sourceCuts": [
+        51
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        51
+      ],
+      "prefix": "“Why should he not go to the home of his fathers?” “It seems natural, does it no"
+    },
+    {
+      "pi": 184,
+      "sourceCuts": [
+        12
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        12
+      ],
+      "prefix": "“And then?” “And then you will say nothing to him at all until I have made up my"
+    },
+    {
+      "pi": 202,
+      "sourceCuts": [
+        28
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        28
+      ],
+      "prefix": "“Thick! It is intolerable.” “Open the window, then! You have been at your club a"
+    },
+    {
+      "pi": 229,
+      "sourceCuts": [
+        130
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        130
+      ],
+      "prefix": "“He was running, Watson—running desperately, running for his life, running until"
+    },
+    {
+      "pi": 247,
+      "sourceCuts": [
+        57
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        57
+      ],
+      "prefix": "“No, I had been staying with a friend,” said the doctor. “There was no possible "
+    },
+    {
+      "pi": 249,
+      "sourceCuts": [
+        63
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        63
+      ],
+      "prefix": "As you value your life or your reason keep away from the moor. The word “moor” o"
+    },
+    {
+      "pi": 252,
+      "sourceCuts": [
+        105
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        105
+      ],
+      "prefix": "“No, sir, but it might very well come from someone who was convinced that the bu"
+    },
+    {
+      "pi": 253,
+      "sourceCuts": [
+        313
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        313
+      ],
+      "prefix": "“You shall share our knowledge before you leave this room, Sir Henry. I promise "
+    },
+    {
+      "pi": 257,
+      "sourceCuts": [
+        138
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        138
+      ],
+      "prefix": "Dr. Mortimer looked at Holmes with an air of professional interest, and Sir Henr"
+    },
+    {
+      "pi": 259,
+      "sourceCuts": [
+        42
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        42
+      ],
+      "prefix": "“No, I confess that I see no connection.” “And yet, my dear Watson, there is so "
+    },
+    {
+      "pi": 261,
+      "sourceCuts": [
+        117
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        117
+      ],
+      "prefix": "“If any possible doubt remained it is settled by the fact that ‘keep away’ and ‘"
+    },
+    {
+      "pi": 262,
+      "sourceCuts": [
+        366
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        366
+      ],
+      "prefix": "“Really, Mr. Holmes, this exceeds anything which I could have imagined,” said Dr"
+    },
+    {
+      "pi": 268,
+      "sourceCuts": [
+        143
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        143
+      ],
+      "prefix": "“Nail-scissors,” said Holmes. “You can see that it was a very short-bladed sciss"
+    },
+    {
+      "pi": 274,
+      "sourceCuts": [
+        76
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        76
+      ],
+      "prefix": "“We are coming now rather into the region of guesswork,” said Dr. Mortimer. “Say"
+    },
+    {
+      "pi": 282,
+      "sourceCuts": [
+        131
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        131
+      ],
+      "prefix": "“I seem to have walked right into the thick of a dime novel,” said our visitor. "
+    },
+    {
+      "pi": 289,
+      "sourceCuts": [
+        107
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        107
+      ],
+      "prefix": "“Exactly,” said Holmes, “however foolish the incident may seem. You have lost on"
+    },
+    {
+      "pi": 291,
+      "sourceCuts": [
+        81
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        81
+      ],
+      "prefix": "“They were tan boots and had never been varnished. That was why I put them out.”"
+    },
+    {
+      "pi": 292,
+      "sourceCuts": [
+        330
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        330
+      ],
+      "prefix": "“I did a good deal of shopping. Dr. Mortimer here went round with me. You see, i"
+    },
+    {
+      "pi": 293,
+      "sourceCuts": [
+        230
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        230
+      ],
+      "prefix": "“And, now, gentlemen,” said the baronet with decision, “it seems to me that I ha"
+    },
+    {
+      "pi": 294,
+      "sourceCuts": [
+        246
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        246
+      ],
+      "prefix": "Thus encouraged, our scientific friend drew his papers from his pocket and prese"
+    },
+    {
+      "pi": 299,
+      "sourceCuts": [
+        73
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        73
+      ],
+      "prefix": "“Or it may be that they wish, for their own purposes, to scare me away.” “Well, "
+    },
+    {
+      "pi": 302,
+      "sourceCuts": [
+        85
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        85
+      ],
+      "prefix": "“Do you mean danger from this family fiend or do you mean danger from human bein"
+    },
+    {
+      "pi": 311,
+      "sourceCuts": [
+        333
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        333
+      ],
+      "prefix": "“Your hat and boots, Watson, quick! Not a moment to lose!” He rushed into his ro"
+    },
+    {
+      "pi": 314,
+      "sourceCuts": [
+        92
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        92
+      ],
+      "prefix": "“There’s our man, Watson! Come along! We’ll have a good look at him, if we can d"
+    },
+    {
+      "pi": 328,
+      "sourceCuts": [
+        147
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        147
+      ],
+      "prefix": "We had been sauntering slowly down Regent Street during this conversation, and D"
+    },
+    {
+      "pi": 337,
+      "sourceCuts": [
+        150
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        150
+      ],
+      "prefix": "A lad of fourteen, with a bright, keen face, had obeyed the summons of the manag"
+    },
+    {
+      "pi": 342,
+      "sourceCuts": [
+        12
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        12
+      ],
+      "prefix": "“Yes, sir.” “You will tell him that you want to see the waste-paper of yesterday"
+    },
+    {
+      "pi": 345,
+      "sourceCuts": [
+        12
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        12
+      ],
+      "prefix": "“Yes, sir.” “In each case the outside porter will send for the hall porter, to w"
+    },
+    {
+      "pi": 376,
+      "sourceCuts": [
+        25
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        25
+      ],
+      "prefix": "“How do you explain it?” “I just don’t attempt to explain it. It seems the very "
+    },
+    {
+      "pi": 380,
+      "sourceCuts": [
+        222
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        222
+      ],
+      "prefix": "We had a pleasant luncheon in which little was said of the business which had br"
+    },
+    {
+      "pi": 388,
+      "sourceCuts": [
+        31
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        31
+      ],
+      "prefix": "“He is in charge of the Hall.” “We had best ascertain if he is really there, or "
+    },
+    {
+      "pi": 392,
+      "sourceCuts": [
+        193
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        193
+      ],
+      "prefix": "“He is the son of the old caretaker, who is dead. They have looked after the Hal"
+    },
+    {
+      "pi": 397,
+      "sourceCuts": [
+        78
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        78
+      ],
+      "prefix": "“Yes; Sir Charles was very fond of talking about the provisions of his will.” “T"
+    },
+    {
+      "pi": 402,
+      "sourceCuts": [
+        43
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        43
+      ],
+      "prefix": "“Seven hundred and forty thousand pounds.” Holmes raised his eyebrows in surpris"
+    },
+    {
+      "pi": 406,
+      "sourceCuts": [
+        86
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        86
+      ],
+      "prefix": "“Thank you. These details are all of great interest. Have you met Mr. James Desm"
+    },
+    {
+      "pi": 424,
+      "sourceCuts": [
+        13
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        13
+      ],
+      "prefix": "“Perfectly.” “Then on Saturday, unless you hear to the contrary, we shall meet a"
+    },
+    {
+      "pi": 435,
+      "sourceCuts": [
+        12
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        12
+      ],
+      "prefix": "The second: Visited twenty-three hotels as directed, but sorry to report unable "
+    },
+    {
+      "pi": 443,
+      "sourceCuts": [
+        64
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        64
+      ],
+      "prefix": "“First of all your name and address, in case I want you again.” “John Clayton, 3"
+    },
+    {
+      "pi": 451,
+      "sourceCuts": [
+        28
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        28
+      ],
+      "prefix": "“Did he say anything more?” “He mentioned his name.”"
+    },
+    {
+      "pi": 454,
+      "sourceCuts": [
+        162
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        162
+      ],
+      "prefix": "Never have I seen my friend more completely taken aback than by the cabman’s rep"
+    },
+    {
+      "pi": 490,
+      "sourceCuts": [
+        151
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        151
+      ],
+      "prefix": "“Except yesterday afternoon. I usually give up one day to pure amusement when I "
+    },
+    {
+      "pi": 503,
+      "sourceCuts": [
+        925
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        925
+      ],
+      "prefix": "The train pulled up at a small wayside station and we all descended. Outside, be"
+    },
+    {
+      "pi": 507,
+      "sourceCuts": [
+        267
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        267
+      ],
+      "prefix": "Our driver half turned in his seat. “There’s a convict escaped from Princetown, "
+    },
+    {
+      "pi": 511,
+      "sourceCuts": [
+        897
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        897
+      ],
+      "prefix": "I remembered the case well, for it was one in which Holmes had taken an interest"
+    },
+    {
+      "pi": 523,
+      "sourceCuts": [
+        45
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        45
+      ],
+      "prefix": "“Surely you will stay and have some dinner?” “No, I must go. I shall probably fi"
+    },
+    {
+      "pi": 524,
+      "sourceCuts": [
+        625
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        625
+      ],
+      "prefix": "The wheels died away down the drive while Sir Henry and I turned into the hall, "
+    },
+    {
+      "pi": 530,
+      "sourceCuts": [
+        202
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        202
+      ],
+      "prefix": "“I only meant, sir, that Sir Charles led a very retired life, and we were able t"
+    },
+    {
+      "pi": 539,
+      "sourceCuts": [
+        353
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        353
+      ],
+      "prefix": "“My word, it isn’t a very cheerful place,” said Sir Henry. “I suppose one can to"
+    },
+    {
+      "pi": 549,
+      "sourceCuts": [
+        1325,
+        1748
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        1325,
+        1748
+      ],
+      "prefix": "And yet he lied as he said it, for it chanced that after breakfast I met Mrs. Ba"
+    },
+    {
+      "pi": 559,
+      "sourceCuts": [
+        1354
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        1354
+      ],
+      "prefix": "It seemed hopeless to pursue the inquiry any farther, but it was clear that in s"
+    },
+    {
+      "pi": 567,
+      "sourceCuts": [
+        19
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        19
+      ],
+      "prefix": "“I have heard it.” “It is extraordinary how credulous the peasants are about her"
+    },
+    {
+      "pi": 572,
+      "sourceCuts": [
+        97
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        97
+      ],
+      "prefix": "“You think, then, that some dog pursued Sir Charles, and that he died of fright "
+    },
+    {
+      "pi": 579,
+      "sourceCuts": [
+        82
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        82
+      ],
+      "prefix": "“He cannot leave town at present. He has other cases which engage his attention."
+    },
+    {
+      "pi": 594,
+      "sourceCuts": [
+        244
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        244
+      ],
+      "prefix": "Something brown was rolling and tossing among the green sedges. Then a long, ago"
+    },
+    {
+      "pi": 597,
+      "sourceCuts": [
+        58
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        58
+      ],
+      "prefix": "“But why should you wish to go into so horrible a place?” “Well, you see the hil"
+    },
+    {
+      "pi": 610,
+      "sourceCuts": [
+        19
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        19
+      ],
+      "prefix": "“No, I never did.” “It’s a very rare bird—practically extinct—in England now, bu"
+    },
+    {
+      "pi": 616,
+      "sourceCuts": [
+        49
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        49
+      ],
+      "prefix": "“But it is quite a town. When was it inhabited?” “Neolithic man—no date.”"
+    },
+    {
+      "pi": 624,
+      "sourceCuts": [
+        179
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        179
+      ],
+      "prefix": "“I cannot explain.” She spoke in a low, eager voice, with a curious lisp in her "
+    },
+    {
+      "pi": 625,
+      "sourceCuts": [
+        399
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        399
+      ],
+      "prefix": "“Man, man!” she cried. “Can you not tell when a warning is for your own good? Go"
+    },
+    {
+      "pi": 638,
+      "sourceCuts": [
+        144
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        144
+      ],
+      "prefix": "“Queer spot to choose, is it not?” said he as if in answer to my thought. “And y"
+    },
+    {
+      "pi": 654,
+      "sourceCuts": [
+        35
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        35
+      ],
+      "prefix": "“You know the story of the hound?” “I do not believe in such nonsense.”"
+    },
+    {
+      "pi": 656,
+      "sourceCuts": [
+        184
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        184
+      ],
+      "prefix": "“Because it is the place of danger. That is Sir Henry’s nature. I fear that unle"
+    },
+    {
+      "pi": 662,
+      "sourceCuts": [
+        16
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        16
+      ],
+      "prefix": "MY DEAR HOLMES, My previous letters and telegrams have kept you pretty well up t"
+    },
+    {
+      "pi": 665,
+      "sourceCuts": [
+        750
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        750
+      ],
+      "prefix": "One of these, concerning which I have said little, is the escaped convict upon t"
+    },
+    {
+      "pi": 668,
+      "sourceCuts": [],
+      "editorialCuts": [
+        495,
+        1082
+      ],
+      "reason": "Separate the acquaintance, Stapleton's disapproval, and the effect on Watson's guarding duties.",
+      "cuts": [
+        495,
+        1082
+      ],
+      "prefix": "On our way back we stayed for lunch at Merripit House, and it was there that Sir"
+    },
+    {
+      "pi": 670,
+      "sourceCuts": [],
+      "editorialCuts": [
+        1196,
+        1611
+      ],
+      "reason": "Separate Frankland's litigation habit, telescope surveillance, and the impending Mortimer dispute.",
+      "cuts": [
+        1196,
+        1611
+      ],
+      "prefix": "One other neighbour I have met since I wrote last. This is Mr. Frankland, of Laf"
+    },
+    {
+      "pi": 688,
+      "sourceCuts": [
+        624
+      ],
+      "editorialCuts": [
+        1392
+      ],
+      "reason": "Separate examination of the window from Watson's tentative love-intrigue hypothesis.",
+      "cuts": [
+        624,
+        1392
+      ],
+      "prefix": "If I was compelled to leave you without much news during the early days of my mi"
+    },
+    {
+      "pi": 696,
+      "sourceCuts": [
+        277
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        277
+      ],
+      "prefix": "“The man is rather deaf, and in any case we must take our chance of that. We’ll "
+    },
+    {
+      "pi": 706,
+      "sourceCuts": [],
+      "editorialCuts": [
+        807
+      ],
+      "reason": "Separate Watson locating the pair from his dilemma about watching them.",
+      "cuts": [
+        807
+      ],
+      "prefix": "I hurried along the road at the top of my speed without seeing anything of Sir H"
+    },
+    {
+      "pi": 707,
+      "sourceCuts": [],
+      "editorialCuts": [
+        734,
+        1212
+      ],
+      "reason": "Separate the observed intimacy, Stapleton's interruption, and the parties' departure.",
+      "cuts": [
+        734,
+        1212
+      ],
+      "prefix": "Our friend, Sir Henry, and the lady had halted on the path and were standing dee"
+    },
+    {
+      "pi": 710,
+      "sourceCuts": [
+        274
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        274
+      ],
+      "prefix": "I explained everything to him: how I had found it impossible to remain behind, h"
+    },
+    {
+      "pi": 713,
+      "sourceCuts": [
+        14
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        14
+      ],
+      "prefix": "“Yes, I did.” “Did he ever strike you as being crazy—this brother of hers?”"
+    },
+    {
+      "pi": 715,
+      "sourceCuts": [
+        338
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        338
+      ],
+      "prefix": "“I dare say not. I always thought him sane enough until today, but you can take "
+    },
+    {
+      "pi": 718,
+      "sourceCuts": [
+        1867
+      ],
+      "editorialCuts": [
+        859,
+        1339
+      ],
+      "reason": "Separate Sir Henry's private conversation, the interrupted proposal, and his response to Stapleton.",
+      "cuts": [
+        859,
+        1339,
+        1867
+      ],
+      "prefix": "“That, and a deal more. I tell you, Watson, I’ve only known her these few weeks,"
+    },
+    {
+      "pi": 730,
+      "sourceCuts": [
+        227
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        227
+      ],
+      "prefix": "“Look here, Barrymore,” said Sir Henry sternly, “we have made up our minds to ha"
+    },
+    {
+      "pi": 733,
+      "sourceCuts": [
+        189
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        189
+      ],
+      "prefix": "“Don’t ask me, Sir Henry—don’t ask me! I give you my word, sir, that it is not m"
+    },
+    {
+      "pi": 743,
+      "sourceCuts": [
+        89
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        89
+      ],
+      "prefix": "“We have to go, Eliza. This is the end of it. You can pack our things,” said the"
+    },
+    {
+      "pi": 746,
+      "sourceCuts": [
+        24
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        24
+      ],
+      "prefix": "“Then your brother is—” “The escaped convict, sir—Selden, the criminal.”"
+    },
+    {
+      "pi": 749,
+      "sourceCuts": [],
+      "editorialCuts": [
+        634
+      ],
+      "reason": "Separate Mrs. Barrymore's childhood/family account from the escape and current assistance.",
+      "cuts": [
+        634
+      ],
+      "prefix": "“Yes, sir, my name was Selden, and he is my younger brother. We humoured him too"
+    },
+    {
+      "pi": 755,
+      "sourceCuts": [
+        37
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        37
+      ],
+      "prefix": "“I wonder he dares,” said Sir Henry. “It may be so placed as to be only visible "
+    },
+    {
+      "pi": 771,
+      "sourceCuts": [
+        76
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        76
+      ],
+      "prefix": "“I don’t know. It’s a sound they have on the moor. I heard it once before.” It d"
+    },
+    {
+      "pi": 784,
+      "sourceCuts": [
+        86
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        86
+      ],
+      "prefix": "“It rose and fell with the wind. Isn’t that the direction of the great Grimpen M"
+    },
+    {
+      "pi": 789,
+      "sourceCuts": [
+        350
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        350
+      ],
+      "prefix": "“And yet it was one thing to laugh about it in London, and it is another to stan"
+    },
+    {
+      "pi": 793,
+      "sourceCuts": [
+        223
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        223
+      ],
+      "prefix": "“No, by thunder; we have come out to get our man, and we will do it. We after th"
+    },
+    {
+      "pi": 800,
+      "sourceCuts": [],
+      "editorialCuts": [
+        788,
+        1171
+      ],
+      "reason": "Separate the tor observation, Watson's report summary, and his assessment of progress.",
+      "cuts": [
+        788,
+        1171
+      ],
+      "prefix": "I wished to go in that direction and to search the tor, but it was some distance"
+    },
+    {
+      "pi": 804,
+      "sourceCuts": [
+        1927
+      ],
+      "editorialCuts": [
+        1103,
+        1509
+      ],
+      "reason": "Separate rejection of superstition, the material-hound hypothesis, and the independent human agency.",
+      "cuts": [
+        1103,
+        1509,
+        1927
+      ],
+      "prefix": "And have I not cause for such a feeling? Consider the long sequence of incidents"
+    },
+    {
+      "pi": 811,
+      "sourceCuts": [
+        325
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        325
+      ],
+      "prefix": "“The man is a public danger. There are lonely houses scattered over the moor, an"
+    },
+    {
+      "pi": 818,
+      "sourceCuts": [
+        189
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        189
+      ],
+      "prefix": "“I guess we are aiding and abetting a felony, Watson? But, after what we have he"
+    },
+    {
+      "pi": 819,
+      "sourceCuts": [
+        311
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        311
+      ],
+      "prefix": "“You’ve been so kind to us, sir, that I should like to do the best I can for you"
+    },
+    {
+      "pi": 827,
+      "sourceCuts": [
+        35
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        35
+      ],
+      "prefix": "“How do you know this, Barrymore?” “Well, Sir Henry, your uncle had a letter tha"
+    },
+    {
+      "pi": 828,
+      "sourceCuts": [
+        8
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        8
+      ],
+      "prefix": "“Well?” “Well, sir, I thought no more of the matter, and never would have done h"
+    },
+    {
+      "pi": 849,
+      "sourceCuts": [
+        30
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        30
+      ],
+      "prefix": "He thought for a few minutes. “No,” said he. “There are a few gipsies and labour"
+    },
+    {
+      "pi": 861,
+      "sourceCuts": [
+        24
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        24
+      ],
+      "prefix": "“Did you see him then?” “No, sir, but the food was gone when next I went that wa"
+    },
+    {
+      "pi": 869,
+      "sourceCuts": [
+        31
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        31
+      ],
+      "prefix": "“How do you know of him then?” “Selden told me of him, sir, a week ago or more. "
+    },
+    {
+      "pi": 870,
+      "sourceCuts": [
+        193
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        193
+      ],
+      "prefix": "“Now, listen to me, Barrymore! I have no interest in this matter but that of you"
+    },
+    {
+      "pi": 872,
+      "sourceCuts": [
+        34
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        34
+      ],
+      "prefix": "“But what is it that alarms you?” “Look at Sir Charles’s death! That was bad eno"
+    },
+    {
+      "pi": 882,
+      "sourceCuts": [
+        613
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        613
+      ],
+      "prefix": "I had no opportunity to tell the baronet what I had learned about Mrs. Lyons upo"
+    },
+    {
+      "pi": 883,
+      "sourceCuts": [
+        787
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        787
+      ],
+      "prefix": "The first impression left by Mrs. Lyons was one of extreme beauty. Her eyes and "
+    },
+    {
+      "pi": 885,
+      "sourceCuts": [
+        82
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        82
+      ],
+      "prefix": "“It was about the late Sir Charles Baskerville that I have come here to see you."
+    },
+    {
+      "pi": 889,
+      "sourceCuts": [
+        31
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        31
+      ],
+      "prefix": "“Did you correspond with him?” The lady looked quickly up with an angry gleam in"
+    },
+    {
+      "pi": 893,
+      "sourceCuts": [
+        58
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        58
+      ],
+      "prefix": "“Well, I’ll answer,” she said. “What are your questions?” “Did you correspond wi"
+    },
+    {
+      "pi": 907,
+      "sourceCuts": [
+        46
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        46
+      ],
+      "prefix": "“Not on the very day of Sir Charles’s death?” The flush had faded in an instant,"
+    },
+    {
+      "pi": 909,
+      "sourceCuts": [
+        79
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        79
+      ],
+      "prefix": "I thought that she had fainted, but she recovered herself by a supreme effort. “"
+    },
+    {
+      "pi": 915,
+      "sourceCuts": [
+        74
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        74
+      ],
+      "prefix": "“Do you think a woman could go alone at that hour to a bachelor’s house?” “Well,"
+    },
+    {
+      "pi": 921,
+      "sourceCuts": [
+        167
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        167
+      ],
+      "prefix": "“You acknowledge then that you made an appointment with Sir Charles at the very "
+    },
+    {
+      "pi": 927,
+      "sourceCuts": [
+        48
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        48
+      ],
+      "prefix": "“I did not say that I had read all the letter.” “You quoted some of it.”"
+    },
+    {
+      "pi": 955,
+      "sourceCuts": [
+        231
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        231
+      ],
+      "prefix": "“I may not know exactly where he is, but I am quite sure that I could help the p"
+    },
+    {
+      "pi": 961,
+      "sourceCuts": [
+        166
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        166
+      ],
+      "prefix": "The least appearance of opposition struck fire out of the old autocrat. His eyes"
+    },
+    {
+      "pi": 964,
+      "sourceCuts": [
+        103
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        103
+      ],
+      "prefix": "It was several miles off, but I could distinctly see a small dark dot against th"
+    },
+    {
+      "pi": 987,
+      "sourceCuts": [
+        85
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        85
+      ],
+      "prefix": "“I never was more glad to see anyone in my life,” said I as I wrung him by the h"
+    },
+    {
+      "pi": 997,
+      "sourceCuts": [
+        70
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        70
+      ],
+      "prefix": "“And have no doubt searched all the huts until you came to this one?” “No, your "
+    },
+    {
+      "pi": 1001,
+      "sourceCuts": [
+        11
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        11
+      ],
+      "prefix": "“Exactly.” “Well done! Our researches have evidently been running on parallel li"
+    },
+    {
+      "pi": 1009,
+      "sourceCuts": [
+        48
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        48
+      ],
+      "prefix": "Holmes took a bundle of papers from his pocket. “Here are your reports, my dear "
+    },
+    {
+      "pi": 1012,
+      "sourceCuts": [
+        292
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        292
+      ],
+      "prefix": "The sun had set and dusk was settling over the moor. The air had turned chill an"
+    },
+    {
+      "pi": 1029,
+      "sourceCuts": [
+        67
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        67
+      ],
+      "prefix": "The darkness was rising, but much was still hidden by the shadows. “If this woma"
+    },
+    {
+      "pi": 1031,
+      "sourceCuts": [
+        30
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        30
+      ],
+      "prefix": "“And when she is undeceived?” “Why, then we may find the lady of service. It mus"
+    },
+    {
+      "pi": 1036,
+      "sourceCuts": [
+        151
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        151
+      ],
+      "prefix": "A terrible scream—a prolonged yell of horror and anguish—burst out of the silenc"
+    },
+    {
+      "pi": 1063,
+      "sourceCuts": [
+        18
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        18
+      ],
+      "prefix": "“What can we do?” “There will be plenty for us to do tomorrow. Tonight we can on"
+    },
+    {
+      "pi": 1065,
+      "sourceCuts": [
+        105
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        105
+      ],
+      "prefix": "“We must send for help, Holmes! We cannot carry him all the way to the Hall. Goo"
+    },
+    {
+      "pi": 1073,
+      "sourceCuts": [
+        267
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        267
+      ],
+      "prefix": "“To hear a hound upon the moor would not work a hard man like this convict into "
+    },
+    {
+      "pi": 1098,
+      "sourceCuts": [
+        153
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        153
+      ],
+      "prefix": "“Yes, indeed. I have no doubt that my friend’s explanation will cover the facts."
+    },
+    {
+      "pi": 1115,
+      "sourceCuts": [
+        32,
+        469
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        32,
+        469
+      ],
+      "prefix": "“There is Sir Charles’s death.” “Found dead without a mark upon him. You and I k"
+    },
+    {
+      "pi": 1116,
+      "sourceCuts": [
+        424
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        424
+      ],
+      "prefix": "“We are not much better off tonight. Again, there was no direct connection betwe"
+    },
+    {
+      "pi": 1119,
+      "sourceCuts": [
+        21
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        21
+      ],
+      "prefix": "“Are you coming up?” “Yes; I see no reason for further concealment. But one last"
+    },
+    {
+      "pi": 1127,
+      "sourceCuts": [
+        127
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        127
+      ],
+      "prefix": "“This poor wretch was dressed in your clothes. I fear your servant who gave them"
+    },
+    {
+      "pi": 1133,
+      "sourceCuts": [
+        40
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        40
+      ],
+      "prefix": "“Whatever you tell me to do I will do.” “Very good; and I will ask you also to d"
+    },
+    {
+      "pi": 1148,
+      "sourceCuts": [
+        173
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        173
+      ],
+      "prefix": "“Ah, you have a right to know about him. That is the cause of all the mischief, "
+    },
+    {
+      "pi": 1160,
+      "sourceCuts": [
+        52
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        52
+      ],
+      "prefix": "“But this is marvellous. It might be his portrait.” “Yes, it is an interesting i"
+    },
+    {
+      "pi": 1175,
+      "sourceCuts": [
+        13
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        13
+      ],
+      "prefix": "“To London?” “Yes, I think that we should be more useful there at the present ju"
+    },
+    {
+      "pi": 1182,
+      "sourceCuts": [
+        45
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        45
+      ],
+      "prefix": "“When do you desire to go?” he asked coldly. “Immediately after breakfast. We wi"
+    },
+    {
+      "pi": 1212,
+      "sourceCuts": [
+        95
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        95
+      ],
+      "prefix": "“The fact is no longer a secret. The person who has passed for his sister is rea"
+    },
+    {
+      "pi": 1217,
+      "sourceCuts": [
+        490
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        490
+      ],
+      "prefix": "“I have come prepared to do so,” said Holmes, drawing several papers from his po"
+    },
+    {
+      "pi": 1222,
+      "sourceCuts": [
+        11
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        11
+      ],
+      "prefix": "“Exactly.” “And then after you had sent the letter he dissuaded you from keeping"
+    },
+    {
+      "pi": 1224,
+      "sourceCuts": [
+        129
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        129
+      ],
+      "prefix": "“He appears to be a very consistent character. And then you heard nothing until "
+    },
+    {
+      "pi": 1229,
+      "sourceCuts": [
+        98
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        98
+      ],
+      "prefix": "“I knew him,” she said. “But if he had kept faith with me I should always have d"
+    },
+    {
+      "pi": 1235,
+      "sourceCuts": [
+        1058
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        1058
+      ],
+      "prefix": "One of Sherlock Holmes’s defects—if, indeed, one may call it a defect—was that h"
+    },
+    {
+      "pi": 1240,
+      "sourceCuts": [
+        18
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        18
+      ],
+      "prefix": "“A waiting game.” “My word, it does not seem a very cheerful place,” said the de"
+    },
+    {
+      "pi": 1251,
+      "sourceCuts": [
+        397
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        397
+      ],
+      "prefix": "There were only two men in the room, Sir Henry and Stapleton. They sat with thei"
+    },
+    {
+      "pi": 1253,
+      "sourceCuts": [
+        6
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        6
+      ],
+      "prefix": "“No.” “Where can she be, then, since there is no light in any other room except "
+    },
+    {
+      "pi": 1258,
+      "sourceCuts": [
+        236
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        236
+      ],
+      "prefix": "“Very serious, indeed—the one thing upon earth which could have disarranged my p"
+    },
+    {
+      "pi": 1266,
+      "sourceCuts": [
+        96
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        96
+      ],
+      "prefix": "“Hist!” cried Holmes, and I heard the sharp click of a cocking pistol. “Look out"
+    },
+    {
+      "pi": 1267,
+      "sourceCuts": [
+        1477
+      ],
+      "editorialCuts": [
+        571
+      ],
+      "reason": "Separate initial paralysis and gunshots from the pursuit and rescue.",
+      "cuts": [
+        571,
+        1477
+      ],
+      "prefix": "With long bounds the huge black creature was leaping down the track, following h"
+    },
+    {
+      "pi": 1268,
+      "sourceCuts": [
+        71
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        71
+      ],
+      "prefix": "“My God!” he whispered. “What was it? What, in heaven’s name, was it?” “It’s dea"
+    },
+    {
+      "pi": 1277,
+      "sourceCuts": [
+        157
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        157
+      ],
+      "prefix": "“We must leave you now,” said Holmes. “The rest of our work must be done, and ev"
+    },
+    {
+      "pi": 1279,
+      "sourceCuts": [
+        142
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        142
+      ],
+      "prefix": "“He followed the hound to call him off—of that you may be certain. No, no, he’s "
+    },
+    {
+      "pi": 1282,
+      "sourceCuts": [
+        214
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        214
+      ],
+      "prefix": "But there was no sign within it of that desperate and defiant villain whom we ex"
+    },
+    {
+      "pi": 1286,
+      "sourceCuts": [
+        30
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        30
+      ],
+      "prefix": "“He cannot escape us, madam.” “No, no, I did not mean my husband. Sir Henry? Is "
+    },
+    {
+      "pi": 1292,
+      "sourceCuts": [
+        151
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        151
+      ],
+      "prefix": "“You bear him no good will, madam,” said Holmes. “Tell us then where we shall fi"
+    },
+    {
+      "pi": 1294,
+      "sourceCuts": [
+        75
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        75
+      ],
+      "prefix": "“See,” said he. “No one could find his way into the Grimpen Mire tonight.” She l"
+    },
+    {
+      "pi": 1297,
+      "sourceCuts": [],
+      "editorialCuts": [
+        1298
+      ],
+      "reason": "Separate the approach across the bog from discovering and recovering the boot.",
+      "cuts": [
+        1298
+      ],
+      "prefix": "And now I come rapidly to the conclusion of this singular narrative, in which I "
+    },
+    {
+      "pi": 1302,
+      "sourceCuts": [
+        503
+      ],
+      "editorialCuts": [
+        1032,
+        1671
+      ],
+      "reason": "Separate concealment of the animal, the luminous disguise and intimidation, and Holmes's final judgment.",
+      "cuts": [
+        503,
+        1032,
+        1671
+      ],
+      "prefix": "Many traces we found of him in the bog-girt island where he had hid his savage a"
+    },
+    {
+      "pi": 1305,
+      "sourceCuts": [
+        581
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        581
+      ],
+      "prefix": "“The whole course of events,” said Holmes, “from the point of view of the man wh"
+    },
+    {
+      "pi": 1306,
+      "sourceCuts": [
+        759
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        759
+      ],
+      "prefix": "“Certainly, though I cannot guarantee that I carry all the facts in my mind. Int"
+    },
+    {
+      "pi": 1309,
+      "sourceCuts": [
+        699
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        699
+      ],
+      "prefix": "“Having conceived the idea he proceeded to carry it out with considerable finess"
+    },
+    {
+      "pi": 1313,
+      "sourceCuts": [],
+      "editorialCuts": [
+        965
+      ],
+      "reason": "Separate Stapleton's London pursuit from his wife's covert warning.",
+      "cuts": [
+        965
+      ],
+      "prefix": "“It is possible that Stapleton did not know of the existence of an heir in Canad"
+    },
+    {
+      "pi": 1314,
+      "sourceCuts": [
+        990
+      ],
+      "editorialCuts": [],
+      "reason": "",
+      "cuts": [
+        990
+      ],
+      "prefix": "“It was very essential for Stapleton to get some article of Sir Henry’s attire s"
+    },
+    {
+      "pi": 1322,
+      "sourceCuts": [],
+      "editorialCuts": [
+        1067,
+        1865,
+        2076
+      ],
+      "reason": "Separate the wife's constrained earlier role, the final confrontation, Holmes's inference, and his closing invitation to questions.",
+      "cuts": [
+        1067,
+        1865,
+        2076
+      ],
+      "prefix": "“It only remains to indicate the part which she had played throughout. There can"
+    }
+  ]
+}

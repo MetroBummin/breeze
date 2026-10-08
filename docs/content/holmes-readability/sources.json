@@ -1,0 +1,23 @@
+[
+  {
+    "gutenbergId": 1661,
+    "url": "https://www.gutenberg.org/cache/epub/1661/pg1661-images.html",
+    "retrieved": "2026-10-08",
+    "sha256": "26adf6c8ff1384574fca7466df77e226fc048e9ef1eac5c341f0dd997bcb71a4",
+    "bytes": 640229
+  },
+  {
+    "gutenbergId": 834,
+    "url": "https://www.gutenberg.org/cache/epub/834/pg834-images.html",
+    "retrieved": "2026-10-08",
+    "sha256": "c7fe1562233b145c3cde008445de4287eea8c88274500e892c513865e194df64",
+    "bytes": 586009
+  },
+  {
+    "gutenbergId": 2852,
+    "url": "https://www.gutenberg.org/cache/epub/2852/pg2852-images.html",
+    "retrieved": "2026-10-08",
+    "sha256": "f6e2b763e2d06ce3354cb2325044d8c826f1bf40d1bb3420ebb1ee9d101b7b1d",
+    "bytes": 418682
+  }
+]

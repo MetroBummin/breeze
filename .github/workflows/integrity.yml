@@ -131,13 +131,19 @@ jobs:
       - name: Bundled long-read previews, imports and offline persistence
         run: npm run test:longreads && npm run test:homeward-lookup
       - name: Five illustrated Holmes stories in Chromium and WebKit
-        run: npm run test:holmes
+        run: |
+          git fetch --no-tags origin e7b61d5304d20d639d45fc8dd23116db5d6446e5
+          mkdir -p /tmp/breeze-holmes-baseline
+          git archive FETCH_HEAD | tar -x -C /tmp/breeze-holmes-baseline
+          BREEZE_HOLMES_BASELINE=/tmp/breeze-holmes-baseline npm run test:holmes
       - name: Holmes artwork and typography proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: holmes-illustrated-proof
-          path: /tmp/breeze-holmes-integration-proof/
+          path: |
+            /tmp/breeze-holmes-integration-proof/
+            /tmp/breeze-holmes-readability-proof/
           if-no-files-found: ignore
           retention-days: 7
       - name: Long-read preview proof

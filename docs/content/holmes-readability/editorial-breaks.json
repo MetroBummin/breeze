@@ -1,0 +1,182 @@
+{
+  "speckled-band": [
+    {
+      "pi": 49,
+      "before": [
+        "Suddenly, amid all the hubbub",
+        "At first I thought that she had not",
+        "I rushed out, calling loudly"
+      ],
+      "reason": "Separate the sleepless-night setting, the sister's collapse, her final clue, and the attempt to get help; keep Helen's uninterrupted speech and exact quotation punctuation."
+    },
+    {
+      "pi": 247,
+      "before": [
+        "My attention was speedily drawn",
+        "Then I thought of the whistle."
+      ],
+      "reason": "Separate the mistaken hypothesis, the physical mechanism, and the recall/training explanation within Holmes's single speech."
+    }
+  ],
+  "scandal-in-bohemia": [
+    {
+      "pi": 187,
+      "before": [
+        "Holmes dashed into the crowd"
+      ],
+      "reason": "Separate the staged street quarrel from Holmes's intervention and Adler's response."
+    }
+  ],
+  "red-headed-league": [
+    {
+      "pi": 11,
+      "before": [
+        "Perhaps, Mr. Wilson, you would"
+      ],
+      "reason": "Separate Holmes's assessment of the unusual case from his request to hear Wilson's account again; retain the same speaker."
+    }
+  ],
+  "final-problem": [
+    {
+      "pi": 0,
+      "before": [
+        "My hand has been forced, however",
+        "As far as I know, there have"
+      ],
+      "reason": "Separate Watson's intended silence, his reason for writing, and his review of the published accounts."
+    },
+    {
+      "pi": 47,
+      "before": [
+        "I kept to the pavement after that",
+        "I took a cab after that"
+      ],
+      "reason": "Separate the successive attempts on Holmes's life by change of location, without changing the order or speaker."
+    }
+  ],
+  "hound-of-the-baskervilles": [
+    {
+      "pi": 83,
+      "before": [
+        "Now, the poor lass upstairs"
+      ],
+      "reason": "Within the original legend paragraph, separate the abduction and confinement from the captive's escape. The later Hugo pursuit break is source-confirmed."
+    },
+    {
+      "pi": 97,
+      "before": [
+        "One fact which has not been explained",
+        "No signs of violence were to be discovered",
+        "It is well that this is so"
+      ],
+      "reason": "Separate the newspaper's discovery narrative, anomalous witness evidence, medical finding, and estate/heir consequences."
+    },
+    {
+      "pi": 668,
+      "before": [
+        "One would imagine that such a match",
+        "By the way, your instructions"
+      ],
+      "reason": "Separate the acquaintance, Stapleton's disapproval, and the effect on Watson's guarding duties."
+    },
+    {
+      "pi": 670,
+      "before": [
+        "Apart from the law he seems",
+        "If he would confine his energies"
+      ],
+      "reason": "Separate Frankland's litigation habit, telescope surveillance, and the impending Mortimer dispute."
+    },
+    {
+      "pi": 688,
+      "before": [
+        "It had struck me that it was possible"
+      ],
+      "reason": "Separate examination of the window from Watson's tentative love-intrigue hypothesis."
+    },
+    {
+      "pi": 706,
+      "before": [
+        "I stood among the rocks watching"
+      ],
+      "reason": "Separate Watson locating the pair from his dilemma about watching them."
+    },
+    {
+      "pi": 707,
+      "before": [
+        "Next moment I saw them spring apart",
+        "Finally Stapleton turned upon his heel"
+      ],
+      "reason": "Separate the observed intimacy, Stapleton's interruption, and the parties' departure."
+    },
+    {
+      "pi": 718,
+      "before": [
+        "With that I offered in as many words",
+        "As it was I told him"
+      ],
+      "reason": "Separate Sir Henry's private conversation, the interrupted proposal, and his response to Stapleton."
+    },
+    {
+      "pi": 749,
+      "before": [
+        "That was why he broke prison, sir."
+      ],
+      "reason": "Separate Mrs. Barrymore's childhood/family account from the escape and current assistance."
+    },
+    {
+      "pi": 800,
+      "before": [
+        "Such are the adventures of last night",
+        "We are certainly making some progress."
+      ],
+      "reason": "Separate the tor observation, Watson's report summary, and his assessment of progress."
+    },
+    {
+      "pi": 804,
+      "before": [
+        "But facts are facts",
+        "And always, apart from the hound"
+      ],
+      "reason": "Separate rejection of superstition, the material-hound hypothesis, and the independent human agency."
+    },
+    {
+      "pi": 1267,
+      "before": [
+        "But that cry of pain from the hound"
+      ],
+      "reason": "Separate initial paralysis and gunshots from the pursuit and rescue."
+    },
+    {
+      "pi": 1297,
+      "before": [
+        "Once only we saw a trace"
+      ],
+      "reason": "Separate the approach across the bog from discovering and recovering the boot."
+    },
+    {
+      "pi": 1302,
+      "before": [
+        "This paste in the tin is no doubt",
+        "I said it in London, Watson"
+      ],
+      "reason": "Separate concealment of the animal, the luminous disguise and intimidation, and Holmes's final judgment."
+    },
+    {
+      "pi": 1313,
+      "before": [
+        "His wife had some inkling of his plans"
+      ],
+      "reason": "Separate Stapleton's London pursuit from his wife's covert warning."
+    },
+    {
+      "pi": 1322,
+      "before": [
+        "On the day of the crisis, however",
+        "In this I fancy that in any case",
+        "And now, my dear Watson, without"
+      ],
+      "reason": "Separate the wife's constrained earlier role, the final confrontation, Holmes's inference, and his closing invitation to questions."
+    }
+  ]
+}
