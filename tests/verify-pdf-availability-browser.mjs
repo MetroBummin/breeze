@@ -1,6 +1,7 @@
 /* Real PDF.js/IndexedDB; native signals are mocked, not hardware acceptance. */
 import assert from 'node:assert/strict';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -32,9 +33,11 @@ const cases=[
 ];
 try{
  for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
-  const browser=await engine.launch({headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+  // Match existing PDF suites: WebKit requires persistent IndexedDB Blob storage.
+  const profile=mkdtempSync(resolve(tmpdir(),'breeze-availability-'));
+  const browser=await engine.launchPersistentContext(profile,{headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
   try{
-   const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
+   const context=browser;
    const page=await context.newPage(),errors=[];
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
@@ -111,8 +114,7 @@ try{
     mkdirSync(proof,{recursive:true});await page.screenshot({path:resolve(proof,`${engine.name()}-${runtime.name}.png`)});
    }
    assert.deepEqual(errors,[]);
-   await context.close();
    console.log(`${engine.name()}: PASS platform restrictions, native revoke, persisted tool/forced activation, responsive light/dark and real stored ink readback; Android native hardware policy remains unchanged`);
-  }finally{await browser.close();}
+  }finally{await browser.close();rmSync(profile,{recursive:true,force:true});}
  }
 }finally{await new Promise(r=>server.close(r));}
