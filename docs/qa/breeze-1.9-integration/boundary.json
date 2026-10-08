@@ -1577,6 +1577,16 @@
       },
       "kind": "combined-reviewed",
       "sha256": "f6c5fd4491f1d8da91e47891291b995b1da08c570da9d390a1c9f84eebbda5ba"
+    },
+    "tests/verify-sentence-success-pill-browser.mjs": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "447d0f37c70c5a78549ce9a30ad01ebf6737bbdc36995b5587a34c7da86e5421"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "896f660460e10f906e9e67eeb4360de25804bf96c034367ef459d12d16e059df"
     }
   },
   "integrationScope": [

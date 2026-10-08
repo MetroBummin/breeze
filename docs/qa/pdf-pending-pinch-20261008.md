@@ -31,7 +31,10 @@ No change to viewport, ink, palette/keyframes, onboarding, brand or release meta
 `index.html`/`sw.js` receive the normal generated content-version stamps.
 
 The integration receipt pins precisely the changed runtime/decision files and
-retains their previous baseline hashes; existing tests/assertions are unchanged.
+retains their previous baseline hashes. The existing sentence-success test now
+asserts the authorized pending-retention contract (same life/cue/request, no abort,
+result after release, pending cleanup). Its ready-result/help dismissal and stale
+reply checks remain intact; no timeout, skip or assertion is weakened.
 A separate workflow adds the new real-PDF test in Chromium and WebKit.
 
 ## Local evidence
@@ -49,8 +52,12 @@ A separate workflow adds the new real-PDF test in Chromium and WebKit.
   presentation and complete pending cleanup on cancellation.
 - Existing Chromium word pinch dismissal/morph/text/EPUB tests passed.
 - Existing Chromium PDF glyph/highlight geometry and ink browser tests passed.
-- Existing PDF pinch/interruption and responsive sentence success tests are run
-  separately; their final results and exact-head CI are reported with the PR.
+- Existing Chromium PDF interruption checks passed. The broad PDF pinch suite
+  times out at its post-long-press result assertion (line220); the identical
+  timeout reproduces on the unmodified archive source, so it remains an existing
+  baseline/device-browser validation gap. No test was changed to hide it.
+- The revised full responsive sentence-success browser suite is run separately;
+  its final result and exact-head CI are reported with the PR.
 
 Controlled transport mirrors production `dictCall`'s abort-to-null contract;
 late gate resolution cannot return an answer through an aborted request. It

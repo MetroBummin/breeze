@@ -800,12 +800,20 @@ try{
         await start(kind);
         if(mode!=='pending')await result({ko:korean},kind+'-pinch-'+mode+'-'+ending,{capture:false});
         if(mode==='help')await page.locator('#ps-easy-button').click();
-        await page.evaluate(()=>{qaPill.beforePinchPending=qaPill.pending.at(-1);});
+        await page.evaluate(()=>{qaPill.beforePinchPending=qaPill.pending.at(-1);qaPill.beforePinchLife=sentenceLife;qaPill.beforePinchCue=readerSentenceCue;qaPill.beforePinchCalls=qaPill.pending.length;});
         await page.evaluate(()=>qaPill.touch('touchstart',[1,2]));
         assert.equal(await page.evaluate(()=>originalPinchBusy()),true,'PDF pinch did not acquire gesture');
-        await closed('PDF pinch acquisition');
-        if(mode!=='result')assert.equal(await page.evaluate(()=>qaPill.beforePinchPending.signal.aborted),true,
-          'PDF pinch did not abort '+mode);
+        if(mode==='pending'){
+          assert.equal(await page.evaluate(()=>sentenceWaitingActive()&&sentenceLife===qaPill.beforePinchLife
+            &&readerSentenceCue===qaPill.beforePinchCue&&readerSentenceCue.layer.isConnected
+            &&readerSentenceCue.layer.classList.contains('is-pending')),true,'PDF pinch lost pending owner/cue');
+          assert.equal(await page.evaluate(()=>qaPill.beforePinchPending.signal.aborted),false,'PDF pinch aborted pending request');
+          assert.equal(await page.locator('#sentence-modal').isVisible(),false,'pending pinch opened a result');
+        }else {
+          await closed('PDF pinch acquisition');
+          if(mode==='help')assert.equal(await page.evaluate(()=>qaPill.beforePinchPending.signal.aborted),true,
+            'PDF pinch did not abort help');
+        }
         await page.evaluate(ending=>{
           if(ending==='release')qaPill.touch('touchend',[]);
           if(ending==='cancel')qaPill.touch('touchcancel',[]);
@@ -813,7 +821,16 @@ try{
           if(ending==='noncancelable')qaPill.touch('touchmove',[1,2],false);
           qaPill.beforePinchPending.resolve({ko:'오래된 해석',explanation:'오래된 설명'});sentenceGestureReleased();
         },ending);
-        await page.waitForFunction(()=>!originalPinchBusy());await settle();await closed('PDF pinch '+mode+' '+ending);
+        await page.waitForFunction(()=>!originalPinchBusy());await settle();
+        if(mode==='pending'){
+          await page.waitForFunction(()=>sentenceResultAnchored());
+          assert.equal(await page.evaluate(()=>sentenceLife),await page.evaluate(()=>qaPill.beforePinchLife),'pinch changed pending lifetime');
+          assert.equal(await page.evaluate(()=>qaPill.pending.length),await page.evaluate(()=>qaPill.beforePinchCalls),'pinch duplicated request');
+          assert.equal(await page.locator('#ps-ko').textContent(),'오래된 해석','retained pending reply was lost');
+          assert.equal(await page.evaluate(()=>readerSentenceCue.layer.classList.contains('is-pending')),false,'completed reply retained shimmer');
+          await page.evaluate(()=>closeSentence());
+        }
+        await closed('PDF pinch '+mode+' '+ending);
         await prepare(kind,{width:820,height:1180});
       }
     }
