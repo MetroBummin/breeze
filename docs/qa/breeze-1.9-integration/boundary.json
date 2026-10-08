@@ -9,7 +9,7 @@
     "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb"
   },
   "version": "1.9",
-  "build": "246",
+  "build": "247",
   "files": {
     ".github/workflows/design-brand.yml": {
       "owners": [
@@ -1179,7 +1179,7 @@
         "131"
       ],
       "kind": "combined-reviewed",
-      "sha256": "bfded03f7620d7b3d2b8cf171c185bf8781cf9534b5c0ebc712260a501a07e5a",
+      "sha256": "f34596cb8d48791eb473720e622f4514bed19c8f570d5134734b0ceec0f651b4",
       "sourceSha256": {
         "130": "3a148729f5ea6805e7d08404987a622ab0c1b6d0a784e88ba5ba00ae74707f7f",
         "131": "275d707d2d514a7a2fe30d6d3092ecd94b0b1bd35935d2a83b0879be6f9e25f9"
@@ -1550,6 +1550,7 @@
     "ios/App/App.xcodeproj/project.pbxproj",
     "docs/qa/onboarding-carousel/pdf-media-credits.md",
     "docs/qa/onboarding-carousel/pdf-openstax-light.png",
-    "docs/qa/onboarding-carousel/pdf-openstax-dark.png"
+    "docs/qa/onboarding-carousel/pdf-openstax-dark.png",
+    "tests/verify-holmes-illustrations-browser.mjs"
   ]
 }

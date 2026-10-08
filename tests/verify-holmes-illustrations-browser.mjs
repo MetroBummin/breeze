@@ -64,6 +64,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
     assert.equal(actual.pi,scene.verifiedPlacement.afterParagraph1Based);assert.equal(actual.loaded,true);assert.ok(Math.abs(actual.ratio-2)<.01);
    }
    const boundary=slug==='hound-of-the-baskervilles'?1304:Math.floor(paras.length*.8);
+   // Missing offline artwork must retain the canonical paragraph even when the
+   // browser supplies no automatic scroll anchoring (Linux WebKit CI path).
+   const missingArtwork=await page.evaluate(boundary=>{
+    const scroller=readerScroller(),automatic=scroller.style.overflowAnchor;
+    scroller.style.overflowAnchor='none';restoreAnchor({pi:boundary,dy:0});
+    const before=captureAnchor();
+    for(const img of document.querySelectorAll('#rtext .story-illustration img'))img.dispatchEvent(new Event('error'));
+    const after=captureAnchor();scroller.style.overflowAnchor=automatic;
+    return {before,after};
+   },boundary);
+   assert.ok(Math.abs(missingArtwork.before.pi-boundary)<=1);
+   assert.ok(Math.abs(missingArtwork.after.pi-boundary)<=1,'failed artwork preserves source paragraph: '+JSON.stringify(missingArtwork));
    const saved=await page.evaluate(boundary=>{const id=curBook.id,book=curBook;show('home');positions[id]={p:boundary/(book.paras.length-1),pi:boundary,y:0,mode:'text',t:Date.now()};save(LS_POS,positions);return {id,cover:book.cover,title:book.title};},boundary);
    await page.reload();await page.evaluate(()=>homeReady);
    await context.setOffline(true);await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),saved.id);await page.waitForFunction(()=>!readerPositionPending());

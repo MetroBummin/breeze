@@ -1,7 +1,7 @@
 # Breeze 1.9 integration checkpoint
 
 Isolated checkout: `/Users/kosangbum/Documents/Codex/2026-10-08/task-4/release-integration`.
-Branch: `integration/breeze-1.9-20261008`. Local candidate: **1.9 (246)**.
+Branch: `integration/breeze-1.9-20261008`. Final local candidate after offline artwork repair: **1.9 (247)**. Build 246 remains preserved as an earlier candidate.
 No main mutation, deployment, upload, TestFlight or App Review action occurred.
 
 ## Integrated source heads
@@ -69,3 +69,9 @@ asset evidence. File Provider's identical untracked `config 2.xml` is preserved
 and locally excluded; it is not committed.
 
 User requests continuing with GPT-6.1 Sol and no further scope expansion.
+
+## Final offline artwork repair
+
+Final PDF source `2dd2384` initially failed Integrity and failed the single browser-job retry at the same WebKit Red-Headed League anchor (saved 174, visible 193). Investigation found that `img.onerror` removed failed bundled illustrations without preserving a source anchor. The exact removal path was reproduced with browser automatic anchoring disabled: paragraph 174 moved to 184. The repair explicitly captures/restores the current source anchor around removal, including pending initial restoration. The same probe now retains paragraph 174. A strict additional assertion covers this path for every Holmes story; the original real offline paragraph assertion is unchanged.
+
+A new archive uses build 247, above the actual locally preserved 246 archive, without claiming ASC reservation or Cloud counter uniqueness. No source paragraphs, stored IDs, auth, PDF tools or other onboarding media change in this repair.

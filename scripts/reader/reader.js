@@ -180,7 +180,14 @@ function renderBookBody(b){
       img.alt=illustration.alt;
       img.width=illustration.width||1536; img.height=illustration.height||1024;
       img.loading='lazy'; img.decoding='async';
-      img.onerror=()=>fig.remove();
+      img.onerror=()=>{
+        // Offline artwork failure changes layout, not the saved source location.
+        // Preserve it explicitly: browser scroll anchoring differs by platform.
+        const active=imageGeneration===readerBodyImageGeneration&&curBook===b&&currentReaderMode==='text';
+        const anchor=active?(readerPositionPending()?posOf(b.id):captureAnchor()):null;
+        fig.remove();
+        if(anchor){restoreAnchor(anchor);lastAnchor=captureAnchor();}
+      };
       fig.appendChild(img);
       page.appendChild(fig);
       pageChars+=400;
