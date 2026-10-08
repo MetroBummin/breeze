@@ -33,6 +33,13 @@ read/write behavior is not changed by this PR.
 
 Local Chromium onboarding and full npm tests pass. The latest source also passes
 unchanged typecheck (34 diagnostics), production boundary pins and www packaging.
+
+Visual review caught the detail scene's original y=140..540 crop cutting the
+`본문 색칠` toggle (bottom 556.39) and panel (bottom 575). The refreshed light/dark
+source crop is x=8, y=132, 374×450, ending at 582: the entire panel fits while the
+Reader dock stays outside. Capture now verifies the panel bounds against the crop.
+The final single review video includes the complete light flow followed by a
+shorter dark flow; it replaces the existing Library video as a new version.
 The full-flow video shows welcome → all seven scenes → Home at a narrow viewport
 with native-iPad capability emulated. It is a UI review, not physical-device proof.
 WebKit could not be installed locally because the download was forbidden; CI

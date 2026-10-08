@@ -12,7 +12,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1
 const browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE||'/usr/bin/chromium'});
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const receipt=[];
-const firstOnly=process.env.BREEZE_CAPTURE_FEATURES==='word';
+const selected=process.env.BREEZE_CAPTURE_FEATURES?.split(',');
 try{
 for(const dark of [false,true]){
  const context=await browser.newContext({viewport:{width:390,height:640},hasTouch:true,serviceWorkers:'block'});
@@ -33,21 +33,25 @@ for(const dark of [false,true]){
  const mark=async locator=>{const b=await locator.boundingBox();if(!b)throw Error('Missing target');await page.evaluate(b=>{let n=document.getElementById('qa-touch');if(!n){n=document.createElement('div');n.id='qa-touch';document.body.append(n);}n.style.left=b.x+b.width/2+'px';n.style.top=b.y+b.height/2+'px';},b);return b;};
  const clear=()=>page.evaluate(()=>document.getElementById('qa-touch')?.remove());
  async function clip(name,target,action){
+  if(selected&&!selected.includes(name)){await action(await target.boundingBox());await wait(180);return;}
   const key=name+'-'+(dark?'dark':'light'),frames=resolve('/tmp/breeze-onboard-frames',key);mkdirSync(frames,{recursive:true});
   await clear();let running=true,count=0,rows=[];
   const focus=['word','details','sentence','easy'].includes(name);
-  const region=focus?{x:12,y:140,width:366,height:name==='word'?200:400}:undefined;
+  const region=name==='details'?{x:8,y:132,width:374,height:450}:focus?{x:12,y:140,width:366,height:name==='word'?200:400}:undefined;
   const capturing=(async()=>{while(running){const start=Date.now(),path=resolve(frames,String(count++).padStart(4,'0')+'.png');await page.screenshot({path,clip:region});rows.push({path,time:Date.now()});await wait(Math.max(0,90-(Date.now()-start)));}})();
   await wait(400);const rect=await mark(target);await wait(220);await action(rect);await wait(180);await clear();await wait(1400);running=false;await capturing;
   await page.screenshot({path:resolve(out,key+'.jpg'),type:'jpeg',quality:85,clip:region});
+  const contentBounds=name==='details'?await page.locator('#panel').boundingBox():null;
+  if(contentBounds&&(contentBounds.x<region.x||contentBounds.y<region.y||contentBounds.x+contentBounds.width>region.x+region.width||contentBounds.y+contentBounds.height>region.y+region.height))throw Error('Detail panel exceeds capture crop');
   const concat=rows.map((row,i)=>`file '${row.path}'\nduration ${i<rows.length-1?(rows[i+1].time-row.time)/1000:.09}`).join('\n');writeFileSync(resolve(frames,'frames.txt'),concat);
   const result=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-level','3.0','-pix_fmt','yuv420p','-crf','29','-an','-movflags','+faststart',resolve(out,key+'.mp4')],{encoding:'utf8'});if(result.status)throw Error(result.stderr);
-  receipt.push({key,region,sourceSHA:process.env.BREEZE_CAPTURE_SHA||'e7b61d5304d20d639d45fc8dd23116db5d6446e5',target:await target.getAttribute('id'),rect,frames:count,duration:rows.length?(rows.at(-1).time-rows[0].time)/1000:0});console.log('Recorded',key);
+  receipt.push({key,region,contentBounds,sourceSHA:process.env.BREEZE_CAPTURE_SHA||'e7b61d5304d20d639d45fc8dd23116db5d6446e5',target:await target.getAttribute('id'),rect,frames:count,duration:rows.length?(rows.at(-1).time-rows[0].time)/1000:0});console.log('Recorded',key);
  }
  const word=page.locator('#rtext .w').filter({hasText:/^curiosity$/}).first();
  await clip('word',word,()=>word.tap());await page.locator('#word-peek').waitFor({state:'visible'});
- if(firstOnly){await context.close();continue;}
+ if(selected?.length===1&&selected[0]==='word'){await context.close();continue;}
  await clip('details',page.locator('#word-peek-more'),()=>page.locator('#word-peek-more').tap());
+ if(selected?.length===1&&selected[0]==='details'){await context.close();continue;}
  await page.evaluate(()=>closePanel());
  const sentence=page.locator('#rtext .w').filter({hasText:/^Every$/}).first();
  await clip('sentence',sentence,async b=>{await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await wait(830);await page.mouse.up();});
@@ -69,5 +73,7 @@ for(const dark of [false,true]){
  await clip('memory',page.locator('#nav-vocab'),()=>page.locator('#nav-vocab').tap());
  await context.close();
 }
-writeFileSync(resolve('docs/qa/onboarding-carousel/capture-receipt.json'),JSON.stringify({sourceRoot:root,source:'real app UI, authored demo TXT/PDF, prepared Korean answers, no external API',clips:receipt},null,2));
+const receiptPath=resolve('docs/qa/onboarding-carousel/capture-receipt.json');
+const prior=selected?JSON.parse(readFileSync(receiptPath,'utf8')).clips.filter(row=>!receipt.some(next=>next.key===row.key)):[];
+writeFileSync(receiptPath,JSON.stringify({sourceRoot:root,source:'real app UI, authored demo TXT/PDF, prepared Korean answers, no external API',clips:[...prior,...receipt]},null,2));
 }finally{await browser.close();server.close();}

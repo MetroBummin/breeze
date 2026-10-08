@@ -17,7 +17,16 @@ for(let i=0;i<7;i++){
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);await wait(3500);
  await page.screenshot({path:resolve(out,`final-${i+1}-${name}.png`)});await page.locator('#onboard-next').tap();
 }
-chapters.push({scene:'complete-home',at:(Date.now()-start)/1000});await wait(1800);running=false;await capture;
+chapters.push({scene:'complete-home',at:(Date.now()-start)/1000});await wait(900);
+await page.evaluate(()=>{darkMode=true;applyDark();return startOnboarding(true);});
+chapters.push({scene:'dark-welcome',at:(Date.now()-start)/1000});
+await page.screenshot({path:resolve(out,'final-dark-welcome.png')});await wait(1100);await page.locator('#onboard-next').tap();
+for(let i=0;i<7;i++){
+ const name=await page.evaluate(()=>onboardingSession.pages[onboardingSession.page-1][0]);chapters.push({scene:'dark-'+name,at:(Date.now()-start)/1000});
+ await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);await wait(name==='details'?3500:1800);
+ await page.screenshot({path:resolve(out,`final-dark-${i+1}-${name}.png`)});await page.locator('#onboard-next').tap();
+}
+chapters.push({scene:'dark-complete-home',at:(Date.now()-start)/1000});await wait(1000);running=false;await capture;
 if(errors.length)throw Error(errors.join('\n'));await context.close();
 writeFileSync(resolve(frames,'frames.txt'),rows.map((r,i)=>`file '${r.p}'\nduration ${i<rows.length-1?(rows[i+1].t-r.t)/1000:.1}`).join('\n'));
 const file=resolve(out,'Breeze-onboarding-full-flow.mp4');const result=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-level','3.0','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',file],{encoding:'utf8'});if(result.status)throw Error(result.stderr);

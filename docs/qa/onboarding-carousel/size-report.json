@@ -14,12 +14,12 @@
     {
       "scene": "details",
       "light": {
-        "mp4": 13078,
-        "jpg": 16276
+        "mp4": 14760,
+        "jpg": 17768
       },
       "dark": {
-        "mp4": 14663,
-        "jpg": 17036
+        "mp4": 14833,
+        "jpg": 18538
       }
     },
     {
@@ -78,11 +78,11 @@
       }
     }
   ],
-  "media_total_bytes": 427920,
+  "media_total_bytes": 432766,
   "base_www_bytes": 20811775,
-  "new_www_bytes": 21241726,
-  "www_added_bytes": 429951,
+  "new_www_bytes": 21246572,
+  "www_added_bytes": 434797,
   "base_www_zip_bytes": 17792522,
-  "new_www_zip_bytes": 18166294,
-  "www_zip_added_bytes": 373772
+  "new_www_zip_bytes": 18170374,
+  "www_zip_added_bytes": 377852
 }
