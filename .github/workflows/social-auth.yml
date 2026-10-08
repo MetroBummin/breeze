@@ -81,7 +81,7 @@ jobs:
           CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
 
   button-artwork-source:
-    runs-on: macos-26
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
