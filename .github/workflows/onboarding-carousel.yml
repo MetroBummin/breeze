@@ -1,0 +1,45 @@
+name: Onboarding carousel
+on:
+  pull_request:
+    paths:
+      - 'scripts/ui/onboarding.js'
+      - 'scripts/main.js'
+      - 'styles/onboarding.css'
+      - 'assets/onboarding/**'
+      - 'index.html'
+      - 'tests/verify-onboarding-browser.mjs'
+      - '.github/workflows/onboarding-carousel.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: onboarding-carousel-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Welcome, navigation, lifetime, media and Reader isolation
+        env:
+          BROWSER: ${{ matrix.engine }}
+          BREEZE_ONBOARD_PROOF: /tmp/breeze-onboarding-carousel
+        run: npm run test:onboarding
+      - name: Responsive light/dark review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-carousel-${{ matrix.engine }}
+          path: /tmp/breeze-onboarding-carousel/
+          if-no-files-found: warn
+          retention-days: 7
