@@ -30,3 +30,12 @@ verifiers use this explicit candidate consistently.
 Final source freeze waits for PR129's replacement of the PDF-only onboarding
 clip/poster with an actual reusable PDF and the final PR128 toolbar. Other scenes
 remain unchanged. Record exact source, test results and archive signing state.
+
+## Mac WebKit keyboard regression found during integration
+
+Touch navigation left document.activeElement on body. Escape never reached the
+root-only keyboard listener, leaving the replay overlay visible at page 4.
+The active guide now owns document capture keyboard input with its existing
+AbortSignal; closing aborts this owner. Existing navigation, focus loop and
+Escape assertions are unchanged. This is an integration-only correction, with
+no changes to an owner branch, scene order, UI copy, assets or completion keys.

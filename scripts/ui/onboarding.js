@@ -65,7 +65,9 @@ function startOnboardingResolved(replay,pdfAvailable){
   document.getElementById('onboard-next').addEventListener('click',()=>session.page===session.pages.length?endOnboarding(true):goOnboardingPage(session.page+1),{signal});
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
   carousel.addEventListener('click',()=>{if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
-  root.addEventListener('keydown',event=>{
+  // WebKit touch can leave focus on body. The active guide owns keyboard input
+  // until its existing session signal aborts, including Escape after a tap.
+  document.addEventListener('keydown',event=>{
     event.stopPropagation();
     if(event.key==='Escape'){event.preventDefault();endOnboarding(false);return;}
     if(session.page>0&&['ArrowLeft','ArrowRight'].includes(event.key)){
@@ -78,7 +80,7 @@ function startOnboardingResolved(replay,pdfAvailable){
       if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
     }
-  },{signal});
+  },{signal,capture:true});
   carousel.addEventListener('pointerdown',event=>{
     if(event.isPrimary){session.swiped=false;session.pointer={id:event.pointerId,x:event.clientX,y:event.clientY};if(event.isTrusted)carousel.setPointerCapture?.(event.pointerId);}
   },{signal});

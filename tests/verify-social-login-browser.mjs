@@ -28,7 +28,9 @@ try{
     }}}}});
    },{token});
   }
-  await context.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','true'));
+  // The combined guide persists its existing completed marker as JSON "done".
+  // Keep auth fixtures outside an active guide, matching a returning reader.
+  await context.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await context.route('**/*',async route=>{
    const address=new URL(route.request().url());
    if(address.origin===origin){
