@@ -299,7 +299,7 @@ See docs/decisions/014-design-only-brand-release.md.
 
 2026-10-08 Memory feedback: remove the decorative Thunder header image; retain
 Breeze Memory and all controls. Header starts at safe-area + 24px like Home;
-its text has a -4px optical correction to align visible ink centers with the
+its text has a -3.25px optical correction to align visible ink centers with the
 neutral Home wordmark. Manual add uses the existing `.control-glass` material
 in a visible 44px circle with keyboard focus. Dock geometry, review mascots and
 onboarding stay unchanged. See docs/qa/memory-header-20261008.md.

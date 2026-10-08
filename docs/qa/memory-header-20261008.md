@@ -18,15 +18,18 @@ the same contour, although light reflections make the upper thin strokes quieter
 
 Matching top padding alone leaves the title's visible ink below the wordmark
 center. Set Memory padding to safe-area + 24px, then translate just its title
-up 4px to compensate for the text's baseline/line-box metrics. Do not move the
+up 3.25px to compensate for the text's baseline/line-box metrics. Do not move the
 add button or change the Home logo. Chromium contour/Canvas font measurements:
 
 | 390×844 viewport | Home ink center | Memory before | Memory after |
 | --- | ---: | ---: | ---: |
-| light and dark, safe area 0 | 45.99px | 79px | 47px |
-| light and dark, safe area 59 | 104.99px | 138px | 106px |
+| light and dark, safe area 0 | 45.99px | 79px | 47.75px |
+| light and dark, safe area 59 | 104.99px | 138px | 106.75px |
 
-The visible-center delta falls from 33.01px to 1.01px. Measurements use alpha
+The visible-center delta falls from 33.01px to 1.76px in Chromium. WebKit CI
+revealed different font baseline metrics: the initial -4px correction put its
+ink center 2.49px above Home. A shared -3.25px correction balances both engines
+(Chromium +1.76px, WebKit -1.74px), retaining the strict 2px assertion. Measurements use alpha
 bounds of the rendered SVG and font ascent/descent with the actual DOM baseline,
 not equal CSS boxes. Screenshot antialiasing adds roughly a pixel of uncertainty.
 The 59px safe-area case substitutes CSS env values in intercepted stylesheets;

@@ -4,7 +4,7 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 #v-vocab{max-width:1160px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));background:var(--home-background);color:var(--settings-ink);min-height:100svh;}
 #v-vocab .wordbook-brand{display:flex;align-items:center;gap:10px;margin:0 0 32px;min-height:38px;}
 /* Match Home’s 44px header row; compensate the text ink inside its line box. */
-#v-vocab .wordbook-brand h1{transform:translateY(-4px);}
+#v-vocab .wordbook-brand h1{transform:translateY(-3.25px);}
 #v-vocab h1{font:700 26px/32px var(--ui);letter-spacing:-.4px;}
 #v-vocab .cnt{font:600 13px/20px var(--ui);color:var(--settings-muted);font-variant-numeric:tabular-nums;}
 .wordbook-search{display:flex;align-items:center;gap:12px;height:46px;background:var(--wordbook-field);border-radius:17px;padding:0 16px;color:var(--settings-muted);}

@@ -26,7 +26,7 @@ finish before merge. Local native/physical installation unavailable.
 
 The Memory header no longer displays the decorative Thunder image. Title and
 controls stay intact. Align its visible title ink to Home's wordmark using
-safe-area + 24px top spacing and a -4px title optical correction; the add control
+safe-area + 24px top spacing and a -3.25px title optical correction; the add control
 uses shared glass in its existing 44px circle. This follow-up is PR-only, with no
 new merge or Cloud/TestFlight authorization. Review mascots and onboarding remain
 unchanged. Measurement and screenshot evidence: ../qa/memory-header-20261008.md.

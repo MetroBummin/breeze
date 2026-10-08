@@ -10,7 +10,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -25,10 +25,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "iphone-dark",
@@ -41,7 +43,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -56,10 +58,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "iphone-safe-light",
@@ -72,7 +76,7 @@
     },
     "title": {
       "x": 20,
-      "y": 85,
+      "y": 85.75,
       "width": 163.53125,
       "height": 32
     },
@@ -87,10 +91,12 @@
       "bottom": 125.234375
     },
     "titleInk": {
-      "top": 96,
-      "bottom": 116
+      "top": 96.75,
+      "bottom": 116.75,
+      "baseline": 111.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "iphone-safe-dark",
@@ -103,7 +109,7 @@
     },
     "title": {
       "x": 20,
-      "y": 85,
+      "y": 85.75,
       "width": 163.53125,
       "height": 32
     },
@@ -118,10 +124,12 @@
       "bottom": 125.234375
     },
     "titleInk": {
-      "top": 96,
-      "bottom": 116
+      "top": 96.75,
+      "bottom": 116.75,
+      "baseline": 111.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "narrow-light",
@@ -134,7 +142,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -149,10 +157,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "narrow-dark",
@@ -165,7 +175,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -180,10 +190,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "tablet-light",
@@ -196,7 +208,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -211,10 +223,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "tablet-dark",
@@ -227,7 +241,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -242,10 +256,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "desktop-light",
@@ -258,7 +274,7 @@
     },
     "title": {
       "x": 160,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -273,10 +289,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "desktop-dark",
@@ -289,7 +307,7 @@
     },
     "title": {
       "x": 160,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -304,10 +322,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "short-light",
@@ -320,7 +340,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -335,10 +355,12 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   },
   {
     "key": "short-dark",
@@ -351,7 +373,7 @@
     },
     "title": {
       "x": 20,
-      "y": 26,
+      "y": 26.75,
       "width": 163.53125,
       "height": 32
     },
@@ -366,9 +388,11 @@
       "bottom": 66.234375
     },
     "titleInk": {
-      "top": 37,
-      "bottom": 57
+      "top": 37.75,
+      "bottom": 57.75,
+      "baseline": 52.75,
+      "font": "600 22px \"Avenir Next\", \"Helvetica Neue\", \"Apple SD Gothic Neo\", Pretendard, -apple-system, sans-serif"
     },
-    "opticalCenterDelta": 1.0078125
+    "opticalCenterDelta": 1.7578125
   }
 ]
