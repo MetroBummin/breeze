@@ -112,7 +112,9 @@ const BreezePdfInk = (()=>{
     const enabled=!!visible()&&mode!=='read'&&!document.hidden, box=readerScroller();
     let scope={enabled};
     if(enabled&&box){
-      if(originalPinchBusy())return; // Keep the last committed scope until the contact-end refresh.
+      if(originalPinchBusy()&&!(typeof originalPinchReturn!=='undefined'&&originalPinchReturn))return;
+      // The elastic return exposes committed pdfPageLayout coordinates, so a
+      // fresh native Pencil admission must already see the released zoom.
       const outer=box.getBoundingClientRect();
       const bounds=element=>{
         const r=element.getBoundingClientRect();return [r.x,r.y,r.width,r.height];
@@ -831,6 +833,7 @@ const BreezePdfInk = (()=>{
     },
     close(s){if(s!==session)return;interrupt();mode='read';for(let n=1;n<=s.pages.length;n++)this.release(s,n);session=null;undoStack.length=redoStack.length=0;update();},
     finger,trace,
+    refreshScope:scheduleNativeScope,
     writing(){return !!visible()&&mode!=='read';},
     undo(){history(true);},
     diagnosticState(){

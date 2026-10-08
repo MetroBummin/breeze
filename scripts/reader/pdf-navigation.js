@@ -74,6 +74,7 @@ function applyPdfDirection(session,page=1){
   invalidatePdfPageLayout(session);layoutOriginalZoom();updatePdfNavigationControls();
 }
 async function setPdfReadDirection(direction){
+  cancelOriginalPinchReturn();
   if(readerPositionPending()||!['vertical','horizontal'].includes(direction)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
   if(direction===studyPrefs.direction)return;
   const session=originalSession,anchor=currentPdfSession(session)?capturePdfAnchor(topInset()):null;
@@ -82,6 +83,7 @@ async function setPdfReadDirection(direction){
   if(currentPdfSession(session)){saveReadingState();updatePfill(true);}
 }
 async function goPdfPage(n,{keepNavigation=false}={}){
+  cancelOriginalPinchReturn();
   const session=originalSession;
   if(readerPositionPending()||currentReaderMode!=='original'||!currentPdfSession(session)||pdfDeletionBusy||BreezePdfInk.busy()||originalPinchBusy())return;
   n=pdfNearestPage(session,n);

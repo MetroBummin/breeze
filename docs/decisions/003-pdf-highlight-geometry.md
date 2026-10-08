@@ -68,6 +68,23 @@ are excluded, as they were in the former `getTextContent()` map.
 - 80% is a geometry stress case: the existing UI's 100% minimum is preserved.
   The current dictionary uses overlays, so popup cycles and layout width changes
   are tested separately instead of restoring the retired side panel.
+
+### Post-1.9 minimum-zoom feedback
+
+Pinching below the 100% minimum adds bounded resistance to the existing paper
+transform only. Logical zoom, scroll extents, landing position, glyph boxes and
+stored ink stay clamped to the existing geometry. Paper, ink and pending lookup
+cues share that transform. Release restores presentation over 220ms; reduced
+motion restores immediately. New input, navigation, resize, blur and reader
+closure cancel the return before sampling new coordinates. The animation owns
+no saved state and its obsolete completion cannot change a later pinch.
+
+This change is isolated from 1.9 on `feat/pdf-min-zoom-rubber-band`, based on
+`post-1.9/pdf-gesture-base` at PR133's `644de72a974f76990bd61d95e641d935f8deedd2`.
+Focused browser checks extend `verify-pdf-pinch-browser.mjs` and
+`verify-pdf-ink-browser.mjs`; the pending word/sentence suite covers retained
+shimmer, replies, stale completion and light/dark responsive surfaces. These
+checks do not claim physical-device Pencil or WKWebView acceptance.
 - With the supplied PDF, a canvas `fillText` trace independently captures the
   rendered `perspective` boundaries; a frozen legacy calculation demonstrates
   the previous drift. Screenshot pixel comparison checks that white paper gains

@@ -29,6 +29,7 @@ function invalidatePdfPageLayout(session=originalSession){
 }
 function pdfPageLayout(session=originalSession){
   if(!currentPdfSession(session))return null;
+  if(typeof originalPinchReturn!=='undefined'&&originalPinchReturn)return originalPinchReturn.layout;
   const scroller=readerScroller(),outer=scroller.getBoundingClientRect();
   const key=[outer.width,outer.height,scroller.scrollHeight,originalZoom(),session.pages.length].join('|');
   if(!session.pageLayout || session.pageLayout.key!==key){
