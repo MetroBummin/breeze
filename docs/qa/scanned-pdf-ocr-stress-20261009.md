@@ -147,3 +147,15 @@ The next diagnostic awaits the real worker's readiness before toggling offline,
 asserts that the persisted original bytes can be read with `navigator.onLine`
 false, and prints the reader error on failure. The earlier worker-path hypothesis
 is not claimed as a confirmed fix.
+
+At `f1d495e`, the [controlled read comparison](https://github.com/MetroBummin/breeze/actions/runs/37963213519/job/113930978508)
+showed that both the persisted 24,074-byte PDF **and a newly allocated 13-byte
+Blob with no app/storage involvement** failed with `NotReadableError` while
+Playwright was offline. Restoring transport immediately read both successfully.
+This rules out a missing/corrupt source file and isolates the failure below OCR
+and PDF parsing. WebKit intentionally routes `blob:` URLs too; the
+[maintainer guidance](https://github.com/microsoft/playwright/issues/42727)
+is to restrict network interception to HTTP(S). The follow-up narrows that matcher
+while preserving network-offline mode, blocked external HTTP(S), the real local
+worker, persisted-byte checks and every reopening assertion. Its CI result is
+reported separately rather than treating the earlier failures as passes.
