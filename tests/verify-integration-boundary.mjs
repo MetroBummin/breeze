@@ -10,16 +10,42 @@ function normalized(file,bytes){
   if(file==='sw.js')return bytes.toString().replace(/const VERSION = '[^']*';/,"const VERSION = 'STAMP';");
   return bytes;
 }
+const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
+const sentence=receipt.approvedSentenceTextHighlightFollowup;
+const sentenceScope=sentence?[...sentence.files,...sentence.integrationFiles]:[];
+// Historical owner hashes remain authoritative for the pre-follow-up bytes;
+// independently require every current changed byte to equal the reviewed source.
+const historicalBytes=file=>sentence?.baseSha256[file]
+  ?execFileSync('git',['show',sentence.base+':'+file],{cwd:root})
+  :readFileSync(new URL(file,root));
+if(sentence){
+  const expectedSourceFiles=['.github/workflows/sentence-inline-feedback.yml','docs/decisions/004-sentence-lookup-feedback.md','index.html','scripts/reader/reader-modes.js','sw.js','tests/verify-light-lookup-tone-browser.mjs','tests/verify-sentence-cue-browser.mjs','tests/verify-sentence-inline-browser.mjs','tests/verify-sentence-text-ink-browser.mjs'];
+  assert.deepEqual(sentence.files,expectedSourceFiles,'Sentence follow-up expanded its reviewed source scope');
+  assert.deepEqual(sentence.integrationFiles,['docs/qa/breeze-1.9-integration/boundary.json','tests/verify-integration-boundary.mjs','tools/record-sentence-highlight-boundary.mjs'],'Sentence boundary changed unrelated integration files');
+  assert.deepEqual(Object.keys(sentence.sha256),sentence.files);
+  assert.deepEqual(Object.keys(sentence.baseSha256),sentence.files.filter(file=>file!=='tests/verify-sentence-text-ink-browser.mjs'));
+  assert.deepEqual(Object.keys(sentence.integrationSha256),sentence.integrationFiles.filter(file=>file!=='docs/qa/breeze-1.9-integration/boundary.json'));
+  assert.equal(sentence.base,'b55f3df241607c95855a53009aceaa903e1da164');
+  assert.equal(sentence.source,'9f292c1a0488111b46c9e6eefdf78c05d4ab85dd');
+  for(const file of new Set([...git('diff','--name-only',sentence.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(sentenceScope.includes(file),'Sentence follow-up exceeded explicit source/integration scope: '+file);
+  for(const file of sentence.files){
+    const approved=execFileSync('git',['show',sentence.source+':'+file],{cwd:root});
+    assert.equal(hash(normalized(file,readFileSync(new URL(file,root)))),hash(normalized(file,approved)),'Reviewed sentence source changed: '+file);
+    assert.equal(hash(normalized(file,approved)),sentence.sha256[file],'Sentence receipt source mismatch: '+file);
+    if(sentence.baseSha256[file])assert.equal(hash(normalized(file,historicalBytes(file))),sentence.baseSha256[file],'Sentence replaced an unexpected main baseline: '+file);
+  }
+  for(const file of ['index.html','sw.js'])assert.equal(sentence.sha256[file],sentence.baseSha256[file],'Sentence changed normalized shell source: '+file);
+  for(const [file,sha] of Object.entries(sentence.integrationSha256))assert.equal(hash(readFileSync(new URL(file,root))),sha,'Sentence boundary verifier/tool drift: '+file);
+}
 for(const [file,entry] of Object.entries(receipt.files)){
-  assert.equal(hash(normalized(file,readFileSync(new URL(file,root)))),entry.sha256,'Combined scope drift: '+file);
+  assert.equal(hash(normalized(file,historicalBytes(file))),entry.sha256,'Combined scope drift: '+file);
   if(entry.kind==='single-source')assert.equal(entry.sha256,entry.sourceSha256[entry.owners[0]],'Single-owner content changed: '+file);
 }
-const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const native=receipt.approvedNativeApple191;
 const nativeScope=native?.files||[];
 const bootstrap=receipt.approvedCloudBootstrapFollowup;
 const bootstrapScope=bootstrap?.files||[];
-const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope]);
+const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope,...sentenceScope]);
 for(const file of new Set([...git('diff','--name-only',receipt.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
   assert.ok(permitted.has(file),'Unapproved file drift: '+file);
 }
@@ -33,7 +59,7 @@ const html=read('index.html');
 const web=receipt.approvedWebLandingIntegration;
 const webScope=web?[...web.files,...web.integrationFiles]:[];
 if(web){
-  const scope=new Set([...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...webScope,...nativeScope,...bootstrapScope,...sentenceScope]);
   for(const file of new Set([...git('diff','--name-only',web.appBase).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Combined web integration changed app source outside PR137: '+file);
   for(const file of web.files){
     if(bootstrap?.sha256[file]&&file!=='landing/index.html')continue; // Exact follow-up hash checked below.
@@ -45,7 +71,7 @@ if(web){
 }
 const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
 if(welcomeJoin){
-  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope,...sentenceScope]);
   for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
   assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
   assert.equal(normalized('index.html',Buffer.from(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin))).trim(),normalized('index.html',Buffer.from(git('show',welcomeJoin.base+':index.html'))),'Welcome join repair changed markup outside its one exit segment');
@@ -53,7 +79,7 @@ if(welcomeJoin){
 }
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
-  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope,...sentenceScope]);
   for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
     assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
   }
@@ -87,7 +113,7 @@ if(native){
  assert.ok(read('scripts/sync/sync.js').includes("signInWithIdToken({provider:'apple'"));
 }
 if(bootstrap){
-  const scope=new Set(bootstrapScope);
+  const scope=new Set([...bootstrapScope,...sentenceScope]);
   for(const file of new Set([...git('diff','--name-only',bootstrap.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Bootstrap/copy follow-up exceeded explicit scope: '+file);
   for(const [file,expected] of Object.entries(bootstrap.sha256))assert.equal(hash(readFileSync(new URL(file,root))),expected,'Reviewed bootstrap/copy bytes changed: '+file);
   const landing=read('landing/index.html');
