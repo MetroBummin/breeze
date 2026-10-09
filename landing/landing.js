@@ -10,7 +10,7 @@
  * CSS 를 그대로 링크해서 씁니다(index.html). 랜딩에서 눌러 본 방식이 앱에서
  * 그대로 통해야 하므로, 손짓의 기준도 앱과 같은 수를 씁니다:
  *
- *     꾹 누르기 1000ms · 흔들림 10px   (scripts/reader/gesture.js 의
+ *     꾹 누르기 750ms · 흔들림 10px   (scripts/reader/gesture.js 의
  *                                       GESTURE_HOLD_MS · GESTURE_SLOP)
  *
  * 장면 여섯은 스크롤이 넘겨 줍니다. 스크롤이 하는 일은 `body[data-state]` 한
@@ -78,24 +78,34 @@ const LP_COPY = {
 const $ = id => document.getElementById(id);
 const lpSent = n => document.querySelector('.lp-sentence[data-s="' + n + '"]');
 const lpQuiet = window.matchMedia('(prefers-reduced-motion:reduce)');
+const lpTheme = window.matchMedia('(prefers-color-scheme:dark)');
+function lpApplyTheme(){
+  document.documentElement.classList.toggle('dark',lpTheme.matches);
+  document.body.classList.toggle('dark',lpTheme.matches);
+  document.querySelector('meta[name="theme-color"]').content=lpTheme.matches?'#171816':'#FAF8F2';
+}
+lpApplyTheme();
+lpTheme.addEventListener('change',lpApplyTheme);
 
 /* ================= 두 줄 ================= */
 
 /* 말은 바뀌고 상표는 남습니다. 앞뒤 조각만 흐려졌다 돌아오고 `Breeze` 는 그
    사이에도 계속 보입니다. */
-let lpLang = '';
+let lpLang = '', lpLangTimer;
 function lpSetLang(lang, then){
-  if(lang === lpLang){ then(); return; }
+  clearTimeout(lpLangTimer);
+  if(lang === lpLang){ document.body.classList.remove('lp-swap'); then(); return; }
   const first = !lpLang;
-  lpLang = lang;
   const brand = document.querySelector('.lp-brand');
   const write = () => {
+    lpLang = lang;
     const was = brand.getBoundingClientRect().left;
     const copy = LP_COPY[lang];
     lpSent(1).querySelector('.lp-a').innerHTML = copy.a1;
     lpSent(2).querySelector('.lp-a').innerHTML = copy.a2;
     lpSent(2).querySelector('.lp-b').innerHTML = copy.b2;
-    document.documentElement.lang = lang;
+    // The rest of the page remains Korean as the story changes language.
+    $('copy').lang = lang;
     /* 상표는 줄 안에서 자리가 바뀝니다 — 한국어에서는 "나머지는" 뒤에, 영어에서는
        줄 맨 앞에. 폰에서 그 거리가 화면 폭의 4분의 1이라, 그냥 두면 주변이
        돌아오는 순간 상표가 한 번 튄 것으로 보입니다. 새 자리에 놓은 뒤 **옛
@@ -114,7 +124,7 @@ function lpSetLang(lang, then){
   };
   if(first || lpQuiet.matches){ write(); return; }
   document.body.classList.add('lp-swap');
-  setTimeout(() => { write(); document.body.classList.remove('lp-swap'); }, 320);
+  lpLangTimer=setTimeout(() => { write(); document.body.classList.remove('lp-swap'); }, 320);
 }
 
 /* ================= 단어창 ================= */
@@ -244,6 +254,10 @@ function lpOpenWord(key, fromLine){
   $('p-ai-note').hidden = true;
   $('p-ai-saved').hidden = false;
   $('p-ai').classList.remove('wait','load');
+  $('p-easy-button').hidden = false;
+  $('p-easy-button').setAttribute('aria-expanded','false');
+  $('p-easy-card').hidden = true;
+  $('p-easy').classList.remove('expanded');
   $('p-saved-senses').innerHTML = '';
   $('p-saved-senses').classList.remove('on');
   $('p-alt-sec').classList.add('on');
@@ -303,30 +317,67 @@ function lpToast(message){
 
 function lpCloseSentence(){
   $('sentence-modal').hidden = true;
-  $('p-sentence').style.top = '';
+  document.body.classList.remove('sentence-anchored','sentence-result-anchored');
+  $('p-sentence').removeAttribute('style');
+  lpActiveSentence = null;
   document.querySelectorAll('.lp-sentence.cued').forEach(node => node.classList.remove('cued'));
 }
 
+let lpActiveSentence = null;
 function lpPlaceSentence(){
-  if($('sentence-modal').hidden) return;
-  const card = $('p-sentence');
-  const lineBottom = Math.max(...[1,2].map(n => lpSent(n).getBoundingClientRect().bottom));
-  const navBottom = document.querySelector('.lp-nav').getBoundingClientRect().bottom;
-  const maxTop = Math.max(navBottom+12,window.innerHeight-card.getBoundingClientRect().height-16);
-  card.style.top = Math.min(Math.max(navBottom+12,lineBottom+20),maxTop)+'px';
+  if($('sentence-modal').hidden || !lpActiveSentence) return;
+  const card=$('p-sentence'),anchor=lpSent(lpActiveSentence).getBoundingClientRect();
+  const {x,width,top,bottom}=lpWordBounds(),edge=16,gap=8;
+  card.style.width=Math.min(600,Math.max(360,width*.64),width-edge*2)+'px';
+  card.style.maxHeight=Math.min(520,bottom-top)+'px';
+  const desired=card.getBoundingClientRect().height;
+  const above=Math.max(0,anchor.top-gap-top),below=Math.max(0,bottom-anchor.bottom-gap);
+  let budget=desired;
+  if(below<desired&&above<desired){
+    if(below>=Math.min(desired,160))budget=below;
+    else if(above>=Math.min(desired,160))budget=above;
+  }
+  card.style.maxHeight=Math.min(desired,budget)+'px';
+  const box=card.getBoundingClientRect();
+  const useBelow=below>=box.height || (above<box.height && below>=above);
+  Object.assign(card.style,{
+    left:Math.max(x+edge,Math.min((anchor.left+anchor.right-box.width)/2,x+width-edge-box.width))+'px',
+    top:Math.max(top,Math.min(useBelow?anchor.bottom+gap:anchor.top-gap-box.height,bottom-box.height))+'px'
+  });
 }
 
 function lpOpenSentence(n){
   const sentence = LP_SENTS[n];
   lpCloseWord();
-  $('ps-en').textContent = sentence.en;
-  $('ps-source').hidden = false;
+  lpActiveSentence = n;
   $('ps-ko').textContent = sentence.ko;
+  $('ps-easy-button').hidden = false;
+  $('ps-easy-button').setAttribute('aria-expanded','false');
+  $('ps-easy-card').hidden = true;
+  $('ps-easy').classList.remove('expanded');
+  document.body.classList.add('sentence-anchored','sentence-result-anchored');
   $('sentence-modal').hidden = false;
   document.querySelectorAll('.lp-sentence').forEach(node =>
     node.classList.toggle('cued', node.dataset.s === String(n)));
   lpPlaceSentence();
 }
+
+// Authored, offline examples use the production easy-help material. No AI call.
+function lpShowEasy(prefix,text){
+  $(prefix+'-easy-text').textContent=text;
+  $(prefix+'-easy-button').hidden=true;
+  $(prefix+'-easy-button').setAttribute('aria-expanded','true');
+  $(prefix+'-easy-card').hidden=false;
+  $(prefix+'-easy').classList.add('expanded');
+  if(prefix==='ps')lpPlaceSentence();else lpPlaceWordDetail();
+}
+$('p-easy-button').addEventListener('click',()=>{
+  const entry=LP_WORDS[lpActiveWord?.key];
+  if(entry)lpShowEasy('p',`이 문장에서 “${entry.word}”는 “${entry.ko}”라는 뜻으로 쓰였어요.`);
+});
+$('ps-easy-button').addEventListener('click',()=>{
+  if(lpActiveSentence)lpShowEasy('ps',lpActiveSentence===1?'이야기에 집중하며 계속 읽으라는 뜻이에요.':'나머지 일은 Breeze가 맡겠다는 뜻이에요.');
+});
 
 /* ================= 손짓 =================
    앱과 같은 판정입니다 — 제자리에서 떼면 낱말, 제자리에서 오래 누르고 있으면
@@ -376,11 +427,16 @@ $('word-peek-retry').addEventListener('click', () => {
 $('sentence-scrim').addEventListener('click', lpCloseSentence);
 document.addEventListener('pointerdown', event => {
   const target = event.target;
-  if(!(target instanceof Element) || target.closest('#word-peek,#panel,#sentence-modal,.w')) return;
+  if(!(target instanceof Element))return;
+  if(!$('sentence-modal').hidden&&!target.closest('#p-sentence,.lp-sentence'))lpCloseSentence();
+  if(target.closest('#word-peek,#panel,#p-sentence,.w')) return;
   if(!$('word-peek').hidden || lpPanel().classList.contains('on')) lpCloseWord();
 });
 document.addEventListener('keydown', event => {
   const target=event.target;
+  if(event.key==='Enter'&&event.shiftKey&&target instanceof HTMLElement&&target.matches('.lp-sentence .w')&&lpLang==='en'){
+    event.preventDefault();lpOpenSentence(Number(target.closest('.lp-sentence').dataset.s));return;
+  }
   if((event.key==='Enter'||event.key===' ')&&target instanceof HTMLElement&&target.matches('.lp-sentence .w')&&lpLang==='en'){
     event.preventDefault();lpShowWordPeek(target.dataset.w,Number(target.closest('.lp-sentence').getAttribute('data-s')));return;
   }
@@ -397,6 +453,9 @@ function lpApply(state){
   if(state === lpState) return;
   lpState = state;
   document.body.dataset.state = String(state);
+  $('copy').inert=state>=4;
+  $('scene3').inert=state!==4;
+  $('scene4').inert=state!==5;
 
   clearTimeout(lpHintTimer);
   $('hint').classList.remove('on');
