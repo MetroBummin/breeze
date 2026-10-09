@@ -26,9 +26,21 @@ for(const file of ['config.js','capacitor.config.json','ios/App/App/Info.plist',
 }
 const read=file=>readFileSync(new URL(file,root),'utf8');
 const html=read('index.html');
+const web=receipt.approvedWebLandingIntegration;
+const webScope=web?[...web.files,...web.integrationFiles]:[];
+if(web){
+  const scope=new Set(webScope);
+  for(const file of new Set([...git('diff','--name-only',web.appBase).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Combined web integration changed app source outside PR137: '+file);
+  for(const file of web.files){
+    const bytes=readFileSync(new URL(file,root));
+    const source=execFileSync('git',['show',web.landingSource+':'+file],{cwd:root,maxBuffer:16*1024*1024});
+    const stamp=value=>file==='landing/index.html'?value.toString().replace(/\?v=[a-f0-9]{8}/g,''):value;
+    assert.equal(hash(stamp(bytes)),hash(stamp(source)),'Combined web integration changed approved landing bytes: '+file);
+  }
+}
 const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
 if(welcomeJoin){
-  const scope=new Set(welcomeJoin.files);
+  const scope=new Set([...welcomeJoin.files,...webScope]);
   for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
   assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
   assert.equal(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin).trim(),git('show',welcomeJoin.base+':index.html'),'Welcome join repair changed markup outside its one exit segment');
@@ -36,7 +48,7 @@ if(welcomeJoin){
 }
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
-  const scope=new Set(followup.files);
+  const scope=new Set([...followup.files,...webScope]);
   for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
     assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
   }
