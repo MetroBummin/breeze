@@ -249,7 +249,13 @@ function answerFromLook(j, cached){
   const oldAi=j.ai||{};
   return { ko:j.ko||oldAi.ko||'', ai:{ko:j.ko||oldAi.ko||'',pos:j.pos||oldAi.pos||'',
       done:true,cached:!!cached},
-    alts:Array.isArray(j.alts)?j.alts:[], aiLemma:j.lemma||'' };
+    alts:Array.isArray(j.alts)?j.alts:[], aiLemma:j.canonical||j.lemma||'' };
+}
+function applyWordCanonical(w,answer){
+  const canonical=answer.canonical||answer.lemma||answer.aiLemma;
+  if(!w||!canonical)return;
+  w.aiLemma=canonical;
+  if(!isAcro(w.word)&&/^[A-Za-z][A-Za-z'’-]*$/.test(canonical))w.word=canonical.toLowerCase();
 }
 function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentence)}`; }
 function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
@@ -314,9 +320,10 @@ function createMeaning(root, text, source){
   const base=words[root]; if(!meaning || !base) return '';
   const from=source||{};
   const already=findSenseByMeaning(root,meaning);
-  if(already){touchMeaning(already);dropSuggestion(root,meaning);saveWords();queueSync();return already;}
+  if(already){applyWordCanonical(base,from);applyWordCanonical(words[already],from);touchMeaning(already);dropSuggestion(root,meaning);saveWords();queueSync();return already;}
   const buriedMeaning=dead[senseCardKey(root,meaning)]||0;
   if(from.automatic&&buriedMeaning)return '';
+  applyWordCanonical(base,from);
   if(buriedMeaning&&!from.automatic){delete dead[senseCardKey(root,meaning)];save(LS_DEAD,dead);}
   const ai={...(from.ai||{}),ko:meaning};
   /* 아직 뜻이 하나도 없는 낱말이면 대표 카드의 빈 뜻자리를 채웁니다. 빈 카드를
@@ -356,6 +363,7 @@ function saveRetriedMeaning(root, text, source){
   const meaning=String(text||'').replace(/\s+/g,' ').trim(),base=words[root];
   if(!meaning||!base)return '';
   const from=source||{},ai={...(from.ai||{}),ko:meaning};
+  applyWordCanonical(base,from);
   if(firstLookupMeaning&&firstLookupMeaning.root===root&&firstLookupMeaning.life===wordLookupLife&&!base.koEdited){
     base.ko=meaning;base.ai=ai;delete base.koEdited;
     base.alts=Array.isArray(from.alts)?from.alts:[];
@@ -370,7 +378,7 @@ function saveRetriedMeaning(root, text, source){
   if(existing){
     if(retry&&retry[0]!==existing)discardRetryCandidate(retry[0]);
     const item=words[existing];
-    if(item){if(!retry||retry[0]!==existing)delete item.retryCandidate;touchMeaning(existing);}
+    if(item){applyWordCanonical(item,from);if(!retry||retry[0]!==existing)delete item.retryCandidate;touchMeaning(existing);}
     saveWords();queueSync();return existing;
   }
   if(retry&&meaningKey(words[retry[0]].ko)!==meaningKey(meaning))discardRetryCandidate(retry[0]);
@@ -516,7 +524,8 @@ async function resolveCurrentLookup(k,input,life,node){
   if(!answer||!answer.ko){if(context){context.loading='';context.error=w.aiOff||'error';}renderWordLookup();return;}
   const phrase=expressionFromMini(answer,input.sentence,input.clicked,input.clickedIndex);
   if(phrase){saveDetectedExpression(k,phrase,input.sentence,input.book,answer,life,{automatic:true,clickedIndex:input.clickedIndex});return;}
-  const id=createMeaning(w.root||k,answer.ko,{...input,example:input.sentence,ai:answerFromLook(answer,false).ai,automatic:true});
+  const parsed=answerFromLook(answer,false);
+  const id=createMeaning(w.root||k,answer.ko,{...input,example:input.sentence,ai:parsed.ai,aiLemma:parsed.aiLemma,automatic:true});
   if(id){
     if(id===(w.root||k))firstLookupMeaning={root:w.root||k,life};
     rememberSenseContext(id,input.sentence,input.clickedIndex);selKey=id;
@@ -932,7 +941,7 @@ async function retryWordPeek(){
     }
   }
   const id=saveRetriedMeaning(targetRoot,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
-    alts:parsed.alts,phrase:parsed.phrase});
+    aiLemma:parsed.aiLemma,alts:parsed.alts,phrase:parsed.phrase});
   if(id){ rememberSenseContext(id,sentence,clickedIndex);saveWords();selKey=id; contextView=null; paintWord(targetRoot); }
   wordPeekRetryState=null;
   renderWordPeek();
@@ -1745,11 +1754,10 @@ function applyLook(w, j, k, opt){
              cached: !!opt.cached };
     if(!w.koEdited) w.ko = j.ko || w.ko;
   }
-  w.aiLemma = j.canonical || j.lemma || w.aiLemma || '';
+  applyWordCanonical(w,j);
   w.alts = Array.isArray(j.alts) ? j.alts : [];
   if(keep && j.ko) w.alts = [j.ko, ...w.alts];
   w.colloc = [];
-  if(j.lemma && !isAcro(w.word) && /^[A-Za-z][A-Za-z'’-]*$/.test(j.lemma)) w.word = j.lemma.toLowerCase();
   w.up = Date.now();
   if(initial&&String(w.ko||'').trim())firstLookupMeaning={root:k,life:opt.life===undefined?wordLookupLife:opt.life};
   saveWords(k); queueSync(true);

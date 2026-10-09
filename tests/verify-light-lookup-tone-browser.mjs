@@ -32,7 +32,7 @@ let browser,page;
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 try{
-  browser=await engine.launch({headless:true});
+  browser=await engine.launch({headless:true,executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
   page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,serviceWorkers:'block'});
   const errors=[];
   page.on('pageerror',error=>{if(!error.message.startsWith('ResizeObserver loop'))errors.push(error.message);});
@@ -138,7 +138,7 @@ try{
           assert.equal(cue.radius,kind==='word'?'5px':'8px');
           assert.equal(cue.size,'240% 100%');assert.equal(cue.repeat,'no-repeat');
           assert.equal(cue.opacity,'1');assert.equal(cue.transform,'none');
-          assert.equal(cue.blend,kind==='sentence'?(dark?'screen':'multiply'):'normal');
+          assert.equal(cue.blend,'normal','Text sentence wash must paint beneath source ink like word backgrounds');
           assert.equal(cue.image==='none',reduced);
         }
         console.log(`Capturing ${key}/${kind}/${state}`);

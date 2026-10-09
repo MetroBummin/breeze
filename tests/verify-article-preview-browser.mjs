@@ -69,7 +69,7 @@ try{
         await page.evaluate(()=>show('casuals'));
         await page.locator('#casual-grid .casual').filter({hasText:'Second article'}).first().click();
         await page.waitForFunction(()=>document.querySelector('#article-preview').open);
-        await page.waitForTimeout(100);
+        await page.waitForFunction(()=>document.querySelector('#article-preview').dataset.metadata==='fallback'&&document.querySelector('#article-preview').dataset.metadataReason==='network');
         assert.equal(await page.locator('.ap-summary').isVisible(),false,'network failure retains source-only preview');
         assert.equal(await page.locator('.ap-title').textContent(),'Second article');
         await page.locator('.ap-start').click();

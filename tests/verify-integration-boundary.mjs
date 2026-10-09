@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
+import {verifyCombinedBoundary,historicalBytes} from '../tools/record-191-followups-boundary.mjs';
 const root=new URL('../',import.meta.url);
 const receipt=JSON.parse(readFileSync(new URL('docs/qa/breeze-1.9-integration/boundary.json',root)));
 const hash=value=>createHash('sha256').update(value).digest('hex');
+const combined=verifyCombinedBoundary(receipt);
 function normalized(file,bytes){
+  bytes=historicalBytes(file,bytes,combined);
   if(file==='index.html'||file==='scripts/core/lazy-lib.js')return bytes.toString().replace(/\?v=[a-f0-9]{8}/g,'');
   if(file==='sw.js')return bytes.toString().replace(/const VERSION = '[^']*';/,"const VERSION = 'STAMP';");
   return bytes;
@@ -19,7 +22,8 @@ const native=receipt.approvedNativeApple191;
 const nativeScope=native?.files||[];
 const bootstrap=receipt.approvedCloudBootstrapFollowup;
 const bootstrapScope=bootstrap?.files||[];
-const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope]);
+const combinedScope=[...Object.keys(combined.files),...combined.integrationFiles];
+const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope,...combinedScope]);
 for(const file of new Set([...git('diff','--name-only',receipt.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
   assert.ok(permitted.has(file),'Unapproved file drift: '+file);
 }
@@ -33,7 +37,7 @@ const html=read('index.html');
 const web=receipt.approvedWebLandingIntegration;
 const webScope=web?[...web.files,...web.integrationFiles]:[];
 if(web){
-  const scope=new Set([...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...webScope,...nativeScope,...bootstrapScope,...combinedScope]);
   for(const file of new Set([...git('diff','--name-only',web.appBase).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Combined web integration changed app source outside PR137: '+file);
   for(const file of web.files){
     if(bootstrap?.sha256[file]&&file!=='landing/index.html')continue; // Exact follow-up hash checked below.
@@ -45,7 +49,7 @@ if(web){
 }
 const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
 if(welcomeJoin){
-  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope,...combinedScope]);
   for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
   assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
   assert.equal(normalized('index.html',Buffer.from(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin))).trim(),normalized('index.html',Buffer.from(git('show',welcomeJoin.base+':index.html'))),'Welcome join repair changed markup outside its one exit segment');
@@ -53,7 +57,7 @@ if(welcomeJoin){
 }
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
-  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope,...combinedScope]);
   for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
     assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
   }
@@ -87,7 +91,7 @@ if(native){
  assert.ok(read('scripts/sync/sync.js').includes("signInWithIdToken({provider:'apple'"));
 }
 if(bootstrap){
-  const scope=new Set(bootstrapScope);
+  const scope=new Set([...bootstrapScope,...combinedScope]);
   for(const file of new Set([...git('diff','--name-only',bootstrap.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Bootstrap/copy follow-up exceeded explicit scope: '+file);
   for(const [file,expected] of Object.entries(bootstrap.sha256))assert.equal(hash(readFileSync(new URL(file,root))),expected,'Reviewed bootstrap/copy bytes changed: '+file);
   const landing=read('landing/index.html');
@@ -98,4 +102,4 @@ if(bootstrap){
   packageNow.scripts.test=packageNow.scripts.test.replace(' tests/verify-ios-bootstrap.mjs','');
   assert.deepEqual(packageNow,packageBase,'Package changed outside bootstrap test registration');
 }
-console.log('Combined 1.9/1.9.1 boundary passed: approved six-PR scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');
+console.log('Combined 1.9.1 boundary passed: exact PR139/140/141 bytes and stamps, unchanged historical owners, independent auth/onboarding, native/config/release protection.');

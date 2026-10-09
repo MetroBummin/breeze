@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=a07bcc13">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=991cfadf">
+  <link rel="stylesheet" href="styles/wordbook.css?v=fa6c380d">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=7bb723de">
   <link rel="stylesheet" href="styles/onboarding.css?v=8f315304">
@@ -100,7 +100,7 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=6e7f9af7"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=29a24ea8"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/vocabulary-review.js?v=bdeefbb7"></script>
@@ -113,7 +113,7 @@
   <script defer src="scripts/reader/pdf-original.js?v=dafa70b8"></script>
   <script defer src="scripts/reader/epub-original.js?v=c5347589"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=3db30939"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=7d621203"></script>
   <script defer src="scripts/reader/reader.js?v=f34596cb"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
   <script defer src="scripts/ui/preferences.js?v=f1e9ebd6"></script>
@@ -426,7 +426,7 @@
 
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
-  <header class="wordbook-brand"><h1>Breeze Memory</h1><button id="wordbook-add" class="control-glass" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
+  <header class="wordbook-brand"><h1 class="memory-wordmark">Breeze Memory</h1><button id="wordbook-add" class="control-glass" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
   <div id="wordbook-review-entry" class="wordbook-review-entry" hidden><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">전체 범위 정규 학습</button></div>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">

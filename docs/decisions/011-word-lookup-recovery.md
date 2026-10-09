@@ -135,3 +135,42 @@ pre-aborted signals, close/navigation, same-record reopen, replacement cards,
 ignored fetch/body aborts, shared auth completion, normal auth, anonymous fallback,
 HTTP errors and manual retry. Providers and credentials are synthetic; these tests
 make no paid or production requests.
+
+## AI-owned word canonical (2026-10-09)
+
+The user approved trusting the model's word canonical and contextual meaning.
+The bounded morphology validator still omitted valid forms such as
+`Selfies -> selfie`, `brownies -> brownie`, and `indices -> index`. A correct
+model response could therefore fail every fallback and manual retry. This is a
+reproduced mechanism, not proof of every reported production failure.
+
+Word canonical is no longer compared with client or server lemma candidates.
+The prompt identifies the selected surface and occurrence without supplying the
+client's guessed `target_lemma`. The existing four-field response schema, text
+limits, selected-member alignment, word/expression shapes and expression span
+checks remain. No new provider call or part-of-speech field is introduced.
+Meaning and canonical are model output; structural validation still protects
+the transport and rendering contract.
+
+Lookup input normalization, candidate hints, fingerprints, authentication,
+quota RPCs, success-only receipts and same-ID recovery remain unchanged.
+`lemma()`, `lemmaCands()`, `keyOf()` and all existing storage keys are untouched.
+The existing 1.9(253) and 1.9.1(256) clients accept the response and apply its
+`lemma` during a fresh word lookup and detail retry. The server fix restores
+meaning retrieval without an iOS rebuild. Their mini retry and context-specific
+meaning paths omit canonical when saving, so those paths can retain the guessed
+display word. The small client companion passes canonical through those paths
+and uses the existing display-update rule without renaming stored IDs or changing
+meaning selection. Shipping that display correction requires an app rebuild;
+neither change requires a data migration.
+
+Fixtures cover previously rejected plurals and unknown canonical forms, schema
+and source guards, failed lookup recovery, cache replay and a single charge.
+Local tests use synthetic providers and local receipt SQL. Merge and production
+deployment require separate approval; this change does not deploy the function.
+
+PR CI also pins the generated asset stamps and the previous integration receipt.
+Run `tools/stamp-version.mjs` after the client change. The AI canonical follow-up
+receipt records its exact approved file scope and before/after hashes while
+retaining the historical release checks. This only prepares source for the next
+app build; the server bundle excludes client assets and receipt files.
