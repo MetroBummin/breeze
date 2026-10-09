@@ -168,3 +168,9 @@ Fixtures cover previously rejected plurals and unknown canonical forms, schema
 and source guards, failed lookup recovery, cache replay and a single charge.
 Local tests use synthetic providers and local receipt SQL. Merge and production
 deployment require separate approval; this change does not deploy the function.
+
+PR CI also pins the generated asset stamps and the previous integration receipt.
+Run `tools/stamp-version.mjs` after the client change. The AI canonical follow-up
+receipt records its exact approved file scope and before/after hashes while
+retaining the historical release checks. This only prepares source for the next
+app build; the server bundle excludes client assets and receipt files.

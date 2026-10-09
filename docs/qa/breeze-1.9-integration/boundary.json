@@ -1180,12 +1180,13 @@
         "130",
         "pdf-pending-pinch"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "6e7f9af7ebaad7c91a00a83e45d3b1d1156ccbdac32a149e735f43fa8e7aa9fe",
+      "kind": "ai-canonical-reviewed",
+      "sha256": "29a24ea88d0cb753949d83c207166a40ce66efc70b80cbb5f27111a82275836b",
       "sourceSha256": {
         "130": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389",
         "pending-pinch-baseline": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389"
-      }
+      },
+      "followupBaseSha256": "6e7f9af7ebaad7c91a00a83e45d3b1d1156ccbdac32a149e735f43fa8e7aa9fe"
     },
     "scripts/dictionary/sentence.js": {
       "owners": [
@@ -2119,6 +2120,51 @@
       "package.json": "c4c8f21c7a3083c04eb8edc1cab993fbb18897c3c6538eaee721b36cea111ca1",
       "tests/verify-ios-bootstrap.mjs": "6ace2b9b61be3336090c5885de108c6ca74419a3e5ffe4658ce5e297c811e3ad",
       "tests/verify-landing-browser.mjs": "5847ee037241a860e7b354bbd309747ef8fc5645b225dfe85adc4b8627107e56"
+    }
+  },
+  "approvedAiCanonicalFollowup": {
+    "base": "b55f3df241607c95855a53009aceaa903e1da164",
+    "sourceCommit": "0de606899fad09c2c28d8b5ed14792adf9a1ef73",
+    "scope": "User approved AI-owned canonical/meaning lookup and next-build canonical display; PR140 only, server dict rollout after passing CI; no main merge, new app build, key/cache/DB changes. Asset stamps and exact before/after scope receipt updated for CI without bypassing historical protections.",
+    "files": [
+      "docs/decisions/011-word-lookup-recovery.md",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "index.html",
+      "scripts/dictionary/dictionary.js",
+      "server/dict/lookup.ts",
+      "sw.js",
+      "tests/verify-integration-boundary.mjs",
+      "tests/verify-lookup-contract.mjs",
+      "tests/verify-word-arrival-browser.mjs",
+      "tests/verify-word-auth-deadline.mjs",
+      "tests/verify-word-lemma-validation.mjs",
+      "tests/verify-word-lookup-quota.mjs"
+    ],
+    "sha256": {
+      "docs/decisions/011-word-lookup-recovery.md": "cfa5c4cbe28b6d0f029ca988d5455d72ca4cae697e1eb490ac225c46b32d905c",
+      "index.html": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "scripts/dictionary/dictionary.js": "29a24ea88d0cb753949d83c207166a40ce66efc70b80cbb5f27111a82275836b",
+      "server/dict/lookup.ts": "dbaa5aac0ea3c775d68dd996431936b2c7b698f7701eff2153c1b5d3bfe3dddc",
+      "sw.js": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "tests/verify-integration-boundary.mjs": "3af901dbb147e21836a1d4d30ac27c2b46648bc5090ead0a4f77857a035b98ec",
+      "tests/verify-lookup-contract.mjs": "0ccd6051bbfce57e65bbf9462c500a51a93f173c5e7ca36bf52908465d84254c",
+      "tests/verify-word-arrival-browser.mjs": "90a8b0bbfce88639464b36f405140bd6c3fdc2872e89cbe59a58342ccacf0cd7",
+      "tests/verify-word-auth-deadline.mjs": "7e02dc582aa154d5682cc2bb60072e3d6391a9e0dd71c984b010bd3d03426cf5",
+      "tests/verify-word-lemma-validation.mjs": "4fd50c28eb4dc0445f7b096111c3ca2d8daa6328951e5245ba53356ab896c191",
+      "tests/verify-word-lookup-quota.mjs": "de4923f56c211f693294e2ab9136d9b2731f5a00bac90f377f781780d2ca0997"
+    },
+    "baseSha256": {
+      "docs/decisions/011-word-lookup-recovery.md": "fb164aa367161340d3fdd0673db66971133dbad6aff221d814c289bf93ba79db",
+      "index.html": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "scripts/dictionary/dictionary.js": "6e7f9af7ebaad7c91a00a83e45d3b1d1156ccbdac32a149e735f43fa8e7aa9fe",
+      "server/dict/lookup.ts": "7ef238237a152221ddbdb94ba6b53c08322c12a5dc981b279847eae3a2c178d9",
+      "sw.js": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "tests/verify-integration-boundary.mjs": "6df6e01ce3594b91d05591012b04d965a2099f57d9799fed971f5e1ef77fe7a3",
+      "tests/verify-lookup-contract.mjs": "dab8e7690578c2e97b3a91ae13151fc6d43c268ec8ecfa382542139d619bea35",
+      "tests/verify-word-arrival-browser.mjs": "1930fedc50eac3e7872ad9270bf20b7d43a042729f30abd75ce5e861466fc961",
+      "tests/verify-word-auth-deadline.mjs": "ac0999d2318467f6746fa437cf8f6a1ad5be63ffe0d57bb2943adc420e4bb21c",
+      "tests/verify-word-lemma-validation.mjs": "435a66b032a6048e88d33fc68cc06b4a8bb143fb231f68a54f3bb083d81535eb",
+      "tests/verify-word-lookup-quota.mjs": "821a1fe2e7126d6009b68b0cd919ca5e09196df3303a25a04901ab4000e3d439"
     }
   }
 }

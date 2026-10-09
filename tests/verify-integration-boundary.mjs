@@ -4,6 +4,8 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 const root=new URL('../',import.meta.url);
 const receipt=JSON.parse(readFileSync(new URL('docs/qa/breeze-1.9-integration/boundary.json',root)));
+const canonical=receipt.approvedAiCanonicalFollowup;
+const canonicalScope=canonical?.files||[];
 const hash=value=>createHash('sha256').update(value).digest('hex');
 function normalized(file,bytes){
   if(file==='index.html'||file==='scripts/core/lazy-lib.js')return bytes.toString().replace(/\?v=[a-f0-9]{8}/g,'');
@@ -19,7 +21,7 @@ const native=receipt.approvedNativeApple191;
 const nativeScope=native?.files||[];
 const bootstrap=receipt.approvedCloudBootstrapFollowup;
 const bootstrapScope=bootstrap?.files||[];
-const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope]);
+const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope,...canonicalScope]);
 for(const file of new Set([...git('diff','--name-only',receipt.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
   assert.ok(permitted.has(file),'Unapproved file drift: '+file);
 }
@@ -33,7 +35,7 @@ const html=read('index.html');
 const web=receipt.approvedWebLandingIntegration;
 const webScope=web?[...web.files,...web.integrationFiles]:[];
 if(web){
-  const scope=new Set([...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...webScope,...nativeScope,...bootstrapScope,...canonicalScope]);
   for(const file of new Set([...git('diff','--name-only',web.appBase).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Combined web integration changed app source outside PR137: '+file);
   for(const file of web.files){
     if(bootstrap?.sha256[file]&&file!=='landing/index.html')continue; // Exact follow-up hash checked below.
@@ -45,7 +47,7 @@ if(web){
 }
 const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
 if(welcomeJoin){
-  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope,...canonicalScope]);
   for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
   assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
   assert.equal(normalized('index.html',Buffer.from(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin))).trim(),normalized('index.html',Buffer.from(git('show',welcomeJoin.base+':index.html'))),'Welcome join repair changed markup outside its one exit segment');
@@ -53,7 +55,7 @@ if(welcomeJoin){
 }
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
-  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope]);
+  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope,...canonicalScope]);
   for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
     assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
   }
@@ -87,7 +89,7 @@ if(native){
  assert.ok(read('scripts/sync/sync.js').includes("signInWithIdToken({provider:'apple'"));
 }
 if(bootstrap){
-  const scope=new Set(bootstrapScope);
+  const scope=new Set([...bootstrapScope,...canonicalScope]);
   for(const file of new Set([...git('diff','--name-only',bootstrap.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Bootstrap/copy follow-up exceeded explicit scope: '+file);
   for(const [file,expected] of Object.entries(bootstrap.sha256))assert.equal(hash(readFileSync(new URL(file,root))),expected,'Reviewed bootstrap/copy bytes changed: '+file);
   const landing=read('landing/index.html');
@@ -98,4 +100,14 @@ if(bootstrap){
   packageNow.scripts.test=packageNow.scripts.test.replace(' tests/verify-ios-bootstrap.mjs','');
   assert.deepEqual(packageNow,packageBase,'Package changed outside bootstrap test registration');
 }
-console.log('Combined 1.9/1.9.1 boundary passed: approved six-PR scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');
+if(canonical){
+  // Older release receipts still protect their scopes. This approved follow-up
+  // pins both its unchanged base and exact current bytes; it is not a bypass.
+  const scope=new Set(canonicalScope);
+  for(const file of new Set([...git('diff','--name-only',canonical.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'AI canonical follow-up exceeded approved scope: '+file);
+  for(const [file,expected] of Object.entries(canonical.sha256)){
+    assert.equal(hash(normalized(file,readFileSync(new URL(file,root)))),expected,'Reviewed AI canonical bytes changed: '+file);
+    assert.equal(hash(normalized(file,execFileSync('git',['show',canonical.base+':'+file],{cwd:root}))),canonical.baseSha256[file],'AI canonical replaced an unexpected baseline: '+file);
+  }
+}
+console.log('Combined 1.9/1.9.1 boundary passed: approved integration/follow-up scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');
