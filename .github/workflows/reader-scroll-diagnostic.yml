@@ -1,0 +1,42 @@
+name: Reader post-lookup scroll diagnostic
+on:
+  pull_request:
+    paths:
+      - tests/diagnose-reader-post-lookup-scroll.mjs
+      - .github/workflows/reader-scroll-diagnostic.yml
+permissions:
+  contents: read
+concurrency:
+  group: reader-scroll-diagnostic-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Compare baseline, translation, ready and pending explanation
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_SCROLL_PROOF: /tmp/breeze-post-lookup-scroll
+        run: timeout --kill-after=5s 600s node tests/diagnose-reader-post-lookup-scroll.mjs
+      - name: Canvas lifecycle, cleanup and screen evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-scroll-${{ matrix.engine }}
+          path: /tmp/breeze-post-lookup-scroll/
+          if-no-files-found: error
+          retention-days: 7
