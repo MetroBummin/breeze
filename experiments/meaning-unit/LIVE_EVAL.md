@@ -1,0 +1,29 @@
+# Smallest realistic live evaluation (not executed)
+
+The checked release source pins `deepseek/deepseek-v4-flash-0731` on OpenRouter as primary and `gemini-3.5-flash-lite` as fallback (`server/dict/index.ts`). This describes repository configuration, not an independently verified deployed provider. Temperature is 0.2; reasoning is disabled. The primary route is POST `https://openrouter.ai/api/v1/chat/completions`. The existing app calls `${SB_URL}/functions/v1/dict`; its `explain` operation accepts a sentence, cuts input to 600 characters, asks only for `ko` with 600 output tokens, and cuts the result to 500 characters. It cannot carry the experimental prompt or return selected offsets/source. Sending experimental fixtures through it would not evaluate this design. No compatible permitted/unmetered selection endpoint was found.
+
+The user has explicitly approved stage 1: exactly 13 synthetic requests, all attempts included, total spend at most $0.05. Execution remains blocked because no compatible authenticated gateway action is exposed here. The smallest next step is an existing permitted authenticated action accepting these completion requests, or an operator running the prepared bundle where their existing credential already resides and returning sanitized outputs, finish reasons, usage, cost and latency. This needs no deployment, new persistent grant, or secret in chat. Do not retrieve existing secrets or sessions. Verify the route’s model, response contract, price controls and spending scope before inference. Actual calls remain 0 and actual spend $0.
+
+## Stage 1: 13 calls, one per reviewed fixture
+
+Run one independent output for each existing synthetic fixture. Do not send `expected` spans/translations to the model, use an answer oracle, silently correct returned ranges, or auto-retry invalid answers. Use the actual `prepare(input).prompt`, plus Breeze's current bilingual JSON system prompt. Preserve all returned outputs and score them blindly against the reviewed source spans. Review Korean translations independently; the current stub translations are intentionally placeholders, not translation gold labels. The page-continuation source requires human review and should be scored as incomplete or an explicit insufficient-context answer. The long-output stub is a renderer stress case: judge the model's natural complete translation, not equality with the repeated placeholder Korean string.
+
+Use model ID above; temperature 0.2; `reasoning.enabled=false`; `stream=false`; JSON response format; `provider.require_parameters=true`; `provider.allow_fallbacks=false`; no Gemini/model fallback; same throughput preference and `max_price` of $0.10 input/$0.30 output per million tokens. Log the provider actually chosen. Preflight availability and supported parameters without inference; fail closed if these constraints cannot be honored.
+
+Bound each request to at most 6,000 input tokens (including system/message framing) and 4,096 output tokens, one inference attempt, a 30-second hard transport deadline, and no tools/search. Preflight the input with the verified tokenizer, or a documented conservative UTF-8 byte upper bound plus system/message overhead; if a trustworthy bound is unavailable, stop rather than claiming a hard token/cost ceiling. Truncation (`finish_reason=length` or other non-normal completion), errors, insufficient context and malformed JSON are recorded failures, not additional calls. Cancellation cannot guarantee zero provider charge.
+
+At the enforced price ceilings, token charges are bounded by:
+
+`13 × (6,000 × $0.10 + 4,096 × $0.30) / 1,000,000 = $0.0237744`
+
+The approved run requires an operator-enforced **$0.05 total spending limit**, inclusive of any applicable fees, and a hard maximum of 13 requests. The inference estimate excludes account funding minimums, purchase fees, taxes and unrelated traffic; a dedicated key/budget avoids confusing those with this run. Check applicable fees before execution; all charges must fit the approved limit.
+
+As of October 7, the public model endpoint lists a DeepInfra route at $0.06 input/$0.18 output per million tokens and a Sail Research route at $0.10/$0.30, supporting relevant JSON/max-token parameters. Availability and prices can change. Public metadata was read; no inference request or credentials were used. Reverify immediately before a paid run. [Model endpoint metadata](https://openrouter.ai/api/v1/models/deepseek/deepseek-v4-flash-0731/endpoints), [provider routing and price controls](https://openrouter.ai/docs/guides/routing/provider-selection#max-price).
+
+## Stage 2: only after reviewing stage 1
+
+If stage 1 warrants further evidence, separately authorize two additional outputs per fixture: **39 total calls including the first 13**, at the same limits. Maximum token charge estimate is $0.0713232; recommend a $0.10 total operator-enforced limit inclusive of fees. Three outputs per fixture reveal instability but do not establish broad accuracy or production p95 latency.
+
+Record separately: exact source/tap validity; human-reviewed meaning-unit completeness; Korean fidelity/completeness; injection obedience; provider/finish reason; error status; token usage; actual billed cost; request latency. Compare baseline source selection with actual AI source selection, never with hand-built oracle output. Preserve every failure and context omission. Report per-case outcomes and measured median/range; p95 from 13–39 heterogeneous calls is only descriptive, not a production latency claim.
+
+Authorization is already recorded for stage 1; do not ask for it again. Stage 2 remains unauthorized. Prepared credential-free bundle: privately shared `approved-synthetic-requests.json`. Hand off execution through the existing authenticated action/operator path above. No credential access or inference occurred in this workspace.

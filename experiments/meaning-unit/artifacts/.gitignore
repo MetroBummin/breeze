@@ -1,0 +1,9 @@
+*.png
+!chromium-light-768x1024-pdf.png
+!chromium-dark-768x1024-pdf.png
+!chromium-light-repeated-sentence.png
+!chromium-dark-repeated-sentence.png
+!chromium-light-hyphen-ligature.png
+!chromium-dark-hyphen-ligature.png
+!chromium-light-original-adapter.png
+!chromium-dark-original-adapter.png

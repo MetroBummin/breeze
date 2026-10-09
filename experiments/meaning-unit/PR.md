@@ -1,0 +1,5 @@
+The current deterministic splitter clips abbreviations and long source text, and cannot reliably identify meaning units in punctuation-free exam material. This isolated experiment preserves the exact tap and structural block, asks for one verbatim span plus translation, and rejects unsafe source mappings without changing release 1.8.1. No production integration or rollout is proposed.
+
+Validation: 1,128 deterministic checks and 112 actual Chromium render cases; 8/13 baseline fixture spans matched. Oracle stub spans are exact by construction, not evidence of AI accuracy. WebKit is blocked by the missing engine/CDN policy. Live AI selection, translation quality, latency and cost are unmeasured; no paid calls or secrets. Page continuation and a valid source paired with a wrong translation are explicit semantic counterexamples.
+
+See `experiments/meaning-unit/REPORT.md`, JSON evidence, and committed Chromium screenshots. Draft only; no merge/deploy/App Review; #120 and onboarding are separate.

@@ -346,3 +346,32 @@ jobs:
           path: /tmp/breeze-chrome-layout/
           if-no-files-found: error
           retention-days: 7
+  meaning-unit-experiment:
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'experiment/ai-meaning-unit' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Deterministic meaning-unit safety and baseline evidence
+        run: |
+          node experiments/meaning-unit/stress.mjs
+          node experiments/meaning-unit/original-adapter-test.mjs
+      - name: Same synthetic rendering matrix in Chromium and WebKit
+        env:
+          REQUIRE_ALL_ENGINES: '1'
+        run: |
+          timeout --kill-after=5s 180s node experiments/meaning-unit/browser.mjs
+          timeout --kill-after=5s 180s node experiments/meaning-unit/original-browser.mjs
+      - name: Meaning-unit experiment evidence (zero model calls)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meaning-unit-experiment-proof
+          path: experiments/meaning-unit/artifacts/
+          if-no-files-found: error
+          retention-days: 7
