@@ -20,6 +20,7 @@ import Capacitor
         let manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("manifest.json"))) as! [String: Any]
         let corpus = manifest["cases"] as! [[String: Any]]
         let plugin = BreezePdfOcrPlugin()
+        let repeatCount = min(128, max(1, Int(ProcessInfo.processInfo.environment["BREEZE_OCR_REPEAT_COUNT"] ?? "24") ?? 24))
         var cases: [[String: Any]] = [], repetitions: [[String: Any]] = []
         func write() throws {
             let report: [String: Any] = ["engine": "Apple Vision", "environment": "macOS CI; not iOS hardware",
@@ -27,12 +28,12 @@ import Capacitor
                 "revision": VNRecognizeTextRequest().revision, "native": true,
                 "bridge": "test transport around unchanged production plugin", "network": "sandbox denies network",
                 "cases": cases, "repetitions": repetitions,
-                "memoryMetric": "process resident bytes; includes framework/model/harness; not a leak proof"]
+                "memoryMetric": "process resident bytes 50ms after completion and the input autorelease pool; includes model/harness; not a leak proof"]
             try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: output, options: .atomic)
         }
-        for i in 0..<(corpus.count + 24) {
+        for i in 0..<(corpus.count + repeatCount) {
             let id = i < corpus.count ? corpus[i]["id"] as! String : "print-48"
-            try autoreleasepool {
+            var row: [String: Any] = try autoreleasepool {
                 let data = try Data(contentsOf: root.appendingPathComponent(id + ".png"))
                 let call = CAPPluginCall(image: data.base64EncodedString())
                 let start = ProcessInfo.processInfo.systemUptime
@@ -40,20 +41,22 @@ import Capacitor
                 guard call.completed.wait(timeout: .now() + 45) == .success else {
                     throw NSError(domain: "OCR timeout", code: 1)
                 }
-                let row: [String: Any] = ["id": id, "iteration": i, "words": call.result?["words"] ?? [],
-                    "error": (call.failure as Any?) ?? NSNull(), "milliseconds": (ProcessInfo.processInfo.systemUptime-start)*1000,
-                    "residentBytes": memory()]
-                if i < corpus.count { cases.append(row) }
-                else { repetitions.append(row.filter { $0.key != "words" }) }
-                try write()
-                if let failure = call.failure { throw NSError(domain: failure, code: 2) }
+                return ["id": id, "iteration": i, "words": call.result?["words"] ?? [],
+                    "error": (call.failure as Any?) ?? NSNull(), "milliseconds": (ProcessInfo.processInfo.systemUptime-start)*1000]
             }
+            // Do not confuse live input/autorelease buffers with retained memory.
+            Thread.sleep(forTimeInterval: 0.05)
+            row["residentBytes"] = memory()
+            if i < corpus.count { cases.append(row) }
+            else { repetitions.append(row.filter { $0.key != "words" }) }
+            try autoreleasepool { try write() }
+            if let failure = row["error"] as? String { throw NSError(domain: failure, code: 2) }
         }
         let invalid = CAPPluginCall(image: "not-valid-base64")
         plugin.recognize(invalid)
         guard invalid.completed.wait(timeout: .now() + 5) == .success, invalid.failure != nil else {
             throw NSError(domain: "Invalid image was not rejected", code: 3)
         }
-        print("Actual Apple Vision completed \(corpus.count) cases and 24 repeat calls; see JSON for measurements.")
+        print("Actual Apple Vision completed \(corpus.count) cases and \(repeatCount) repeat calls; see JSON for measurements.")
     }
 }

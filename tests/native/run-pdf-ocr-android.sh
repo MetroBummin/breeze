@@ -2,10 +2,17 @@
 set -euo pipefail
 ocr_proof_dir="${RUNNER_TEMP:-/tmp}/breeze-ocr-android"
 mkdir -p "$ocr_proof_dir"
+# avdmanager and emulator can resolve different defaults on hosted runners.
+# Give both the same private index/data location, outside uploaded evidence.
+export ANDROID_AVD_HOME="${RUNNER_TEMP:-/tmp}/breeze-ocr-avd"
+mkdir -p "$ANDROID_AVD_HOME"
 export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
 # Existing runner licenses only. No yes-to-licenses, sudo, chmod or device ACL edits.
 sdkmanager 'system-images;android-35;google_apis;x86_64' </dev/null
-printf 'no\n' | avdmanager create avd --force --name breeze_ocr_stress --package 'system-images;android-35;google_apis;x86_64'
+printf 'no\n' | avdmanager create avd --force --name breeze_ocr_stress --path "$ANDROID_AVD_HOME/breeze_ocr_stress.avd" --package 'system-images;android-35;google_apis;x86_64'
+test -f "$ANDROID_AVD_HOME/breeze_ocr_stress.ini"
+emulator -list-avds | tee "$ocr_proof_dir/avds.txt"
+grep -qx breeze_ocr_stress "$ocr_proof_dir/avds.txt"
 ocr_accel=off
 emulator -accel-check >"$ocr_proof_dir/acceleration.txt" 2>&1 || true
 cat "$ocr_proof_dir/acceleration.txt"

@@ -125,3 +125,48 @@ test('a failed durable PDF deletion keeps recognition alive for the retained boo
  assert.equal(f.session.wordBoxes.get(1)[0]?.word,'Retained','failed deletion must not retire the current reader');
  assert.equal(f.cache.size,1);
 });
+
+test('unrated/nonfinite confidence and clamped zero-area OCR must never become lookup words',()=>{
+ const f=fixture();
+ const malformed=[undefined,null,NaN,Infinity,-Infinity,-.1,1.01];
+ assert.deepEqual(Array.from(f.ocr.boxesFromWords(malformed.map(confidence=>word('Uncertain',{confidence})))),[]);
+ assert.deepEqual(Array.from(f.ocr.boxesFromWords([word('Edge',{x:1,w:.0001}),word('Edge',{y:1,h:.0001})])),[]);
+ assert.equal(f.ocr.boxesFromWords([word('Rated',{confidence:.9})]).length,1);
+});
+
+test('120 rapid visible-page changes keep one lane, bounded cache and released raster pixels',async()=>{
+ const f=fixture();f.session.pages=Array.from({length:60},(_,i)=>({isConnected:true,dataset:{page:String(i+1)}}));
+ f.session.settled=new Set(Array.from({length:60},(_,i)=>i+1));
+ for(let n=1;n<=60;n++){f.session.wordBoxes.set(n,[]);await f.inspect(n);}
+ for(let round=0;round<120;round++){
+  const n=round%60+1;f.context.visible=[n];await f.start();
+  const pending=f.calls.at(-1);
+  // Flood timers/taps while the same recognition is pending; no queued raster.
+  const count=f.calls.length;
+  for(let tap=0;tap<8;tap++){f.ocr.schedule(f.session);f.ocr.tap(f.session,n);await f.tick();}
+  assert.equal(f.calls.length,count);
+  pending.resolve({words:[word('Current')]});await flush();
+  assert.equal(f.session.wordBoxes.get(n)?.[0]?.word,'Current');
+  f.ocr.release(f.session,n);f.session.wordBoxes.set(n,[]);
+  assert.ok(f.cache.size<=48);
+  assert.ok(f.canvases.every(c=>c.width===0&&c.height===0));
+ }
+ assert.equal(f.calls.length,120,'sequential pass exceeds 48-page cache without an unbounded live map');
+ assert.equal(f.cache.size,48);
+ assert.equal([...f.session.wordBoxes.values()].flat().length,0);
+});
+
+test('raster cancellation, storage failure and malformed native output preserve explicit retry',async()=>{
+ const f=fixture();let cancelled=0;const render=defer();
+ f.session.pdf.getPage=async()=>({getViewport:({scale})=>({width:20000*scale,height:10000*scale}),
+  render:()=>({promise:render.promise,cancel(){cancelled++;render.reject(Error('cancelled'));}}),cleanup(){}});
+ await f.inspect();await f.start();
+ assert.equal(f.canvases[0].width,2048);assert.equal(f.canvases[0].height,1024);
+ f.ocr.close(f.session);await flush();assert.equal(cancelled,1);assert.equal(f.calls.length,0);
+ assert.ok(f.canvases.every(c=>!c.width&&!c.height));
+ const fresh=fixture();fresh.context.localTransaction=async()=>{throw Error('quota unavailable');};
+ await fresh.inspect();await fresh.start();fresh.calls[0].resolve({words:Array(3001).fill(word())});await flush();
+ assert.equal(fresh.session.pages[0].dataset.ocr,'failed');
+ fresh.ocr.tap(fresh.session,1);await fresh.tick();fresh.calls[1].resolve({words:[word('Recovered')]});await flush();
+ assert.equal(fresh.session.wordBoxes.get(1)[0].word,'Recovered');assert.equal(fresh.cache.size,0);
+});

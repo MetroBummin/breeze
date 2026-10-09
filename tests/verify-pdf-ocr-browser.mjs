@@ -1,13 +1,14 @@
 /* Real PDF.js, raster/IndexedDB, hit-test and lookup; native recognition is a
    controlled bridge double. Does not measure Vision/ML Kit accuracy or latency. */
 import assert from 'node:assert/strict';
-import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,mkdtempSync,rmSync,mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 import {scanPdf} from './helpers/pdf-scan-fixture.mjs';
+import {stressPdfOcrBrowser} from './helpers/pdf-ocr-browser-stress.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2'};
 const server=createServer((req,res)=>{
  const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://local').pathname));
@@ -57,7 +58,7 @@ try{
  for(const size of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000},{width:844,height:390},{width:320,height:568}]){
   await page.setViewportSize(size);
   for(const dark of [false,true]){
-   await page.evaluate(dark=>document.documentElement.dataset.theme=dark?'dark':'light',dark);
+   await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
    for(const zoom of [1,1.5,2.5]){
     const check=await page.evaluate(z=>{
      originalZoomLevel=z;applyOriginalZoomTransform();readerScrollTo(0);
@@ -67,14 +68,31 @@ try{
       error:Math.max(Math.abs(marker.left-(r.left+b.x*r.width)),Math.abs(marker.top-(r.top+b.y*r.height))),same:qaOcrBoxes===originalSession.wordBoxes.get(1)};
     },zoom);
     assert.equal(check.word,'Bright');assert.ok(check.same);assert.ok(check.error<.2,JSON.stringify({size,dark,zoom,check}));
+    if(zoom===1){
+     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+     await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
+     await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]));
+     const prompt=page.locator('.pdf-ocr-confirm');await prompt.waitFor();
+     const geometry=await prompt.evaluate(node=>{const r=node.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:innerWidth,height:innerHeight,buttons:[...node.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height),dark:document.body.classList.contains('dark')};});
+     assert.equal(geometry.dark,dark);assert.ok(geometry.left>=0&&geometry.top>=0&&geometry.right<=geometry.width&&geometry.bottom<=geometry.height,JSON.stringify(geometry));
+     assert.ok(geometry.buttons.every(h=>h>=44));assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
+     const proof='/tmp/breeze-ocr-confirm';mkdirSync(proof,{recursive:true});
+     await page.screenshot({path:`${proof}/${engine.name()}-${size.width}x${size.height}-${dark?'dark':'light'}.png`});
+     await page.locator('[data-ocr-dismiss]').click();
+    }
    }
   }
  }
  await page.setViewportSize({width:820,height:1180});
  await page.evaluate(()=>{originalZoomLevel=1;applyOriginalZoomTransform();readerScrollTo(0);});
- lookupAllowed=true;
  for(let i=0;i<3;i++){
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
+  lookupAllowed=false;
   await page.evaluate(async()=>{const p=originalSession.pages[0],r=p.getBoundingClientRect(),b=originalSession.wordBoxes.get(1)[0];await openPdfWordAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);});
+  await page.locator('[data-ocr-confirm]').waitFor();
+  assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'recognition must be confirmed before showing even a cached meaning');
+  lookupAllowed=true;await page.locator('[data-ocr-confirm]').click();
   await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
  }
  // Reopen consumes durable results; eviction consumes cache without native rerun.
@@ -114,7 +132,9 @@ try{
  assert.equal(await page.evaluate(()=>qaOldOcrSession.wordBoxes.get(1).length),0);
  await page.evaluate(()=>qaOcrCalls[3].resolve({words:[{...qaOcrResult[0],word:'Current'}]}));
  await page.waitForFunction(()=>originalSession.wordBoxes.get(1)?.[0]?.word==='Current');
+ lookupAllowed=false;
+ const stress=await stressPdfOcrBrowser({page,context:browser,engine:engine.name(),jpeg,openFixture,scanPdf});
  assert.deepEqual(errors,[]);
  assert.deepEqual(prematureLookups,[],'OCR must not itself request lookup');
- console.log(JSON.stringify({engine:engine.name(),passed:true,geometryCases:30,native:'mocked',network:'external requests blocked',unverified:'Vision/ML Kit accuracy and physical gestures'}));
+ console.log(JSON.stringify({engine:engine.name(),passed:true,geometryCases:30,stress,native:'mocked',network:'external requests blocked',unverified:'Vision/ML Kit accuracy and physical gestures'}));
 }finally{await browser?.close();rmSync(profile,{recursive:true,force:true});await new Promise(r=>server.close(r));}

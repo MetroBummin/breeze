@@ -264,3 +264,9 @@ intrinsically rotated viewport as the paper. Native word boxes become the same
 normalized top-left boxes used by lookup and markers. OCR does not add gesture
 owners or alter pinch/ink geometry. See [the OCR decision](021-scanned-pdf-ocr.md)
 for queue, cache, privacy and validation limits.
+
+OCR lookup now requires explicit confirmation of the recognized spelling in a
+nonmodal source-adjacent prompt. Confidence 1.0 was observed on a wrong spelling
+in the native stress corpus. The prompt does not intercept reading/zoom gestures;
+it closes and invalidates its action when the source position changes. Existing
+text-layer word lookup remains unchanged, and OCR does not expose sentence lookup.

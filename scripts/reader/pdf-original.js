@@ -628,8 +628,9 @@ function pdfPageAtPoint(clientX,clientY){
   return r&&x>=r[0]&&x<=r[0]+r[2]&&y>=r[1]&&y<=r[1]+r[3]?originalSession.pages[i]:null;
 }
 
-function openPdfWord(page,box){
+function openPdfWord(page,box,confirmedOcr=false){
   if(!box || !ownsPdfBoxes(page,[box])) return;
+  if(box.ocr&&!confirmedOcr){BreezePdfOcr.confirm(page,box,()=>openPdfWord(page,box,true));return;}
   // openWord compares the old source occurrence before transferring marker ownership.
   const savedKey=pdfSavedWordKeys.get(box);
   const key=savedKey&&words[savedKey]?savedKey:keyOf(box.word);
@@ -787,6 +788,8 @@ registerReaderSurface({
     const page=pdfPageAtPoint(clientX,clientY);
     if(!page) return null;
     const box=pdfWordAtPoint(page,clientX,clientY);
+    // OCR confirms an individual spelling; it does not certify a whole sentence.
+    if(box?.ocr)return null;
     const sentence=box && box.example ? String(box.example).trim() : '';
     if(!sentence) return null;
     /* 같은 문장에서 잘라 낸 낱말 상자들이 곧 그 문장의 자리입니다 — 위의

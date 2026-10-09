@@ -9,6 +9,8 @@ on:
       - 'android/app/src/**/BreezePdfOcr*'
       - 'tests/*pdf-ocr*'
       - 'tests/helpers/pdf-scan-fixture.mjs'
+      - 'tests/helpers/pdf-ocr-browser-stress.mjs'
+      - 'styles/reader.css'
       - '.github/workflows/pdf-ocr.yml'
 permissions:
   contents: read
@@ -29,3 +31,12 @@ jobs:
       - run: npm run test:pdf-ocr
         env:
           BROWSER: ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ocr-browser-stress-${{ matrix.engine }}
+          path: |
+            /tmp/breeze-ocr-browser-stress/
+            /tmp/breeze-ocr-confirm/
+          if-no-files-found: warn
+          retention-days: 7

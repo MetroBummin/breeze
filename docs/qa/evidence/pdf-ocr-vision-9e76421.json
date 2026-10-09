@@ -1,0 +1,514 @@
+{
+  "testedHead": "9e7642178b9668439967bcdbb2e464bf6cb7277d",
+  "workflow": "https://github.com/MetroBummin/breeze/actions/runs/37956011050",
+  "job": "https://github.com/MetroBummin/breeze/actions/runs/37956011050/job/113906581166",
+  "engine": "Apple Vision",
+  "environment": "macOS CI; not iOS hardware",
+  "native": true,
+  "rows": [
+    {
+      "id": "print-48",
+      "kind": "printed",
+      "strict": true,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 2293.675958333381,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "large-180",
+      "kind": "printed",
+      "strict": true,
+      "expected": 2,
+      "accepted": 2,
+      "correct": 2,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 936.9922083333222,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "huge-360",
+      "kind": "printed",
+      "strict": false,
+      "expected": 1,
+      "accepted": 1,
+      "correct": 1,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 923.064166666677,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-8",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 4,
+      "wrong": [],
+      "milliseconds": 1133.821208333302,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-12",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 2,
+      "missed": 2,
+      "wrong": [
+        {
+          "word": "Briaht",
+          "at": 0,
+          "confidence": 1
+        },
+        {
+          "word": "uliet",
+          "at": 2,
+          "confidence": 0.5
+        }
+      ],
+      "milliseconds": 1319.407124999998,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-16",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 2,
+      "missed": 2,
+      "wrong": [
+        {
+          "word": "briont",
+          "at": 0,
+          "confidence": 0.30000001192092896
+        },
+        {
+          "word": "worla",
+          "at": 1,
+          "confidence": 0.30000001192092896
+        }
+      ],
+      "milliseconds": 1192.6005416667067,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-24",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1487.9470833333244,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blur-1.5",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1277.767874999995,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blur-4",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1288.7281250000342,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blur-8",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 4,
+      "wrong": [],
+      "milliseconds": 513.3225833333768,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "low-contrast",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1208.863041666632,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-7",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1158.5329166666725,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation--13",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1216.4709166666512,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-90",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1206.1326250000093,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-180",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1172.2804583333755,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-270",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1316.1148333333017,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "two-columns",
+      "kind": "printed",
+      "strict": true,
+      "expected": 12,
+      "accepted": 12,
+      "correct": 12,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1227.0833333333258,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "repeated",
+      "kind": "printed",
+      "strict": true,
+      "expected": 8,
+      "accepted": 8,
+      "correct": 8,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1260.7183749999535,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "dense",
+      "kind": "printed",
+      "strict": false,
+      "expected": 120,
+      "accepted": 120,
+      "correct": 120,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1834.8833333333232,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "synthetic-ink-only",
+      "kind": "synthetic-ink",
+      "strict": false,
+      "expected": 2,
+      "accepted": 2,
+      "correct": 2,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1279.8109999999951,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "mixed-print-ink",
+      "kind": "mixed-synthetic-ink",
+      "strict": false,
+      "expected": 5,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 1,
+      "wrong": [],
+      "milliseconds": 1347.355291666645,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "flattened-ink-overlap",
+      "kind": "flattened-ink",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1308.0464166666843,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blank",
+      "kind": "printed",
+      "strict": true,
+      "expected": 0,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 529.0122083333699,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "scribbles-no-words",
+      "kind": "synthetic-ink",
+      "strict": false,
+      "expected": 0,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 477.5247083333056,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "clipped-edges",
+      "kind": "printed",
+      "strict": false,
+      "expected": 2,
+      "accepted": 1,
+      "correct": 0,
+      "missed": 2,
+      "wrong": [
+        {
+          "word": "wor",
+          "at": 1,
+          "confidence": 0.30000001192092896
+        }
+      ],
+      "milliseconds": 1235.6664999999794,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    }
+  ],
+  "repetitions": [
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 25,
+      "milliseconds": 1351.9687083333451,
+      "residentBytes": 190562304
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 26,
+      "milliseconds": 1266.6308333333518,
+      "residentBytes": 184893440
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 27,
+      "milliseconds": 1378.40137500001,
+      "residentBytes": 200851456
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 28,
+      "milliseconds": 1288.546374999953,
+      "residentBytes": 201392128
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 29,
+      "milliseconds": 1230.9858333333636,
+      "residentBytes": 193806336
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 30,
+      "milliseconds": 1247.3504999999818,
+      "residentBytes": 193953792
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 31,
+      "milliseconds": 1213.495916666659,
+      "residentBytes": 194052096
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 32,
+      "milliseconds": 1203.133791666687,
+      "residentBytes": 203161600
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 33,
+      "milliseconds": 1233.1685833333381,
+      "residentBytes": 206192640
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 34,
+      "milliseconds": 1125.8267916666682,
+      "residentBytes": 195690496
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 35,
+      "milliseconds": 964.325625000015,
+      "residentBytes": 189022208
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 36,
+      "milliseconds": 1075.0474583333016,
+      "residentBytes": 196820992
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 37,
+      "milliseconds": 934.6291666666957,
+      "residentBytes": 196935680
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 38,
+      "milliseconds": 1006.7578750000052,
+      "residentBytes": 197033984
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 39,
+      "milliseconds": 949.4187500000066,
+      "residentBytes": 197165056
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 40,
+      "milliseconds": 936.2485000000333,
+      "residentBytes": 204947456
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 41,
+      "milliseconds": 913.3975416666544,
+      "residentBytes": 197378048
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 42,
+      "milliseconds": 1044.7888333333708,
+      "residentBytes": 205160448
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 43,
+      "milliseconds": 1260.5844583333123,
+      "residentBytes": 197591040
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 44,
+      "milliseconds": 1362.3092916666906,
+      "residentBytes": 197689344
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 45,
+      "milliseconds": 1059.4992916666683,
+      "residentBytes": 190119936
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 46,
+      "milliseconds": 1335.812374999989,
+      "residentBytes": 197902336
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 47,
+      "milliseconds": 1221.1930416667087,
+      "residentBytes": 198017024
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 48,
+      "milliseconds": 1275.4458333333787,
+      "residentBytes": 198115328
+    }
+  ],
+  "limitations": [
+    "Synthetic corpus only; vector ink is not representative human handwriting.",
+    "macOS Vision differs from iOS-device model/runtime.",
+    "PSS/RSS include models and harness; bounded observations cannot prove absence of leaks."
+  ],
+  "strictFailures": []
+}
