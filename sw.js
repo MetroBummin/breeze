@@ -129,6 +129,8 @@ self.addEventListener('fetch', event => {
   /* 우리 서버에서 온 것만. 나머지는 이 파일이 없는 것처럼 그대로 흘러갑니다. */
   const url = new URL(request.url);
   if(url.origin !== self.location.origin) return;
+  // Public site pages are separate documents, never the cached Reader shell.
+  if(request.mode==='navigate' && url.pathname!=='/' && url.pathname!=='/index.html' && !url.pathname.startsWith('/ready/'))return;
   event.respondWith(request.mode === 'navigate'
     ? (url.pathname.startsWith('/ready/') ? networkFirst(request) : staleWhileRevalidate(request))
     : cacheFirst(request));

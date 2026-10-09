@@ -135,8 +135,8 @@
       "owners": [
         "welcome"
       ],
-      "kind": "single-source",
-      "sha256": "4f639e9ab9b1da516b59a97de6b2eee2c136c193a7e7534401b8edb1d99ec34e",
+      "kind": "combined-reviewed",
+      "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
       "sourceSha256": {
         "welcome": "4f639e9ab9b1da516b59a97de6b2eee2c136c193a7e7534401b8edb1d99ec34e"
       }
@@ -1109,7 +1109,7 @@
         "131"
       ],
       "kind": "combined-reviewed",
-      "sha256": "0112569bfec93a05ee796413b73cf75efafd36529c16483544f1b0e95a424b57",
+      "sha256": "3c7a1d125a5a25c08c1684224f89456c619d937fb89a4b9377dcfa844d7fbb59",
       "sourceSha256": {
         "130": "150915db3cceb7b410a0f8e638c39dfc35b7ef1c3c75ba2bbb74e0aecd77c558",
         "131": "79164219d6f204225a448f45380f7bd8f612d95d57a191a7caa6f2ad46bc2e43"
@@ -1908,7 +1908,8 @@
     "landing/landing.js",
     "tests/verify-landing-browser.mjs",
     "tools/capture-landing-app.mjs",
-    "docs/qa/web-integration-20261009.md"
+    "docs/qa/web-integration-20261009.md",
+    "tests/verify-site-navigation-browser.mjs"
   ],
   "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680",
   "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c",
@@ -2003,7 +2004,7 @@
   "approvedWebLandingIntegration": {
     "appBase": "bdc2222315cad490cdcd3d4f1ddb4139bd7f2bce",
     "landingSource": "e4b49a00e893bad9ae34264d58a79ca5f344a6a9",
-    "scope": "Explicit user approval to merge and deploy PR136 and PR137, preserving submitted 1.9 dependencies. App/native bytes remain exactly PR136; landing source exactly PR137 except generated HTML content-hash query strings. Extend only the combination boundary, then publish main once. No release metadata, Apple requests, provider or account changes.",
+    "scope": "Explicit user approval to merge and deploy PR136 and PR137, preserving submitted 1.9 dependencies. App/native bytes remain exactly PR136; landing source exactly PR137 except generated HTML content-hash query strings. Extend only the combination boundary, then publish main once. No release metadata, Apple requests, provider or account changes. Cache validation reproduced app-shell HTML on controlled public-site navigation. Permit only the two-line service-worker navigation guard and generated worker version, its new real-worker browser regression, and the existing Chromium offline CI command extension. No forced worker activation or Reader code change.",
     "files": [
       ".github/workflows/landing.yml",
       "docs/qa/landing-current-app-20261009/README.md",
@@ -2046,7 +2047,10 @@
     "integrationFiles": [
       "tests/verify-integration-boundary.mjs",
       "docs/qa/breeze-1.9-integration/boundary.json",
-      "docs/qa/web-integration-20261009.md"
+      "docs/qa/web-integration-20261009.md",
+      "sw.js",
+      "tests/verify-site-navigation-browser.mjs",
+      ".github/workflows/integrity.yml"
     ]
   }
 }

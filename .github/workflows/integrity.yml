@@ -74,7 +74,7 @@ jobs:
           node tests/verify-homeward-open-preparation-browser.mjs
       - name: Existing offline import and shell upgrade
         if: matrix.engine == 'chromium'
-        run: node tests/verify-deferred-offline-browser.mjs
+        run: node tests/verify-deferred-offline-browser.mjs && node tests/verify-site-navigation-browser.mjs
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 45

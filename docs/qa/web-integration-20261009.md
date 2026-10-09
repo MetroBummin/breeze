@@ -7,11 +7,20 @@ verified `e4b49a00e893bad9ae34264d58a79ca5f344a6a9` is independently based on
 main `e7b61d5304d20d639d45fc8dd23116db5d6446e5`.
 
 An isolated web integration branch combines both histories. The submitted 253
-branch remains unchanged. The production app/native tree matches PR136 exactly;
+branch remains unchanged. The production app/native tree matches PR136 except the
+service-worker site-navigation fix below;
 landing code, captures and assets match PR137, except content-hash query strings
 in landing HTML resolve the newer approved shared app CSS. The integration
-boundary independently enforces both source sets. No runtime behavior is changed
-to resolve the combination; only that explicit test/receipt boundary is extended.
+boundary independently enforces both source sets.
+
+An installed real app worker reproduced a public-site navigation defect: visiting
+`/landing` returned cached app HTML. Its navigation fallback is now restricted to
+the two app entry paths (`/`, `/index.html`); READY keeps its existing network-first
+rule. Landing, support, privacy and terms use normal browser document navigation.
+The app's generation/cache ownership, offline Reader and no-forced-worker-activation
+policy are preserved. A real Chromium worker regression covers both landing URL
+forms, all three other public pages, the phone CTA and durable book retention.
+Integrity runs that regression beside its existing offline worker checks.
 
 Deployment follows the existing main GitHub Pages build, observed in successful
 run 37652315566. A previous main also has Xcode Cloud's Default iOS Archive check.
