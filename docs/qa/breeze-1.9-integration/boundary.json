@@ -2243,5 +2243,195 @@
       "newWait": "await page.waitForFunction(()=>document.querySelector('#article-preview').dataset.metadata==='fallback'&&document.querySelector('#article-preview').dataset.metadataReason==='network');",
       "baseSha256": "471db2eeef1c4007646f8281324a02d1c9ca6bc894b3a475406a784f196e89ab"
     }
+  },
+  "approved191FollowupsIntegration": {
+    "base": "b55f3df241607c95855a53009aceaa903e1da164",
+    "owners": [
+      {
+        "pr": 139,
+        "source": "63c79d28e850b5e0c21c67be38e98641aa2390ef",
+        "key": "approvedMemoryTitleFollowup",
+        "files": [
+          "docs/decisions/014-design-only-brand-release.md",
+          "docs/qa/breeze-1.9-integration/boundary.json",
+          "docs/qa/memory-handwritten-title-20261009.md",
+          "index.html",
+          "styles/wordbook.css",
+          "sw.js",
+          "tests/verify-design-memory-browser.mjs",
+          "tests/verify-integration-boundary.mjs"
+        ]
+      },
+      {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "key": "approvedAiCanonicalFollowup",
+        "files": [
+          "docs/decisions/011-word-lookup-recovery.md",
+          "docs/qa/breeze-1.9-integration/boundary.json",
+          "index.html",
+          "scripts/dictionary/dictionary.js",
+          "server/dict/lookup.ts",
+          "sw.js",
+          "tests/verify-integration-boundary.mjs",
+          "tests/verify-lookup-contract.mjs",
+          "tests/verify-word-arrival-browser.mjs",
+          "tests/verify-word-auth-deadline.mjs",
+          "tests/verify-word-lemma-validation.mjs",
+          "tests/verify-word-lookup-quota.mjs"
+        ]
+      },
+      {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "key": "approvedSentenceTextHighlightFollowup",
+        "files": [
+          ".github/workflows/sentence-inline-feedback.yml",
+          "docs/decisions/004-sentence-lookup-feedback.md",
+          "docs/qa/breeze-1.9-integration/boundary.json",
+          "index.html",
+          "scripts/reader/reader-modes.js",
+          "sw.js",
+          "tests/verify-article-preview-browser.mjs",
+          "tests/verify-integration-boundary.mjs",
+          "tests/verify-light-lookup-tone-browser.mjs",
+          "tests/verify-sentence-cue-browser.mjs",
+          "tests/verify-sentence-inline-browser.mjs",
+          "tests/verify-sentence-text-ink-browser.mjs",
+          "tools/record-sentence-highlight-boundary.mjs"
+        ]
+      }
+    ],
+    "files": {
+      "docs/decisions/014-design-only-brand-release.md": {
+        "pr": 139,
+        "source": "63c79d28e850b5e0c21c67be38e98641aa2390ef",
+        "sha256": "a32cec7bee11262dd4450bf29ab4e1236321dd86174bde42d360497a91762f4d"
+      },
+      "docs/qa/memory-handwritten-title-20261009.md": {
+        "pr": 139,
+        "source": "63c79d28e850b5e0c21c67be38e98641aa2390ef",
+        "sha256": "17e9bcfc43ddb475d4f1c23b91b0d366e3e5ba043772f37d80a40ab473090292"
+      },
+      "styles/wordbook.css": {
+        "pr": 139,
+        "source": "63c79d28e850b5e0c21c67be38e98641aa2390ef",
+        "sha256": "fa6c380d3a1ea0cb7902c2488d0b1dac84d0396d76fd4b72576b4d42bd230e14"
+      },
+      "tests/verify-design-memory-browser.mjs": {
+        "pr": 139,
+        "source": "63c79d28e850b5e0c21c67be38e98641aa2390ef",
+        "sha256": "31336d5e94c59a515ccf6020bca20049950e83f94165b036ea5fcc9aa1faf5e7"
+      },
+      "docs/decisions/011-word-lookup-recovery.md": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "cfa5c4cbe28b6d0f029ca988d5455d72ca4cae697e1eb490ac225c46b32d905c"
+      },
+      "scripts/dictionary/dictionary.js": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "29a24ea88d0cb753949d83c207166a40ce66efc70b80cbb5f27111a82275836b"
+      },
+      "server/dict/lookup.ts": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "dbaa5aac0ea3c775d68dd996431936b2c7b698f7701eff2153c1b5d3bfe3dddc"
+      },
+      "tests/verify-lookup-contract.mjs": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "0ccd6051bbfce57e65bbf9462c500a51a93f173c5e7ca36bf52908465d84254c"
+      },
+      "tests/verify-word-arrival-browser.mjs": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "90a8b0bbfce88639464b36f405140bd6c3fdc2872e89cbe59a58342ccacf0cd7"
+      },
+      "tests/verify-word-auth-deadline.mjs": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "7e02dc582aa154d5682cc2bb60072e3d6391a9e0dd71c984b010bd3d03426cf5"
+      },
+      "tests/verify-word-lemma-validation.mjs": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "4fd50c28eb4dc0445f7b096111c3ca2d8daa6328951e5245ba53356ab896c191"
+      },
+      "tests/verify-word-lookup-quota.mjs": {
+        "pr": 140,
+        "source": "da0d935098c89a0d4482bd8d65463c93690ebf4d",
+        "sha256": "de4923f56c211f693294e2ab9136d9b2731f5a00bac90f377f781780d2ca0997"
+      },
+      ".github/workflows/sentence-inline-feedback.yml": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "bb4ca37c954d1db9fbfe95ed424b03daeb280d7a38d6fa5f36f280381da46d80"
+      },
+      "docs/decisions/004-sentence-lookup-feedback.md": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "c6580a3ffc0027c3628f7473614bc1b9be8d80e650d7fdb75735c9f8b1ad14f5"
+      },
+      "scripts/reader/reader-modes.js": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "7d621203fd9ea954855b717d09e9871c00c57d53200466fc78ecfa5ca464d415"
+      },
+      "tests/verify-article-preview-browser.mjs": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "5902a595095f64cb97843fcbe531e03830719fc0bd56968467126fb66ee90ee1"
+      },
+      "tests/verify-light-lookup-tone-browser.mjs": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "b8d044111f3d6c2edf746160c3e0abf18c2a6a3222c1e1c137a1f6041cdebb9a"
+      },
+      "tests/verify-sentence-cue-browser.mjs": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "7d9cf4b84560d42cdbebbb702589fadc34aad2b3d4830aa39eaadd0dc4a43abc"
+      },
+      "tests/verify-sentence-inline-browser.mjs": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "17b2d765e840fd2b071856a1d40e839934c7d33d7bcce73d1e7be7b3ecbbd445"
+      },
+      "tests/verify-sentence-text-ink-browser.mjs": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "5b8e562ada1f8a4a3665b3e59a3ce1c599e20291bf6bbeac00513ca28df2e315"
+      },
+      "tools/record-sentence-highlight-boundary.mjs": {
+        "pr": 141,
+        "source": "902af5c3544b94e6b9c2787559aea5a4b76cd33e",
+        "sha256": "235f505509f377875c1df03d3412a94cb4e05b89aecf668c3ede3759111aebd2"
+      },
+      "index.html": {
+        "pr": 139,
+        "source": "63c79d28e850b5e0c21c67be38e98641aa2390ef",
+        "sha256": "607fcecf03059600d9d6dbcbea3c50639478e352fc8c8ae0c3faffbd7c82ff6f"
+      },
+      "sw.js": {
+        "pr": "baseline",
+        "source": "b55f3df241607c95855a53009aceaa903e1da164",
+        "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
+      }
+    },
+    "integrationFiles": [
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "tests/verify-integration-boundary.mjs",
+      "tools/record-191-followups-boundary.mjs",
+      "docs/decisions/020-breeze-191-followup-integration.md",
+      "docs/qa/breeze-191-followups-20261009.md"
+    ],
+    "authorization": "User requested a new build on 2026-10-09 12:25 UTC: 새빌드 ㄱㄱ 테스트플라이트보고 괜찮으면 다시심사. Parent designated a single repo integration owner. Prepare/verify one combined source, then coordinate one main update and one existing automatic Cloud/TestFlight build. Keep 1.9.1 and Cloud-owned unique counter. No server redeploy, keys/DB changes, marketing-image replacement, review cancellation or new review submission before TestFlight user confirmation.",
+    "integrationSha256": {
+      "tests/verify-integration-boundary.mjs": "174dd8c13f4bb0b9c796289a661028073816b825bf5950da5d88464849eebd02",
+      "tools/record-191-followups-boundary.mjs": "f91324e3b64e9cf7211f5c5f164cfb41878d0ca0eac975e942f9a873fb6f1e41",
+      "docs/decisions/020-breeze-191-followup-integration.md": "8450e1a510e3991e0f93e14a9d823e9ce56db7613e6657fe597e28a63a86a0b4",
+      "docs/qa/breeze-191-followups-20261009.md": "ce17115631ea35a223edf09ad6a49a784f0d535db6504991113ef821b33de394"
+    }
   }
 }
