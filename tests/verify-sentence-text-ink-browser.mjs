@@ -4,7 +4,8 @@
  * Browser WebKit is separate from physical iOS/WKWebView validation.
  */
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -34,12 +35,21 @@ zip.file('META-INF/container.xml','<container xmlns="urn:oasis:names:tc:opendocu
 zip.file('book.opf','<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">sentence-ink</dc:identifier><dc:title>Sentence EPUB ink</dc:title><dc:language>en</dc:language></metadata><manifest><item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="chapter"/></spine></package>');
 zip.file('chapter.xhtml','<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Sentence EPUB ink</title></head><body>'+('<p>'+phrase+' Another sentence stays outside the selected source.</p>').repeat(30)+'</body></html>');
 const reports=[];
-let browser;
+let browser,context,profile;
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 try{
-  browser=await engine.launch({headless:true,executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
-  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,hasTouch:true,serviceWorkers:'block'});
+  const contextOptions={viewport:{width:390,height:844},deviceScaleFactor:1,hasTouch:true,serviceWorkers:'block'};
+  if(engine===webkit){
+    // Match the existing import/sentence fixtures: persistent WebKit storage
+    // preserves original-file bytes while the reader retrieves them from IDB.
+    profile=mkdtempSync(resolve(tmpdir(),'breeze-sentence-text-ink-'));
+    context=await engine.launchPersistentContext(profile,{...contextOptions,headless:true});
+  }else{
+    browser=await engine.launch({headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+    context=await browser.newContext(contextOptions);
+  }
+  const page=await context.newPage();
   const errors=[],providerAttempts=[];
   page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.push(e.message);});
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
@@ -195,4 +205,4 @@ try{
   await page.evaluate(()=>clearReaderSentenceCue(true));
   assert.deepEqual(errors,[]);assert.deepEqual(providerAttempts,[],'paid transport was attempted');
   console.log(`${engineName}: ${reports.length} Text ink cases ${baseline?'recorded on unfixed baseline':'passed'}; ${output}`);
-}finally{await browser?.close();server.close();}
+}finally{await context?.close();await browser?.close();if(profile)rmSync(profile,{recursive:true,force:true});server.close();}
