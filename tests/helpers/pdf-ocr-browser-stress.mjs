@@ -137,6 +137,25 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
   }
   console.log(`OCR browser stress: completed cache pass ${pass+1}`);
  }
+ // Complete ordinary lifecycle coverage before the separately diagnosed
+ // offline transport gate, so an environment failure cannot hide these checks.
+ for(let i=0;i<8;i++){
+  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await openBook(b);await switchReaderMode('original');});
+  await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused());
+  await page.evaluate(()=>goPdfPage(56));
+  await page.waitForFunction(()=>originalSession.wordBoxes.get(56)?.length===2);
+ }
+ await sample('after-eight-reopens');
+ assert.equal(await page.evaluate(()=>qaStress.peak),1);
+ assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
+ const writeReport=async(offlineReopen,reopens)=>{
+  const report={native:'controlled bridge responses, not accuracy',completedCoreChecks:true,pages:60,rapidNavigationIntents:6,cachePasses:2,reopens,
+   nativeCalls:await page.evaluate(()=>qaStress.calls.length),maximumConcurrentNative:1,liveInkExcluded:true,
+   highConfidenceMisreadRequiresExplicitConfirmation:true,memory,offlineReopen,
+   memoryLimit:'CDP JS heap/DOM only on Chromium, excludes GPU/native memory; bounded samples are not a leak proof'};
+  const out=process.env.BREEZE_OCR_STRESS_OUTPUT||'/tmp/breeze-ocr-browser-stress';mkdirSync(out,{recursive:true});writeFileSync(`${out}/${engine}.json`,JSON.stringify(report,null,2)+'\n');
+  return report;
+ };
  // Browser offline means dictionary/network unavailable, but an already cached
  // page remains tappable. Use the bundled worker bytes through PDF.js's real
  // workerPort API, like Capacitor's network-independent local assets. Playwright
@@ -167,7 +186,9 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
   // Diagnose only after the original failed read; do not warm it in advance or
   // convert a subsequent successful read into a passing offline assertion.
   await context.setOffline(false);
-  console.log('Source read after restoring transport',await readSource());
+  const onlineSource=await readSource();
+  console.log('Source read after restoring transport',onlineSource);
+  console.log('OCR core completed; offline gate failed',JSON.stringify(await writeReport({status:'failed-local-blob-read',offlineSource,onlineSource},8)));
  }
  assert.equal(offlineSource.online,false);assert.equal(offlineSource.original.bytes,offlineSource.storedSize,JSON.stringify(offlineSource));
  const beforeOffline=await page.evaluate(()=>qaStress.calls.length);
@@ -179,22 +200,11 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
  }catch(error){console.log('Offline reopen diagnostic',await page.evaluate(async()=>({readerError:document.querySelector('#original-content .original-empty')?.textContent,pending:readerPositionPending(),paused:originalPdfPaintPaused(),mode:currentReaderMode,presented:originalSession?.presented,visible:originalSession?pdfPagesInView(originalSession):[],page:originalSession?.navigationPage,status:originalSession?.pages?.[55]?.dataset.ocr,wordCount:originalSession?.wordBoxes?.get(56)?.length,cache:await qaCacheCount(),calls:qaStress.calls.slice(-3).map(({page,book})=>({page,book})),current:currentPdfSession()})));throw error;}
  assert.equal(await page.evaluate(()=>qaStress.calls.length),beforeOffline);
  await context.setOffline(false);
- for(let i=0;i<8;i++){
-  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await openBook(b);await switchReaderMode('original');});
-  await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused());
-  await page.evaluate(()=>goPdfPage(56));
-  await page.waitForFunction(()=>originalSession.wordBoxes.get(56)?.length===2);
- }
- await sample('after-eight-reopens');
  // The current document still owns the real worker; browser-context teardown
  // releases it after this test, rather than terminating a live PDF mid-read.
  await page.evaluate(()=>{pdfjsLib.GlobalWorkerOptions.workerPort=null;URL.revokeObjectURL(qaLocalWorkerUrl);});
  assert.equal(await page.evaluate(()=>qaStress.peak),1);
  assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
- const report={native:'controlled bridge responses, not accuracy',pages:60,rapidNavigationIntents:6,cachePasses:2,reopens:9,
-  nativeCalls:await page.evaluate(()=>qaStress.calls.length),maximumConcurrentNative:1,liveInkExcluded:true,
-  highConfidenceMisreadRequiresExplicitConfirmation:true,memory,
-  memoryLimit:'CDP JS heap/DOM only on Chromium, excludes GPU/native memory; bounded samples are not a leak proof'};
- const out=process.env.BREEZE_OCR_STRESS_OUTPUT||'/tmp/breeze-ocr-browser-stress';mkdirSync(out,{recursive:true});writeFileSync(`${out}/${engine}.json`,JSON.stringify(report,null,2)+'\n');
+ const report=await writeReport({status:'passed',offlineSource},9);
  await cdp?.detach();return report;
 }

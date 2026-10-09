@@ -159,3 +159,11 @@ is to restrict network interception to HTTP(S). The follow-up narrows that match
 while preserving network-offline mode, blocked external HTTP(S), the real local
 worker, persisted-byte checks and every reopening assertion. Its CI result is
 reported separately rather than treating the earlier failures as passes.
+
+At `9c43ff0`, HTTP(S)-only routing still produced the same fresh/persisted Blob
+failure offline and immediate successful reads online. Thus narrowing routing
+was **not** a fix; Playwright's WebKit offline local-Blob path remains blocked in
+this environment. No product storage change or weakened assertion is justified
+by that result. The final harness runs all eight ordinary reopens before this
+gate and saves their evidence even when the offline assertion fails. The WebKit
+job remains failed in that case; native offline acceptance remains open.
