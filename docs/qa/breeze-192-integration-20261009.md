@@ -24,10 +24,12 @@ Local verification on the provisional inputs completed successfully:
 - Full `npm test`: exit 0, including the 15 OCR unit cases and all existing suites.
 - `npm run typecheck`: passed with the existing 32 diagnostics, no increase.
 - Strict new boundary plus the entire unchanged historical 1.9.1 boundary: passed.
-- Fifteen intentional mutations all rejected; restored boundary passed. Probes
+- Sixteen intentional mutations all rejected; restored boundary passed. Probes
   cover OCR/Memory bytes, old receipt/helper/article assertion, native hook,
   config, current verifier, marketing version/counter, wrong/missing stamps,
-  worker version, unrelated file and forged receipt source.
+  worker version, unrelated file, forged receipt source and a stamp-shaped title
+  mutation. Normalization removes only real local script/style/favicon resource
+  stamps, so a query-looking string cannot hide a semantic HTML change.
 - Chromium OCR: 30 geometry/lifecycle cases using real PDF.js and IndexedDB,
   with controlled native recognition and external requests blocked.
 - Chromium Memory editor/filter: twelve theme/size cases. Existing Wordbook

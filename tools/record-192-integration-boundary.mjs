@@ -48,7 +48,10 @@ const sourceBytes=(sha,file)=>git('show',sha+':'+file);
 const read=file=>readFileSync(join(root,file));
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const blob=value=>createHash('sha1').update('blob '+value.length+'\0').update(value).digest('hex');
-const normalized=(file,bytes)=>file==='index.html'?bytes.toString().replace(/\?v=[a-f0-9]{8}/g,''):
+const stampable=file=>/\.(?:js|css)$/.test(file)||/(?:^|\/)assets\/favicon\/[^/]+\.(?:png|svg|ico)$/.test(file);
+const normalized=(file,bytes)=>file==='index.html'?bytes.toString().replace(
+ /(<(?:script|link|img)\b[^>]*?\b(?:src|href)=")(?!https?:|\/\/|data:|#)([^"?]+)\?v=[a-f0-9]{8}(")/g,
+ (match,prefix,path,quote)=>stampable(path)?prefix+path+quote:match):
  file==='sw.js'?bytes.toString().replace(/const VERSION = '[^']*';/,"const VERSION = 'STAMP';"):bytes;
 const tree=sha=>Object.fromEntries(git('ls-tree','-rz',sha).toString().split('\0').filter(Boolean).map(line=>{
  const [meta,file]=line.split('\t'),[mode,type,object]=meta.split(' ');
@@ -115,7 +118,7 @@ function verifyCurrent(contract){
  const html=read('index.html').toString();
  const local=/(<(?:script|link|img)\b[^>]*?\b(?:src|href)=")(?!https?:|\/\/|data:|#)([^"?]+)(?:\?([^"?]*))?(")/g;
  for(const match of html.matchAll(local)){
-  if(!/\.(?:js|css)$/.test(match[2])&&!/(?:^|\/)assets\/favicon\/[^/]+\.(?:png|svg|ico)$/.test(match[2]))continue;
+  if(!stampable(match[2]))continue;
   assert.equal(match[3],'v='+hash(read(match[2])).slice(0,8),'Resource stamp drift: '+match[2]);
  }
  const ready=['ready/index.html','ready/admin/index.html','ready/app.js','ready/admin/app.js','ready/ready.css'];

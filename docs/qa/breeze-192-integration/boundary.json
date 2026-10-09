@@ -115,7 +115,7 @@
       "pr": 143,
       "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
       "mode": "100644",
-      "sha256": "d44f20b4b51b0314fd393ff6c5825f3b5ce3b8f9c95681931a409d1a085723a7"
+      "sha256": "44ba17aed313cf781d170a58e5fe6da98991d44b833fa0afa61f1f8491bbf37b"
     },
     "ios/App/App.xcodeproj/project.pbxproj": {
       "pr": "version-only",
@@ -381,8 +381,8 @@
   "authorization": "2026-10-09: user requested 1.9.2 OCR stress testing, minor-fix testing/merge and new photos; at 15:57:36 UTC explicitly approved assistant clarification including integration/build/submission, then requested completion while asleep at 15:57:46. Parent designated this isolated integration owner. Hold main/Cloud until the separately running OCR stress task supplies its final result and SHA. Preserve 1.9.1 historical receipts; authorize only these owners, 1.9.2 version-only delta, strict boundary and verification documentation. A single verified main merge may then start the existing automatic Xcode Cloud build. Marketing photos and App Store submission remain with their assigned owners.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "7c38f341f53724a1cab92af3261b3bc9ba7e38413efd564e887e00924fb3a34f",
+    "tools/record-192-integration-boundary.mjs": "e5c542146b4fd4d504718dc94dc929cfdc6ab765b44317ace2806c2232927126",
     "docs/decisions/022-breeze-192-integration.md": "3a388bd473195413e77ca23b37e3cf88e98c0057df81196250a0cb67d6e5ccbe",
-    "docs/qa/breeze-192-integration-20261009.md": "2b27a9f1b0633a58822da1e4466aa774db8c99b4a3bb13ba21c44acce14f8072"
+    "docs/qa/breeze-192-integration-20261009.md": "ad7f172cbeb5b4589585fedf4d39faf27bf77a6f99516490cd7997fa5d9cda78"
   }
 }
