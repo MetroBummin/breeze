@@ -1,8 +1,10 @@
-# On-device scanned PDF word lookup (2.0 draft)
+# On-device scanned PDF word lookup (1.9.2 candidate draft)
 
 Base: main `83cc182db73ed1d63784e66321a066ccb2943994`. PR142 was already
-merged when this work started. This feature belongs to an independent 2.0 draft;
+merged when this work started. This feature belongs to an independent 1.9.2 draft;
 it changes no marketing version, build counter, release hook or deployment.
+The target was changed from 2.0 to 1.9.2 by the owner; submitted 1.9.1(257)
+remains frozen. This designation does not authorize a release build or submission.
 
 ## Ownership and scope
 

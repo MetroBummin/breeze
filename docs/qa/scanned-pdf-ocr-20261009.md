@@ -3,6 +3,8 @@
 Independent branch from main `83cc182`; no merge, deployment, version bump or
 paid provider call. Original checkout `/workspace/breeze` remains untouched.
 The new worktree is `/workspace/breeze-ocr`.
+The owner retargeted this draft from 2.0 to the 1.9.2 candidate. Submitted
+1.9.1(257) stays frozen; there is no release build, submission or merge approval.
 
 ## Executed locally (Linux)
 
@@ -34,10 +36,10 @@ The new worktree is `/workspace/breeze-ocr`.
 ## Known blockers and unverified work
 
 - `node tests/verify-integration-boundary.mjs` fails because the frozen 1.9.1
-  receipt requires PR139's exact `index.html` bytes. This 2.0 feature adds a script
+  receipt requires PR139's exact `index.html` bytes. This 1.9.2 feature adds a script
   and intentionally falls outside that old release snapshot. The receipt and
   guard are unchanged; do not interpret the draft as passing Integrity CI or
-  ready to merge. A separately reviewed 2.0 integration contract is still needed.
+  ready to merge. A separately reviewed 1.9.2 integration contract is still needed.
 - No Xcode/iOS SDK or Android SDK is installed here. Android compile attempt also
   stopped at Gradle download (`UnknownHostException: services.gradle.org`).
   Neither native plugin has been locally compiled or executed.
@@ -52,7 +54,7 @@ The new worktree is `/workspace/breeze-ocr`.
   `./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=kr.io.breeze.app.PdfOcrAccuracyTest`.
   Existing Android CI compiles instrumentation tests; it does not execute them.
 
-## Physical acceptance before 2.0 release
+## Physical acceptance before 1.9.2 release
 
 On native iPhone/iPad and Android phone/tablet, use owned synthetic scan PDFs
 (clean print, small print, low contrast, blur, skew, multiple columns, punctuation,
@@ -87,8 +89,8 @@ repair; successful deletion still retires pending work before clearing its cache
 The unchanged integration-boundary verifier passes on exact main `83cc182` in
 an isolated checkout. On the feature head it rejects PR139's exact shell markup,
 as expected from its hard-coded 1.9.1 owner contract; downstream native/config
-checks also freeze whole files where 2.0 needs plugin registration/test scripts.
-This requires a separately reviewed 2.0 contract anchored to that accepted main:
+checks also freeze whole files where 1.9.2 needs plugin registration/test scripts.
+This requires a separately reviewed 1.9.2 contract anchored to that accepted main:
 retain the historical receipts and release protections, explicitly admit only
 reviewed OCR changes, and verify current behavior and negative mutation cases.
 A branch-name bypass, removed assertions or regenerating historical owner hashes
