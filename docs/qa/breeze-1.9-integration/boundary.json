@@ -307,7 +307,7 @@
         "131"
       ],
       "kind": "combined-reviewed",
-      "sha256": "95c17bf3fcf4cebc15d8706b771e57344c7d4f9b81ad188f4aea0d08bbb931fe",
+      "sha256": "c4c8f21c7a3083c04eb8edc1cab993fbb18897c3c6538eaee721b36cea111ca1",
       "sourceSha256": {
         "127": "a2258b58e03b8fa3f3080ff215d3819106167f409948ea1aa9faf271c11dafbe",
         "128": "1604ce61216b510dd090c47eab520a0bc9ea2422d3fd912509326b1edfa97559",
@@ -1536,7 +1536,7 @@
         "131"
       ],
       "kind": "combined-reviewed",
-      "sha256": "c0737a986a7d4ed3a3e2af15445459bb8b9450d04775b0de3067df78a9b397fe",
+      "sha256": "127076ef83de599388f5a004ca6a1cdbc63a30bd04ad56e1ff70b94d511c82d1",
       "sourceSha256": {
         "131": "9f4ed4e849fd7cbe3ff29f48f78dc9ea4a4c83af871212d3df2a282ad2b30f84",
         "landing-137": "c68d5d23dfa0f7b818e434c51a9246052802a3144bdd1f05cec2808f80bda86f"
@@ -2093,6 +2093,32 @@
       "tests/verify-social-login-browser.mjs": "5aec4c597d225a05e4cdd5c11abf7bdfcb2ea27c6d334344acc4381e9d801291",
       "tools/ios-testflight.sh": "b34147ba514d689df518c88aa3ca7eda42b542b1ada77ad4f5f8f81053256c51",
       "tools/verify-ios-release.mjs": "d126e8810d9b2d041b67fcb462a5e335d977bedea12a0a5e8e27d6f70f131ea1"
+    }
+  },
+  "approvedCloudBootstrapFollowup": {
+    "base": "0df44b4f4cf6cea7cd18a33fc338481c3c7b2f94",
+    "scope": "Explicit user approval after builds 254/255 failed before compile: reuse Homebrew Node 22, bounded lock-only install retries retaining provenance and verification, production-hook regression/CI; correct one landing sentence for existing web Google/Apple login, keep Android preparation and all native/design/data/release baseline bytes. One main merge triggers automatic Cloud; no manual Cloud start or archive/upload/account operation.",
+    "files": [
+      ".github/workflows/ios-bootstrap.yml",
+      "docs/decisions/020-xcode-cloud-node-bootstrap.md",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "ios/App/ci_scripts/ci_post_clone.sh",
+      "landing/index.html",
+      "package.json",
+      "tests/verify-integration-boundary.mjs",
+      "tests/verify-ios-bootstrap.mjs",
+      "tests/verify-landing-browser.mjs"
+    ],
+    "oldLoginCopy": "Google·Apple 로그인은 준비 중이에요.",
+    "newLoginCopy": "웹에서는 Google·Apple로도 로그인할 수 있어요.",
+    "sha256": {
+      ".github/workflows/ios-bootstrap.yml": "a2f495c858ed1aed69a6cb0813e089d23ab686e967d1f40867855ff24015fb03",
+      "docs/decisions/020-xcode-cloud-node-bootstrap.md": "fc13452a79dfcbc6f8795407ceeaa42958d66f256df09036e25dddf926035c26",
+      "ios/App/ci_scripts/ci_post_clone.sh": "25ef5e3b41b47d89f18358f83019d987eebc3aafcfaf524888f5c3bba6349ac0",
+      "landing/index.html": "127076ef83de599388f5a004ca6a1cdbc63a30bd04ad56e1ff70b94d511c82d1",
+      "package.json": "c4c8f21c7a3083c04eb8edc1cab993fbb18897c3c6538eaee721b36cea111ca1",
+      "tests/verify-ios-bootstrap.mjs": "6ace2b9b61be3336090c5885de108c6ca74419a3e5ffe4658ce5e297c811e3ad",
+      "tests/verify-landing-browser.mjs": "5847ee037241a860e7b354bbd309747ef8fc5645b225dfe85adc4b8627107e56"
     }
   }
 }

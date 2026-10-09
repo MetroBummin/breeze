@@ -1,0 +1,39 @@
+name: Xcode Cloud bootstrap
+on:
+  pull_request:
+    paths:
+      - 'ios/App/ci_scripts/**'
+      - 'tests/verify-ios-bootstrap.mjs'
+      - 'tools/verify-ios-release.mjs'
+      - 'package*.json'
+      - '.github/workflows/ios-bootstrap.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ios-bootstrap-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  bootstrap:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute the production hook against runtime/install/lock/failure fixtures
+        run: node --test tests/verify-ios-bootstrap.mjs
+      - name: Run the complete post-clone chain on macOS without archiving or uploading
+        if: runner.os == 'macOS'
+        env:
+          CI_BUILD_NUMBER: '900'
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
