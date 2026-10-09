@@ -8,7 +8,7 @@ function fixture(){
  const timers=new Map(),calls=[],events=new Map();let timerId=0;
  const box={addEventListener(name,fn){events.set(name,fn);}};
  const session={kind:'pdf',loadToken:1,bookId:'book',hash:'bytes',pages:[],settled:new Set(),wordBoxes:new Map(),rendering:new Map(),drawnAt:new Map(),paintQueue:new Map()};
- const context={console,Map,Set,WeakMap,performance:{now:()=>1000},
+ const context={BreezePdfOcr:{inspect:async()=>{},schedule(){},release(){},tap:()=>false},console,Map,Set,WeakMap,performance:{now:()=>1000},
   setTimeout(fn,delay){const id=++timerId;timers.set(id,{fn,delay});return id;},clearTimeout(id){timers.delete(id);},
   originalSession:session,originalLoadToken:1,curBook:{id:'book',original:{hash:'bytes'}},
   originalPdfContacts:0,originalPdfRenderPending:false,paused:false,

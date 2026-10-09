@@ -1,0 +1,31 @@
+name: Scanned PDF OCR
+on:
+  pull_request:
+    paths:
+      - 'scripts/reader/**'
+      - 'scripts/core/storage.js'
+      - 'ios/App/App/BreezePdfOcrPlugin.swift'
+      - 'android/app/src/**/PdfOcr*'
+      - 'android/app/src/**/BreezePdfOcr*'
+      - 'tests/*pdf-ocr*'
+      - 'tests/helpers/pdf-scan-fixture.mjs'
+      - '.github/workflows/pdf-ocr.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: npm run test:pdf-ocr
+        env:
+          BROWSER: ${{ matrix.engine }}
