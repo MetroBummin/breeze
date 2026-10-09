@@ -156,12 +156,20 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
   pdfjsLib.GlobalWorkerOptions.workerPort=qaLocalWorker;
  },readFileSync(worker,'utf8'));
  await context.setOffline(true);
- const offlineSource=await page.evaluate(async()=>{
-  const record=await originalGetForBook(curBook);
-  return {online:navigator.onLine,storedSize:record?.blob?.size,readBytes:(await record.blob.arrayBuffer()).byteLength};
+ const readSource=()=>page.evaluate(async()=>{
+  const record=await originalGetForBook(curBook),fresh=new Blob(['local control']);
+  const read=async blob=>{try{return {bytes:(await blob.arrayBuffer()).byteLength};}catch(error){return {error:error.name,message:error.message};}};
+  return {online:navigator.onLine,storedSize:record?.blob?.size,original:await read(record.blob),fresh:await read(fresh)};
  });
+ const offlineSource=await readSource();
  console.log('Offline source bytes and prepared worker',offlineSource);
- assert.equal(offlineSource.online,false);assert.equal(offlineSource.readBytes,offlineSource.storedSize);
+ if(offlineSource.original.error){
+  // Diagnose only after the original failed read; do not warm it in advance or
+  // convert a subsequent successful read into a passing offline assertion.
+  await context.setOffline(false);
+  console.log('Source read after restoring transport',await readSource());
+ }
+ assert.equal(offlineSource.online,false);assert.equal(offlineSource.original.bytes,offlineSource.storedSize,JSON.stringify(offlineSource));
  const beforeOffline=await page.evaluate(()=>qaStress.calls.length);
  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await openBook(b);await switchReaderMode('original');});
  try{
