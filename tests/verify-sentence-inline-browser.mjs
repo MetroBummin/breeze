@@ -328,7 +328,7 @@ try{
     }
     for(const source of cue.expected)assert.ok(cue.styles.some(({box})=>
       box[0]<=source[0]+.2&&box[1]<=source[1]+.2&&box[2]>=source[2]-.2&&box[3]>=source[3]-.2),
-      label+': selected source escaped the line cue');
+      label+': selected source escaped the line cue '+JSON.stringify({source,styles:cue.styles}));
     for(let edge=0;edge<4;edge++){
       const boundary=edge<2?Math.min:Math.max;
       const source=boundary(...cue.expected.map(box=>box[edge]));
@@ -493,7 +493,7 @@ try{
       await start(kind);
       const cue=await pending(label,reduced);
       if(kind==='pdf')assert.equal(cue.styles.length,2,label+': identical second PDF occurrence was also highlighted');
-      assert.equal(cue.blend,kind!=='pdf'&&dark?'screen':'multiply',label+': wrong source blending');
+      assert.equal(cue.blend,kind==='txt'?'normal':kind!=='pdf'&&dark?'screen':'multiply',label+': wrong source blending');
       if(!reduced||profile.name==='phone'&&dark)await screenshot(label+'-loading');
       await terminal({error:'lookup_failed'},label+' error terminal frame');
       await page.waitForFunction(()=>!document.getElementById('sentence-peek').hidden);

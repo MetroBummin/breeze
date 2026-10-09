@@ -2189,5 +2189,59 @@
       "tests/verify-word-lemma-validation.mjs": "435a66b032a6048e88d33fc68cc06b4a8bb143fb231f68a54f3bb083d81535eb",
       "tests/verify-word-lookup-quota.mjs": "821a1fe2e7126d6009b68b0cd919ca5e09196df3303a25a04901ab4000e3d439"
     }
+  },
+  "approvedSentenceTextHighlightFollowup": {
+    "base": "b55f3df241607c95855a53009aceaa903e1da164",
+    "source": "9f292c1a0488111b46c9e6eefdf78c05d4ab85dd",
+    "scope": "Explicit 2026-10-09 sentence-highlight investigation/quick-fix approval and parent instruction to repair CI formally without bypassing checks. Only Text reader cue paint order/coordinates/cleanup, provider-free pixel/lifecycle/browser evidence, its decision record and generated cache stamps. One existing article fallback test now waits for the mocked network failure instead of assuming completion after 100ms; its original assertion and all other bytes stay unchanged. Preserve word appearance, original PDF/EPUB rendering, text/Range/gesture ownership, AI/server/storage/auth/billing and native/release metadata. Main merge and release build remain gated on user screenshot review.",
+    "files": [
+      ".github/workflows/sentence-inline-feedback.yml",
+      "docs/decisions/004-sentence-lookup-feedback.md",
+      "index.html",
+      "scripts/reader/reader-modes.js",
+      "sw.js",
+      "tests/verify-light-lookup-tone-browser.mjs",
+      "tests/verify-sentence-cue-browser.mjs",
+      "tests/verify-sentence-inline-browser.mjs",
+      "tests/verify-sentence-text-ink-browser.mjs"
+    ],
+    "integrationFiles": [
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "tests/verify-integration-boundary.mjs",
+      "tools/record-sentence-highlight-boundary.mjs",
+      "tests/verify-article-preview-browser.mjs"
+    ],
+    "sha256": {
+      ".github/workflows/sentence-inline-feedback.yml": "bb4ca37c954d1db9fbfe95ed424b03daeb280d7a38d6fa5f36f280381da46d80",
+      "docs/decisions/004-sentence-lookup-feedback.md": "c6580a3ffc0027c3628f7473614bc1b9be8d80e650d7fdb75735c9f8b1ad14f5",
+      "index.html": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "scripts/reader/reader-modes.js": "7d621203fd9ea954855b717d09e9871c00c57d53200466fc78ecfa5ca464d415",
+      "sw.js": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "tests/verify-light-lookup-tone-browser.mjs": "b8d044111f3d6c2edf746160c3e0abf18c2a6a3222c1e1c137a1f6041cdebb9a",
+      "tests/verify-sentence-cue-browser.mjs": "7d9cf4b84560d42cdbebbb702589fadc34aad2b3d4830aa39eaadd0dc4a43abc",
+      "tests/verify-sentence-inline-browser.mjs": "17b2d765e840fd2b071856a1d40e839934c7d33d7bcce73d1e7be7b3ecbbd445",
+      "tests/verify-sentence-text-ink-browser.mjs": "5b8e562ada1f8a4a3665b3e59a3ce1c599e20291bf6bbeac00513ca28df2e315"
+    },
+    "baseSha256": {
+      ".github/workflows/sentence-inline-feedback.yml": "a3c9b385f66e124b61a2fc912d558c3ce4ed649e922a5cda1b475e13f21a981a",
+      "docs/decisions/004-sentence-lookup-feedback.md": "f6c5fd4491f1d8da91e47891291b995b1da08c570da9d390a1c9f84eebbda5ba",
+      "index.html": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "scripts/reader/reader-modes.js": "3db30939886d3a85f8c998c5bdec623e44b2e1eb4c4ee76b4cd73998a94f8c02",
+      "sw.js": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "tests/verify-light-lookup-tone-browser.mjs": "181fc0eeb9f2ba7ee59e7c6df17ede250c5d510f8a37d478724672e6e2a72e33",
+      "tests/verify-sentence-cue-browser.mjs": "8978e164b78747b3be1db30606907e0336ae637d1eeb9f1814ebc70d247db516",
+      "tests/verify-sentence-inline-browser.mjs": "4c745b11518a34f20582056cc2a5ecfbfbb4f54db005d28f5a19d6fc026c3e85"
+    },
+    "integrationSha256": {
+      "tests/verify-integration-boundary.mjs": "54ea6333e9167a7672884d622e32eb88529c1feec69ce6027b263dfc07293cde",
+      "tools/record-sentence-highlight-boundary.mjs": "235f505509f377875c1df03d3412a94cb4e05b89aecf668c3ede3759111aebd2",
+      "tests/verify-article-preview-browser.mjs": "5902a595095f64cb97843fcbe531e03830719fc0bd56968467126fb66ee90ee1"
+    },
+    "completionFixture": {
+      "file": "tests/verify-article-preview-browser.mjs",
+      "oldWait": "await page.waitForTimeout(100);",
+      "newWait": "await page.waitForFunction(()=>document.querySelector('#article-preview').dataset.metadata==='fallback'&&document.querySelector('#article-preview').dataset.metadataReason==='network');",
+      "baseSha256": "471db2eeef1c4007646f8281324a02d1c9ca6bc894b3a475406a784f196e89ab"
+    }
   }
 }

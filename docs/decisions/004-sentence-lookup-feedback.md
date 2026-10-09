@@ -211,3 +211,28 @@ PDF line cue during pinch. A reply stops pending shimmer but waits for pinch
 release before normal visibility/scroll-idle presentation. Ready/error results
 retain their established pinch dismissal. Explicit cancellation and source/book/
 account ownership still reject obsolete replies; no additional request is made.
+
+## Text sentence ink paint order (2026-10-09)
+
+Text mode (TXT, extracted EPUB/PDF and articles in `#rtext`) now paints the
+sentence rectangles beneath source glyphs inside the selected paragraph's
+isolated stacking context. The former `z-index:38` multiply/screen overlay
+changed source glyph pixels, unlike word lookup's background. Chromium proof
+found unchanged Range rectangles, typography and source nodes; it did not find
+a baseline shift, text shadow, filter or shared text animation.
+
+Only the temporary Text cue host becomes positioned/isolated. Its empty,
+pointer-transparent cue layer uses negative stacking and normal blending, like
+word backgrounds; no source text is wrapped or copied. Removing the outgoing
+cue removes its host class only if that paragraph owns no newer cue. Text is
+unscaled, so its cue uses direct CSS-pixel coordinates rather than an integer
+`offsetHeight` ratio that rounds fractional paragraph heights. Original PDF
+and EPUB retain their existing hosts, blending and zoom geometry.
+
+The exact blue tokens, gradient, alpha, animation timing, line merging, request
+lifetime and selection Range stay unchanged. `verify-sentence-text-ink-browser`
+compares actual word/sentence pending/done pixels against unmarked source ink,
+with a fixed shimmer phase, both themes and reduced motion. It checks glyph
+cores separately from the existing result pill's outer shadow, and captures the
+full delivered result too. Physical installed-build/WKWebView cause remains
+unconfirmed; browser evidence is not device sign-off.
