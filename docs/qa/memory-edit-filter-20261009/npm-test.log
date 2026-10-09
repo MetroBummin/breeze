@@ -1,0 +1,1086 @@
+
+> breeze-refactored@1.1.0 test
+> npm run test:rss-quality && npm run test:rss-catalog && node --test tests/verify-speckled-band.mjs tests/verify-holmes-collection.mjs tests/verify-holmes-complete-texts.mjs tests/verify-holmes-illustrations.mjs tests/verify-holmes-readability.mjs && node tools/verify-fsrs-vendor.mjs && node tools/verify-ios-release.mjs && node --test tests/verify-ios-cloud-build.mjs tests/verify-ios-bootstrap.mjs tests/verify-apple-release.mjs && node --experimental-strip-types --test tests/verify-easy-explanation.mjs tests/verify-sentence-easy-explanation.mjs && node --test tests/verify-library-folder-scopes.mjs tests/verify-home-reading-cards.mjs tests/verify-offline-word-metadata.mjs && node --test tests/verify-saved-expression-reopen.mjs && node --test tests/verify-reader-native-selection.mjs && node tests/verify-word-lookup-recovery.mjs && node --test tests/verify-word-auth-deadline.mjs && node tests/verify-word-lemma-validation.mjs && node tests/verify-word-lookup-quota.mjs && node tests/verify-word-scroll-idle.mjs && node tests/verify-lookup-performance.mjs && node tests/verify-reader-feedback.mjs && node --test tests/verify-import-feedback.mjs && node --test tests/verify-import-identity.mjs tests/verify-cover-chooser.mjs tests/verify-article-repair-edit.mjs tests/verify-article-image-transport.mjs && node --test tests/verify-pdf-ink-regressions.mjs tests/verify-pdf-session-regressions.mjs tests/verify-pdf-visible-repaint.mjs tests/verify-pdf-scope-noop.mjs tests/verify-reader-work-readiness.mjs && node --test tests/verify-audit-hardening.mjs && node --test tests/verify-rss-recommendation.mjs && node --test tests/verify-egress-network.mjs && node tools/stamp-version.mjs && node tools/build-docs.mjs && node tools/typecheck.mjs && node tests/verify-structure.mjs && node tests/verify-pdf-glyph-geometry.mjs && node tests/verify-dict-telemetry.mjs && node tests/verify-lookup-architecture.mjs && node tests/verify-lookup-contract.mjs && node tests/verify-sync-egress.mjs && node tests/verify-sync-network.mjs && node --test tests/verify-sync-safety.mjs tests/verify-email-login.mjs tests/verify-apple-login.mjs && node tests/verify-gesture-ownership.mjs && node --test tests/verify-reader-input-gestures.mjs tests/verify-two-finger-undo.mjs && node tests/verify-word-lifecycle.mjs && node tests/verify-word-integrity.mjs && node tests/verify-word-item-storage.mjs && node tests/verify-sentence-lifecycle.mjs && node tests/verify-sentence-success-pill.mjs && node --test tests/verify-epub-navigation-motion.mjs tests/verify-text-anchor-restoration.mjs && node tests/verify-epub-geometry.mjs && node tests/verify-word-spans.mjs && node tests/verify-lemma.mjs && node tests/verify-ready.mjs && node tests/verify-ready-intelligence.mjs && node --test tests/verify-shared-files.mjs && node --test tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs
+
+
+> breeze-refactored@1.1.0 test:rss-quality
+> node --test tests/verify-rss-quality.mjs tests/verify-rss-covers.mjs tests/verify-rss-visible-covers.mjs tests/verify-rss-photo-ready.mjs tests/verify-rss-selected-body.mjs
+
+✔ a photo in description survives image-less full content without changing the body (24.437584ms)
+✔ an Atom summary photo is independent of its supplied content (10.14166ms)
+✔ a video declaration cannot take the place of a supplied image thumbnail (7.517334ms)
+✔ image MIME types and media values are case insensitive (21.631209ms)
+✔ responsive photos in a supplementary field retain the existing size selection (2.38192ms)
+✔ unsafe and tracking images do not replace an available publisher photo (1.817162ms)
+✔ source photo absence retains candidate metadata without inventing ready display or a photo (3.260718ms)
+✔ cold default loading caches the supplementary photo and never prepares an article (41.065115ms)
+✔ selected photo uses the current discovery entry and retained card without extra fetch/storage (1.65741ms)
+✔ a replaced source entry with the same URL cannot receive a late selected cover (1.78309ms)
+✔ detached or repurposed cards do not decode the selected source photo (7.439721ms)
+✔ a supplied discovery photo remains authoritative after article selection (9.907319ms)
+✔ missing or excluded draft photos preserve candidate metadata without inventing a photo (10.460453ms)
+✔ draft photo precedence is explicit cover, discovery photo, then existing body image (18.555779ms)
+✔ historical photo-only display stays separate from retained candidate eligibility (104.916706ms)
+✔ only actual metadata admission shows shimmer and resolves up to two original-only photos (175.872441ms)
+✔ complete no-image caches absence while transient/unknown only withhold this generation and refill (139.42437ms)
+✔ supplied decode failure exhausts existing image fallback, withholds and refills without originals (92.83081ms)
+✔ supplied decode can succeed through the existing one-blob fallback (70.432142ms)
+✔ cancel and reentry resume a supplied image without making an artwork-ready card (72.586519ms)
+✔ offscreen and budget-unadmitted metadata stays unknown; photo-ready fallback remains reachable (52.288336ms)
+✔ new owner cannot replenish the generation budget or delete pending candidates (94.887378ms)
+✔ small images, rejected decode and failed blob transport cannot become ready (177.133178ms)
+✔ a canceled old decode cannot clear the resumed image owner or falsely become ready (65.529266ms)
+✔ metadata cancellation reentry keeps the global two-request cap and ignores late old completion (89.499231ms)
+✔ all thirteen source groups survive even when none produces a photo-ready card (56.942702ms)
+✔ late supplied sources append without replacing admitted covers, including a recreated owner (151.135761ms)
+✔ a photo sibling bypasses unresolved entries; an offscreen photo-free source settles once (275.002746ms)
+✔ saved or promotional photo siblings do not suppress original-only recovery (95.089291ms)
+✔ warm decoded-photo count precedes layout-probe settlement; settled rail keeps only cached photos (98.457751ms)
+✔ explicit refresh reranks before admission and preserves the new visible owner through late refill (223.564055ms)
+✔ display-eligible ranking cannot be replaced by filtering a full-candidate ranking (106.144688ms)
+✔ normal Home refresh re-admits unknown metadata after a new generation with identical feed contents (245.36219ms)
+✔ normal refresh preserves confirmed-negative metadata and recovers other unknown candidates (131.173083ms)
+✔ late identical feed publication preserves an admitted original owner through normal refresh (173.731393ms)
+✔ late changed-title or version publication still cancels the old original owner and cache write (285.185084ms)
+RSS refresh boundary evidence: {"interrupted":true,"total":6,"unique":5,"perGeneration":[{"pass":1,"urls":["https://publisher.test/shimmer-0","https://publisher.test/shimmer-1"]},{"pass":2,"urls":["https://publisher.test/shimmer-10","https://publisher.test/shimmer-11"]},{"pass":3,"urls":["https://publisher.test/shimmer-11","https://publisher.test/shimmer-12"]}],"confirmedNegativeRequests":1,"canceledRetryCache":null}
+RSS refresh boundary evidence: {"interrupted":false,"total":6,"unique":6,"perGeneration":[{"pass":1,"urls":["https://publisher.test/shimmer-0","https://publisher.test/shimmer-1"]},{"pass":2,"urls":["https://publisher.test/shimmer-10","https://publisher.test/shimmer-11"]},{"pass":3,"urls":["https://publisher.test/shimmer-12","https://publisher.test/shimmer-4"]}],"confirmedNegativeRequests":1,"canceledRetryCache":"no retry"}
+✔ interrupted refresh retries only canceled unknown metadata; settled generations never repeat confirmed results (377.769098ms)
+Navigation boundary: {"before":{"requests":1,"remaining":1,"pass":0},"after":{"requests":2,"remaining":0,"pass":0},"requests":["https://publisher.test/navigation-0","https://publisher.test/navigation-1"],"firstSourceOriginalReused":true}
+✔ navigation after the first pending image may legitimately admit the remaining candidate on return (126.8169ms)
+Stamp boundary: {"sameOnReturn":true,"changesOnExplicitRefresh":true,"decodedCardRetained":true}
+✔ Home return preserves its stamp before explicit refresh; generation refresh changes stamp but retains photo (132.399559ms)
+✔ decision contract (mocked Jev): Conversation sinking cities (2.66423ms)
+✔ decision contract (mocked Jev): Conversation El Nino (0.877688ms)
+✔ decision contract (mocked Jev): ATI Cliff House history (0.52215ms)
+✔ decision contract (mocked Jev): ATI dinosaur (0.747664ms)
+✔ decision contract (mocked Jev): Dexerto Kindle (0.605754ms)
+✔ decision contract (mocked Jev): Dexerto robots (1.452976ms)
+✔ decision contract (mocked Jev): Bloody Disgusting review (0.286552ms)
+✔ decision contract (mocked Jev): politics and medicine (2.473581ms)
+✔ decision contract (mocked Jev): WIRED coupon (0.40732ms)
+✔ decision contract (mocked Jev): Medium telemetry spam (0.289413ms)
+✔ decision contract (mocked Jev): Medium accounting sales (0.360162ms)
+✔ decision contract (mocked Jev): ProPublica interactive intro (0.135532ms)
+✔ decision contract (mocked Jev): NASA image dependency (0.067226ms)
+✔ decision contract (mocked Jev): severe mismatch (0.141053ms)
+✔ decision contract (mocked Jev): footer clutter (0.066338ms)
+✔ decision contract (mocked Jev): STEM count is not a completeness test (0.066161ms)
+✔ malformed, partial, unknown, inconsistent and out-of-range provider output cannot pass (12.730537ms)
+✔ low-confidence or unsupported hard verdict remains uncertain, never permanent reject/pass (0.401025ms)
+✔ all low ranking qualities and sensitive topics still allow suitable prose (0.169529ms)
+✔ injection remains state data, closed choices and evidence IDs are fixed (6.544182ms)
+✔ configuration, provider failure, body/output limits fail without raw response leakage (1.425963ms)
+✔ canonical identity removes tracking only; title/body/check changes invalidate cache (37.056359ms)
+✔ server Readability includes the extracted body, removes active content and keeps deterministic gates (19.933226ms)
+✔ fixed feed parsing rejects private links and DTD; bounded, deduplicated entries (35.12993ms)
+✔ Medium full public body is fetched from owner feed, not accepted from a request (9.353012ms)
+✔ cross-reader reuse, in-flight coalescing, cross-feed identity and no body storage (19.829444ms)
+✔ replenishment advances past three rejected candidates (3.663988ms)
+✔ failures/uncertainty cannot publish; cache write failure is not an approval (4.8023ms)
+✔ outage retains valid last-good inventory; changed body and old rubric do not inherit approval (5.432406ms)
+✔ HTTP boundary accepts only one fixed feed ID, no paid work from arbitrary client data (5.158766ms)
+✔ browser/server feed and rubric parity, approved-only integration and bounded retry (4.688705ms)
+✔ migration enforces role boundary, durable claims, slots, retries and global budget (local Postgres) (5876.265379ms)
+✔ retention report distinguishes rejection, unresolved and missing measurements (2.130418ms)
+✔ successful Medium metadata refresh revokes old approvals and never prepares a body before intent (4.753111ms)
+✔ Medium transport outage preserves prior approvals, but successful refresh excludes saved fallback (3.546464ms)
+✔ unusable feed photo falls back to a public article cover; no usable cover still withholds (6.884204ms)
+✔ default off and public shadow perform no reads, claims or paid work (4.740115ms)
+✔ uncertain readable candidates retain shadow inventory without becoming approved (3.311489ms)
+✔ failed fetch, unsafe URL, unreadable bytes and proven junk never become candidates (10.005382ms)
+✔ same-content transient failure retains valid cards; revoked cached verdict removes them (4.83923ms)
+✔ safe schema diagnostics distinguish validation branches and preserve valid usage (2.074883ms)
+✔ NASA public addresses work; reserved ranges, mixed DNS and unsafe redirects remain blocked (1.706107ms)
+✔ readiness is observable, long prose and declared list counts do not prove completeness (1.058065ms)
+✔ paired baseline preserves all 106 and the nonoverlapping 70/1/2 causes; v2 is unmeasured (8.095348ms)
+✔ candidate fallback is eligible without relabeling approval; errors and alleged junk stay out (2.797731ms)
+✔ provider exceptions retain their processing stage without logging raw error text (8.775285ms)
+✔ already downloaded full body opens with no new request; disk and discovery retain metadata only (53.52284ms)
+✔ a supplied Medium body is reused without an owner request or preselection parsing (15.679235ms)
+✔ custom source bodies remain memory-only and cannot be claimed by another source (12.902924ms)
+✔ metadata-only restart does not invent a body, and expired/backward-clock memory is discarded (20.228657ms)
+✔ successful source refresh revokes old supplied bodies; failure retains only still-fresh evidence (16.297555ms)
+✔ slower earlier-started feeds do not evict later-started successful bodies (2.649719ms)
+✔ supplied body storage is bounded globally and per feed in UTF-8 bytes (2173.452678ms)
+✔ invalid metadata and oversized identities never enter the supplied-body cache (3.552668ms)
+✔ a failed Medium owner request is evicted, allowing a real manual retry (11.725781ms)
+✔ concurrent failed consumers share one request; late failure cannot erase a newer job (47.429725ms)
+✔ malformed owner responses can retry, but successful empty inventory remains coalesced (41.126227ms)
+✔ automatic metadata excludes credentials, private/local hosts and all IP literals (26.513918ms)
+✔ only a fixed public feed missing its own photo qualifies; warm metadata hydrates the canonical entry (2.478699ms)
+✔ metadata cache has distinct expiry, a hard size/count bound and no bodies or extra fields (174.07664ms)
+✔ persisted malformed, future, expired, credential and private metadata cannot become a photo (7.807804ms)
+✔ cache migration retains v1 positive metadata and discards unverifiable negative records (2.413799ms)
+✔ captured TMZ and Conversation originals recover the same public share images in both extractors (55.247116ms)
+✔ shared cover extraction rejects private/signed images and hidden/restricted body candidates (3.300783ms)
+✔ pinned server and client HTML extraction agree on case, head, base, entities and malformed input (37.18513ms)
+✔ relay prefixes decode JSON escapes without treating nested or fake html fields as metadata (2.57487ms)
+✔ metadata extraction prefers OG/twitter then usable first images and leaves HTML inert (7.143793ms)
+✔ early photo cancels a large relay response without parsing or saving an article body (53.056722ms)
+✔ 128 KiB retained prefix cannot promise a network or relay billing ceiling (20.355721ms)
+✔ failed or incomplete cover retrieval cannot poison the negative cache; complete absence still caches (159.476932ms)
+✔ a streamed relative declaration waits for the first public base; ambiguous bases never cache absence (48.04268ms)
+✔ closed heads recover relative photos before a long body while inert head text cannot choose the base (115.348165ms)
+✔ coalesced in-flight metadata and stale completions preserve cache ownership (14.443212ms)
+✔ only an admitted lookup shimmers, and empty/error completion releases the thumbnail (38.012515ms)
+✔ negative cache, ineligible metadata and exhausted budgets never shimmer or enqueue work (12.898798ms)
+✔ cancellation ends pending immediately, and stale release cannot clear a newer image owner (1.92021ms)
+ℹ tests 115
+ℹ suites 0
+ℹ pass 115
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6598.658526
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+> breeze-refactored@1.1.0 test:rss-catalog
+> node --test tests/verify-rss-catalog-auth.mjs tests/verify-rss-catalog.mjs tests/verify-rss-catalog-client.mjs tests/verify-rss-catalog-hybrid.mjs tests/verify-rss-catalog-photos.mjs
+
+✔ catalog operator requires a supported Bearer JWT and configured public validation key (5.259874ms)
+✔ only the existing same-project RPC boolean true authorizes; caller identity is preserved (11.182086ms)
+✔ anon, forged, expired, absent RPC and rejected RPC responses fail closed (3.078474ms)
+✔ operator validation aborts after five seconds and never authorizes a timeout (5000.479617ms)
+✔ POST awaits authorization and rejects false, non-booleans and thrown/rejected checks (1.388041ms)
+✔ public GET and preflight never invoke operator auth or refresh (6.59915ms)
+✔ Edge uses the public validation key only, keeps mode off by default and bundles helper (5.394788ms)
+✔ existing operator RPC dependency must be stable, invoker, empty-path and service-role-only (7347.475086ms)
+✔ catalog replaces thirteen feed requests; concurrent consumers coalesce, restart and rotation reuse metadata (267.186617ms)
+✔ catalog failure never rebuilds default feeds and empty/disabled results replace old cards (62.672029ms)
+✔ failed catalog refreshes are bounded across rotations and forced refreshes without a default feed herd (770.094448ms)
+✔ catalog offline fallback expires by source timestamp and failure cannot renew it (121.713154ms)
+✔ conditional refresh returns zero body and retains source age, independent of receipt time (35.356354ms)
+✔ a backward clock jump invalidates future receipt/source metadata in an open document (19.064357ms)
+✔ malformed, duplicate, future, credential and oversized catalog responses cannot become cards (73.74833ms)
+✔ embedded bodies and private/quality fields are discarded at the catalog trust boundary (53.182535ms)
+✔ catalog custom sources remain local and separate; publisher artwork requires no HTML lookups (13.987334ms)
+✔ corrupt cache/storage denial are safe; expired cold catalog is an empty offline state (62.437274ms)
+✔ release244 config explicitly enables only WIRED in the shared partition (12.753886ms)
+✔ release244 uses one catalog plus twelve legacy feeds, including Medium, without error-driven reassignment (402.562179ms)
+✔ explicit multi-source hybrid keeps all thirteen sources with one catalog and nine independent legacy requests (57.795839ms)
+✔ unmanaged and custom sources publish before a stalled catalog settles (52.137683ms)
+✔ managed errors, absent records and disabled statuses never trigger a legacy rebuild (167.547788ms)
+✔ a custom alias of a managed built-in URL cannot bypass its catalog ownership (72.036767ms)
+✔ response contents cannot reassign the configured transport owners (71.91327ms)
+✔ catalog outage cooldown survives forced refreshes and rotations without blocking legacy retries (184.855766ms)
+✔ warm documents, rotation and restart reuse both caches without resetting cover generation on a warm load (99.339796ms)
+✔ source age, offline expiry and clock rollback apply independently to managed and legacy caches (172.015096ms)
+✔ a clock jump between request receipt and source timestamp cannot block the independent legacy path (93.410184ms)
+✔ partition validation rejects duplicates, holes and non-fixed IDs before any transport (13.391127ms)
+✔ catalog network byte cap and source validation cannot contaminate healthy legacy sources (229.346342ms)
+✔ catalog cache byte cap and stripping stay bounded alongside separate legacy metadata (147.003178ms)
+✔ selected Medium intent keeps owner-body resolution local, deferred and coalesced in hybrid mode (40.855329ms)
+✔ all fixed feeds remain eligible in hybrid mode, with social, linked, custom and supplied exclusions intact (7.052639ms)
+✔ supplied photos spend no original budget while managed and unmanaged rails share exactly two serialized lookups (146.613553ms)
+✔ the pinned PR104 extractor passes its case, base, entity and malformed document fixtures (26.016487ms)
+✔ streamed relative photos wait for a first base or full response; ambiguous cutoffs never become absence (6.675557ms)
+✔ real head completion resolves root/path relative photos at the final redirect URL before a long body (1.625828ms)
+✔ comments, quoted markup, raw text and templates cannot fake a completed head or negative provenance (30.62134ms)
+✔ audited feed-empty original metadata becomes a photo without retaining page prose (17.32251ms)
+✔ only complete public success proves no image; failures, cutoff, malformed partial tags and blocked pages stay distinct (4.245135ms)
+✔ original admission excludes custom, social, read targets, credentials and other publisher hosts (6.552814ms)
+✔ public DNS and same-publisher redirect checks precede every pinned transport attempt (29.31087ms)
+✔ prefix readers cancel early and report retained versus delivered body bytes (5.500363ms)
+✔ partial Deno HTTP framing cannot turn a cutoff into verified photo absence (12.51481ms)
+✔ Node pinned socket closes after a photo prefix without waiting for the article tail (39.039433ms)
+✔ bounded workers coalesce duplicates, retain only provenance and reuse photo/absence caches (14.084474ms)
+✔ positive original expiry clears the photo, changes ETag and bounds HTTP cache independently of refreshed feeds (21.435766ms)
+✔ a cold missing-photo budget reaches first entries across feeds before one feed consumes every job (3.836718ms)
+✔ feed approval alone cannot probe originals; removing original approval withholds old hints but keeps supplied photos (3.564525ms)
+✔ metadata strips embedded bodies, HTML, unknown fields and token-bearing URLs (24.198569ms)
+✔ bounded RSS/Atom parsing rejects entity declarations, malformed roots and oversized input (33.256902ms)
+✔ server catalog preserves supplied supplementary, lazy, responsive and media photos with provenance (4.674454ms)
+✔ refresh fetches only reviewed fixed feeds once; simultaneous requests share a global claim (6.638403ms)
+✔ long safe publisher URLs reduce bounded entry counts instead of failing the whole refresh (3041.25993ms)
+✔ publisher lifetime and validators are honored; failed refresh never renews stale data (4.448277ms)
+✔ freshness changes without a scheduler, and 304 retains publisher validators (4.035213ms)
+✔ database OFF withholds cached metadata and prevents refresh work (4.133536ms)
+✔ ETag and HTTP lifetime follow freshness boundaries (35.437724ms)
+✔ GET weakly validates gateway ETags, wildcard and complete entity-tag lists while OFF (6.304896ms)
+✔ GET does not accept malformed, partial, or mismatching entity-tag conditions (12.085253ms)
+✔ gateway-weakened old ETags cannot hide changes, freshness, expiry or DB OFF (10.512395ms)
+✔ conditional GET does not mask read failures or change refresh authorization (5.816923ms)
+✔ scheduler registers new pg_net installs in extensions without replacing existing installs (0.714532ms)
+✔ scheduler uses owner APIs without direct table writes and installs disabled with owned-fixture ACLs (6566.106253ms)
+✔ no-store/private responses revoke prior metadata and failed workers cannot overwrite later claims (1.830867ms)
+✔ public reads never fetch or refresh; parameters, bodies, forged user credentials and methods are rejected (8.756279ms)
+✔ ETag changes on expiry/disabled sources without retaining an old private/body representation (3.51047ms)
+✔ feed configuration cannot introduce arbitrary URLs or unknown IDs (0.376283ms)
+✔ actual SQL denies public access, fences publication and retains refresh cooldown (2280.6412ms)
+✔ feed-only language/junk gates retain the existing client policy before discarding bodies (11.610729ms)
+ℹ tests 71
+ℹ suites 0
+ℹ pass 71
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14724.506651
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+✔ scandal-in-bohemia: complete source, exact edit replay and independent catalog identity (7.351195ms)
+✔ red-headed-league: complete source, exact edit replay and independent catalog identity (3.366608ms)
+✔ final-problem: continuous official source coverage preserves every word in order (13.113534ms)
+✔ final-problem: only logged modernization changes the source, with unchanged paragraph identity (1.148593ms)
+✔ final-problem: ten source-grounded scene anchors resolve once and after the depicted passage (1.189571ms)
+✔ final-problem: original source header and full license remain separate from the adapted reader asset (0.645051ms)
+✔ hound-of-the-baskervilles: continuous official source coverage preserves every word in order (103.15318ms)
+✔ hound-of-the-baskervilles: only logged modernization changes the source, with unchanged paragraph identity (2.968721ms)
+✔ hound-of-the-baskervilles: ten source-grounded scene anchors resolve once and after the depicted passage (1.445283ms)
+✔ hound-of-the-baskervilles: original source header and full license remain separate from the adapted reader asset (0.750047ms)
+✔ Hound: complete fifteen chapters, dedication, contents, reports, diary and concluding narrative (5.984822ms)
+✔ Final Problem: complete opening and final account, without the preceding collection story (2.383296ms)
+✔ approved complete-frame artwork has 5 covers and 50 unique scene derivatives (55.482537ms)
+✔ speckled-band: independent full text and ten ordered, after-passage decorations (3.934251ms)
+✔ scandal-in-bohemia: independent full text and ten ordered, after-passage decorations (9.855615ms)
+✔ red-headed-league: independent full text and ten ordered, after-passage decorations (7.180397ms)
+✔ final-problem: independent full text and ten ordered, after-passage decorations (3.092938ms)
+✔ hound-of-the-baskervilles: independent full text and ten ordered, after-passage decorations (18.954225ms)
+✔ Hound frontmatter and all chapter headings derive from exact source blocks only (3.072548ms)
+✔ speckled-band: every display boundary has source or reviewed editorial evidence, without changing any stored character (11.49385ms)
+✔ scandal-in-bohemia: every display boundary has source or reviewed editorial evidence, without changing any stored character (2.714404ms)
+✔ red-headed-league: every display boundary has source or reviewed editorial evidence, without changing any stored character (1.658028ms)
+✔ final-problem: every display boundary has source or reviewed editorial evidence, without changing any stored character (17.462355ms)
+✔ hound-of-the-baskervilles: every display boundary has source or reviewed editorial evidence, without changing any stored character (126.23025ms)
+✔ Hound: the opening Watson question and Holmes reply are separated at the source-confirmed speaker boundary (3.09624ms)
+✔ complete story has one auditable, ordered baseline and no unlogged rewrites (8.067317ms)
+✔ catalog has separate stable identity and checksum for complete local text (5.99862ms)
+✔ cover repair cannot overwrite a concurrent custom cover or restore a deleted book (6.080577ms)
+✔ Backrooms stays retained but never becomes a new offer after saved-copy removal (1.77915ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 386.991589
+Pinned ts-fsrs 5.4.2 UMD and MIT license match npm distribution
+Breeze and Share Extension: 1.9.1 (253)
+✔ explicit manual smoke needs no manifest or app configuration (11.942955ms)
+✔ exact manifest, dispatch and new main request bind status (16.12889ms)
+✔ exact manifest, dispatch and new main request bind dry-run (0.694607ms)
+✔ exact manifest, dispatch and new main request bind prepare (29.51637ms)
+✔ exact manifest, dispatch and new main request bind submit (0.563364ms)
+✔ missing operation defaults to GET-only status for manual and request invocations (3.976947ms)
+✔ gate rejects PR (0.786946ms)
+✔ gate rejects ordinary main push (0.310267ms)
+✔ gate rejects development push (0.402701ms)
+✔ gate rejects manual branch (0.469213ms)
+✔ gate rejects other commit (1.872432ms)
+✔ gate rejects other repository (1.579039ms)
+✔ gate rejects other actor (5.642286ms)
+✔ gate rejects other rerun actor (1.783046ms)
+✔ gate rejects missing actor (0.231447ms)
+✔ gate rejects unknown operation (0.273566ms)
+✔ gate rejects missing hash (9.067086ms)
+✔ gate rejects malformed JSON (0.234131ms)
+✔ gate rejects manifest path traversal (0.217747ms)
+✔ manual writes require exact confirmation (0.535724ms)
+✔ gate rejects removed tag trigger refs/tags/apple-release/smoke (0.351539ms)
+✔ gate rejects removed tag trigger refs/tags/apple-release/submit/candidate/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (0.15008ms)
+✔ request gate rejects no request before credentials (0.251339ms)
+✔ request gate rejects request edit before credentials (0.153081ms)
+✔ request gate rejects request deletion before credentials (11.263811ms)
+✔ request gate rejects rename before credentials (1.11718ms)
+✔ request gate rejects nested path before credentials (2.548272ms)
+✔ request gate rejects path traversal before credentials (0.353785ms)
+✔ request gate rejects non-request JSON before credentials (1.453966ms)
+✔ request gate rejects multiple requests before credentials (0.272475ms)
+✔ request gate rejects mixed code change before credentials (0.471315ms)
+✔ request gate rejects mixed manifest change before credentials (0.165398ms)
+✔ request gate rejects new branch (0.180456ms)
+✔ request gate rejects deletion (0.118166ms)
+✔ request gate rejects forced update (0.223336ms)
+✔ request gate rejects wrong after (0.192647ms)
+✔ request gate rejects missing before (0.095441ms)
+✔ request gate rejects zero before (0.0794ms)
+✔ request gate rejects same before/after (3.729107ms)
+✔ request gate rejects other sender (0.928513ms)
+✔ request JSON rejects unknown fields/code (0.716278ms)
+✔ request JSON rejects missing hash (0.412129ms)
+✔ request JSON rejects wrong hash (0.250919ms)
+✔ request JSON rejects wrong ID (0.258665ms)
+✔ request JSON rejects wrong operator (4.741045ms)
+✔ request JSON rejects wrong version manifest (0.458573ms)
+✔ request JSON rejects unknown operation (0.463493ms)
+✔ request JSON rejects null operation (0.205127ms)
+✔ request JSON rejects missing confirmation (0.23969ms)
+✔ request JSON rejects write confirmation on status (0.218763ms)
+✔ write requests require exact confirmation, matching manifest operation and bounded expiry (3.749892ms)
+✔ write reruns are blocked, while status reruns only inspect (1.264188ms)
+✔ manifest rejects missing input (0.373354ms)
+✔ manifest rejects unknown input (2.774332ms)
+✔ manifest rejects wrong app (1.847001ms)
+✔ manifest rejects wrong bundle (1.169028ms)
+✔ manifest rejects invalid version (1.472237ms)
+✔ manifest rejects invalid number (5.343921ms)
+✔ manifest rejects unbounded notes (0.327997ms)
+✔ manifest rejects empty notes (0.171859ms)
+✔ manifest rejects missing authorization (0.152411ms)
+✔ manifest rejects expired authorization (0.217958ms)
+✔ manifest rejects unbounded expiry (0.161652ms)
+✔ status performs GETs only by default (13.971382ms)
+✔ dry-run performs GETs only by default (0.486031ms)
+✔ default release mode stays read-only (0.723687ms)
+✔ default build/review-item responses are sparse; orchestration explicitly requests linkage (15.15874ms)
+✔ provenance bundle mismatch fails before any write (2.327706ms)
+✔ provenance commit mismatch fails before any write (0.363944ms)
+✔ provenance PR build mismatch fails before any write (0.330583ms)
+✔ provenance failed run mismatch fails before any write (2.571678ms)
+✔ provenance unfinished run mismatch fails before any write (0.396801ms)
+✔ provenance app mismatch fails before any write (0.325298ms)
+✔ provenance build number mismatch fails before any write (1.698873ms)
+✔ provenance processing mismatch fails before any write (0.447282ms)
+✔ provenance expired build mismatch fails before any write (2.335487ms)
+✔ provenance internal-only audience mismatch fails before any write (0.619149ms)
+✔ provenance missing audience mismatch fails before any write (0.646065ms)
+✔ provenance unknown audience mismatch fails before any write (1.317419ms)
+✔ provenance sparse included app mismatch fails before any write (0.682167ms)
+✔ provenance sparse included pre-release version mismatch fails before any write (0.654061ms)
+✔ provenance marketing version mismatch fails before any write (0.418416ms)
+✔ provenance platform mismatch fails before any write (0.547467ms)
+✔ provenance App Store version mismatch fails before any write (0.463146ms)
+✔ provenance locale ambiguity mismatch fails before any write (0.392085ms)
+✔ prepare creates exact version, locales and selection without review writes; repeated prepare is idempotent (1.249042ms)
+✔ submit uses modern submission/items then submitted=true; repeated submit makes no writes (1.533574ms)
+✔ matching single-item draft resumes without duplicate submission creation (0.90671ms)
+✔ confirmed WAITING_FOR_REVIEW/READY_FOR_REVIEW returns explicit state without writes (2.332581ms)
+✔ confirmed IN_REVIEW/READY_FOR_REVIEW returns explicit state without writes (2.704011ms)
+✔ confirmed IN_REVIEW/ACCEPTED returns explicit state without writes (0.912873ms)
+✔ confirmed IN_REVIEW/APPROVED returns explicit state without writes (0.900634ms)
+✔ confirmed COMPLETING/ACCEPTED returns explicit state without writes (1.553109ms)
+✔ confirmed COMPLETING/APPROVED returns explicit state without writes (19.739671ms)
+✔ confirmed COMPLETE/APPROVED returns explicit state without writes (2.213318ms)
+✔ timestamp with UNRESOLVED_ISSUES/REJECTED requires action and never resubmits (2.075296ms)
+✔ timestamp with UNRESOLVED_ISSUES/ACCEPTED requires action and never resubmits (0.768984ms)
+✔ timestamp with WAITING_FOR_REVIEW/REJECTED requires action and never resubmits (3.510062ms)
+✔ timestamp with COMPLETE/REJECTED requires action and never resubmits (1.238945ms)
+✔ timestamp with COMPLETE/REMOVED requires action and never resubmits (1.666336ms)
+✔ timestamp with CANCELING/READY_FOR_REVIEW requires action and never resubmits (2.159404ms)
+✔ timestamp with READY_FOR_REVIEW/READY_FOR_REVIEW requires action and never resubmits (1.256391ms)
+✔ timestamp with COMPLETE/ACCEPTED requires action and never resubmits (1.739841ms)
+✔ timestamp with COMPLETE/READY_FOR_REVIEW requires action and never resubmits (0.933431ms)
+✔ timestamp with COMPLETING/READY_FOR_REVIEW requires action and never resubmits (0.88774ms)
+✔ unknown submission state fails closed before writes (1.55825ms)
+✔ unknown item state fails closed before writes (1.045607ms)
+✔ submission-only IN_REVIEW item state fails closed before writes (4.148463ms)
+✔ missing item state fails closed before writes (3.95038ms)
+✔ rejected App Store version exposes action-required and cannot be automatically resubmitted (1.217355ms)
+✔ in-progress review without a submission timestamp remains unconfirmed and cannot write (1.1201ms)
+✔ post-submit read-back rejection reports manual action and never retries the submit (2.606961ms)
+✔ post-submit COMPLETE/APPROVED read-back reports completion without repeating submit (1.533209ms)
+✔ post-submit COMPLETE/ACCEPTED requires reconciliation and never retries submit (1.890921ms)
+✔ version rejection after item creation blocks the final submission PATCH (2.200601ms)
+✔ unrelated, empty, or extra-item review submissions fail before writing (1.718582ms)
+✔ wrong selected build or notes on an already submitted version fail closed (1.307683ms)
+✔ expired authorization during API reads prevents final submission (0.56195ms)
+✔ ES256 tokens verify, renew with five-minute expiry, and distinguish individual/team claims (20.653202ms)
+✔ transport rejects writes by default, build starts/uploads, off-origin pagination and redirects (4.145743ms)
+✔ HTTP and transport failures redact response/token and never retry (0.639833ms)
+✔ pagination follows same-origin links and fails on cycles/bounds (0.711941ms)
+✔ CLI missing inputs fails without printing secret values (148.153479ms)
+✔ CLI gate reads a request-only Git diff and exact committed bytes without credentials (564.949245ms)
+✔ CLI rejects a modified request record before credentials (187.164328ms)
+✔ CLI rejects mixed request/code changes before credentials (130.340388ms)
+✔ CLI rejects symlink manifests without reading their targets (179.103723ms)
+✔ CLI rejects a stale checkout when current origin/main differs (135.076268ms)
+✔ explicit main smoke stays secret-free in the CLI (133.505471ms)
+✔ workflow exposes no PR/dev trigger, has read-only token, pinned actions and serialized gated secrets (0.641115ms)
+✔ working PATH Node 22 avoids Homebrew entirely (1081.87505ms)
+✔ installed keg-only Node 22 avoids the observed install lock even off PATH (546.501609ms)
+✔ wrong PATH Node 20 selects existing Node 22 without upgrading (642.296044ms)
+✔ wrong PATH Node 24 selects existing Node 22 without upgrading (769.066983ms)
+✔ missing formula installs once with verification enabled, then keeps release/test/sync order (1004.669887ms)
+✔ a competing installer completing during the wait is reused without another install (975.949094ms)
+✔ transient openssl lock retries and then installs successfully (1149.84917ms)
+✔ persistent lock has a finite bound and never starts release mutation or npm (1758.466079ms)
+✔ checksum failure is immediate and retains the Homebrew diagnostic (127.552365ms)
+✔ network failure is immediate and retains the Homebrew diagnostic (140.931762ms)
+✔ an installation without usable Node 22/npm fails before project mutation: {"kegMajor":20} (183.41307ms)
+✔ an installation without usable Node 22/npm fails before project mutation: {"brokenNpm":true} (231.487747ms)
+✔ invalid release metadata stops the unchanged verification chain before npm (297.790535ms)
+✔ all shared Homebrew locks remain managed by Homebrew (11.67359ms)
+✔ Cloud build 251 updates all four settings and preserves everything else (37.585127ms)
+✔ Cloud build 252 updates all four settings and preserves everything else (0.539503ms)
+✔ Cloud build 253 updates all four settings and preserves everything else (3.727577ms)
+✔ Cloud build 260 updates all four settings and preserves everything else (3.747856ms)
+✔ reject invalid counter undefined (5.842599ms)
+✔ reject invalid counter "" (0.301859ms)
+✔ reject invalid counter "0" (9.916379ms)
+✔ reject invalid counter "-1" (1.681747ms)
+✔ reject invalid counter "1.2" (0.271644ms)
+✔ reject invalid counter "abc" (5.680384ms)
+✔ reject invalid counter " 237" (0.223584ms)
+✔ reject invalid counter "237\n" (0.163118ms)
+✔ reject invalid counter "0237" (0.12619ms)
+✔ reject invalid counter "1234567890123456789" (1.872765ms)
+✔ reject missing build (0.753161ms)
+✔ reject target mismatch (2.744504ms)
+✔ reject marketing drift (4.855002ms)
+✔ reject missing target (1.669044ms)
+ℹ tests 162
+ℹ suites 0
+ℹ pass 162
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9266.246116
+(node:5637) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/breeze/server/dict/easy-explanation.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/breeze/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ invalid input and cancelled requests never consume quota or call a model (3.936399ms)
+✔ quota gate precedes provider and output is bounded, without durable answer receipt (20.281078ms)
+✔ explanation is explicit, deduplicated, memory-only and shown as literal text (9.479723ms)
+✔ close, different meaning and account changes reject late answers (7.970489ms)
+✔ offline performs no call, provider failure is manually retryable (2.890923ms)
+✔ context includes two sentences per side across paragraphs and never guesses duplicate occurrences (3.239195ms)
+✔ current source sentence wins over saved example even when same meaning has no overlay (1.85701ms)
+✔ same context reopens expanded; changing context evicts its old explanation without retry (2.921836ms)
+✔ meaning suggestions are optional, bounded and never inferred from prose (0.710569ms)
+✔ accepting a same-example correction persists only on click and rejects repeated/stale applies (18.313031ms)
+(node:5638) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/breeze/server/dict/sentence-easy-explanation.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/breeze/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+dict_request_failed Error
+✔ sentence help validates before quota, reuses one charge and has no meaning suggestion (3.98863ms)
+✔ sentence quota, cancellation and provider errors share the existing fail-closed path (0.59501ms)
+✔ real Edge route authenticates owner, shares anonymous/account quota and advertises capability without provider work (164.491616ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 873.596424
+✔ reused Home cover updates 66 to 68 and backward progress from the current committed record (11.619965ms)
+✔ Home cover adds a first-read label and removes it when the current record is unread (2.961712ms)
+✔ same PDF completion to 50 to 19 updates Home just as the fresh library shelf does (7.531662ms)
+✔ started bundled library copies open their exact record; unread copies keep preview (1.16461ms)
+✔ catalog cards resolve current library identity; deletion restores preview even with stale progress (1.68901ms)
+✔ legacy migration retains assignments and splits shared/unused categories independently (14.085409ms)
+✔ scope controls naming, selection, filtering and assignment independently (2.462204ms)
+✔ failed migration preserves old data and blocks edits until a clean reload (4.695841ms)
+✔ offline metadata cache miss sends no request, sets no provider failure/cooldown, and reconnect retries (4.418353ms)
+✔ offline cached English definitions remain available and cache misses on forced retry stay local (2.813768ms)
+✔ metadata resolved after card deletion cannot recreate it (1.596005ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 214.606369
+✔ PDF: every member reopens the saved phrase synchronously, even with 2,100 saved words (24.575461ms)
+✔ PDF: a saved component word does not override the colored phrase; outside occurrence stays a word (1.461812ms)
+✔ PDF: gapped phrase members reopen the phrase, but intervening words do not (1.501014ms)
+✔ PDF: hidden marks and status-only refresh preserve lexical identity (2.116761ms)
+✔ PDF: deleting a phrase cannot reopen a stale card (1.649492ms)
+✔ PDF: after phrase membership changes, old members fall back to their own word (1.537163ms)
+✔ PDF: reopening a source rebuilds occurrence identity without changing saved data (1.872614ms)
+✔ EPUB: every member reopens the saved phrase synchronously, even with 2,100 saved words (15.755874ms)
+✔ EPUB: a saved component word does not override the colored phrase; outside occurrence stays a word (1.794694ms)
+✔ EPUB: gapped phrase members reopen the phrase, but intervening words do not (1.695138ms)
+✔ EPUB: hidden marks and status-only refresh preserve lexical identity (1.558312ms)
+✔ EPUB: deleting a phrase cannot reopen a stale card (1.537012ms)
+✔ EPUB: after phrase membership changes, old members fall back to their own word (1.511626ms)
+✔ EPUB: reopening a source rebuilds occurrence identity without changing saved data (1.564714ms)
+✔ PDF: boxes from a released page or another document cannot open a phrase (1.283185ms)
+✔ EPUB: source-node identity and exact boundaries, not equal offsets/text, select the phrase (1.265645ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 147.164223
+✔ reading disables native text interaction without waiting for a pointer or selectionchange (3.820561ms)
+✔ entry/exit has one native owner, independent of PDF/EPUB/Text and UI class changes (0.768948ms)
+✔ every supported text control restores input/cursor/paste policy and blur disables it (1.130419ms)
+✔ editor-to-editor focus does not briefly turn typing off (1.037638ms)
+✔ reader buttons, sliders, disabled/detached fields and contenteditable=false are not editors (0.872558ms)
+✔ cold document attaches the body observer when ready; reinjection never duplicates it (0.843825ms)
+✔ pageshow, visibility and native resume resend even if the last web state was identical (0.820572ms)
+✔ late bridge and failed postMessage can recover on next state event (0.941726ms)
+✔ external documents never install the app policy or send a native message (1.789338ms)
+✔ native integration uses the public preference in the trusted main frame on iPhone AND iPad (1.945535ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 89.948753
+word lookup recovery: technical-only retry, IDs, manual recovery, cancellation passed
+✔ normal auth, anonymous fallback, HTTP errors and network failure keep their contracts (29.961403ms)
+✔ pre-aborted and offline calls do not start auth or fetch (0.841215ms)
+✔ a never-settling auth read respects the shared 30s deadline (8.259932ms)
+✔ word 9s attempts settle failed loading; manual retry recovers and late auth cannot dispatch (3.276757ms)
+✔ close during auth settles promptly without recovery or late fetch (1.318928ms)
+✔ same-record reopen retains the new request loading after old cancellation and auth completion (1.570895ms)
+✔ navigation to another word cannot dispatch or paint the old auth completion (1.392497ms)
+✔ fetchDict cancellation cannot clear a replacement card or a newer same-record request (3.163158ms)
+✔ fetch and JSON body that ignore cancellation still settle by deadline and cannot return late data (3.80391ms)
+✔ new attempt during shared authentication is the only one allowed to dispatch (1.175488ms)
+✔ already-arrived usable answer is saved without clearing a newer lookup loading (1.544574ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.100506
+word canonical validation: 27 AI canonical/legacy identity cases, 13 casing/possessives, 75 word goldens, schema/source guards, same-ID recovery and receipt/quota passed
+(node:5746) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/breeze/server/dict/logical-lookup.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/breeze/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+word lookup quota SQL + Edge orchestration: passed
+word scroll-idle presentation: passed
+lookup performance invariants: passed
+lookup work: 1000 cleanup parity cases; linear 0/100/2100/5000 state; cache independence; on-demand metadata; transform-only morph; visible-only boot passed
+Reader feedback: pending/ready/failure, cue ownership, metrics/privacy/bounds, and writing chrome passed.
+✔ fast PDF progress is replaced immediately and completion never replays old counts (3.323631ms)
+✔ blocked input retains only latest progress and then only the terminal result (3.929567ms)
+✔ input interrupts active progress; completion replaces the requeued item (1.010631ms)
+✔ terminal errors and duplicate results cannot be overwritten by late progress (1.472199ms)
+✔ concurrent tasks keep independent slots even with identical initial messages (1.097338ms)
+✔ ordinary notices keep FIFO order, deduplication, expiry and queue bounds (2.05179ms)
+✔ finishing one task neither deletes nor preempts unrelated ordinary notices (1.109993ms)
+✔ navigation resets suppress old progress and results, not the next operation (0.998165ms)
+✔ task messages are text, not markup (0.903719ms)
+✔ production PDF parser reports through its callback without changing its page loop (6.51227ms)
+✔ pdf addition completes with one result and refreshes the visible shelf (2.491162ms)
+✔ epub addition completes with one result and refreshes the visible shelf (1.537656ms)
+✔ txt addition completes with one result and refreshes the visible shelf (1.401137ms)
+✔ parseFailure does not leave progress or report success (1.672113ms)
+✔ saveFailure does not leave progress or report success (1.501019ms)
+✔ original-storage failure publishes no book or success result (10.391318ms)
+✔ duplicate TXT replaces progress but does not add another record (1.484734ms)
+✔ existing PDF reconnect refreshes current shelf and keeps one book (1.405022ms)
+✔ import continues after navigation but its old notifications do not follow (2.300231ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 116.583129
+✔ a complete direct image preserves every byte without a relay request (30.987817ms)
+✔ direct HTTP 200 with a body timeout still uses the relay (2004.880283ms)
+✔ direct empty image body falls back to the complete relay image (2.658717ms)
+✔ direct HTTP 200 challenge page falls back to the complete relay image (2.133498ms)
+✔ direct interrupted image stream falls back to the complete relay image (1.90423ms)
+✔ unusable relay empty image stops after the two allowed attempts (1.177131ms)
+✔ unusable relay non-image response stops after the two allowed attempts (1.342943ms)
+✔ unusable relay SVG document stops after the two allowed attempts (1.362593ms)
+✔ unusable relay failed status stops after the two allowed attempts (1.60871ms)
+✔ a relay body exceeding its existing budget is aborted (4001.211067ms)
+✔ without a configured relay an invalid direct body returns without another request (1.460139ms)
+✔ editing during repair waits for durable content and retains the same book object (8.905883ms)
+✔ a failed source repair leaves the old item editable (3.045572ms)
+✔ close while waiting cancels the pending edit (1.371816ms)
+✔ switch while waiting cancels the pending edit (2.432479ms)
+✔ cover selection waits for repair and saves the recovered paragraphs (4.1443ms)
+✔ switching sheets before cover commit cannot apply the cover to the new book (1.48252ms)
+✔ a newer photo selection owns the sheet while an older file read is pending (1.494677ms)
+✔ closing and reopening the same book invalidates the earlier picker read (1.210939ms)
+✔ deletion waits for successful repair and wins afterward (6.314708ms)
+✔ deletion waits for failed repair and wins afterward (2.165403ms)
+✔ manual URL title and explicit no-cover selection survive repair (1.479064ms)
+✔ book editor remains usable when the optional article helper is absent (1.174187ms)
+✔ browser phase bounds a never-settling page promise and names the failing owner (12.726687ms)
+✔ browser phase retains successful values and original failures (0.796008ms)
+✔ txt: current custom cover is a selected candidate even without source images (11.699645ms)
+✔ epub: current custom cover is a selected candidate even without source images (2.975955ms)
+✔ article: current custom cover is a selected candidate even without source images (2.912785ms)
+✔ current and source images are deduplicated, and None remains an explicit choice (2.749231ms)
+✔ a saved None selection does not invent or revive a custom-cover candidate (1.997918ms)
+✔ existing ID match bypasses storage and keeps the existing book (9.393716ms)
+✔ existing source hash match bypasses storage and keeps the existing book (1.949028ms)
+✔ existing original hash match bypasses storage and keeps the existing book (1.762162ms)
+✔ metadata match retains precedence over an earlier direct-record match (2.116776ms)
+✔ legacy direct original without metadata reconnects the existing book (2.604197ms)
+✔ persisted original hash is still checked when both metadata hashes disagree (1.881572ms)
+✔ first direct match follows book order and does not read past the match (1.737122ms)
+✔ new import with many books uses one transaction and skips missing original keys (2.812941ms)
+✔ orphan originals are not adopted and unrelated legacy aliases are not repaired (2.093229ms)
+✔ explicit legacy recovery still finds and repairs a renamed original (2.237297ms)
+✔ a successful matching request does not resolve before transaction completion (1.92819ms)
+✔ transaction abort after a matching read rejects instead of accepting the match (2.304439ms)
+✔ failed duplicate lookup stops import before either original or book is saved (2.469066ms)
+✔ database-open failure is observable and an empty candidate list needs no database (1.605226ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6117.331501
+✔ scope: selecting pen arms native scope before a later animation frame (8.839961ms)
+✔ scope: ancestor layout changes invalidate paper even with unchanged extent/zoom (1.632758ms)
+✔ scope: body layout changes also invalidate cached paper (1.38855ms)
+✔ scope: chrome-only body changes retain cached paper geometry (1.353071ms)
+✔ scope: same-value root class and ancestor style retain cached paper (1.773137ms)
+✔ scope: genuine ancestor class changes still refresh paper (1.587811ms)
+✔ scope: pinch dirty geometry survives deferral and refreshes after contact end (1.646715ms)
+✔ scope: transition completion replaces an intermediate cached rectangle (2.10909ms)
+✔ scope: invisible/inert controls do not veto paper contacts; real controls do (2.145026ms)
+✔ scope: pointer-transparent controls do not exclude paper (1.407871ms)
+✔ scope: scrolling retains content-coordinate cache without per-frame page scans (3.235863ms)
+✔ scope: layout invalidation refreshes paper before the next Pencil (1.733925ms)
+✔ scope: read mode and document hiding disable the native gate (1.28769ms)
+✔ smoothing: taps and two-point lines preserve their exact endpoints (1.193ms)
+✔ smoothing: curves add intermediate geometry with a live tip and no overshoot (1.249287ms)
+✔ smoothing: broad arcs have smaller direction jumps than raw samples (1.259127ms)
+✔ smoothing: deliberate corners and reversals are retained (0.879338ms)
+✔ smoothing: repeated and invalid samples cannot poison a stroke (0.849724ms)
+✔ smoothing: long dense strokes stay bounded rather than resampling history (20.001729ms)
+✔ input: preview, stored v1 geometry and repainted geometry are identical (15.141823ms)
+✔ input: the last touchend sample is retained without waiting for another move (1.73065ms)
+✔ input: cancellation discards the unfinished smoothed stroke (1.437541ms)
+✔ input: page exit clips and commits once; re-entry never joins across the gap (1.729762ms)
+✔ input: partial eraser and undo/redo use the actual visible smoothed path (3.589057ms)
+✔ input: old saved strokes are not re-smoothed on repaint or undo (1.680555ms)
+✔ input: existing finger ownership rejects a late Pencil for its entire contact (1.256138ms)
+✔ input: failed save retains the latest smoothed stroke and retry persists it (1.975706ms)
+✔ scope: ordinary finger contacts reuse all cached page boundaries (4.86356ms)
+✔ highlighter: one translucent path, underneath pens, with durable tool metadata (7.983227ms)
+✔ highlighter: saved records validate attributes without accepting corrupt opacity/tool (1.367566ms)
+✔ input: a contact outside starting paper cannot create off-page ink (1.857724ms)
+✔ paint: completed paths survive another stroke; erased paths and released pages are dropped (3.174617ms)
+✔ storage: edits during database acquisition keep independent revisions and persist the latest page (1.278164ms)
+✔ eraser: unchanged strokes and highlight groups never leave their parent (27.371299ms)
+✔ dense scribbles remain ordinary ink, with normal undo and redo (5.965391ms)
+✔ pointer ink: native iPad keeps Touch ownership when both APIs exist (1.516977ms)
+✔ pointer ink: requires both event capabilities and touch hardware (2.643814ms)
+✔ availability: touch-capable web/PWA, native iPhone and desktop cannot activate any write tool (3.000569ms)
+✔ availability: missing or throwing Android bridge fails closed (1.089563ms)
+✔ availability: native iPad uses UIKit idiom and excludes iOS apps on Mac (1.609942ms)
+✔ availability: native Android phone denies all tools and undo despite a capable pen adapter (3.842865ms)
+✔ availability: pending native classification rejects activation; resolving tablet status keeps read mode (1.538098ms)
+✔ availability: denied platform reply does not interrupt an unrelated read-mode lookup (1.107294ms)
+✔ pointer ink: only pen writes; mouse, finger, hover and right button do not (1.489959ms)
+✔ pointer ink: coalesced samples and last lift position use existing durable geometry (5.067294ms)
+✔ pointer ink: companion Touch contacts prevent native pen pan without duplicating geometry (1.865137ms)
+✔ pointer ink: old finger pan and pinch retain their whole gesture (2.4228ms)
+✔ pointer ink: palm cannot extend or finish pen; fresh finger works while old palm remains (1.898375ms)
+✔ pointer ink: late second pen cannot own or end the first stroke (1.485435ms)
+✔ pointer ink: pointer cancellation, lost capture, scroll, resize and background discard preview (6.744779ms)
+✔ pointer ink: noncancelable companion Touch fails closed instead of committing while scrolling (1.19275ms)
+✔ pointer ink: pen crossing an edge commits one clipped stroke and never rejoins (2.289983ms)
+✔ pointer ink: explicit read lock prevents edits and retains completed ink (1.45268ms)
+✔ pointer ink: highlighter, eraser, undo/redo and save retry retain existing format (2.432578ms)
+✔ pointer ink: scrolling rejects the entire pen contact, scrollend admits the next without a timer (2.02117ms)
+✔ pointer ink: missing or noncancelable companion Touch cannot preview, erase or save (2.864249ms)
+✔ pointer ink: rejected or interrupted pending admission never acts on a later contact (1.526194ms)
+✔ pointer ink: unrelated palm cannot admit a pen whose companion Touch is missing (2.722347ms)
+✔ pointer ink: a second pen cannot provide the first pen missing Touch admission (1.569839ms)
+✔ pointer ink: resize invalidates unadmitted geometry and the next clean pen recovers (1.532369ms)
+✔ native ink: resize also retires a delayed UIKit admission before it can write stale geometry (2.069187ms)
+✔ removing an already absent boot class does not invalidate PDF paper (3.990345ms)
+✔ a same-value page style and absent hidden attribute cause no paper invalidation (1.068959ms)
+✔ actual root class changes still invalidate paper geometry (0.874682ms)
+✔ actual source aspect-ratio changes still invalidate paper geometry (0.973202ms)
+✔ actual page-list changes still invalidate paper geometry (0.988456ms)
+✔ chrome-only body class changes remain excluded (2.129621ms)
+✔ a changed-then-restored class batch still carries the real transition (0.954641ms)
+✔ delayed first page cannot publish after switch (4.858159ms)
+✔ delayed first page cannot publish after close (1.106085ms)
+✔ delayed first page cannot publish after delete (2.520662ms)
+✔ delayed first page cannot publish after A-B-A (1.219081ms)
+✔ word picking rejects a foreign page even when its page number matches (1.054697ms)
+✔ original-byte identity rejects a stale map even for the same book id (0.937325ms)
+✔ a lookup waiting for its page cannot select words after a document switch (0.945372ms)
+✔ a delayed sentence cue cannot paint boxes from the previous document (1.110885ms)
+✔ scrollbar movement defers automatic maps but a direct lookup prepares the visible page (2.496133ms)
+✔ a stationary held finger does not block lookup preparation for long press (1.053241ms)
+✔ deferred map rejects a document switch while its PDF page is loading (1.194962ms)
+✔ resumed scroll interrupts preparation before glyph extraction and queues one retry (1.023451ms)
+✔ PDF preparation errors resolve without an unbounded automatic retry (0.982636ms)
+✔ tablet rotation captures the logical PDF page before width reflow changes page heights (2.074097ms)
+✔ rotation uses the last settled reading point even if page layout was already rebuilt (0.894641ms)
+✔ deferred word geometry cannot reopen lookup after pinch: during (2.13011ms)
+✔ deferred word geometry cannot reopen lookup after pinch: release (1.792234ms)
+✔ deferred word geometry cannot reopen lookup after pinch: cancel (1.530615ms)
+✔ deferred word geometry cannot reopen lookup after pinch: fresh-lookup (1.82431ms)
+✔ uninterrupted deferred word geometry keeps normal hit/miss behavior: true (1.057758ms)
+✔ uninterrupted deferred word geometry keeps normal hit/miss behavior: false (0.975849ms)
+✔ a newly visible evicted page is admitted even without another intersection callback (5.172321ms)
+✔ repeated scroll scheduling coalesces one canvas job per missing visible page (1.786069ms)
+✔ visible admission does not request offscreen pages or re-sharpen settled paper (1.297703ms)
+✔ pinch pause keeps one queued visible request and paints only after ownership releases (3.492965ms)
+✔ a queued callback cannot admit pages from a replaced document (1.533297ms)
+✔ idle sharpening only requests visible pages, preserving offscreen cache capacity (1.721325ms)
+✔ scrolling a non-PDF reader does not create PDF work (1.496498ms)
+✔ new scrolling wakes a deferred prefetch timer before admitting visible paper (1.6382ms)
+✔ connected old EPUB paper must not satisfy new viewport readiness (1.851185ms)
+✔ settled page geometry satisfies the unchanged acceptance dimensions (3.048247ms)
+✔ zero size and incorrect aspect ratio remain unready (1.146617ms)
+ℹ tests 100
+ℹ suites 0
+ℹ pass 100
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 270.020327
+✔ read failure rejects instead of inventing an empty library (69.761754ms)
+✔ transaction abort rejects even when onerror never fires (16.812413ms)
+✔ transaction completion is required before write resolves (22.236244ms)
+✔ failed atomic deletion never removes UI/progress or reports success (32.388106ms)
+✔ atomic assets deletion protects images used by other books (20.371569ms)
+✔ legacy image byte records normalize to exportable Blob (7.224643ms)
+✔ middle-only same-length edit has a different content digest (25.156094ms)
+✔ quota error fails closed (12.54654ms)
+✔ quota null fails closed (10.483154ms)
+✔ quota missing fields fails closed (9.073915ms)
+✔ quota invalid quota fails closed (7.531034ms)
+✔ valid quota grant and refusal remain distinguishable (7.459402ms)
+✔ private and special address families are not public (4.366641ms)
+✔ URL normalization cannot bypass destination or credentials policy (0.676457ms)
+✔ mixed private/public DNS answers fail closed (0.303419ms)
+✔ every redirect is validated before transport (0.566965ms)
+✔ pinned public address list reaches transport with original hostname (0.272654ms)
+✔ stream byte limit stops before consuming the remainder (0.273979ms)
+✔ DNS wait honors cancellation (0.30184ms)
+✔ pinned Deno response decoder keeps body bytes and rejects oversized chunks (0.917624ms)
+✔ runtime PDF calls disable eval without upgrading the glyph adapter (0.885262ms)
+✔ failed new shell never activates and does not delete old caches (4.962086ms)
+✔ worker never automatically takes over a live Reader (0.287897ms)
+✔ local sync commit failures abort before remote CAS and dirty clear (0.648361ms)
+✔ different definitions are journaled before replacement and journal failure refuses merge (26.079554ms)
+✔ late Reader preparation cannot replace a newer selection (27.072068ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 642.402487
+✔ cold start favors fresh articles and remains deterministic (12.834093ms)
+✔ recent meaningful reading boosts its source/category without an AI request (14.457605ms)
+✔ a Preview, saved-only link or accidental open does not train preferences (6.645426ms)
+✔ PDF, EPUB and pasted text do not train the article profile (7.026957ms)
+✔ invalid, future and expired reading timestamps do not train preferences (11.653759ms)
+✔ recent readings outweigh equally progressed old readings (1.425377ms)
+✔ duplicate library aliases do not multiply an interest signal (2.729608ms)
+✔ saved source, resolved and discovered URLs are excluded including tracking variants (2.877431ms)
+✔ saved linked article suppresses its Reddit discovery card (1.745176ms)
+✔ only supplied RSS candidates are recommended; library contents are never appended (2.501481ms)
+✔ cross-feed duplicates fall through to the next eligible candidate (1.194402ms)
+✔ different Reddit links to the same article are deduplicated (1.069224ms)
+✔ photo-less, malformed and non-HTTP entries cannot become recommendations (1.031821ms)
+✔ refresh rotation within a feed is preserved rather than always taking newest (1.064851ms)
+✔ unread pictured candidate follows a saved candidate in the same feed (1.060923ms)
+✔ new category gets the fourth slot when alternatives exist (1.833007ms)
+✔ first four avoid repeated publishers when alternatives exist (1.419426ms)
+✔ single-source/category feeds remain usable; no rigid quota causes empty slots (0.985646ms)
+✔ ambiguous publisher categories are not guessed from titles or body (2.975143ms)
+✔ current custom source categories are respected (1.291443ms)
+✔ missing and future publication dates gain no artificial freshness bonus (1.063585ms)
+✔ same candidate pool, history and clock produce stable non-mutating output (12.006775ms)
+✔ profile is derived each time: removing reading history removes personalization (3.492097ms)
+✔ candidate work is bounded to existing source/item limits (47.931516ms)
+✔ non-array legacy state and malformed URL values do not throw (3.320734ms)
+✔ Home render uses ranking, preserves decoded nodes, and refreshes after reading changes (5.107087ms)
+✔ legacy category and Discover rails keep their non-personalized path (3.11166ms)
+✔ scroll/focus/busy rails preserve old card order; explicit refresh reranks (13.394302ms)
+✔ empty feeds render an empty state instead of injecting personal saved content (1.327412ms)
+✔ ranking has no storage or network side effects (1.355752ms)
+✔ same URL refresh replaces a changed verdict/import target/title and never restores revoked cards (9.279811ms)
+✔ narrow promo filter: thin verified coupon-code pitch (1.888824ms)
+✔ narrow promo filter: thin urgent percentage-off pitch (1.209854ms)
+✔ narrow promo filter: HTML coupon pitch (0.876835ms)
+✔ narrow promo filter: substantive product review (0.828907ms)
+✔ narrow promo filter: buying guide (0.764856ms)
+✔ narrow promo filter: business reporting (0.866704ms)
+✔ narrow promo filter: coupon discussion (0.894772ms)
+✔ narrow promo filter: discount mentioned in ordinary article (0.729449ms)
+✔ narrow promo filter: uncertain coupon headline (0.798693ms)
+✔ narrow promo filter: discount and checkout without boilerplate (0.750159ms)
+✔ narrow promo filter: editorial body behind promo headline (0.816875ms)
+✔ narrow promo filter: developed body remains uncertain (0.825106ms)
+✔ cached recommendation candidates skip obvious promo junk and keep the next readable entry (1.058942ms)
+✔ card selection rechecks cached candidates even outside the recommendation ranker (1.677823ms)
+✔ RSS ingestion removes a clear coupon pitch before cover preparation (83.528203ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 367.36723
+✔ clean foreground/auth checks retain request counts but transfer metadata after first persisted snapshot (3515.654212ms)
+✔ actual foreground listener and completed auth events use the clean metadata path (1021.784822ms)
+✔ changed remote revision downloads and durably merges the new snapshot (300.701875ms)
+✔ dirty changes bypass metadata and preserve normal CAS merging (283.96305ms)
+✔ in-memory mutation without dirty hook still takes the full merge path (269.201483ms)
+✔ a local edit during the projected read cannot be skipped (276.757729ms)
+✔ a local edit during CAS does not become acknowledged until a later merge (379.237947ms)
+✔ a mutation during clean completion remains unacknowledged and is merged on the next pass (598.815058ms)
+✔ failed local persistence never acknowledges the failed pull (172.099312ms)
+✔ failed dirty-state save after CAS cannot enable metadata-only acknowledgement (269.24272ms)
+✔ concurrent clean pulls coalesce their metadata check (132.43283ms)
+✔ manual refresh and document restart each require a full snapshot (267.839353ms)
+✔ account isolation holds even if two accounts have the same revision text (177.23037ms)
+✔ missing revision or incomplete migration cannot use the clean fast path (4.436511ms)
+✔ network/quota failure during metadata does not mutate words and obeys cooldown (195.939393ms)
+✔ sign out cancels an in-flight projected pull (126.403788ms)
+✔ public feed cache survives restart and rotation without refetching fresh feeds (66.605334ms)
+✔ expiry and explicit online refresh fetch new feeds; concurrent loads coalesce (80.247522ms)
+✔ offline restart uses bounded stale cache; returning online refreshes expired feeds (61.288534ms)
+✔ failed fresh fetch retains cached cards without renewing their timestamp (24.831444ms)
+✔ an open page drops default cards past the stale limit or after a backward clock jump (93.934351ms)
+✔ storage denial and corrupt/oversized/future cache fall back to safe fetching (88.022093ms)
+✔ custom feeds are not persisted and private cache entries are discarded (27.804743ms)
+✔ credential-bearing feed metadata is rejected when hydrating public cache records (44.277229ms)
+✔ public cache stays within global/per-feed byte limits and never truncates HTML into a body (825.038926ms)
+✔ Home never fetches cover pages or Medium owner bodies before selection (70.522886ms)
+✔ Medium selected body resolution coalesces only after explicit intent (23.878608ms)
+﹣ before/after request counts and bytes are measured separately (0.08901ms) # SKIP
+ℹ tests 28
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 9522.030163
+Stamped 77 local assets
+Service worker 79f383b5
+Built 7 doc pages → docs/
+타입 검사 통과 — 남은 지적 32개 (늘지 않음)
+Breeze checks passed: 59 active + 4 parked JavaScript files
+PDF glyph geometry: spacing, fonts, punctuation, ligatures, multiline, transforms, rotation and scale passed
+PDF cropped Form text: hidden source excluded; nesting, transforms and partial bounds passed
+(node:6740) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/breeze/server/dict/telemetry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/breeze/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Dictionary telemetry persists behind the provider response
+Lookup architecture checks passed
+Lookup contract, target alignment, malformed-output fallback, cancellation and fail-closed checks passed
+Sentence translation-only contract passed
+Wordbook-only egress and dormant-data checks passed
+Wordbook-only sync request checks passed
+✔ configured web Apple starts real SDK consent with the existing redirect/session owner (16.170903ms)
+✔ unconfigured provider keeps Settings usable without opening a broken consent page (3.353921ms)
+✔ native cannot claim social support without its system authentication bridge (5.714811ms)
+✔ pending clicks coalesce and an aborted provider check releases retry (4.043624ms)
+✔ changed session ignores an old provider result (2.47855ms)
+✔ SDK failure or off-project redirect never navigates away and remains retryable (6.803001ms)
+✔ apple: failed settings and stalled JSON release retry without requesting consent (9.225648ms)
+✔ apple: credential-bearing, fragmented and ambiguous authorize URLs never navigate (14.350545ms)
+✔ apple: the whole-operation deadline settles a never-returning SDK promise and ignores its late URL (8.195261ms)
+✔ apple: close/cancel releases a new request and old completion cannot unlock or navigate it (3.301702ms)
+✔ apple: timeout retry remains owned by the new request (2.686302ms)
+✔ apple: stale session after SDK settlement cannot navigate (2.363733ms)
+✔ google: failed settings and stalled JSON release retry without requesting consent (8.308399ms)
+✔ google: credential-bearing, fragmented and ambiguous authorize URLs never navigate (7.342631ms)
+✔ google: the whole-operation deadline settles a never-returning SDK promise and ignores its late URL (6.069527ms)
+✔ google: close/cancel releases a new request and old completion cannot unlock or navigate it (3.010467ms)
+✔ google: timeout retry remains owned by the new request (1.954592ms)
+✔ google: stale session after SDK settlement cannot navigate (1.628473ms)
+✔ Google button follows Apple and invokes the configured provider through the existing client (2.668141ms)
+✔ google: consent deadline and cancellation reject a late valid callback (4.622198ms)
+✔ google: ambiguous or credential-bearing native callbacks cannot reload the app (5.780802ms)
+✔ google: iOS bridge returns a bound callback to a new app document, preserving custom-scheme origin (3.247202ms)
+✔ google: cancellation ignores late native credentials and mismatched callbacks never reload (3.915129ms)
+✔ native Apple requests fresh OS nonce and exchanges ID token through the existing client (3.345891ms)
+✔ native Apple cancellation, timeout and stale session reject late OS credentials (29.468625ms)
+✔ native Apple cancelled sheet, failed exchange and request/nonce mismatch are retryable (14.007834ms)
+✔ native Apple cancellation followed by retry cannot release the newer owner (3.346858ms)
+✔ invalid email never requests an OTP (16.665996ms)
+✔ repeated send clicks coalesce while pending and during resend cooldown (4.057803ms)
+✔ settings dismissal and rerender retain email and the code step without retaining the OTP (17.600962ms)
+✔ password round trip preserves email and code availability (11.15741ms)
+✔ late email result does not overwrite the password screen and is available on return (4.980262ms)
+✔ server resend delay is shown in Korean and already received code remains usable (3.609937ms)
+✔ countdown does not overwrite code-verification status (8.031994ms)
+✔ a rejected network promise restores the form and can be retried (3.573075ms)
+✔ another email does not inherit a previous address code step or resend lock (3.65665ms)
+✔ web and native email requests preserve existing redirect behavior (10.949487ms)
+✔ success after a changed auth session cannot restore old email state (3.177215ms)
+✔ signed-in render clears temporary email state and countdown (4.486823ms)
+✔ a throttled first request still lets an existing email code be entered (4.313272ms)
+✔ an old send cannot unlock a newer request after sign-in and sign-out (4.542ms)
+✔ concurrent additions survive conditional writes (24.509027ms)
+✔ a deletion wins over a stale word, including equal timestamps (4.09977ms)
+✔ two first inserts cannot overwrite each other (3.956932ms)
+✔ offline local words upload even when the remembered remote revision is unchanged (1.951799ms)
+✔ a keyed old device imports encrypted words without changing old vault data (3.061228ms)
+✔ a new device syncs account words without an old recovery key (3.916927ms)
+✔ an unchanged wordbook makes no server write (1.75721ms)
+✔ book and reading changes do not schedule or send sync (1.940689ms)
+✔ settings shows only account and wordbook controls (2.181945ms)
+✔ a word edit during an in-flight write remains dirty (4.800145ms)
+✔ conflict retries stop and leave local words pending (33.513644ms)
+✔ quota failures preserve dirty state and cool down automatic attempts (3.693259ms)
+✔ account changes reject a late response (4.03643ms)
+ℹ tests 54
+ℹ suites 0
+ℹ pass 54
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 505.287166
+손짓 임자 기준선 통과 — 해석 창 · 낱말 popup 같은 규칙, 200회 반복 무결
+✔ edge opens once on release and never also pages; ordinary horizontal swipe pages (9.34672ms)
+✔ vertical, short, leftward, noncancelable and native admitted pan are never stolen (3.061286ms)
+✔ Pencil, ink busy, zoom, pinch tail, popup, mode and session changes cannot open (11.920302ms)
+✔ multitouch and partial cancel never admit a leftover finger; fresh contact recovers (1.262088ms)
+✔ cancel, lost capture and resize cancellation clear a candidate; normal pointer release remains valid (5.244119ms)
+✔ a long press already dispatched by the gesture owner cannot also open navigation (1.169592ms)
+✔ a fresh single contact recovers immediately after a lost terminal event (7.167557ms)
+✔ exactly two stationary paired taps undo once; one pair or one-finger double tap cannot (14.981926ms)
+✔ slightly staggered fingers are accepted; sequential and long contacts are rejected (7.741627ms)
+✔ movement, native pan, zoom/session/viewport changes, cancellations and ownership forbid undo (29.921233ms)
+✔ small jitter reserves a tap, spatially unrelated or slow second pair starts over (9.713672ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 239.847347
+낱말 lookup 한살이 기준선 통과 — 죽은 열림은 화면을 못 만지고, 도착한 답은 남습니다 (60회 여닫기 무결)
+확정 못 한 새 조회는 없던 일 — AI 답·사람의 채택만 확정, 늦은 답도 되살리지 못합니다
+Pinch acquisition ends mini/detail lookup lifetime and rejects delayed presentation
+Explicit mini/detail retries replace stale occurrence errors without touching newer openings
+Word meaning cleanup and sync resurrection checks passed
+{"records":5000,"fullWriteChars":287781,"singleChangeChars":102,"interruptedBatchRecovered":true,"legacyPreserved":true}
+Sentence lifecycle ownership verified
+11200 sentence result placements verified: 3520 below, 1744 above, 1632 scroll budgets, 4296 necessary overlaps
+✔ EPUB forward move cannot extrapolate before its start on an older queued rAF timestamp (8.353835ms)
+✔ EPUB backward move cannot extrapolate before its start on an older queued rAF timestamp (1.192193ms)
+✔ Text anchor stays idempotent through repeated reopen and font layout with truncate scrolling (44.937979ms)
+✔ Text anchor stays idempotent through repeated reopen and font layout with floor scrolling (24.926884ms)
+✔ Text anchor stays idempotent through repeated reopen and font layout with nearest scrolling (27.530514ms)
+✔ Text anchor stays idempotent through repeated reopen and font layout with fractional scrolling (24.418343ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 269.266894
+EPUB geometry contract verified
+낱말 상자 기준선 통과 — 글 17개, 상자 114개, 성질 9가지
+원형 기준선 통과 — 44개
+READY Question-first core checks passed
+READY deterministic Reader tokenization verified
+✔ waits for library startup, reads bounded chunks, acknowledges only after persistence (48.615732ms)
+✔ repeated native deliveries while importing do not start duplicate jobs (53.017817ms)
+✔ failed/partial imports retain originals, retry next foreground, and allow later files (64.607722ms)
+✔ acknowledgement failure retries cleanup without reimporting in the same session (23.653252ms)
+✔ invalid metadata or truncated transfer never reaches importer or acknowledgement (0.909719ms)
+✔ failed library load preserves all pending files until the library can be read (38.991787ms)
+✔ startup snapshot is imported with no category inherited from the visible shelf (27.385059ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 336.825567
+✔ exact phrase forms do not mark unrelated member words (9.249785ms)
+✔ inflected contiguous phrase members merge into one highlight (1.695651ms)
+✔ inflected discontinuous phrase highlights only saved members (2.977543ms)
+✔ separate meanings reuse their lexical root phrase membership (1.654986ms)
+✔ partial phrases do not fall back to unrelated member highlights (1.35558ms)
+✔ plain words retain saved inflections and whole-word matching (4.000577ms)
+✔ manual multiword records retain exact expression highlighting (2.521733ms)
+✔ regular expression punctuation and saved markup remain literal text (5.052373ms)
+✔ missing context gives an accessible text fallback (4.152725ms)
+✔ uses only saved contextual Meanings, keeping source text and book intact (10.682246ms)
+✔ empty, fewer than five, missing optional source, and not-yet-due states (3.991498ms)
+✔ selects at most five deterministically, without locale or insertion-order dependence (2.887472ms)
+✔ oldest reviewed due cards precede oldest new cards, with stable key ties (2.423773ms)
+✔ all four ratings match upstream FSRS through learning, delayed review and relearning (89.670143ms)
+✔ new learning steps and a lapse have distinct states, and previews equal saved schedules (1.935681ms)
+✔ resumes the exact persisted queue/index, without appending newly saved words (1.522982ms)
+✔ accepts only the current opaque token once, including duplicate callbacks after completion (2.864108ms)
+✔ view never starts new work and completed sessions remain summary until start (1.771389ms)
+✔ deleted or invalid current and upcoming cards skip safely without grading replacements (1.713029ms)
+✔ edited definition, word or recreated key invalidates old progress (2.007067ms)
+✔ learning flags, stars, metadata and picked timestamps preserve contextual identity (0.626397ms)
+✔ prunes deleted progress and resets stale content to a new unreviewed card (0.605932ms)
+✔ prototype-looking keys are ordinary Meaning keys and cannot pollute state (1.891454ms)
+✔ invalid top-level schemas reset, malformed records drop, valid progress survives (0.752569ms)
+✔ corrupt sessions are discarded rather than shifting queue indexes or reusing a partial queue (0.809658ms)
+✔ all functions leave frozen input and saved vocabulary byte-for-byte unchanged (1.315429ms)
+✔ returned state and card do not alias mutable inputs or one another (0.679077ms)
+✔ large dictionaries remain bounded to five persisted session references (43.905974ms)
+✔ no external APIs, Date clock, AI dependencies or stored answer visibility are required (8.219963ms)
+✔ explicit selection includes future-due meanings and preserves unrelated progress (3.188485ms)
+✔ manual selection resumes its own queue and supports more than the daily five (2.795997ms)
+✔ four grades publish exact new-card learning intervals and reject duplicate answers (0.918949ms)
+✔ malformed uncertain counts cannot corrupt a saved session (0.767698ms)
+✔ 2,000 new cards never become overdue; daily unused allocation does not roll over (76.895704ms)
+✔ 1,000 overdue cards are backlog, limited separately from new cards and batch size (119.13607ms)
+✔ zero new limit and independent review budget, with explicit extra batches (5.67555ms)
+✔ daily relearning increases responses, not distinct new/review card counts (1.602703ms)
+✔ due relearning precedes overdue review, then new cards (0.647021ms)
+✔ short early practice does not graduate cards, consume new limits or alter progress (6.451054ms)
+✔ shrinking limits or batch sizes preserves interrupted queues, including midnight resume (3.209534ms)
+✔ switching between practice scopes and regular study retains all unanswered queues (2.822033ms)
+✔ practice batches keep their remaining selected scope through restart and smaller next batch (3.036983ms)
+✔ source title and context edits preserve identities and progress (1.24758ms)
+✔ v1 migration preserves progress, due times and partial sessions with source edits (1.084197ms)
+✔ failed commits and duplicate callbacks never persist a second response or event (1.594182ms)
+✔ local calendar date changes reset budgets without altering old daily totals (1.303629ms)
+✔ due relearning preempts a resumed queue without losing unanswered cards (2.129742ms)
+✔ deleted practice references do not restart already answered selected cards (1.1558ms)
+✔ 100 cards use a tiny opening and progressively larger stages with durable partial progress (290.308241ms)
+✔ 300-card goals stop only at their five stage boundaries (1711.321835ms)
+✔ a 60-card cap over 100 due cards completes the goal and leaves 40 pending (127.156552ms)
+✔ failed answers earn milestones while repeated same-card attempts never earn duplicate progress (24.219703ms)
+✔ new cards remain independent, practice does not fill stages, and small goals do not invent empty stages (2.89253ms)
+✔ first relearning on a later day uses one review slot; its same-day repetitions use none (2.23738ms)
+✔ milestone save failure and duplicate clicks neither lose nor double-award a stage (1.742518ms)
+✔ goals remain stable on added cards or increased limits, and cap reductions preserve unanswered queues (57.070275ms)
+✔ integer stage sizes never decrease, even with small goals (1021.035997ms)
+✔ one daily cap combines scheduled review and new cards without starving due priority (128.962047ms)
+✔ combined zero cap, reduction, repeated failures and next-day reset preserve data (6.767488ms)
+✔ v2 migration retains real history and due dates without inventing FSRS memory or answers (1.133069ms)
+✔ timezone and DST boundaries reset unique caps but preserve absolute FSRS dates (8.468065ms)
+✔ elapsed time uses the actual answer timestamp and memory survives serialization (1.471481ms)
+✔ legacy five-card queues bridge directly into the rest of a stage (28.43652ms)
+ℹ tests 63
+ℹ suites 0
+ℹ pass 63
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3970.814457
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

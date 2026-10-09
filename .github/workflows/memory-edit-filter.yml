@@ -1,0 +1,38 @@
+name: Memory edit and filter
+on:
+  pull_request:
+    paths:
+      - 'scripts/ui/wordbook.js'
+      - 'scripts/core/state.js'
+      - 'styles/wordbook.css'
+      - 'styles/surfaces.css'
+      - 'tests/verify-memory-edit-filter-browser.mjs'
+      - '.github/workflows/memory-edit-filter.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/verify-memory-edit-filter-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: memory-edit-filter-${{ matrix.engine }}
+          path: /tmp/breeze-memory-edit-filter/
+          if-no-files-found: ignore
+          retention-days: 7
