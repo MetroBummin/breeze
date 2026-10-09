@@ -144,19 +144,31 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
  // it (WebKit failed before reader presentation). No PDF parsing is mocked.
  // This is not a web/PWA offline-cache claim.
  const worker=new URL('../../assets/lib/pdf-3.11.174.worker.min.js',import.meta.url);
- await page.evaluate(source=>{
+ await page.evaluate(async source=>{
   window.qaLocalWorkerUrl=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
   window.qaLocalWorker=new Worker(qaLocalWorkerUrl);
+  await new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>reject(Error('Bundled PDF worker did not become ready before going offline')),10000);
+   const ready=event=>{if(event.data?.action==='ready'){clearTimeout(timer);qaLocalWorker.removeEventListener('message',ready);resolve();}};
+   qaLocalWorker.addEventListener('message',ready);
+   qaLocalWorker.addEventListener('error',event=>{clearTimeout(timer);reject(Error(event.message||'Bundled PDF worker startup failed'));},{once:true});
+  });
   pdfjsLib.GlobalWorkerOptions.workerPort=qaLocalWorker;
  },readFileSync(worker,'utf8'));
  await context.setOffline(true);
+ const offlineSource=await page.evaluate(async()=>{
+  const record=await originalGetForBook(curBook);
+  return {online:navigator.onLine,storedSize:record?.blob?.size,readBytes:(await record.blob.arrayBuffer()).byteLength};
+ });
+ console.log('Offline source bytes and prepared worker',offlineSource);
+ assert.equal(offlineSource.online,false);assert.equal(offlineSource.readBytes,offlineSource.storedSize);
  const beforeOffline=await page.evaluate(()=>qaStress.calls.length);
  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await openBook(b);await switchReaderMode('original');});
  try{
   await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused());
   await page.evaluate(()=>goPdfPage(56));
   await page.waitForFunction(()=>originalSession.wordBoxes.get(56)?.length===2);
- }catch(error){console.log('Offline reopen diagnostic',await page.evaluate(async()=>({pending:readerPositionPending(),paused:originalPdfPaintPaused(),mode:currentReaderMode,presented:originalSession?.presented,visible:originalSession?pdfPagesInView(originalSession):[],page:originalSession?.navigationPage,status:originalSession?.pages?.[55]?.dataset.ocr,wordCount:originalSession?.wordBoxes?.get(56)?.length,cache:await qaCacheCount(),calls:qaStress.calls.slice(-3).map(({page,book})=>({page,book})),current:currentPdfSession()})));throw error;}
+ }catch(error){console.log('Offline reopen diagnostic',await page.evaluate(async()=>({readerError:document.querySelector('#original-content .original-empty')?.textContent,pending:readerPositionPending(),paused:originalPdfPaintPaused(),mode:currentReaderMode,presented:originalSession?.presented,visible:originalSession?pdfPagesInView(originalSession):[],page:originalSession?.navigationPage,status:originalSession?.pages?.[55]?.dataset.ocr,wordCount:originalSession?.wordBoxes?.get(56)?.length,cache:await qaCacheCount(),calls:qaStress.calls.slice(-3).map(({page,book})=>({page,book})),current:currentPdfSession()})));throw error;}
  assert.equal(await page.evaluate(()=>qaStress.calls.length),beforeOffline);
  await context.setOffline(false);
  for(let i=0;i<8;i++){

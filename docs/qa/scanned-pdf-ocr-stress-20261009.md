@@ -139,3 +139,11 @@ dependency. The follow-up supplies the identical bundled worker bytes through
 `workerPort`, keeps offline mode enabled, and retains all reopening assertions
 and extra failure diagnostics. This isolates local-asset availability; only a
 passing follow-up establishes that this was sufficient.
+
+At `8178718`, WebKit still failed after both cache passes: offline reopening left
+no original session, while the gesture owner was idle and the 48-page cache was
+intact. This is an executed test failure, not a browser installation problem.
+The next diagnostic awaits the real worker's readiness before toggling offline,
+asserts that the persisted original bytes can be read with `navigator.onLine`
+false, and prints the reader error on failure. The earlier worker-path hypothesis
+is not claimed as a confirmed fix.
