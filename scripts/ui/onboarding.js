@@ -49,11 +49,11 @@ function startOnboarding(replay){
 function startOnboardingResolved(replay,pdfAvailable){
   closeSettings();
   const progress=load(ONBOARD_PROGRESS_KEY,null);
-  const session={page:replay?0:Math.max(0,Math.min(7,Number.isInteger(progress?.page)?progress.page:0)),replay:!!replay,
+  const session={page:replay?0:Math.max(0,Number.isInteger(progress?.page)?progress.page:0),replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],paused:false,mediaToken:0,pointer:null,
-    motion:matchMedia('(prefers-reduced-motion: reduce)')};
+    motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,importMessage:''};
   session.pages=ONBOARD_PAGES.filter(item=>item[0]!=='pdf'||pdfAvailable);
-  session.page=Math.min(session.pages.length,session.page);
+  session.page=Math.min(session.pages.length+1,session.page);
   onboardingSession=session;
   for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
     session.inert.push([node,node.inert]);node.inert=true;
@@ -90,8 +90,32 @@ function startOnboardingResolved(replay,pdfAvailable){
       event.preventDefault();event.stopImmediatePropagation();finishOnboardingWelcome();
     }
   },{signal,capture:true});
-  document.getElementById('onboard-next').addEventListener('click',()=>session.page===session.pages.length?endOnboarding(true):goOnboardingPage(session.page+1),{signal});
+  const input=/** @type {HTMLInputElement} */(document.getElementById('onboard-fileinput'));
+  input.value='';
+  document.getElementById('onboard-next').addEventListener('click',()=>{
+    if(session.importController)return;
+    if(session.page===session.pages.length+1){input.value='';input.click();}
+    else goOnboardingPage(session.page+1);
+  },{signal});
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
+  document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
+  input.addEventListener('change',async()=>{
+    const file=input.files[0];input.value='';
+    if(!file||session.page!==session.pages.length+1||session.importController)return;
+    const controller=new AbortController();session.importController=controller;
+    session.importMessage='책을 준비하고 있어요…';drawOnboarding();
+    try{
+      const result=await importFile(file,null,{signal:controller.signal});
+      // Back, Skip, replay and external navigation invalidate this handoff.
+      if(onboardingSession!==session||session.importController!==controller)return;
+      if(result?.bookId){endOnboarding(true);return;}
+      session.importMessage='책을 넣지 못했어요. DRM이 없는 PDF · EPUB · TXT 파일을 다시 골라주세요.';
+    }catch{
+      if(onboardingSession!==session||session.importController!==controller)return;
+      session.importMessage='책을 넣지 못했어요. 파일을 다시 골라주세요.';
+    }
+    session.importController=null;drawOnboarding();
+  },{signal});
   carousel.addEventListener('click',()=>{if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
   // WebKit touch can leave focus on body. The active guide owns keyboard input
   // until its existing session signal aborts, including Escape after a tap.
@@ -103,21 +127,24 @@ function startOnboardingResolved(replay,pdfAvailable){
     }
     if((event.key===' '||event.key==='Enter')&&event.target===carousel){event.preventDefault();session.paused=!session.paused;syncOnboardingMedia();}
     if(event.key==='Tab'){
-      const controls=[...root.querySelectorAll(/** @type {'button'} */('button,[tabindex="0"]'))].filter(node=>node.getClientRects().length);
+      const controls=[...root.querySelectorAll(/** @type {'button'} */('button,[tabindex="0"]'))].filter(node=>!node.disabled&&node.getClientRects().length);
       const first=controls[0],last=controls.at(-1);
       if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
     }
   },{signal,capture:true});
-  carousel.addEventListener('pointerdown',event=>{
-    if(event.isPrimary){session.swiped=false;session.pointer={id:event.pointerId,x:event.clientX,y:event.clientY};if(event.isTrusted)carousel.setPointerCapture?.(event.pointerId);}
+  const coach=document.getElementById('onboard-coach');
+  coach.addEventListener('pointerdown',event=>{
+    if(event.target instanceof Element&&event.target.closest('button,input'))return;
+    if(event.isPrimary&&session.page>0){session.swiped=false;session.pointer={id:event.pointerId,x:event.clientX,y:event.clientY};if(event.isTrusted&&event.target instanceof Element)event.target.setPointerCapture?.(event.pointerId);}
   },{signal});
-  carousel.addEventListener('pointerup',event=>{
+  coach.addEventListener('pointerup',event=>{
     const p=session.pointer;session.pointer=null;if(!p||p.id!==event.pointerId)return;
     const dx=event.clientX-p.x,dy=event.clientY-p.y;
     if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){session.swiped=true;goOnboardingPage(session.page+(dx<0?1:-1));}
   },{signal});
-  carousel.addEventListener('pointercancel',()=>{session.pointer=null;},{signal});
+  coach.addEventListener('pointercancel',()=>{session.pointer=null;},{signal});
+  coach.addEventListener('lostpointercapture',()=>{session.pointer=null;},{signal});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)finishOnboardingWelcome();syncOnboardingMedia();},{signal});
   window.addEventListener('pagehide',()=>{finishOnboardingWelcome();persistOnboarding();for(const v of carousel.querySelectorAll('video'))v.pause();},{signal});
   window.addEventListener('pageshow',syncOnboardingMedia,{signal});
@@ -134,19 +161,26 @@ function startOnboardingResolved(replay,pdfAvailable){
 function goOnboardingPage(page){
   if(!onboardingSession)return;
   finishOnboardingWelcome();
-  onboardingSession.page=Math.max(0,Math.min(onboardingSession.pages.length,page));persistOnboarding();drawOnboarding();
+  const next=Math.max(0,Math.min(onboardingSession.pages.length+1,page));
+  if(next!==onboardingSession.page){
+    onboardingSession.importController?.abort();onboardingSession.importController=null;onboardingSession.importMessage='';
+  }
+  onboardingSession.page=next;persistOnboarding();drawOnboarding();
 }
 function drawOnboarding(){
   const session=onboardingSession;if(!session)return;
-  const page=session.page,root=document.getElementById('onboarding');root.dataset.stage=String(page);
+  const page=session.page,finish=page===session.pages.length+1,root=document.getElementById('onboarding');root.dataset.stage=String(page);root.dataset.finish=String(finish);
   document.getElementById('onboard-welcome').hidden=page!==0;
-  document.getElementById('onboard-carousel').hidden=page===0;
-  document.getElementById('onboard-pages').hidden=page===0;
+  document.getElementById('onboard-carousel').hidden=page===0||finish;
+  document.getElementById('onboard-pages').hidden=page===0||finish;
+  document.getElementById('onboard-finish').hidden=!finish;
+  document.getElementById('onboard-skip').hidden=!finish;
   document.getElementById('onboard-back').hidden=page===0;
-  document.getElementById('onboard-step').textContent=page?`${page} / ${session.pages.length}`:'';
-  document.getElementById('onboard-prompt').textContent=page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';
-  document.getElementById('onboard-note').textContent=page?session.pages[page-1][2]:'막힘없이 읽는 새로운 방법.';
-  document.getElementById('onboard-next').textContent=page===0?'시작하기':page===session.pages.length?'완료':'다음';
+  document.getElementById('onboard-step').textContent=finish?'책 넣기':page?`${page} / ${session.pages.length}`:'';
+  document.getElementById('onboard-prompt').textContent=finish?'읽고 싶은 책을 넣어보세요.':page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';
+  document.getElementById('onboard-note').textContent=finish?(session.importMessage||'PDF · EPUB · TXT 파일을 골라주세요. 나중에 서재에서도 넣을 수 있어요.'):page?session.pages[page-1][2]:'막힘없이 읽는 새로운 방법.';
+  document.getElementById('onboard-next').textContent=page===0?'시작하기':finish?'책 넣기':'다음';
+  /** @type {HTMLButtonElement} */(document.getElementById('onboard-next')).disabled=!!session.importController;
   for(const [i,node] of [...document.querySelectorAll(/** @type {'figure'} */('.onboard-slide'))].entries())node.hidden=i!==page-1;
   for(const [i,dot] of [...document.getElementById('onboard-pages').children].entries())dot.setAttribute('aria-current',String(i===page-1));
   syncOnboardingMedia();
@@ -172,7 +206,7 @@ function syncOnboardingMedia(){
 function endOnboarding(remember,returnToPrevious=true){
   ++onboardingRequest;
   const session=onboardingSession;if(!session)return;
-  finishOnboardingWelcome();persistOnboarding();session.controller.abort();session.theme.disconnect();
+  finishOnboardingWelcome();persistOnboarding();session.importController?.abort();session.controller.abort();session.theme.disconnect();
   for(const video of document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))){video.pause();video.removeAttribute('src');video.load();}
   onboardingSession=null;document.getElementById('onboarding').hidden=true;
   document.body.classList.remove('onboarding-active');

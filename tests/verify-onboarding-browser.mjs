@@ -127,7 +127,7 @@ try{
   await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length));
   assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
   assert.equal(await page.locator('#onboard-step').textContent(),`${count} / ${count}`);
-  assert.equal(await page.locator('#onboard-next').textContent(),'완료');
+  assert.equal(await page.locator('#onboard-next').textContent(),'다음');
   await page.evaluate(()=>{endOnboarding(false);startOnboarding(true);endOnboarding(false);});
   await wait(120);assert.equal(await page.evaluate(()=>onboardingSession),null,'pending capability revived cancelled guide');
   await page.evaluate(()=>{startOnboarding(true);show('read');});await wait(120);
@@ -139,7 +139,7 @@ try{
  const requests=[];page.on('request',r=>{if(/assets\/onboarding/.test(r.url()))requests.push(r.url());});
  await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboarding').waitFor({state:'visible'});
  assert.equal(await page.locator('#onboard-prompt').textContent(),'브리즈에 오신 걸 환영해요');
- assert.equal(await page.locator('#onboard-next').textContent(),'시작하기');assert.equal(await page.locator('#onboard-skip').count(),0);
+ assert.equal(await page.locator('#onboard-next').textContent(),'시작하기');assert.equal(await page.locator('#onboard-skip').isVisible(),false);
  assert.equal(requests.length,0,'welcome prefetched guide media');
  const before=await dataSnapshot(page);assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
  await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
@@ -158,6 +158,9 @@ try{
  await page.locator('#onboard-back').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'1');
  await page.locator('#onboard-back').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#onboard-next').textContent(),'시작하기','Back skipped welcome');
  await page.evaluate(()=>{for(let i=0;i<50;i++)document.getElementById('onboard-next').click();});
+ assert.equal(await page.locator('#onboarding').isVisible(),true);
+ assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');
+ await page.locator('#onboard-skip').tap();
  assert.equal(await page.locator('#onboarding').isVisible(),false);assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
  await page.reload();await page.evaluate(()=>homeReady);assert.equal(await page.locator('#onboarding').isVisible(),false);
  await page.evaluate(()=>startOnboarding(true));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','replay skipped welcome');
@@ -186,7 +189,7 @@ try{
  await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
  await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
  await page.evaluate(()=>{readerScroller().scrollTop=100;});const before=await dataSnapshot(page),scroll=await page.evaluate(()=>readerScrollTop());
- await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(7));await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
+ await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length+1));await page.locator('#onboard-skip').tap();
  assert.equal(await page.evaluate(()=>activeAppView()),'read');assert.equal(await dataSnapshot(page),before);assert.equal(await page.evaluate(()=>readerScrollTop()),scroll);
  assert.equal(await page.locator('#v-read').getAttribute('inert'),null);
   await page.locator('#rtext .w').first().tap();await page.waitForFunction(()=>wordLookupOpen());
@@ -197,6 +200,81 @@ try{
  await page.waitForFunction(()=>!onboardingSession);assert.equal(await page.locator('#v-home').getAttribute('inert'),null);
  await context.close();
  }
+ // Visible previous/next, trusted pointer swipes over captions and both boundaries.
+ {
+ const {context,page}=await setup({reducedMotion:'reduce'});await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.locator('#onboard-next').tap();
+ assert.equal(await page.locator('#onboard-back').isVisible(),true);
+ assert.equal(await page.locator('#onboard-back').textContent(),'이전');
+ const swipe=async(direction)=>{
+   const box=await page.locator('#onboard-prompt').boundingBox(),y=box.y+box.height/2;
+   await page.mouse.move(box.x+(direction<0?box.width-10:10),y);await page.mouse.down();
+   await page.mouse.move(box.x+(direction<0?10:box.width-10),y,{steps:5});await page.mouse.up();
+ };
+ await swipe(-1);assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'2');
+ await swipe(1);assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'1');
+ await swipe(1);assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+ await page.evaluate(()=>goOnboardingPage(-100));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+ await page.locator('#onboard-next').tap();await page.evaluate(()=>goOnboardingPage(100));
+ assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');
+ await swipe(-1);assert.equal(await page.evaluate(()=>onboardingSession.page),7,'final swipe escaped boundary');
+ await swipe(1);assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+ await page.locator('#onboard-next').tap();await page.locator('#onboard-back').tap();
+ assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+ await context.close();
+ }
+ // Final file choice shares the production importer. Cancel/failure stay retryable;
+ // successful durable import or explicit Skip alone records completion.
+ {
+ const {context,page}=await setup({reducedMotion:'reduce'});await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.evaluate(()=>goOnboardingPage(100));const before=await dataSnapshot(page);
+ const chooser=page.waitForEvent('filechooser');await page.locator('#onboard-next').tap();await chooser;
+ await page.locator('#onboard-fileinput').dispatchEvent('cancel');
+ assert.equal(await dataSnapshot(page),before,'picker cancel mutated data');
+ assert.notEqual(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
+ await page.reload();await page.evaluate(()=>homeReady);
+ assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기','interrupted final did not resume');
+ await page.locator('#onboard-fileinput').setInputFiles({name:'Broken.epub',mimeType:'application/epub+zip',buffer:Buffer.from('invalid archive')});
+ await page.waitForFunction(()=>onboardingSession&&!onboardingSession.importController);
+ assert.ok((await page.locator('#onboard-note').textContent()).includes('다시 골라주세요'));
+ assert.equal(await dataSnapshot(page),before,'failed import mutated data');
+ assert.notEqual(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
+ await page.locator('#onboard-fileinput').setInputFiles({name:'First Book.txt',mimeType:'text/plain',buffer:Buffer.from('A first book.\n\nReading should feel easy.')});
+ await page.waitForFunction(()=>!onboardingSession);
+ assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
+ assert.equal(await page.evaluate(()=>books.filter(b=>b.title==='First Book').length),1);
+ await page.reload();await page.evaluate(()=>homeReady);assert.equal(await page.locator('#onboarding').isVisible(),false);
+ assert.equal(await page.evaluate(()=>books.filter(b=>b.title==='First Book').length),1,'book was not durable');
+ await page.locator('#nav-settings').click();await page.getByRole('button',{name:'튜토리얼 다시보기'}).click();
+ assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','Settings replay did not start at welcome');
+ await page.evaluate(()=>goOnboardingPage(100));await page.locator('#onboard-skip').tap();
+ assert.equal(await page.evaluate(()=>books.filter(b=>b.title==='First Book').length),1,'replay duplicated a book');
+ await context.close();
+ }
+ // Interrupt a real import before preparation/commit and release its stale result.
+ for(const action of ['back','skip','replay','escape','navigation']){
+ const {context,page}=await setup({reducedMotion:'reduce'});await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.evaluate(()=>{
+   goOnboardingPage(100);
+   const prepare=prepareImportedFile;
+   prepareImportedFile=async(...args)=>{await new Promise(resolve=>Reflect.set(window,'qaImportRelease',resolve));return prepare(...args);};
+ });
+ await page.locator('#onboard-fileinput').setInputFiles({name:'Interrupted.txt',mimeType:'text/plain',buffer:Buffer.from('This import must be cancelled.')});
+ await page.waitForFunction(()=>typeof Reflect.get(window,'qaImportRelease')==='function');
+ assert.equal(await page.locator('#onboard-next').isDisabled(),true);
+ if(action==='back')await page.locator('#onboard-back').tap();
+ if(action==='skip')await page.locator('#onboard-skip').tap();
+ if(action==='replay')await page.evaluate(()=>startOnboarding(true));
+ if(action==='escape')await page.keyboard.press('Escape');
+ if(action==='navigation')await page.evaluate(()=>show('longform'));
+ await page.evaluate(()=>Reflect.get(window,'qaImportRelease')());await wait(150);
+ assert.equal(await page.evaluate(()=>books.length),0,'stale import committed after '+action);
+ assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')==='done'),action==='skip','stale result changed completion after '+action);
+ if(action==='back')assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+ if(action==='replay')assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
+ if(['escape','navigation','skip'].includes(action))assert.equal(await page.locator('#onboarding').isVisible(),false);
+ await context.close();
+ }
  // Layout and fallback at phone/tablet/desktop/short sizes, both themes.
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
  const {context,page}=await setup({viewport:{width,height},reducedMotion:'reduce',annotation:true});await page.goto(url);await page.evaluate(()=>homeReady);
@@ -205,7 +283,14 @@ try{
  await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) img').complete);
  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#onboard-carousel video')].some(v=>v.hasAttribute('src'))),false,'reduced motion downloaded loops');
  assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
- for(let i=1;i<=7;i++){await page.evaluate(i=>goOnboardingPage(i),i);await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-${i}.png`)});}
+ for(let i=1;i<=8;i++){
+   await page.evaluate(i=>goOnboardingPage(i),i);
+   for(const id of ['onboard-back','onboard-next',...(i===8?['onboard-skip']:[])]){
+     const box=await page.locator('#'+id).boundingBox();assert.ok(box.width>=44&&box.height>=44,id+' touch target');
+     assert.ok(box.x>=0&&box.x+box.width<=width&&box.y>=0&&box.y+box.height<=height,JSON.stringify({id,width,height,box})+' outside viewport');
+   }
+   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-${i}.png`)});
+ }
  await context.close();
  }
  // Play rejection uses poster, and media has one owner despite rapid changes.
@@ -235,7 +320,7 @@ try{
  const recording=(async()=>{let i=0;while(running){const p=resolve(frames,String(i++).padStart(5,'0')+'.png');await page.screenshot({path:p});rows.push({p,t:Date.now()});await wait(100);}})();
  await wait(1800);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  for(let i=1;i<=7;i++){await wait(3600);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();}
- await wait(1600);running=false;await recording;await context.close();
+ await page.locator('#onboard-skip').tap();await wait(1600);running=false;await recording;await context.close();
  writeFileSync(resolve(frames,'frames.txt'),rows.map((r,i)=>`file '${r.p}'\nduration ${i<rows.length-1?(rows[i+1].t-r.t)/1000:.1}`).join('\n'));
  const r=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',resolve(out,'Breeze-onboarding-full-flow.mp4')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
  }

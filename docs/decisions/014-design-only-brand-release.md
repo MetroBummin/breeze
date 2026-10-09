@@ -30,3 +30,26 @@ safe-area + 24px top spacing and a -3.25px title optical correction; the add con
 uses shared glass in its existing 44px circle. This follow-up is PR-only, with no
 new merge or Cloud/TestFlight authorization. Review mascots and onboarding remain
 unchanged. Measurement and screenshot evidence: ../qa/memory-header-20261008.md.
+
+## Appearance follow-up (2026-10-09 draft, based on 1.9 / 253)
+
+The approved flow b contour and existing light/dark PNGs are reused unchanged.
+The iOS AppIcon catalog supplies the existing light PNG as Any and the submitted
+`AppIcon-512@2x.png` as luminosity Dark. iOS chooses these native appearance
+assets according to the user's Home Screen Light/Dark/Automatic choice; the app
+does not call alternate-icon APIs or couple icons to its reading theme. Tinted
+appearance is left to the system's generated treatment; no new tint artwork is
+claimed. Earlier iOS uses the Any/light fallback.
+
+Android's approved adaptive foreground/background, API33 monochrome, legacy
+fallback and manifest remain byte-identical. Themed tint depends on the user's
+themed-icon choice and launcher support; app dark mode does not guarantee an
+Android launcher light/dark icon switch. No component toggle is introduced.
+
+This follow-up is isolated from the submitted 253 branch. Its release metadata,
+launch, welcome lettering/timing, videos, auth and shared Reader controls are
+preserved. No build-number bump, native upload, merge, deployment or review change
+is performed. Whole-app theme settings remain a separate proposal.
+
+References: [Apple asset-catalog appearances](https://developer.apple.com/documentation/xcode/configuring-your-app-icon),
+[Android adaptive/themed icons](https://developer.android.com/develop/ui/compose/system/icon_design_adaptive).

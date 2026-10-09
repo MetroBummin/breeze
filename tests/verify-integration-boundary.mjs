@@ -26,6 +26,24 @@ for(const file of ['config.js','capacitor.config.json','ios/App/App/Info.plist',
 }
 const read=file=>readFileSync(new URL(file,root),'utf8');
 const html=read('index.html');
+const followup=receipt.approvedIconOnboardingFollowup;
+if(followup){
+  const scope=new Set(followup.files);
+  for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
+    assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
+  }
+  for(const [file,entry] of Object.entries(receipt.files).filter(([,entry])=>entry.kind==='followup-reviewed')){
+    assert.equal(hash(normalized(file,execFileSync('git',['show',followup.base+':'+file],{cwd:root}))),entry.followupBaseSha256,'Follow-up replaced an unexpected 253 baseline: '+file);
+  }
+  const baseHtml=git('show',followup.base+':index.html');
+  const welcome=source=>source.slice(source.indexOf('<div id="onboard-welcome"'),source.indexOf('<div id="onboard-carousel"'));
+  assert.equal(welcome(html),welcome(baseHtml),'Approved welcome markup changed');
+  const welcomeCss=source=>source.slice(source.indexOf('#onboard-welcome .breeze-wordmark'),source.indexOf('#onboard-carousel{'));
+  assert.equal(welcomeCss(read('styles/onboarding.css')),welcomeCss(git('show',followup.base+':styles/onboarding.css')),'Approved welcome geometry/animation changed');
+  for(const file of ['ios/App/App.xcodeproj/project.pbxproj','scripts/library/library.js','ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png',...git('ls-tree','-r','--name-only',followup.base,'assets/onboarding','android').split('\n').filter(Boolean)]){
+    assert.equal(hash(readFileSync(new URL(file,root))),hash(execFileSync('git',['show',followup.base+':'+file],{cwd:root})),'253 protected icon/media/import/native bytes changed: '+file);
+  }
+}
 assert.ok(html.includes('id="onboard-welcome"')&&html.includes('scripts/library/holmes-layout.js'));
 for(const file of ['assets/lib/readability-0.6.0.js','assets/longreads/homeward-lookup-data.js','scripts/reader/frame-trace.js','scripts/wordbook/review-engine.js','assets/lib/fsrs-5.4.2.min.js'])assert.ok(!html.includes('src="'+file),'Eager resource resurrected: '+file);
 assert.ok(read('scripts/main.js').includes('if(!onboardingSession)renderHome();'));

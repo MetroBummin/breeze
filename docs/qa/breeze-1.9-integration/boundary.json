@@ -51,11 +51,12 @@
       "owners": [
         "126"
       ],
-      "kind": "single-source",
-      "sha256": "6179a3981c77ea4fd7c56059b095531abff0a94fd9c1e6964b71c9652fa7e32e",
+      "kind": "followup-reviewed",
+      "sha256": "7808c549961f34549c3fc15759ad49c1d2d21d9e6381742c0494bbc221f021c3",
       "sourceSha256": {
         "126": "6179a3981c77ea4fd7c56059b095531abff0a94fd9c1e6964b71c9652fa7e32e"
-      }
+      },
+      "followupBaseSha256": "6179a3981c77ea4fd7c56059b095531abff0a94fd9c1e6964b71c9652fa7e32e"
     },
     "docs/qa/memory-header-20261008.md": {
       "owners": [
@@ -112,12 +113,13 @@
         "welcome",
         "approved-writing"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093",
+      "kind": "followup-reviewed",
+      "sha256": "12ce65f9215381d1ea8eb75cc2ed3c25ce7a08128801082de45860869d608227",
       "sourceSha256": {
         "welcome": "1a827c496dbd3e019b861ecd722997e2d69a79de0c13fe92b12781ece577d8f0",
         "approved-writing": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093"
-      }
+      },
+      "followupBaseSha256": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093"
     },
     "styles/wordbook.css": {
       "owners": [
@@ -258,14 +260,15 @@
         "welcome",
         "approved-writing"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9",
+      "kind": "followup-reviewed",
+      "sha256": "4df4229e9ed98a3863cfaa29b78476795dfffc7fb999820681741789006d6825",
       "sourceSha256": {
         "welcome": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
         "pre-approved-media": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
         "approved-2x-30fps": "4c1ec0a691ee1415dc3e5babf2dc26c16e84edbd32fccede755527444c405db2",
         "approved-writing": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9"
-      }
+      },
+      "followupBaseSha256": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9"
     },
     "docs/decisions/016-social-auth.md": {
       "owners": [
@@ -1016,24 +1019,26 @@
         "welcome",
         "approved-writing"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d",
+      "kind": "followup-reviewed",
+      "sha256": "fd95ad2e73b5857482e032b0d26a913cccb705d49114ded384ebbe49ec363b43",
       "sourceSha256": {
         "welcome": "ff22202d52584f255fd9c7deb3dd25cb30232c7ddc076e37f5d1f60e4a27e59c",
         "approved-writing": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d"
-      }
+      },
+      "followupBaseSha256": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d"
     },
     "styles/onboarding.css": {
       "owners": [
         "welcome",
         "approved-writing"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b",
+      "kind": "followup-reviewed",
+      "sha256": "8f315304ce0eca54b0e85225855100c3efe506adfc9e357de3a7938baaa94b63",
       "sourceSha256": {
         "welcome": "1382548283dc756347dca805c4e246f0a4d39bd4b2e64dcdb185c7617447a179",
         "approved-writing": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b"
-      }
+      },
+      "followupBaseSha256": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b"
     },
     "tests/verify-design-only-boundary.mjs": {
       "owners": [
@@ -1070,12 +1075,13 @@
         "welcome",
         "approved-writing"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20",
+      "kind": "followup-reviewed",
+      "sha256": "34ba5a19ff19dc90fd26e64c2e376cbdecdd01f9a3536cdce2f7daafb95a5268",
       "sourceSha256": {
         "welcome": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf",
         "approved-writing": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20"
-      }
+      },
+      "followupBaseSha256": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20"
     },
     "tools/capture-onboarding-media.mjs": {
       "owners": [
@@ -1830,7 +1836,21 @@
     "tests/verify-holmes-illustrations-browser.mjs",
     ".github/workflows/pdf-pending-pinch.yml",
     "tests/verify-pdf-pending-pinch-browser.mjs",
-    "docs/qa/pdf-pending-pinch-20261008.md"
+    "docs/qa/pdf-pending-pinch-20261008.md",
+    "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json",
+    "tools/render-app-icons.mjs",
+    "tools/verify-brand-icon-assets.py",
+    "docs/qa/icon-onboarding-20261009/before-final-light.png",
+    "docs/qa/icon-onboarding-20261009/icons-light-dark.png",
+    "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png",
+    "docs/qa/icon-onboarding-20261009/README.md",
+    "docs/qa/icon-onboarding-20261009/after-final-dark.png",
+    "docs/qa/icon-onboarding-20261009/after-final-light.png",
+    "docs/qa/icon-onboarding-20261009/after-navigation-dark.png",
+    "docs/qa/icon-onboarding-20261009/after-navigation-light.png",
+    "docs/qa/icon-onboarding-20261009/after-short-dark.png",
+    "docs/qa/icon-onboarding-20261009/after-short-light.png",
+    "docs/qa/icon-onboarding-20261009/before-final-dark.png"
   ],
   "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680",
   "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c",
@@ -1838,5 +1858,34 @@
     "base": "003a6ff3705293b119200055902328f819ca33b7",
     "scope": "Only the two existing official Apple button PNGs at scale 3, matching provenance and verification, and App/Share 1.9 (253) release metadata. Existing OAuth and all other runtime/design bytes are preserved.",
     "officialAssetFetch": "https://github.com/MetroBummin/breeze/actions/runs/37802941003"
+  },
+  "approvedIconOnboardingFollowup": {
+    "base": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+    "scope": "Native Any/light and Dark icon catalog using unchanged approved b assets; visible Previous/Next and caption swipes; final book import/Skip with abortable production importer. Submitted branch, release metadata, welcome animation, all media, Reader, auth, Android icons and themes remain unchanged.",
+    "files": [
+      "docs/decisions/006-reader-onboarding.md",
+      "docs/decisions/014-design-only-brand-release.md",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "docs/qa/icon-onboarding-20261009/README.md",
+      "docs/qa/icon-onboarding-20261009/after-final-dark.png",
+      "docs/qa/icon-onboarding-20261009/after-final-light.png",
+      "docs/qa/icon-onboarding-20261009/after-navigation-dark.png",
+      "docs/qa/icon-onboarding-20261009/after-navigation-light.png",
+      "docs/qa/icon-onboarding-20261009/after-short-dark.png",
+      "docs/qa/icon-onboarding-20261009/after-short-light.png",
+      "docs/qa/icon-onboarding-20261009/before-final-dark.png",
+      "docs/qa/icon-onboarding-20261009/before-final-light.png",
+      "docs/qa/icon-onboarding-20261009/icons-light-dark.png",
+      "index.html",
+      "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png",
+      "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "scripts/ui/onboarding.js",
+      "styles/onboarding.css",
+      "sw.js",
+      "tests/verify-integration-boundary.mjs",
+      "tests/verify-onboarding-browser.mjs",
+      "tools/render-app-icons.mjs",
+      "tools/verify-brand-icon-assets.py"
+    ]
   }
 }

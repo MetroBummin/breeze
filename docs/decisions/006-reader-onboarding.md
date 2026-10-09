@@ -62,19 +62,28 @@ Capture response fixtures supply authored Korean meanings and explanations;
 no AI request, auth change, quota charge or durable user-data write is performed
 by the guide. The film is not a simulated interactive Reader.
 
-Selected layout 1 owns media above caption, compact centered progress and one
-wide bottom Next/Complete. Seven progress marks occupy exactly 96px (5px dot,
+Selected layout 1 retains media above caption and compact centered progress.
+Explanation pages now expose two concise 52px Previous/Next buttons. Seven progress marks occupy exactly 96px (5px dot,
 18px active mark, 8px gaps), matching the selected original. Dots are indicators,
-not seven 44px buttons. Next, horizontal swipe, keyboard arrows and an accessible
-previous control own navigation. There is no Skip. Escape/browser Back cancels
+not seven 44px buttons. Previous/Next, horizontal swipe over media or captions, and keyboard arrows own
+navigation. Swipe returns from the first explanation to welcome and clamps at
+both ends. The final non-video page offers “책 넣기” and “건너뛰기”; explanation
+pages do not offer Skip. Escape/browser Back cancels
 without recording completion; returning from Settings replays from welcome.
 
 The overlay never opens a book or changes its appearance, scroll, words, sync,
 cache or history. Existing Reader and dialog controls become inert during the
 guide and restore their exact previous inert state on exit. External navigation
 cancels the guide rather than covering the newly opened view. Startup does not
-render/feed-fetch hidden Home beneath the welcome. Completion reveals the prior
+render/feed-fetch hidden Home beneath the welcome. Explicit Skip or a successful durable book import reveals the prior
 view through its existing renderer and persists the original ‘done’ marker.
+The final file picker accepts PDF/EPUB/TXT and calls the existing `importFile`
+owner with a session AbortSignal. Picker cancellation and import failure leave
+the final page available for retry or Previous. Back, Skip, cancellation, replay
+and external navigation abort pending preparation and invalidate its completion
+callback. The importer owns durable commits; the guide does not roll back a
+book already committed. An interrupted fresh final page resumes on reload.
+Settings replay always starts from welcome and does not replace existing data.
 
 Only the visible video receives a source. Navigation pauses and unloads every
 other video; session cancellation invalidates outstanding play promises. Nothing

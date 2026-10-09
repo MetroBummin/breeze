@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="styles/wordbook.css?v=991cfadf">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=7bb723de">
-  <link rel="stylesheet" href="styles/onboarding.css?v=d00f9eac">
+  <link rel="stylesheet" href="styles/onboarding.css?v=8f315304">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -121,7 +121,7 @@
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=11110a0e"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=00b60f03"></script>
+  <script defer src="scripts/ui/onboarding.js?v=fd95ad2e"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=6b72e077"></script>
@@ -545,11 +545,14 @@
       </svg>
     </span></div>
     <div id="onboard-carousel" role="region" aria-roledescription="캐러셀" aria-label="브리즈 기능 안내" tabindex="0" hidden></div>
+    <div id="onboard-finish" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h9l3 3V20.5H6zM15 3.5v4h3M9 12h6M9 15.5h4"/></svg></div>
     <span id="onboard-step" aria-live="polite"></span>
     <p id="onboard-prompt" role="status" aria-live="polite"></p>
     <p id="onboard-note">막힘없이 읽는 새로운 방법.</p>
     <div id="onboard-pages" aria-hidden="true" hidden></div>
-    <div id="onboard-navigation"><button id="onboard-back" type="button" aria-label="이전 안내" hidden>‹</button><button id="onboard-next" class="control-glass" type="button">시작하기</button></div>
+    <div id="onboard-navigation"><button id="onboard-back" class="control-glass" type="button" aria-label="이전 안내" hidden>이전</button><button id="onboard-next" class="control-glass" type="button">시작하기</button></div>
+    <button id="onboard-skip" type="button" hidden>건너뛰기</button>
+    <input id="onboard-fileinput" type="file" accept=".pdf,.epub,.txt" hidden>
   </section>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
