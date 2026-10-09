@@ -13,18 +13,72 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 export const base='83cc182db73ed1d63784e66321a066ccb2943994';
 export const owners=[
- {pr:143,source:'62a082b071f0375f6763a95fcbad8e46c94e9b00',files:[
-  '.github/workflows/pdf-ocr.yml','android/app/build.gradle',
-  'android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrAccuracyTest.java',
-  'android/app/src/main/java/kr/io/breeze/app/BreezePdfOcrPlugin.java',
-  'android/app/src/main/java/kr/io/breeze/app/MainActivity.java',
-  'docs/decisions/003-pdf-highlight-geometry.md','docs/decisions/021-scanned-pdf-ocr.md',
-  'docs/qa/scanned-pdf-ocr-20261009.md','index.html','ios/App/App.xcodeproj/project.pbxproj',
-  'ios/App/App/BreezePdfOcrPlugin.swift','ios/App/App/SceneDelegate.swift','package.json',
-  'scripts/core/storage.js','scripts/reader/original-session.js','scripts/reader/pdf-ocr.js',
-  'scripts/reader/pdf-original.js','sw.js','tests/helpers/pdf-scan-fixture.mjs',
-  'tests/verify-pdf-ocr-browser.mjs','tests/verify-pdf-ocr.mjs',
-  'tests/verify-pdf-session-regressions.mjs','tests/verify-pdf-visible-repaint.mjs']},
+ {pr:143,source:'0b51a4992c5ec12c1215381a210584f6b2e66561',files:[
+  ".github/workflows/pdf-ocr-native-stress.yml",
+  ".github/workflows/pdf-ocr.yml",
+  "android/app/build.gradle",
+  "android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrAccuracyTest.java",
+  "android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrStressTest.java",
+  "android/app/src/main/java/kr/io/breeze/app/BreezePdfOcrPlugin.java",
+  "android/app/src/main/java/kr/io/breeze/app/MainActivity.java",
+  "docs/decisions/003-pdf-highlight-geometry.md",
+  "docs/decisions/021-scanned-pdf-ocr.md",
+  "docs/qa/evidence/pdf-ocr-confirm-phone-light.png",
+  "docs/qa/evidence/pdf-ocr-vision-5600d0b.json",
+  "docs/qa/evidence/pdf-ocr-vision-9e76421.json",
+  "docs/qa/scanned-pdf-ocr-20261009.md",
+  "docs/qa/scanned-pdf-ocr-stress-20261009.md",
+  "index.html",
+  "ios/App/App.xcodeproj/project.pbxproj",
+  "ios/App/App/BreezePdfOcrPlugin.swift",
+  "ios/App/App/SceneDelegate.swift",
+  "landing/index.html",
+  "package.json",
+  "scripts/core/storage.js",
+  "scripts/reader/original-session.js",
+  "scripts/reader/pdf-ocr.js",
+  "scripts/reader/pdf-original.js",
+  "styles/reader.css",
+  "sw.js",
+  "tests/fixtures/pdf-ocr-stress/blank.png",
+  "tests/fixtures/pdf-ocr-stress/blur-1.5.png",
+  "tests/fixtures/pdf-ocr-stress/blur-4.png",
+  "tests/fixtures/pdf-ocr-stress/blur-8.png",
+  "tests/fixtures/pdf-ocr-stress/clipped-edges.png",
+  "tests/fixtures/pdf-ocr-stress/dense.png",
+  "tests/fixtures/pdf-ocr-stress/flattened-ink-overlap.png",
+  "tests/fixtures/pdf-ocr-stress/huge-360.png",
+  "tests/fixtures/pdf-ocr-stress/large-180.png",
+  "tests/fixtures/pdf-ocr-stress/low-contrast.png",
+  "tests/fixtures/pdf-ocr-stress/manifest.json",
+  "tests/fixtures/pdf-ocr-stress/mixed-print-ink.png",
+  "tests/fixtures/pdf-ocr-stress/print-48.png",
+  "tests/fixtures/pdf-ocr-stress/repeated.png",
+  "tests/fixtures/pdf-ocr-stress/rotation--13.png",
+  "tests/fixtures/pdf-ocr-stress/rotation-180.png",
+  "tests/fixtures/pdf-ocr-stress/rotation-270.png",
+  "tests/fixtures/pdf-ocr-stress/rotation-7.png",
+  "tests/fixtures/pdf-ocr-stress/rotation-90.png",
+  "tests/fixtures/pdf-ocr-stress/scribbles-no-words.png",
+  "tests/fixtures/pdf-ocr-stress/small-12.png",
+  "tests/fixtures/pdf-ocr-stress/small-16.png",
+  "tests/fixtures/pdf-ocr-stress/small-24.png",
+  "tests/fixtures/pdf-ocr-stress/small-8.png",
+  "tests/fixtures/pdf-ocr-stress/synthetic-ink-only.png",
+  "tests/fixtures/pdf-ocr-stress/two-columns.png",
+  "tests/helpers/generate-pdf-ocr-corpus.py",
+  "tests/helpers/pdf-ocr-browser-stress.mjs",
+  "tests/helpers/pdf-scan-fixture.mjs",
+  "tests/native/CapacitorOcrTestBridge.swift",
+  "tests/native/pdf-ocr-vision-main.swift",
+  "tests/native/run-pdf-ocr-android.sh",
+  "tests/native/run-pdf-ocr-vision.sh",
+  "tests/score-pdf-ocr-stress.mjs",
+  "tests/verify-pdf-ocr-browser.mjs",
+  "tests/verify-pdf-ocr.mjs",
+  "tests/verify-pdf-session-regressions.mjs",
+  "tests/verify-pdf-visible-repaint.mjs"
+]},
  {pr:144,source:'e2bf032af786c8c26e03a8222e135cc9dc3a220f',files:[
   '.github/workflows/memory-edit-filter.yml','docs/qa/memory-edit-filter-20261009.md',
   ...['after','before'].flatMap(stage=>['browser.log','chromium.json',
@@ -36,6 +90,7 @@ export const owners=[
   'styles/wordbook.css','sw.js','tests/verify-memory-edit-filter-browser.mjs']},
 ];
 const receiptFile='docs/qa/breeze-192-integration/boundary.json';
+const authorization='2026-10-09 follow-up: parent supplied final OCR PR143 0b51a4992c5ec12c1215381a210584f6b2e66561 and frozen Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Prepare and verify the existing PR145 candidate only. Main merge, Xcode Cloud build and review submission remain held regardless of candidate preparation success. Preserve historical 1.9.1 receipts and tests. Do not hide, skip or delete Android KVM and WebKit offline Blob failures. Retain macOS Vision RSS growth, permanently pending native-call recovery and unverified physical offline/handwriting/ML Kit acceptance as remaining risks.';
 export const integrationFiles=[receiptFile,'tests/verify-192-integration-boundary.mjs',
  'tools/record-192-integration-boundary.mjs','docs/decisions/022-breeze-192-integration.md',
  'docs/qa/breeze-192-integration-20261009.md'];
@@ -93,7 +148,7 @@ function expectedContract(){
    transformation:'replace tests/verify-integration-boundary.mjs with tests/verify-192-integration-boundary.mjs',
    sha256:hash(original.replaceAll('tests/verify-integration-boundary.mjs','tests/verify-192-integration-boundary.mjs'))};
  }
- return {schemaVersion:1,version:'1.9.2',base,owners,files,integrationFiles};
+ return {schemaVersion:1,version:'1.9.2',base,owners,files,integrationFiles,authorization};
 }
 
 function verifyCurrent(contract){
@@ -128,7 +183,7 @@ function verifyCurrent(contract){
 
 export function verify192Boundary(receipt){
  const expected=expectedContract();
- assert.deepEqual(Object.keys(receipt).sort(),[...Object.keys(expected),'authorization','integrationSha256'].sort(),
+ assert.deepEqual(Object.keys(receipt).sort(),[...Object.keys(expected),'integrationSha256'].sort(),
   'Unexpected 1.9.2 receipt fields');
  for(const key of Object.keys(expected))assert.deepEqual(receipt[key],expected[key],'Immutable 1.9.2 contract differs: '+key);
  verifyCurrent(expected);
@@ -157,7 +212,6 @@ function record(){
  execFileSync(process.execPath,['tools/stamp-version.mjs'],{cwd:root,stdio:'inherit'});
  const contract=expectedContract();verifyCurrent(contract);
  const receipt={...contract,
-  authorization:'2026-10-09: user requested 1.9.2 OCR stress testing, minor-fix testing/merge and new photos; at 15:57:36 UTC explicitly approved assistant clarification including integration/build/submission, then requested completion while asleep at 15:57:46. Parent designated this isolated integration owner. Hold main/Cloud until the separately running OCR stress task supplies its final result and SHA. Preserve 1.9.1 historical receipts; authorize only these owners, 1.9.2 version-only delta, strict boundary and verification documentation. A single verified main merge may then start the existing automatic Xcode Cloud build. Marketing photos and App Store submission remain with their assigned owners.',
   integrationSha256:Object.fromEntries(integrationFiles.filter(file=>file!==receiptFile).map(file=>[file,hash(read(file))]))};
  mkdirSync(join(root,'docs/qa/breeze-192-integration'),{recursive:true});
  writeFileSync(join(root,receiptFile),JSON.stringify(receipt,null,2)+'\n');

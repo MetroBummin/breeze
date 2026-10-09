@@ -5,27 +5,68 @@
   "owners": [
     {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "files": [
+        ".github/workflows/pdf-ocr-native-stress.yml",
         ".github/workflows/pdf-ocr.yml",
         "android/app/build.gradle",
         "android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrAccuracyTest.java",
+        "android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrStressTest.java",
         "android/app/src/main/java/kr/io/breeze/app/BreezePdfOcrPlugin.java",
         "android/app/src/main/java/kr/io/breeze/app/MainActivity.java",
         "docs/decisions/003-pdf-highlight-geometry.md",
         "docs/decisions/021-scanned-pdf-ocr.md",
+        "docs/qa/evidence/pdf-ocr-confirm-phone-light.png",
+        "docs/qa/evidence/pdf-ocr-vision-5600d0b.json",
+        "docs/qa/evidence/pdf-ocr-vision-9e76421.json",
         "docs/qa/scanned-pdf-ocr-20261009.md",
+        "docs/qa/scanned-pdf-ocr-stress-20261009.md",
         "index.html",
         "ios/App/App.xcodeproj/project.pbxproj",
         "ios/App/App/BreezePdfOcrPlugin.swift",
         "ios/App/App/SceneDelegate.swift",
+        "landing/index.html",
         "package.json",
         "scripts/core/storage.js",
         "scripts/reader/original-session.js",
         "scripts/reader/pdf-ocr.js",
         "scripts/reader/pdf-original.js",
+        "styles/reader.css",
         "sw.js",
+        "tests/fixtures/pdf-ocr-stress/blank.png",
+        "tests/fixtures/pdf-ocr-stress/blur-1.5.png",
+        "tests/fixtures/pdf-ocr-stress/blur-4.png",
+        "tests/fixtures/pdf-ocr-stress/blur-8.png",
+        "tests/fixtures/pdf-ocr-stress/clipped-edges.png",
+        "tests/fixtures/pdf-ocr-stress/dense.png",
+        "tests/fixtures/pdf-ocr-stress/flattened-ink-overlap.png",
+        "tests/fixtures/pdf-ocr-stress/huge-360.png",
+        "tests/fixtures/pdf-ocr-stress/large-180.png",
+        "tests/fixtures/pdf-ocr-stress/low-contrast.png",
+        "tests/fixtures/pdf-ocr-stress/manifest.json",
+        "tests/fixtures/pdf-ocr-stress/mixed-print-ink.png",
+        "tests/fixtures/pdf-ocr-stress/print-48.png",
+        "tests/fixtures/pdf-ocr-stress/repeated.png",
+        "tests/fixtures/pdf-ocr-stress/rotation--13.png",
+        "tests/fixtures/pdf-ocr-stress/rotation-180.png",
+        "tests/fixtures/pdf-ocr-stress/rotation-270.png",
+        "tests/fixtures/pdf-ocr-stress/rotation-7.png",
+        "tests/fixtures/pdf-ocr-stress/rotation-90.png",
+        "tests/fixtures/pdf-ocr-stress/scribbles-no-words.png",
+        "tests/fixtures/pdf-ocr-stress/small-12.png",
+        "tests/fixtures/pdf-ocr-stress/small-16.png",
+        "tests/fixtures/pdf-ocr-stress/small-24.png",
+        "tests/fixtures/pdf-ocr-stress/small-8.png",
+        "tests/fixtures/pdf-ocr-stress/synthetic-ink-only.png",
+        "tests/fixtures/pdf-ocr-stress/two-columns.png",
+        "tests/helpers/generate-pdf-ocr-corpus.py",
+        "tests/helpers/pdf-ocr-browser-stress.mjs",
         "tests/helpers/pdf-scan-fixture.mjs",
+        "tests/native/CapacitorOcrTestBridge.swift",
+        "tests/native/pdf-ocr-vision-main.swift",
+        "tests/native/run-pdf-ocr-android.sh",
+        "tests/native/run-pdf-ocr-vision.sh",
+        "tests/score-pdf-ocr-stress.mjs",
         "tests/verify-pdf-ocr-browser.mjs",
         "tests/verify-pdf-ocr.mjs",
         "tests/verify-pdf-session-regressions.mjs",
@@ -63,142 +104,388 @@
     }
   ],
   "files": {
+    ".github/workflows/pdf-ocr-native-stress.yml": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "c96b8ac269058de1254df792b69195dedc52814cc7298fadbe81989956c706e2"
+    },
     ".github/workflows/pdf-ocr.yml": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "e2e097705dd0d3e56bb0faaf258ccd7e36ba6c99a19436b281f73d99b1cba6d3"
+      "sha256": "94bcb59f8268c13b4e877efbcee99e16f21bb8229d8f25f1a71ce88021d10a40"
     },
     "android/app/build.gradle": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "f26261af2b66007ec38f9f9037d0eeb80687c1eded7d01748708b9b6b070ffab"
     },
     "android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrAccuracyTest.java": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "1c5112099fbd7c543fc0571aa9d39f1fd1b49e7b9a4527b5f07d0c22c66ccb27"
     },
+    "android/app/src/androidTest/java/kr/io/breeze/app/PdfOcrStressTest.java": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "5ca9f341eb26078c257973f6730c08cd8e79f99f77f75692a508ea7f01c2b9cc"
+    },
     "android/app/src/main/java/kr/io/breeze/app/BreezePdfOcrPlugin.java": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "493335e2c032ab587245c5c38e37775689a05f0b5353ea012741caafea389e89"
     },
     "android/app/src/main/java/kr/io/breeze/app/MainActivity.java": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "da2570cc6ed7e4433c505fa537e53bc44add1c59bf942640196fd6e41f41ac72"
     },
     "docs/decisions/003-pdf-highlight-geometry.md": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "6e80512d359626b68ec8ab60888c7dd187d3511f44dbf40dac3737f5dec0a984"
+      "sha256": "6538e41d1f882577ca66112659b45940b90ffba52870fc1abd38e56e16033553"
     },
     "docs/decisions/021-scanned-pdf-ocr.md": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "e6338246475f4921ad846a1c26ae995a09f000061ce5b272736ba7387e4243aa"
+      "sha256": "364d6597a695de6d967d944c1a0129aa43f0519b2b272b7a7b45d79d6cd4efe5"
+    },
+    "docs/qa/evidence/pdf-ocr-confirm-phone-light.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "148137a8189eefe499654d963e29388ab763bde9e9e1295e38d38e7a5670f9db"
+    },
+    "docs/qa/evidence/pdf-ocr-vision-5600d0b.json": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "c013b8b3e4d1db8d2cec3fd54fefe06ddd78e10c33901ad3ba3bf4e74ccef220"
+    },
+    "docs/qa/evidence/pdf-ocr-vision-9e76421.json": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "bfcc81ce1b065f936e11a9eee3bb4889260ba0ae2bf997474d0083d52302178a"
     },
     "docs/qa/scanned-pdf-ocr-20261009.md": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "9fe19f51af3ada005bf85f81c04d790dfdba43d1b7ef055b49cf1b552c52909c"
+      "sha256": "a210a126bccd77b9a25ab2c98feca54d6826da52ef9af098d50809c48d1387d7"
+    },
+    "docs/qa/scanned-pdf-ocr-stress-20261009.md": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "22be7e8dc6328f01f801fc93ab8069de8ac0820446ccc1ea5dc463eba0c3c936"
     },
     "index.html": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "44ba17aed313cf781d170a58e5fe6da98991d44b833fa0afa61f1f8491bbf37b"
     },
     "ios/App/App.xcodeproj/project.pbxproj": {
       "pr": "version-only",
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "transformation": "replace every literal 1.9.1 with 1.9.2",
       "sha256": "7528a8ea06de96cdeac4ddc469f96bf2a97cbcc4dc5ea545fcdcaaaefa100cb0"
     },
     "ios/App/App/BreezePdfOcrPlugin.swift": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "7f831fe17b31e6754149405fa6f36c2263badce6aac9f3e6593c1c6d02ce02ab"
     },
     "ios/App/App/SceneDelegate.swift": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "dceb25851a813c0b314d6333286846387826e611eb36afd0a7864edd4948a892"
     },
+    "landing/index.html": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "ccc91b2bd331d161be77e99527e927747c6faac420ab81afb9bf370e37a418f8"
+    },
     "package.json": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "ea1c8158ef4181983d073c807e647a7e582fafecf99d19bc8454a8bb1583aba6"
     },
     "scripts/core/storage.js": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "abd59462e7a8a275289254a1976e96e07ae4375e6b022df2555b48c2a744ff30"
     },
     "scripts/reader/original-session.js": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "fc16eb5f791770f4f9a49b4c275209f814046e56391a81600f6b44b760edd8af"
     },
     "scripts/reader/pdf-ocr.js": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "84fc2ef36fa14e0ce5d4f9a12ed34d674e2544378a75c557b3204982058d6cf8"
+      "sha256": "065b7affcbb46777b36e66b4acd7702ef43eaed449589630876474db4953a05e"
     },
     "scripts/reader/pdf-original.js": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "b32be7c0355d4aab21c2768303154b7a5e7cc96ae1bd367ad7abdbd6d0d0c6b8"
+      "sha256": "0c13e1cbee4333722f4c4dc66b552626723a438fd01e215948468e31421301e6"
+    },
+    "styles/reader.css": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "f2f41aa9df110abdda96633aabac9f1c391cf21f243b3377399fe242346550f1"
     },
     "sw.js": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
     },
+    "tests/fixtures/pdf-ocr-stress/blank.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "76441e504c8cda7db9a81b369ee9a1e4dfd9ffb39f78b6352981527cd5cb05dd"
+    },
+    "tests/fixtures/pdf-ocr-stress/blur-1.5.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "c61b13629fddea25341f135a168aa57fc523a917c19215bf38c74dbf4ab1da25"
+    },
+    "tests/fixtures/pdf-ocr-stress/blur-4.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "5aa99776de02001e5a38b7e836b496eebf79f38a4f17458e0e0eaf4a5329d110"
+    },
+    "tests/fixtures/pdf-ocr-stress/blur-8.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "d429ab0663a906b499bd041f125cfd7000246eea677e7b4ce62f14e4f48a5ae1"
+    },
+    "tests/fixtures/pdf-ocr-stress/clipped-edges.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "b1e73670cb2523011e1f4b8ff15230ac1fa2029faf7cac00d4317c4770420eb5"
+    },
+    "tests/fixtures/pdf-ocr-stress/dense.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "0aa6063600bb7c490d88b33d70541308781f220145e40f369a91d3a4d66b17f4"
+    },
+    "tests/fixtures/pdf-ocr-stress/flattened-ink-overlap.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "2b43d722c2bf73a47617e6c50eedbdd8c9b6778617099de61f6258e648c7950b"
+    },
+    "tests/fixtures/pdf-ocr-stress/huge-360.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "8e82460aa5aff84453668a3a127902e90ac8d0005dcf8362fc09f7cb49df45db"
+    },
+    "tests/fixtures/pdf-ocr-stress/large-180.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "6950159e60618c3687b9b91dc9d473f1ac4cacda620c8767b61b414ae7db054d"
+    },
+    "tests/fixtures/pdf-ocr-stress/low-contrast.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "0b1352332f56d7bb98beb431ec5c41e384ced251f6548edb185d40f8b2a609c4"
+    },
+    "tests/fixtures/pdf-ocr-stress/manifest.json": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "737253e133142c955f9d8e3580474a5c4e95533a05ff7fc92ab635f8d851ed21"
+    },
+    "tests/fixtures/pdf-ocr-stress/mixed-print-ink.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "2d52e0c603d9605e3d64439f868f2bbc1784aaccdc3c3ef3930c67be49d9cb5c"
+    },
+    "tests/fixtures/pdf-ocr-stress/print-48.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "256d371b3a828bb0192ed4103820f4e827397006346f8150268c0016c98b682d"
+    },
+    "tests/fixtures/pdf-ocr-stress/repeated.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "96caf88ea7494ec8376c6a123a62fd0d1572d02b63807c12464b6a7c9934e7e7"
+    },
+    "tests/fixtures/pdf-ocr-stress/rotation--13.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "d2036d2484c8ed3956d8802e8646f85e44b8ce5ef829bf38b00982a9af5f7232"
+    },
+    "tests/fixtures/pdf-ocr-stress/rotation-180.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "a4b159d75fa5412ba484949f1af2f2749a22e4b60e7b620a7d8ace3fdc24e2e4"
+    },
+    "tests/fixtures/pdf-ocr-stress/rotation-270.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "1081db4bf8f2ac9940dc6d7da1d37a68e0438dec50013633e9593fbb392a0161"
+    },
+    "tests/fixtures/pdf-ocr-stress/rotation-7.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "45a50c171623d285c301a1ebb07cde98d68c04905dd51acbfdcd99d960c60d29"
+    },
+    "tests/fixtures/pdf-ocr-stress/rotation-90.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "0d5991d6572ed29eb643e8b1e4fc98770a7874400e584d02c609d7d489c57b65"
+    },
+    "tests/fixtures/pdf-ocr-stress/scribbles-no-words.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "fcccc5b003788721d400b614243aa0172ccbee510a41272a204e32b6d195a08b"
+    },
+    "tests/fixtures/pdf-ocr-stress/small-12.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "365dab99201523e6267485239ddd9d200bb261d0630333576026e951588691d5"
+    },
+    "tests/fixtures/pdf-ocr-stress/small-16.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "83a9bf1c4d6998d96b6895b0423667302b86b25e77f9bd1dd0a2e1622acdb9a6"
+    },
+    "tests/fixtures/pdf-ocr-stress/small-24.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "08a55d1311fe35930cbc0e4d761303f401d9f44697c20a1a777883db7bc92f30"
+    },
+    "tests/fixtures/pdf-ocr-stress/small-8.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "928cfb398a822f85fede2853268ecc080e06e71527d33f18dcdd48ef4d252da3"
+    },
+    "tests/fixtures/pdf-ocr-stress/synthetic-ink-only.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "9666d92f6e3c126b198ced43ebcf4ef344119820f1ec37899ac783baa366fced"
+    },
+    "tests/fixtures/pdf-ocr-stress/two-columns.png": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "9d0b4674c7b5b664c4aef345fc4bd6d6a26f77b037f1a8fe685b76b439a22ed1"
+    },
+    "tests/helpers/generate-pdf-ocr-corpus.py": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "7add4371f770cfcbb63554ce3235974eef9a06893bd0aa7227db33d93833c66c"
+    },
+    "tests/helpers/pdf-ocr-browser-stress.mjs": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "34424cee3a520ee0d5e509b0b7c9fadfead9b4f9a623fdd730e04cc0897eaf7e"
+    },
     "tests/helpers/pdf-scan-fixture.mjs": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "3c9b53d3fa59886da13c8f18a3dc5f2dd76a78538618490f3730d4df845ea0fb"
+      "sha256": "8ab5ffb1d1481af32529d8855a2a0a0f745906a24b1e248db6f75ffecb70f5f4"
+    },
+    "tests/native/CapacitorOcrTestBridge.swift": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "737a52a813025af98c9680b4e98b6fad9dc73bcb2f37902fc374e586b9cf1b02"
+    },
+    "tests/native/pdf-ocr-vision-main.swift": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "8976a8a17f8017b6b45b4c32b18391dd1c0a4c9fffd6085131814532396d20af"
+    },
+    "tests/native/run-pdf-ocr-android.sh": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "cbc3cda3092be0ff0f62e2e0a1927f7bc588a7ccf61ddfe35c560fa8b0140733"
+    },
+    "tests/native/run-pdf-ocr-vision.sh": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "c72d871a5605489c5576191f15a8374f01abefeb40f8b30883d8f085390721cc"
+    },
+    "tests/score-pdf-ocr-stress.mjs": {
+      "pr": 143,
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
+      "mode": "100644",
+      "sha256": "1da4ab960d78633ba03a75bf576b751100c606b5e45002aef9cedfb7bae2a94d"
     },
     "tests/verify-pdf-ocr-browser.mjs": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "cdf6d845f05976f816492702a90aefcaf94b1f89beb5de681a6492ce11e82244"
+      "sha256": "6c6c08c7d5ec2f42a51fb301be4aeaa635e05640ac86cf402eab1359d52ee554"
     },
     "tests/verify-pdf-ocr.mjs": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
-      "sha256": "ce132d15040249f02f673ff22b8d185e76de2533072f8271f7cceb921a29a168"
+      "sha256": "ad074cbd3b7efec62ebac2ec2a94f3c296338b4f26320ed5737c473d172b96c1"
     },
     "tests/verify-pdf-session-regressions.mjs": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "89ac9cd1c0664f46612d4a31b4da277e3fecf591ba88d77575aec482e6feea03"
     },
     "tests/verify-pdf-visible-repaint.mjs": {
       "pr": 143,
-      "source": "62a082b071f0375f6763a95fcbad8e46c94e9b00",
+      "source": "0b51a4992c5ec12c1215381a210584f6b2e66561",
       "mode": "100644",
       "sha256": "9852498d8a6b8963ccd6a8a4596456a17214850b98c5b0e356a9aa829ef52eff"
     },
@@ -378,11 +665,11 @@
     "docs/decisions/022-breeze-192-integration.md",
     "docs/qa/breeze-192-integration-20261009.md"
   ],
-  "authorization": "2026-10-09: user requested 1.9.2 OCR stress testing, minor-fix testing/merge and new photos; at 15:57:36 UTC explicitly approved assistant clarification including integration/build/submission, then requested completion while asleep at 15:57:46. Parent designated this isolated integration owner. Hold main/Cloud until the separately running OCR stress task supplies its final result and SHA. Preserve 1.9.1 historical receipts; authorize only these owners, 1.9.2 version-only delta, strict boundary and verification documentation. A single verified main merge may then start the existing automatic Xcode Cloud build. Marketing photos and App Store submission remain with their assigned owners.",
+  "authorization": "2026-10-09 follow-up: parent supplied final OCR PR143 0b51a4992c5ec12c1215381a210584f6b2e66561 and frozen Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Prepare and verify the existing PR145 candidate only. Main merge, Xcode Cloud build and review submission remain held regardless of candidate preparation success. Preserve historical 1.9.1 receipts and tests. Do not hide, skip or delete Android KVM and WebKit offline Blob failures. Retain macOS Vision RSS growth, permanently pending native-call recovery and unverified physical offline/handwriting/ML Kit acceptance as remaining risks.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "e5c542146b4fd4d504718dc94dc929cfdc6ab765b44317ace2806c2232927126",
-    "docs/decisions/022-breeze-192-integration.md": "3a388bd473195413e77ca23b37e3cf88e98c0057df81196250a0cb67d6e5ccbe",
-    "docs/qa/breeze-192-integration-20261009.md": "ad7f172cbeb5b4589585fedf4d39faf27bf77a6f99516490cd7997fa5d9cda78"
+    "tools/record-192-integration-boundary.mjs": "1607eb22bcb3c6a3d150aa9a32b20c5c2e449a8031533758d54e6b2beeb8c6b1",
+    "docs/decisions/022-breeze-192-integration.md": "9256b061dc4599b7a53451106e876dd950fb7974180b2fe4be908b4598eaa87d",
+    "docs/qa/breeze-192-integration-20261009.md": "87dfc14e37e96a3a35f974ae6388b5ce29599c67d1ae83f1f36c17c46a41673b"
   }
 }

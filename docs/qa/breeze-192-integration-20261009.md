@@ -1,66 +1,97 @@
-# Breeze 1.9.2 isolated integration verification
+# Breeze 1.9.2 final-source candidate verification
 
 Baseline: `83cc182db73ed1d63784e66321a066ccb2943994` (PR142).
-Candidate branch: `integration/breeze-192-20261009`.
-Provisional OCR input: PR143 `62a082b071f0375f6763a95fcbad8e46c94e9b00`.
+Candidate branch: `integration/breeze-192-20261009`, existing draft PR145.
+Final OCR input: PR143 `0b51a4992c5ec12c1215381a210584f6b2e66561`.
 Frozen Memory input: PR144 `e2bf032af786c8c26e03a8222e135cc9dc3a220f`.
 
-Main and existing release branches remain untouched while the OCR stress owner
-finishes and supplies the final result/SHA. The candidate preserves both owners'
-history. Its only shared conflict was the generated service worker version;
-official stamping resolves it. Marketing version is 1.9.2 across App and Share;
-the baseline counter stays 253 pending the existing Cloud counter rewrite.
+The latest parent instruction authorizes **candidate preparation and verification
+only**. Main, Cloud build and review submission remain held regardless of these
+checks. Existing release branches, photos and ASC records are untouched.
 
-The [new strict receipt](breeze-192-integration/boundary.json) independently pins
-every owner path and the version-only delta. All historical receipt/helper bytes
-and every other baseline file are unchanged. The original complete 1.9.1 guard
-also runs unchanged in an isolated checkout. See the
-[boundary decision](../decisions/022-breeze-192-integration.md).
+## Source and historical protection
 
-## Verification status
+The new merge preserves final OCR ancestry alongside the already integrated
+Memory ancestry. Only the generated service-worker version conflicted; official
+stamping resolves it. App/Share Debug/Release stay at 1.9.2 with checked-in counter
+253; the existing Cloud hook is unchanged and no actual build was started.
 
-Local verification on the provisional inputs completed successfully:
+The [strict receipt](breeze-192-integration/boundary.json) independently pins the
+final OCR's 64 paths, Memory's 23 paths, exact version transformations and three
+literal workflow-runner replacements. The combined contract has 91 owner/version/
+runner paths plus five integration-evidence paths. All other baseline bytes and
+executable modes are immutable. Original historical receipt, integration helper,
+boundary test and Cloud hook remain byte-for-byte unchanged. The complete original
+1.9.1 boundary executes in its exact detached baseline checkout. The new verifier
+also pins the preparation-only authorization text; receipt edits cannot fabricate
+release authorization. See [the decision](../decisions/022-breeze-192-integration.md).
 
-- Full `npm test`: exit 0, including the 15 OCR unit cases and all existing suites.
-- `npm run typecheck`: passed with the existing 32 diagnostics, no increase.
-- Strict new boundary plus the entire unchanged historical 1.9.1 boundary: passed.
-- Sixteen intentional mutations all rejected; restored boundary passed. Probes
-  cover OCR/Memory bytes, old receipt/helper/article assertion, native hook,
-  config, current verifier, marketing version/counter, wrong/missing stamps,
-  worker version, unrelated file, forged receipt source and a stamp-shaped title
-  mutation. Normalization removes only real local script/style/favicon resource
-  stamps, so a query-looking string cannot hide a semantic HTML change.
-- Chromium OCR: 30 geometry/lifecycle cases using real PDF.js and IndexedDB,
-  with controlled native recognition and external requests blocked.
-- Chromium Memory editor/filter: twelve theme/size cases. Existing Wordbook
-  search, sort, filters, edit, manual add, export and Home regression passed.
-- Existing Chromium ink, pointer ink, pending-lookup pinch and onboarding suites
-  passed, including rapid/repeated navigation, cancel/back/replay, lifecycle,
-  failed save/retry, document isolation and responsive light/dark captures.
-- `npm run www`, iOS/Android Capacitor sync, native package and worker policy,
-  six Android source/config checks, brand-icon assets, changed JS syntax,
-  archive-helper shell syntax and whitespace: passed. These are local packaging
-  checks, not a local native compile. Android sync's generated machine-relative
-  Gradle path was restored to its exact baseline before boundary verification.
+The final OCR adds finite confidence/rectangle validation and an occurrence-scoped,
+nonmodal spelling confirmation before lookup, including cached meanings. It keeps
+reading/zoom available, invalidates obsolete prompts, requires fresh confirmation
+after replacement/eviction/reopen, and does not enable OCR sentence lookup. These
+are exact reviewed owner bytes; integration makes no product or test-harness edit.
+The owner's landing change is only its reader stylesheet's generated stamp.
 
-The verifier and helper preserve every original test/receipt byte, and the three
-existing boundary workflows change only the literal runner filename to the new
-1.9.2 entry point. No assertion/step/trigger is removed. A detached exact-baseline
-checkout runs the historical guard without modifying its inputs.
+## Local checks on final inputs
 
-OCR stress acceptance and final source SHA remain required. Final-head CI and
-main/Cloud results will be recorded in the integration PR body and external SHA
-receipts, so reporting does not mutate an already-tested candidate.
+- Full `npm test`: passed, including the expanded OCR assertions and all existing
+  unit/contract suites. Typecheck passed with the existing 32 diagnostics.
+- Current 1.9.2 and complete unchanged historical 1.9.1 boundaries: passed.
+- Nineteen intentional mutation probes all rejected; restored guard passed. They cover source/config/native/version/history/evidence/stamp scope,
+  forged source and authorization, deletion of the native execution gate, and
+  deletion of the offline assertion. Only real asset attributes are normalized;
+  stamp-shaped semantic HTML changes cannot hide drift.
+- Chromium OCR: 30 geometry cases; responsive light/dark spelling-confirmation
+  captures; actual PDF.js/IndexedDB; 60-page stress, rapid navigation, maximum one
+  concurrent recognizer, live-ink exclusion, failure/retry, two cache passes,
+  48-page cap, eight ordinary reopens plus one offline reopen. **Recognition is
+  controlled bridge output**, not model accuracy. Offline persisted PDF bytes
+  and a fresh local Blob both read successfully in this Chromium run.
+- Chromium Memory: twelve responsive light/dark cases. Existing Wordbook search,
+  sort/filter/edit/add/export/Home and onboarding cancel/back/swipe/skip/replay,
+  rapid navigation, media and responsive themes passed.
+- Existing Chromium PDF ink, pointer ink and pending-lookup pinch regressions:
+  passed. Stylus/finger events are synthetic, not physical-device acceptance.
+- `www`, iOS/Android Capacitor sync, native package/service-worker policy, six
+  Android source/config checks, brand icons, changed JS/shell syntax and whitespace:
+  passed. Android sync's machine-relative generated Gradle path is restored to
+  the immutable baseline before guard verification. No local native SDK/compiler
+  is available; compile results come from final candidate CI.
 
-PR143's existing browser coverage uses real image-only PDF/PDF.js/IndexedDB but
-mocked native recognition; its native accuracy smoke fixture was compiled, not
-executed. PR144's Chromium/Linux WebKit coverage verifies editable font sizing
-and disclosure/navigation behavior, not physical iOS keyboard/focus autozoom.
-Actual iPhone Safari/WKWebView behavior, native accuracy/performance/device
-gestures and Store availability require evidence from their respective owners.
+Final negative-probe results and exact source equality are recorded externally
+at `/workspace/breeze-192-final-proof/`; final-head CI results will be posted in
+PR145 and an external SHA receipt after all checks terminate. The earlier
+`0af75b6` candidate's 14-workflow/34-job success is historical and does not stand
+in for these new final-source checks.
 
-Existing before/after screenshots and measurements are preserved at
-[Memory QA](memory-edit-filter-20261009.md). OCR geometry screenshots and runtime
-measurements are generated by the OCR suite's proof directory/workflow artifacts.
-The separately assigned photos owner supplies 1.9.2 marketing assets; this source
-integration does not replace them or submit a Store version.
+## Retained source failures and acceptance limits
+
+The parent reports final PR143 source CI as **30 success / 8 failure**: six frozen
+1.9.1 guard failures, one Android KVM execution blocker, and one WebKit offline
+local-Blob `NotReadableError`. The formal new boundary resolves only the historical
+scope mismatch. Native execution and offline assertions remain present, enabled
+and byte-identical to the owner. Their final candidate outcomes are reported as
+observed, including failures; no skip, deletion, permission change or green
+classification is used to conceal them.
+
+Actual macOS Vision ran 25 owned images and 96 repeated calls under network
+denial in the source workflow. It passed five clean controls, with difficult
+misreads retained (including a misspelling at confidence 1.0). This is not physical
+iOS or representative human-handwriting acceptance. The parent reports roughly
+13 MB process RSS growth in the final-head run; bounded measurements include
+framework/model caches and harness objects and do not establish a leak-free
+plateau. Keep that observation even if a new bounded candidate run has different
+samples. Recovery from a permanently pending native call remains unverified.
+
+Physical iPhone/iPad/Android offline behavior, real handwriting, pen/palm timing,
+long-duration memory behavior and ML Kit execution remain unverified. Memory's
+real iOS keyboard/focus autozoom and intentional pinch retention remain unverified
+as well. [Full OCR limitations and evidence](scanned-pdf-ocr-stress-20261009.md),
+[committed confirmation screenshot](evidence/pdf-ocr-confirm-phone-light.png) and
+[Memory before/after screenshots](memory-edit-filter-20261009.md) are preserved.
+Local confirmation screenshots at `/workspace/breeze-192-final-proof/ocr-confirm/`
+show the integrated UI with mocked native recognition, not a physical device.
+
+No main merge, Cloud/TestFlight build, server/DB/key deployment or ASC write was
+performed. Photos and any later release decision remain with their assigned owners.

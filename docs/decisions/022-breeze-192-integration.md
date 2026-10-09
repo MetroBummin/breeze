@@ -4,7 +4,11 @@ Base: released/integrated 1.9.1 source `83cc182db73ed1d63784e66321a066ccb2943994
 The user approved testing and merging the OCR and minor fixes into 1.9.2 while
 asleep on 2026-10-09. OCR stress testing has a separate owner; its final result
 and source SHA are required before this owner publishes main or starts Cloud.
-Photos and App Store Connect submission have separate owners.
+Photos and App Store Connect submission have separate owners. The follow-up
+handoff supplies final PR143 `0b51a4992c5ec12c1215381a210584f6b2e66561` and
+keeps PR144 `e2bf032af786c8c26e03a8222e135cc9dc3a220f`. Its latest instruction
+limits this task to candidate integration and verification: main merge, Cloud
+build and review submission remain held even after candidate checks complete.
 
 ## Exact sources and versions
 
@@ -60,8 +64,16 @@ Validate generated native packages locally and both platform builds in final-hea
 CI. Linux browser OCR uses controlled recognizer results; it cannot substitute
 for actual Apple Vision/ML Kit stress evidence supplied by the OCR owner.
 
-Only publish one main merge after the OCR final SHA/result, local checks and
-all required final-head CI checks are complete. Confirm the merged tree equals
-the verified candidate tree and watch its existing automatic Cloud build. Do not
-manually start a duplicate build. This integration performs no server deployment,
-key/database change, unrelated learning feature, review cancellation or ASC write.
+This follow-up publishes only the updated draft candidate and its exact-head CI
+results. The immutable source's Android KVM execution gate and WebKit offline
+local-Blob assertion remain enabled; failures are recorded rather than made
+green by skipping them. Successful macOS Vision execution is distinct from
+physical iOS acceptance. Its process RSS increase and recovery from a permanently
+pending native call remain unresolved. Real handwriting, device offline behavior
+and ML Kit execution also remain unverified. The receipt now pins the exact
+preparation-only authorization text as well as its source contract.
+
+Main merge, Cloud build and review submission stay held. This integration performs
+no server deployment, key/database change, unrelated learning feature, review
+cancellation or ASC write. Any later release is a separate owner decision after
+reviewing the explicit remaining failures and risks.
