@@ -1,0 +1,63 @@
+name: Native OCR stress
+on:
+  pull_request:
+    paths:
+      - 'scripts/reader/pdf-ocr.js'
+      - 'ios/App/App/BreezePdfOcrPlugin.swift'
+      - 'android/app/src/**/BreezePdfOcr*'
+      - 'android/app/src/**/PdfOcr*'
+      - 'tests/fixtures/pdf-ocr-stress/**'
+      - 'tests/native/*ocr*'
+      - 'tests/native/CapacitorOcrTestBridge.swift'
+      - 'tests/score-pdf-ocr-stress.mjs'
+      - '.github/workflows/pdf-ocr-native-stress.yml'
+permissions:
+  contents: read
+concurrency:
+  group: native-ocr-stress-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  vision:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Execute production plugin with actual Apple Vision, network denied
+        run: bash tests/native/run-pdf-ocr-vision.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-vision-stress
+          path: ${{ runner.temp }}/breeze-ocr-vision/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  mlkit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build only debug and test APKs with owned corpus in test assets
+        run: |
+          npm run android:sync
+          mkdir -p android/app/src/androidTest/assets/pdf-ocr-stress
+          cp tests/fixtures/pdf-ocr-stress/* android/app/src/androidTest/assets/pdf-ocr-stress/
+          cd android
+          ./gradlew --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Bounded emulator boot and offline production ML Kit execution
+        run: bash tests/native/run-pdf-ocr-android.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-mlkit-stress
+          path: ${{ runner.temp }}/breeze-ocr-android/
+          if-no-files-found: warn
+          retention-days: 7
