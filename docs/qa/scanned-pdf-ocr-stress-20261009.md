@@ -19,7 +19,8 @@ transport. Apple Vision runs on macOS under process-local network denial;
 that is actual Vision execution but not iOS-device acceptance. Android runs
 the bundled ML Kit plugin on a fresh emulator with airplane mode and wifi/data
 disabled before its first OCR call. It does not modify KVM permissions or accept
-new SDK licenses; lack of a bootable emulator is a reported execution blocker.
+new SDK licenses; missing existing KVM access or a bootable emulator is an explicit
+failed execution gate, not a skipped/pass result.
 
 All cases retain raw words, confidence and geometry, plus a score using the
 production JavaScript acceptance adapter. Clean controls fail CI if words or
@@ -99,6 +100,15 @@ name`, missing `.ini`) as the immediate exit cause, plus inaccessible KVM as a
 separate constraint. The harness now supplies an explicit shared `ANDROID_AVD_HOME`
 and AVD data path and checks discovery before boot. It uses bounded software
 emulation when existing KVM access is unavailable, without changing permissions.
+
+At `5600d0b`, [Android diagnostics](https://github.com/MetroBummin/breeze/actions/runs/37960279739/job/113921072488)
+confirmed AVD discovery and emulator startup after that fix, but software
+emulation without accessible KVM did not finish booting. No ML Kit calls ran.
+The 160-poll limit took about 651 seconds including ADB overhead; its old error
+message's "480-second" figure counted sleeps only. The follow-up checks existing
+KVM access first and fails explicitly if absent, avoiding repeated unusable
+software boots; for supported runners the boot deadline now uses elapsed wall
+time and a per-query timeout. No host ACL, group, permission or secret changed.
 
 ## Product fixes prompted by stress
 
