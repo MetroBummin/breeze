@@ -251,3 +251,16 @@ contract is retained; no timing sleep or measurement allowance is added.
 Production-callback tests and a browser counterfactual cover the no-op before/
 after behavior plus a real-change positive control. The diagnostic keeps every
 bounded attempt and fails if any attempt violates its existing assertion.
+
+## Scanned-page fallback (2.0 draft, 2026-10-09)
+
+Pages with no text layer now admit on-device OCR in native iOS/Android shells.
+The existing glyph/operator path stays authoritative whenever any text layer
+is present, even if it produces no English word boxes. OCR does not repair or
+overwrite existing hidden OCR text or partially scanned/text pages.
+
+The fallback consumes a bounded, annotation-free PDF.js raster in the same
+intrinsically rotated viewport as the paper. Native word boxes become the same
+normalized top-left boxes used by lookup and markers. OCR does not add gesture
+owners or alter pinch/ink geometry. See [the OCR decision](021-scanned-pdf-ocr.md)
+for queue, cache, privacy and validation limits.

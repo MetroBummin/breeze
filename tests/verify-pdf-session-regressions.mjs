@@ -10,7 +10,7 @@ function fixture(realRender=false){
  const a={id:'A'},b={id:'B'},record={hash:'hash-A',blob:{arrayBuffer:async()=>new ArrayBuffer(0)}};
  let destroyed=0;
  const pdf={numPages:0,destroy(){destroyed++;},async getPage(){started.resolve();await gate.promise;return {getViewport:()=>({width:600,height:800})};}};
- const context={console,Map,Set,WeakMap,performance,setTimeout,clearTimeout,requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout,
+ const context={BreezePdfOcr:{inspect:async()=>{},schedule(){},release(){},tap:()=>false},console,Map,Set,WeakMap,performance,setTimeout,clearTimeout,requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout,
  readerModeChangeToken:0,originalLoadToken:1,originalSession:null,curBook:a,ensurePdfLib:async()=>{},pdfjsLib:{getDocument:()=>({promise:Promise.resolve(pdf)})},
  document:{getElementById:()=>content,addEventListener(){}},window:{addEventListener(){}},
  BreezePdfInk:{open(){}},IntersectionObserver:class{observe(){}},readerScroller:()=>({}),

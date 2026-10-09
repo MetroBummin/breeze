@@ -239,6 +239,7 @@ function leaveOriginalReader(){
   if(originalSession.paintTimer)clearTimeout(originalSession.paintTimer);
   originalSession.paintQueue?.forEach(job=>job.resolve());
   originalSession.paintQueue?.clear();
+  BreezePdfOcr.close(originalSession);
   BreezePdfInk.close(originalSession);
   if(originalSession.observer) originalSession.observer.disconnect();
   (originalSession.resizeObservers||[]).forEach(observer=>observer.disconnect());

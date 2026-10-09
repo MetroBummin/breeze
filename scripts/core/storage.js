@@ -187,6 +187,7 @@ function bookAssetKeys(book){
 /* All durable assets live in this DB. Do not perform a torn multi-step delete,
    and never remove a shared URL-keyed picture still referenced by another book. */
 async function bookDeleteAssets(book){
+  if(book.kind==='pdf'&&typeof BreezePdfOcr!=='undefined')await BreezePdfOcr.forget(book);
   return localTransaction(await idb(),['books','originals','imgs'],'readwrite',(tx)=>{
     const store=tx.objectStore('books'),imgs=tx.objectStore('imgs');
     const list=store.getAll(),keys=imgs.getAllKeys();let others,imageKeys;

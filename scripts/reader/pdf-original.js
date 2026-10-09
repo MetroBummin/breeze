@@ -194,6 +194,7 @@ function releaseDistantPdfPages(session,exceptPage,reservePixels=0){
 }
 
 function releaseOriginalPdfPage(session,pageNumber){
+  BreezePdfOcr.release(session,pageNumber);
   BreezePdfInk.release(session,pageNumber,{keepShell:true});
   session.settled.delete(pageNumber);
   session.rendering.delete(pageNumber);
@@ -278,6 +279,8 @@ async function prepareOriginalPdfPage(session,pageNumber,options){
     if(!boxes)return 'deferred';
     session.wordBoxes.set(pageNumber,boxes);element.dataset.wordCount=String(boxes.length);
     renderPdfSavedWordMarkers(element,boxes);
+    await BreezePdfOcr.inspect(session,pageNumber,page,boxes,alive);
+    if(alive())BreezePdfOcr.schedule(session);
   }finally{page.cleanup();}
 }
 
@@ -384,6 +387,7 @@ async function paintOriginalPdfPage(session,pageNumber,options){
     session.wordBoxes.set(pageNumber,wordBoxes);
     pageElement.dataset.wordCount=String(wordBoxes.length);
     renderPdfSavedWordMarkers(pageElement,wordBoxes);
+    await BreezePdfOcr.inspect(session,pageNumber,page,wordBoxes,alive);
   })().catch(error=>console.warn('PDF page render skipped:',error));
   /* 다시 그리는 동안에도 "이 쪽은 그려졌다"는 사실은 그대로 둡니다 — 실패해도
      옛 캔버스가 그 자리에 남아 있으니까요. */
@@ -397,6 +401,7 @@ async function paintOriginalPdfPage(session,pageNumber,options){
      것을 그 자리에서 도로 놓으면 헛일이 됩니다. */
   if(alive() && session.rendering.has(pageNumber)) session.settled.add(pageNumber);
   releaseDistantPdfPages(session,pageNumber);
+  if(alive())BreezePdfOcr.schedule(session);
   if(alive()&&zoom<requestedZoom)schedulePdfSharpen(session);
   return job;
 }
@@ -410,6 +415,7 @@ function resharpenOriginalPages(){
   originalPdfRenderPending = false;
   const session=originalSession;
   if(!session || session.kind!=='pdf') return;
+  BreezePdfOcr.schedule(session);
   for(const pageNumber of pdfPagesInView(session)){
     const options=session.settled.has(pageNumber)?{resharpen:true,prefetch:true}:{prefetch:true};
     void renderOriginalPdfPage(session,pageNumber,options);
@@ -762,7 +768,7 @@ async function openPdfWordAt(clientX,clientY){
     if(changeToken!==readerModeChangeToken || !ownsPdfPage(page,session)) return false;
   }
   const box=pdfWordAtPoint(page,clientX,clientY);
-  if(!box) return false;
+  if(!box) return BreezePdfOcr.tap(session,pageNumber);
   openPdfWord(page,box);
   return true;
 }
