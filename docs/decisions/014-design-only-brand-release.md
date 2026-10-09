@@ -53,3 +53,28 @@ is performed. Whole-app theme settings remain a separate proposal.
 
 References: [Apple asset-catalog appearances](https://developer.apple.com/documentation/xcode/configuring-your-app-icon),
 [Android adaptive/themed icons](https://developer.android.com/develop/ui/compose/system/icon_design_adaptive).
+
+## Memory header matches Home (2026-10-09 draft revision)
+
+After reviewing the handwritten Memory draft, the user selected the same
+Breeze logo used by Home, with no visible Memory lettering. Reuse the existing
+`breeze-neutral-{light,dark}.svg` assets unchanged at Home's 132px width and
+841/258 proportions. Apply the same neutral gradients and the same original
+mask/ink fallback for reduced motion/transparency or increased contrast.
+No new font or brand asset is needed; remove only the companion Memory mask
+introduced by the earlier PR139 commit. That commit remains in branch history.
+
+The semantic h1 and navigation keep the functional `Breeze Memory` name.
+The visible logo matches Home's actual y coordinate and rendered pixels, with
+safe-area + 24px top spacing, 20px inset and the existing 44px header/add button.
+Retain the existing 32px gap below the row (Home uses 12px header bottom padding
+plus 20px view padding). Keep Wordbook's centered 1160px content column on wide
+screens; its 20px inset is relative to that column. Home source and layout are
+unchanged. Wordbook storage, auth, lookup, welcome, icons, navigation, release
+metadata and button behavior remain unchanged.
+
+Same PR139, based on main b55f3df241607c95855a53009aceaa903e1da164, with a new
+commit after 602aa155e894e0bb590c2d58f5085c885d3c9a7e. Actual Home/Wordbook
+comparison screenshots and final-SHA CI precede any integration decision.
+The user's visual-confirmation gate forbids main merge, Cloud/release build,
+deployment and review changes. Existing PR test/compile CI is permitted.
