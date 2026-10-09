@@ -110,3 +110,18 @@ test('deleting assets retires pending work before clearing the durable cache',as
  f.calls[0].resolve({words:[word('Deleted')]});await flush();
  assert.equal(f.cache.size,0);assert.equal(f.paints.length,0);
 });
+
+test('a failed durable PDF deletion keeps recognition alive for the retained book',async()=>{
+ const f=fixture();await f.inspect();await f.start();
+ const storage=readFileSync(new URL('../scripts/core/storage.js',import.meta.url),'utf8');
+ vm.runInContext(storage.match(/async function bookDeleteAssets\(book\)\{[^]*?\n\}/)[0],f.context);
+ f.context.idb=async()=>({});const localTransaction=f.context.localTransaction;
+ f.context.localTransaction=async(db,stores,...args)=>{
+  if(Array.isArray(stores))throw Error('durable deletion aborted');
+  return localTransaction(db,stores,...args);
+ };
+ await assert.rejects(f.context.bookDeleteAssets({id:'A',kind:'pdf'}),/durable deletion aborted/);
+ f.calls[0].resolve({words:[word('Retained')]});await flush();
+ assert.equal(f.session.wordBoxes.get(1)[0]?.word,'Retained','failed deletion must not retire the current reader');
+ assert.equal(f.cache.size,1);
+});

@@ -187,8 +187,7 @@ function bookAssetKeys(book){
 /* All durable assets live in this DB. Do not perform a torn multi-step delete,
    and never remove a shared URL-keyed picture still referenced by another book. */
 async function bookDeleteAssets(book){
-  if(book.kind==='pdf'&&typeof BreezePdfOcr!=='undefined')await BreezePdfOcr.forget(book);
-  return localTransaction(await idb(),['books','originals','imgs'],'readwrite',(tx)=>{
+  await localTransaction(await idb(),['books','originals','imgs'],'readwrite',(tx)=>{
     const store=tx.objectStore('books'),imgs=tx.objectStore('imgs');
     const list=store.getAll(),keys=imgs.getAllKeys();let others,imageKeys;
     const finish=()=>{
@@ -207,6 +206,8 @@ async function bookDeleteAssets(book){
     list.onsuccess=()=>{others=list.result||[];finish();};
     keys.onsuccess=()=>{imageKeys=keys.result||[];finish();};
   });
+  // Failed durable deletion leaves the book and its active OCR session intact.
+  if(book.kind==='pdf'&&typeof BreezePdfOcr!=='undefined')await BreezePdfOcr.forget(book);
 }
 /* A synced/legacy book can acquire a different local ID even though its raw
    file is already present on this device. Recover it through the file hash and

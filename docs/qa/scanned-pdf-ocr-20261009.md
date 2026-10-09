@@ -7,7 +7,7 @@ The new worktree is `/workspace/breeze-ocr`.
 ## Executed locally (Linux)
 
 - Full `npm test` passed; type baseline remains 32 (no added diagnostics).
-- OCR unit harness: 14 tests passed. No text-layer replacement (including
+- OCR unit harness: 15 tests passed. No text-layer replacement (including
   non-English text); strict box/confidence validation; one visible native job;
   repeated taps; rapid page switching; close/replacement/A→B→A/deletion stale
   rejection; hash-bound reopening/eviction cache; explicit failure retry; empty
@@ -69,3 +69,27 @@ answers or local response fixtures for acceptance to avoid paid calls. Capture
 actual task duration and peak memory on each tested device if performance numbers
 are needed. This draft contains no claimed OCR accuracy rate, speed or memory
 measurement, and no screenshot/automated browser claim of native acceptance.
+
+## CI follow-up: failed-delete lifetime repair
+
+The initial head `e59a2a9` passed OCR unit/Chromium/WebKit CI and Android compile,
+unit/lint/APK/AAB checks. The Social auth job also compiled the new Vision plugin
+for unsigned arm64/x86_64 iOS Simulator. None runs the actual OCR engine on a
+physical device; the native accuracy/device gates above remain open.
+
+An additional production-function regression reproduced a lifecycle error:
+`bookDeleteAssets()` retired OCR before the durable asset transaction. If that
+transaction aborted, the book remained but pending OCR could no longer publish.
+The repair retires and clears OCR only after durable deletion commits. The new
+test failed on `e59a2a9` (no word map for the retained book) and passes with the
+repair; successful deletion still retires pending work before clearing its cache.
+
+The unchanged integration-boundary verifier passes on exact main `83cc182` in
+an isolated checkout. On the feature head it rejects PR139's exact shell markup,
+as expected from its hard-coded 1.9.1 owner contract; downstream native/config
+checks also freeze whole files where 2.0 needs plugin registration/test scripts.
+This requires a separately reviewed 2.0 contract anchored to that accepted main:
+retain the historical receipts and release protections, explicitly admit only
+reviewed OCR changes, and verify current behavior and negative mutation cases.
+A branch-name bypass, removed assertions or regenerating historical owner hashes
+would hide drift. None of those changes is made in this PR.
