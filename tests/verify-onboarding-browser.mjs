@@ -5,6 +5,7 @@ import {resolve,extname} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {chromium,webkit} from 'playwright';
 const root=resolve('.'),out=process.env.BREEZE_ONBOARD_PROOF||'/tmp/breeze-onboarding-carousel';mkdirSync(out,{recursive:true});
+const welcomeJoin=JSON.parse(readFileSync(resolve(root,'tests/fixtures/welcome-join-437fd6f.json'),'utf8'));
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg','.mp4':'video/mp4','.woff2':'font/woff2'};
 const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{const data=readFileSync(p);res.setHeader('Content-Type',mime[extname(p)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
@@ -72,6 +73,26 @@ try{
    const nearest=target=>geometry.points.reduce((best,point,i)=>
     Math.hypot(point[0]-target[0],point[1]-target[1])<Math.hypot(geometry.points[best][0]-target[0],geometry.points[best][1]-target[1])?i:best,0);
    assert.ok(nearest([164,41])<nearest([120,26]),'B must climb the right ascender and turn left before descending its stem');
+   // Only the exit connector may differ from the verified PR136 centerline.
+   // The old exit turns sharply out of the retraced bowl; compare actual SVG
+   // tangents on both sides of the joint, retaining the b order and every r/e/z.
+   assert.equal(geometry.d.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin),welcomeJoin.path,'Welcome changed outside the b-to-r connector');
+   assert.deepEqual(await samplePage.evaluate(()=>ONBOARD_WELCOME_TIMING),welcomeJoin.timing,'Approved welcome timing changed');
+   const joinAngles=await samplePage.evaluate(fixture=>{
+    const path=document.getElementById('onboard-pen-path');
+    const prefix=path.cloneNode();prefix.setAttribute('d',fixture.path.split(fixture.oldJoin)[0]);
+    const length=prefix.getTotalLength();
+    const angle=d=>{
+     const probe=path.cloneNode();probe.setAttribute('d',d);
+     const a=probe.getPointAtLength(length-.2),b=probe.getPointAtLength(length),c=probe.getPointAtLength(length+.2);
+     const left=Math.atan2(b.y-a.y,b.x-a.x),right=Math.atan2(c.y-b.y,c.x-b.x);
+     return Math.abs(Math.atan2(Math.sin(right-left),Math.cos(right-left)))*180/Math.PI;
+    };
+    return {before:angle(fixture.path),after:angle(path.getAttribute('d'))};
+   },welcomeJoin);
+   assert.ok(joinAngles.before>20,'baseline no longer reproduces the sharp exit');
+   assert.ok(joinAngles.after<5,'b-to-r exit still changes direction abruptly: '+JSON.stringify(joinAngles));
+   console.log('Welcome join: original b order and other letters retained; actual SVG exit tangents',joinAngles);
 
    for(let i=1;i<geometry.points.length;i++){
     const distance=Math.hypot(...geometry.points[i].map((n,j)=>n-geometry.points[i-1][j]));

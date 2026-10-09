@@ -1,0 +1,2914 @@
+[
+  {
+    "stage": "before",
+    "theme": "light",
+    "baseline": "437fd6f006acb62097f6737e69a4a9ad292f96bb",
+    "geometry": {
+      "d": "M13 225 Q60 195 77 171 Q161 91 164 41 Q162 -9 120 26 Q76 64 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q65 203 87 230 Q121 267 161 228 Q164 210 178 208 Q214 202 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162",
+      "length": 2711.35693359375,
+      "joinStart": 949.36474609375,
+      "joinEnd": 1071.63720703125,
+      "timing": {
+        "write": 4200,
+        "hold": 750,
+        "fade": 900
+      }
+    },
+    "joinMidTime": 1233.3333333333333,
+    "samples": [
+      {
+        "pen": 0,
+        "caption": 0
+      },
+      {
+        "pen": 0.000624907,
+        "caption": 0
+      },
+      {
+        "pen": 0.00160263,
+        "caption": 0
+      },
+      {
+        "pen": 0.00294877,
+        "caption": 0
+      },
+      {
+        "pen": 0.00467973,
+        "caption": 0
+      },
+      {
+        "pen": 0.00681269,
+        "caption": 0
+      },
+      {
+        "pen": 0.00936564,
+        "caption": 0
+      },
+      {
+        "pen": 0.0123573,
+        "caption": 0
+      },
+      {
+        "pen": 0.0158074,
+        "caption": 0
+      },
+      {
+        "pen": 0.019736,
+        "caption": 0
+      },
+      {
+        "pen": 0.0241643,
+        "caption": 0
+      },
+      {
+        "pen": 0.0291138,
+        "caption": 0
+      },
+      {
+        "pen": 0.0346065,
+        "caption": 0
+      },
+      {
+        "pen": 0.040665,
+        "caption": 0
+      },
+      {
+        "pen": 0.0473118,
+        "caption": 0
+      },
+      {
+        "pen": 0.0545692,
+        "caption": 0
+      },
+      {
+        "pen": 0.0624591,
+        "caption": 0
+      },
+      {
+        "pen": 0.0710027,
+        "caption": 0
+      },
+      {
+        "pen": 0.0802195,
+        "caption": 0
+      },
+      {
+        "pen": 0.0901272,
+        "caption": 0
+      },
+      {
+        "pen": 0.100741,
+        "caption": 0
+      },
+      {
+        "pen": 0.112072,
+        "caption": 0
+      },
+      {
+        "pen": 0.124129,
+        "caption": 0
+      },
+      {
+        "pen": 0.136913,
+        "caption": 0
+      },
+      {
+        "pen": 0.150421,
+        "caption": 0
+      },
+      {
+        "pen": 0.164642,
+        "caption": 0
+      },
+      {
+        "pen": 0.179558,
+        "caption": 0
+      },
+      {
+        "pen": 0.195142,
+        "caption": 0
+      },
+      {
+        "pen": 0.211359,
+        "caption": 0
+      },
+      {
+        "pen": 0.228165,
+        "caption": 0
+      },
+      {
+        "pen": 0.245507,
+        "caption": 0
+      },
+      {
+        "pen": 0.263325,
+        "caption": 0
+      },
+      {
+        "pen": 0.281551,
+        "caption": 0
+      },
+      {
+        "pen": 0.300115,
+        "caption": 0
+      },
+      {
+        "pen": 0.318938,
+        "caption": 0
+      },
+      {
+        "pen": 0.337945,
+        "caption": 0
+      },
+      {
+        "pen": 0.357057,
+        "caption": 0
+      },
+      {
+        "pen": 0.376199,
+        "caption": 0
+      },
+      {
+        "pen": 0.3953,
+        "caption": 0
+      },
+      {
+        "pen": 0.414293,
+        "caption": 0
+      },
+      {
+        "pen": 0.433118,
+        "caption": 0
+      },
+      {
+        "pen": 0.451719,
+        "caption": 0
+      },
+      {
+        "pen": 0.470051,
+        "caption": 0
+      },
+      {
+        "pen": 0.488073,
+        "caption": 0
+      },
+      {
+        "pen": 0.505752,
+        "caption": 0
+      },
+      {
+        "pen": 0.52306,
+        "caption": 0
+      },
+      {
+        "pen": 0.539977,
+        "caption": 0
+      },
+      {
+        "pen": 0.556486,
+        "caption": 0
+      },
+      {
+        "pen": 0.572577,
+        "caption": 0
+      },
+      {
+        "pen": 0.588241,
+        "caption": 0
+      },
+      {
+        "pen": 0.603476,
+        "caption": 0
+      },
+      {
+        "pen": 0.61828,
+        "caption": 0
+      },
+      {
+        "pen": 0.632656,
+        "caption": 0
+      },
+      {
+        "pen": 0.646607,
+        "caption": 0
+      },
+      {
+        "pen": 0.660138,
+        "caption": 0
+      },
+      {
+        "pen": 0.673256,
+        "caption": 0
+      },
+      {
+        "pen": 0.68597,
+        "caption": 0
+      },
+      {
+        "pen": 0.698286,
+        "caption": 0
+      },
+      {
+        "pen": 0.710214,
+        "caption": 0
+      },
+      {
+        "pen": 0.721765,
+        "caption": 0
+      },
+      {
+        "pen": 0.732946,
+        "caption": 0
+      },
+      {
+        "pen": 0.743769,
+        "caption": 0
+      },
+      {
+        "pen": 0.754242,
+        "caption": 0
+      },
+      {
+        "pen": 0.764376,
+        "caption": 0
+      },
+      {
+        "pen": 0.774181,
+        "caption": 0
+      },
+      {
+        "pen": 0.783665,
+        "caption": 0
+      },
+      {
+        "pen": 0.792839,
+        "caption": 0
+      },
+      {
+        "pen": 0.801711,
+        "caption": 0
+      },
+      {
+        "pen": 0.810291,
+        "caption": 0
+      },
+      {
+        "pen": 0.818586,
+        "caption": 0
+      },
+      {
+        "pen": 0.826606,
+        "caption": 0
+      },
+      {
+        "pen": 0.834358,
+        "caption": 0
+      },
+      {
+        "pen": 0.84185,
+        "caption": 0
+      },
+      {
+        "pen": 0.849091,
+        "caption": 0
+      },
+      {
+        "pen": 0.856087,
+        "caption": 0
+      },
+      {
+        "pen": 0.862845,
+        "caption": 0
+      },
+      {
+        "pen": 0.869373,
+        "caption": 0
+      },
+      {
+        "pen": 0.875677,
+        "caption": 0
+      },
+      {
+        "pen": 0.881762,
+        "caption": 0
+      },
+      {
+        "pen": 0.887636,
+        "caption": 0
+      },
+      {
+        "pen": 0.893305,
+        "caption": 0
+      },
+      {
+        "pen": 0.898773,
+        "caption": 0
+      },
+      {
+        "pen": 0.904047,
+        "caption": 0
+      },
+      {
+        "pen": 0.909131,
+        "caption": 0
+      },
+      {
+        "pen": 0.914031,
+        "caption": 0
+      },
+      {
+        "pen": 0.918752,
+        "caption": 0
+      },
+      {
+        "pen": 0.923297,
+        "caption": 0
+      },
+      {
+        "pen": 0.927673,
+        "caption": 0
+      },
+      {
+        "pen": 0.931883,
+        "caption": 0
+      },
+      {
+        "pen": 0.935931,
+        "caption": 0
+      },
+      {
+        "pen": 0.939822,
+        "caption": 0
+      },
+      {
+        "pen": 0.943559,
+        "caption": 0
+      },
+      {
+        "pen": 0.947146,
+        "caption": 0
+      },
+      {
+        "pen": 0.950587,
+        "caption": 0
+      },
+      {
+        "pen": 0.953885,
+        "caption": 0
+      },
+      {
+        "pen": 0.957044,
+        "caption": 0
+      },
+      {
+        "pen": 0.960067,
+        "caption": 0
+      },
+      {
+        "pen": 0.962956,
+        "caption": 0
+      },
+      {
+        "pen": 0.965716,
+        "caption": 0
+      },
+      {
+        "pen": 0.968349,
+        "caption": 0
+      },
+      {
+        "pen": 0.970858,
+        "caption": 0
+      },
+      {
+        "pen": 0.973246,
+        "caption": 0
+      },
+      {
+        "pen": 0.975514,
+        "caption": 0
+      },
+      {
+        "pen": 0.977667,
+        "caption": 0
+      },
+      {
+        "pen": 0.979706,
+        "caption": 0
+      },
+      {
+        "pen": 0.981634,
+        "caption": 0
+      },
+      {
+        "pen": 0.983453,
+        "caption": 0
+      },
+      {
+        "pen": 0.985166,
+        "caption": 0
+      },
+      {
+        "pen": 0.986774,
+        "caption": 0
+      },
+      {
+        "pen": 0.988279,
+        "caption": 0
+      },
+      {
+        "pen": 0.989685,
+        "caption": 0
+      },
+      {
+        "pen": 0.990992,
+        "caption": 0
+      },
+      {
+        "pen": 0.992203,
+        "caption": 0
+      },
+      {
+        "pen": 0.993319,
+        "caption": 0
+      },
+      {
+        "pen": 0.994343,
+        "caption": 0
+      },
+      {
+        "pen": 0.995276,
+        "caption": 0
+      },
+      {
+        "pen": 0.99612,
+        "caption": 0
+      },
+      {
+        "pen": 0.996876,
+        "caption": 0
+      },
+      {
+        "pen": 0.997547,
+        "caption": 0
+      },
+      {
+        "pen": 0.998133,
+        "caption": 0
+      },
+      {
+        "pen": 0.998636,
+        "caption": 0
+      },
+      {
+        "pen": 0.999059,
+        "caption": 0
+      },
+      {
+        "pen": 0.999401,
+        "caption": 0
+      },
+      {
+        "pen": 0.999665,
+        "caption": 0
+      },
+      {
+        "pen": 0.999852,
+        "caption": 0
+      },
+      {
+        "pen": 0.999963,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0.0513106
+      },
+      {
+        "pen": 1,
+        "caption": 0.152937
+      },
+      {
+        "pen": 1,
+        "caption": 0.251398
+      },
+      {
+        "pen": 1,
+        "caption": 0.34454
+      },
+      {
+        "pen": 1,
+        "caption": 0.430632
+      },
+      {
+        "pen": 1,
+        "caption": 0.508621
+      },
+      {
+        "pen": 1,
+        "caption": 0.578167
+      },
+      {
+        "pen": 1,
+        "caption": 0.639492
+      },
+      {
+        "pen": 1,
+        "caption": 0.693174
+      },
+      {
+        "pen": 1,
+        "caption": 0.739953
+      },
+      {
+        "pen": 1,
+        "caption": 0.780609
+      },
+      {
+        "pen": 1,
+        "caption": 0.815883
+      },
+      {
+        "pen": 1,
+        "caption": 0.846447
+      },
+      {
+        "pen": 1,
+        "caption": 0.872893
+      },
+      {
+        "pen": 1,
+        "caption": 0.89573
+      },
+      {
+        "pen": 1,
+        "caption": 0.915398
+      },
+      {
+        "pen": 1,
+        "caption": 0.932272
+      },
+      {
+        "pen": 1,
+        "caption": 0.946672
+      },
+      {
+        "pen": 1,
+        "caption": 0.958873
+      },
+      {
+        "pen": 1,
+        "caption": 0.96911
+      },
+      {
+        "pen": 1,
+        "caption": 0.977586
+      },
+      {
+        "pen": 1,
+        "caption": 0.984478
+      },
+      {
+        "pen": 1,
+        "caption": 0.989938
+      },
+      {
+        "pen": 1,
+        "caption": 0.994099
+      },
+      {
+        "pen": 1,
+        "caption": 0.997079
+      },
+      {
+        "pen": 1,
+        "caption": 0.998978
+      },
+      {
+        "pen": 1,
+        "caption": 0.99989
+      }
+    ],
+    "errors": [],
+    "method": "actual production CSS animations paused/seeked at exact 1/30s; session finished at 5.85s",
+    "viewport": "390x844 @2x",
+    "fps": 30,
+    "frames": 211
+  },
+  {
+    "stage": "after",
+    "theme": "light",
+    "baseline": "working source",
+    "geometry": {
+      "d": "M13 225 Q60 195 77 171 Q161 91 164 41 Q162 -9 120 26 Q76 64 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q65 203 87 230 Q121 267 161 228 C187.666667 202 221 181 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162",
+      "length": 2706.34765625,
+      "joinStart": 949.36474609375,
+      "joinEnd": 1066.628173828125,
+      "timing": {
+        "write": 4200,
+        "hold": 750,
+        "fade": 900
+      }
+    },
+    "joinMidTime": 1233.3333333333333,
+    "samples": [
+      {
+        "pen": 0,
+        "caption": 0
+      },
+      {
+        "pen": 0.000624907,
+        "caption": 0
+      },
+      {
+        "pen": 0.00160263,
+        "caption": 0
+      },
+      {
+        "pen": 0.00294877,
+        "caption": 0
+      },
+      {
+        "pen": 0.00467973,
+        "caption": 0
+      },
+      {
+        "pen": 0.00681269,
+        "caption": 0
+      },
+      {
+        "pen": 0.00936564,
+        "caption": 0
+      },
+      {
+        "pen": 0.0123573,
+        "caption": 0
+      },
+      {
+        "pen": 0.0158074,
+        "caption": 0
+      },
+      {
+        "pen": 0.019736,
+        "caption": 0
+      },
+      {
+        "pen": 0.0241643,
+        "caption": 0
+      },
+      {
+        "pen": 0.0291138,
+        "caption": 0
+      },
+      {
+        "pen": 0.0346065,
+        "caption": 0
+      },
+      {
+        "pen": 0.040665,
+        "caption": 0
+      },
+      {
+        "pen": 0.0473118,
+        "caption": 0
+      },
+      {
+        "pen": 0.0545692,
+        "caption": 0
+      },
+      {
+        "pen": 0.0624591,
+        "caption": 0
+      },
+      {
+        "pen": 0.0710027,
+        "caption": 0
+      },
+      {
+        "pen": 0.0802195,
+        "caption": 0
+      },
+      {
+        "pen": 0.0901272,
+        "caption": 0
+      },
+      {
+        "pen": 0.100741,
+        "caption": 0
+      },
+      {
+        "pen": 0.112072,
+        "caption": 0
+      },
+      {
+        "pen": 0.124129,
+        "caption": 0
+      },
+      {
+        "pen": 0.136913,
+        "caption": 0
+      },
+      {
+        "pen": 0.150421,
+        "caption": 0
+      },
+      {
+        "pen": 0.164642,
+        "caption": 0
+      },
+      {
+        "pen": 0.179558,
+        "caption": 0
+      },
+      {
+        "pen": 0.195142,
+        "caption": 0
+      },
+      {
+        "pen": 0.211359,
+        "caption": 0
+      },
+      {
+        "pen": 0.228165,
+        "caption": 0
+      },
+      {
+        "pen": 0.245507,
+        "caption": 0
+      },
+      {
+        "pen": 0.263325,
+        "caption": 0
+      },
+      {
+        "pen": 0.281551,
+        "caption": 0
+      },
+      {
+        "pen": 0.300115,
+        "caption": 0
+      },
+      {
+        "pen": 0.318938,
+        "caption": 0
+      },
+      {
+        "pen": 0.337945,
+        "caption": 0
+      },
+      {
+        "pen": 0.357057,
+        "caption": 0
+      },
+      {
+        "pen": 0.376199,
+        "caption": 0
+      },
+      {
+        "pen": 0.3953,
+        "caption": 0
+      },
+      {
+        "pen": 0.414293,
+        "caption": 0
+      },
+      {
+        "pen": 0.433118,
+        "caption": 0
+      },
+      {
+        "pen": 0.451719,
+        "caption": 0
+      },
+      {
+        "pen": 0.470051,
+        "caption": 0
+      },
+      {
+        "pen": 0.488073,
+        "caption": 0
+      },
+      {
+        "pen": 0.505752,
+        "caption": 0
+      },
+      {
+        "pen": 0.52306,
+        "caption": 0
+      },
+      {
+        "pen": 0.539977,
+        "caption": 0
+      },
+      {
+        "pen": 0.556486,
+        "caption": 0
+      },
+      {
+        "pen": 0.572577,
+        "caption": 0
+      },
+      {
+        "pen": 0.588241,
+        "caption": 0
+      },
+      {
+        "pen": 0.603476,
+        "caption": 0
+      },
+      {
+        "pen": 0.61828,
+        "caption": 0
+      },
+      {
+        "pen": 0.632656,
+        "caption": 0
+      },
+      {
+        "pen": 0.646607,
+        "caption": 0
+      },
+      {
+        "pen": 0.660138,
+        "caption": 0
+      },
+      {
+        "pen": 0.673256,
+        "caption": 0
+      },
+      {
+        "pen": 0.68597,
+        "caption": 0
+      },
+      {
+        "pen": 0.698286,
+        "caption": 0
+      },
+      {
+        "pen": 0.710214,
+        "caption": 0
+      },
+      {
+        "pen": 0.721765,
+        "caption": 0
+      },
+      {
+        "pen": 0.732946,
+        "caption": 0
+      },
+      {
+        "pen": 0.743769,
+        "caption": 0
+      },
+      {
+        "pen": 0.754242,
+        "caption": 0
+      },
+      {
+        "pen": 0.764376,
+        "caption": 0
+      },
+      {
+        "pen": 0.774181,
+        "caption": 0
+      },
+      {
+        "pen": 0.783665,
+        "caption": 0
+      },
+      {
+        "pen": 0.792839,
+        "caption": 0
+      },
+      {
+        "pen": 0.801711,
+        "caption": 0
+      },
+      {
+        "pen": 0.810291,
+        "caption": 0
+      },
+      {
+        "pen": 0.818586,
+        "caption": 0
+      },
+      {
+        "pen": 0.826606,
+        "caption": 0
+      },
+      {
+        "pen": 0.834358,
+        "caption": 0
+      },
+      {
+        "pen": 0.84185,
+        "caption": 0
+      },
+      {
+        "pen": 0.849091,
+        "caption": 0
+      },
+      {
+        "pen": 0.856087,
+        "caption": 0
+      },
+      {
+        "pen": 0.862845,
+        "caption": 0
+      },
+      {
+        "pen": 0.869373,
+        "caption": 0
+      },
+      {
+        "pen": 0.875677,
+        "caption": 0
+      },
+      {
+        "pen": 0.881762,
+        "caption": 0
+      },
+      {
+        "pen": 0.887636,
+        "caption": 0
+      },
+      {
+        "pen": 0.893305,
+        "caption": 0
+      },
+      {
+        "pen": 0.898773,
+        "caption": 0
+      },
+      {
+        "pen": 0.904047,
+        "caption": 0
+      },
+      {
+        "pen": 0.909131,
+        "caption": 0
+      },
+      {
+        "pen": 0.914031,
+        "caption": 0
+      },
+      {
+        "pen": 0.918752,
+        "caption": 0
+      },
+      {
+        "pen": 0.923297,
+        "caption": 0
+      },
+      {
+        "pen": 0.927673,
+        "caption": 0
+      },
+      {
+        "pen": 0.931883,
+        "caption": 0
+      },
+      {
+        "pen": 0.935931,
+        "caption": 0
+      },
+      {
+        "pen": 0.939822,
+        "caption": 0
+      },
+      {
+        "pen": 0.943559,
+        "caption": 0
+      },
+      {
+        "pen": 0.947146,
+        "caption": 0
+      },
+      {
+        "pen": 0.950587,
+        "caption": 0
+      },
+      {
+        "pen": 0.953885,
+        "caption": 0
+      },
+      {
+        "pen": 0.957044,
+        "caption": 0
+      },
+      {
+        "pen": 0.960067,
+        "caption": 0
+      },
+      {
+        "pen": 0.962956,
+        "caption": 0
+      },
+      {
+        "pen": 0.965716,
+        "caption": 0
+      },
+      {
+        "pen": 0.968349,
+        "caption": 0
+      },
+      {
+        "pen": 0.970858,
+        "caption": 0
+      },
+      {
+        "pen": 0.973246,
+        "caption": 0
+      },
+      {
+        "pen": 0.975514,
+        "caption": 0
+      },
+      {
+        "pen": 0.977667,
+        "caption": 0
+      },
+      {
+        "pen": 0.979706,
+        "caption": 0
+      },
+      {
+        "pen": 0.981634,
+        "caption": 0
+      },
+      {
+        "pen": 0.983453,
+        "caption": 0
+      },
+      {
+        "pen": 0.985166,
+        "caption": 0
+      },
+      {
+        "pen": 0.986774,
+        "caption": 0
+      },
+      {
+        "pen": 0.988279,
+        "caption": 0
+      },
+      {
+        "pen": 0.989685,
+        "caption": 0
+      },
+      {
+        "pen": 0.990992,
+        "caption": 0
+      },
+      {
+        "pen": 0.992203,
+        "caption": 0
+      },
+      {
+        "pen": 0.993319,
+        "caption": 0
+      },
+      {
+        "pen": 0.994343,
+        "caption": 0
+      },
+      {
+        "pen": 0.995276,
+        "caption": 0
+      },
+      {
+        "pen": 0.99612,
+        "caption": 0
+      },
+      {
+        "pen": 0.996876,
+        "caption": 0
+      },
+      {
+        "pen": 0.997547,
+        "caption": 0
+      },
+      {
+        "pen": 0.998133,
+        "caption": 0
+      },
+      {
+        "pen": 0.998636,
+        "caption": 0
+      },
+      {
+        "pen": 0.999059,
+        "caption": 0
+      },
+      {
+        "pen": 0.999401,
+        "caption": 0
+      },
+      {
+        "pen": 0.999665,
+        "caption": 0
+      },
+      {
+        "pen": 0.999852,
+        "caption": 0
+      },
+      {
+        "pen": 0.999963,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0.0513106
+      },
+      {
+        "pen": 1,
+        "caption": 0.152937
+      },
+      {
+        "pen": 1,
+        "caption": 0.251398
+      },
+      {
+        "pen": 1,
+        "caption": 0.34454
+      },
+      {
+        "pen": 1,
+        "caption": 0.430632
+      },
+      {
+        "pen": 1,
+        "caption": 0.508621
+      },
+      {
+        "pen": 1,
+        "caption": 0.578167
+      },
+      {
+        "pen": 1,
+        "caption": 0.639492
+      },
+      {
+        "pen": 1,
+        "caption": 0.693174
+      },
+      {
+        "pen": 1,
+        "caption": 0.739953
+      },
+      {
+        "pen": 1,
+        "caption": 0.780609
+      },
+      {
+        "pen": 1,
+        "caption": 0.815883
+      },
+      {
+        "pen": 1,
+        "caption": 0.846447
+      },
+      {
+        "pen": 1,
+        "caption": 0.872893
+      },
+      {
+        "pen": 1,
+        "caption": 0.89573
+      },
+      {
+        "pen": 1,
+        "caption": 0.915398
+      },
+      {
+        "pen": 1,
+        "caption": 0.932272
+      },
+      {
+        "pen": 1,
+        "caption": 0.946672
+      },
+      {
+        "pen": 1,
+        "caption": 0.958873
+      },
+      {
+        "pen": 1,
+        "caption": 0.96911
+      },
+      {
+        "pen": 1,
+        "caption": 0.977586
+      },
+      {
+        "pen": 1,
+        "caption": 0.984478
+      },
+      {
+        "pen": 1,
+        "caption": 0.989938
+      },
+      {
+        "pen": 1,
+        "caption": 0.994099
+      },
+      {
+        "pen": 1,
+        "caption": 0.997079
+      },
+      {
+        "pen": 1,
+        "caption": 0.998978
+      },
+      {
+        "pen": 1,
+        "caption": 0.99989
+      }
+    ],
+    "errors": [],
+    "method": "actual production CSS animations paused/seeked at exact 1/30s; session finished at 5.85s",
+    "viewport": "390x844 @2x",
+    "fps": 30,
+    "frames": 211
+  },
+  {
+    "stage": "before",
+    "theme": "dark",
+    "baseline": "437fd6f006acb62097f6737e69a4a9ad292f96bb",
+    "geometry": {
+      "d": "M13 225 Q60 195 77 171 Q161 91 164 41 Q162 -9 120 26 Q76 64 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q65 203 87 230 Q121 267 161 228 Q164 210 178 208 Q214 202 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162",
+      "length": 2711.35693359375,
+      "joinStart": 949.36474609375,
+      "joinEnd": 1071.63720703125,
+      "timing": {
+        "write": 4200,
+        "hold": 750,
+        "fade": 900
+      }
+    },
+    "joinMidTime": 1233.3333333333333,
+    "samples": [
+      {
+        "pen": 0,
+        "caption": 0
+      },
+      {
+        "pen": 0.000624907,
+        "caption": 0
+      },
+      {
+        "pen": 0.00160263,
+        "caption": 0
+      },
+      {
+        "pen": 0.00294877,
+        "caption": 0
+      },
+      {
+        "pen": 0.00467973,
+        "caption": 0
+      },
+      {
+        "pen": 0.00681269,
+        "caption": 0
+      },
+      {
+        "pen": 0.00936564,
+        "caption": 0
+      },
+      {
+        "pen": 0.0123573,
+        "caption": 0
+      },
+      {
+        "pen": 0.0158074,
+        "caption": 0
+      },
+      {
+        "pen": 0.019736,
+        "caption": 0
+      },
+      {
+        "pen": 0.0241643,
+        "caption": 0
+      },
+      {
+        "pen": 0.0291138,
+        "caption": 0
+      },
+      {
+        "pen": 0.0346065,
+        "caption": 0
+      },
+      {
+        "pen": 0.040665,
+        "caption": 0
+      },
+      {
+        "pen": 0.0473118,
+        "caption": 0
+      },
+      {
+        "pen": 0.0545692,
+        "caption": 0
+      },
+      {
+        "pen": 0.0624591,
+        "caption": 0
+      },
+      {
+        "pen": 0.0710027,
+        "caption": 0
+      },
+      {
+        "pen": 0.0802195,
+        "caption": 0
+      },
+      {
+        "pen": 0.0901272,
+        "caption": 0
+      },
+      {
+        "pen": 0.100741,
+        "caption": 0
+      },
+      {
+        "pen": 0.112072,
+        "caption": 0
+      },
+      {
+        "pen": 0.124129,
+        "caption": 0
+      },
+      {
+        "pen": 0.136913,
+        "caption": 0
+      },
+      {
+        "pen": 0.150421,
+        "caption": 0
+      },
+      {
+        "pen": 0.164642,
+        "caption": 0
+      },
+      {
+        "pen": 0.179558,
+        "caption": 0
+      },
+      {
+        "pen": 0.195142,
+        "caption": 0
+      },
+      {
+        "pen": 0.211359,
+        "caption": 0
+      },
+      {
+        "pen": 0.228165,
+        "caption": 0
+      },
+      {
+        "pen": 0.245507,
+        "caption": 0
+      },
+      {
+        "pen": 0.263325,
+        "caption": 0
+      },
+      {
+        "pen": 0.281551,
+        "caption": 0
+      },
+      {
+        "pen": 0.300115,
+        "caption": 0
+      },
+      {
+        "pen": 0.318938,
+        "caption": 0
+      },
+      {
+        "pen": 0.337945,
+        "caption": 0
+      },
+      {
+        "pen": 0.357057,
+        "caption": 0
+      },
+      {
+        "pen": 0.376199,
+        "caption": 0
+      },
+      {
+        "pen": 0.3953,
+        "caption": 0
+      },
+      {
+        "pen": 0.414293,
+        "caption": 0
+      },
+      {
+        "pen": 0.433118,
+        "caption": 0
+      },
+      {
+        "pen": 0.451719,
+        "caption": 0
+      },
+      {
+        "pen": 0.470051,
+        "caption": 0
+      },
+      {
+        "pen": 0.488073,
+        "caption": 0
+      },
+      {
+        "pen": 0.505752,
+        "caption": 0
+      },
+      {
+        "pen": 0.52306,
+        "caption": 0
+      },
+      {
+        "pen": 0.539977,
+        "caption": 0
+      },
+      {
+        "pen": 0.556486,
+        "caption": 0
+      },
+      {
+        "pen": 0.572577,
+        "caption": 0
+      },
+      {
+        "pen": 0.588241,
+        "caption": 0
+      },
+      {
+        "pen": 0.603476,
+        "caption": 0
+      },
+      {
+        "pen": 0.61828,
+        "caption": 0
+      },
+      {
+        "pen": 0.632656,
+        "caption": 0
+      },
+      {
+        "pen": 0.646607,
+        "caption": 0
+      },
+      {
+        "pen": 0.660138,
+        "caption": 0
+      },
+      {
+        "pen": 0.673256,
+        "caption": 0
+      },
+      {
+        "pen": 0.68597,
+        "caption": 0
+      },
+      {
+        "pen": 0.698286,
+        "caption": 0
+      },
+      {
+        "pen": 0.710214,
+        "caption": 0
+      },
+      {
+        "pen": 0.721765,
+        "caption": 0
+      },
+      {
+        "pen": 0.732946,
+        "caption": 0
+      },
+      {
+        "pen": 0.743769,
+        "caption": 0
+      },
+      {
+        "pen": 0.754242,
+        "caption": 0
+      },
+      {
+        "pen": 0.764376,
+        "caption": 0
+      },
+      {
+        "pen": 0.774181,
+        "caption": 0
+      },
+      {
+        "pen": 0.783665,
+        "caption": 0
+      },
+      {
+        "pen": 0.792839,
+        "caption": 0
+      },
+      {
+        "pen": 0.801711,
+        "caption": 0
+      },
+      {
+        "pen": 0.810291,
+        "caption": 0
+      },
+      {
+        "pen": 0.818586,
+        "caption": 0
+      },
+      {
+        "pen": 0.826606,
+        "caption": 0
+      },
+      {
+        "pen": 0.834358,
+        "caption": 0
+      },
+      {
+        "pen": 0.84185,
+        "caption": 0
+      },
+      {
+        "pen": 0.849091,
+        "caption": 0
+      },
+      {
+        "pen": 0.856087,
+        "caption": 0
+      },
+      {
+        "pen": 0.862845,
+        "caption": 0
+      },
+      {
+        "pen": 0.869373,
+        "caption": 0
+      },
+      {
+        "pen": 0.875677,
+        "caption": 0
+      },
+      {
+        "pen": 0.881762,
+        "caption": 0
+      },
+      {
+        "pen": 0.887636,
+        "caption": 0
+      },
+      {
+        "pen": 0.893305,
+        "caption": 0
+      },
+      {
+        "pen": 0.898773,
+        "caption": 0
+      },
+      {
+        "pen": 0.904047,
+        "caption": 0
+      },
+      {
+        "pen": 0.909131,
+        "caption": 0
+      },
+      {
+        "pen": 0.914031,
+        "caption": 0
+      },
+      {
+        "pen": 0.918752,
+        "caption": 0
+      },
+      {
+        "pen": 0.923297,
+        "caption": 0
+      },
+      {
+        "pen": 0.927673,
+        "caption": 0
+      },
+      {
+        "pen": 0.931883,
+        "caption": 0
+      },
+      {
+        "pen": 0.935931,
+        "caption": 0
+      },
+      {
+        "pen": 0.939822,
+        "caption": 0
+      },
+      {
+        "pen": 0.943559,
+        "caption": 0
+      },
+      {
+        "pen": 0.947146,
+        "caption": 0
+      },
+      {
+        "pen": 0.950587,
+        "caption": 0
+      },
+      {
+        "pen": 0.953885,
+        "caption": 0
+      },
+      {
+        "pen": 0.957044,
+        "caption": 0
+      },
+      {
+        "pen": 0.960067,
+        "caption": 0
+      },
+      {
+        "pen": 0.962956,
+        "caption": 0
+      },
+      {
+        "pen": 0.965716,
+        "caption": 0
+      },
+      {
+        "pen": 0.968349,
+        "caption": 0
+      },
+      {
+        "pen": 0.970858,
+        "caption": 0
+      },
+      {
+        "pen": 0.973246,
+        "caption": 0
+      },
+      {
+        "pen": 0.975514,
+        "caption": 0
+      },
+      {
+        "pen": 0.977667,
+        "caption": 0
+      },
+      {
+        "pen": 0.979706,
+        "caption": 0
+      },
+      {
+        "pen": 0.981634,
+        "caption": 0
+      },
+      {
+        "pen": 0.983453,
+        "caption": 0
+      },
+      {
+        "pen": 0.985166,
+        "caption": 0
+      },
+      {
+        "pen": 0.986774,
+        "caption": 0
+      },
+      {
+        "pen": 0.988279,
+        "caption": 0
+      },
+      {
+        "pen": 0.989685,
+        "caption": 0
+      },
+      {
+        "pen": 0.990992,
+        "caption": 0
+      },
+      {
+        "pen": 0.992203,
+        "caption": 0
+      },
+      {
+        "pen": 0.993319,
+        "caption": 0
+      },
+      {
+        "pen": 0.994343,
+        "caption": 0
+      },
+      {
+        "pen": 0.995276,
+        "caption": 0
+      },
+      {
+        "pen": 0.99612,
+        "caption": 0
+      },
+      {
+        "pen": 0.996876,
+        "caption": 0
+      },
+      {
+        "pen": 0.997547,
+        "caption": 0
+      },
+      {
+        "pen": 0.998133,
+        "caption": 0
+      },
+      {
+        "pen": 0.998636,
+        "caption": 0
+      },
+      {
+        "pen": 0.999059,
+        "caption": 0
+      },
+      {
+        "pen": 0.999401,
+        "caption": 0
+      },
+      {
+        "pen": 0.999665,
+        "caption": 0
+      },
+      {
+        "pen": 0.999852,
+        "caption": 0
+      },
+      {
+        "pen": 0.999963,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0.0513106
+      },
+      {
+        "pen": 1,
+        "caption": 0.152937
+      },
+      {
+        "pen": 1,
+        "caption": 0.251398
+      },
+      {
+        "pen": 1,
+        "caption": 0.34454
+      },
+      {
+        "pen": 1,
+        "caption": 0.430632
+      },
+      {
+        "pen": 1,
+        "caption": 0.508621
+      },
+      {
+        "pen": 1,
+        "caption": 0.578167
+      },
+      {
+        "pen": 1,
+        "caption": 0.639492
+      },
+      {
+        "pen": 1,
+        "caption": 0.693174
+      },
+      {
+        "pen": 1,
+        "caption": 0.739953
+      },
+      {
+        "pen": 1,
+        "caption": 0.780609
+      },
+      {
+        "pen": 1,
+        "caption": 0.815883
+      },
+      {
+        "pen": 1,
+        "caption": 0.846447
+      },
+      {
+        "pen": 1,
+        "caption": 0.872893
+      },
+      {
+        "pen": 1,
+        "caption": 0.89573
+      },
+      {
+        "pen": 1,
+        "caption": 0.915398
+      },
+      {
+        "pen": 1,
+        "caption": 0.932272
+      },
+      {
+        "pen": 1,
+        "caption": 0.946672
+      },
+      {
+        "pen": 1,
+        "caption": 0.958873
+      },
+      {
+        "pen": 1,
+        "caption": 0.96911
+      },
+      {
+        "pen": 1,
+        "caption": 0.977586
+      },
+      {
+        "pen": 1,
+        "caption": 0.984478
+      },
+      {
+        "pen": 1,
+        "caption": 0.989938
+      },
+      {
+        "pen": 1,
+        "caption": 0.994099
+      },
+      {
+        "pen": 1,
+        "caption": 0.997079
+      },
+      {
+        "pen": 1,
+        "caption": 0.998978
+      },
+      {
+        "pen": 1,
+        "caption": 0.99989
+      }
+    ],
+    "errors": [],
+    "method": "actual production CSS animations paused/seeked at exact 1/30s; session finished at 5.85s",
+    "viewport": "390x844 @2x",
+    "fps": 30,
+    "frames": 211
+  },
+  {
+    "stage": "after",
+    "theme": "dark",
+    "baseline": "working source",
+    "geometry": {
+      "d": "M13 225 Q60 195 77 171 Q161 91 164 41 Q162 -9 120 26 Q76 64 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q65 203 87 230 Q121 267 161 228 C187.666667 202 221 181 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162",
+      "length": 2706.34765625,
+      "joinStart": 949.36474609375,
+      "joinEnd": 1066.628173828125,
+      "timing": {
+        "write": 4200,
+        "hold": 750,
+        "fade": 900
+      }
+    },
+    "joinMidTime": 1233.3333333333333,
+    "samples": [
+      {
+        "pen": 0,
+        "caption": 0
+      },
+      {
+        "pen": 0.000624907,
+        "caption": 0
+      },
+      {
+        "pen": 0.00160263,
+        "caption": 0
+      },
+      {
+        "pen": 0.00294877,
+        "caption": 0
+      },
+      {
+        "pen": 0.00467973,
+        "caption": 0
+      },
+      {
+        "pen": 0.00681269,
+        "caption": 0
+      },
+      {
+        "pen": 0.00936564,
+        "caption": 0
+      },
+      {
+        "pen": 0.0123573,
+        "caption": 0
+      },
+      {
+        "pen": 0.0158074,
+        "caption": 0
+      },
+      {
+        "pen": 0.019736,
+        "caption": 0
+      },
+      {
+        "pen": 0.0241643,
+        "caption": 0
+      },
+      {
+        "pen": 0.0291138,
+        "caption": 0
+      },
+      {
+        "pen": 0.0346065,
+        "caption": 0
+      },
+      {
+        "pen": 0.040665,
+        "caption": 0
+      },
+      {
+        "pen": 0.0473118,
+        "caption": 0
+      },
+      {
+        "pen": 0.0545692,
+        "caption": 0
+      },
+      {
+        "pen": 0.0624591,
+        "caption": 0
+      },
+      {
+        "pen": 0.0710027,
+        "caption": 0
+      },
+      {
+        "pen": 0.0802195,
+        "caption": 0
+      },
+      {
+        "pen": 0.0901272,
+        "caption": 0
+      },
+      {
+        "pen": 0.100741,
+        "caption": 0
+      },
+      {
+        "pen": 0.112072,
+        "caption": 0
+      },
+      {
+        "pen": 0.124129,
+        "caption": 0
+      },
+      {
+        "pen": 0.136913,
+        "caption": 0
+      },
+      {
+        "pen": 0.150421,
+        "caption": 0
+      },
+      {
+        "pen": 0.164642,
+        "caption": 0
+      },
+      {
+        "pen": 0.179558,
+        "caption": 0
+      },
+      {
+        "pen": 0.195142,
+        "caption": 0
+      },
+      {
+        "pen": 0.211359,
+        "caption": 0
+      },
+      {
+        "pen": 0.228165,
+        "caption": 0
+      },
+      {
+        "pen": 0.245507,
+        "caption": 0
+      },
+      {
+        "pen": 0.263325,
+        "caption": 0
+      },
+      {
+        "pen": 0.281551,
+        "caption": 0
+      },
+      {
+        "pen": 0.300115,
+        "caption": 0
+      },
+      {
+        "pen": 0.318938,
+        "caption": 0
+      },
+      {
+        "pen": 0.337945,
+        "caption": 0
+      },
+      {
+        "pen": 0.357057,
+        "caption": 0
+      },
+      {
+        "pen": 0.376199,
+        "caption": 0
+      },
+      {
+        "pen": 0.3953,
+        "caption": 0
+      },
+      {
+        "pen": 0.414293,
+        "caption": 0
+      },
+      {
+        "pen": 0.433118,
+        "caption": 0
+      },
+      {
+        "pen": 0.451719,
+        "caption": 0
+      },
+      {
+        "pen": 0.470051,
+        "caption": 0
+      },
+      {
+        "pen": 0.488073,
+        "caption": 0
+      },
+      {
+        "pen": 0.505752,
+        "caption": 0
+      },
+      {
+        "pen": 0.52306,
+        "caption": 0
+      },
+      {
+        "pen": 0.539977,
+        "caption": 0
+      },
+      {
+        "pen": 0.556486,
+        "caption": 0
+      },
+      {
+        "pen": 0.572577,
+        "caption": 0
+      },
+      {
+        "pen": 0.588241,
+        "caption": 0
+      },
+      {
+        "pen": 0.603476,
+        "caption": 0
+      },
+      {
+        "pen": 0.61828,
+        "caption": 0
+      },
+      {
+        "pen": 0.632656,
+        "caption": 0
+      },
+      {
+        "pen": 0.646607,
+        "caption": 0
+      },
+      {
+        "pen": 0.660138,
+        "caption": 0
+      },
+      {
+        "pen": 0.673256,
+        "caption": 0
+      },
+      {
+        "pen": 0.68597,
+        "caption": 0
+      },
+      {
+        "pen": 0.698286,
+        "caption": 0
+      },
+      {
+        "pen": 0.710214,
+        "caption": 0
+      },
+      {
+        "pen": 0.721765,
+        "caption": 0
+      },
+      {
+        "pen": 0.732946,
+        "caption": 0
+      },
+      {
+        "pen": 0.743769,
+        "caption": 0
+      },
+      {
+        "pen": 0.754242,
+        "caption": 0
+      },
+      {
+        "pen": 0.764376,
+        "caption": 0
+      },
+      {
+        "pen": 0.774181,
+        "caption": 0
+      },
+      {
+        "pen": 0.783665,
+        "caption": 0
+      },
+      {
+        "pen": 0.792839,
+        "caption": 0
+      },
+      {
+        "pen": 0.801711,
+        "caption": 0
+      },
+      {
+        "pen": 0.810291,
+        "caption": 0
+      },
+      {
+        "pen": 0.818586,
+        "caption": 0
+      },
+      {
+        "pen": 0.826606,
+        "caption": 0
+      },
+      {
+        "pen": 0.834358,
+        "caption": 0
+      },
+      {
+        "pen": 0.84185,
+        "caption": 0
+      },
+      {
+        "pen": 0.849091,
+        "caption": 0
+      },
+      {
+        "pen": 0.856087,
+        "caption": 0
+      },
+      {
+        "pen": 0.862845,
+        "caption": 0
+      },
+      {
+        "pen": 0.869373,
+        "caption": 0
+      },
+      {
+        "pen": 0.875677,
+        "caption": 0
+      },
+      {
+        "pen": 0.881762,
+        "caption": 0
+      },
+      {
+        "pen": 0.887636,
+        "caption": 0
+      },
+      {
+        "pen": 0.893305,
+        "caption": 0
+      },
+      {
+        "pen": 0.898773,
+        "caption": 0
+      },
+      {
+        "pen": 0.904047,
+        "caption": 0
+      },
+      {
+        "pen": 0.909131,
+        "caption": 0
+      },
+      {
+        "pen": 0.914031,
+        "caption": 0
+      },
+      {
+        "pen": 0.918752,
+        "caption": 0
+      },
+      {
+        "pen": 0.923297,
+        "caption": 0
+      },
+      {
+        "pen": 0.927673,
+        "caption": 0
+      },
+      {
+        "pen": 0.931883,
+        "caption": 0
+      },
+      {
+        "pen": 0.935931,
+        "caption": 0
+      },
+      {
+        "pen": 0.939822,
+        "caption": 0
+      },
+      {
+        "pen": 0.943559,
+        "caption": 0
+      },
+      {
+        "pen": 0.947146,
+        "caption": 0
+      },
+      {
+        "pen": 0.950587,
+        "caption": 0
+      },
+      {
+        "pen": 0.953885,
+        "caption": 0
+      },
+      {
+        "pen": 0.957044,
+        "caption": 0
+      },
+      {
+        "pen": 0.960067,
+        "caption": 0
+      },
+      {
+        "pen": 0.962956,
+        "caption": 0
+      },
+      {
+        "pen": 0.965716,
+        "caption": 0
+      },
+      {
+        "pen": 0.968349,
+        "caption": 0
+      },
+      {
+        "pen": 0.970858,
+        "caption": 0
+      },
+      {
+        "pen": 0.973246,
+        "caption": 0
+      },
+      {
+        "pen": 0.975514,
+        "caption": 0
+      },
+      {
+        "pen": 0.977667,
+        "caption": 0
+      },
+      {
+        "pen": 0.979706,
+        "caption": 0
+      },
+      {
+        "pen": 0.981634,
+        "caption": 0
+      },
+      {
+        "pen": 0.983453,
+        "caption": 0
+      },
+      {
+        "pen": 0.985166,
+        "caption": 0
+      },
+      {
+        "pen": 0.986774,
+        "caption": 0
+      },
+      {
+        "pen": 0.988279,
+        "caption": 0
+      },
+      {
+        "pen": 0.989685,
+        "caption": 0
+      },
+      {
+        "pen": 0.990992,
+        "caption": 0
+      },
+      {
+        "pen": 0.992203,
+        "caption": 0
+      },
+      {
+        "pen": 0.993319,
+        "caption": 0
+      },
+      {
+        "pen": 0.994343,
+        "caption": 0
+      },
+      {
+        "pen": 0.995276,
+        "caption": 0
+      },
+      {
+        "pen": 0.99612,
+        "caption": 0
+      },
+      {
+        "pen": 0.996876,
+        "caption": 0
+      },
+      {
+        "pen": 0.997547,
+        "caption": 0
+      },
+      {
+        "pen": 0.998133,
+        "caption": 0
+      },
+      {
+        "pen": 0.998636,
+        "caption": 0
+      },
+      {
+        "pen": 0.999059,
+        "caption": 0
+      },
+      {
+        "pen": 0.999401,
+        "caption": 0
+      },
+      {
+        "pen": 0.999665,
+        "caption": 0
+      },
+      {
+        "pen": 0.999852,
+        "caption": 0
+      },
+      {
+        "pen": 0.999963,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0
+      },
+      {
+        "pen": 1,
+        "caption": 0.0513106
+      },
+      {
+        "pen": 1,
+        "caption": 0.152937
+      },
+      {
+        "pen": 1,
+        "caption": 0.251398
+      },
+      {
+        "pen": 1,
+        "caption": 0.34454
+      },
+      {
+        "pen": 1,
+        "caption": 0.430632
+      },
+      {
+        "pen": 1,
+        "caption": 0.508621
+      },
+      {
+        "pen": 1,
+        "caption": 0.578167
+      },
+      {
+        "pen": 1,
+        "caption": 0.639492
+      },
+      {
+        "pen": 1,
+        "caption": 0.693174
+      },
+      {
+        "pen": 1,
+        "caption": 0.739953
+      },
+      {
+        "pen": 1,
+        "caption": 0.780609
+      },
+      {
+        "pen": 1,
+        "caption": 0.815883
+      },
+      {
+        "pen": 1,
+        "caption": 0.846447
+      },
+      {
+        "pen": 1,
+        "caption": 0.872893
+      },
+      {
+        "pen": 1,
+        "caption": 0.89573
+      },
+      {
+        "pen": 1,
+        "caption": 0.915398
+      },
+      {
+        "pen": 1,
+        "caption": 0.932272
+      },
+      {
+        "pen": 1,
+        "caption": 0.946672
+      },
+      {
+        "pen": 1,
+        "caption": 0.958873
+      },
+      {
+        "pen": 1,
+        "caption": 0.96911
+      },
+      {
+        "pen": 1,
+        "caption": 0.977586
+      },
+      {
+        "pen": 1,
+        "caption": 0.984478
+      },
+      {
+        "pen": 1,
+        "caption": 0.989938
+      },
+      {
+        "pen": 1,
+        "caption": 0.994099
+      },
+      {
+        "pen": 1,
+        "caption": 0.997079
+      },
+      {
+        "pen": 1,
+        "caption": 0.998978
+      },
+      {
+        "pen": 1,
+        "caption": 0.99989
+      }
+    ],
+    "errors": [],
+    "method": "actual production CSS animations paused/seeked at exact 1/30s; session finished at 5.85s",
+    "viewport": "390x844 @2x",
+    "fps": 30,
+    "frames": 211
+  }
+]

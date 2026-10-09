@@ -26,6 +26,14 @@ for(const file of ['config.js','capacitor.config.json','ios/App/App/Info.plist',
 }
 const read=file=>readFileSync(new URL(file,root),'utf8');
 const html=read('index.html');
+const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
+if(welcomeJoin){
+  const scope=new Set(welcomeJoin.files);
+  for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
+  assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
+  assert.equal(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin).trim(),git('show',welcomeJoin.base+':index.html'),'Welcome join repair changed markup outside its one exit segment');
+  for(const file of ['scripts/ui/onboarding.js','styles/onboarding.css','ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json','ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png',...git('ls-tree','-r','--name-only',welcomeJoin.base,'assets/brand','assets/onboarding','android').split('\n').filter(Boolean)])assert.equal(git('hash-object',file),git('rev-parse',welcomeJoin.base+':'+file),'Welcome join repair changed protected timing/navigation/icon/source bytes: '+file);
+}
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
   const scope=new Set(followup.files);
@@ -37,7 +45,7 @@ if(followup){
   }
   const baseHtml=git('show',followup.base+':index.html');
   const welcome=source=>source.slice(source.indexOf('<div id="onboard-welcome"'),source.indexOf('<div id="onboard-carousel"'));
-  assert.equal(welcome(html),welcome(baseHtml),'Approved welcome markup changed');
+  assert.equal(welcomeJoin?welcome(html).replace(welcomeJoin.newJoin,welcomeJoin.oldJoin):welcome(html),welcome(baseHtml),'Approved welcome markup changed outside its authorized b-to-r exit');
   const welcomeCss=source=>source.slice(source.indexOf('#onboard-welcome .breeze-wordmark'),source.indexOf('#onboard-carousel{'));
   assert.equal(welcomeCss(read('styles/onboarding.css')),welcomeCss(git('show',followup.base+':styles/onboarding.css')),'Approved welcome geometry/animation changed');
   for(const file of ['ios/App/App.xcodeproj/project.pbxproj','scripts/library/library.js','ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png',...git('ls-tree','-r','--name-only',followup.base,'assets/onboarding','android').split('\n').filter(Boolean)]){

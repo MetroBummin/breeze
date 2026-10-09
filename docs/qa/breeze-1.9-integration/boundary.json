@@ -114,7 +114,7 @@
         "approved-writing"
       ],
       "kind": "followup-reviewed",
-      "sha256": "12ce65f9215381d1ea8eb75cc2ed3c25ce7a08128801082de45860869d608227",
+      "sha256": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
       "sourceSha256": {
         "welcome": "1a827c496dbd3e019b861ecd722997e2d69a79de0c13fe92b12781ece577d8f0",
         "approved-writing": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093"
@@ -261,7 +261,7 @@
         "approved-writing"
       ],
       "kind": "followup-reviewed",
-      "sha256": "4df4229e9ed98a3863cfaa29b78476795dfffc7fb999820681741789006d6825",
+      "sha256": "cef6246a4d9276f80afffe3db0a2256c97b13a16ae6c7f6ad3cd6ebe996235a1",
       "sourceSha256": {
         "welcome": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
         "pre-approved-media": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
@@ -1076,7 +1076,7 @@
         "approved-writing"
       ],
       "kind": "followup-reviewed",
-      "sha256": "34ba5a19ff19dc90fd26e64c2e376cbdecdd01f9a3536cdce2f7daafb95a5268",
+      "sha256": "1ef4ee6086da608b7e09e832683f92bab045a55b7864cb7ad9100c5693b562f6",
       "sourceSha256": {
         "welcome": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf",
         "approved-writing": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20"
@@ -1850,7 +1850,27 @@
     "docs/qa/icon-onboarding-20261009/after-navigation-light.png",
     "docs/qa/icon-onboarding-20261009/after-short-dark.png",
     "docs/qa/icon-onboarding-20261009/after-short-light.png",
-    "docs/qa/icon-onboarding-20261009/before-final-dark.png"
+    "docs/qa/icon-onboarding-20261009/before-final-dark.png",
+    "tests/fixtures/welcome-join-437fd6f.json",
+    "tools/capture-welcome-join-review.mjs",
+    "docs/qa/welcome-join-20261009/README.md",
+    "docs/qa/welcome-join-20261009/after-full-dark.png",
+    "docs/qa/welcome-join-20261009/after-full-light.png",
+    "docs/qa/welcome-join-20261009/after-zoom-final-dark.png",
+    "docs/qa/welcome-join-20261009/after-zoom-final-light.png",
+    "docs/qa/welcome-join-20261009/after-zoom-mid-dark.png",
+    "docs/qa/welcome-join-20261009/after-zoom-mid-light.png",
+    "docs/qa/welcome-join-20261009/before-after-dark.mp4",
+    "docs/qa/welcome-join-20261009/before-after-light.mp4",
+    "docs/qa/welcome-join-20261009/before-full-dark.png",
+    "docs/qa/welcome-join-20261009/before-full-light.png",
+    "docs/qa/welcome-join-20261009/before-zoom-final-dark.png",
+    "docs/qa/welcome-join-20261009/before-zoom-final-light.png",
+    "docs/qa/welcome-join-20261009/before-zoom-mid-dark.png",
+    "docs/qa/welcome-join-20261009/before-zoom-mid-light.png",
+    "docs/qa/welcome-join-20261009/capture-receipt.json",
+    "docs/qa/welcome-join-20261009/reference-before-after-overlay-dark.png",
+    "docs/qa/welcome-join-20261009/reference-before-after-overlay-light.png"
   ],
   "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680",
   "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c",
@@ -1885,7 +1905,61 @@
       "tests/verify-integration-boundary.mjs",
       "tests/verify-onboarding-browser.mjs",
       "tools/render-app-icons.mjs",
-      "tools/verify-brand-icon-assets.py"
+      "tools/verify-brand-icon-assets.py",
+      "tests/fixtures/welcome-join-437fd6f.json",
+      "tools/capture-welcome-join-review.mjs",
+      "docs/qa/welcome-join-20261009/README.md",
+      "docs/qa/welcome-join-20261009/after-full-dark.png",
+      "docs/qa/welcome-join-20261009/after-full-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/before-after-dark.mp4",
+      "docs/qa/welcome-join-20261009/before-after-light.mp4",
+      "docs/qa/welcome-join-20261009/before-full-dark.png",
+      "docs/qa/welcome-join-20261009/before-full-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/capture-receipt.json",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-dark.png",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-light.png"
+    ]
+  },
+  "approvedWelcomeJoinFollowup": {
+    "base": "437fd6f006acb62097f6737e69a4a9ad292f96bb",
+    "scope": "Explicit 2026-10-09 user request: smooth the b-to-r exit only after comparing the stored cursive asset with actual welcome frames. Preserve the complete b retrace, later letters, original assets, CSS/session timing, icon/navigation/import behavior, approved media, Android and release metadata. This limited repair supersedes only the earlier welcome-path preservation statement.",
+    "oldJoin": "Q164 210 178 208 Q214 202 235 139",
+    "newJoin": "C187.666667 202 221 181 235 139",
+    "files": [
+      "index.html",
+      "sw.js",
+      "docs/decisions/006-reader-onboarding.md",
+      "tests/verify-onboarding-browser.mjs",
+      "tests/verify-integration-boundary.mjs",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "tests/fixtures/welcome-join-437fd6f.json",
+      "tools/capture-welcome-join-review.mjs",
+      "docs/qa/welcome-join-20261009/README.md",
+      "docs/qa/welcome-join-20261009/after-full-dark.png",
+      "docs/qa/welcome-join-20261009/after-full-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/before-after-dark.mp4",
+      "docs/qa/welcome-join-20261009/before-after-light.mp4",
+      "docs/qa/welcome-join-20261009/before-full-dark.png",
+      "docs/qa/welcome-join-20261009/before-full-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/capture-receipt.json",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-dark.png",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-light.png"
     ]
   }
 }

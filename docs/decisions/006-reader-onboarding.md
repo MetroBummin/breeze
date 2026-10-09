@@ -15,6 +15,14 @@ side of the ascender loop, turns left at the top and descends the stem, then
 rises through the bowl and exits over the existing lower curve into r.
 This reverses the rejected ascender direction and removes its extra upper-bowl
 circuit. The short lower-curve retrace is intentional connected handwriting.
+The 2026-10-09 user-requested b-to-r repair keeps that entire b retrace and the
+original r entry/later letters. Only the two quadratic exit segments become one
+cubic segment with the same endpoints. Its first handle follows the incoming
+b tangent; its last handle preserves the former r-entry tangent. This removes
+the approximately 36-degree exit turn without redrawing any letter or changing
+the original cursive brand asset. The original stored wordmark and actual app
+middle/final frames are shown together in ../qa/welcome-join-20261009/README.md.
+Writing, hold, caption timing/easing and all welcome session behavior stay unchanged.
 Formation references: [Dynamilis](https://dynamilis.com/handwriting/cursive/b)
 and [Scribble](https://scribble.app/cursive/b); school capital B differs and
 Scribble explicitly lifts before the next letter. This brand adaptation keeps
