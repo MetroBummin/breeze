@@ -28,7 +28,7 @@ try{
   });
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.locator('#fileinput').setInputFiles({name:'word-overlay.txt',mimeType:'text/plain',
-    buffer:Buffer.from(('A patient reader keeps resilient words close to their context. '+
+    buffer:Buffer.from(('A patient reader keeps resilient words close to their context. Selfies are popular. '+
       'Another patient reader checks every repeated word carefully. '+
       'The patient waited calmly for the doctor.\n\n').repeat(50))});
   await page.waitForFunction(()=>books.some(book=>book.kind==='txt'));
@@ -43,7 +43,8 @@ try{
     const payload=route.request().postDataJSON();requests.push(payload);
     if(failures>0){failures--;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
     if(responseGate)await responseGate;
-    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical:payload.word,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
+    const canonical=String(payload.clicked||'').toLowerCase()==='selfies'?'selfie':payload.word;
+    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical,lemma:canonical,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
   });
   await page.evaluate(url=>{
     sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-user'};SB_URL=url;SB_KEY='qa';
@@ -87,14 +88,14 @@ try{
   // Existing unresolved cards own a context view. Exhaust initial recovery, then
   // exercise both actual retry controls: stale context errors must not hide
   // pending feedback or the successful meaning already saved in the card.
-  for(const [surface,mode] of [['resilient','mini'],['reader','detail']]){
+  for(const [surface,mode] of [['Selfies','mini'],['reader','detail']]){
     const before=requests.length;failures=2;
     await page.evaluate(surface=>{
       closePanel();
-      const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
+      const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface.toLowerCase()&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
       if(!node)throw Error('Missing visible retry fixture '+surface);
       const key=keyOf(surface);
-      words[key]={word:surface,clicked:surface,forms:[key],ko:'',defs:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
+      words[key]={word:key,clicked:surface,forms:[key],ko:'',defs:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
       openWord(key,node);
     },surface);
     await page.waitForFunction(()=>currentContext(selKey)?.error==='error'&&!words[selKey].aiLoading&&!document.getElementById('word-peek').hidden);
@@ -115,6 +116,12 @@ try{
     }
     responseGate=null;releaseResponse=null;
     assert.equal(await page.evaluate(()=>words[selKey].ko),'참을성 있는');
+    if(surface==='Selfies'){
+      assert.deepEqual(await page.evaluate(()=>({key:selKey,word:words[selKey].word,clicked:words[selKey].clicked,hasRenamedKey:!!words.selfie})),
+        {key:'selfy',word:'selfie',clicked:'Selfies',hasRenamedKey:false});
+      await page.locator('#word-peek-more').click();
+      assert.equal(await page.locator('#p-word').textContent(),'selfie');
+    }
     assert.equal(requests.length,before+3,'manual retry repeated automatic budget');
     assert.equal(requests.at(-1).lookupId,requests[before].lookupId,'manual retry lost its recovery ID');
     assert.equal(await page.evaluate(()=>currentContext(selKey)?.error||''),'');

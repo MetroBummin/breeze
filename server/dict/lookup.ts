@@ -1,6 +1,3 @@
-import "../../modules/lexical/core.js";
-const lexicalCore=(globalThis as typeof globalThis & {BreezeLexical:{lookupLemmaCands:(raw:string)=>string[]}}).BreezeLexical;
-
 // One short lexical result; context is input only, never an extra output field.
 export const LOOK_SCHEMA={type:"object",additionalProperties:false,required:["kind","canonical","members","ko"],properties:{kind:{type:"string",enum:["word","expression"]},canonical:{type:"string"},members:{type:"array",items:{type:"integer"}},ko:{type:"string"}}};
 export const tokenize=(text:string)=>[...text.matchAll(/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g)].map(m=>m[0]);
@@ -47,7 +44,7 @@ CONTRASTS:
 
 ko: If you were naturally translating the sentence into Korean, what short Korean word or phrase would you use for the SELECTED lexical unit in this context? Return only that meaning. Do not translate the whole sentence or surrounding words. Do not default to the most common dictionary sense when the context clearly indicates another sense. Rechecking may confirm the existing sense; never invent a different sense merely because retry=true.
 Before emitting, verify selected membership, every fixed function word, canonical/meaning agreement, and exact JSON.
-DATA=${JSON.stringify({sentence:input.sentence,selected_index:input.clickedIndex,selected_text:input.tokens[input.clickedIndex],target_lemma:input.word,indexed_tokens:input.tokens.map((t,i)=>`${i}:${t}`).join(" | "),before:input.before||undefined,after:input.after||undefined,retry:input.retry||undefined})}`;
+DATA=${JSON.stringify({sentence:input.sentence,selected_index:input.clickedIndex,selected_text:input.tokens[input.clickedIndex],indexed_tokens:input.tokens.map((t,i)=>`${i}:${t}`).join(" | "),before:input.before||undefined,after:input.after||undefined,retry:input.retry||undefined})}`;
 }
 export function validateLook(value:any,input:Lookup){
   if(!value||!['word','expression'].includes(value.kind)||typeof value.canonical!=='string'||typeof value.ko!=='string')throw Error('invalid_fields');
@@ -55,13 +52,9 @@ export function validateLook(value:any,input:Lookup){
   if(!/^[A-Za-z][A-Za-z'’\- ]{0,119}$/.test(canonical)||!ko||ko.length>60||/[\n\r,;／/]/.test(ko))throw Error('invalid_text');
   const members=value.members;
   if(!Array.isArray(members)||!members.length||members.some((n:any,i:number)=>!Number.isInteger(n)||n<0||n>=input.tokens.length||(i>0&&n<=members[i-1]))||!members.includes(input.clickedIndex))throw Error('invalid_members');
-  // Client candidates are versioned hints, not a complete dictionary or an
-  // authority to rename the selected token. Old clients must benefit from new
-  // morphology without changing their payload fingerprint or receipt identity.
-  const selectedToken=input.tokens[input.clickedIndex];
-  const normalizedCanonical=canonical.toLowerCase();
-  if(kind==='word'&&selectedToken.toLowerCase().replace(/’/g,"'")!==normalizedCanonical
-    &&!lexicalCore.lookupLemmaCands(selectedToken).some(t=>t.toLowerCase().replace(/’/g,"'")===normalizedCanonical))throw Error('invalid_lemma');
+  // The model owns the word's canonical spelling and contextual meaning.
+  // Link its answer to the selected occurrence through members, not a bounded
+  // morphology allow-list. Keep input hints intact for receipt fingerprints.
   if(kind==='word'&&(members.length!==1||canonical.includes(' ')))throw Error('invalid_word');
   if(kind==='expression'){
     if(members.length<2||!canonical.includes(' '))throw Error('invalid_expression');
