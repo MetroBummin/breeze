@@ -12,7 +12,7 @@ public let CAPPluginReturnPromise = "promise"
     public var result: [String: Any]?
     public var failure: String?
     private let options: [String: String]
-    public init(image: String) { options = ["image": image]; super.init() }
+    public init(image: String, requestId: String = "") { options = ["image": image, "requestId": requestId]; super.init() }
     public func getString(_ key: String) -> String? { options[key] }
     public func resolve(_ value: [String: Any]) { result = value; completed.signal() }
     public func reject(_ message: String, _ code: String) { failure = code; completed.signal() }

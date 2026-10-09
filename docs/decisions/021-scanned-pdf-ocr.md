@@ -14,12 +14,12 @@ page is an OCR candidate. Existing text PDFs, including invisible OCR layers,
 non-English text and mixed image/text pages, keep the original path. We do not
 infer that a text layer is bad merely because it has no English lookup words.
 
-`BreezePdfOcr` has one global work lane across document sessions. It admits only
+`BreezePdfOcr` has one global native admission across document sessions. It admits only
 settled visible pages, after scroll idle, outside pinch/ink, active paper painting
 and background state. There is no document-wide OCR queue or adjacent-page OCR.
 A page change reprioritizes the next job. A native request already running may
 finish; close, replacement, deletion and A→B→A reopen invalidate publication and
-cache writes. Native work retains the lane until completion, so reopening cannot
+cache writes. Native work retains admission until completion, so reopening cannot
 stack recognizers. Page rasterization is cancelled on close when possible.
 
 A separate raster avoids capturing annotations/lookup markers and avoids quality
@@ -80,8 +80,34 @@ not enabled by confirming an individual word. Text-layer PDFs keep one-tap looku
 OCR never automatically calls the dictionary. A tap on an unrecognized page
 uses the existing toast: processing, unsupported, empty or retry-on-failure.
 It never waits to open lookup from an old screen coordinate. There is no automatic
-retry loop after OCR failure. A native call that never settles retains the work
-lane; restarting the reader process is the recovery for a stuck native SDK call.
+retry loop after OCR failure.
+
+## Response deadline and recovery
+
+A 30-second response deadline ends JavaScript's wait with a failed page. This is
+a configured UI policy, not a measured OCR speed claim. It does not assert that
+the native operation stopped. Its result, if delivered later, is discarded without
+publication or cache writes. Scheduling can then read other pages' existing OCR
+cache, while uncached pages remain blocked from native admission.
+
+On an explicit retry, one shared status probe has a 2-second deadline. The native
+plugin only confirms completion for the exact request ID, after Vision/ML Kit
+has returned and input/model cleanup has run. A matching receipt permits retry
+even if the original Capacitor response never arrived. Busy, unknown, unsupported,
+or nonresponding status never releases admission. The existing reader notice asks
+the reader to completely close and reopen the app. Late status/retry callbacks
+cannot revive a closed reader, and a late old response cannot release a newer job.
+Natural native settlement also wakes the currently visible blocked page; the
+failed timeout page itself still needs an explicit retry.
+
+An SDK call that actually never returns cannot be safely force-restarted here.
+Apple exposes `VNRequest.cancel()`, but requesting cancellation is not evidence of
+completion; ML Kit's `TextRecognizer` exposes processing and resource closing,
+without a matching cancellation-completion contract. No timer recycles a bitmap,
+closes an active recognizer, or starts overlapping SDK work. A genuinely stuck
+SDK can still require process restart. This conditional limitation is distinct
+from controlled lost-response tests; no actual permanent native hang has been
+observed in the executed Vision corpus, and actual ML Kit remains unexecuted.
 
 Web/PWA and native builds missing the plugin explicitly report unsupported and
 remain readable. No web OCR package, cloud OCR, paid API or original PDF upload
@@ -90,8 +116,10 @@ is introduced. Existing user-initiated dictionary behavior is unchanged.
 Official API references:
 - [Apple text recognition](https://developer.apple.com/documentation/vision/recognizing-text-in-images)
 - [Apple range bounds](https://developer.apple.com/documentation/vision/vnrecognizedtext/boundingbox(for:))
+- [Apple cancellation](https://developer.apple.com/documentation/vision/vnrequest/cancel())
 - [ML Kit bundled Android model](https://developers.google.com/ml-kit/vision/text-recognition/v2/android)
 - [ML Kit element bounds and confidence](https://developers.google.com/android/reference/com/google/mlkit/vision/text/Text.Element)
+- [ML Kit processing and resource lifetime](https://developers.google.com/android/reference/com/google/mlkit/vision/text/TextRecognizer)
 - [Capacitor iOS plugin registration](https://capacitorjs.com/docs/plugins/tutorial/ios-implementation)
 
 See [verification and remaining acceptance](../qa/scanned-pdf-ocr-20261009.md).

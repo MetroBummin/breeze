@@ -7,7 +7,7 @@ const BreezePdfOcr=(()=>{
   // Explicitly checked spelling belongs to this published occurrence, not to a
   // word string, persisted cache entry, another page or a later reader session.
   const checkedOccurrences=new WeakSet();
-  let active=null,timer=0,wanted=null,confirmation=null,confirmationNode=null;
+  let active=null,nativeWork=null,nativeSequence=0,timer=0,wanted=null,confirmation=null,confirmationNode=null;
   const cacheDb=openDb('breeze-pdf-ocr',1,db=>db.createObjectStore('pages').createIndex('at','at'));
   function state(session){
     if(!states.has(session))states.set(session,{pages:new Map(),closed:false});
@@ -121,6 +121,64 @@ const BreezePdfOcr=(()=>{
     if(!currentPdfSession(session)||!states.has(session)||state(session).closed||!state(session).pages.size)return;
     wanted=session;clearTimeout(timer);timer=setTimeout(()=>{timer=0;void drain();},200);
   }
+  function releaseNative(job){
+    if(nativeWork!==job)return;
+    nativeWork=null;
+    if(!currentPdfSession(wanted)||state(wanted).closed)return;
+    for(const [n,entry] of state(wanted).pages)if(entry.status==='blocked')status(wanted,n,entry,'waiting');
+    schedule(wanted);
+  }
+  function recognize(native,image){
+    const job={native,id:Date.now()+'-'+(++nativeSequence),expired:false,probe:null};
+    nativeWork=job;
+    return new Promise((resolve,reject)=>{
+      // A UI deadline is not proof that native work stopped. Keep its exclusive
+      // admission until settlement or a matching native completion receipt.
+      const timer=setTimeout(()=>{job.expired=true;reject(new Error('OCR response deadline'));},30000);
+      const finish=(error,result)=>{
+        clearTimeout(timer);releaseNative(job);
+        if(!job.expired){if(error)reject(error);else resolve(result);}
+      };
+      try{Promise.resolve(native.recognize({image,requestId:job.id})).then(result=>finish(null,result),error=>finish(error));}
+      catch(error){finish(error);}
+    });
+  }
+  function reconcileNative(job){
+    if(job.probe)return job.probe;
+    job.probe=new Promise(resolve=>{
+      const timer=setTimeout(()=>resolve(false),2000);
+      try{
+        // Reuse a still-pending bridge probe after its UI deadline. Repeated
+        // taps must not accumulate native calls if the bridge itself is stuck.
+        if(!job.statusCall)job.statusCall=Promise.resolve(job.native.getStatus({requestId:job.id}))
+          .finally(()=>{job.statusCall=null;});
+        job.statusCall.then(result=>{
+        clearTimeout(timer);resolve(result?.finished===true);
+        },()=>{clearTimeout(timer);resolve(false);});
+      }
+      catch{clearTimeout(timer);resolve(false);}
+    }).then(finished=>{
+      if(finished)releaseNative(job);
+      return nativeWork!==job;
+    }).finally(()=>{job.probe=null;});
+    return job.probe;
+  }
+  async function retry(session,n,entry){
+    if(entry.retrying)return;
+    entry.retrying=true;
+    const valid=()=>live(session,n,entry)&&!document.hidden&&pdfPagesInView(session).includes(n)
+      &&!originalPdfPaintPaused()&&!pdfScrollBusy(session);
+    try{
+      const job=nativeWork;
+      if(job?.expired&&!await reconcileNative(job)){
+        if(valid())toast('앱 완전 종료 후 다시 열기');
+        return;
+      }
+      if(!valid())return;
+      status(session,n,entry,'waiting');schedule(session);
+      toast('글자 인식을 다시 시도해요. 인식이 끝나면 단어를 눌러 주세요.');
+    }finally{entry.retrying=false;}
+  }
   async function drain(){
     const session=wanted;
     if(active||!currentPdfSession(session)||state(session).closed||document.hidden)return;
@@ -138,9 +196,11 @@ const BreezePdfOcr=(()=>{
       if(words){try{boxesFromWords(words);}catch{words=null;}}
       if(!valid()){status(session,n,entry,'waiting');return;}
       if(!words){
+        // Cached lookup remains available even if an earlier native call stalls.
+        if(nativeWork){status(session,n,entry,'blocked');return;}
         const image=await raster(session,n,valid);
         if(!image){status(session,n,entry,'waiting');return;}
-        const result=await native.recognize({image});words=result.words;
+        const result=await recognize(native,image);words=result.words;
       }
       const boxes=boxesFromWords(words);
       // Closing/replacing the document also prevents late cache writes.
@@ -168,9 +228,8 @@ const BreezePdfOcr=(()=>{
   }
   function tap(session,n){
     const entry=states.get(session)?.pages.get(n);if(!entry)return false;
-    if(entry.status==='failed'){
-      status(session,n,entry,'waiting');schedule(session);
-      toast('글자 인식을 다시 시도해요. 인식이 끝나면 단어를 눌러 주세요.');
+    if(entry.status==='failed'||entry.status==='blocked'){
+      void retry(session,n,entry);
     }else if(entry.status==='unsupported')toast('스캔 PDF 단어 인식은 iOS·Android 앱에서 지원해요. 앱을 최신 버전으로 업데이트해 주세요.');
     else if(entry.status==='empty')toast('이 페이지에서 읽을 수 있는 영어 단어를 찾지 못했어요.');
     else if(['waiting','running'].includes(entry.status)){

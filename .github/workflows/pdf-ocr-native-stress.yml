@@ -28,12 +28,12 @@ jobs:
       - name: Execute production plugin with actual Apple Vision, network denied
         run: bash tests/native/run-pdf-ocr-vision.sh
         env:
-          BREEZE_OCR_REPEAT_COUNT: '96'
+          BREEZE_OCR_REPEAT_COUNT: '384'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-vision-stress
-          path: ${{ runner.temp }}/breeze-ocr-vision/*.json
+          path: ${{ runner.temp }}/breeze-ocr-vision/
           if-no-files-found: warn
           retention-days: 7
   mlkit:
