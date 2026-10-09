@@ -17,7 +17,9 @@ for(const [file,entry] of Object.entries(receipt.files)){
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const native=receipt.approvedNativeApple191;
 const nativeScope=native?.files||[];
-const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope]);
+const bootstrap=receipt.approvedCloudBootstrapFollowup;
+const bootstrapScope=bootstrap?.files||[];
+const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope,...bootstrapScope]);
 for(const file of new Set([...git('diff','--name-only',receipt.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
   assert.ok(permitted.has(file),'Unapproved file drift: '+file);
 }
@@ -31,18 +33,19 @@ const html=read('index.html');
 const web=receipt.approvedWebLandingIntegration;
 const webScope=web?[...web.files,...web.integrationFiles]:[];
 if(web){
-  const scope=new Set([...webScope,...nativeScope]);
+  const scope=new Set([...webScope,...nativeScope,...bootstrapScope]);
   for(const file of new Set([...git('diff','--name-only',web.appBase).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Combined web integration changed app source outside PR137: '+file);
   for(const file of web.files){
+    if(bootstrap?.sha256[file]&&file!=='landing/index.html')continue; // Exact follow-up hash checked below.
     const bytes=readFileSync(new URL(file,root));
     const source=execFileSync('git',['show',web.landingSource+':'+file],{cwd:root,maxBuffer:16*1024*1024});
-    const stamp=value=>file==='landing/index.html'?value.toString().replace(/\?v=[a-f0-9]{8}/g,''):value;
+    const stamp=value=>file==='landing/index.html'?value.toString().replace(/\?v=[a-f0-9]{8}/g,'').replace(bootstrap?.newLoginCopy||'__NO_COPY_CHANGE__',bootstrap?.oldLoginCopy||'__NO_COPY_CHANGE__'):value;
     assert.equal(hash(stamp(bytes)),hash(stamp(source)),'Combined web integration changed approved landing bytes: '+file);
   }
 }
 const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
 if(welcomeJoin){
-  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope]);
+  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope,...bootstrapScope]);
   for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
   assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
   assert.equal(normalized('index.html',Buffer.from(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin))).trim(),normalized('index.html',Buffer.from(git('show',welcomeJoin.base+':index.html'))),'Welcome join repair changed markup outside its one exit segment');
@@ -50,7 +53,7 @@ if(welcomeJoin){
 }
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
-  const scope=new Set([...followup.files,...webScope,...nativeScope]);
+  const scope=new Set([...followup.files,...webScope,...nativeScope,...bootstrapScope]);
   for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
     assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
   }
@@ -82,5 +85,17 @@ if(native){
  for(const file of native.files.filter(file=>!receipt.integrationScope.includes(file)&&file!=='docs/qa/breeze-1.9-integration/boundary.json'&&file!=='tests/verify-integration-boundary.mjs'))assert.equal(hash(normalized(file,readFileSync(new URL(file,root)))),native.sha256[file],'Native Apple 1.9.1 reviewed scope drift: '+file);
  assert.match(read('ios/App/App/Breeze.entitlements'),/<key>com.apple.developer.applesignin<\/key><array><string>Default<\/string><\/array>/);
  assert.ok(read('scripts/sync/sync.js').includes("signInWithIdToken({provider:'apple'"));
+}
+if(bootstrap){
+  const scope=new Set(bootstrapScope);
+  for(const file of new Set([...git('diff','--name-only',bootstrap.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Bootstrap/copy follow-up exceeded explicit scope: '+file);
+  for(const [file,expected] of Object.entries(bootstrap.sha256))assert.equal(hash(readFileSync(new URL(file,root))),expected,'Reviewed bootstrap/copy bytes changed: '+file);
+  const landing=read('landing/index.html');
+  assert.equal(landing.split(bootstrap.newLoginCopy).length,2,'Exactly one web login sentence replacement');
+  assert.equal(landing.replace(bootstrap.newLoginCopy,bootstrap.oldLoginCopy).trim(),git('show',bootstrap.base+':landing/index.html'),'Landing changed outside the approved web login sentence');
+  const packageBase=JSON.parse(git('show',bootstrap.base+':package.json'));
+  const packageNow=JSON.parse(read('package.json'));
+  packageNow.scripts.test=packageNow.scripts.test.replace(' tests/verify-ios-bootstrap.mjs','');
+  assert.deepEqual(packageNow,packageBase,'Package changed outside bootstrap test registration');
 }
 console.log('Combined 1.9/1.9.1 boundary passed: approved six-PR scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');

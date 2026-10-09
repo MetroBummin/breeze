@@ -56,6 +56,12 @@ try{
       assert.equal(await page.locator('#copy').evaluate(n=>n.inert),state>=4);
       if(state===0)assert.match(await page.locator('#copy').innerText(),/이야기의 흐름 그대로/);
       if(state===1)assert.match(await page.locator('#copy').innerText(),/Stay with the story/);
+      if(state<=1){
+        const supportCopy=await page.locator('#support').innerText();
+        assert.match(supportCopy,/웹에서는 Google·Apple로도 로그인할 수 있어요/);
+        assert.doesNotMatch(supportCopy,/Google·Apple 로그인은 준비 중/);
+        assert.match(supportCopy,/Android 앱은 공개 준비 중/);
+      }
       if(state===2){await page.locator('#word-peek').waitFor({state:'visible'});await inside(page,'#word-peek');}
       if(state===3){
         await page.locator('#ps-ko').waitFor({state:'visible'});await inside(page,'#p-sentence');
@@ -96,7 +102,7 @@ try{
     await page.screenshot({path:resolve(out,`${name}-${theme}-support.png`)});
     for(const href of await page.locator('#support a').evaluateAll(nodes=>nodes.map(n=>n.href))){const response=await context.request.get(href);assert.equal(response.status(),200,href);}
     assert.match(await page.locator('#support').innerText(),/Android 앱은 공개 준비 중/);
-    assert.match(await page.locator('#support').innerText(),/Google·Apple 로그인은 준비 중/);
+    assert.match(await page.locator('#support').innerText(),/웹에서는 Google·Apple로도 로그인할 수 있어요/);
     assert.equal(await page.locator('a[href*="play.google"]').count(),0);
     // Preference changes update both shared tokens and real screenshot variants.
     await page.emulateMedia({colorScheme:dark?'light':'dark'});
