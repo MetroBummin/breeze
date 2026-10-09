@@ -156,6 +156,14 @@
     .control-glass{background:var(--control-glass-surface);
       backdrop-filter:blur(19px) saturate(122%); -webkit-backdrop-filter:blur(19px) saturate(122%);}
   }
+  .pdf-ocr-confirm{position:fixed;z-index:135;width:260px;max-width:calc(100vw - 24px);
+    box-sizing:border-box;border-radius:18px;padding:12px;color:var(--ink);font:12px/1.5 var(--ui);}
+  .pdf-ocr-confirm p{margin:0 0 6px;}
+  .pdf-ocr-confirm strong{display:block;margin:4px 0 8px;font-size:21px;line-height:1.25;overflow-wrap:anywhere;}
+  .pdf-ocr-confirm-actions{display:flex;gap:6px;margin-top:8px;}
+  .pdf-ocr-confirm button{min-height:44px;flex:1;border:0;border-radius:12px;padding:6px;
+    background:transparent;color:inherit;font:600 12px var(--ui);cursor:pointer;}
+  .pdf-ocr-confirm button:focus-visible{outline:2px solid currentColor;outline-offset:1px;}
   /* 왼쪽 원과 오른쪽 조각은 **같은 높이·같은 윗변**입니다(36px · 안전 영역 + 10px).
      둘이 한 줄에 나란히 서는 물건이라, 한쪽만 1px 달라도 줄이 어긋나 보입니다.
      아래 `#readfabs` 의 높이도 같은 36px 이어야 합니다. */

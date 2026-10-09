@@ -1,4 +1,8 @@
-# Scanned PDF OCR draft validation — 2026-10-09
+# Initial scanned PDF OCR draft validation — 2026-10-09
+
+This is the initial implementation/failed-delete repair record. The later
+[stress evidence](scanned-pdf-ocr-stress-20261009.md) and PR143's exact-head CI
+report supersede its initial test counts and native-execution status.
 
 Independent branch from main `83cc182`; no merge, deployment, version bump or
 paid provider call. Original checkout `/workspace/breeze` remains untouched.
@@ -69,8 +73,9 @@ Verify native Pencil/stylus ink, finger pinch/momentum, device rotation and page
 navigation remain owned by their existing handlers. Use local saved dictionary
 answers or local response fixtures for acceptance to avoid paid calls. Capture
 actual task duration and peak memory on each tested device if performance numbers
-are needed. This draft contains no claimed OCR accuracy rate, speed or memory
-measurement, and no screenshot/automated browser claim of native acceptance.
+are needed. At this initial validation stage there was no claimed OCR accuracy
+rate, speed or memory measurement, and no screenshot/automated browser claim of
+native acceptance.
 
 ## CI follow-up: failed-delete lifetime repair
 

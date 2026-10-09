@@ -1,13 +1,14 @@
 /* Real PDF.js, raster/IndexedDB, hit-test and lookup; native recognition is a
    controlled bridge double. Does not measure Vision/ML Kit accuracy or latency. */
 import assert from 'node:assert/strict';
-import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,mkdtempSync,rmSync,mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 import {scanPdf} from './helpers/pdf-scan-fixture.mjs';
+import {stressPdfOcrBrowser} from './helpers/pdf-ocr-browser-stress.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2'};
 const server=createServer((req,res)=>{
  const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://local').pathname));
@@ -21,9 +22,14 @@ let browser,lookupAllowed=false;const prematureLookups=[];
 try{
  browser=await engine.launchPersistentContext(profile,{headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},serviceWorkers:'block'});
  const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',message=>{if(/pdf|worker/i.test(message.text()))console.log('PDF browser diagnostic:',message.text());});
+ page.on('requestfailed',request=>{if(request.url().includes('pdf-3.11.174.worker'))console.log('Bundled worker request failed:',request.failure());});
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
- await page.route('**/*',route=>{const u=route.request().url();
-  if(u.startsWith(url)||u.startsWith('blob:')||u.startsWith('data:'))return route.continue();
+ // WebKit routes blob: reads as well. Only intercept network protocols so
+ // offline emulation does not turn local IndexedDB Blob reads into requests.
+ // https://github.com/microsoft/playwright/issues/42727
+ await page.route(/^https?:\/\//,route=>{const u=route.request().url();
+  if(u.startsWith(url))return route.continue();
   if(/functions\/v1\/dict(?:[?\/]|$)/.test(u)){
    const input=route.request().postDataJSON()||{};
    if(input.op==='warm')return route.fulfill({contentType:'application/json',body:'{"ok":true}'});
@@ -57,7 +63,7 @@ try{
  for(const size of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000},{width:844,height:390},{width:320,height:568}]){
   await page.setViewportSize(size);
   for(const dark of [false,true]){
-   await page.evaluate(dark=>document.documentElement.dataset.theme=dark?'dark':'light',dark);
+   await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
    for(const zoom of [1,1.5,2.5]){
     const check=await page.evaluate(z=>{
      originalZoomLevel=z;applyOriginalZoomTransform();readerScrollTo(0);
@@ -67,20 +73,57 @@ try{
       error:Math.max(Math.abs(marker.left-(r.left+b.x*r.width)),Math.abs(marker.top-(r.top+b.y*r.height))),same:qaOcrBoxes===originalSession.wordBoxes.get(1)};
     },zoom);
     assert.equal(check.word,'Bright');assert.ok(check.same);assert.ok(check.error<.2,JSON.stringify({size,dark,zoom,check}));
+    if(zoom===1){
+     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+     await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
+     await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]));
+     const prompt=page.locator('.pdf-ocr-confirm');await prompt.waitFor();
+     const geometry=await prompt.evaluate(node=>{const r=node.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:innerWidth,height:innerHeight,buttons:[...node.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height),dark:document.body.classList.contains('dark')};});
+     assert.equal(geometry.dark,dark);assert.ok(geometry.left>=0&&geometry.top>=0&&geometry.right<=geometry.width&&geometry.bottom<=geometry.height,JSON.stringify(geometry));
+     assert.ok(geometry.buttons.every(h=>h>=44));assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
+     const proof='/tmp/breeze-ocr-confirm';mkdirSync(proof,{recursive:true});
+     await page.screenshot({path:`${proof}/${engine.name()}-${size.width}x${size.height}-${dark?'dark':'light'}.png`});
+     await page.locator('[data-ocr-dismiss]').click();
+    }
    }
   }
  }
  await page.setViewportSize({width:820,height:1180});
  await page.evaluate(()=>{originalZoomLevel=1;applyOriginalZoomTransform();readerScrollTo(0);});
- lookupAllowed=true;
  for(let i=0;i<3;i++){
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
+  lookupAllowed=i>0;
   await page.evaluate(async()=>{const p=originalSession.pages[0],r=p.getBoundingClientRect(),b=originalSession.wordBoxes.get(1)[0];await openPdfWordAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);});
+  if(i===0){
+   await page.locator('[data-ocr-confirm]').waitFor();
+   assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'first recognition must be confirmed before showing even a cached meaning');
+   lookupAllowed=true;await page.locator('[data-ocr-confirm]').click();
+  }else assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'repeated tap reuses this explicitly checked occurrence');
   await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
  }
+ lookupAllowed=false;
+ for(let i=0;i<2;i++){
+  await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[1]));
+  await page.locator('[data-ocr-confirm]').waitFor();
+  assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'another occurrence is not implicitly confirmed');
+  await page.locator('[data-ocr-dismiss]').click();
+ }
+ await page.evaluate(()=>{
+  originalSession.wordBoxes.set(1,originalSession.wordBoxes.get(1).map(b=>({...b})));
+  openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]);
+ });
+ await page.locator('[data-ocr-confirm]').waitFor();
+ assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'replacement boxes do not inherit confirmation by spelling or coordinates');
+ await page.locator('[data-ocr-dismiss]').click();
  // Reopen consumes durable results; eviction consumes cache without native rerun.
  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await renderOriginalBook(b,await originalGetForBook(b));});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===2);
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),1);
+ await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]));
+ await page.locator('[data-ocr-confirm]').waitFor();
+ assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'cache reopen does not inherit confirmation from an old session');
+ await page.locator('[data-ocr-dismiss]').click();
  await page.evaluate(async()=>{releaseOriginalPdfPage(originalSession,1);await renderOriginalPdfPage(originalSession,1);});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===2);
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),1);
@@ -114,7 +157,9 @@ try{
  assert.equal(await page.evaluate(()=>qaOldOcrSession.wordBoxes.get(1).length),0);
  await page.evaluate(()=>qaOcrCalls[3].resolve({words:[{...qaOcrResult[0],word:'Current'}]}));
  await page.waitForFunction(()=>originalSession.wordBoxes.get(1)?.[0]?.word==='Current');
+ lookupAllowed=false;
+ const stress=await stressPdfOcrBrowser({page,context:browser,engine:engine.name(),jpeg,openFixture,scanPdf});
  assert.deepEqual(errors,[]);
  assert.deepEqual(prematureLookups,[],'OCR must not itself request lookup');
- console.log(JSON.stringify({engine:engine.name(),passed:true,geometryCases:30,native:'mocked',network:'external requests blocked',unverified:'Vision/ML Kit accuracy and physical gestures'}));
+ console.log(JSON.stringify({engine:engine.name(),passed:true,geometryCases:30,stress,native:'mocked',network:'external requests blocked',unverified:'Vision/ML Kit accuracy and physical gestures'}));
 }finally{await browser?.close();rmSync(profile,{recursive:true,force:true});await new Promise(r=>server.close(r));}
