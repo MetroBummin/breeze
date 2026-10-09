@@ -97,7 +97,15 @@ try{
       // Locator hover can first scroll the short viewport to reveal the menu.
       await options.hover();
       const bodyScroll=await page.evaluate(()=>scrollY);
-      await page.mouse.wheel(0,600);
+      // Playwright mobile WebKit rejects mouse.wheel before dispatch. Keep
+      // wheel coverage on supported contexts and label the mobile simulation.
+      if(engine==='webkit'&&width<500){
+        record.bookListScrollInput='DOM scrollBy; mobile WebKit wheel unsupported';
+        await options.evaluate(e=>e.scrollBy(0,600));
+      }else{
+        record.bookListScrollInput='mouse wheel';
+        await page.mouse.wheel(0,600);
+      }
       await page.waitForFunction(()=>document.getElementById('vbook-options').scrollTop>0);
       assert.equal(await page.evaluate(()=>scrollY),bodyScroll,'Menu wheel scroll stays inside the book list');
       assert.equal(await books.getAttribute('open')!==null,true,'Scrolling does not dismiss the menu');

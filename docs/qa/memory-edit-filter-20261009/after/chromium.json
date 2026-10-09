@@ -105,6 +105,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -272,6 +273,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -399,6 +401,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -526,6 +529,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -653,6 +657,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -780,6 +785,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -907,6 +913,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -1034,6 +1041,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -1161,6 +1169,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -1288,6 +1297,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -1415,6 +1425,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",
@@ -1542,6 +1553,7 @@
     },
     "bookOutsideTapClosed": true,
     "bookEscapeClosed": true,
+    "bookListScrollInput": "mouse wheel",
     "largeText": {
       "fontSize": "20px",
       "lineHeight": "30px",

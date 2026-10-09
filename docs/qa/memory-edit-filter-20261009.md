@@ -76,6 +76,17 @@ computed font/line height, focus/contenteditable, viewport meta, visualViewport
 scale/dimensions/offsets, scroll and disclosure/dialog state. The test creates
 full-size screenshots for every case; representative phone images are committed.
 
+### CI harness correction
+
+The first WebKit attempt on `fc7c722` timed out downloading Ubuntu system
+packages before running any test. A same-head retry installed WebKit successfully
+and exposed a new harness error: Playwright rejects `mouse.wheel` in mobile
+WebKit. No app assertion failed before that unsupported call.
+The harness now keeps actual wheel coverage in all supported contexts and uses
+explicitly labeled `Element.scrollBy` in mobile WebKit. The scrolling, menu-open
+and unchanged body-scroll assertions remain. This does not claim finger-scroll
+coverage; physical iPhone scrolling remains in the release gate below.
+
 | Surface | Before | After |
 | --- | --- | --- |
 | Meaning focused, light | [14px](memory-edit-filter-20261009/before/phone-light-meaning-focused.png) | [16px](memory-edit-filter-20261009/after/phone-light-meaning-focused.png) |
