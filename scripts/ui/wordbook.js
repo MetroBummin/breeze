@@ -37,16 +37,20 @@ document.querySelectorAll('#vsort-options input').forEach(node=>node.addEventLis
   /** @type {HTMLElement} */(document.querySelector('#vsort-menu summary')).focus();
   renderVocab();
 }));
-document.addEventListener('click',event=>{
-  const menu=document.getElementById('vsort-menu');
-  if(!menu.contains(/** @type {Node} */(event.target))) menu.removeAttribute('open');
-});
-document.getElementById('vsort-menu').addEventListener('keydown',event=>{
-  if(/** @type {KeyboardEvent} */(event).key==='Escape'){
-    event.preventDefault();event.stopPropagation();
-    document.getElementById('vsort-menu').removeAttribute('open');
-    /** @type {HTMLElement} */(document.querySelector('#vsort-menu summary')).focus();
-  }
+function closeWordbookMenus(){
+  document.querySelectorAll('#vsort-menu[open],#vbooks[open]').forEach(menu=>menu.removeAttribute('open'));
+}
+document.querySelectorAll('#vsort-menu,#vbooks').forEach(menu=>{
+  document.addEventListener('click',event=>{
+    if(event.target instanceof Node&&!menu.contains(event.target)) menu.removeAttribute('open');
+  });
+  menu.addEventListener('keydown',event=>{
+    if(/** @type {KeyboardEvent} */(event).key==='Escape'){
+      event.preventDefault();event.stopPropagation();
+      menu.removeAttribute('open');
+      /** @type {HTMLElement} */(menu.querySelector('summary')).focus({preventScroll:true});
+    }
+  });
 });
 document.querySelectorAll('#vstars button').forEach(button=>button.addEventListener('click',()=>{
   const status=Number(/** @type {HTMLElement} */(button).dataset.status);

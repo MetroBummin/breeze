@@ -1,0 +1,25 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Reviewed PR139 source bytes changed: styles/wordbook.css
++ actual - expected
+
++ '34962cecfe96f1e6a9af1baeed04ee005f3ab2f11b136b1b26c9816df98c55c2'
+- 'fa6c380d3a1ea0cb7902c2488d0b1dac84d0396d76fd4b72576b4d42bd230e14'
+
+    at verifyCurrentFiles (file:///workspace/breeze/tools/record-191-followups-boundary.mjs:66:66)
+    at verifyCombinedBoundary (file:///workspace/breeze/tools/record-191-followups-boundary.mjs:110:2)
+    at file:///workspace/breeze/tests/verify-integration-boundary.mjs:9:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '34962cecfe96f1e6a9af1baeed04ee005f3ab2f11b136b1b26c9816df98c55c2',
+  expected: 'fa6c380d3a1ea0cb7902c2488d0b1dac84d0396d76fd4b72576b4d42bd230e14',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

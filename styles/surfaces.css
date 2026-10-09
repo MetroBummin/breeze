@@ -91,7 +91,6 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #v-vocab .wordbook-brand{gap:10px;margin-bottom:22px;}
 #v-vocab h1{font-size:22px;font-weight:600;}
 #v-vocab .vword{font-size:16px;font-weight:500;}
-#v-vocab .vko{font-size:14px;}
 #v-vocab .chip{min-width:44px;min-height:36px;padding:4px 8px;border-radius:12px;font:400 11px var(--ui);letter-spacing:2px;}
 #v-vocab .chip::after{inset:-4px 0;}
 #vbook-options{box-sizing:border-box;width:min(220px,calc(100vw - 64px));}
