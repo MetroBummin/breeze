@@ -13,20 +13,28 @@ function normalized(file,bytes){
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
 const sentence=receipt.approvedSentenceTextHighlightFollowup;
 const sentenceScope=sentence?[...sentence.files,...sentence.integrationFiles]:[];
+const sentenceFixture=sentence?.completionFixture;
 // Historical owner hashes remain authoritative for the pre-follow-up bytes;
 // independently require every current changed byte to equal the reviewed source.
-const historicalBytes=file=>sentence?.baseSha256[file]
+const historicalBytes=file=>sentence?.baseSha256[file]||sentenceFixture?.file===file
   ?execFileSync('git',['show',sentence.base+':'+file],{cwd:root})
   :readFileSync(new URL(file,root));
 if(sentence){
   const expectedSourceFiles=['.github/workflows/sentence-inline-feedback.yml','docs/decisions/004-sentence-lookup-feedback.md','index.html','scripts/reader/reader-modes.js','sw.js','tests/verify-light-lookup-tone-browser.mjs','tests/verify-sentence-cue-browser.mjs','tests/verify-sentence-inline-browser.mjs','tests/verify-sentence-text-ink-browser.mjs'];
   assert.deepEqual(sentence.files,expectedSourceFiles,'Sentence follow-up expanded its reviewed source scope');
-  assert.deepEqual(sentence.integrationFiles,['docs/qa/breeze-1.9-integration/boundary.json','tests/verify-integration-boundary.mjs','tools/record-sentence-highlight-boundary.mjs'],'Sentence boundary changed unrelated integration files');
+  assert.deepEqual(sentence.integrationFiles,['docs/qa/breeze-1.9-integration/boundary.json','tests/verify-integration-boundary.mjs','tools/record-sentence-highlight-boundary.mjs','tests/verify-article-preview-browser.mjs'],'Sentence boundary changed unrelated integration files');
   assert.deepEqual(Object.keys(sentence.sha256),sentence.files);
   assert.deepEqual(Object.keys(sentence.baseSha256),sentence.files.filter(file=>file!=='tests/verify-sentence-text-ink-browser.mjs'));
   assert.deepEqual(Object.keys(sentence.integrationSha256),sentence.integrationFiles.filter(file=>file!=='docs/qa/breeze-1.9-integration/boundary.json'));
   assert.equal(sentence.base,'b55f3df241607c95855a53009aceaa903e1da164');
   assert.equal(sentence.source,'9f292c1a0488111b46c9e6eefdf78c05d4ab85dd');
+  assert.equal(sentenceFixture.file,'tests/verify-article-preview-browser.mjs');
+  assert.equal(sentenceFixture.oldWait,'await page.waitForTimeout(100);');
+  assert.equal(sentenceFixture.newWait,"await page.waitForFunction(()=>document.querySelector('#article-preview').dataset.metadata==='fallback'&&document.querySelector('#article-preview').dataset.metadataReason==='network');");
+  const fixtureNow=readFileSync(new URL(sentenceFixture.file,root),'utf8'),fixtureBase=historicalBytes(sentenceFixture.file);
+  assert.equal(fixtureNow.split(sentenceFixture.newWait).length,2);
+  assert.equal(hash(fixtureNow.replace(sentenceFixture.newWait,sentenceFixture.oldWait)),hash(fixtureBase),'Article fallback fixture changed beyond completion wait');
+  assert.equal(hash(fixtureBase),sentenceFixture.baseSha256);
   for(const file of new Set([...git('diff','--name-only',sentence.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(sentenceScope.includes(file),'Sentence follow-up exceeded explicit source/integration scope: '+file);
   for(const file of sentence.files){
     const approved=execFileSync('git',['show',sentence.source+':'+file],{cwd:root});

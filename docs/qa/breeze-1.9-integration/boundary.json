@@ -2124,7 +2124,7 @@
   "approvedSentenceTextHighlightFollowup": {
     "base": "b55f3df241607c95855a53009aceaa903e1da164",
     "source": "9f292c1a0488111b46c9e6eefdf78c05d4ab85dd",
-    "scope": "Explicit 2026-10-09 sentence-highlight investigation/quick-fix approval and parent instruction to record this follow-up without bypassing CI. Only Text reader cue paint order/coordinates/cleanup, provider-free pixel/lifecycle/browser evidence, its decision record and generated cache stamps. Preserve word appearance, original PDF/EPUB rendering, text/Range/gesture ownership, AI/server/storage/auth/billing and native/release metadata. Main merge and release build remain gated on user screenshot review.",
+    "scope": "Explicit 2026-10-09 sentence-highlight investigation/quick-fix approval and parent instruction to repair CI formally without bypassing checks. Only Text reader cue paint order/coordinates/cleanup, provider-free pixel/lifecycle/browser evidence, its decision record and generated cache stamps. One existing article fallback test now waits for the mocked network failure instead of assuming completion after 100ms; its original assertion and all other bytes stay unchanged. Preserve word appearance, original PDF/EPUB rendering, text/Range/gesture ownership, AI/server/storage/auth/billing and native/release metadata. Main merge and release build remain gated on user screenshot review.",
     "files": [
       ".github/workflows/sentence-inline-feedback.yml",
       "docs/decisions/004-sentence-lookup-feedback.md",
@@ -2139,7 +2139,8 @@
     "integrationFiles": [
       "docs/qa/breeze-1.9-integration/boundary.json",
       "tests/verify-integration-boundary.mjs",
-      "tools/record-sentence-highlight-boundary.mjs"
+      "tools/record-sentence-highlight-boundary.mjs",
+      "tests/verify-article-preview-browser.mjs"
     ],
     "sha256": {
       ".github/workflows/sentence-inline-feedback.yml": "bb4ca37c954d1db9fbfe95ed424b03daeb280d7a38d6fa5f36f280381da46d80",
@@ -2163,8 +2164,15 @@
       "tests/verify-sentence-inline-browser.mjs": "4c745b11518a34f20582056cc2a5ecfbfbb4f54db005d28f5a19d6fc026c3e85"
     },
     "integrationSha256": {
-      "tests/verify-integration-boundary.mjs": "851e23bf05c3b4ecb567676f50fa679e9141ce70287209c2c84dfdb81812bfd0",
-      "tools/record-sentence-highlight-boundary.mjs": "84cb4a101e38391f58e510dcb9f15d5030d1d01ba3e9a6ff521c9413666b3fd0"
+      "tests/verify-integration-boundary.mjs": "54ea6333e9167a7672884d622e32eb88529c1feec69ce6027b263dfc07293cde",
+      "tools/record-sentence-highlight-boundary.mjs": "235f505509f377875c1df03d3412a94cb4e05b89aecf668c3ede3759111aebd2",
+      "tests/verify-article-preview-browser.mjs": "5902a595095f64cb97843fcbe531e03830719fc0bd56968467126fb66ee90ee1"
+    },
+    "completionFixture": {
+      "file": "tests/verify-article-preview-browser.mjs",
+      "oldWait": "await page.waitForTimeout(100);",
+      "newWait": "await page.waitForFunction(()=>document.querySelector('#article-preview').dataset.metadata==='fallback'&&document.querySelector('#article-preview').dataset.metadataReason==='network');",
+      "baseSha256": "471db2eeef1c4007646f8281324a02d1c9ca6bc894b3a475406a784f196e89ab"
     }
   }
 }
