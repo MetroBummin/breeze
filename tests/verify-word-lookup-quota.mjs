@@ -53,8 +53,8 @@ try{
   assert.equal((await receipt({u:null,device:'device-blocked',request:crypto.randomUUID(),result:answer})).status,'login_required');
   assert.equal((await db.query("select calls from public.anon_usage where device='device-blocked'")).rows.length,0);
   // Execute the real Edge handler against the real receipt SQL with fake providers.
-  let handler,providerCalls=0,broken=false;
-  const sr={auth:{getUser:async()=>({data:{user:{id:user}}})},rpc:async(name,p)=>{
+  let handler,providerCalls=0,broken=false,providerAnswer=answer;
+  const sr={auth:{getUser:async token=>({data:{user:token==='fixture'?{id:user}:null}})},rpc:async(name,p)=>{
     assert.ok(['word_lookup_receipt','sentence_lookup_receipt'].includes(name));
     const data=await receipt({u:p.p_user,device:p.p_device,request:p.p_request,fingerprint:p.p_fingerprint,result:p.p_answer,kind:name.startsWith('sentence')?'sentence':'word'});
     return {data,error:null};
@@ -63,12 +63,12 @@ try{
   runInNewContext(transpileModule(edge,{compilerOptions:{target:99,module:99}}).outputText,{
     ...lookup,logicalLookup,lookupFingerprint,crypto,TextEncoder,AbortSignal,Response,console,
     createClient:()=>sr,newAiTrace:()=>({}),
-    meteredFetch:async()=>{providerCalls++;return Response.json({choices:[{message:{content:broken?'invalid JSON':JSON.stringify(answer)}}]});},
+    meteredFetch:async()=>{providerCalls++;return Response.json({choices:[{message:{content:broken?'invalid JSON':JSON.stringify(providerAnswer)}}]});},
     Deno:{env:{get:key=>key==='OPENROUTER_API_KEY'?'fixture':key==='SUPABASE_URL'?'fixture':null},serve:fn=>handler=fn}
   });
   await db.query('update public.ai_usage set calls=0 where user_id=$1',[user]);
-  const invoke=async lookupId=>{
-    const res=await handler(new Request('http://fixture',{method:'POST',headers:{authorization:'Bearer fixture','content-type':'application/json'},body:JSON.stringify({op:'look_v2',lookupId,word:'patient',clicked:'patient',sentence:'patient reader',clickedIndex:0,cands:['patient']})}));
+  const invoke=async(lookupId,patch={},token='fixture')=>{
+    const res=await handler(new Request('http://fixture',{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify({op:'look_v2',lookupId,word:'patient',clicked:'patient',sentence:'patient reader',clickedIndex:0,cands:['patient'],...patch})}));
     return {status:res.status,body:await res.json()};
   };
   await db.exec('set role service_role');
@@ -78,6 +78,26 @@ try{
   const beforeReplay=providerCalls;assert.equal((await invoke(edgeId)).body.ko,answer.ko);
   assert.equal(providerCalls,beforeReplay);assert.equal(await calls(),1);
   await invoke(crypto.randomUUID());assert.equal(await calls(),2);
+  // A canonical outside every old lemma candidate succeeds on one provider
+  // response, then replays from the real SQL receipt without another charge.
+  const selfieId=crypto.randomUUID(),selfieBody={word:'selfy',clicked:'Selfies',sentence:'Selfies are popular.',clickedIndex:0,cands:['selfy','selfies']};
+  providerAnswer={kind:'word',canonical:'selfie',members:[0],ko:'셀카'};
+  const beforeSelfie=providerCalls;
+  const selfie=await invoke(selfieId,selfieBody);
+  assert.equal(selfie.status,200);assert.equal(selfie.body.canonical,'selfie');assert.equal(selfie.body.lemma,'selfie');
+  assert.equal(providerCalls,beforeSelfie+1);assert.equal(await calls(),3);
+  assert.equal((await invoke(selfieId,selfieBody)).body.ko,'셀카');
+  assert.equal(providerCalls,beforeSelfie+1);assert.equal(await calls(),3);
+  const beforeDenied=providerCalls;
+  assert.equal((await invoke(crypto.randomUUID(),selfieBody,'invalid-fixture')).status,401);
+  assert.equal(providerCalls,beforeDenied);assert.equal(await calls(),3);
+  await db.exec('reset role');
+  await db.query('update public.ai_usage set calls=3000 where user_id=$1',[user]);
+  await db.exec('set role service_role');
+  assert.equal((await invoke(crypto.randomUUID(),selfieBody)).status,429);
+  assert.equal(providerCalls,beforeDenied);assert.equal(await calls(),3000);
+  await db.exec('reset role');
+  await db.query('update public.ai_usage set calls=3 where user_id=$1',[user]);
   await db.exec('reset role;update public.anon_daily set calls=0');
   for(let n=0;n<10;n++)await receipt({u:null,device:'device-1234',kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}});
   assert.equal((await receipt({u:null,device:'device-1234',kind:'sentence',request:crypto.randomUUID()})).status,'anon_exhausted');

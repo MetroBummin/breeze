@@ -33,7 +33,13 @@ assert.match(contextual,/"after":"Nobody believed him\."/);
 const backrooms=box.miniPrompt(box.lookupInput({word:'wild',clicked:'wild',sentence:"It was something I hadn't ever seen before, it was completely wild.",clickedIndex:11,before:'Was this the Backrooms thing she had been obsessing over?',after:"I couldn't believe she had bought into this nonsense."}));
 assert.match(backrooms,/"before":"Was this the Backrooms thing she had been obsessing over\?"/);
 assert.match(backrooms,/"after":"I couldn't believe she had bought into this nonsense\."/);
-assert.throws(()=>box.validateLook({kind:'word',canonical:'flood',members:[1],ko:'홍수'},bank),/invalid_lemma/);
+// Semantic correctness belongs to the model; source membership is still checked.
+assert.equal(box.validateLook({kind:'word',canonical:'flood',members:[1],ko:'홍수'},bank).canonical,'flood');
+assert.throws(()=>box.validateLook({kind:'word',canonical:'flood',members:[2],ko:'홍수'},bank),/invalid_members/);
+const selfies=box.lookupInput({word:'selfy',clicked:'Selfies',sentence:'Selfies are popular.',clickedIndex:0,cands:['selfy','selfies']});
+assert.equal(box.validateLook({kind:'word',canonical:'selfie',members:[0],ko:'셀카'},selfies).canonical,'selfie');
+assert.match(box.miniPrompt(selfies),/"selected_text":"Selfies"/);
+assert.doesNotMatch(box.miniPrompt(selfies),/target_lemma|selfy/);
 const repeated=box.lookupInput({word:'take',clicked:'take',sentence:'I take notes before the planes take off.',clickedIndex:1});
 for(const members of [[1,6,7],[1,7]])assert.throws(()=>box.validateLook({kind:'expression',canonical:'take off',members,ko:'이륙하다'},repeated));
 const possessive=box.lookupInput({word:'leg',clicked:'leg',sentence:'I am pulling your leg.',clickedIndex:4});
