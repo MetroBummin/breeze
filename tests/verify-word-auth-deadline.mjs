@@ -130,7 +130,8 @@ test('new attempt during shared authentication is the only one allowed to dispat
 test('already-arrived usable answer is saved without clearing a newer lookup loading',async()=>{
   const f=fixture(),currentAuth=deferred();f.session(()=>currentAuth.promise);
   f.box.pendingWord=null;f.box.meaningKey=s=>s;f.box.isAcro=()=>false;
-  vm.runInContext(slice('function applyLook(', '/* A failed first lookup'),f.box);
+  vm.runInContext(slice('function applyWordCanonical(', 'function contextCardKey(')+
+    slice('function applyLook(', '/* A failed first lookup'),f.box);
   const newer=f.box.fetchLook('patient',{life:f.next()});
   f.box.applyLook(f.box.words.patient,answer({word:'patient'}),'patient',{life:1});
   assert.equal(f.box.words.patient.ko,'참을성 있는');assert.equal(f.box.words.patient.aiLoading,true);

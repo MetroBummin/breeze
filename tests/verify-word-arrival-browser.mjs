@@ -28,7 +28,7 @@ try{
   });
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.locator('#fileinput').setInputFiles({name:'word-overlay.txt',mimeType:'text/plain',
-    buffer:Buffer.from(('A patient reader keeps resilient words close to their context. Selfies are popular. '+
+    buffer:Buffer.from(('A patient reader keeps resilient words close to their context. Selfies are popular. Brownies are tasty. '+
       'Another patient reader checks every repeated word carefully. '+
       'The patient waited calmly for the doctor.\n\n').repeat(50))});
   await page.waitForFunction(()=>books.some(book=>book.kind==='txt'));
@@ -43,7 +43,7 @@ try{
     const payload=route.request().postDataJSON();requests.push(payload);
     if(failures>0){failures--;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
     if(responseGate)await responseGate;
-    const canonical=String(payload.clicked||'').toLowerCase()==='selfies'?'selfie':payload.word;
+    const canonical=({selfies:'selfie',brownies:'brownie'})[String(payload.clicked||'').toLowerCase()]||payload.word;
     return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical,lemma:canonical,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
   });
   await page.evaluate(url=>{
@@ -126,6 +126,22 @@ try{
     assert.equal(requests.at(-1).lookupId,requests[before].lookupId,'manual retry lost its recovery ID');
     assert.equal(await page.evaluate(()=>currentContext(selKey)?.error||''),'');
   }
+  // An existing unresolved card's context-specific lookup also preserves the
+  // AI canonical without moving its storage key or starting a second AI call.
+  const beforeContext=requests.length;
+  await page.evaluate(()=>{
+    closePanel();
+    const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()==='brownies'&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
+    if(!node)throw Error('Missing visible canonical context fixture');
+    words.browny={word:'browny',clicked:'Brownies',forms:['browny','brownies'],ko:'',defs:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
+    openWord('browny',node);
+  });
+  await page.waitForFunction(()=>words.browny.ko==='참을성 있는'&&!words.browny.aiLoading);
+  assert.deepEqual(await page.evaluate(()=>({key:selKey,word:words.browny.word,clicked:words.browny.clicked,hasRenamedKey:!!words.brownie})),
+    {key:'browny',word:'brownie',clicked:'Brownies',hasRenamedKey:false});
+  assert.equal(requests.length,beforeContext+1);
+  await page.locator('#word-peek-more').click();
+  assert.equal(await page.locator('#p-word').textContent(),'brownie');
   // Keep production deadline values, but advance only those timers explicitly.
   // Real buttons and transport run against deferred synthetic authentication.
   await page.evaluate(()=>{
