@@ -2109,8 +2109,8 @@
       "tests/verify-ios-bootstrap.mjs",
       "tests/verify-landing-browser.mjs"
     ],
-    "oldLoginCopy": "Google·Apple 로그인은 준비 중이에요.",
-    "newLoginCopy": "웹에서는 Google·Apple로도 로그인할 수 있어요.",
+    "oldLoginCopy": "Google\u00b7Apple \ub85c\uadf8\uc778\uc740 \uc900\ube44 \uc911\uc774\uc5d0\uc694.",
+    "newLoginCopy": "\uc6f9\uc5d0\uc11c\ub294 Google\u00b7Apple\ub85c\ub3c4 \ub85c\uadf8\uc778\ud560 \uc218 \uc788\uc5b4\uc694.",
     "sha256": {
       ".github/workflows/ios-bootstrap.yml": "a2f495c858ed1aed69a6cb0813e089d23ab686e967d1f40867855ff24015fb03",
       "docs/decisions/020-xcode-cloud-node-bootstrap.md": "fc13452a79dfcbc6f8795407ceeaa42958d66f256df09036e25dddf926035c26",
@@ -2119,6 +2119,31 @@
       "package.json": "c4c8f21c7a3083c04eb8edc1cab993fbb18897c3c6538eaee721b36cea111ca1",
       "tests/verify-ios-bootstrap.mjs": "6ace2b9b61be3336090c5885de108c6ca74419a3e5ffe4658ce5e297c811e3ad",
       "tests/verify-landing-browser.mjs": "5847ee037241a860e7b354bbd309747ef8fc5645b225dfe85adc4b8627107e56"
+    }
+  },
+  "approvedMemoryTitleFollowup": {
+    "base": "b55f3df241607c95855a53009aceaa903e1da164",
+    "scope": "Explicit user Yes: match only the Wordbook Breeze Memory title to the authored Breeze lettering. Reuse exact Breeze contour and companion e/r construction; no arbitrary font. Preserve colors, heading name, 44px add button, placement, all storage/auth/lookup/navigation/native/release behavior. Separate draft PR; no merge, deployment, ASC, archive/upload or build-counter change. Extend only title-related browser/strict scope evidence.",
+    "files": [
+      "index.html",
+      "styles/wordbook.css",
+      "assets/brand/wordmarks/breeze-memory-mask.svg",
+      "tests/verify-design-memory-browser.mjs",
+      "tests/verify-integration-boundary.mjs",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "docs/decisions/014-design-only-brand-release.md",
+      "docs/qa/memory-handwritten-title-20261009.md",
+      "sw.js"
+    ],
+    "oldTitle": "<h1>Breeze Memory</h1>",
+    "newTitle": "<h1 class=\"memory-wordmark\">Breeze Memory</h1>",
+    "oldStyles": "/* Match Home\u2019s 44px header row; compensate the text ink inside its line box. */\n#v-vocab .wordbook-brand h1{transform:translateY(-3.25px);}\n",
+    "newStyles": "/* Original Breeze contour with matching Memory lettering; fixed geometry avoids font/asset layout shifts. */\n#v-vocab .wordbook-brand .memory-wordmark{position:relative;flex:0 1 226px;min-width:0;height:44px;font-size:0;line-height:0;letter-spacing:0;}\n#v-vocab .memory-wordmark::before{content:\"\";position:absolute;inset:0;background:var(--settings-ink);mask:url(../assets/brand/wordmarks/breeze-memory-mask.svg) left center/contain no-repeat;-webkit-mask:url(../assets/brand/wordmarks/breeze-memory-mask.svg) left center/contain no-repeat;}\n",
+    "sha256": {
+      "styles/wordbook.css": "9d8d00e5e8226c68e4faf237759a39b277a6dd0d03d7a573e71686220d6ecd1b",
+      "assets/brand/wordmarks/breeze-memory-mask.svg": "3d86a0b2ac2269d1d7013f58fb6e0b72a561aa2705c5ef16c455f0ae8d907381",
+      "tests/verify-design-memory-browser.mjs": "ca349ff6ac6a4de3c9621cd98db00ec8f4d88d7fdad9b9ed66b5714474e7228f",
+      "docs/decisions/014-design-only-brand-release.md": "ce821f232219586cc4514d1195d0c9d07e4216d035c90bfb531e0297e1016c6e"
     }
   }
 }

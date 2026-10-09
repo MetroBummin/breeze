@@ -53,3 +53,25 @@ is performed. Whole-app theme settings remain a separate proposal.
 
 References: [Apple asset-catalog appearances](https://developer.apple.com/documentation/xcode/configuring-your-app-icon),
 [Android adaptive/themed icons](https://developer.android.com/develop/ui/compose/system/icon_design_adaptive).
+
+## Memory handwritten title follow-up (2026-10-09 draft)
+
+User explicitly selected handwritten `Breeze Memory` lettering matching the
+existing Breeze logo. The old Memory heading is UI text, while the original
+Breeze logo is an authored SVG contour, not a cursive font. Reuse that exact
+contour in a small companion mask; draw Memory at the same 26-unit pen weight
+and reuse the welcome e/r loop construction. No third-party font, dependency,
+license substitution or change to the existing brand assets is introduced.
+
+The semantic h1 still contains `Breeze Memory`. CSS masks use the existing
+`--settings-ink` in both themes. A fixed 44px heading row and a flexible 226px
+lettering width replace the previous text-only optical correction, retaining
+the safe-area + 24px position, 32px gap below the header and original 44px
+glass add button. Narrow screens keep the existing 10px button gap. The
+lettering can load without changing header geometry or waiting for a font.
+
+This draft starts at main b55f3df241607c95855a53009aceaa903e1da164 and changes
+only the title, its companion asset and validation/decision evidence. Word
+storage, auth, lookup, navigation, welcome, Home, icons and release metadata
+remain unchanged. No main/release merge, deployment, archive/upload, build
+counter change or App Store Connect operation is authorized by this follow-up.

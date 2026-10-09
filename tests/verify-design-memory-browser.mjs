@@ -10,6 +10,12 @@ const server=createServer((req,res)=>{try{const f=resolve(root,'.'+new URL(req.u
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='chromium'&&process.env.BREEZE_CHROMIUM?{executablePath:process.env.BREEZE_CHROMIUM}:{});
 const measurements=[];
+if(phase==='after'){
+ const original=readFileSync(resolve(root,'assets/brand/wordmark-mask.svg'),'utf8').match(/<path d="([^"]+)"/)[1];
+ const companion=readFileSync(resolve(root,'assets/brand/wordmarks/breeze-memory-mask.svg'),'utf8');
+ assert.equal(companion.match(/<path d="([^"]+)"/)[1],original,'Keep the authored Breeze contour exactly');
+ assert.ok(!/<text\b|@font-face|https?:/.test(companion.replace('http://www.w3.org/2000/svg','')),'Lettering has no external font or network dependency');
+}
 try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',390,844,59],['narrow',320,568,0],['tablet',820,1180,0],['desktop',1440,900,0],['short',844,390,0]])for(const dark of [false,true]){
  const key=`${name}-${dark?'dark':'light'}`,context=await browser.newContext({viewport:{width,height},serviceWorkers:'block'});
  await context.addInitScript(d=>{localStorage.setItem('breeze.dark',JSON.stringify(d));localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));},dark);
@@ -26,7 +32,17 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
  });await page.screenshot({path:`${out}/${key}-home.png`});await page.locator('#logo .mark').screenshot({path:`${out}/${key}-home-ink.png`});
  await page.locator('#nav-vocab').click();await page.evaluate(()=>document.fonts.ready);
  const title=await page.locator('.wordbook-brand h1').boundingBox(),button=await page.locator('#wordbook-add').boundingBox();
- const titleInk=await page.locator('.wordbook-brand h1').evaluate(e=>{
+ const titleInk=await page.locator('.wordbook-brand h1').evaluate(async e=>{
+  if(e.classList.contains('memory-wordmark')){
+   const rect=e.getBoundingClientRect(),style=getComputedStyle(e,'::before');
+   const image=new Image();image.src=(style.maskImage||style.webkitMaskImage).match(/url\(["']?(.*?)["']?\)/)[1];await image.decode();
+   const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+   const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+   let top=canvas.height,bottom=0,left=canvas.width,right=0;
+   for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(data[(y*canvas.width+x)*4+3]>128){top=Math.min(top,y);bottom=Math.max(bottom,y+1);left=Math.min(left,x);right=Math.max(right,x+1);}
+   const scale=Math.min(rect.width/canvas.width,rect.height/canvas.height),offset=(rect.height-canvas.height*scale)/2;
+   return {top:rect.top+offset+top*scale,bottom:rect.top+offset+bottom*scale,left:rect.left+left*scale,right:rect.left+right*scale,source:[canvas.width,canvas.height],color:style.backgroundColor};
+  }
   const style=getComputedStyle(e),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   const metrics=ctx.measureText(e.textContent),marker=document.createElement('span');marker.style.cssText='display:inline-block;width:0;height:0';e.append(marker);
   const baseline=marker.getBoundingClientRect().top;marker.remove();return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent,baseline,font:ctx.font};
@@ -39,6 +55,11 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   assert.ok(Math.abs(opticalCenterDelta)<=2,`Visible header ink centers differ by ${opticalCenterDelta}px: ${JSON.stringify(titleInk)}`);
   assert.equal(await page.locator('.wordbook-brand img').count(),0);
   assert.equal(await page.locator('.wordbook-brand h1').textContent(),'Breeze Memory');
+  assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
+  assert.ok(titleInk.left>=title.x&&titleInk.right<=button.x-10,'Lettering fits with the existing button gap');
+  const ink=await page.locator('#v-vocab').evaluate(e=>getComputedStyle(e).color);
+  assert.equal(titleInk.color,ink,'Preserve the existing light/dark title ink');
+  const header=await page.locator('.wordbook-brand').boundingBox();assert.equal(header.height,44);
   assert.equal(button.width,44);assert.equal(button.height,44);assert.ok(Math.abs(button.y-(24+safe))<1);
   assert.equal(await page.locator('#wordbook-add').getAttribute('aria-label'),'단어 추가');
   const style=await page.locator('#wordbook-add').evaluate(e=>{const s=getComputedStyle(e);return {radius:s.borderRadius,background:s.backgroundColor,border:s.borderTopWidth}});
@@ -61,6 +82,25 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   assert.deepEqual(errors,[]);
  }
  await context.close();
-}}finally{await browser.close();await new Promise(r=>server.close(r));}
+}
+if(phase==='after')for(const dark of [false,true]){
+ const context=await browser.newContext({viewport:{width:320,height:568},serviceWorkers:'block'});
+ await context.addInitScript(d=>{localStorage.setItem('breeze.dark',JSON.stringify(d));localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));},dark);
+ let release;const loaded=new Promise(r=>release=r);
+ await context.route('**/*',async route=>{
+  const resource=route.request().url();
+  if(!resource.startsWith(url)||/\.(woff2?|ttf)(\?|$)/.test(resource))return route.abort();
+  if(resource.endsWith('/breeze-memory-mask.svg'))await loaded;
+  return route.continue();
+ });
+ const page=await context.newPage();await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
+ await page.evaluate(()=>{endOnboarding(true);show('vocab')});
+ const before=await page.locator('.wordbook-brand').boundingBox();
+ assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
+ release();await page.locator('.memory-wordmark').evaluate(async()=>{const img=new Image();img.src='assets/brand/wordmarks/breeze-memory-mask.svg';await img.decode()});
+ assert.deepEqual(await page.locator('.wordbook-brand').boundingBox(),before,'Delayed lettering and missing fonts must not move the header');
+ await context.close();
+}
+}finally{await browser.close();await new Promise(r=>server.close(r));}
 writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
 console.log(`${phase}: ${engine}, twelve light/dark layouts, safe-area fixture, screenshots and Memory controls passed.`);
