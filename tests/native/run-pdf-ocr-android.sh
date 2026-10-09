@@ -7,9 +7,11 @@ export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/c
 sdkmanager 'system-images;android-35;google_apis;x86_64' </dev/null
 printf 'no\n' | avdmanager create avd --force --name breeze_ocr_stress --package 'system-images;android-35;google_apis;x86_64'
 ocr_accel=off
-if emulator -accel-check >"$ocr_proof_dir/acceleration.txt" 2>&1; then ocr_accel=on; fi
+emulator -accel-check >"$ocr_proof_dir/acceleration.txt" 2>&1 || true
+cat "$ocr_proof_dir/acceleration.txt"
+if [ -r /dev/kvm ] && [ -w /dev/kvm ] && grep -q 'installed and usable' "$ocr_proof_dir/acceleration.txt"; then ocr_accel=on; fi
 emulator -avd breeze_ocr_stress -no-window -no-audio -no-boot-anim -no-snapshot \
-  -gpu swiftshader_indirect -accel "$ocr_accel" -memory 2048 -cores 2 \
+  -gpu swiftshader -accel "$ocr_accel" -memory 2048 -cores 2 \
   -camera-back none -camera-front none >"$ocr_proof_dir/emulator.log" 2>&1 &
 ocr_emulator_pid=$!
 trap 'adb emu kill >/dev/null 2>&1 || true; kill "$ocr_emulator_pid" >/dev/null 2>&1 || true' EXIT
@@ -20,7 +22,8 @@ for attempt in $(seq 1 160); do
   sleep 3
 done
 if [ "$ocr_ready" != 1 ]; then
-  echo 'Android emulator did not boot within 480 seconds; native execution is unverified.' >&2
+  cat "$ocr_proof_dir/emulator.log"
+  echo 'Android emulator exited or exceeded the 480-second boot deadline; native execution is unverified.' >&2
   exit 1
 fi
 adb shell cmd connectivity airplane-mode enable
