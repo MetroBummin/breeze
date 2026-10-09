@@ -270,3 +270,6 @@ nonmodal source-adjacent prompt. Confidence 1.0 was observed on a wrong spelling
 in the native stress corpus. The prompt does not intercept reading/zoom gestures;
 it closes and invalidates its action when the source position changes. Existing
 text-layer word lookup remains unchanged, and OCR does not expose sentence lookup.
+An explicitly checked live box supports direct repeat lookup. The WeakSet check
+does not transfer to an identical spelling/position reconstructed from cache or
+another session, and does not persist a user correction.

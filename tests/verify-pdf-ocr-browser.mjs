@@ -22,6 +22,8 @@ let browser,lookupAllowed=false;const prematureLookups=[];
 try{
  browser=await engine.launchPersistentContext(profile,{headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},serviceWorkers:'block'});
  const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',message=>{if(/pdf|worker/i.test(message.text()))console.log('PDF browser diagnostic:',message.text());});
+ page.on('requestfailed',request=>{if(request.url().includes('pdf-3.11.174.worker'))console.log('Bundled worker request failed:',request.failure());});
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
  await page.route('**/*',route=>{const u=route.request().url();
   if(u.startsWith(url)||u.startsWith('blob:')||u.startsWith('data:'))return route.continue();
@@ -88,17 +90,37 @@ try{
  for(let i=0;i<3;i++){
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
-  lookupAllowed=false;
+  lookupAllowed=i>0;
   await page.evaluate(async()=>{const p=originalSession.pages[0],r=p.getBoundingClientRect(),b=originalSession.wordBoxes.get(1)[0];await openPdfWordAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);});
-  await page.locator('[data-ocr-confirm]').waitFor();
-  assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'recognition must be confirmed before showing even a cached meaning');
-  lookupAllowed=true;await page.locator('[data-ocr-confirm]').click();
+  if(i===0){
+   await page.locator('[data-ocr-confirm]').waitFor();
+   assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'first recognition must be confirmed before showing even a cached meaning');
+   lookupAllowed=true;await page.locator('[data-ocr-confirm]').click();
+  }else assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'repeated tap reuses this explicitly checked occurrence');
   await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
  }
+ lookupAllowed=false;
+ for(let i=0;i<2;i++){
+  await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[1]));
+  await page.locator('[data-ocr-confirm]').waitFor();
+  assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'another occurrence is not implicitly confirmed');
+  await page.locator('[data-ocr-dismiss]').click();
+ }
+ await page.evaluate(()=>{
+  originalSession.wordBoxes.set(1,originalSession.wordBoxes.get(1).map(b=>({...b})));
+  openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]);
+ });
+ await page.locator('[data-ocr-confirm]').waitFor();
+ assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'replacement boxes do not inherit confirmation by spelling or coordinates');
+ await page.locator('[data-ocr-dismiss]').click();
  // Reopen consumes durable results; eviction consumes cache without native rerun.
  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await renderOriginalBook(b,await originalGetForBook(b));});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===2);
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),1);
+ await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]));
+ await page.locator('[data-ocr-confirm]').waitFor();
+ assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'cache reopen does not inherit confirmation from an old session');
+ await page.locator('[data-ocr-dismiss]').click();
  await page.evaluate(async()=>{releaseOriginalPdfPage(originalSession,1);await renderOriginalPdfPage(originalSession,1);});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===2);
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),1);

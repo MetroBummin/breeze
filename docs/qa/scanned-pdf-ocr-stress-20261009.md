@@ -76,6 +76,16 @@ process** samples, including models, active autorelease objects and the harness.
 The observed increase is not evidence of a stable long-run plateau or a proven
 leak. It is not an iPhone memory estimate or acceptance result.
 
+The follow-up [Vision job](https://github.com/MetroBummin/breeze/actions/runs/37960279739/job/113921072781)
+at `5600d0bcd2c9143ff1e42196bd3c4c2f55c716be` completed the same 25 cases and
+**96 repeated calls** after moving RSS sampling outside the input autorelease
+pool. The same word mismatches and five clean-control successes were observed.
+Repeated-call RSS ranged from 169,672,704 to 192,266,240 bytes, first/last
+181,092,352 / 172,408,832 bytes. This bounded run does not show monotonically
+increasing RSS, but does not establish a long-run leak-free plateau or physical
+device budget. The [follow-up evidence](evidence/pdf-ocr-vision-5600d0b.json)
+retains the measured samples; no phone latency estimate is inferred.
+
 ML Kit compiled in that run but did not execute: the emulator process exited
 during startup, before instrumentation. Its first harness did not print the
 redirected emulator log, so the precise startup reason is not established by
@@ -94,16 +104,28 @@ emulation when existing KVM access is unavailable, without changing permissions.
 
 - Missing, nonfinite or out-of-range confidence and rectangles that clamp to
   zero area no longer become lookup words. A failing regression preceded the fix.
-- Confidence is not treated as proof of spelling. Every OCR word requires a
-  nonmodal spelling check before the existing lookup, including cached meanings.
-  Repeated source taps do not confirm. Original reading and zoom stay available;
+- Confidence is not treated as proof of spelling. A new OCR occurrence requires
+  a nonmodal spelling check before the existing lookup, including cached meanings.
+  Explicit confirmation is reused for repeated taps on that same live box only.
+  Other occurrences, replaced boxes, eviction and reopening need their own check;
+  unconfirmed repeat taps and cancellation do not grant it. No spelling editor
+  or durable user correction is added. Original reading and zoom stay available;
   source changes invalidate the prompt/action. OCR does not enable sentence lookup.
 - The existing explicit tap retry after a native failure remains; unreadable
   pages remain readable originals. No cloud fallback or spelling fabrication is
   introduced. Returning to the original dismisses the spelling prompt.
 
 Final browser/native results and exact head are recorded in the PR. Browser
-stress uses native doubles and locally fulfilled bundled assets for offline
+stress uses native doubles and the real bundled PDF.js worker through its
+`workerPort` API for offline
 reopening, not a claim about web/PWA offline support or model accuracy. Physical
 iPhone/iPad/Android hardware, real user handwriting, stylus delivery and
 long-duration memory behavior remain separate acceptance gates.
+
+At `5600d0b`, Chromium completed the 60-page browser stress; WebKit completed
+both cache passes but timed out before presenting the offline reopened reader.
+HTTP worker routing plus Playwright's offline mode was a test-environment
+dependency. The follow-up supplies the identical bundled worker bytes through
+`workerPort`, keeps offline mode enabled, and retains all reopening assertions
+and extra failure diagnostics. This isolates local-asset availability; only a
+passing follow-up establishes that this was sufficient.

@@ -4,6 +4,9 @@
 const BreezePdfOcr=(()=>{
   const REVISION='scan-en-v1-2048',MAX_WORDS=3000,MAX_CACHE_PAGES=48;
   const states=new WeakMap();
+  // Explicitly checked spelling belongs to this published occurrence, not to a
+  // word string, persisted cache entry, another page or a later reader session.
+  const checkedOccurrences=new WeakSet();
   let active=null,timer=0,wanted=null,confirmation=null,confirmationNode=null;
   const cacheDb=openDb('breeze-pdf-ocr',1,db=>db.createObjectStore('pages').createIndex('at','at'));
   function state(session){
@@ -183,6 +186,10 @@ const BreezePdfOcr=(()=>{
     dismissConfirmation();
     const session=originalSession,token=readerModeChangeToken;
     if(!ownsPdfBoxes(page,[box],session)||document.hidden)return;
+    if(checkedOccurrences.has(box)){
+      if(!originalPdfPaintPaused()&&!pdfScrollBusy(session))accept();
+      return;
+    }
     if(typeof closePanel==='function')closePanel();
     if(typeof closeSentence==='function')closeSentence();
     const node=document.createElement('div');node.className='pdf-ocr-confirm control-glass';
@@ -206,7 +213,7 @@ const BreezePdfOcr=(()=>{
       event.preventDefault();event.stopPropagation();
       const valid=confirmation===entry&&currentPdfSession(session)&&readerModeChangeToken===token
         &&ownsPdfBoxes(page,[box],session)&&!document.hidden&&!originalPdfPaintPaused()&&!pdfScrollBusy(session);
-      dismissConfirmation();if(valid)accept();
+      dismissConfirmation();if(valid){checkedOccurrences.add(box);accept();}
     });
     no.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();dismissConfirmation();});
   }

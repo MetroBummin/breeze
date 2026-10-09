@@ -138,22 +138,27 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
   console.log(`OCR browser stress: completed cache pass ${pass+1}`);
  }
  // Browser offline means dictionary/network unavailable, but an already cached
- // page remains tappable. Fulfill the bundled worker from disk like Capacitor's
- // local asset scheme: Playwright routing disables HTTP cache and setOffline
- // otherwise blocks even localhost. This is not a web/PWA offline-cache claim.
+ // page remains tappable. Use the bundled worker bytes through PDF.js's real
+ // workerPort API, like Capacitor's network-independent local assets. Playwright
+ // offline mode can block HTTP worker loading even when a page route fulfills
+ // it (WebKit failed before reader presentation). No PDF parsing is mocked.
+ // This is not a web/PWA offline-cache claim.
  const worker=new URL('../../assets/lib/pdf-3.11.174.worker.min.js',import.meta.url);
- const workerRoute='**/assets/lib/pdf-3.11.174.worker.min.js*';
- await page.route(workerRoute,route=>route.fulfill({contentType:'text/javascript',body:readFileSync(worker)}));
+ await page.evaluate(source=>{
+  window.qaLocalWorkerUrl=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+  window.qaLocalWorker=new Worker(qaLocalWorkerUrl);
+  pdfjsLib.GlobalWorkerOptions.workerPort=qaLocalWorker;
+ },readFileSync(worker,'utf8'));
  await context.setOffline(true);
  const beforeOffline=await page.evaluate(()=>qaStress.calls.length);
  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await openBook(b);await switchReaderMode('original');});
- await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused());
- await page.evaluate(()=>goPdfPage(56));
- try{await page.waitForFunction(()=>originalSession.wordBoxes.get(56)?.length===2);}
- catch(error){console.log('Offline reopen diagnostic',await page.evaluate(async()=>({pending:readerPositionPending(),mode:currentReaderMode,visible:pdfPagesInView(originalSession),page:originalSession.navigationPage,status:originalSession.pages[55].dataset.ocr,wordCount:originalSession.wordBoxes.get(56)?.length,cache:await qaCacheCount(),calls:qaStress.calls.slice(-3).map(({page,book})=>({page,book})),current:currentPdfSession()})));throw error;}
+ try{
+  await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused());
+  await page.evaluate(()=>goPdfPage(56));
+  await page.waitForFunction(()=>originalSession.wordBoxes.get(56)?.length===2);
+ }catch(error){console.log('Offline reopen diagnostic',await page.evaluate(async()=>({pending:readerPositionPending(),paused:originalPdfPaintPaused(),mode:currentReaderMode,presented:originalSession?.presented,visible:originalSession?pdfPagesInView(originalSession):[],page:originalSession?.navigationPage,status:originalSession?.pages?.[55]?.dataset.ocr,wordCount:originalSession?.wordBoxes?.get(56)?.length,cache:await qaCacheCount(),calls:qaStress.calls.slice(-3).map(({page,book})=>({page,book})),current:currentPdfSession()})));throw error;}
  assert.equal(await page.evaluate(()=>qaStress.calls.length),beforeOffline);
  await context.setOffline(false);
- await page.unroute(workerRoute);
  for(let i=0;i<8;i++){
   await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await openBook(b);await switchReaderMode('original');});
   await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused());
@@ -161,6 +166,9 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
   await page.waitForFunction(()=>originalSession.wordBoxes.get(56)?.length===2);
  }
  await sample('after-eight-reopens');
+ // The current document still owns the real worker; browser-context teardown
+ // releases it after this test, rather than terminating a live PDF mid-read.
+ await page.evaluate(()=>{pdfjsLib.GlobalWorkerOptions.workerPort=null;URL.revokeObjectURL(qaLocalWorkerUrl);});
  assert.equal(await page.evaluate(()=>qaStress.peak),1);
  assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
  const report={native:'controlled bridge responses, not accuracy',pages:60,rapidNavigationIntents:6,cachePasses:2,reopens:9,

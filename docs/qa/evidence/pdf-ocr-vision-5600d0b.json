@@ -1,0 +1,1015 @@
+{
+  "engine": "Apple Vision",
+  "environment": "macOS CI; not iOS hardware",
+  "native": true,
+  "rows": [
+    {
+      "id": "print-48",
+      "kind": "printed",
+      "strict": true,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 3519.500541666673,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "large-180",
+      "kind": "printed",
+      "strict": true,
+      "expected": 2,
+      "accepted": 2,
+      "correct": 2,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1839.5559583333352,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "huge-360",
+      "kind": "printed",
+      "strict": false,
+      "expected": 1,
+      "accepted": 1,
+      "correct": 1,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 977.1358750000019,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-8",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 4,
+      "wrong": [],
+      "milliseconds": 891.1757500000022,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-12",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 2,
+      "missed": 2,
+      "wrong": [
+        {
+          "word": "Briaht",
+          "at": 0,
+          "confidence": 1
+        },
+        {
+          "word": "uliet",
+          "at": 2,
+          "confidence": 0.5
+        }
+      ],
+      "milliseconds": 1305.9882916666652,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-16",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 2,
+      "missed": 2,
+      "wrong": [
+        {
+          "word": "briont",
+          "at": 0,
+          "confidence": 0.30000001192092896
+        },
+        {
+          "word": "worla",
+          "at": 1,
+          "confidence": 0.30000001192092896
+        }
+      ],
+      "milliseconds": 1338.400583333339,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "small-24",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1034.0087916666648,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blur-1.5",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 859.0215416666638,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blur-4",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1035.5070416666763,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blur-8",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 4,
+      "wrong": [],
+      "milliseconds": 343.42049999999347,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "low-contrast",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 854.7072500000041,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-7",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 883.8091249999991,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation--13",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1032.991999999993,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-90",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 897.0748333333347,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-180",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1045.808291666674,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "rotation-270",
+      "kind": "printed",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1123.1446666666614,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "two-columns",
+      "kind": "printed",
+      "strict": true,
+      "expected": 12,
+      "accepted": 12,
+      "correct": 12,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1045.4447916666682,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "repeated",
+      "kind": "printed",
+      "strict": true,
+      "expected": 8,
+      "accepted": 8,
+      "correct": 8,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 905.8890833333351,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "dense",
+      "kind": "printed",
+      "strict": false,
+      "expected": 120,
+      "accepted": 120,
+      "correct": 120,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 1274.5590833333154,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "synthetic-ink-only",
+      "kind": "synthetic-ink",
+      "strict": false,
+      "expected": 2,
+      "accepted": 2,
+      "correct": 2,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 812.7845833333254,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "mixed-print-ink",
+      "kind": "mixed-synthetic-ink",
+      "strict": false,
+      "expected": 5,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 1,
+      "wrong": [],
+      "milliseconds": 825.0863333333314,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "flattened-ink-overlap",
+      "kind": "flattened-ink",
+      "strict": false,
+      "expected": 4,
+      "accepted": 4,
+      "correct": 4,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 863.5036249999928,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "blank",
+      "kind": "printed",
+      "strict": true,
+      "expected": 0,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 452.64262500000996,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "scribbles-no-words",
+      "kind": "synthetic-ink",
+      "strict": false,
+      "expected": 0,
+      "accepted": 0,
+      "correct": 0,
+      "missed": 0,
+      "wrong": [],
+      "milliseconds": 358.1715416666782,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    },
+    {
+      "id": "clipped-edges",
+      "kind": "printed",
+      "strict": false,
+      "expected": 2,
+      "accepted": 1,
+      "correct": 0,
+      "missed": 2,
+      "wrong": [
+        {
+          "word": "wor",
+          "at": 1,
+          "confidence": 0.30000001192092896
+        }
+      ],
+      "milliseconds": 802.6470416666598,
+      "geometry": "word center within independently drawn ink bounds, with 1% page tolerance"
+    }
+  ],
+  "repetitions": [
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 25,
+      "milliseconds": 951.1092916666826,
+      "residentBytes": 181092352
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 26,
+      "milliseconds": 921.9078333333357,
+      "residentBytes": 181927936
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 27,
+      "milliseconds": 857.7472499999885,
+      "residentBytes": 182026240
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 28,
+      "milliseconds": 880.1133750000076,
+      "residentBytes": 182140928
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 29,
+      "milliseconds": 821.7670833333273,
+      "residentBytes": 182239232
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 30,
+      "milliseconds": 783.7225833333434,
+      "residentBytes": 182353920
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 31,
+      "milliseconds": 841.2832083333228,
+      "residentBytes": 182452224
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 32,
+      "milliseconds": 842.2116666666568,
+      "residentBytes": 182566912
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 33,
+      "milliseconds": 884.6825833333298,
+      "residentBytes": 182665216
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 34,
+      "milliseconds": 812.1986666666601,
+      "residentBytes": 182829056
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 35,
+      "milliseconds": 894.3119583333328,
+      "residentBytes": 182927360
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 36,
+      "milliseconds": 769.6202083333219,
+      "residentBytes": 183042048
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 37,
+      "milliseconds": 997.2078333333343,
+      "residentBytes": 183156736
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 38,
+      "milliseconds": 1283.0686249999985,
+      "residentBytes": 183255040
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 39,
+      "milliseconds": 776.9242500000075,
+      "residentBytes": 183369728
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 40,
+      "milliseconds": 1011.7529999999988,
+      "residentBytes": 183468032
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 41,
+      "milliseconds": 970.9404166666786,
+      "residentBytes": 183582720
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 42,
+      "milliseconds": 944.1626249999899,
+      "residentBytes": 183681024
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 43,
+      "milliseconds": 867.2164583333313,
+      "residentBytes": 183795712
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 44,
+      "milliseconds": 1322.8263333333246,
+      "residentBytes": 183894016
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 45,
+      "milliseconds": 1477.8145000000222,
+      "residentBytes": 183992320
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 46,
+      "milliseconds": 1296.0594583333602,
+      "residentBytes": 184090624
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 47,
+      "milliseconds": 2617.872708333323,
+      "residentBytes": 184205312
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 48,
+      "milliseconds": 1560.540791666682,
+      "residentBytes": 184303616
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 49,
+      "milliseconds": 1364.5537916666797,
+      "residentBytes": 184451072
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 50,
+      "milliseconds": 1570.0191666666683,
+      "residentBytes": 184582144
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 51,
+      "milliseconds": 1202.2269999999935,
+      "residentBytes": 184680448
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 52,
+      "milliseconds": 1001.4284583333222,
+      "residentBytes": 184795136
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 53,
+      "milliseconds": 858.5642500000006,
+      "residentBytes": 184893440
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 54,
+      "milliseconds": 890.9317500000213,
+      "residentBytes": 185008128
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 55,
+      "milliseconds": 1053.020041666656,
+      "residentBytes": 185106432
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 56,
+      "milliseconds": 1044.1757083333414,
+      "residentBytes": 185221120
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 57,
+      "milliseconds": 879.5677916666591,
+      "residentBytes": 185319424
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 58,
+      "milliseconds": 849.9733333333097,
+      "residentBytes": 185434112
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 59,
+      "milliseconds": 890.8932916666572,
+      "residentBytes": 185532416
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 60,
+      "milliseconds": 882.0699999999988,
+      "residentBytes": 185647104
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 61,
+      "milliseconds": 866.8799166666759,
+      "residentBytes": 185761792
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 62,
+      "milliseconds": 864.7637499999803,
+      "residentBytes": 185860096
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 63,
+      "milliseconds": 1061.788583333339,
+      "residentBytes": 185974784
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 64,
+      "milliseconds": 1057.6802499999758,
+      "residentBytes": 186073088
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 65,
+      "milliseconds": 940.6241666666801,
+      "residentBytes": 186187776
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 66,
+      "milliseconds": 1664.847166666675,
+      "residentBytes": 186286080
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 67,
+      "milliseconds": 1155.084208333335,
+      "residentBytes": 186400768
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 68,
+      "milliseconds": 1025.875124999999,
+      "residentBytes": 186499072
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 69,
+      "milliseconds": 1105.660208333319,
+      "residentBytes": 186613760
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 70,
+      "milliseconds": 1292.305208333346,
+      "residentBytes": 186728448
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 71,
+      "milliseconds": 1309.4908749999945,
+      "residentBytes": 186826752
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 72,
+      "milliseconds": 1009.4573333333301,
+      "residentBytes": 186941440
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 73,
+      "milliseconds": 1081.4949583333373,
+      "residentBytes": 187056128
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 74,
+      "milliseconds": 1097.5552499999992,
+      "residentBytes": 187170816
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 75,
+      "milliseconds": 1317.6600416666702,
+      "residentBytes": 187269120
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 76,
+      "milliseconds": 1014.3389166666736,
+      "residentBytes": 187383808
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 77,
+      "milliseconds": 813.5178333333215,
+      "residentBytes": 187482112
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 78,
+      "milliseconds": 1453.2174999999938,
+      "residentBytes": 187596800
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 79,
+      "milliseconds": 1739.8948333333522,
+      "residentBytes": 187695104
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 80,
+      "milliseconds": 1138.787624999992,
+      "residentBytes": 187809792
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 81,
+      "milliseconds": 1069.5972916666676,
+      "residentBytes": 187908096
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 82,
+      "milliseconds": 937.5980000000084,
+      "residentBytes": 188022784
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 83,
+      "milliseconds": 997.2655833333306,
+      "residentBytes": 188121088
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 84,
+      "milliseconds": 819.6400833333257,
+      "residentBytes": 188235776
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 85,
+      "milliseconds": 761.8411249999895,
+      "residentBytes": 188350464
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 86,
+      "milliseconds": 990.0928333333354,
+      "residentBytes": 188448768
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 87,
+      "milliseconds": 1381.2941666666632,
+      "residentBytes": 188563456
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 88,
+      "milliseconds": 971.4725000000044,
+      "residentBytes": 188661760
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 89,
+      "milliseconds": 930.2292499999965,
+      "residentBytes": 189120512
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 90,
+      "milliseconds": 970.6261666666762,
+      "residentBytes": 189218816
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 91,
+      "milliseconds": 895.0301666666576,
+      "residentBytes": 189333504
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 92,
+      "milliseconds": 888.0264583333144,
+      "residentBytes": 189431808
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 93,
+      "milliseconds": 919.9078333333262,
+      "residentBytes": 189546496
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 94,
+      "milliseconds": 1116.6582916666528,
+      "residentBytes": 189644800
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 95,
+      "milliseconds": 1068.282499999981,
+      "residentBytes": 189759488
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 96,
+      "milliseconds": 939.1411249999919,
+      "residentBytes": 189857792
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 97,
+      "milliseconds": 1045.7223333333445,
+      "residentBytes": 189972480
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 98,
+      "milliseconds": 945.2249166666604,
+      "residentBytes": 190087168
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 99,
+      "milliseconds": 1209.2621666666616,
+      "residentBytes": 190185472
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 100,
+      "milliseconds": 1008.8568749999922,
+      "residentBytes": 190300160
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 101,
+      "milliseconds": 1092.7117083333258,
+      "residentBytes": 190398464
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 102,
+      "milliseconds": 1014.2611249999902,
+      "residentBytes": 190513152
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 103,
+      "milliseconds": 1231.92825000001,
+      "residentBytes": 190611456
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 104,
+      "milliseconds": 1120.6346666666605,
+      "residentBytes": 190758912
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 105,
+      "milliseconds": 1037.8351666666674,
+      "residentBytes": 190857216
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 106,
+      "milliseconds": 1155.8120416666782,
+      "residentBytes": 190971904
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 107,
+      "milliseconds": 957.5924166666709,
+      "residentBytes": 191070208
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 108,
+      "milliseconds": 1201.9982083333218,
+      "residentBytes": 191184896
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 109,
+      "milliseconds": 1205.4399583333293,
+      "residentBytes": 191299584
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 110,
+      "milliseconds": 1231.359166666664,
+      "residentBytes": 191414272
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 111,
+      "milliseconds": 1282.1517083333447,
+      "residentBytes": 191528960
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 112,
+      "milliseconds": 1137.2039583333446,
+      "residentBytes": 191627264
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 113,
+      "milliseconds": 1053.7254166666798,
+      "residentBytes": 191741952
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 114,
+      "milliseconds": 1084.0819166666904,
+      "residentBytes": 191840256
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 115,
+      "milliseconds": 1254.917208333353,
+      "residentBytes": 191954944
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 116,
+      "milliseconds": 1093.7446249999994,
+      "residentBytes": 192053248
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 117,
+      "milliseconds": 1228.5898750000115,
+      "residentBytes": 192167936
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 118,
+      "milliseconds": 925.5571249999832,
+      "residentBytes": 192266240
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 119,
+      "milliseconds": 1418.0044166666903,
+      "residentBytes": 169672704
+    },
+    {
+      "error": null,
+      "id": "print-48",
+      "iteration": 120,
+      "milliseconds": 1747.7318333333187,
+      "residentBytes": 172408832
+    }
+  ],
+  "limitations": [
+    "Synthetic corpus only; vector ink is not representative human handwriting.",
+    "macOS Vision differs from iOS-device model/runtime.",
+    "PSS/RSS include models and harness; bounded observations cannot prove absence of leaks."
+  ],
+  "strictFailures": []
+}

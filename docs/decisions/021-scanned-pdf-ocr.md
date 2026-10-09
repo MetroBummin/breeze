@@ -65,8 +65,13 @@ changes require a revision bump if their cached output must be invalidated.
 
 Completed words feed `session.wordBoxes`, the existing saved/selected markers,
 and `openPdfWord`. An OCR word first opens a nonmodal spelling confirmation.
-Only its explicit "맞아요, 뜻 보기" action starts the existing lookup; repeated
-source taps never count as confirmation. Outside input, scroll, pinch, resize,
+Its explicit "맞아요, 뜻 보기" action starts the existing lookup and remembers
+that exact published box in a WeakSet. Repeated taps on that same live occurrence
+then open lookup directly. The check is not shared by word string, another box,
+cache reconstruction, page eviction or document reopening; it is never persisted.
+Unconfirmed repeated source taps never count as confirmation. There is no new
+spelling editor or saved user correction; "원문으로" dismisses the prompt.
+Outside input, scroll, pinch, resize,
 backgrounding or reader exit dismisses the prompt, and its callback rechecks the
 document, occurrence and position generation. Reading and zoom remain available.
 Native stress found `Bright` recognized as `Briaht` at confidence 1.0; raising a
