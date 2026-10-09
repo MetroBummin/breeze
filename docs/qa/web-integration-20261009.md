@@ -37,3 +37,12 @@ state. A main-triggered archive is not a claim of a new reviewed release.
 Public service retrieval was proxy-blocked during preparation. Deployment run
 and served-byte/cache/mobile/browser verification are reported separately after
 the final source is merged; local screenshots do not prove public deployment.
+
+## Later approved native follow-up
+
+Before publishing main, the user approved native Apple login and version 1.9.1.
+This supersedes only the earlier metadata/auth freeze above; baseline counter
+253 remains until Cloud supplies the actual number. See
+[native implementation and owner checks](native-apple-191-20261009.md). Main is
+updated once with the final verified combined source to avoid an intermediate
+archive. Manual Cloud/review/provider/credential actions remain separate.

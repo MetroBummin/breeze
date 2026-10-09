@@ -18,7 +18,7 @@ for (const build of [undefined, '', '0', '-1', '1.2', 'abc', ' 237', '237\n', '0
 for (const [name, altered] of [
   ['missing build', baseline.replace('CURRENT_PROJECT_VERSION = 253;', '')],
   ['target mismatch', baseline.replace('CURRENT_PROJECT_VERSION = 253;', 'CURRENT_PROJECT_VERSION = 237;')],
-  ['marketing drift', baseline.replace('MARKETING_VERSION = 1.9;', 'MARKETING_VERSION = 1.10;')],
+  ['marketing drift', baseline.replace('MARKETING_VERSION = 1.9.1;', 'MARKETING_VERSION = 1.10;')],
   ['missing target', baseline.replace('PRODUCT_BUNDLE_IDENTIFIER = kr.io.breeze.app.share;', 'PRODUCT_BUNDLE_IDENTIFIER = other;')],
 ]) {
   test(`reject ${name}`, () => assert.throws(() => applyCloudBuild(altered, '238')));

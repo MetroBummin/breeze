@@ -4,6 +4,7 @@ import Capacitor
 import WebKit
 import AVFoundation
 import AuthenticationServices
+import CryptoKit
 
 // BEGIN AUTH_CALLBACK_POLICY
 // Foundation-only boundary exercised by the unsigned native CI job.
@@ -31,6 +32,27 @@ private enum BreezeAuthCallbackPolicy {
     }
 }
 // END AUTH_CALLBACK_POLICY
+
+// BEGIN APPLE_TOKEN_POLICY
+// These checks bind the OS reply to this request. Supabase verifies the JWT
+// signature and the raw nonce before accepting the existing Apple identity.
+private enum BreezeAppleTokenPolicy {
+    static func accepts(_ token: String, nonceHash: String, subject: String, now: TimeInterval = Date().timeIntervalSince1970) -> Bool {
+        let parts = token.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3, !parts[0].isEmpty, !parts[2].isEmpty, !subject.isEmpty else { return false }
+        var payload = String(parts[1]).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        payload += String(repeating: "=", count: (4 - payload.count % 4) % 4)
+        guard let data = Data(base64Encoded: payload),
+              let claims = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              claims["iss"] as? String == "https://appleid.apple.com",
+              claims["aud"] as? String == "kr.io.breeze.app",
+              claims["sub"] as? String == subject,
+              claims["nonce"] as? String == nonceHash,
+              let expiry = claims["exp"] as? Double, expiry > now else { return false }
+        return true
+    }
+}
+// END APPLE_TOKEN_POLICY
 
 // BEGIN PDF_CONTACT_POLICY
 // Native identities only: never compare these with DOM Touch/Pointer IDs.
@@ -264,7 +286,7 @@ private final class BreezeRefreshControl: UIRefreshControl {
     }
 }
 
-final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate, ASWebAuthenticationPresentationContextProviding {
+final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate, ASWebAuthenticationPresentationContextProviding, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     #if DEBUG
     private let pdfMotionProbe = BreezePdfMotionProbe()
     private var pdfMotionTraceEnabled = false
@@ -311,6 +333,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var authRequest: String?
     private var authReply: ((Any?, String?) -> Void)?
     private var authDeadline: DispatchWorkItem?
+    private var appleAuthController: ASAuthorizationController?
+    private var appleAuthNonce: String?
     private static let sharedFileHandler = "breezeSharedFile"
     private let sharedFileQueue = DispatchQueue(label: "kr.io.breeze.shared-files", qos: .userInitiated)
     private static let readerSelectionHandler = "breezeReaderSelection"
@@ -475,22 +499,54 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
 
     // System consent browser only; credentials stay with Apple/Google and
-    // Supabase. No OAuth client, entitlement, provider or provisioning changes.
+    // Supabase. Google retains browser OAuth; Apple uses the native flow below.
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         view.window ?? ASPresentationAnchor()
     }
 
-    private func finishAuth(request: String, callback: URL? = nil, error: String? = nil) {
+    private func finishAuth(request: String, callback: URL? = nil, value: Any? = nil, error: String? = nil) {
         guard authRequest == request else { return }
         let reply = authReply
         let session = authSession
+        let apple = appleAuthController
         authRequest = nil
         authReply = nil
         authSession = nil
+        appleAuthController = nil
+        appleAuthNonce = nil
         authDeadline?.cancel()
         authDeadline = nil
         if callback == nil { session?.cancel() }
-        reply?(callback?.absoluteString, error)
+        apple?.delegate = nil
+        apple?.presentationContextProvider = nil
+        if error != nil, #available(iOS 16.0, *) { apple?.cancel() }
+        reply?(value ?? callback?.absoluteString, error)
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        view.window ?? ASPresentationAnchor()
+    }
+
+    private func appleNonceHash(_ nonce: String) -> String {
+        SHA256.hash(data: Data(nonce.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard controller === appleAuthController, let request = authRequest, let nonce = appleAuthNonce else { return }
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              credential.state == request,
+              let data = credential.identityToken, let token = String(data: data, encoding: .utf8),
+              BreezeAppleTokenPolicy.accepts(token, nonceHash: appleNonceHash(nonce), subject: credential.user) else {
+            finishAuth(request: request, error: "Apple 로그인 응답을 확인할 수 없어요.")
+            return
+        }
+        finishAuth(request: request, value: ["request": request, "nonce": nonce, "identityToken": token])
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        guard controller === appleAuthController, let request = authRequest else { return }
+        let cancelled = (error as? ASAuthorizationError)?.code == .canceled
+        finishAuth(request: request, error: cancelled ? "로그인을 취소했어요." : "Apple 로그인을 마치지 못했어요. 다시 시도해 주세요.")
     }
 
     private func handleAuthMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
@@ -506,6 +562,32 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         if action == "cancel" {
             finishAuth(request: request, error: "로그인을 취소했어요.")
             replyHandler(true, nil)
+            return
+        }
+        if action == "apple" {
+            guard view.window != nil, authRequest == nil,
+                  let nonce = body["nonce"] as? String, nonce.count == 64,
+                  nonce.allSatisfy({ "0123456789abcdef".contains($0) }) else {
+                replyHandler(nil, "Apple 로그인 요청을 확인할 수 없어요.")
+                return
+            }
+            let appleRequest = ASAuthorizationAppleIDProvider().createRequest()
+            appleRequest.requestedScopes = [.email]
+            appleRequest.nonce = appleNonceHash(nonce)
+            appleRequest.state = request
+            let controller = ASAuthorizationController(authorizationRequests: [appleRequest])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            authRequest = request
+            authReply = replyHandler
+            appleAuthNonce = nonce
+            appleAuthController = controller
+            let timeout = DispatchWorkItem { [weak self] in
+                self?.finishAuth(request: request, error: "로그인 시간이 지났어요. 다시 시도해 주세요.")
+            }
+            authDeadline = timeout
+            DispatchQueue.main.asyncAfter(deadline: .now() + 120, execute: timeout)
+            controller.performRequests()
             return
         }
         guard action == "start", view.window != nil,

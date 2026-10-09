@@ -274,8 +274,8 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "3364943d84cb31c8f2aeed6e7db510240a47545f70cf6727f6604aee77653642",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "ce5919292153029970db79941bcb1053346f43cc9a7671ff5b786a3add63b0ce",
       "sourceSha256": {
         "127": "3364943d84cb31c8f2aeed6e7db510240a47545f70cf6727f6604aee77653642"
       }
@@ -294,8 +294,8 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "d9da40e8e58bf6e3386f2c35fb01ea751b4f138bbf651ccd8f0adda58069c456",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "3a555e53ac41189296fdbe63e1e4b80237e7af4857dc78e7e6202f27b21b3710",
       "sourceSha256": {
         "127": "d9da40e8e58bf6e3386f2c35fb01ea751b4f138bbf651ccd8f0adda58069c456"
       }
@@ -318,8 +318,8 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "11110a0e6f0c74211f8618902cee80ee137dc8abc49bcf39d396512b1ca28143",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "0485e5de8fbe262ac1033530fe1efef1e8963953b2b4e9efc9818a647ac198c3",
       "sourceSha256": {
         "127": "11110a0e6f0c74211f8618902cee80ee137dc8abc49bcf39d396512b1ca28143"
       }
@@ -348,8 +348,8 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "1c8f1e6046b1bb86d89fa2bad1bbd2f5e3e83b6749c97b3b867a10f46a7c412b",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "9070c3c34d2abd013994f5be605d07a5e8b22548a096d999b5820cf690d447d7",
       "sourceSha256": {
         "127": "1c8f1e6046b1bb86d89fa2bad1bbd2f5e3e83b6749c97b3b867a10f46a7c412b"
       }
@@ -358,8 +358,8 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "2618867eb5407f995a774dba9bdc32517ce2f4669b3e10f4bfb412d99c3af1e8",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "889326b9973804d5099bcc43425173dcfe974432d0baaf46a1cc10f43989fc67",
       "sourceSha256": {
         "127": "2618867eb5407f995a774dba9bdc32517ce2f4669b3e10f4bfb412d99c3af1e8"
       }
@@ -368,8 +368,8 @@
       "owners": [
         "127"
       ],
-      "kind": "single-source",
-      "sha256": "81eeb780fa624539cbbd53a22cf02d00f0b6c3f22ad769e8b04e7c2891730e2b",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "65a0b326b4a839bde7209d6eaeba162f1e26a9429bf1526b8555b76e8f9ee874",
       "sourceSha256": {
         "127": "81eeb780fa624539cbbd53a22cf02d00f0b6c3f22ad769e8b04e7c2891730e2b"
       }
@@ -410,8 +410,8 @@
       "owners": [
         "127"
       ],
-      "kind": "combined-reviewed",
-      "sha256": "0bb80b253788baca47053004bc81baf9f39dca276ae5be0dbad8089419c3b84d",
+      "kind": "native-apple-191-reviewed",
+      "sha256": "5aec4c597d225a05e4cdd5c11abf7bdfcb2ea27c6d334344acc4381e9d801291",
       "sourceSha256": {
         "127": "cd83da4142b4b16baf3a38999860cc75181c5a0aff18a85d68c8b07965571b78"
       }
@@ -2052,5 +2052,47 @@
       "tests/verify-site-navigation-browser.mjs",
       ".github/workflows/integrity.yml"
     ]
+  },
+  "approvedNativeApple191": {
+    "base": "e450a86094f7ba0f42daaac5da8d348ea866a4e1",
+    "scope": "Explicit user approval: native iPhone/iPad Apple AuthenticationServices ID-token login through the existing Supabase client with SHA-256 nonce, cancellation/session-write gates, unchanged UI/web OAuth/Google/Android/data ownership; App/Share 1.9.1 marketing metadata, baseline counter 253, App-only Apple entitlement. No manual archive, Apple review action, provider/secret/account operation or email-based identity linking. Source reviewed independently of live signing/identity continuity.",
+    "files": [
+      "docs/decisions/016-social-auth.md",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "docs/qa/native-apple-191-20261009.md",
+      "docs/qa/web-integration-20261009.md",
+      "index.html",
+      "ios/App/App.xcodeproj/project.pbxproj",
+      "ios/App/App/Breeze.entitlements",
+      "ios/App/App/SceneDelegate.swift",
+      "scripts/sync/sync.js",
+      "sw.js",
+      "tests/auth-native-policy-checks.swift",
+      "tests/verify-apple-login.mjs",
+      "tests/verify-auth-native-policy.mjs",
+      "tests/verify-integration-boundary.mjs",
+      "tests/verify-ios-cloud-build.mjs",
+      "tests/verify-social-login-browser.mjs",
+      "tools/ios-testflight.sh",
+      "tools/verify-ios-release.mjs"
+    ],
+    "sha256": {
+      "docs/decisions/016-social-auth.md": "ce5919292153029970db79941bcb1053346f43cc9a7671ff5b786a3add63b0ce",
+      "docs/qa/native-apple-191-20261009.md": "0d2d3cee6b23b0e2084576d337fb83d12203be7247a2d263b99a0b4ccadc7949",
+      "docs/qa/web-integration-20261009.md": "9c2591ed564b1d9a6aa4b00a80b1d23d2a972fe15a1fb66f3b44c2393301732f",
+      "index.html": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "ios/App/App.xcodeproj/project.pbxproj": "022f5610fb38b3650df67e23e1bbf61ee4b426e5ffd965d64e91ea02b4864c6f",
+      "ios/App/App/Breeze.entitlements": "5ccb6e1ad3a51aafe3237f47cba5279a4dd2497533e93d8966170834236da799",
+      "ios/App/App/SceneDelegate.swift": "3a555e53ac41189296fdbe63e1e4b80237e7af4857dc78e7e6202f27b21b3710",
+      "scripts/sync/sync.js": "0485e5de8fbe262ac1033530fe1efef1e8963953b2b4e9efc9818a647ac198c3",
+      "sw.js": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "tests/auth-native-policy-checks.swift": "9070c3c34d2abd013994f5be605d07a5e8b22548a096d999b5820cf690d447d7",
+      "tests/verify-apple-login.mjs": "889326b9973804d5099bcc43425173dcfe974432d0baaf46a1cc10f43989fc67",
+      "tests/verify-auth-native-policy.mjs": "65a0b326b4a839bde7209d6eaeba162f1e26a9429bf1526b8555b76e8f9ee874",
+      "tests/verify-ios-cloud-build.mjs": "d324448464be7c56f4941c88a732008204860510b3d9446ecaaa4e300ded0c85",
+      "tests/verify-social-login-browser.mjs": "5aec4c597d225a05e4cdd5c11abf7bdfcb2ea27c6d334344acc4381e9d801291",
+      "tools/ios-testflight.sh": "b34147ba514d689df518c88aa3ca7eda42b542b1ada77ad4f5f8f81053256c51",
+      "tools/verify-ios-release.mjs": "d126e8810d9b2d041b67fcb462a5e335d977bedea12a0a5e8e27d6f70f131ea1"
+    }
   }
 }

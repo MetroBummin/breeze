@@ -28,7 +28,7 @@ let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progre
 let pendingRecoveryKey='', vaultInfoOpen=false, vaultRecoveryError='', recoveryRotateOpen=false;
 let pendingPair=null, pairingPoll=null, pairingError='';
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
-/** @type {null | {client:any,epoch:number,controller:AbortController, timer:any,native:any,nonce:string}} */
+/** @type {null | {client:any,epoch:number,controller:AbortController,timer:any,native:any,nonce:string,nativeApple:boolean,rawNonce:string,accepted:boolean,releaseTokens?:()=>void}} */
 let socialLoginOperation=null;
 // Keep the current email step across settings dismissal/auth rerenders. Never
 // persist a password or OTP; Supabase continues to own session verification.
@@ -70,7 +70,7 @@ function initSupabase(){
   SB_KEY=typeof config.SB_KEY==='string'?config.SB_KEY.trim():'';
   if(!SB_URL||!SB_KEY){ sbInitProblem='config'; return null; }
   if(!window.supabase||typeof window.supabase.createClient!=='function'){ sbInitProblem='sdk'; return null; }
-  try{ sb=window.supabase.createClient(SB_URL,SB_KEY); sbInitProblem=''; attachSupabaseAuth(); }
+  try{ sb=window.supabase.createClient(SB_URL,SB_KEY,socialNativeBridge()?nativeAppleAuthOptions():undefined); sbInitProblem=''; attachSupabaseAuth(); }
   catch(error){ sbInitProblem='client'; console.error('Supabase 연결 초기화 실패:',error); }
   return sb;
 }
@@ -248,14 +248,58 @@ function recoveryPanel(){
 function socialNativeBridge(){
   return isNativeShell()?Reflect.get(window,'webkit')?.messageHandlers?.breezeAuth:null;
 }
-function socialLoginSupported(){
-  return !!(sb && (!isNativeShell()||socialNativeBridge()) && typeof sb.auth.signInWithOAuth==='function');
+function socialLoginSupported(provider='google'){
+  return !!(sb && (!isNativeShell()||socialNativeBridge()) && typeof sb.auth[provider==='apple'&&socialNativeBridge()?'signInWithIdToken':'signInWithOAuth']==='function');
 }
-function appleLoginWebSupported(){ return socialLoginSupported(); }
+function appleLoginWebSupported(){ return socialLoginSupported('apple'); }
+function socialLoginCurrent(operation){
+  return socialLoginOperation===operation&&!operation.controller.signal.aborted&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser;
+}
+/* The SDK remains the sole session owner and uses its existing localStorage
+   keys. Bind only native Apple token exchange to the request's abort signal,
+   including delayed JSON and the final storage write. A dismissed request must
+   never persist a late session or start wordbook sync. All other calls pass on. */
+function nativeAppleAuthOptions(){
+  const tokenOwners=new Map();
+  const storage={
+    getItem:key=>localStorage.getItem(key),removeItem:key=>localStorage.removeItem(key),
+    setItem:(key,value)=>{
+      const token=JSON.parse(value)?.access_token,operation=tokenOwners.get(token);
+      if(operation){
+        if(!socialLoginCurrent(operation))throw Error('social_cancelled');
+        // The synchronous session write is the commit point. The auth listener
+        // can now reset sync ownership without aborting this accepted login.
+        operation.accepted=true;
+      }
+      localStorage.setItem(key,value);
+    },
+  };
+  const authFetch=async(input,options)=>{
+    const url=new URL(String(input));
+    if(url.origin!==new URL(SB_URL).origin||url.pathname!=='/auth/v1/token'||url.searchParams.get('grant_type')!=='id_token')return fetch(input,options);
+    const operation=socialLoginOperation,body=JSON.parse(options.body);
+    if(!operation?.nativeApple||!socialLoginCurrent(operation)||body.provider!=='apple'||body.nonce!==operation.rawNonce)throw Error('social_cancelled');
+    const response=await fetch(input,{...options,signal:operation.controller.signal});
+    if(!socialLoginCurrent(operation))throw Error('social_cancelled');
+    return new Proxy(response,{get(target,key){
+      if(key==='json')return async()=>{
+        const result=await target.json();
+        if(!socialLoginCurrent(operation))throw Error('social_cancelled');
+        if(result?.access_token){
+          tokenOwners.set(result.access_token,operation);
+          operation.releaseTokens=()=>tokenOwners.delete(result.access_token);
+        }
+        return result;
+      };
+      const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+    }});
+  };
+  return {auth:{storage},global:{fetch:authFetch}};
+}
 function updateSocialLoginControls(){
   for(const provider of ['apple','google']){
     const button=/** @type {HTMLButtonElement} */(document.getElementById('sm-'+provider+'-login'));
-    if(button)button.disabled=!socialLoginSupported()||!!socialLoginOperation;
+    if(button)button.disabled=!socialLoginSupported(provider)||!!socialLoginOperation;
   }
 }
 function cancelSocialLogin(){
@@ -263,7 +307,7 @@ function cancelSocialLogin(){
   if(!operation)return;
   socialLoginOperation=null;
   clearTimeout(operation.timer);
-  operation.controller.abort();
+  if(!operation.accepted)operation.controller.abort();
   if(operation.native)operation.native.postMessage({action:'cancel',request:operation.nonce}).catch(()=>{});
   updateSocialLoginControls();
 }
@@ -330,12 +374,13 @@ function renderSyncModal(){
 async function sbAppleLogin(){ return sbSocialLogin('apple'); }
 async function sbGoogleLogin(){ return sbSocialLogin('google'); }
 async function sbSocialLogin(provider){
-  if(!['apple','google'].includes(provider)||!socialLoginSupported()||sbUser||socialLoginOperation)return;
+  if(!['apple','google'].includes(provider)||!socialLoginSupported(provider)||sbUser||socialLoginOperation)return;
   const label=provider==='apple'?'Apple':'Google';
-  const operation={client:sb,epoch:syncSessionEpoch,controller:new AbortController(),timer:null,native:socialNativeBridge(),nonce:''};
+  const operation={client:sb,epoch:syncSessionEpoch,controller:new AbortController(),timer:null,native:socialNativeBridge(),nonce:'',nativeApple:false,rawNonce:'',accepted:false,releaseTokens:null};
   if(operation.native)operation.nonce=VaultCrypto.uuid();
+  operation.nativeApple=provider==='apple'&&!!operation.native;
   socialLoginOperation=operation;
-  const current=()=>socialLoginOperation===operation&&!operation.controller.signal.aborted&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser;
+  const current=()=>socialLoginCurrent(operation);
   const deadline=new Promise((_,reject)=>{
     operation.controller.signal.addEventListener('abort',()=>reject(Error('social_cancelled')),{once:true});
     operation.timer=setTimeout(()=>operation.controller.abort(),5000);
@@ -350,6 +395,7 @@ async function sbSocialLogin(provider){
       const settings=await response.json();
       if(!current())return null;
       if(settings.external?.[provider]!==true)return {unconfigured:true};
+      if(operation.nativeApple)return {appleNative:true};
       const {data,error}=await operation.client.auth.signInWithOAuth({provider,options:{
         redirectTo:operation.native?'kr.io.breeze.app://auth/callback?request='+operation.nonce:location.origin+location.pathname,skipBrowserRedirect:true,
       }});
@@ -368,6 +414,18 @@ async function sbSocialLogin(provider){
     clearTimeout(operation.timer);
     operation.timer=setTimeout(()=>operation.controller.abort(),120000);
     syncStatus(label+'에서 로그인을 마쳐 주세요.');
+    if(operation.nativeApple){
+      operation.rawNonce=Array.from(crypto.getRandomValues(new Uint8Array(32)),byte=>byte.toString(16).padStart(2,'0')).join('');
+      const credential=await Promise.race([operation.native.postMessage({action:'apple',request:operation.nonce,nonce:operation.rawNonce}),deadline]);
+      if(!current())return;
+      if(credential?.request!==operation.nonce||credential?.nonce!==operation.rawNonce||typeof credential?.identityToken!=='string'||credential.identityToken.split('.').length!==3)throw Error('apple_credential');
+      syncStatus('Apple 로그인 확인 중…');
+      const exchange=operation.client.auth.signInWithIdToken({provider:'apple',token:credential.identityToken,nonce:operation.rawNonce})
+        .finally(()=>operation.releaseTokens?.());
+      const result=await Promise.race([exchange,deadline]);
+      if(result.error)throw Error('apple_signin');
+      return;
+    }
     const callback=await Promise.race([operation.native.postMessage({action:'start',request:operation.nonce,url:result.url}),deadline]);
     if(!current())return;
     const returned=new URL(String(callback));
@@ -383,7 +441,7 @@ async function sbSocialLogin(provider){
     const appURL=new URL(location.href);appURL.search='';appURL.searchParams.set('breeze_auth_return',operation.nonce);appURL.hash=returned.hash;
     location.replace(appURL.href);
   }catch(error){
-    if(socialLoginOperation===operation&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser)syncStatus(label+' 로그인에 연결하지 못했어요. 다시 시도하거나 이메일로 로그인해 주세요.');
+    if(socialLoginOperation===operation&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser)syncStatus(String(error).includes('취소')?label+' 로그인을 취소했어요.':label+' 로그인에 연결하지 못했어요. 다시 시도하거나 이메일로 로그인해 주세요.');
   }finally{
     clearTimeout(operation.timer);
     if(operation.native)operation.native.postMessage({action:'cancel',request:operation.nonce}).catch(()=>{});

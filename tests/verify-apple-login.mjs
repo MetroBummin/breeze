@@ -14,8 +14,8 @@ function device({native=false,bridge=null}={}){
   setTimeout:callback=>{const id=++sequence;timers.set(id,callback);return id;},clearTimeout:id=>timers.delete(id),
   fetch:(url,options)=>new Promise((resolve,reject)=>{requests.push({url,options,resolve,reject});options.signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true});}),
  });
- vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,login:sbAppleLogin,google:sbGoogleLogin,cancel:cancelSocialLogin,advanceEpoch:()=>syncSessionEpoch++,setClient:client=>{sb=client;SB_URL="https://project.supabase.co";SB_KEY="existing-public-test-key";}};',context);
- const client={auth:{signInWithOAuth:async args=>{oauth.push(args);return {data:{url:'https://project.supabase.co/auth/v1/authorize?provider=apple'},error:null};}}};
+ vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,login:sbAppleLogin,google:sbGoogleLogin,cancel:cancelSocialLogin,operation:()=>socialLoginOperation,options:nativeAppleAuthOptions,advanceEpoch:()=>syncSessionEpoch++,setClient:client=>{sb=client;SB_URL="https://project.supabase.co";SB_KEY="existing-public-test-key";}};',context);
+ const client={auth:{signInWithIdToken:async()=>({data:{user:{id:'same-existing-user'}},error:null}),signInWithOAuth:async args=>{oauth.push(args);return {data:{url:'https://project.supabase.co/auth/v1/authorize?provider=apple'},error:null};}}};
  context.api.setClient(client);context.api.render();
  return {api:context.api,client,document,requests,oauth,redirects,timers,words:context.words,
   resolve:enabled=>requests.at(-1).resolve({ok:true,json:async()=>({external:{apple:enabled,google:enabled}})}),
@@ -119,7 +119,7 @@ test('Google button follows Apple and invokes the configured provider through th
  const work=h.api.google();h.resolve(true);await work;assert.equal(h.oauth[0].provider,'google');assert.equal(h.redirects.length,1);
 });
 
-for(const provider of ['apple','google']){
+for(const provider of ['google']){
  const login=h=>provider==='apple'?h.api.login():h.api.google();
  test(provider+': consent deadline and cancellation reject a late valid callback',async()=>{
   for(const timedOut of [false,true]){
@@ -167,3 +167,48 @@ for(const provider of ['apple','google']){
   }
  });
 }
+
+function nativeApple(){
+ const messages=[];let resolve,reject;
+ const bridge={postMessage:message=>{messages.push(message);return message.action==='apple'?new Promise((yes,no)=>{resolve=yes;reject=no;}):Promise.resolve(true);}};
+ const h=device({native:true,bridge}),exchanges=[];
+ h.client.auth.signInWithIdToken=async args=>{exchanges.push(args);return {data:{user:{id:'existing-apple-user'}},error:null};};
+ return {...h,messages,exchanges,
+  pending:()=>resolve,reply:changed=>{const m=messages.findLast(m=>m.action==='apple');resolve({request:m.request,nonce:m.nonce,identityToken:'header.payload.signature',...changed});},
+  fail:()=>reject(Error('로그인을 취소했어요.'))};
+}
+test('native Apple requests fresh OS nonce and exchanges ID token through the existing client',async()=>{
+ const h=nativeApple(),before=JSON.stringify(h.words);
+ for(let i=0;i<2;i++){
+  const work=h.api.login();await h.api.login();h.resolve(true);await turn();
+  const message=h.messages.findLast(m=>m.action==='apple');assert.match(message.nonce,/^[a-f0-9]{64}$/);assert.match(message.request,/^[a-f0-9-]{36}$/);
+  h.reply();await work;
+  assert.equal(h.exchanges[i].provider,'apple');assert.equal(h.exchanges[i].nonce,message.nonce);assert.equal(h.exchanges[i].token,'header.payload.signature');
+ }
+ assert.notEqual(h.messages.filter(m=>m.action==='apple')[0].nonce,h.messages.filter(m=>m.action==='apple')[1].nonce);
+ assert.equal(h.oauth.length,0);assert.equal(h.redirects.length,0);assert.equal(h.timers.size,0);assert.equal(JSON.stringify(h.words),before);
+});
+test('native Apple cancellation, timeout and stale session reject late OS credentials',async()=>{
+ for(const stop of [h=>h.api.cancel(),h=>[...h.timers.values()][0](),h=>h.api.advanceEpoch()]){
+  const h=nativeApple(),work=h.api.login();h.resolve(true);await turn();stop(h);h.reply();await work;await turn();
+  assert.equal(h.exchanges.length,0);assert.equal(h.redirects.length,0);assert.equal(h.button().disabled,false);assert.equal(h.timers.size,0);
+ }
+});
+test('native Apple cancelled sheet, failed exchange and request/nonce mismatch are retryable',async()=>{
+ for(const failure of ['cancel','exchange','request','nonce','identityToken']){
+  const h=nativeApple(),work=h.api.login();h.resolve(true);await turn();
+  if(failure==='cancel')h.fail();
+  else if(failure==='exchange'){h.client.auth.signInWithIdToken=async()=>({error:Error('unavailable')});h.reply();}
+  else h.reply({[failure]:'wrong'});
+  await work;assert.equal(h.button().disabled,false);assert.equal(h.redirects.length,0);
+  assert.match(h.status(),failure==='cancel'?/취소/:/연결하지 못했/);
+ }
+});
+test('native Apple cancellation followed by retry cannot release the newer owner',async()=>{
+ const h=nativeApple(),old=h.api.login();h.resolve(true);await turn();const oldMessage=h.messages.find(m=>m.action==='apple');
+ const oldReply=h.pending();h.api.cancel();await old;
+ const next=h.api.login();h.resolve(true);await turn();assert.equal(h.button().disabled,true);
+ oldReply({request:oldMessage.request,nonce:oldMessage.nonce,identityToken:'header.payload.signature'});await turn();assert.equal(h.button().disabled,true);assert.equal(h.exchanges.length,0);
+ h.reply();await next;
+ assert.equal(h.exchanges.length,1);assert.equal(h.button().disabled,false);
+});

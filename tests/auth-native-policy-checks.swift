@@ -49,6 +49,27 @@ private enum AuthPolicyChecks {
             check(BreezeAuthCallbackPolicy.callback(URL(string: changed)!, request: request), false, label)
         }
         check(BreezeAuthCallbackPolicy.callback(URL(string: callback)!, request: "invalid"), false, "invalid callback owner")
+        let claims: [String: Any] = ["iss": "https://appleid.apple.com", "aud": "kr.io.breeze.app", "sub": "existing-apple-subject", "nonce": "expected-sha256", "exp": 2000]
+        func token(_ values: [String: Any]) -> String {
+            let data = try! JSONSerialization.data(withJSONObject: values)
+            let payload = data.base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+            return "header.\(payload).fixture-signature"
+        }
+        func apple(_ value: String) -> Bool {
+            BreezeAppleTokenPolicy.accepts(value, nonceHash: "expected-sha256", subject: "existing-apple-subject", now: 1000)
+        }
+        check(apple(token(claims)), true, "valid request-bound Apple identity")
+        for (key, value) in [("iss", "https://other.example"), ("aud", "kr.io.breeze.app.web"), ("sub", "different-user"), ("nonce", "different-nonce")] {
+            var altered = claims; altered[key] = value
+            check(apple(token(altered)), false, "Apple \(key) mismatch")
+        }
+        var expired = claims; expired["exp"] = 1000
+        check(apple(token(expired)), false, "expired Apple identity")
+        var missing = claims; missing.removeValue(forKey: "nonce")
+        check(apple(token(missing)), false, "missing nonce")
+        for malformed in ["", "a.b", "a.b.c.d", ".payload.signature", "header.payload.", "header.invalid!.signature"] {
+            check(apple(malformed), false, "malformed Apple token")
+        }
         print("Native Foundation auth policy: \(count) checks passed; not a live consent or UIKit session test")
     }
 }

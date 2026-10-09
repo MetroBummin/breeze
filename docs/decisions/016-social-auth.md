@@ -2,6 +2,33 @@
 
 ## Decision
 
+### Approved 1.9.1 native Apple follow-up (2026-10-09)
+
+iPhone/iPad Apple sign-in now uses AuthenticationServices
+`ASAuthorizationAppleIDProvider`. The trusted main-frame bridge carries a fresh
+256-bit random raw nonce and UUID state. The OS request uses its SHA-256 digest;
+native replies must match the controller, state, audience, issuer, subject,
+expiry and nonce digest. The same bundled Supabase client's `signInWithIdToken`
+receives the identity token and raw nonce, and verifies the signature server-side.
+Tokens stay in memory until the SDK persists its normal session. They are never
+put in navigation URLs, diagnostic output or a separate credential store.
+
+The native token exchange binds network completion, JSON parsing and the final
+existing session-storage write to its current operation. Closing Settings,
+timeouts, session changes and cancellation prevent late session writes. Only a
+committed session starts the existing account-owned wordbook sync. Google on
+iOS keeps ASWebAuthenticationSession; web Apple/Google keep OAuth. Android has
+no new native auth bridge. Official button artwork, layout and guest access stay
+unchanged. There is no client email-based identity linking or account migration.
+
+App/Share marketing version is 1.9.1; the checked-in counter remains 253 until
+Apple Cloud supplies the actual archive number. Only App gets the Sign in with
+Apple entitlement/capability. Provider setup, credentials, Developer-account
+settings and App Store review actions remain owned externally. See the precise
+device/signing/identity checks in [native QA](../qa/native-apple-191-20261009.md).
+
+The original extraction record below describes the submitted 1.9 baseline.
+
 Settings adds Apple and Google alongside the existing email link/code and password
 flows. This extracts authentication from draft #122 onto the released main UI;
 the existing tutorial, completion marker, guest access, Reader, Memory, brand and

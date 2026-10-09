@@ -15,7 +15,9 @@ for(const [file,entry] of Object.entries(receipt.files)){
   if(entry.kind==='single-source')assert.equal(entry.sha256,entry.sourceSha256[entry.owners[0]],'Single-owner content changed: '+file);
 }
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
-const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope]);
+const native=receipt.approvedNativeApple191;
+const nativeScope=native?.files||[];
+const permitted=new Set([...Object.keys(receipt.files),...receipt.integrationScope,...nativeScope]);
 for(const file of new Set([...git('diff','--name-only',receipt.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
   assert.ok(permitted.has(file),'Unapproved file drift: '+file);
 }
@@ -29,7 +31,7 @@ const html=read('index.html');
 const web=receipt.approvedWebLandingIntegration;
 const webScope=web?[...web.files,...web.integrationFiles]:[];
 if(web){
-  const scope=new Set(webScope);
+  const scope=new Set([...webScope,...nativeScope]);
   for(const file of new Set([...git('diff','--name-only',web.appBase).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Combined web integration changed app source outside PR137: '+file);
   for(const file of web.files){
     const bytes=readFileSync(new URL(file,root));
@@ -40,15 +42,15 @@ if(web){
 }
 const welcomeJoin=receipt.approvedWelcomeJoinFollowup;
 if(welcomeJoin){
-  const scope=new Set([...welcomeJoin.files,...webScope]);
+  const scope=new Set([...welcomeJoin.files,...webScope,...nativeScope]);
   for(const file of new Set([...git('diff','--name-only',welcomeJoin.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean)))assert.ok(scope.has(file),'Welcome join repair exceeded approved local scope: '+file);
   assert.equal(html.split(welcomeJoin.newJoin).length,2,'The replacement exit must occur exactly once');
-  assert.equal(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin).trim(),git('show',welcomeJoin.base+':index.html'),'Welcome join repair changed markup outside its one exit segment');
+  assert.equal(normalized('index.html',Buffer.from(html.replace(welcomeJoin.newJoin,welcomeJoin.oldJoin))).trim(),normalized('index.html',Buffer.from(git('show',welcomeJoin.base+':index.html'))),'Welcome join repair changed markup outside its one exit segment');
   for(const file of ['scripts/ui/onboarding.js','styles/onboarding.css','ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json','ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png',...git('ls-tree','-r','--name-only',welcomeJoin.base,'assets/brand','assets/onboarding','android').split('\n').filter(Boolean)])assert.equal(git('hash-object',file),git('rev-parse',welcomeJoin.base+':'+file),'Welcome join repair changed protected timing/navigation/icon/source bytes: '+file);
 }
 const followup=receipt.approvedIconOnboardingFollowup;
 if(followup){
-  const scope=new Set([...followup.files,...webScope]);
+  const scope=new Set([...followup.files,...webScope,...nativeScope]);
   for(const file of new Set([...git('diff','--name-only',followup.base).split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))){
     assert.ok(scope.has(file),'Icon/onboarding follow-up exceeded 253 scope: '+file);
   }
@@ -60,7 +62,7 @@ if(followup){
   assert.equal(welcomeJoin?welcome(html).replace(welcomeJoin.newJoin,welcomeJoin.oldJoin):welcome(html),welcome(baseHtml),'Approved welcome markup changed outside its authorized b-to-r exit');
   const welcomeCss=source=>source.slice(source.indexOf('#onboard-welcome .breeze-wordmark'),source.indexOf('#onboard-carousel{'));
   assert.equal(welcomeCss(read('styles/onboarding.css')),welcomeCss(git('show',followup.base+':styles/onboarding.css')),'Approved welcome geometry/animation changed');
-  for(const file of ['ios/App/App.xcodeproj/project.pbxproj','scripts/library/library.js','ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png',...git('ls-tree','-r','--name-only',followup.base,'assets/onboarding','android').split('\n').filter(Boolean)]){
+  for(const file of [...(native?[]:['ios/App/App.xcodeproj/project.pbxproj']),'scripts/library/library.js','ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png',...git('ls-tree','-r','--name-only',followup.base,'assets/onboarding','android').split('\n').filter(Boolean)]){
     assert.equal(hash(readFileSync(new URL(file,root))),hash(execFileSync('git',['show',followup.base+':'+file],{cwd:root})),'253 protected icon/media/import/native bytes changed: '+file);
   }
 }
@@ -75,5 +77,10 @@ assert.ok(read('scripts/ui/onboarding.js').includes("Reflect.get(BreezePdfInk,'a
 assert.ok(read('scripts/reader/pdf-ink.js').includes('breeze-ink-platform'));
 const project=read('ios/App/App.xcodeproj/project.pbxproj');
 const baselineProject=git('show',receipt.base+':ios/App/App.xcodeproj/project.pbxproj');
-assert.equal(project.replaceAll('MARKETING_VERSION = 1.9;','MARKETING_VERSION = 1.8.1;').replaceAll('CURRENT_PROJECT_VERSION = 253;','CURRENT_PROJECT_VERSION = 236;').trim(),baselineProject,'Release scope changed settings beyond explicit version/build');
-console.log('Combined 1.9 boundary passed: approved six-PR scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');
+assert.equal(project.replace(native?'\n\t\t\t\t\t\tSystemCapabilities = {com.apple.SignInWithApple = {enabled = 1; }; };':'__NO_NATIVE_CAPABILITY__','').replaceAll(native?'MARKETING_VERSION = 1.9.1;':'MARKETING_VERSION = 1.9;','MARKETING_VERSION = 1.8.1;').replaceAll('CURRENT_PROJECT_VERSION = 253;','CURRENT_PROJECT_VERSION = 236;').trim(),baselineProject,'Release scope changed settings beyond explicit version/build');
+if(native){
+ for(const file of native.files.filter(file=>!receipt.integrationScope.includes(file)&&file!=='docs/qa/breeze-1.9-integration/boundary.json'&&file!=='tests/verify-integration-boundary.mjs'))assert.equal(hash(normalized(file,readFileSync(new URL(file,root)))),native.sha256[file],'Native Apple 1.9.1 reviewed scope drift: '+file);
+ assert.match(read('ios/App/App/Breeze.entitlements'),/<key>com.apple.developer.applesignin<\/key><array><string>Default<\/string><\/array>/);
+ assert.ok(read('scripts/sync/sync.js').includes("signInWithIdToken({provider:'apple'"));
+}
+console.log('Combined 1.9/1.9.1 boundary passed: approved six-PR scopes, independent auth/onboarding, deferred startup, stable source paragraphs, native PDF capability and release-only metadata.');

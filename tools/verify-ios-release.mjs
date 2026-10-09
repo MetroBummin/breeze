@@ -20,7 +20,7 @@ export function verifyRelease(project, expectedBuild = '253') {
     assert.equal(builds.length, 1, 'Missing or duplicate build number');
     validateBuildNumber(builds[0][1]);
     assert.equal(builds[0][1], expectedBuild, 'App and extension build numbers must match expected build');
-    assert.deepEqual(versions.map(m => m[1]), ['1.9'], 'Marketing version must remain 1.9');
+    assert.deepEqual(versions.map(m => m[1]), ['1.9.1'], 'Marketing version must remain 1.9.1');
   }
 }
 
@@ -41,5 +41,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   } else {
     verifyRelease(project, process.env.CI_BUILD_NUMBER ?? '253');
   }
-  console.log(`Breeze and Share Extension: 1.9 (${process.env.CI_BUILD_NUMBER ?? '253'})`);
+  console.log(`Breeze and Share Extension: 1.9.1 (${process.env.CI_BUILD_NUMBER ?? '253'})`);
 }

@@ -20,10 +20,20 @@ try{
   if(native){
    await context.addInitScript(({token})=>{
     window.Capacitor={isNativePlatform:()=>true,getPlatform:()=>'ios'};
-    Object.defineProperty(window,'webkit',{configurable:true,value:{messageHandlers:{breezeAuth:{postMessage:message=>{
+    Object.defineProperty(window,'webkit',{configurable:true,value:{messageHandlers:{breezeAuth:{postMessage:async message=>{
      if(message.action==='cancel')return Promise.resolve(true);
      // Only OS consent is substituted; SDK callback acceptance/storage are real.
      sessionStorage.setItem('__qaNativeStart',JSON.stringify(message));
+     if(message.action==='apple'){
+      if(window.__qaNativeMode==='cancel')throw Error('로그인을 취소했어요.');
+      if(window.__qaNativeMode==='error')throw Error('OS authorization failed');
+      if(window.__qaNativeMode==='holdOS')await new Promise(resolve=>window.__qaReleaseOS=resolve);
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(message.nonce));
+      const hashed=Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('');
+      const payload={iss:'https://appleid.apple.com',aud:'kr.io.breeze.app',sub:'existing-apple-subject',nonce:hashed,exp:Math.floor(Date.now()/1000)+600};
+      const identityToken='header.'+btoa(JSON.stringify(payload)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_')+'.fixture-signature';
+      return {request:message.request,nonce:message.nonce,identityToken};
+     }
      return Promise.resolve('kr.io.breeze.app://auth/callback?request='+message.request+'#access_token='+token+'&refresh_token=local-test-refresh&expires_in=3600&token_type=bearer');
     }}}}});
    },{token});
@@ -55,6 +65,12 @@ try{
     // WebKit cannot synthesize an HTTP redirect with route.fulfill. A provider
     // page navigation exercises the same real app callback on both engines.
     return route.fulfill({contentType:'text/html',body:'<!doctype html><script>location.replace('+JSON.stringify(callback)+')</script>'});
+   }
+   if(address.pathname==='/auth/v1/token'&&address.searchParams.get('grant_type')==='id_token'){
+    const body=route.request().postDataJSON();assert.equal(provider,'apple');assert.equal(native,true);assert.equal(body.provider,'apple');assert.match(body.nonce,/^[a-f0-9]{64}$/);
+    const claims=JSON.parse(Buffer.from(body.id_token.split('.')[1],'base64url'));
+    const {createHash}=await import('node:crypto');assert.equal(claims.nonce,createHash('sha256').update(body.nonce).digest('hex'));assert.equal(claims.aud,'kr.io.breeze.app');
+    return route.fulfill({headers,json:{access_token:token,refresh_token:'local-test-refresh',expires_in:3600,token_type:'bearer',user}});
    }
    if(address.pathname==='/auth/v1/user')return route.fulfill({headers,json:user});
    if(address.pathname.startsWith('/rest/v1/'))return route.fulfill({headers,json:[]});
@@ -92,14 +108,73 @@ try{
   assert.equal(requests.filter(path=>path==='/auth/v1/authorize').length,native?0:1);
   if(native){
    const message=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('__qaNativeStart')));
-   assert.equal(message.action,'start');const url=new URL(message.url);
+   if(provider==='apple'){assert.equal(message.action,'apple');assert.match(message.nonce,/^[a-f0-9]{64}$/);assert.equal(message.url,undefined);assert.equal(requests.filter(path=>path==='/auth/v1/token').length,1);}
+   else {assert.equal(message.action,'start');const url=new URL(message.url);
    assert.equal(url.origin,project);assert.equal(url.pathname,'/auth/v1/authorize');assert.equal(url.searchParams.get('provider'),provider);
    assert.match(message.request,/^[0-9a-f-]{36}$/i);
-   assert.equal(url.searchParams.get('redirect_to'),'kr.io.breeze.app://auth/callback?request='+message.request);
+   assert.equal(url.searchParams.get('redirect_to'),'kr.io.breeze.app://auth/callback?request='+message.request);}
    nativeStarts.push(message);
   }
   assert.equal(nativeStarts.length,native?1:0);
+  if(native&&provider==='apple'){
+   const initialWords=await page.evaluate(()=>JSON.stringify(words));
+   const loggedOut=async()=>{
+    await page.evaluate(()=>sbLogout());
+    await page.waitForFunction(()=>sbUser===null);
+    assert.equal(await page.evaluate(async()=>(await sb.auth.getSession()).data.session),null);
+   };
+   await loggedOut();
+   await page.evaluate(()=>sbAppleLogin());await page.waitForFunction(()=>sbUser?.id==='11111111-1111-4111-8111-111111111111');
+   await page.waitForFunction(()=>!remoteSyncPromise&&!syncPromise);
+   assert.equal(await page.evaluate(()=>JSON.stringify(words)),initialWords,'Existing wordbook survives logout and native relogin');
+   await loggedOut();
+   for(const mode of ['cancel','error','holdOS','network','json','storage']){
+    await page.evaluate(mode=>{
+     window.__qaNativeMode=mode;window.__qaReleaseOS=null;window.__qaReleaseExchange=null;
+     if(mode==='storage'){
+      const original=sb.auth._saveSession.bind(sb.auth);
+      sb.auth._saveSession=async session=>{
+       sb.auth._saveSession=original;
+       await new Promise(resolve=>window.__qaReleaseExchange=resolve);
+       return original(session);
+      };
+     }
+     if(mode==='network'||mode==='json'){
+      const original=window.fetch;
+      window.fetch=async(input,options)=>{
+       if(!String(input).includes('/auth/v1/token?grant_type=id_token'))return original(input,options);
+       window.fetch=original;
+       if(mode==='network')await new Promise(resolve=>window.__qaReleaseExchange=resolve);
+       const response=await original(input,options);
+       if(mode!=='json')return response;
+       return new Proxy(response,{get(target,key){
+        if(key==='json')return async()=>{await new Promise(resolve=>window.__qaReleaseExchange=resolve);return target.json();};
+        const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+       }});
+      };
+     }
+     window.__qaLoginDone=false;sbAppleLogin().finally(()=>window.__qaLoginDone=true);
+    },mode);
+    if(mode==='cancel'||mode==='error'){
+     await page.waitForFunction(()=>window.__qaLoginDone);assert.match(await page.locator('#sm-status').textContent(),mode==='cancel'?/취소/:/연결하지 못했/);
+    }else{
+     await page.waitForFunction(()=>!!(window.__qaReleaseOS||window.__qaReleaseExchange));
+     await page.evaluate(()=>cancelSocialLogin());await page.waitForFunction(()=>window.__qaLoginDone);
+     await page.evaluate(()=>{window.__qaReleaseOS?.();window.__qaReleaseExchange?.();});
+     // Let the real SDK's delayed completion attempt its final write.
+     await page.waitForTimeout(120);
+    }
+    assert.equal(await page.evaluate(()=>sbUser),null,mode+': no late account accepted');
+    assert.equal(await page.evaluate(async()=>(await sb.auth.getSession()).data.session),null,mode+': no late session persisted');
+    assert.equal(await page.locator('#sm-apple-login').isEnabled(),true);
+    assert.equal(await page.evaluate(()=>JSON.stringify(words)),initialWords,mode+': wordbook unchanged');
+   }
+   await page.evaluate(()=>{window.__qaNativeMode='';return sbAppleLogin();});
+   await page.waitForFunction(()=>sbUser?.id==='11111111-1111-4111-8111-111111111111');
+   await page.waitForFunction(()=>!remoteSyncPromise&&!syncPromise);
+   assert.equal(await page.evaluate(()=>JSON.stringify(words)),initialWords);
+  }
   await context.close();
  }
- console.log('Apple/Google web and simulated iOS bridge with real bundled SDK: mocked consent, bound callback, session persistence and reload passed; no live provider or native OS consent claimed');
+ console.log('Apple/Google web and simulated iOS bridge with real bundled SDK: mocked consent, bound callback, native Apple ID token/raw nonce, existing user ID, session persistence and reload passed; no live provider or native OS consent claimed');
 }finally{await browser.close();await new Promise(done=>server.close(done));}
