@@ -1,0 +1,146 @@
+{
+  "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+  "source": "Production app rendered locally; authored TXT/PDF and prepared lookup answers; no live login/API. Native iPad signal emulated for PDF tools.",
+  "captures": [
+    {
+      "file": "app/reader-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 56983,
+      "sha256": "739adf7ed2e6564ce5bbc01b296d104cd31d1941e9b25ae680ac72bcc2b127b8"
+    },
+    {
+      "file": "app/word-peek-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 63750,
+      "sha256": "066758d5e74b3cf718324222332d5a3c1b86dfbf49ed31571e6c6450a9c0da72"
+    },
+    {
+      "file": "app/word-detail-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 64731,
+      "sha256": "f729662aebb817b78eeeb72024ce08bd012a2ff54448a015ccb68dbf8adb7bfc"
+    },
+    {
+      "file": "app/sentence-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 63666,
+      "sha256": "7ad9b3ef081dbfaf90b831bb7502981148a2e67b9eb2ec3f290efb84da09474f"
+    },
+    {
+      "file": "landing/assets/screens/memory-phone-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 39096,
+      "sha256": "dcf13a023f6af1a17219daa9e8f6e13ff253e5d8481a0177f06a245fa8533f7b"
+    },
+    {
+      "file": "landing/assets/screens/memory-web-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 1024,
+        "height": 640
+      },
+      "sizeBytes": 42224,
+      "sha256": "6aeefac1704a5f19ff207cd7875c0c3679078c8fba631111dec6739e461a9ae6"
+    },
+    {
+      "file": "app/pdf-tools-light.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "sizeBytes": 41692,
+      "sha256": "4577fbc946aed8214c5a028d374424846cf5a4f7ad1a0a0169417c28b038a940"
+    },
+    {
+      "file": "app/reader-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 50606,
+      "sha256": "10c7aa615232182be3a5c57dee12b522dbc255b9e624b5b72a79f16b26d02e0d"
+    },
+    {
+      "file": "app/word-peek-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 56867,
+      "sha256": "bc12a4eeaa51b36dc1bd64323e5265225e2b7094defa56d1d14285267a4c7d16"
+    },
+    {
+      "file": "app/word-detail-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 47884,
+      "sha256": "a55bfa7236d5191170aca54ce69629bafd67196e588f6fe698862167311c47fe"
+    },
+    {
+      "file": "app/sentence-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 57864,
+      "sha256": "e365bef9c0eb55e6aed8da42efccc3d25762f0c9a20bbebf4071981ac95fa138"
+    },
+    {
+      "file": "landing/assets/screens/memory-phone-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 390,
+        "height": 720
+      },
+      "sizeBytes": 39882,
+      "sha256": "25bab7bea3e088505f9a83b2cc9b2e85875dbc590f229e3fafbb6b90d814d177"
+    },
+    {
+      "file": "landing/assets/screens/memory-web-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 1024,
+        "height": 640
+      },
+      "sizeBytes": 44935,
+      "sha256": "e06df79cc8e67d76d4d4af3d612390dd47085af1c7a3ee222ebb08393f448be5"
+    },
+    {
+      "file": "app/pdf-tools-dark.png",
+      "sourceSHA": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "sizeBytes": 45509,
+      "sha256": "cf1546064c9690808f7295a63c0a8d9d5f031f946dea9244e47ab5bead4ce1bf"
+    }
+  ]
+}

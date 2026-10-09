@@ -13,14 +13,8 @@
   <link rel="icon" href="../assets/favicon/favicon.png?v=dd2a6d46" type="image/png">
   <link rel="apple-touch-icon" href="../assets/favicon/apple-touch-icon.png?v=e9c9a0d6">
 
-  <!-- ================= 이 페이지는 앱을 읽기만 합니다 =================
-       Breeze 앱(../index.html)은 이 폴더를 모릅니다. 여기서 아래 스타일을
-       가져다 쓸 뿐이고, 화살표는 한 방향입니다 — 랜딩 → 앱. 그래서 이 폴더를
-       통째로 지워도 앱은 한 글자도 달라지지 않습니다.
-
-       베끼지 않고 링크하는 이유: 단어창·시트·낱말 상자를 복사해 두면 앱 쪽을
-       고칠 때마다 조용히 어긋납니다. 랜딩에서 보는 단어창은 진짜 그 단어창이어야
-       합니다. 랜딩이 따로 정하는 것은 "무대와 전환"뿐입니다(landing.css). -->
+  <!-- The landing uses shared Reader styles, authored offline lookup examples,
+       and PNGs captured from submitted 1.9 (253). It never opens app storage. -->
   <link rel="preload" href="../assets/fonts/fraunces-latin.woff2?v=48282a41" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/gowun-batang-ui-400.woff2?v=cb182529" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/gowun-batang-ui-700.woff2?v=8fbd485f" as="font" type="font/woff2" crossorigin>
@@ -36,7 +30,7 @@
   <link rel="stylesheet" href="../styles/components.css?v=d347f199">
   <!-- 서재의 책·글 카드(`.bookcard` · `.casual`) -->
   <link rel="stylesheet" href="../styles/home.css?v=4c5db19c">
-  <link rel="stylesheet" href="landing.css?v=9b53a4b0">
+  <link rel="stylesheet" href="landing.css?v=607201f2">
 </head>
 <!-- `lang-ko` 는 앱과 같은 제목 글꼴 짝(Fraunces + 고운바탕)을 씁니다 — 로마자
      "Breeze" 는 Fraunces 로, 한글만 고운바탕으로 넘어갑니다(styles/tokens.css). -->
@@ -48,7 +42,7 @@
     <span>Breeze</span>
   </a>
   <nav class="lp-actions" aria-label="시작하기">
-    <a class="lp-cta lp-cta-web" href="../?start=library">웹에서 읽기</a>
+    <a class="lp-cta lp-cta-web" href="../">웹에서 읽기</a>
     <a class="lp-cta lp-cta-store" href="https://apps.apple.com/kr/app/id6804570182" target="_blank" rel="noopener">App Store</a>
   </nav>
 </header>
@@ -125,77 +119,31 @@
   <div class="lp-note">링크 · 글 · PDF · EPUB · TXT</div>
 </div>
 
-<!-- ================= 넷째 장면 · 어디서든 =================
-     두 화면에 같은 단어장이 있습니다. 그것이 전부입니다 — 화살표도, 구름도,
-     "동기화 중" 도 없습니다. 한쪽에서 다른 쪽으로 보내는 그림이 아니라 같은
-     것이 두 군데 있는 그림이라, 사이를 잇는 것도 방향이 없는 점 다섯입니다.
-
-     단어장 한 줄은 앱의 그 한 줄입니다 — `.vgroup` · `.vrow` · `.vword` ·
-     `.vko` · `.chip`, 전부 ../styles/components.css 의 것이고 글자 크기도 앱과
-     같습니다. 기기를 통째로 보여 주려고 글씨를 줄이지 않습니다: 화면은 아래가
-     잘린 채로 둡니다(진짜 화면도 아래로 이어집니다). -->
+<!-- Current production Memory, with authored local words. The two screens
+     illustrate supported reading surfaces; they do not simulate account sync. -->
 <div class="lp-scene" id="scene4">
   <p class="lp-slot lp-head">어디서든, 그대로.</p>
-  <div class="lp-devices" aria-hidden="true">
+  <p class="lp-subcopy">저장한 단어와 뜻을 Breeze Memory의 단어 카드로 다시 봐요.</p>
+  <div class="lp-devices">
     <div class="lp-device lp-mac">
       <div class="lp-glass">
-        <div class="lp-vhead">Breeze Memory</div>
-        <div class="lp-vtable">
-          <div class="vgroup lp-new">
-            <div class="vrow">
-              <div class="vword">reluctant</div>
-              <div class="vsenses"><div class="vsense"><div class="vko">꺼리는</div></div></div>
-              <span class="chip s2">★★</span>
-            </div>
-          </div>
-          <div class="vgroup">
-            <div class="vrow">
-              <div class="vword">meadow</div>
-              <div class="vsenses"><div class="vsense"><div class="vko">초원</div></div></div>
-              <span class="chip s1">★</span>
-            </div>
-          </div>
-          <div class="vgroup">
-            <div class="vrow">
-              <div class="vword">subtle</div>
-              <div class="vsenses"><div class="vsense"><div class="vko">미묘한</div></div></div>
-              <span class="chip s3">★★★</span>
-            </div>
-          </div>
-        </div>
+        <picture>
+          <source media="(prefers-color-scheme:dark)" srcset="assets/screens/memory-web-dark.png">
+          <img src="assets/screens/memory-web-light.png" width="1024" height="640" alt="웹의 Breeze Memory: 검색, 책·별점 필터, 저장한 단어와 뜻, 단어 카드" loading="lazy" decoding="async">
+        </picture>
       </div>
-      <div class="lp-foot"></div>
+      <div class="lp-foot" aria-hidden="true"></div>
     </div>
-    <div class="lp-link" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     <div class="lp-device lp-phone">
       <div class="lp-glass">
-        <div class="lp-vhead">Breeze Memory</div>
-        <div class="lp-vtable">
-          <div class="vgroup lp-new">
-            <div class="vrow">
-              <div class="vword">reluctant</div>
-              <div class="vsenses"><div class="vsense"><div class="vko">꺼리는</div></div></div>
-              <span class="chip s2">★★</span>
-            </div>
-          </div>
-          <div class="vgroup">
-            <div class="vrow">
-              <div class="vword">meadow</div>
-              <div class="vsenses"><div class="vsense"><div class="vko">초원</div></div></div>
-              <span class="chip s1">★</span>
-            </div>
-          </div>
-          <div class="vgroup">
-            <div class="vrow">
-              <div class="vword">subtle</div>
-              <div class="vsenses"><div class="vsense"><div class="vko">미묘한</div></div></div>
-              <span class="chip s3">★★★</span>
-            </div>
-          </div>
-        </div>
+        <picture>
+          <source media="(prefers-color-scheme:dark)" srcset="assets/screens/memory-phone-dark.png">
+          <img src="assets/screens/memory-phone-light.png" width="390" height="720" alt="휴대폰의 Breeze Memory: 같은 검색·필터와 저장 단어 목록" loading="lazy" decoding="async">
+        </picture>
       </div>
     </div>
   </div>
+  <a class="lp-note lp-support-link" href="#support">지원기기와 로그인 안내</a>
 </div>
   </div>
 </div>
@@ -235,6 +183,10 @@
       <div class="note" id="p-ai-note"></div>
       <div id="p-saved-senses" aria-label="저장된 다른 뜻"></div>
     </div>
+    <section id="p-easy" aria-label="쉬운 설명">
+      <button id="p-easy-button" type="button" aria-expanded="false" aria-controls="p-easy-card">쉬운 설명</button>
+      <div id="p-easy-card" hidden><p id="p-easy-text"></p></div>
+    </section>
     <div class="p-sec" id="p-alt-sec">추천 뜻</div>
     <div id="p-alts"></div>
     <div class="p-sec" id="p-status-label">모르는 정도</div>
@@ -246,19 +198,31 @@
   </div>
 </div>
 
-<!-- ================= 문장 해석 =================
-     문장을 꾹 누르면 원문과 한국어 해석이 같은 카드에 나타납니다. -->
+<!-- Reader-style anchored translation: source stays in the story, no scrim. -->
 <div id="sentence-modal" hidden>
   <div id="sentence-scrim"></div>
-  <section id="p-sentence" role="dialog" aria-modal="true" aria-live="polite">
-    <div id="ps-source"><div id="ps-en"></div></div>
-    <div id="ps-ko"></div>
+  <section id="p-sentence" role="dialog" aria-modal="false" aria-label="문장 해석 체험" aria-live="polite">
+    <div id="ps-content">
+      <div id="ps-ko"></div>
+      <section id="ps-easy" aria-label="쉬운 설명">
+        <button id="ps-easy-button" type="button" aria-expanded="false" aria-controls="ps-easy-card">쉬운 설명</button>
+        <div id="ps-easy-card" hidden><p id="ps-easy-text"></p></div>
+      </section>
+      <p class="lp-demo-note">체험 예시 · 실제 조회는 앱에서</p>
+    </div>
   </section>
 </div>
 
+<section id="support" class="lp-support" aria-labelledby="support-title" tabindex="-1">
+  <h2 id="support-title">읽는 곳과 로그인</h2>
+  <p>웹과 iPhone·iPad 앱에서 PDF·EPUB·TXT, 링크와 글을 가져와 읽어요.</p>
+  <p>PDF 필기는 iPad 앱에서 Apple Pencil로 사용할 수 있어요. 웹과 iPhone에는 필기 도구가 표시되지 않아요. Android 앱은 공개 준비 중이에요.</p>
+  <p>로그인 없이 내 기기의 글을 읽을 수 있어요. 계정은 이메일 링크·코드 또는 비밀번호로 로그인해요. Google·Apple 로그인은 준비 중이에요.</p>
+  <p><a href="../support/">도움이 필요해요</a> · <a href="../docs/privacy.html">개인정보 처리방침</a> · <a href="../docs/terms.html">이용약관</a></p>
+</section>
 <footer class="dictionary-credit">English definitions: <a href="https://en.wiktionary.org/">Wiktionary</a> via <a href="https://freedictionaryapi.com/">FreeDictionaryAPI.com</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></footer>
 <div id="toast"></div>
 
-<script src="landing.js?v=4300221f"></script>
+<script src="landing.js?v=9f8f41df"></script>
 </body>
 </html>

@@ -90,19 +90,8 @@
   #panel.anchored{right:auto; bottom:auto; transform:none;}
   #word-modal-scrim{display:none!important;}
 
-/* ================= 문장 해석 자리 =================
-   창도 뒤의 막도 앱 그대로입니다. 막이 손가락을 먹지 않게만 풀어 둡니다 —
-   장면을 넘기는 일은 스크롤이 하므로. 눌러서 닫는 길은 앱과 같습니다. */
-  #sentence-modal{touch-action:auto; align-items:flex-start;}
-  #p-sentence{position:fixed; left:max(16px,calc((100vw - 420px)/2));
-    right:auto; width:min(420px,calc(100vw - 32px)); margin:0;}
-  /* 넓은 화면에서는 두 줄을 가리지 않도록 단어창과 같은 쪽에 섭니다. 카드 자체는
-     앱의 그 카드 그대로이고, 자리만 가운데에서 옆으로 옮깁니다. */
-  @media (min-width:1000px){
-    #p-sentence{left:auto; right:clamp(20px,5vw,64px); width:min(420px,34vw); max-height:78svh;}
-  }
-  #ps-ko{font-size:18px; font-weight:600; line-height:1.7;}
-  #ps-source[hidden]{display:none!important;}
+/* The shared Reader stylesheet owns the anchored translation material. */
+  #sentence-modal{touch-action:auto;}
   #panel #p-know,#panel #p-speak,#panel #p-mark,#panel .stbtn,
   #panel .saved-sense,#panel #p-alts button{pointer-events:none;}
   #panel #p-know,#panel #p-speak{opacity:1;}
@@ -114,7 +103,7 @@
   #panel #p-defs div{margin-top:4px;}
   #panel #p-defs .pos{color:var(--sentence-glass-secondary); margin-right:7px;}
   #word-peek{z-index:95;}
-  @media (max-width:999px){#p-sentence{width:min(420px,calc(100vw - 32px));}}
+
 
 /* 넓은 화면에서도 Hero의 두 문장을 한 덩어리로 중앙에 놓습니다. */
   @media (min-width:1000px){
@@ -162,8 +151,8 @@
      첫 두 장면의 단어창(340px)보다 넓기 때문입니다. 왼쪽 끝은 두 줄과 같은
      자리에 그대로 두고 폭만 줄입니다. */
   @media (min-width:1000px){
-    .lp-head{width:min(34vw,480px);}
-    .lp-subcopy{left:0; right:auto; width:min(40vw,540px); top:calc(50% + 42px);}
+    .lp-head{left:0; right:auto; width:40vw; transform:translateY(-50%); padding:0 clamp(20px,4vw,56px);}
+    .lp-subcopy{left:0; right:auto; width:40vw; top:calc(50% + 42px); padding:0 clamp(20px,4vw,56px);}
   }
 
 /* ---- 셋째 장면: 글과 책이 한 줄로 천천히 흐릅니다 ---- */
@@ -203,78 +192,26 @@
     .lp-carousel-set{gap:10px; padding-right:10px;}
   }
 
-/* ---- 넷째 장면: 두 화면에 같은 단어장 ----
-   화면 안은 앱의 단어장 그대로입니다 — `.vgroup` · `.vrow` · `.vword` · `.vko` ·
-   `.chip`, 전부 ../styles/components.css 의 것이고 글자 크기도 앱과 같습니다.
-   기기를 통째로 보여 주려고 글씨를 줄이지 않습니다: 화면은 아래가 잘린 채로
-   둡니다 — 진짜 화면도 아래로 이어지니까요.
-
-   틀은 최소한입니다. 노트북은 16:10 에 작은 받침 하나, 폰은 좁고 모서리가 크게
-   둥근 네모 하나. 노치도 카메라도 그리지 않습니다 — 여기서 봐야 할 것은 기기가
-   아니라 그 안이 같다는 것입니다. */
-  /* 좁은 화면에서는 위에서부터 쌓습니다 — 가운데를 맞추면 폰이 통째로 들어오려고
-     제 몸을 줄이는데, 그러면 그 안의 낱말이 안 읽힙니다. 폰은 제 크기로 서고
-     아래가 화면 밖으로 나갑니다(무대가 잘라 냅니다). 진짜 폰도 그렇습니다 —
-     손에 들면 아래가 안 보이는 것이 아니라, 여기 화면이 거기서 끝날 뿐입니다. */
+/* Production Memory screenshots in the original two-device composition. */
   .lp-devices{position:absolute; left:0; right:0; top:21svh;
-    display:flex; flex-direction:column; align-items:center;
-    gap:clamp(10px,1.8svh,16px); pointer-events:none;}
+    display:flex; flex-direction:column; align-items:center; gap:16px; pointer-events:none;}
   .lp-device{display:flex; flex-direction:column; align-items:center; max-width:100%;}
   .lp-glass{background:var(--home-background); border:1px solid var(--sentence-glass-line-soft);
-    box-shadow:var(--shadow-card); overflow:hidden; padding:12px 13px 0;}
-  /* 16:10 은 뚜껑의 비율입니다. 이 비율이 낱말을 몇 줄 보여 줄지 정합니다 —
-     가장 좁아지는 300px 에서 머리글과 세 줄이 딱 들어갑니다. 그래서 단어장은
-     세 줄입니다: 넷째 줄을 넣으면 뚜껑에서만 잘리고, 두 화면이 서로 다른 목록을
-     보여 주게 됩니다. 그 어긋남 하나로 이 장면은 할 말을 잃습니다. */
-  .lp-mac .lp-glass{width:min(330px,86vw); aspect-ratio:16/10; border-radius:9px;}
-  /* 받침은 뚜껑이 서 있다는 것만 말합니다 — 화면보다 조금 넓은 얇은 띠 하나. */
-  .lp-foot{width:114%; height:6px; border-radius:0 0 6px 6px;
-    background:var(--line2); opacity:.85;}
-  .lp-phone .lp-glass{width:min(252px,68vw); height:clamp(340px,52svh,420px);
-    border-radius:26px;}
-  /* 화면 안의 머리글. 앱의 단어장 머리글(#v-vocab h1 · components.css)과 같은
-     굵기·색이고, 작은 화면에 맞춰 크기만 한 단계 내려앉습니다. */
-  .lp-vhead{font-family:var(--ui);font-size:14px; font-weight:700; letter-spacing:-.4px; color:var(--ink);
-    margin:0 2px 7px;}
-  /* 표의 첫 줄 위에 놓이는 선. #vtablewrap 의 그 한 줄입니다. */
-  .lp-vtable{border-top:1px solid var(--td-line);}
-  .lp-devices .vrow{cursor:default;}
-  .lp-devices .chip{pointer-events:none;}
-
-/* ---- 사이 ----
-   화살표가 아닙니다. 한쪽에서 다른 쪽으로 보내는 그림이면 "업로드"가 되는데,
-   여기서 말하려는 것은 같은 것이 두 군데 있다는 것뿐이라 방향이 없는 점 다섯을
-   둡니다. 넓은 화면에서는 가로로 눕고, 좁은 화면에서는 세로로 섭니다. */
-  .lp-link{display:flex; flex-direction:column; align-items:center; gap:7px;}
-  .lp-link i{width:4px; height:4px; border-radius:50%; background:var(--soft2); opacity:.5;}
-
-/* ---- 도착 ----
-   설명 한 줄 대신 이것뿐입니다. 맥의 단어장에 낱말 하나가 내려앉고, 점들이 한 번
-   숨을 쉬고, 잠깐 뒤 폰의 같은 자리에도 같은 낱말이 있습니다. 자리는 처음부터
-   비워 둡니다 — 나타나면서 아래 줄들을 밀지 않게. 한 번 지나가면 두 화면은
-   완전히 같아지고, 그다음부터는 아무것도 움직이지 않습니다. */
-  .lp-new{opacity:0;}
-  body[data-state="5"] .lp-mac .lp-new{animation:lp-arrive .7s ease .55s both;}
-  body[data-state="5"] .lp-phone .lp-new{animation:lp-arrive .7s ease 1.75s both;}
-  body[data-state="5"] .lp-link i{animation:lp-breathe 1.5s ease .95s both;}
-  @keyframes lp-arrive{from{opacity:0; transform:translateY(-5px)} to{opacity:1; transform:none}}
-  @keyframes lp-breathe{0%,100%{opacity:.5} 50%{opacity:1}}
-
+    box-shadow:var(--shadow-card); overflow:hidden; padding:0;}
+  .lp-glass picture,.lp-glass img{display:block; width:100%; height:auto;}
+  .lp-mac .lp-glass{width:min(360px,86vw); aspect-ratio:16/10; border-radius:9px;}
+  .lp-foot{width:114%; height:6px; border-radius:0 0 6px 6px; background:var(--line2); opacity:.85;}
+  .lp-phone .lp-glass{width:min(252px,68vw); border-radius:22px;}
+  .lp-support-link{letter-spacing:0; min-height:44px; display:flex; justify-content:center; align-items:center;}
+  body[data-state="5"] .lp-support-link{pointer-events:auto;}
   @media (min-width:1000px){
-    /* 자리는 셋째 장면의 카드와 같은 칸입니다 — 큰 한 줄이 끝나는 자리 뒤,
-       단어창이 서던 그 여백 안. 그 칸 안에서 가운데를 맞춥니다. */
-    .lp-devices{left:clamp(410px,41vw,780px); right:clamp(16px,3vw,56px); top:0; bottom:0;
-      justify-content:center;}
+    .lp-devices{left:41vw; right:clamp(20px,4vw,56px); top:80px; bottom:100px; justify-content:center;}
+    #scene4 .lp-note{left:41vw; right:clamp(20px,4vw,56px); bottom:4svh;}
   }
-  /* 나란히 세우는 것은 뚜껑이 뚜껑처럼 보일 만큼 넓어진 뒤부터입니다. 그 아래에서
-     좌우로 밀어 넣으면 노트북이 폰만큼 좁아져 16:10 이 무너집니다 — 기기를 둘
-     다 보여 주려다 둘 다 아닌 것이 됩니다. 그래서 1280 아래에서는 오른쪽 칸
-     안에서 위아래로 섭니다. */
   @media (min-width:1280px){
-    .lp-devices{flex-direction:row; gap:clamp(18px,2.2vw,36px);}
-    .lp-mac .lp-glass{width:clamp(316px,23vw,360px);}
-    .lp-phone .lp-glass{width:clamp(252px,17vw,268px);}
-    .lp-link{flex-direction:row;}
+    .lp-devices{flex-direction:row; gap:clamp(18px,2vw,32px);}
+    .lp-mac .lp-glass{width:clamp(300px,23vw,360px);}
+    .lp-phone .lp-glass{width:clamp(220px,17vw,252px);}
   }
 
   /* 좁은 화면에서는 제목, 카드와 두 기기를 화면 높이에 맞춰 순서대로 놓습니다. */
@@ -283,16 +220,12 @@
     #scene3 .lp-subcopy{top:clamp(150px,19svh + 45px,210px);}
     #scene3 .lp-shelf{top:clamp(215px,35svh,290px); bottom:clamp(58px,10svh,90px);}
     #scene3 .lp-note{bottom:clamp(24px,5svh,42px);}
-    #scene4 .lp-devices{top:clamp(170px,27svh,225px); gap:clamp(8px,1.2svh,12px);}
-    #scene4 .lp-link{flex-direction:row;}
-    #scene4 .lp-mac .lp-glass{width:min(330px,35.2svh,calc(100vw - 40px));}
-    #scene4 .lp-phone .lp-glass{width:min(220px,26svh,62vw); height:min(40svh,330px);}
-    #scene4 .lp-devices .vrow{grid-template-columns:minmax(0,1.2fr) minmax(0,.75fr) auto;
-      column-gap:clamp(3px,.8vw,8px); padding:clamp(4px,.8svh,7px) 2px;}
-    #scene4 .lp-devices .vword{font-size:clamp(10px,1.8svh,14px);}
-    #scene4 .lp-devices .vko{font-size:clamp(9px,1.6svh,12px);}
-    #scene4 .lp-devices .chip{min-width:clamp(27px,5svh,38px);
-      min-height:clamp(19px,3svh,24px); padding:2px 3px; font-size:clamp(8px,1.4svh,11px);}
+    #scene4 .lp-subcopy{top:clamp(150px,19svh + 45px,210px);}
+    #scene4 .lp-devices{top:clamp(215px,35svh,290px); gap:12px; bottom:74px; justify-content:center;}
+    #scene4 .lp-mac .lp-glass{width:min(330px,22svh,calc(100vw - 40px));}
+    #scene4 .lp-phone .lp-glass{width:min(220px,22svh,62vw);}
+    #scene4 .lp-note{bottom:12px;}
+
   }
 
 /* 움직임을 줄여 달라고 설정한 사람에게는 장면이 그냥 바뀝니다. */
@@ -302,8 +235,7 @@
     /* 움직이는 것들은 전부 끄고, 말하려던 것만 남깁니다 — 아래로 이어진다는
        표시는 제자리에 서 있고, 넷째 장면의 두 단어장은 처음부터 같습니다. */
     #scrollcue{animation:none!important; opacity:.78;}
-    .lp-link i,.lp-new{animation:none!important; opacity:1;}
-    .lp-link i{opacity:.5;}
+
   }
 
 .dictionary-credit{position:relative;padding:24px;text-align:center;font:11px/1.5 var(--ui);color:var(--soft);}
@@ -312,7 +244,31 @@
 /* Native Reader tokens supply the UI, while the landing keeps its paper stage. */
 .lp-demo-note{color:var(--sentence-glass-muted);font:400 11px/1.5 var(--ui);margin:12px 0;}
 .lp-cta:focus-visible,.lp-sentence .w:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;}
-.lp-vtable .vword{font-family:var(--ui);font-weight:600;}
-.lp-vtable .vko{color:var(--settings-muted);}
-.lp-vtable .chip{border-radius:12px;}
+
 @media(max-width:359px){.lp-wordmark{font-size:21px;gap:5px;}.lp-wordmark img{width:26px;height:26px;}.lp-cta{padding:0 7px;font-size:10.5px;}.lp-actions{gap:5px;}}
+
+/* Compact truthful support copy lives after the six-scene rail. */
+.lp-support{position:relative; max-width:760px; margin:0 auto; padding:40px 24px 12px;
+  scroll-margin-top:96px; color:var(--settings-ink); font:400 14px/1.8 var(--ui); word-break:keep-all;}
+.lp-support h2{margin:0 0 16px; font:700 22px/1.5 var(--ui);}
+.lp-support p{margin:12px 0;}
+.lp-support a{color:inherit; text-underline-offset:3px;}
+.lp-support-link:focus-visible,.lp-support a:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;}
+@media(max-height:500px) and (min-width:600px){
+  #scene3 .lp-head,#scene4 .lp-head{left:0;right:auto;top:45%;width:40vw;transform:translateY(-50%);padding:0 20px;font-size:28px;}
+  #scene3 .lp-subcopy,#scene4 .lp-subcopy{left:0;right:auto;top:calc(45% + 35px);width:40vw;padding:0 20px;font-size:12px;}
+  #scene3 .lp-shelf{left:43vw;right:12px;top:100px;bottom:58px;}
+  #scene3 .lp-note,#scene4 .lp-note{left:43vw;right:12px;bottom:8px;}
+  #scene4 .lp-devices{left:43vw;right:12px;top:100px;bottom:58px;flex-direction:row;gap:16px;}
+  #scene4 .lp-mac .lp-glass{width:min(27vw,230px);}
+  #scene4 .lp-phone .lp-glass{width:120px;}
+  .lp-shelf .bookcard,.lp-shelf .casual{height:170px;}
+}
+@media(max-height:600px) and (max-width:599px){
+  #scene3 .lp-head,#scene4 .lp-head{top:94px;font-size:22px;}
+  #scene3 .lp-subcopy,#scene4 .lp-subcopy{top:130px;font-size:12px;}
+  #scene3 .lp-shelf{top:185px;bottom:60px;}
+  #scene4 .lp-devices{top:185px;bottom:74px;}
+  #scene4 .lp-mac{display:none;}
+  #scene4 .lp-phone .lp-glass{width:min(62vw,calc((100svh - 260px)*390/720));}
+}

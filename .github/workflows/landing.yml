@@ -1,0 +1,37 @@
+name: Landing
+on:
+  pull_request:
+    paths: ['landing/**', 'tests/verify-landing-browser.mjs', 'tools/capture-landing-app.mjs', '.github/workflows/landing.yml']
+permissions:
+  contents: read
+concurrency:
+  group: landing-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: node --check landing/landing.js && node tests/verify-landing-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: landing-${{ matrix.browser }}
+          path: /tmp/breeze-landing-proof/
+          if-no-files-found: error
+          retention-days: 7

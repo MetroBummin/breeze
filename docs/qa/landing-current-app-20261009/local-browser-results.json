@@ -1,0 +1,86 @@
+{
+  "engine": "chromium",
+  "receipts": [
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "tablet",
+      "width": 820,
+      "height": 1180,
+      "theme": "light",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "tablet",
+      "width": 820,
+      "height": 1180,
+      "theme": "dark",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 568,
+      "theme": "light",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 568,
+      "theme": "dark",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "short",
+      "width": 844,
+      "height": 390,
+      "theme": "light",
+      "scenes": 6,
+      "passed": true
+    },
+    {
+      "name": "short",
+      "width": 844,
+      "height": 390,
+      "theme": "dark",
+      "scenes": 6,
+      "passed": true
+    }
+  ],
+  "checks": "60 scenes, 10 support views, both hero languages, no overlap/overflow, offline lookup/help, pointer/keyboard/escape/outside dismissal, theme changes, anchors/internal links, zero account/storage/network effects, live transitions and rotation"
+}
