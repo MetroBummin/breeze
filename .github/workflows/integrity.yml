@@ -19,15 +19,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/verify-integration-boundary.mjs
       - run: npm test
       - name: Verify integrated native asset sync
         run: |
           npm run ios:sync
+          node tests/verify-native-package.mjs
+          node tests/verify-native-service-worker.mjs
           cmp scripts/importers/rss.js www/scripts/importers/rss.js
           cmp scripts/importers/rss.js ios/App/App/public/scripts/importers/rss.js
           cmp index.html www/index.html
@@ -48,9 +52,32 @@ jobs:
           for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs tests/verify-pdf-ink-geometry.mjs; do
             if test -f "$test"; then node --test "$test"; fi
           done
+  deferred-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Deferred import, debug and local lookup boundaries
+        env:
+          BROWSER: ${{ matrix.engine }}
+        run: |
+          node tests/verify-deferred-resources-browser.mjs
+          node tests/verify-homeward-open-preparation-browser.mjs
+      - name: Existing offline import and shell upgrade
+        if: matrix.engine == 'chromium'
+        run: node tests/verify-deferred-offline-browser.mjs && node tests/verify-site-navigation-browser.mjs
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
@@ -131,13 +158,19 @@ jobs:
       - name: Bundled long-read previews, imports and offline persistence
         run: npm run test:longreads && npm run test:homeward-lookup
       - name: Five illustrated Holmes stories in Chromium and WebKit
-        run: npm run test:holmes
+        run: |
+          git fetch --no-tags origin e7b61d5304d20d639d45fc8dd23116db5d6446e5
+          mkdir -p /tmp/breeze-holmes-baseline
+          git archive FETCH_HEAD | tar -x -C /tmp/breeze-holmes-baseline
+          BREEZE_HOLMES_BASELINE=/tmp/breeze-holmes-baseline npm run test:holmes
       - name: Holmes artwork and typography proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: holmes-illustrated-proof
-          path: /tmp/breeze-holmes-integration-proof/
+          path: |
+            /tmp/breeze-holmes-integration-proof/
+            /tmp/breeze-holmes-readability-proof/
           if-no-files-found: ignore
           retention-days: 7
       - name: Long-read preview proof

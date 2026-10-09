@@ -27,13 +27,13 @@
  * 그대로 남습니다(아래 `carryOverRuntimeLibs`).
  *
  * 네이티브 셸(Capacitor)은 이 파일을 쓰지 않습니다 — 그쪽은 파일이 이미 앱 안에
- * 들어 있고, 주소가 http 가 아니라 등록 자체를 건너뜁니다 (scripts/main.js).
+ * 들어 있고, Capacitor 표시로 등록 자체를 건너뜁니다 (scripts/main.js).
  */
 
 /* tools/stamp-version.mjs 가 찍습니다 — 손으로 고치지 마세요.
    값은 "판 번호를 찍은 index.html 의 해시" 입니다. index.html 은 모든 파일의
    해시를 담고 있으니, 이 한 줄이 "무엇이든 바뀌었다" 를 정확히 가리킵니다. */
-const VERSION = 'ec2c62eb';
+const VERSION = '8201013b';
 const CACHE = `breeze-${VERSION}`;
 
 /* 담을 목록은 index.html 을 읽어서 그때그때 만듭니다. 손으로 적어 두면 파일을
@@ -91,6 +91,12 @@ self.addEventListener('install',event=>event.waitUntil(installShell()));
    `?v=` 가 붙는 앱 파일(js·css)과 index.html 은 **옮기지 않습니다** — 그쪽은
    옛 주소가 곧 옛 내용이라, 옮기면 반은 새 코드 반은 옛 코드가 됩니다. */
 const KEEP_ACROSS_VERSIONS = /\/assets\/lib\/[^/]+$/;
+// These files used to be in the eager shell. Retain their exact content-hashed
+// addresses so offline local lookup and HTML import survive the transition.
+function keepRuntimeAsset(url){
+  return (!url.search&&KEEP_ACROSS_VERSIONS.test(url.pathname))
+    || (/\/assets\/(?:longreads\/homeward-lookup-data|lib\/readability-0\.6\.0)\.js$/.test(url.pathname)&&/^\?v=[a-f0-9]{8}$/.test(url.search));
+}
 
 async function carryOverRuntimeLibs(cache){
   for(const name of await caches.keys()){
@@ -99,7 +105,7 @@ async function carryOverRuntimeLibs(cache){
     for(const request of await old.keys()){
       const url = new URL(request.url);
       if(url.origin !== self.location.origin) continue;
-      if(url.search || !KEEP_ACROSS_VERSIONS.test(url.pathname)) continue;
+      if(!keepRuntimeAsset(url)) continue;
       if(await cache.match(request)) continue;
       const response = await old.match(request);
       if(response) await cache.put(request, response);
@@ -123,6 +129,8 @@ self.addEventListener('fetch', event => {
   /* 우리 서버에서 온 것만. 나머지는 이 파일이 없는 것처럼 그대로 흘러갑니다. */
   const url = new URL(request.url);
   if(url.origin !== self.location.origin) return;
+  // Public site pages are separate documents, never the cached Reader shell.
+  if(request.mode==='navigate' && url.pathname!=='/' && url.pathname!=='/index.html' && !url.pathname.startsWith('/ready/'))return;
   event.respondWith(request.mode === 'navigate'
     ? (url.pathname.startsWith('/ready/') ? networkFirst(request) : staleWhileRevalidate(request))
     : cacheFirst(request));
@@ -159,7 +167,7 @@ async function cacheFirst(request){
   // The uncontrolled first page can cache immutable libraries before this worker
   // ever sees a fetch from it. Shell HTML/versioned app scripts never use this.
   const url=new URL(request.url);
-  if(!url.search && KEEP_ACROSS_VERSIONS.test(url.pathname)){
+  if(keepRuntimeAsset(url)){
     const runtime=await caches.open('breeze-runtime-libs-v1');
     const response=await runtime.match(request);
     if(response)return response;

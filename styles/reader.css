@@ -361,6 +361,8 @@
     text-align:center;font-size:1.15em;line-height:1.5;font-weight:600;letter-spacing:0;
     margin:1em 0 1.6em;text-wrap:balance;break-after:avoid;}
   #rtext.holmes-story .holmes-end{text-align:center;font-size:.82em;letter-spacing:.12em;margin:2em 0 1em;}
+  #rtext.holmes-story .holmes-paragraph-part{display:block;}
+  #rtext.holmes-story .holmes-paragraph-part + .holmes-paragraph-part{margin-top:1.2em;}
   #rtext.holmes-story figure.story-illustration{margin:1.6em 0 1.8em;}
   #rtext .story-scene-break{text-align:center;letter-spacing:.3em;color:var(--soft2);margin:2.5em 0;}
   /* 그림을 꾹 누르면 Safari 는 그것을 집어 옮기려 합니다. 그 끌기가 시작되면

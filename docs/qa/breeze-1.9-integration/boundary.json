@@ -1,0 +1,2098 @@
+{
+  "base": "e7b61d5304d20d639d45fc8dd23116db5d6446e5",
+  "sources": {
+    "126": "9afbaf499ed3a747d839e982a8dca4704bb9f7fe",
+    "127": "e388efd509a47361fcc201faa73282c2dab0e0f9",
+    "128": "1f7a70e2d39094c91a579b73c4b7a7fcd6927f1c",
+    "129": "116d3adda261e9dd9e13223b30abcde155f8a4ad",
+    "130": "8b91fa076fbb3c4d31054acd52aac80e6cbe3200",
+    "131": "9bf7f4e1d0f977021b7c4bdd3d5d6e055935d5cb",
+    "134": "ea2184bfc80b31560bcf9266683a3f76bec4024f",
+    "135": "faf06f810b5fcc9003587f2c2a3d8c924449022c",
+    "welcome": "231c4d9c759d4b4b15f5039596dbf0fc98a6185c",
+    "approved-writing": "647615c9cc2bc540ba2fc49b3e453236b4a9140c"
+  },
+  "version": "1.9",
+  "build": "253",
+  "files": {
+    ".github/workflows/design-brand.yml": {
+      "owners": [
+        "126",
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "981d43225941011e435f73f43b83fb9bae27321668cf8ed28e8809c381cdf90f",
+      "sourceSha256": {
+        "126": "23b3df5e1c32ead571b9ddd67d81b31bdef4e9fffcee0c11cb2e547e42a91965",
+        "127": "ae8c2000834a2b3e04cb30b4368992bc47b53be01902fd4034c71f19aaf5530e"
+      }
+    },
+    ".github/workflows/sentence-inline-feedback.yml": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "a3c9b385f66e124b61a2fc912d558c3ce4ed649e922a5cda1b475e13f21a981a",
+      "sourceSha256": {
+        "126": "a3c9b385f66e124b61a2fc912d558c3ce4ed649e922a5cda1b475e13f21a981a"
+      }
+    },
+    "DESIGN.md": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "b5e43591efd4aa2e42940edd9cdbe79c2351e32bb1bd2320eafc83e1c3cf8f50",
+      "sourceSha256": {
+        "126": "b5e43591efd4aa2e42940edd9cdbe79c2351e32bb1bd2320eafc83e1c3cf8f50"
+      }
+    },
+    "docs/decisions/014-design-only-brand-release.md": {
+      "owners": [
+        "126"
+      ],
+      "kind": "followup-reviewed",
+      "sha256": "7808c549961f34549c3fc15759ad49c1d2d21d9e6381742c0494bbc221f021c3",
+      "sourceSha256": {
+        "126": "6179a3981c77ea4fd7c56059b095531abff0a94fd9c1e6964b71c9652fa7e32e"
+      },
+      "followupBaseSha256": "6179a3981c77ea4fd7c56059b095531abff0a94fd9c1e6964b71c9652fa7e32e"
+    },
+    "docs/qa/memory-header-20261008.md": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "3cac10aded143ef263f7c7465c6aa369314a6ee8be53b6da0559771f82267c96",
+      "sourceSha256": {
+        "126": "3cac10aded143ef263f7c7465c6aa369314a6ee8be53b6da0559771f82267c96"
+      }
+    },
+    "docs/qa/memory-header-20261008/after-chromium.json": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "369883375f4523c3492012ac847dee4297bf9222bd8e35e636427f84569f88a3",
+      "sourceSha256": {
+        "126": "369883375f4523c3492012ac847dee4297bf9222bd8e35e636427f84569f88a3"
+      }
+    },
+    "docs/qa/memory-header-20261008/before-chromium.json": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "08324c01cde540be96fc8a8c8e00ead7a008f0e7ae1b394426a8bbfdc487c781",
+      "sourceSha256": {
+        "126": "08324c01cde540be96fc8a8c8e00ead7a008f0e7ae1b394426a8bbfdc487c781"
+      }
+    },
+    "docs/qa/memory-header-20261008/breeze-memory-dark-comparison.png": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "854ee18519c8c30dcb158620c120540bf83b5161ff2693e48f4ce15a2f7ddf93",
+      "sourceSha256": {
+        "126": "854ee18519c8c30dcb158620c120540bf83b5161ff2693e48f4ce15a2f7ddf93"
+      }
+    },
+    "docs/qa/memory-header-20261008/breeze-memory-light-comparison.png": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "d84c4fce52a8b1b6b40d3b16eebc31078512a5f5a59674fe7ad07b1c6731d174",
+      "sourceSha256": {
+        "126": "d84c4fce52a8b1b6b40d3b16eebc31078512a5f5a59674fe7ad07b1c6731d174"
+      }
+    },
+    "index.html": {
+      "owners": [
+        "welcome",
+        "approved-writing"
+      ],
+      "kind": "followup-reviewed",
+      "sha256": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "sourceSha256": {
+        "welcome": "1a827c496dbd3e019b861ecd722997e2d69a79de0c13fe92b12781ece577d8f0",
+        "approved-writing": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093"
+      },
+      "followupBaseSha256": "12e3920769b08e69f938c9fd9860b28b62f2b92cb8e36f3ca1601014e1e05093"
+    },
+    "styles/wordbook.css": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "991cfadf334c6ae420d45b243942c5710b5fba61bbbe6405f058ff62639235d5",
+      "sourceSha256": {
+        "126": "991cfadf334c6ae420d45b243942c5710b5fba61bbbe6405f058ff62639235d5"
+      }
+    },
+    "sw.js": {
+      "owners": [
+        "welcome"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "sourceSha256": {
+        "welcome": "4f639e9ab9b1da516b59a97de6b2eee2c136c193a7e7534401b8edb1d99ec34e"
+      }
+    },
+    "tests/verify-design-memory-browser.mjs": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "1090f70d02d124460c14e10d8012fb41bde505f762181db115f76f3793edbd17",
+      "sourceSha256": {
+        "126": "1090f70d02d124460c14e10d8012fb41bde505f762181db115f76f3793edbd17"
+      }
+    },
+    "tests/verify-sentence-cue-browser.mjs": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "8978e164b78747b3be1db30606907e0336ae637d1eeb9f1814ebc70d247db516",
+      "sourceSha256": {
+        "126": "8978e164b78747b3be1db30606907e0336ae637d1eeb9f1814ebc70d247db516"
+      }
+    },
+    "tests/verify-wordbook-browser.mjs": {
+      "owners": [
+        "126"
+      ],
+      "kind": "single-source",
+      "sha256": "18ad0eb0afc17789267bd0eeb3c102633cce3de021202a93b0b94a5724998298",
+      "sourceSha256": {
+        "126": "18ad0eb0afc17789267bd0eeb3c102633cce3de021202a93b0b94a5724998298"
+      }
+    },
+    ".github/workflows/social-auth.yml": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "9498441ff52082974d28ca8b9bce18d44f7f15626c73498d8c90bbd611e6f035",
+      "sourceSha256": {
+        "127": "f8ffe92e96c220990c3708f61f81cad7489b6841021afb3131c8cd956dbca5e6"
+      }
+    },
+    "assets/auth/README.md": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "e5ca75e66cf486c6d4edaaad2ac03911de59acdbb89151e0d02611b3f76fa3c4",
+      "sourceSha256": {
+        "127": "70d721a6c456a05eca3c9f79c5436359cd7b9cfc418006ce9e14f5963edeefe0",
+        "approved-253": "e5ca75e66cf486c6d4edaaad2ac03911de59acdbb89151e0d02611b3f76fa3c4"
+      }
+    },
+    "assets/auth/google-g.png": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a",
+      "sourceSha256": {
+        "127": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a"
+      }
+    },
+    "assets/auth/manifest.json": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "ba536974b301b8d79182c5a2595e82925a8f5acaee4303e12f9f16b75d69c8cd",
+      "sourceSha256": {
+        "127": "fc710b67928e4903ed5f18dd4d7cc73989042dcc294470b5e0ebe3cb72926eaf",
+        "approved-253": "ba536974b301b8d79182c5a2595e82925a8f5acaee4303e12f9f16b75d69c8cd"
+      }
+    },
+    "assets/auth/signin-ko-black.png": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "b62ad8549062ba84434273881a964b9be3298bf44b54cedd891a20dabf9dd9f6",
+      "sourceSha256": {
+        "127": "0a9f00ffb6a7439cf73054ffa28df942946470544bdd88e6092b0e36c405fec8",
+        "approved-253": "b62ad8549062ba84434273881a964b9be3298bf44b54cedd891a20dabf9dd9f6"
+      }
+    },
+    "assets/auth/signin-ko-white.png": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "30dac95a55719dcd791fd64653cd2e651825fbb805b567e24b12c3c128fc18f8",
+      "sourceSha256": {
+        "127": "bf32055f2baf48b98711ddf50216a6ce462282c53f0c235db89bc9b548914208",
+        "approved-253": "30dac95a55719dcd791fd64653cd2e651825fbb805b567e24b12c3c128fc18f8"
+      }
+    },
+    "assets/fonts/OFL-GoogleSans.txt": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "2b75ef20f13d83a7514aee452c4782c20cdc9ff2dee17600f44d37a06d4fb958",
+      "sourceSha256": {
+        "127": "2b75ef20f13d83a7514aee452c4782c20cdc9ff2dee17600f44d37a06d4fb958"
+      }
+    },
+    "assets/fonts/google-sans-signin-500.ttf": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "27215d850656e3ef656341432f1a449add48a14a2e30bf4d58030e87b8878ae4",
+      "sourceSha256": {
+        "127": "27215d850656e3ef656341432f1a449add48a14a2e30bf4d58030e87b8878ae4"
+      }
+    },
+    "docs/decisions/006-reader-onboarding.md": {
+      "owners": [
+        "welcome",
+        "approved-writing"
+      ],
+      "kind": "followup-reviewed",
+      "sha256": "cef6246a4d9276f80afffe3db0a2256c97b13a16ae6c7f6ad3cd6ebe996235a1",
+      "sourceSha256": {
+        "welcome": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
+        "pre-approved-media": "a5f1028797647912156493d6d538cad23397bdeb6be06eb5f9ead6561334ae9f",
+        "approved-2x-30fps": "4c1ec0a691ee1415dc3e5babf2dc26c16e84edbd32fccede755527444c405db2",
+        "approved-writing": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9"
+      },
+      "followupBaseSha256": "e57a80a9e4978990b5b8a28e6abafbc6c736223e4140eb5e42c02043c60362b9"
+    },
+    "docs/decisions/016-social-auth.md": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "ce5919292153029970db79941bcb1053346f43cc9a7671ff5b786a3add63b0ce",
+      "sourceSha256": {
+        "127": "3364943d84cb31c8f2aeed6e7db510240a47545f70cf6727f6604aee77653642"
+      }
+    },
+    "docs/qa/social-auth-only.md": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "2357b7dda7cc841f40607f82e26278d53f344d48dbeef368f72fd55e3c0f62dc",
+      "sourceSha256": {
+        "127": "2357b7dda7cc841f40607f82e26278d53f344d48dbeef368f72fd55e3c0f62dc"
+      }
+    },
+    "ios/App/App/SceneDelegate.swift": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "3a555e53ac41189296fdbe63e1e4b80237e7af4857dc78e7e6202f27b21b3710",
+      "sourceSha256": {
+        "127": "d9da40e8e58bf6e3386f2c35fb01ea751b4f138bbf651ccd8f0adda58069c456"
+      }
+    },
+    "package.json": {
+      "owners": [
+        "127",
+        "128",
+        "131"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "95c17bf3fcf4cebc15d8706b771e57344c7d4f9b81ad188f4aea0d08bbb931fe",
+      "sourceSha256": {
+        "127": "a2258b58e03b8fa3f3080ff215d3819106167f409948ea1aa9faf271c11dafbe",
+        "128": "1604ce61216b510dd090c47eab520a0bc9ea2422d3fd912509326b1edfa97559",
+        "131": "15145cc05ccf9bc2d7652c1479d6667249130f92ffb8d73fbbf10fad8cb67a3c"
+      }
+    },
+    "scripts/sync/sync.js": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "0485e5de8fbe262ac1033530fe1efef1e8963953b2b4e9efc9818a647ac198c3",
+      "sourceSha256": {
+        "127": "11110a0e6f0c74211f8618902cee80ee137dc8abc49bcf39d396512b1ca28143"
+      }
+    },
+    "scripts/ui/preferences.js": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "f1e9ebd6ebeaac36c2d2fd509cae86fca887abf716c40edf84ae443aa0a9f614",
+      "sourceSha256": {
+        "127": "f1e9ebd6ebeaac36c2d2fd509cae86fca887abf716c40edf84ae443aa0a9f614"
+      }
+    },
+    "styles/home-shell.css": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "7bb723de951f9853b86a6b8a836cf88b07fa79846aef7e913f3ad513f8e48954",
+      "sourceSha256": {
+        "127": "7bb723de951f9853b86a6b8a836cf88b07fa79846aef7e913f3ad513f8e48954"
+      }
+    },
+    "tests/auth-native-policy-checks.swift": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "9070c3c34d2abd013994f5be605d07a5e8b22548a096d999b5820cf690d447d7",
+      "sourceSha256": {
+        "127": "1c8f1e6046b1bb86d89fa2bad1bbd2f5e3e83b6749c97b3b867a10f46a7c412b"
+      }
+    },
+    "tests/verify-apple-login.mjs": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "889326b9973804d5099bcc43425173dcfe974432d0baaf46a1cc10f43989fc67",
+      "sourceSha256": {
+        "127": "2618867eb5407f995a774dba9bdc32517ce2f4669b3e10f4bfb412d99c3af1e8"
+      }
+    },
+    "tests/verify-auth-native-policy.mjs": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "65a0b326b4a839bde7209d6eaeba162f1e26a9429bf1526b8555b76e8f9ee874",
+      "sourceSha256": {
+        "127": "81eeb780fa624539cbbd53a22cf02d00f0b6c3f22ad769e8b04e7c2891730e2b"
+      }
+    },
+    "tests/verify-email-login-browser.mjs": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "825a182fedf69a714ab42fb178f4aaa577978b7ca7380907be7860be173a5d15",
+      "sourceSha256": {
+        "127": "7a5d4b909000671ff64fff3bd2aa3486aa623c4ac703e48c287f72e8746c6e6f",
+        "approved-253": "825a182fedf69a714ab42fb178f4aaa577978b7ca7380907be7860be173a5d15"
+      }
+    },
+    "tests/verify-provider-artwork.mjs": {
+      "owners": [
+        "127"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "c22ba531b9a05077d7f204e97ec340941ad7d812bc2278ec533be1330b73cfec",
+      "sourceSha256": {
+        "127": "61922b094d8d692069fac55d99c0e048b1db64ce927b9b2d19f59e3ae496ed18",
+        "approved-253": "c22ba531b9a05077d7f204e97ec340941ad7d812bc2278ec533be1330b73cfec"
+      }
+    },
+    "tests/verify-social-auth-boundary.mjs": {
+      "owners": [
+        "127"
+      ],
+      "kind": "single-source",
+      "sha256": "67cba2e54258863cb48d3dea0f2723f64ea61c486f054b6168f35077d1dc59a1",
+      "sourceSha256": {
+        "127": "67cba2e54258863cb48d3dea0f2723f64ea61c486f054b6168f35077d1dc59a1"
+      }
+    },
+    "tests/verify-social-login-browser.mjs": {
+      "owners": [
+        "127"
+      ],
+      "kind": "native-apple-191-reviewed",
+      "sha256": "5aec4c597d225a05e4cdd5c11abf7bdfcb2ea27c6d334344acc4381e9d801291",
+      "sourceSha256": {
+        "127": "cd83da4142b4b16baf3a38999860cc75181c5a0aff18a85d68c8b07965571b78"
+      }
+    },
+    ".github/workflows/android-build.yml": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "2322f398b62fe2e6609daa44b0d2318eeee2c8abfc544eca680b57de2a425a18",
+      "sourceSha256": {
+        "128": "2322f398b62fe2e6609daa44b0d2318eeee2c8abfc544eca680b57de2a425a18"
+      }
+    },
+    ".github/workflows/pdf-pointer-ink.yml": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "b323f2e67bb94fef7996747fe13866a7b557d7ff1d57f73b709ffb5c706f7498",
+      "sourceSha256": {
+        "128": "b323f2e67bb94fef7996747fe13866a7b557d7ff1d57f73b709ffb5c706f7498"
+      }
+    },
+    "android/app/src/main/java/kr/io/breeze/app/BreezePdfPlatformPlugin.java": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "3ea16a9cae8aec5df710ab130c2680bd0f56d0a3fe97af9f3a4bcfb18b2629a3",
+      "sourceSha256": {
+        "128": "3ea16a9cae8aec5df710ab130c2680bd0f56d0a3fe97af9f3a4bcfb18b2629a3"
+      }
+    },
+    "android/app/src/main/java/kr/io/breeze/app/MainActivity.java": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "d03c89bdcc0177200b0c94a8e4874974b679eeccee472255231d5b1a5a335a23",
+      "sourceSha256": {
+        "128": "d03c89bdcc0177200b0c94a8e4874974b679eeccee472255231d5b1a5a335a23"
+      }
+    },
+    "android/app/src/main/java/kr/io/breeze/app/PdfDeviceClassification.java": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "f221e441ec6e24d77a652cd447af21e09dfd481629e600c99eb8431143fe973c",
+      "sourceSha256": {
+        "128": "f221e441ec6e24d77a652cd447af21e09dfd481629e600c99eb8431143fe973c"
+      }
+    },
+    "android/app/src/test/java/kr/io/breeze/app/PdfDeviceClassificationTest.java": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "08aa73c8ef9374e8c7e142fa38cdfc50103c40c34e550ca6f8c6e34b50a6d1ff",
+      "sourceSha256": {
+        "128": "08aa73c8ef9374e8c7e142fa38cdfc50103c40c34e550ca6f8c6e34b50a6d1ff"
+      }
+    },
+    "docs/decisions/009-pdf-ink.md": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "18cf1ca2e376b3479a7d32a27ae92900f4f758bd144031a564615cb233b9b376",
+      "sourceSha256": {
+        "128": "18cf1ca2e376b3479a7d32a27ae92900f4f758bd144031a564615cb233b9b376"
+      }
+    },
+    "docs/qa/pdf-native-availability-investigation-20261008.md": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "71798da6981862032bee3cb437eb307322b61e5cb844555083544415f06ee174",
+      "sourceSha256": {
+        "128": "71798da6981862032bee3cb437eb307322b61e5cb844555083544415f06ee174"
+      }
+    },
+    "scripts/reader/pdf-ink.js": {
+      "owners": [
+        "128",
+        "134"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "fe80bddeacb6f775c9246c9d4ef51c2afefc27f4aa548f2d298fd9e55639447f",
+      "sourceSha256": {
+        "128": "e117b0ffa6b40c52dc5c924b432123cfdb699247a34c8803f81dc64a57ea1d76",
+        "134": "fe80bddeacb6f775c9246c9d4ef51c2afefc27f4aa548f2d298fd9e55639447f"
+      }
+    },
+    "styles/pdf-ink.css": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "f4dac3fbca70a14f393058e5d23a95edacb9338ed6c329e1f45117de58a9bcb4",
+      "sourceSha256": {
+        "128": "f4dac3fbca70a14f393058e5d23a95edacb9338ed6c329e1f45117de58a9bcb4"
+      }
+    },
+    "styles/study.css": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "5c493f5504d931ae400b64f79aae5e492dec570ef9f97006ae05cc700f0d3df1",
+      "sourceSha256": {
+        "128": "5c493f5504d931ae400b64f79aae5e492dec570ef9f97006ae05cc700f0d3df1"
+      }
+    },
+    "tests/verify-android-build.mjs": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "d8782ba34a0422d0b7f55bb3673bcfbf237e020f6cf7935fa07feaad781b095a",
+      "sourceSha256": {
+        "128": "d8782ba34a0422d0b7f55bb3673bcfbf237e020f6cf7935fa07feaad781b095a"
+      }
+    },
+    "tests/verify-device-polish-browser.mjs": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "9f0e1e14b89bfeab1985c24573a2ed7199d8a262618132a68a080cd9ba14976d",
+      "sourceSha256": {
+        "128": "9f0e1e14b89bfeab1985c24573a2ed7199d8a262618132a68a080cd9ba14976d"
+      }
+    },
+    "tests/verify-pdf-availability-browser.mjs": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "fa7fe0122b01201196d13395e0faba24c01212fde141e6c0df6344d3787902a5",
+      "sourceSha256": {
+        "128": "fa7fe0122b01201196d13395e0faba24c01212fde141e6c0df6344d3787902a5"
+      }
+    },
+    "tests/verify-pdf-ink-browser.mjs": {
+      "owners": [
+        "128",
+        "134"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
+      "sourceSha256": {
+        "128": "715b000d857bb0f50eece02dc01db7a2c09c6ab2a3d2a0cb923798a6cdde7136",
+        "134": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950"
+      }
+    },
+    "tests/verify-pdf-ink-regressions.mjs": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "e88a4c37fe97e18759600a9c8bc3f317570e9e205858089b48cc5836292548ab",
+      "sourceSha256": {
+        "128": "e88a4c37fe97e18759600a9c8bc3f317570e9e205858089b48cc5836292548ab"
+      }
+    },
+    "tests/verify-pdf-pointer-ink-browser.mjs": {
+      "owners": [
+        "128"
+      ],
+      "kind": "single-source",
+      "sha256": "400681536814d99d2b5afc29ab960b0499112028beda1e33674a1fe0a3e2cf6c",
+      "sourceSha256": {
+        "128": "400681536814d99d2b5afc29ab960b0499112028beda1e33674a1fe0a3e2cf6c"
+      }
+    },
+    ".github/workflows/onboarding-carousel.yml": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "357315d8156d6b4a358aa06e1c7f92c8cc300c90652dcd9af519fc71d8c7aa05",
+      "sourceSha256": {
+        "129": "357315d8156d6b4a358aa06e1c7f92c8cc300c90652dcd9af519fc71d8c7aa05"
+      }
+    },
+    "assets/onboarding/details-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "3dd1489cb2ed19a68fd6a49808a71fe70d5162c0b1a38e999e29832a728c7436",
+      "sourceSha256": {
+        "129": "843594036c839d21f3a2da0f8a40e6c09d776b6466f90df9eeebe5ab0215f116",
+        "pre-approved-media": "843594036c839d21f3a2da0f8a40e6c09d776b6466f90df9eeebe5ab0215f116",
+        "approved-2x-30fps": "3dd1489cb2ed19a68fd6a49808a71fe70d5162c0b1a38e999e29832a728c7436"
+      }
+    },
+    "assets/onboarding/details-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "0f6b3d35587f28b51ea485d73bd9acc0248ee94b46d9d732181c020e92be262c",
+      "sourceSha256": {
+        "129": "0ddf08712a5d3f63e3732e17a1eb6b7ac9862ae8117cf473d0ded387123dece6",
+        "pre-approved-media": "0ddf08712a5d3f63e3732e17a1eb6b7ac9862ae8117cf473d0ded387123dece6",
+        "approved-2x-30fps": "0f6b3d35587f28b51ea485d73bd9acc0248ee94b46d9d732181c020e92be262c"
+      }
+    },
+    "assets/onboarding/details-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "afab59ec11e0d7372b68e8c0b9ac5deba2bf5fbfe7997bdd2bb4ca0443cf0c9e",
+      "sourceSha256": {
+        "129": "40addc304817c9d7f0c9163e6419e5b6babc3ee871b1b0786a0e5c4bc4eb560d",
+        "pre-approved-media": "40addc304817c9d7f0c9163e6419e5b6babc3ee871b1b0786a0e5c4bc4eb560d",
+        "approved-2x-30fps": "afab59ec11e0d7372b68e8c0b9ac5deba2bf5fbfe7997bdd2bb4ca0443cf0c9e"
+      }
+    },
+    "assets/onboarding/details-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "ca24c0788c787609ebc2deac84322c0c92ad0ad8bdd9541683c8360b98003aa1",
+      "sourceSha256": {
+        "129": "2456906261e41d5d774c39fa37b110b915081fe75ea9d4f2b4a85c227841c605",
+        "pre-approved-media": "2456906261e41d5d774c39fa37b110b915081fe75ea9d4f2b4a85c227841c605",
+        "approved-2x-30fps": "ca24c0788c787609ebc2deac84322c0c92ad0ad8bdd9541683c8360b98003aa1"
+      }
+    },
+    "assets/onboarding/easy-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "41a96d9e41cc8f667115872e7ab2b66468c185e265edac7d521886d32943f7d7",
+      "sourceSha256": {
+        "129": "da94692e2f52b86ff254b4d8076372d3ba62d567ae6d7c8a2ed72ce2c9f34992",
+        "pre-approved-media": "da94692e2f52b86ff254b4d8076372d3ba62d567ae6d7c8a2ed72ce2c9f34992",
+        "approved-2x-30fps": "41a96d9e41cc8f667115872e7ab2b66468c185e265edac7d521886d32943f7d7"
+      }
+    },
+    "assets/onboarding/easy-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "68c6c91a959215436ef9486fbad37702dac2fbbce534b163f78d20bf6cf038b1",
+      "sourceSha256": {
+        "129": "eb3f006c605bdb927728383df1e1ad348eba6c8ca562a328f3a0cda5303947fc",
+        "pre-approved-media": "eb3f006c605bdb927728383df1e1ad348eba6c8ca562a328f3a0cda5303947fc",
+        "approved-2x-30fps": "68c6c91a959215436ef9486fbad37702dac2fbbce534b163f78d20bf6cf038b1"
+      }
+    },
+    "assets/onboarding/easy-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "ef35f401b73f464c0268db67c997d56bf8b829a6129572c5ffe2b84200f64a22",
+      "sourceSha256": {
+        "129": "8adede74d19ea1da65949fd7040fa77b5e5d729a4893cef3ec1d7206eeb0a8ec",
+        "pre-approved-media": "8adede74d19ea1da65949fd7040fa77b5e5d729a4893cef3ec1d7206eeb0a8ec",
+        "approved-2x-30fps": "ef35f401b73f464c0268db67c997d56bf8b829a6129572c5ffe2b84200f64a22"
+      }
+    },
+    "assets/onboarding/easy-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "33585b61dada0234faa4f4f2fe4d95710b5bb74fb22b62142033942b8f5c6390",
+      "sourceSha256": {
+        "129": "39bf40ca1d4058f88a8ad31ee8334dbd35fb6723d03e672d9482a804f149e047",
+        "pre-approved-media": "39bf40ca1d4058f88a8ad31ee8334dbd35fb6723d03e672d9482a804f149e047",
+        "approved-2x-30fps": "33585b61dada0234faa4f4f2fe4d95710b5bb74fb22b62142033942b8f5c6390"
+      }
+    },
+    "assets/onboarding/memory-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "bf1825d6d79cf456fe345d605a545678ed894c21f08cd5c656540efc18c21cb4",
+      "sourceSha256": {
+        "129": "f69b3005cd7c16385910301f3d11220eeff6ea59bfbdf2adbca6fda698cfc3b4",
+        "pre-approved-media": "f69b3005cd7c16385910301f3d11220eeff6ea59bfbdf2adbca6fda698cfc3b4",
+        "approved-2x-30fps": "bf1825d6d79cf456fe345d605a545678ed894c21f08cd5c656540efc18c21cb4"
+      }
+    },
+    "assets/onboarding/memory-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "70c3ccfeb57c06245882495de284f9f47e5578a05097654b4048dd8554427796",
+      "sourceSha256": {
+        "129": "54c5fe1c1e36f4590b7871556701d128fe5bce93cb8e4a84aba2b9a9f7479c3d",
+        "pre-approved-media": "54c5fe1c1e36f4590b7871556701d128fe5bce93cb8e4a84aba2b9a9f7479c3d",
+        "approved-2x-30fps": "70c3ccfeb57c06245882495de284f9f47e5578a05097654b4048dd8554427796"
+      }
+    },
+    "assets/onboarding/memory-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "6c86a2a41162920966dc5576f3eb1655f32effdd885fa28623453de2a7406d01",
+      "sourceSha256": {
+        "129": "723a21ebe10b934a9b9ffa75ea5149ff975e7f4e6bed4ea6b818e18935130e61",
+        "pre-approved-media": "723a21ebe10b934a9b9ffa75ea5149ff975e7f4e6bed4ea6b818e18935130e61",
+        "approved-2x-30fps": "6c86a2a41162920966dc5576f3eb1655f32effdd885fa28623453de2a7406d01"
+      }
+    },
+    "assets/onboarding/memory-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "cb5ce81de6cc505417fff58044936058e5b984f76ad6412b4eb6a996556a50e2",
+      "sourceSha256": {
+        "129": "a25bdda510dca9d37a94a28e2b6c432e251e45acb9baf96f0ee7a4684e1c088e",
+        "pre-approved-media": "a25bdda510dca9d37a94a28e2b6c432e251e45acb9baf96f0ee7a4684e1c088e",
+        "approved-2x-30fps": "cb5ce81de6cc505417fff58044936058e5b984f76ad6412b4eb6a996556a50e2"
+      }
+    },
+    "assets/onboarding/pdf-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "d8dd55778401c4a65cb4fe404a7a410af8092d4d14cd906a6f5dc4f416af57b7",
+      "sourceSha256": {
+        "129": "e4739b8a985dd0c7246814e97fd3df53ec522844bd3889770be6b32b4064fa96",
+        "pre-approved-media": "622b763944270db79d7092a1db579782cfbc71d3fd2d3688fd9bd85bf4917a0b",
+        "approved-2x-30fps": "d8dd55778401c4a65cb4fe404a7a410af8092d4d14cd906a6f5dc4f416af57b7"
+      }
+    },
+    "assets/onboarding/pdf-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "8c2c0bf71bb32fd3e18fe2f5345ce4e2f3fe0fbc66a77af047eb7e7a512a9003",
+      "sourceSha256": {
+        "129": "3de5411c31b948b815d9a3a47a42f40cfaefa31568eb2b8beaa00725fa351f73",
+        "pre-approved-media": "bf14d098e17f89d8d4b926f2a9c8bcf9fcf67036c41192bfd0ae40d110751ca4",
+        "approved-2x-30fps": "8c2c0bf71bb32fd3e18fe2f5345ce4e2f3fe0fbc66a77af047eb7e7a512a9003"
+      }
+    },
+    "assets/onboarding/pdf-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "88f96f36e31b38fe530290ebd203ca41a79e13b0f0204948c1ab8ca6f4069628",
+      "sourceSha256": {
+        "129": "b2c54705cdac57d44b519b423168ef86fce0cf764456d698db39cf8d0d331054",
+        "pre-approved-media": "03056f91b555f822804285c50eae5898cfb6a9c50c93de765d95002079e06993",
+        "approved-2x-30fps": "88f96f36e31b38fe530290ebd203ca41a79e13b0f0204948c1ab8ca6f4069628"
+      }
+    },
+    "assets/onboarding/pdf-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "b2e3dbb0e02d9907ca17fe26eb62a756ba33eda50a66889d302686dfacf806b8",
+      "sourceSha256": {
+        "129": "a13dbac3fed9fc69a451f9c9a05653c0faacb1ed3148d534cd7f00d0bc1d3cce",
+        "pre-approved-media": "ca6cffca1d296d0af26205e9c1508466b1c8071891649ae17b92cc8fce073b33",
+        "approved-2x-30fps": "b2e3dbb0e02d9907ca17fe26eb62a756ba33eda50a66889d302686dfacf806b8"
+      }
+    },
+    "assets/onboarding/sentence-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "0f58866fba6a3b83a5cde7cf0b2c21666d8e04483c8363941623d2a0c6163f1e",
+      "sourceSha256": {
+        "129": "8d581e807f3b7e30acb10912b94fef23ace55f2f7b4c2ffe3a00284883df88c3",
+        "pre-approved-media": "8d581e807f3b7e30acb10912b94fef23ace55f2f7b4c2ffe3a00284883df88c3",
+        "approved-2x-30fps": "0f58866fba6a3b83a5cde7cf0b2c21666d8e04483c8363941623d2a0c6163f1e"
+      }
+    },
+    "assets/onboarding/sentence-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "01194196ab1ffc1cf043335f394bd27d56e8b13c338197b134af4b60813a7f6d",
+      "sourceSha256": {
+        "129": "1719015802e0ea402404ba67b437c74670b7672c862fb33f4ce6f6dd0acb5778",
+        "pre-approved-media": "1719015802e0ea402404ba67b437c74670b7672c862fb33f4ce6f6dd0acb5778",
+        "approved-2x-30fps": "01194196ab1ffc1cf043335f394bd27d56e8b13c338197b134af4b60813a7f6d"
+      }
+    },
+    "assets/onboarding/sentence-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "fc8523de24d1bdc0a72e08516e874fbb581b171b6464f890c6d6d2bdbb3906f7",
+      "sourceSha256": {
+        "129": "4049d6201176848f7de78c9ad031a91f8636a3b2a72b0d72d64622f45bf8154f",
+        "pre-approved-media": "4049d6201176848f7de78c9ad031a91f8636a3b2a72b0d72d64622f45bf8154f",
+        "approved-2x-30fps": "fc8523de24d1bdc0a72e08516e874fbb581b171b6464f890c6d6d2bdbb3906f7"
+      }
+    },
+    "assets/onboarding/sentence-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "9379d4fc7c81950057b48b470ac7d99f94192b5d3dc5b0633efaaaf280c0e6fc",
+      "sourceSha256": {
+        "129": "06761e9d3c96ede205606f4417e72f4635426f28f5a9378e9ffcb114b10612e6",
+        "pre-approved-media": "06761e9d3c96ede205606f4417e72f4635426f28f5a9378e9ffcb114b10612e6",
+        "approved-2x-30fps": "9379d4fc7c81950057b48b470ac7d99f94192b5d3dc5b0633efaaaf280c0e6fc"
+      }
+    },
+    "assets/onboarding/settings-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "f6c6c9ac988dcd950e21d6b91fe4383e2d2e22d5421952d98ba701f1a9d71830",
+      "sourceSha256": {
+        "129": "404e59c6bb5e666ef3d30aabdce77c0b72bb8c81895f0a88bf852dccdf0c458b",
+        "pre-approved-media": "404e59c6bb5e666ef3d30aabdce77c0b72bb8c81895f0a88bf852dccdf0c458b",
+        "approved-2x-30fps": "f6c6c9ac988dcd950e21d6b91fe4383e2d2e22d5421952d98ba701f1a9d71830"
+      }
+    },
+    "assets/onboarding/settings-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "0f1fda5e910040d47c974edd37533ca27b66f9ff35e7cb60286459c66ddaa479",
+      "sourceSha256": {
+        "129": "7ae028321c4532cb1fb0770aff835ad0d6b9b9cd6772f62eeac991380ed69488",
+        "pre-approved-media": "7ae028321c4532cb1fb0770aff835ad0d6b9b9cd6772f62eeac991380ed69488",
+        "approved-2x-30fps": "0f1fda5e910040d47c974edd37533ca27b66f9ff35e7cb60286459c66ddaa479"
+      }
+    },
+    "assets/onboarding/settings-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "48bc0279829a910e788f3ac6fd76185aea96e0d42eb9ea9dd1f31ef64532a654",
+      "sourceSha256": {
+        "129": "bbb5b9de6d18d582ca9dcf986dbf44130cde36fd5b08cf00007e52406427ec40",
+        "pre-approved-media": "bbb5b9de6d18d582ca9dcf986dbf44130cde36fd5b08cf00007e52406427ec40",
+        "approved-2x-30fps": "48bc0279829a910e788f3ac6fd76185aea96e0d42eb9ea9dd1f31ef64532a654"
+      }
+    },
+    "assets/onboarding/settings-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "89e2be011c5e11e50e9a670b35c3e9c7ce37794cfe6688cbb09b799f887278f0",
+      "sourceSha256": {
+        "129": "7146213c969c7be96e35a1e902a971849de8ac1482668ddded0972282509d1c5",
+        "pre-approved-media": "7146213c969c7be96e35a1e902a971849de8ac1482668ddded0972282509d1c5",
+        "approved-2x-30fps": "89e2be011c5e11e50e9a670b35c3e9c7ce37794cfe6688cbb09b799f887278f0"
+      }
+    },
+    "assets/onboarding/word-dark.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "2e3c4f7742a0862eb2eb726530b1b5c6bb52e39b2edd4e3b60feaaba7ae477dd",
+      "sourceSha256": {
+        "129": "f141e788d3322501de1c29ace19dfeb68316a8fa6f21ea85ed322bb9134b291b",
+        "pre-approved-media": "f141e788d3322501de1c29ace19dfeb68316a8fa6f21ea85ed322bb9134b291b",
+        "approved-2x-30fps": "2e3c4f7742a0862eb2eb726530b1b5c6bb52e39b2edd4e3b60feaaba7ae477dd"
+      }
+    },
+    "assets/onboarding/word-dark.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "915c4ae47455afb0ffdca03862eba44e27c609d127168e97931bf5c8c663d933",
+      "sourceSha256": {
+        "129": "0afdb191f2972963008da6b6907e3a22f65bb3e171858e7fa651cff265518d3b",
+        "pre-approved-media": "0afdb191f2972963008da6b6907e3a22f65bb3e171858e7fa651cff265518d3b",
+        "approved-2x-30fps": "915c4ae47455afb0ffdca03862eba44e27c609d127168e97931bf5c8c663d933"
+      }
+    },
+    "assets/onboarding/word-light.jpg": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "b4815706c4d1b138d542604098a25d8093fc0eb3bf51237fac9bfdba57b738d9",
+      "sourceSha256": {
+        "129": "cf6732244db9830185caa37fcb95e2cdaa17ddb06fa3002f1c9cf2cba8637e9c",
+        "pre-approved-media": "cf6732244db9830185caa37fcb95e2cdaa17ddb06fa3002f1c9cf2cba8637e9c",
+        "approved-2x-30fps": "b4815706c4d1b138d542604098a25d8093fc0eb3bf51237fac9bfdba57b738d9"
+      }
+    },
+    "assets/onboarding/word-light.mp4": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "e97b17b2830bde7e9d5b4096663c6041fdbb315ba0d4b167290b81d2073dc01d",
+      "sourceSha256": {
+        "129": "5851171494251fb3bf12f5a0cd4e6e7d2a7c346fcaf166fd1fbc55479123275e",
+        "pre-approved-media": "5851171494251fb3bf12f5a0cd4e6e7d2a7c346fcaf166fd1fbc55479123275e",
+        "approved-2x-30fps": "e97b17b2830bde7e9d5b4096663c6041fdbb315ba0d4b167290b81d2073dc01d"
+      }
+    },
+    "docs/qa/onboarding-carousel/README.md": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "0a63a8f6108209370601f0b5eeae123c07b7847d0d82c53e6c17819ed2538c51",
+      "sourceSha256": {
+        "129": "53d9149ffaa655a55a46f274a010e92acbe33637ef5c446362d30e3f9cf595d1",
+        "pre-approved-media": "53d9149ffaa655a55a46f274a010e92acbe33637ef5c446362d30e3f9cf595d1",
+        "approved-2x-30fps": "0a63a8f6108209370601f0b5eeae123c07b7847d0d82c53e6c17819ed2538c51"
+      }
+    },
+    "docs/qa/onboarding-carousel/capture-receipt.json": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "edb3bf009d8ce78b389ad6da77eee3bd1b6186f2583f1ab6dc05b493efd5e30b",
+      "sourceSha256": {
+        "129": "413635fee4606de462c1b389b698afa82311356bd1e83f6e158201f85942ed9a",
+        "pre-approved-media": "b4ffd31794c2e2fe431069e6b078f02195e2960e03d8019db85de4655615f61d",
+        "approved-2x-30fps": "edb3bf009d8ce78b389ad6da77eee3bd1b6186f2583f1ab6dc05b493efd5e30b"
+      }
+    },
+    "docs/qa/onboarding-carousel/contact-sheet.png": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "7d68fe3f629fba5577f163f19d55bc4219eaf9a98accd7a8cf0b1f2c80e085db",
+      "sourceSha256": {
+        "129": "7d68fe3f629fba5577f163f19d55bc4219eaf9a98accd7a8cf0b1f2c80e085db"
+      }
+    },
+    "docs/qa/onboarding-carousel/progress-comparison.json": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "c2af8175153290776187af20149b9363a617900b25cff70ea095cc19b6c5c1f9",
+      "sourceSha256": {
+        "129": "c2af8175153290776187af20149b9363a617900b25cff70ea095cc19b6c5c1f9"
+      }
+    },
+    "docs/qa/onboarding-carousel/size-report.json": {
+      "owners": [
+        "129"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "c4009d847a99015a2cab6f72fa986dcb72af99db80dab3bbc7a7c06fd8e60b5b",
+      "sourceSha256": {
+        "129": "0eb83fd509f5e62cd737627bd6a08c9d4940f556ba8ac38c16203414f01e1331",
+        "pre-approved-media": "5f3e8b8788ee7260bbb922da320df2160052e71de1e4655c8c2fd3910290b86f",
+        "approved-2x-30fps": "c4009d847a99015a2cab6f72fa986dcb72af99db80dab3bbc7a7c06fd8e60b5b"
+      }
+    },
+    "docs/qa/onboarding-carousel/welcome-comparison.json": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "b2065f6b3f06354aed2096a4d03c957c035feecac8329d650d5bb02f4622b633",
+      "sourceSha256": {
+        "129": "b2065f6b3f06354aed2096a4d03c957c035feecac8329d650d5bb02f4622b633"
+      }
+    },
+    "scripts/main.js": {
+      "owners": [
+        "129",
+        "130"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "0c6804782115d73a41b58ad5606d4f1964a50196cb07efb67798d69eee378ead",
+      "sourceSha256": {
+        "129": "274d54ad6f84e3918ff7c41d2a51dfb408b31ffc08d4d9acf6c9716eb121e269",
+        "130": "e19060c69c083378b2cb47846ad71df8f9bf5a54d0e0c24429af4ba5df64144e"
+      }
+    },
+    "scripts/ui/onboarding.js": {
+      "owners": [
+        "welcome",
+        "approved-writing"
+      ],
+      "kind": "followup-reviewed",
+      "sha256": "fd95ad2e73b5857482e032b0d26a913cccb705d49114ded384ebbe49ec363b43",
+      "sourceSha256": {
+        "welcome": "ff22202d52584f255fd9c7deb3dd25cb30232c7ddc076e37f5d1f60e4a27e59c",
+        "approved-writing": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d"
+      },
+      "followupBaseSha256": "00b60f0321dbc5dbbac7871ca27be7949cc152ad0a99549c47551836d92ebb5d"
+    },
+    "styles/onboarding.css": {
+      "owners": [
+        "welcome",
+        "approved-writing"
+      ],
+      "kind": "followup-reviewed",
+      "sha256": "8f315304ce0eca54b0e85225855100c3efe506adfc9e357de3a7938baaa94b63",
+      "sourceSha256": {
+        "welcome": "1382548283dc756347dca805c4e246f0a4d39bd4b2e64dcdb185c7617447a179",
+        "approved-writing": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b"
+      },
+      "followupBaseSha256": "d00f9eac585d775a263c6b19a0e632aaaa700a885526acf5d68d8e009dc5f83b"
+    },
+    "tests/verify-design-only-boundary.mjs": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "54a9c7a3e7242580ffbaf953a50e86397f2cb9f25f14c236efe0af8cfeb23ae2",
+      "sourceSha256": {
+        "129": "54a9c7a3e7242580ffbaf953a50e86397f2cb9f25f14c236efe0af8cfeb23ae2"
+      }
+    },
+    "tests/verify-lookup-work-browser.mjs": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "82deef70ea53f19ca76aa79471079a11da76ab6609e045cf4defe4b45fc566d4",
+      "sourceSha256": {
+        "129": "82deef70ea53f19ca76aa79471079a11da76ab6609e045cf4defe4b45fc566d4"
+      }
+    },
+    "tests/verify-lookup-work.mjs": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "02358f96396920b090945243f8b67041c30143032182c363f43df68ef107794a",
+      "sourceSha256": {
+        "129": "02358f96396920b090945243f8b67041c30143032182c363f43df68ef107794a"
+      }
+    },
+    "tests/verify-onboarding-browser.mjs": {
+      "owners": [
+        "welcome",
+        "approved-writing"
+      ],
+      "kind": "followup-reviewed",
+      "sha256": "1ef4ee6086da608b7e09e832683f92bab045a55b7864cb7ad9100c5693b562f6",
+      "sourceSha256": {
+        "welcome": "ab43213ded1a394a7e401af88e4c6b0a0c966a4a22bebaa56c6be675b5fc3ddf",
+        "approved-writing": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20"
+      },
+      "followupBaseSha256": "aa168de8c52137a6657cd05b58ed770a92184578a65871a1cfe2840c32c6bb20"
+    },
+    "tools/capture-onboarding-media.mjs": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "060df97705e6a779e5f394eb211aa2b17200fb7cef49b0caa5fdcdec18dc1c76",
+      "sourceSha256": {
+        "129": "060df97705e6a779e5f394eb211aa2b17200fb7cef49b0caa5fdcdec18dc1c76"
+      }
+    },
+    "tools/capture-onboarding-review.mjs": {
+      "owners": [
+        "129"
+      ],
+      "kind": "single-source",
+      "sha256": "f168c1be48eaa6170ff1384a6305e9ae8e9d50c9a14842a9577aaeafa11a5207",
+      "sourceSha256": {
+        "129": "f168c1be48eaa6170ff1384a6305e9ae8e9d50c9a14842a9577aaeafa11a5207"
+      }
+    },
+    ".github/workflows/integrity.yml": {
+      "owners": [
+        "130",
+        "131"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "3c7a1d125a5a25c08c1684224f89456c619d937fb89a4b9377dcfa844d7fbb59",
+      "sourceSha256": {
+        "130": "150915db3cceb7b410a0f8e638c39dfc35b7ef1c3c75ba2bbb74e0aecd77c558",
+        "131": "79164219d6f204225a448f45380f7bd8f612d95d57a191a7caa6f2ad46bc2e43"
+      }
+    },
+    "docs/decisions/008-web-content-ingestion.md": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "edeed042c55c07d9643045a98a192caa096e0b4313022572539c7733dbb35bb9",
+      "sourceSha256": {
+        "130": "edeed042c55c07d9643045a98a192caa096e0b4313022572539c7733dbb35bb9"
+      }
+    },
+    "docs/decisions/012-library-study.md": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "65de4bc771cd25ca98d814beefc546a5f2c71b2162a3d73e1562a3e55dca3b62",
+      "sourceSha256": {
+        "130": "65de4bc771cd25ca98d814beefc546a5f2c71b2162a3d73e1562a3e55dca3b62"
+      }
+    },
+    "docs/decisions/013-vocabulary-review.md": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "86d0982e2b1d808842218d13e91adaed557e87fbfa100446a98998dd09fb7da3",
+      "sourceSha256": {
+        "130": "86d0982e2b1d808842218d13e91adaed557e87fbfa100446a98998dd09fb7da3"
+      }
+    },
+    "docs/qa/lightweight-runtime-20261008.json": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "704835a22893863bb10b0ad3a0428ad4a9d3b966301817868bcde5bbb7355efa",
+      "sourceSha256": {
+        "130": "704835a22893863bb10b0ad3a0428ad4a9d3b966301817868bcde5bbb7355efa"
+      }
+    },
+    "docs/qa/lightweight-runtime-20261008.md": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "bc5fc081b5a619c0ba4ded57c28125d3a8ec40a5028c7c3ea581a759dc5ff955",
+      "sourceSha256": {
+        "130": "bc5fc081b5a619c0ba4ded57c28125d3a8ec40a5028c7c3ea581a759dc5ff955"
+      }
+    },
+    "scripts/core/lazy-lib.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "00f163862a47a5e1c559e11c398ce9ceec9e9335b2b420763c9afbe6e6087cfa",
+      "sourceSha256": {
+        "130": "00f163862a47a5e1c559e11c398ce9ceec9e9335b2b420763c9afbe6e6087cfa"
+      }
+    },
+    "scripts/dictionary/dictionary.js": {
+      "owners": [
+        "130",
+        "pdf-pending-pinch"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "6e7f9af7ebaad7c91a00a83e45d3b1d1156ccbdac32a149e735f43fa8e7aa9fe",
+      "sourceSha256": {
+        "130": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389",
+        "pending-pinch-baseline": "f5f58b81d8e58256c25947db5e74a3dffdff6b19210a70ef2525c25a888a0389"
+      }
+    },
+    "scripts/dictionary/sentence.js": {
+      "owners": [
+        "130",
+        "pdf-pending-pinch"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "3f5e51ca1751fad85caa9393932816ca444ca5674e3f90147cc468a01dcef648",
+      "sourceSha256": {
+        "130": "8ea287da5e2a07ebd687268d9ec62e18d1753cd12aa41bb66cb24f12e75577be",
+        "pending-pinch-baseline": "8ea287da5e2a07ebd687268d9ec62e18d1753cd12aa41bb66cb24f12e75577be"
+      }
+    },
+    "scripts/importers/article.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "e33592ae689333487a062171856e6e47f3c632026c867fdd33cca85f6a372f22",
+      "sourceSha256": {
+        "130": "e33592ae689333487a062171856e6e47f3c632026c867fdd33cca85f6a372f22"
+      }
+    },
+    "scripts/importers/rss.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "156b73091fc72126ea1e186a665b5a95571e985fbc196ac4ab4758433d2b23f6",
+      "sourceSha256": {
+        "130": "156b73091fc72126ea1e186a665b5a95571e985fbc196ac4ab4758433d2b23f6"
+      }
+    },
+    "scripts/library/homeward-lookup.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "24ab4083f1f07994d118d548b8a789bf878491aafcf0d737fb86939cc42bd24f",
+      "sourceSha256": {
+        "130": "24ab4083f1f07994d118d548b8a789bf878491aafcf0d737fb86939cc42bd24f"
+      }
+    },
+    "scripts/library/library.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "b05c73111deae94cfc30cbcf46479a806d48ad97a739b683c217a73f5972172a",
+      "sourceSha256": {
+        "130": "b05c73111deae94cfc30cbcf46479a806d48ad97a739b683c217a73f5972172a"
+      }
+    },
+    "scripts/library/longreads.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "902909efc40473f048d19045457092be27aa0686ead6c8539b5b1da31508d18f",
+      "sourceSha256": {
+        "130": "902909efc40473f048d19045457092be27aa0686ead6c8539b5b1da31508d18f"
+      }
+    },
+    "scripts/reader/reader.js": {
+      "owners": [
+        "130",
+        "131"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "f34596cb8d48791eb473720e622f4514bed19c8f570d5134734b0ceec0f651b4",
+      "sourceSha256": {
+        "130": "3a148729f5ea6805e7d08404987a622ab0c1b6d0a784e88ba5ba00ae74707f7f",
+        "131": "275d707d2d514a7a2fe30d6d3092ecd94b0b1bd35935d2a83b0879be6f9e25f9"
+      }
+    },
+    "scripts/ui/vocabulary-review.js": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "bdeefbb7fe6c25305c9fa8afdb7a85c3fd1b8271a2cfb2b66cdd6b64002cc8c1",
+      "sourceSha256": {
+        "130": "bdeefbb7fe6c25305c9fa8afdb7a85c3fd1b8271a2cfb2b66cdd6b64002cc8c1"
+      }
+    },
+    "tests/egress-rss-transport.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "e443bfd96d62ed0b8b7e0a5db5df5b062103beab9516fce16c82286425fd1f11",
+      "sourceSha256": {
+        "130": "e443bfd96d62ed0b8b7e0a5db5df5b062103beab9516fce16c82286425fd1f11"
+      }
+    },
+    "tests/helpers/unavailable-remote.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "369a3059cdf00585642c7e57ea61d922ed580e5f901e1bdc5e3bdebe5f1fd8d9",
+      "sourceSha256": {
+        "130": "369a3059cdf00585642c7e57ea61d922ed580e5f901e1bdc5e3bdebe5f1fd8d9"
+      }
+    },
+    "tests/measure-library-startup-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "23c51a0d38ab7ca5c2df4d37e0b1e8346d2aa41dbb9a97f9f19cb22733713504",
+      "sourceSha256": {
+        "130": "23c51a0d38ab7ca5c2df4d37e0b1e8346d2aa41dbb9a97f9f19cb22733713504"
+      }
+    },
+    "tests/measure-runtime-footprint.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "ad1871c47d6cc0f5d0b6715048e471049c6cecdedb14a787fb1d4a016c27dadc",
+      "sourceSha256": {
+        "130": "ad1871c47d6cc0f5d0b6715048e471049c6cecdedb14a787fb1d4a016c27dadc"
+      }
+    },
+    "tests/typecheck-baseline.json": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "dc30bb1f34cb177d23584abf28b460ad7c3cacd2bd24fe2ad548746e5cf8a3e0",
+      "sourceSha256": {
+        "130": "dc30bb1f34cb177d23584abf28b460ad7c3cacd2bd24fe2ad548746e5cf8a3e0"
+      }
+    },
+    "tests/verify-client-polish-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "5d4520736862165a2eb984599f19230e90f47e463a97668f013d7d01a6624430",
+      "sourceSha256": {
+        "130": "5d4520736862165a2eb984599f19230e90f47e463a97668f013d7d01a6624430"
+      }
+    },
+    "tests/verify-deferred-offline-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "acf258c28dbb8b061d9ddfde332a14e60c3ac0dbbaadb313f5b13927130cc09f",
+      "sourceSha256": {
+        "130": "acf258c28dbb8b061d9ddfde332a14e60c3ac0dbbaadb313f5b13927130cc09f"
+      }
+    },
+    "tests/verify-deferred-resources-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "3ded08c01828340d5c438da37b7d4188e065e51db87cca54004169cc7de62003",
+      "sourceSha256": {
+        "130": "3ded08c01828340d5c438da37b7d4188e065e51db87cca54004169cc7de62003"
+      }
+    },
+    "tests/verify-homeward-lookup-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "da382184ce658ab9fe3327e0584724f2357b15e6fe5a21621750beec968227c8",
+      "sourceSha256": {
+        "130": "da382184ce658ab9fe3327e0584724f2357b15e6fe5a21621750beec968227c8"
+      }
+    },
+    "tests/verify-homeward-open-preparation-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "8fab21e969caa8e21ecb5638913c021e3197b1ce1db4d031d33936501374d831",
+      "sourceSha256": {
+        "130": "8fab21e969caa8e21ecb5638913c021e3197b1ce1db4d031d33936501374d831"
+      }
+    },
+    "tests/verify-ingestion-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "45f6945f8ac94ca19dfd4193139e31208dfbdabc24c1aeff6b888ed2e102f86f",
+      "sourceSha256": {
+        "130": "45f6945f8ac94ca19dfd4193139e31208dfbdabc24c1aeff6b888ed2e102f86f"
+      }
+    },
+    "tests/verify-longreads-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "44f8ff09e092669310d39d8584cb8db4c3bd898367452c3c28ac0652d6977add",
+      "sourceSha256": {
+        "130": "44f8ff09e092669310d39d8584cb8db4c3bd898367452c3c28ac0652d6977add"
+      }
+    },
+    "tests/verify-native-package.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "e0e449e87359e3bc4c73df746608f1e63fe6c0a5e98a146a4cae9a224150001d",
+      "sourceSha256": {
+        "130": "e0e449e87359e3bc4c73df746608f1e63fe6c0a5e98a146a4cae9a224150001d"
+      }
+    },
+    "tests/verify-native-service-worker.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "097cdd582b2c858b30a5f79c352b157f08356166ede1100568e06a40f21f5ab1",
+      "sourceSha256": {
+        "130": "37a03408d4f27d22a8d28a4a7ff7ab5d7ca6b1da082638b5d9939e485d4823ae"
+      }
+    },
+    "tests/verify-rss-selected-body.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "d61aec1c53b877ca43afda823a57af739801139eba11d6aa97cfca61dcddd96a",
+      "sourceSha256": {
+        "130": "d61aec1c53b877ca43afda823a57af739801139eba11d6aa97cfca61dcddd96a"
+      }
+    },
+    "tests/verify-structure.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "147ad8cc7acb7a5208c253cc48526836793ed3796e9c50648a19fa95c8eaef4e",
+      "sourceSha256": {
+        "130": "147ad8cc7acb7a5208c253cc48526836793ed3796e9c50648a19fa95c8eaef4e"
+      }
+    },
+    "tests/verify-vocabulary-review-browser.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "ecd7d9b7afa8e782e249eb158d212efcb295980d3f9e6e50909e8706ff852433",
+      "sourceSha256": {
+        "130": "ecd7d9b7afa8e782e249eb158d212efcb295980d3f9e6e50909e8706ff852433"
+      }
+    },
+    "tools/build-www.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "75369d30f18bce5680987b14bf024e1b1be248e5013e351600654056a203195a",
+      "sourceSha256": {
+        "130": "75369d30f18bce5680987b14bf024e1b1be248e5013e351600654056a203195a"
+      }
+    },
+    "tools/fetch-libs.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "3ece44340afd37065cc731c052ad46d752a1b8bb98b09a9d2d017c3bcc05852c",
+      "sourceSha256": {
+        "130": "3ece44340afd37065cc731c052ad46d752a1b8bb98b09a9d2d017c3bcc05852c"
+      }
+    },
+    "tools/stamp-version.mjs": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "666ee53f223bdd422edbd860e9510d7977e16035c22863ff754c675032256ead",
+      "sourceSha256": {
+        "130": "666ee53f223bdd422edbd860e9510d7977e16035c22863ff754c675032256ead"
+      }
+    },
+    "types/globals.d.ts": {
+      "owners": [
+        "130"
+      ],
+      "kind": "single-source",
+      "sha256": "502a7e68841a08a20dce971784a9332c15c61656bbe18bc711ffede73f7ab6ff",
+      "sourceSha256": {
+        "130": "502a7e68841a08a20dce971784a9332c15c61656bbe18bc711ffede73f7ab6ff"
+      }
+    },
+    "docs/content/holmes-readability/README.md": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "eaadb0da29aa444440615fe08d7f40788a9d76af45164dbd6d53475994829661",
+      "sourceSha256": {
+        "131": "eaadb0da29aa444440615fe08d7f40788a9d76af45164dbd6d53475994829661"
+      }
+    },
+    "docs/content/holmes-readability/boundaries.json": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "a64d9a732de9540294e049e60ec0bc7b19a846197478b5c7c77a83d1db37bce9",
+      "sourceSha256": {
+        "131": "a64d9a732de9540294e049e60ec0bc7b19a846197478b5c7c77a83d1db37bce9"
+      }
+    },
+    "docs/content/holmes-readability/editorial-breaks.json": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "4b567fbd743064a7b4ccd12f4cd4bd7128fede976ad1009421c9613c05a11650",
+      "sourceSha256": {
+        "131": "4b567fbd743064a7b4ccd12f4cd4bd7128fede976ad1009421c9613c05a11650"
+      }
+    },
+    "docs/content/holmes-readability/source-paragraphs.json": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "70e8607f034d015fb8308a08780637db4c3bb14d5a5ceb24fca11b571b08e408",
+      "sourceSha256": {
+        "131": "70e8607f034d015fb8308a08780637db4c3bb14d5a5ceb24fca11b571b08e408"
+      }
+    },
+    "docs/content/holmes-readability/sources.json": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "384fa01de1db862eda5a50611cda1d0007b997a31854efe3eda94dbc4a83d445",
+      "sourceSha256": {
+        "131": "384fa01de1db862eda5a50611cda1d0007b997a31854efe3eda94dbc4a83d445"
+      }
+    },
+    "landing/index.html": {
+      "owners": [
+        "131"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "c0737a986a7d4ed3a3e2af15445459bb8b9450d04775b0de3067df78a9b397fe",
+      "sourceSha256": {
+        "131": "9f4ed4e849fd7cbe3ff29f48f78dc9ea4a4c83af871212d3df2a282ad2b30f84",
+        "landing-137": "c68d5d23dfa0f7b818e434c51a9246052802a3144bdd1f05cec2808f80bda86f"
+      }
+    },
+    "scripts/library/holmes-layout.js": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "16ae497ae4c0e2a1aa0e4fcb5e98a3b9d0759c71524e597f5bbdc1dd05643979",
+      "sourceSha256": {
+        "131": "16ae497ae4c0e2a1aa0e4fcb5e98a3b9d0759c71524e597f5bbdc1dd05643979"
+      }
+    },
+    "styles/reader.css": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "f1f2c167214bb638f54e7e6382b52ed5f06619e860fab203478ab490aa62f150",
+      "sourceSha256": {
+        "131": "f1f2c167214bb638f54e7e6382b52ed5f06619e860fab203478ab490aa62f150"
+      }
+    },
+    "tests/verify-holmes-readability-browser.mjs": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "705f99c90f638fc33ec1a22fa1dfb77842f77160025308181a8c2b251160bba8",
+      "sourceSha256": {
+        "131": "705f99c90f638fc33ec1a22fa1dfb77842f77160025308181a8c2b251160bba8"
+      }
+    },
+    "tests/verify-holmes-readability-cache-browser.mjs": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "8ddbf278e2a323e8089bba81ffb31e345262d8d7e7197252cb65096f84f41db4",
+      "sourceSha256": {
+        "131": "8ddbf278e2a323e8089bba81ffb31e345262d8d7e7197252cb65096f84f41db4"
+      }
+    },
+    "tests/verify-holmes-readability.mjs": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "b2d3b84e80e50cf1c21014feae07c29cdaa7d9416c79f3259ca1ecbb74f1a11b",
+      "sourceSha256": {
+        "131": "b2d3b84e80e50cf1c21014feae07c29cdaa7d9416c79f3259ca1ecbb74f1a11b"
+      }
+    },
+    "tools/audit-holmes-layout-sources.mjs": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "2773a02b0855d7479baef7bae95f4d4a1df43b8737161d8c5c7074fe2192637e",
+      "sourceSha256": {
+        "131": "2773a02b0855d7479baef7bae95f4d4a1df43b8737161d8c5c7074fe2192637e"
+      }
+    },
+    "tools/build-holmes-layout.mjs": {
+      "owners": [
+        "131"
+      ],
+      "kind": "single-source",
+      "sha256": "0ad110a709168b37c4c4db050da4731aa6a340c3aa2f651397afcad46cb17a34",
+      "sourceSha256": {
+        "131": "0ad110a709168b37c4c4db050da4731aa6a340c3aa2f651397afcad46cb17a34"
+      }
+    },
+    "docs/qa/welcome-preview-smooth-20261008.md": {
+      "owners": [
+        "welcome"
+      ],
+      "kind": "single-source",
+      "sha256": "d9e6cfb17925b3b8e601fe97e8e153a1c2eca0ff53b623ec33a5ea0a5457a000",
+      "sourceSha256": {
+        "welcome": "d9e6cfb17925b3b8e601fe97e8e153a1c2eca0ff53b623ec33a5ea0a5457a000"
+      }
+    },
+    "tools/capture-welcome-preview.mjs": {
+      "owners": [
+        "welcome"
+      ],
+      "kind": "single-source",
+      "sha256": "bdba774978fbd6cfaeb505248027642c1477cf8557aefad15277948496fbb662",
+      "sourceSha256": {
+        "welcome": "bdba774978fbd6cfaeb505248027642c1477cf8557aefad15277948496fbb662"
+      }
+    },
+    "tools/encode-welcome-preview.swift": {
+      "owners": [
+        "welcome"
+      ],
+      "kind": "single-source",
+      "sha256": "706a4fff2653c9f31f3d23ed99947d254c5715db1b2924287bfcd4c9d7d8edec",
+      "sourceSha256": {
+        "welcome": "706a4fff2653c9f31f3d23ed99947d254c5715db1b2924287bfcd4c9d7d8edec"
+      }
+    },
+    "scripts/reader/pdf-pinch.js": {
+      "owners": [
+        "pdf-pending-pinch",
+        "134"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "7e46e232acd250d59a03ba716dd4b1eebee415751b215296c46607938391c93b",
+      "sourceSha256": {
+        "134": "7e46e232acd250d59a03ba716dd4b1eebee415751b215296c46607938391c93b",
+        "pending-pinch-baseline": "dfc710bfcf933677b187305aa902f21f5791bf978b0fd6f4cbabc16f3124234a"
+      }
+    },
+    "docs/decisions/002-dictionary-panel-reading-anchor.md": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "998ba379107a3f96f986f344386ebdfa4e06ca0ff83655902ffe49c126100454"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "bf3c61d7c5f22eaf3e74c97cac9a226307ce63d7b0136c56f3dc93b3a760c22d"
+    },
+    "docs/decisions/004-sentence-lookup-feedback.md": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "c7a8c6c4eb107752518f1672d7a5688acc25a5f1eebb55c84aec4ead12305fd0"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "f6c5fd4491f1d8da91e47891291b995b1da08c570da9d390a1c9f84eebbda5ba"
+    },
+    "tests/verify-sentence-success-pill-browser.mjs": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "447d0f37c70c5a78549ce9a30ad01ebf6737bbdc36995b5587a34c7da86e5421"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "896f660460e10f906e9e67eeb4360de25804bf96c034367ef459d12d16e059df"
+    },
+    "tests/verify-sentence-help-browser.mjs": {
+      "owners": [
+        "pdf-pending-pinch"
+      ],
+      "sourceSha256": {
+        "pending-pinch-baseline": "6e24a97b1044e69e50a9c0f4ac568958a2d5afde0a6dc55399a2480bc54baabc"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "fbbfb2ebf9a75cc48be59dce5ac743bcc9a66152c24a29e36e32bc75fc05940c"
+    },
+    ".github/workflows/social-import.yml": {
+      "owners": [
+        "release-ci"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "852ccb9d34d78b47c666cf31a034c422b7430f6667311a912dc62303bd30cb0b",
+      "sourceSha256": {
+        "252-archive-source": "7f5ee6d573154dc28d19097514b6ea5c56eab1be7aadb9a09e95096f75388d0e"
+      }
+    },
+    "docs/qa/onboarding-carousel/30fps-media.md": {
+      "owners": [
+        "approved-media"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "049b7df5ee0c5f5d9459b492436279e96ed87f6691e8aeca1429a37fe8db04d1",
+      "sourceSha256": {
+        "approved-2x-30fps": "049b7df5ee0c5f5d9459b492436279e96ed87f6691e8aeca1429a37fe8db04d1"
+      }
+    },
+    "docs/qa/onboarding-carousel/30fps-player-verification.json": {
+      "owners": [
+        "approved-media"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "4c68ebbe353d40a0b447b64009208349597d86b374288205c9f42912d14a0b5c",
+      "sourceSha256": {
+        "approved-2x-30fps": "4c68ebbe353d40a0b447b64009208349597d86b374288205c9f42912d14a0b5c"
+      }
+    },
+    "tools/capture-onboarding-30fps.mjs": {
+      "owners": [
+        "approved-media"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "5d1d474264123ac1b21521d06f68667b52006f8620a6880c7a30061fedaa2c74",
+      "sourceSha256": {
+        "approved-2x-30fps": "5d1d474264123ac1b21521d06f68667b52006f8620a6880c7a30061fedaa2c74"
+      }
+    },
+    "tools/encode-onboarding-frames.swift": {
+      "owners": [
+        "approved-media"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "4b6c88ddd5f26417f4dc31f6355df4adfb022184e7d2e0bd14891b81e1944657",
+      "sourceSha256": {
+        "approved-2x-30fps": "4b6c88ddd5f26417f4dc31f6355df4adfb022184e7d2e0bd14891b81e1944657"
+      }
+    },
+    "tools/capture-welcome-connected.mjs": {
+      "owners": [
+        "approved-writing"
+      ],
+      "sourceSha256": {
+        "approved-writing": "7e94e3c1125ee67e504f08098996801ad978561a7a30edf6a0cf8814a6a35986"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "7e94e3c1125ee67e504f08098996801ad978561a7a30edf6a0cf8814a6a35986"
+    },
+    "tools/capture-b-order-review.mjs": {
+      "owners": [
+        "approved-writing"
+      ],
+      "sourceSha256": {
+        "approved-writing": "2b3d47ed6a3ea40ceb8c73d0a3834a4ca64361760f056408b4f1fbd27ca72d4f"
+      },
+      "kind": "combined-reviewed",
+      "sha256": "2b3d47ed6a3ea40ceb8c73d0a3834a4ca64361760f056408b4f1fbd27ca72d4f"
+    },
+    "scripts/reader/pdf-original.js": {
+      "owners": [
+        "134"
+      ],
+      "kind": "single-source",
+      "sha256": "dafa70b88b6af1bc4f2bd64d7ddf7975bdf8a92365d1dd94d7e12d002e7180cd",
+      "sourceSha256": {
+        "134": "dafa70b88b6af1bc4f2bd64d7ddf7975bdf8a92365d1dd94d7e12d002e7180cd",
+        "integration-baseline": "c5620583fe3213e060495f97fb8e5d719e8dd1ce9f5b5c38e9a98be8aaad3160"
+      }
+    },
+    "scripts/reader/pdf-navigation.js": {
+      "owners": [
+        "134"
+      ],
+      "kind": "single-source",
+      "sha256": "6b72e0775f146bdd0e10d3713edd55d34d945af2258bcd94dc0242f7d167520c",
+      "sourceSha256": {
+        "134": "6b72e0775f146bdd0e10d3713edd55d34d945af2258bcd94dc0242f7d167520c",
+        "integration-baseline": "1ea70870f13baa2793ed7767d336ce050d60f937e135d95a45b9a4cceba7756a"
+      }
+    },
+    "tests/verify-pdf-pinch-browser.mjs": {
+      "owners": [
+        "134"
+      ],
+      "kind": "single-source",
+      "sha256": "26b0c0e924688cede3c5214915395c6285f1b9a9a1f228e0ac9056e0c22b9336",
+      "sourceSha256": {
+        "134": "26b0c0e924688cede3c5214915395c6285f1b9a9a1f228e0ac9056e0c22b9336",
+        "integration-baseline": "67ec732897dfbda5e1a9f8a32751b79e6b940d65081cf8620ae9b6c60e6d9f5e"
+      }
+    },
+    "docs/decisions/003-pdf-highlight-geometry.md": {
+      "owners": [
+        "134"
+      ],
+      "kind": "combined-reviewed",
+      "sha256": "c28aa273b5987bfaea370caaa08f330ae8a234fc54fabd8aec97997c4d91d7ab",
+      "sourceSha256": {
+        "134": "142038d3846d6bf69ef3e3d26e2d52910c83688573795628d3d863292bb72220",
+        "integration-baseline": "98d04b25e6e58f4c5b4ef797528c75cb271d78ee1f90bff3f95723414520c434"
+      }
+    },
+    "tests/verify-pdf-pending-pinch-browser.mjs": {
+      "owners": [
+        "135"
+      ],
+      "kind": "single-source",
+      "sha256": "edbaec66820f24eaa1a0d7eecc78d7bd6a7de7593dd6fec4b6492d6966232182",
+      "sourceSha256": {
+        "135": "edbaec66820f24eaa1a0d7eecc78d7bd6a7de7593dd6fec4b6492d6966232182"
+      }
+    }
+  },
+  "integrationScope": [
+    "tools/verify-ios-release.mjs",
+    "tools/ios-testflight.sh",
+    "tests/verify-ios-cloud-build.mjs",
+    "tests/verify-integration-boundary.mjs",
+    "docs/qa/breeze-1.9-integration/boundary.json",
+    "docs/qa/breeze-1.9-integration/README.md",
+    "docs/decisions/019-breeze-1.9-integration.md",
+    ".github/workflows/design-brand.yml",
+    ".github/workflows/social-auth.yml",
+    ".github/workflows/integrity.yml",
+    "ios/App/App.xcodeproj/project.pbxproj",
+    "docs/qa/onboarding-carousel/pdf-media-credits.md",
+    "docs/qa/onboarding-carousel/pdf-openstax-light.png",
+    "docs/qa/onboarding-carousel/pdf-openstax-dark.png",
+    "tests/verify-holmes-illustrations-browser.mjs",
+    ".github/workflows/pdf-pending-pinch.yml",
+    "tests/verify-pdf-pending-pinch-browser.mjs",
+    "docs/qa/pdf-pending-pinch-20261008.md",
+    "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json",
+    "tools/render-app-icons.mjs",
+    "tools/verify-brand-icon-assets.py",
+    "docs/qa/icon-onboarding-20261009/before-final-light.png",
+    "docs/qa/icon-onboarding-20261009/icons-light-dark.png",
+    "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png",
+    "docs/qa/icon-onboarding-20261009/README.md",
+    "docs/qa/icon-onboarding-20261009/after-final-dark.png",
+    "docs/qa/icon-onboarding-20261009/after-final-light.png",
+    "docs/qa/icon-onboarding-20261009/after-navigation-dark.png",
+    "docs/qa/icon-onboarding-20261009/after-navigation-light.png",
+    "docs/qa/icon-onboarding-20261009/after-short-dark.png",
+    "docs/qa/icon-onboarding-20261009/after-short-light.png",
+    "docs/qa/icon-onboarding-20261009/before-final-dark.png",
+    "tests/fixtures/welcome-join-437fd6f.json",
+    "tools/capture-welcome-join-review.mjs",
+    "docs/qa/welcome-join-20261009/README.md",
+    "docs/qa/welcome-join-20261009/after-full-dark.png",
+    "docs/qa/welcome-join-20261009/after-full-light.png",
+    "docs/qa/welcome-join-20261009/after-zoom-final-dark.png",
+    "docs/qa/welcome-join-20261009/after-zoom-final-light.png",
+    "docs/qa/welcome-join-20261009/after-zoom-mid-dark.png",
+    "docs/qa/welcome-join-20261009/after-zoom-mid-light.png",
+    "docs/qa/welcome-join-20261009/before-after-dark.mp4",
+    "docs/qa/welcome-join-20261009/before-after-light.mp4",
+    "docs/qa/welcome-join-20261009/before-full-dark.png",
+    "docs/qa/welcome-join-20261009/before-full-light.png",
+    "docs/qa/welcome-join-20261009/before-zoom-final-dark.png",
+    "docs/qa/welcome-join-20261009/before-zoom-final-light.png",
+    "docs/qa/welcome-join-20261009/before-zoom-mid-dark.png",
+    "docs/qa/welcome-join-20261009/before-zoom-mid-light.png",
+    "docs/qa/welcome-join-20261009/capture-receipt.json",
+    "docs/qa/welcome-join-20261009/reference-before-after-overlay-dark.png",
+    "docs/qa/welcome-join-20261009/reference-before-after-overlay-light.png",
+    ".github/workflows/landing.yml",
+    "docs/qa/landing-current-app-20261009/README.md",
+    "docs/qa/landing-current-app-20261009/after-desktop-dark-scene3.png",
+    "docs/qa/landing-current-app-20261009/after-desktop-dark-scene5.png",
+    "docs/qa/landing-current-app-20261009/after-desktop-light-scene3.png",
+    "docs/qa/landing-current-app-20261009/after-desktop-light-scene5.png",
+    "docs/qa/landing-current-app-20261009/after-phone-dark-scene3.png",
+    "docs/qa/landing-current-app-20261009/after-phone-dark-scene5.png",
+    "docs/qa/landing-current-app-20261009/after-phone-light-scene3.png",
+    "docs/qa/landing-current-app-20261009/after-phone-light-scene5.png",
+    "docs/qa/landing-current-app-20261009/app-pdf-tools-dark.png",
+    "docs/qa/landing-current-app-20261009/app-pdf-tools-light.png",
+    "docs/qa/landing-current-app-20261009/app-reader-dark.png",
+    "docs/qa/landing-current-app-20261009/app-reader-light.png",
+    "docs/qa/landing-current-app-20261009/app-sentence-dark.png",
+    "docs/qa/landing-current-app-20261009/app-sentence-light.png",
+    "docs/qa/landing-current-app-20261009/app-word-detail-dark.png",
+    "docs/qa/landing-current-app-20261009/app-word-detail-light.png",
+    "docs/qa/landing-current-app-20261009/before-desktop-dark-scene3.png",
+    "docs/qa/landing-current-app-20261009/before-desktop-dark-scene5.png",
+    "docs/qa/landing-current-app-20261009/before-desktop-light-scene3.png",
+    "docs/qa/landing-current-app-20261009/before-desktop-light-scene5.png",
+    "docs/qa/landing-current-app-20261009/before-phone-dark-scene3.png",
+    "docs/qa/landing-current-app-20261009/before-phone-dark-scene5.png",
+    "docs/qa/landing-current-app-20261009/before-phone-light-scene3.png",
+    "docs/qa/landing-current-app-20261009/before-phone-light-scene5.png",
+    "docs/qa/landing-current-app-20261009/local-browser-results.json",
+    "landing/assets/screens/capture-receipt.json",
+    "landing/assets/screens/memory-phone-dark.png",
+    "landing/assets/screens/memory-phone-light.png",
+    "landing/assets/screens/memory-web-dark.png",
+    "landing/assets/screens/memory-web-light.png",
+    "landing/landing.css",
+    "landing/landing.js",
+    "tests/verify-landing-browser.mjs",
+    "tools/capture-landing-app.mjs",
+    "docs/qa/web-integration-20261009.md",
+    "tests/verify-site-navigation-browser.mjs"
+  ],
+  "approvedMediaSource": "981bd754c2b983af2029ee9e45dfb083ecdb8680",
+  "approvedWelcomeWritingSource": "647615c9cc2bc540ba2fc49b3e453236b4a9140c",
+  "approved253": {
+    "base": "003a6ff3705293b119200055902328f819ca33b7",
+    "scope": "Only the two existing official Apple button PNGs at scale 3, matching provenance and verification, and App/Share 1.9 (253) release metadata. Existing OAuth and all other runtime/design bytes are preserved.",
+    "officialAssetFetch": "https://github.com/MetroBummin/breeze/actions/runs/37802941003"
+  },
+  "approvedIconOnboardingFollowup": {
+    "base": "7bed00f9f5e1bb5cbba68f7d921081b5be7f7d65",
+    "scope": "Native Any/light and Dark icon catalog using unchanged approved b assets; visible Previous/Next and caption swipes; final book import/Skip with abortable production importer. Submitted branch, release metadata, welcome animation, all media, Reader, auth, Android icons and themes remain unchanged.",
+    "files": [
+      "docs/decisions/006-reader-onboarding.md",
+      "docs/decisions/014-design-only-brand-release.md",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "docs/qa/icon-onboarding-20261009/README.md",
+      "docs/qa/icon-onboarding-20261009/after-final-dark.png",
+      "docs/qa/icon-onboarding-20261009/after-final-light.png",
+      "docs/qa/icon-onboarding-20261009/after-navigation-dark.png",
+      "docs/qa/icon-onboarding-20261009/after-navigation-light.png",
+      "docs/qa/icon-onboarding-20261009/after-short-dark.png",
+      "docs/qa/icon-onboarding-20261009/after-short-light.png",
+      "docs/qa/icon-onboarding-20261009/before-final-dark.png",
+      "docs/qa/icon-onboarding-20261009/before-final-light.png",
+      "docs/qa/icon-onboarding-20261009/icons-light-dark.png",
+      "index.html",
+      "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png",
+      "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "scripts/ui/onboarding.js",
+      "styles/onboarding.css",
+      "sw.js",
+      "tests/verify-integration-boundary.mjs",
+      "tests/verify-onboarding-browser.mjs",
+      "tools/render-app-icons.mjs",
+      "tools/verify-brand-icon-assets.py",
+      "tests/fixtures/welcome-join-437fd6f.json",
+      "tools/capture-welcome-join-review.mjs",
+      "docs/qa/welcome-join-20261009/README.md",
+      "docs/qa/welcome-join-20261009/after-full-dark.png",
+      "docs/qa/welcome-join-20261009/after-full-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/before-after-dark.mp4",
+      "docs/qa/welcome-join-20261009/before-after-light.mp4",
+      "docs/qa/welcome-join-20261009/before-full-dark.png",
+      "docs/qa/welcome-join-20261009/before-full-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/capture-receipt.json",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-dark.png",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-light.png"
+    ]
+  },
+  "approvedWelcomeJoinFollowup": {
+    "base": "437fd6f006acb62097f6737e69a4a9ad292f96bb",
+    "scope": "Explicit 2026-10-09 user request: smooth the b-to-r exit only after comparing the stored cursive asset with actual welcome frames. Preserve the complete b retrace, later letters, original assets, CSS/session timing, icon/navigation/import behavior, approved media, Android and release metadata. This limited repair supersedes only the earlier welcome-path preservation statement.",
+    "oldJoin": "Q164 210 178 208 Q214 202 235 139",
+    "newJoin": "C187.666667 202 221 181 235 139",
+    "files": [
+      "index.html",
+      "sw.js",
+      "docs/decisions/006-reader-onboarding.md",
+      "tests/verify-onboarding-browser.mjs",
+      "tests/verify-integration-boundary.mjs",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "tests/fixtures/welcome-join-437fd6f.json",
+      "tools/capture-welcome-join-review.mjs",
+      "docs/qa/welcome-join-20261009/README.md",
+      "docs/qa/welcome-join-20261009/after-full-dark.png",
+      "docs/qa/welcome-join-20261009/after-full-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/after-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/before-after-dark.mp4",
+      "docs/qa/welcome-join-20261009/before-after-light.mp4",
+      "docs/qa/welcome-join-20261009/before-full-dark.png",
+      "docs/qa/welcome-join-20261009/before-full-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-final-light.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-dark.png",
+      "docs/qa/welcome-join-20261009/before-zoom-mid-light.png",
+      "docs/qa/welcome-join-20261009/capture-receipt.json",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-dark.png",
+      "docs/qa/welcome-join-20261009/reference-before-after-overlay-light.png"
+    ]
+  },
+  "approvedWebLandingIntegration": {
+    "appBase": "bdc2222315cad490cdcd3d4f1ddb4139bd7f2bce",
+    "landingSource": "e4b49a00e893bad9ae34264d58a79ca5f344a6a9",
+    "scope": "Explicit user approval to merge and deploy PR136 and PR137, preserving submitted 1.9 dependencies. App/native bytes remain exactly PR136; landing source exactly PR137 except generated HTML content-hash query strings. Extend only the combination boundary, then publish main once. No release metadata, Apple requests, provider or account changes. Cache validation reproduced app-shell HTML on controlled public-site navigation. Permit only the two-line service-worker navigation guard and generated worker version, its new real-worker browser regression, and the existing Chromium offline CI command extension. No forced worker activation or Reader code change.",
+    "files": [
+      ".github/workflows/landing.yml",
+      "docs/qa/landing-current-app-20261009/README.md",
+      "docs/qa/landing-current-app-20261009/after-desktop-dark-scene3.png",
+      "docs/qa/landing-current-app-20261009/after-desktop-dark-scene5.png",
+      "docs/qa/landing-current-app-20261009/after-desktop-light-scene3.png",
+      "docs/qa/landing-current-app-20261009/after-desktop-light-scene5.png",
+      "docs/qa/landing-current-app-20261009/after-phone-dark-scene3.png",
+      "docs/qa/landing-current-app-20261009/after-phone-dark-scene5.png",
+      "docs/qa/landing-current-app-20261009/after-phone-light-scene3.png",
+      "docs/qa/landing-current-app-20261009/after-phone-light-scene5.png",
+      "docs/qa/landing-current-app-20261009/app-pdf-tools-dark.png",
+      "docs/qa/landing-current-app-20261009/app-pdf-tools-light.png",
+      "docs/qa/landing-current-app-20261009/app-reader-dark.png",
+      "docs/qa/landing-current-app-20261009/app-reader-light.png",
+      "docs/qa/landing-current-app-20261009/app-sentence-dark.png",
+      "docs/qa/landing-current-app-20261009/app-sentence-light.png",
+      "docs/qa/landing-current-app-20261009/app-word-detail-dark.png",
+      "docs/qa/landing-current-app-20261009/app-word-detail-light.png",
+      "docs/qa/landing-current-app-20261009/before-desktop-dark-scene3.png",
+      "docs/qa/landing-current-app-20261009/before-desktop-dark-scene5.png",
+      "docs/qa/landing-current-app-20261009/before-desktop-light-scene3.png",
+      "docs/qa/landing-current-app-20261009/before-desktop-light-scene5.png",
+      "docs/qa/landing-current-app-20261009/before-phone-dark-scene3.png",
+      "docs/qa/landing-current-app-20261009/before-phone-dark-scene5.png",
+      "docs/qa/landing-current-app-20261009/before-phone-light-scene3.png",
+      "docs/qa/landing-current-app-20261009/before-phone-light-scene5.png",
+      "docs/qa/landing-current-app-20261009/local-browser-results.json",
+      "landing/assets/screens/capture-receipt.json",
+      "landing/assets/screens/memory-phone-dark.png",
+      "landing/assets/screens/memory-phone-light.png",
+      "landing/assets/screens/memory-web-dark.png",
+      "landing/assets/screens/memory-web-light.png",
+      "landing/index.html",
+      "landing/landing.css",
+      "landing/landing.js",
+      "tests/verify-landing-browser.mjs",
+      "tools/capture-landing-app.mjs"
+    ],
+    "integrationFiles": [
+      "tests/verify-integration-boundary.mjs",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "docs/qa/web-integration-20261009.md",
+      "sw.js",
+      "tests/verify-site-navigation-browser.mjs",
+      ".github/workflows/integrity.yml"
+    ]
+  },
+  "approvedNativeApple191": {
+    "base": "e450a86094f7ba0f42daaac5da8d348ea866a4e1",
+    "scope": "Explicit user approval: native iPhone/iPad Apple AuthenticationServices ID-token login through the existing Supabase client with SHA-256 nonce, cancellation/session-write gates, unchanged UI/web OAuth/Google/Android/data ownership; App/Share 1.9.1 marketing metadata, baseline counter 253, App-only Apple entitlement. No manual archive, Apple review action, provider/secret/account operation or email-based identity linking. Source reviewed independently of live signing/identity continuity.",
+    "files": [
+      "docs/decisions/016-social-auth.md",
+      "docs/qa/breeze-1.9-integration/boundary.json",
+      "docs/qa/native-apple-191-20261009.md",
+      "docs/qa/web-integration-20261009.md",
+      "index.html",
+      "ios/App/App.xcodeproj/project.pbxproj",
+      "ios/App/App/Breeze.entitlements",
+      "ios/App/App/SceneDelegate.swift",
+      "scripts/sync/sync.js",
+      "sw.js",
+      "tests/auth-native-policy-checks.swift",
+      "tests/verify-apple-login.mjs",
+      "tests/verify-auth-native-policy.mjs",
+      "tests/verify-integration-boundary.mjs",
+      "tests/verify-ios-cloud-build.mjs",
+      "tests/verify-social-login-browser.mjs",
+      "tools/ios-testflight.sh",
+      "tools/verify-ios-release.mjs"
+    ],
+    "sha256": {
+      "docs/decisions/016-social-auth.md": "ce5919292153029970db79941bcb1053346f43cc9a7671ff5b786a3add63b0ce",
+      "docs/qa/native-apple-191-20261009.md": "0d2d3cee6b23b0e2084576d337fb83d12203be7247a2d263b99a0b4ccadc7949",
+      "docs/qa/web-integration-20261009.md": "9c2591ed564b1d9a6aa4b00a80b1d23d2a972fe15a1fb66f3b44c2393301732f",
+      "index.html": "c8026895f1c7035d49c3233aee3319fd02f6c7e516eb8e627ab6074c981443ed",
+      "ios/App/App.xcodeproj/project.pbxproj": "022f5610fb38b3650df67e23e1bbf61ee4b426e5ffd965d64e91ea02b4864c6f",
+      "ios/App/App/Breeze.entitlements": "5ccb6e1ad3a51aafe3237f47cba5279a4dd2497533e93d8966170834236da799",
+      "ios/App/App/SceneDelegate.swift": "3a555e53ac41189296fdbe63e1e4b80237e7af4857dc78e7e6202f27b21b3710",
+      "scripts/sync/sync.js": "0485e5de8fbe262ac1033530fe1efef1e8963953b2b4e9efc9818a647ac198c3",
+      "sw.js": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b",
+      "tests/auth-native-policy-checks.swift": "9070c3c34d2abd013994f5be605d07a5e8b22548a096d999b5820cf690d447d7",
+      "tests/verify-apple-login.mjs": "889326b9973804d5099bcc43425173dcfe974432d0baaf46a1cc10f43989fc67",
+      "tests/verify-auth-native-policy.mjs": "65a0b326b4a839bde7209d6eaeba162f1e26a9429bf1526b8555b76e8f9ee874",
+      "tests/verify-ios-cloud-build.mjs": "d324448464be7c56f4941c88a732008204860510b3d9446ecaaa4e300ded0c85",
+      "tests/verify-social-login-browser.mjs": "5aec4c597d225a05e4cdd5c11abf7bdfcb2ea27c6d334344acc4381e9d801291",
+      "tools/ios-testflight.sh": "b34147ba514d689df518c88aa3ca7eda42b542b1ada77ad4f5f8f81053256c51",
+      "tools/verify-ios-release.mjs": "d126e8810d9b2d041b67fcb462a5e335d977bedea12a0a5e8e27d6f70f131ea1"
+    }
+  }
+}

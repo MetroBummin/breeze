@@ -25,7 +25,7 @@ const reports=[];
 
 try{
   for(const engine of [chromium,webkit].filter(engine=>!process.env.BROWSER||engine.name()===process.env.BROWSER)){
-    const browser=await engine.launch();
+    const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
     try{
       const page=await browser.newPage({viewport:{width:320,height:568},hasTouch:true,isMobile:true,
         serviceWorkers:'block'});
@@ -197,6 +197,10 @@ try{
         },definition.id);
         await page.reload({waitUntil:'domcontentloaded'});
         await page.evaluate(()=>homeReady);
+        assert.equal(await page.evaluate(id=>books.find(book=>book.longReadId===id).paras.length,definition.id),61,
+          'Home readiness must leave an unopened legacy edition unchanged');
+        await page.locator(`#shelf .bookcard.longread[data-longread-id="${definition.id}"]`).click();
+        await page.waitForFunction(id=>curBook?.longReadId===id&&!readerPositionRestoration,definition.id);
         const migrated=await page.evaluate(id=>{
           const book=books.find(item=>item.longReadId===id);
           return {paras:book.paras.length,pos:positions[book.id],sources:book.attribution.sources.length};

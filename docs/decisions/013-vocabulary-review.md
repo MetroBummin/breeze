@@ -252,3 +252,16 @@ regression coverage, while `verify-simple-word-cards-browser.mjs` tests the actu
 shipped OFF source and asserts zero review-storage access. Both modes run in CI
 Chromium/WebKit. Simple-card flips use a short fade to avoid perspective overflow
 on tablet and respect reduced motion. No AI/backend changes accompany this scope.
+
+## Do not ship dormant review resources (2026-10-08)
+
+The shipped OFF page no longer loads the FSRS vendor or scheduling engine,
+assigns no source to the hidden stage mascot, and schedules no advanced review
+timer. Native packaging excludes those two scripts, the five stage PNGs and
+manifest, the unreferenced round Thunderhead PNG, and parked exam/dictionary-seed
+modules. Their source files remain intact. Packaging rejects an ON flag until
+its entry scripts/assets are deliberately restored. The advanced browser fixture
+explicitly inserts its engine scripts; OFF tests still exercise the real page.
+No saved Meaning, review history, branded alternative or experimental source is
+deleted. `verify-native-package.mjs` checks source retention, exclusion, and all
+entry dependencies after the actual package build.

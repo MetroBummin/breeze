@@ -4,8 +4,14 @@ import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {Script} from 'node:vm';
 import {chromium,webkit} from 'playwright';
 const root=fileURLToPath(new URL('../',import.meta.url)),out='/tmp/breeze-client-polish';mkdirSync(out,{recursive:true});
+// Build a valid old schedule outside the browser: the shipped OFF page must not
+// load the dormant engine merely to manufacture this regression fixture.
+const reviewFixture={};
+new Script(readFileSync(resolve(root,'scripts/vendor/ts-fsrs-5.4.2.js'),'utf8')+'\n'
+ +readFileSync(resolve(root,'scripts/core/vocabulary-review.js'),'utf8')+'\nglobalThis.review=BreezeReview;').runInNewContext(reviewFixture);
 const manifest=JSON.parse(readFileSync(resolve(root,'docs/content/holmes-artwork/asset-manifest.json'),'utf8'));
 const covers=new Map(['speckled-band','scandal-in-bohemia','red-headed-league'].map(slug=>{
  const asset=manifest.assets.find(item=>item.kind==='cover'&&item.file===`assets/longreads/covers/${slug}.webp`);
@@ -70,14 +76,16 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(id=>books.find(b=>b.longReadId===id)?.cover,coverId);
   await assertStoredCover(page,coverId);
  }
- await page.evaluate(()=>{
-  const at=Date.now();words=Object.fromEntries(['alpha','beta','gamma','delta'].map((word,i)=>[word,{word,clicked:word,forms:[word],ko:'저장된 뜻 '+i,example:'We remember '+word+' in a saved sentence.',book:'Saved book',status:1,addedAt:at-i*1000,up:at-i*1000}]));saveWords();
+ const at=Date.now(),savedWords=Object.fromEntries(['alpha','beta','gamma','delta'].map((word,i)=>[word,{word,clicked:word,forms:[word],ko:'저장된 뜻 '+i,example:'We remember '+word+' in a saved sentence.',book:'Saved book',status:1,addedAt:at-i*1000,up:at-i*1000}]));
+ let view=reviewFixture.review.startJourney(reviewFixture.review.normalize(null),savedWords,at);
+ view=reviewFixture.review.grade(view.state,savedWords,view.token,'confused',at);
+ assert.equal(await page.evaluate(()=>typeof BreezeReview),'undefined','OFF page must not load the review engine');
+ await page.evaluate(({savedWords,rawReview})=>{
+  words=savedWords;saveWords();
   // Seed a real pre-existing schedule as fixture data; shipped simple cards
   // must never call the dormant UI storage adapters to read or mutate it.
-  let view=BreezeReview.startJourney(BreezeReview.normalize(null),words,at);
-  view=BreezeReview.grade(view.state,words,view.token,'confused',at);
-  localStorage.setItem('breeze.vocabulary-review.v1',JSON.stringify(view.state));show('vocab');
- });
+  localStorage.setItem('breeze.vocabulary-review.v1',rawReview);show('vocab');
+ },{savedWords,rawReview:JSON.stringify(view.state)});
  const before=await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1'));
  assert.equal(await page.locator('#review-setup-waiting').count(),0);
  assert.doesNotMatch(await page.locator('#review-setup').textContent(),/지금 학습|이어서 학습할 수/);

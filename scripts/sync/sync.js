@@ -28,6 +28,8 @@ let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progre
 let pendingRecoveryKey='', vaultInfoOpen=false, vaultRecoveryError='', recoveryRotateOpen=false;
 let pendingPair=null, pairingPoll=null, pairingError='';
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
+/** @type {null | {client:any,epoch:number,controller:AbortController,timer:any,native:any,nonce:string,nativeApple:boolean,rawNonce:string,accepted:boolean,releaseTokens?:()=>void}} */
+let socialLoginOperation=null;
 // Keep the current email step across settings dismissal/auth rerenders. Never
 // persist a password or OTP; Supabase continues to own session verification.
 const emailLogin={email:'',sentTo:'',message:'',sending:false,request:0,retryAt:0,retryEmail:'',timer:null};
@@ -68,7 +70,7 @@ function initSupabase(){
   SB_KEY=typeof config.SB_KEY==='string'?config.SB_KEY.trim():'';
   if(!SB_URL||!SB_KEY){ sbInitProblem='config'; return null; }
   if(!window.supabase||typeof window.supabase.createClient!=='function'){ sbInitProblem='sdk'; return null; }
-  try{ sb=window.supabase.createClient(SB_URL,SB_KEY); sbInitProblem=''; attachSupabaseAuth(); }
+  try{ sb=window.supabase.createClient(SB_URL,SB_KEY,socialNativeBridge()?nativeAppleAuthOptions():undefined); sbInitProblem=''; attachSupabaseAuth(); }
   catch(error){ sbInitProblem='client'; console.error('Supabase 연결 초기화 실패:',error); }
   return sb;
 }
@@ -101,6 +103,7 @@ function assertSyncSession(session){
   }
 }
 function resetSyncSession(){
+  cancelSocialLogin();
   if(typeof closeSentence==='function') closeSentence();
   if(typeof clearSentenceEasyCache==='function') clearSentenceEasyCache();
   syncSessionEpoch++;
@@ -242,6 +245,72 @@ function recoveryPanel(){
     <details class="sm-fold"><summary><b>다른 기기 연결</b><span>6자리 코드 또는 QR</span></summary><div class="sm-device-move"><span>새 기기에 표시된 6자리 코드를 입력해 열쇠를 보내세요.</span><input id="sm-pair-code" inputmode="numeric" maxlength="6" placeholder="6자리 코드"><button onclick="approvePairingCode()">코드로 동기화</button><small>새 기기가 QR을 띄우면 이 기기의 카메라로 스캔해도 됩니다.</small></div></details></section>`;
 }
 
+function socialNativeBridge(){
+  return isNativeShell()?Reflect.get(window,'webkit')?.messageHandlers?.breezeAuth:null;
+}
+function socialLoginSupported(provider='google'){
+  return !!(sb && (!isNativeShell()||socialNativeBridge()) && typeof sb.auth[provider==='apple'&&socialNativeBridge()?'signInWithIdToken':'signInWithOAuth']==='function');
+}
+function appleLoginWebSupported(){ return socialLoginSupported('apple'); }
+function socialLoginCurrent(operation){
+  return socialLoginOperation===operation&&!operation.controller.signal.aborted&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser;
+}
+/* The SDK remains the sole session owner and uses its existing localStorage
+   keys. Bind only native Apple token exchange to the request's abort signal,
+   including delayed JSON and the final storage write. A dismissed request must
+   never persist a late session or start wordbook sync. All other calls pass on. */
+function nativeAppleAuthOptions(){
+  const tokenOwners=new Map();
+  const storage={
+    getItem:key=>localStorage.getItem(key),removeItem:key=>localStorage.removeItem(key),
+    setItem:(key,value)=>{
+      const token=JSON.parse(value)?.access_token,operation=tokenOwners.get(token);
+      if(operation){
+        if(!socialLoginCurrent(operation))throw Error('social_cancelled');
+        // The synchronous session write is the commit point. The auth listener
+        // can now reset sync ownership without aborting this accepted login.
+        operation.accepted=true;
+      }
+      localStorage.setItem(key,value);
+    },
+  };
+  const authFetch=async(input,options)=>{
+    const url=new URL(String(input));
+    if(url.origin!==new URL(SB_URL).origin||url.pathname!=='/auth/v1/token'||url.searchParams.get('grant_type')!=='id_token')return fetch(input,options);
+    const operation=socialLoginOperation,body=JSON.parse(options.body);
+    if(!operation?.nativeApple||!socialLoginCurrent(operation)||body.provider!=='apple'||body.nonce!==operation.rawNonce)throw Error('social_cancelled');
+    const response=await fetch(input,{...options,signal:operation.controller.signal});
+    if(!socialLoginCurrent(operation))throw Error('social_cancelled');
+    return new Proxy(response,{get(target,key){
+      if(key==='json')return async()=>{
+        const result=await target.json();
+        if(!socialLoginCurrent(operation))throw Error('social_cancelled');
+        if(result?.access_token){
+          tokenOwners.set(result.access_token,operation);
+          operation.releaseTokens=()=>tokenOwners.delete(result.access_token);
+        }
+        return result;
+      };
+      const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+    }});
+  };
+  return {auth:{storage},global:{fetch:authFetch}};
+}
+function updateSocialLoginControls(){
+  for(const provider of ['apple','google']){
+    const button=/** @type {HTMLButtonElement} */(document.getElementById('sm-'+provider+'-login'));
+    if(button)button.disabled=!socialLoginSupported(provider)||!!socialLoginOperation;
+  }
+}
+function cancelSocialLogin(){
+  const operation=socialLoginOperation;
+  if(!operation)return;
+  socialLoginOperation=null;
+  clearTimeout(operation.timer);
+  if(!operation.accepted)operation.controller.abort();
+  if(operation.native)operation.native.postMessage({action:'cancel',request:operation.nonce}).catch(()=>{});
+  updateSocialLoginControls();
+}
 function renderSyncModal(){
   rememberLoginEmail();
   const body=document.getElementById('sm-body');
@@ -274,17 +343,110 @@ function renderSyncModal(){
       <button class="sm-btn primary" onclick="sbPasswordLogin()">비밀번호로 로그인</button>
       <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
-    body.innerHTML=`<div class="desc">이메일을 입력하면 <b>로그인 링크</b>를 보내드려요.
-      로그인하면 단어장이 기기 간에 자동으로 동기화됩니다.</div>
-      <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email" oninput="emailLoginChanged()">
-      <button id="sm-send-link" class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
-      <div id="sm-codewrap"><div class="hint">메일에 온 <b>6자리 코드</b>를 입력해도 로그인돼요</div>
-      <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
-      <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
-      <button class="sm-linkish neutral" onclick="openPasswordLogin()">비밀번호로 로그인</button>`;
+    body.innerHTML=`<p class="settings-sync-note">로그인하면 단어장을 다른 기기에서도 볼 수 있어요.</p>
+      <div class="settings-signin-choices">
+        <details id="sm-email-login" ${emailLogin.email?'open':''}>
+          <summary>이메일 로그인</summary>
+          <div class="settings-email-form">
+            <label for="sm-email">이메일 주소</label>
+            <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email" oninput="emailLoginChanged()">
+            <button id="sm-send-link" class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
+            <div id="sm-codewrap"><div class="hint">메일의 링크를 누르거나 <b>6자리 코드</b>를 입력하세요.</div>
+            <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······" aria-label="이메일 로그인 코드">
+            <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
+          </div>
+        </details>
+        <button id="sm-apple-login" class="settings-apple-signin" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-apple-note" aria-label="Apple로 로그인"><img class="settings-apple-art light" src="assets/auth/signin-ko-black.png" width="250" height="48" alt="" aria-hidden="true"><img class="settings-apple-art dark" src="assets/auth/signin-ko-white.png" width="250" height="48" alt="" aria-hidden="true"></button>
+        <span id="sm-apple-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Apple 로그인 연결은 아직 준비되지 않았어요.':''}</span>
+        <button id="sm-google-login" class="settings-google-signin ${isNativeShell()?'native':''}" type="button" onclick="sbGoogleLogin()" ${!socialLoginSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-google-note"><img class="settings-google-logo" src="assets/auth/google-g.png" width="20" height="20" alt="" aria-hidden="true"><span>Google로 로그인</span></button>
+        <span id="sm-google-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Google 로그인 연결은 아직 준비되지 않았어요.':''}</span>
+        <button id="sm-password-login" class="sm-linkish neutral settings-password-link" onclick="openPasswordLogin()">비밀번호 로그인</button>
+      </div>`;
   }
   syncStatus('');
   updateEmailLoginControls();
+}
+
+/* The five-second preparation deadline covers settings, body parsing and the
+   SDK authorization URL. Aborting fetch alone cannot settle an SDK promise.
+   Only the current operation may navigate or release its buttons. Consent and
+   callback session persistence remain owned by the existing Supabase client. */
+async function sbAppleLogin(){ return sbSocialLogin('apple'); }
+async function sbGoogleLogin(){ return sbSocialLogin('google'); }
+async function sbSocialLogin(provider){
+  if(!['apple','google'].includes(provider)||!socialLoginSupported(provider)||sbUser||socialLoginOperation)return;
+  const label=provider==='apple'?'Apple':'Google';
+  const operation={client:sb,epoch:syncSessionEpoch,controller:new AbortController(),timer:null,native:socialNativeBridge(),nonce:'',nativeApple:false,rawNonce:'',accepted:false,releaseTokens:null};
+  if(operation.native)operation.nonce=VaultCrypto.uuid();
+  operation.nativeApple=provider==='apple'&&!!operation.native;
+  socialLoginOperation=operation;
+  const current=()=>socialLoginCurrent(operation);
+  const deadline=new Promise((_,reject)=>{
+    operation.controller.signal.addEventListener('abort',()=>reject(Error('social_cancelled')),{once:true});
+    operation.timer=setTimeout(()=>operation.controller.abort(),5000);
+  });
+  updateSocialLoginControls();syncStatus(label+' 로그인 준비 중…');
+  try{
+    const prepare=async()=>{
+      const response=await fetch(SB_URL.replace(/\/$/,'')+'/auth/v1/settings',{
+        headers:{apikey:SB_KEY},signal:operation.controller.signal,credentials:'omit',
+      });
+      if(!response.ok)throw Error('provider_settings');
+      const settings=await response.json();
+      if(!current())return null;
+      if(settings.external?.[provider]!==true)return {unconfigured:true};
+      if(operation.nativeApple)return {appleNative:true};
+      const {data,error}=await operation.client.auth.signInWithOAuth({provider,options:{
+        redirectTo:operation.native?'kr.io.breeze.app://auth/callback?request='+operation.nonce:location.origin+location.pathname,skipBrowserRedirect:true,
+      }});
+      if(!current())return null;
+      if(error||!data?.url)throw Error('social_signin');
+      const target=new URL(data.url),project=new URL(SB_URL);
+      if(target.protocol!=='https:'||target.origin!==project.origin||target.username||target.password||target.hash||target.pathname!=='/auth/v1/authorize'||target.searchParams.getAll('provider').length!==1||target.searchParams.get('provider')!==provider)throw Error('social_url');
+      return {url:target.href};
+    };
+    const result=await Promise.race([prepare(),deadline]);
+    if(!current()||!result)return;
+    if(result.unconfigured){syncStatus(label+' 로그인이 아직 설정되지 않았어요. 이메일로 로그인해 주세요.');return;}
+    if(!operation.native){location.assign(result.url);return;}
+    // Preparation has a five-second bound; interactive consent gets two minutes.
+    // Cancellation invalidates the owner before the native reply can return.
+    clearTimeout(operation.timer);
+    operation.timer=setTimeout(()=>operation.controller.abort(),120000);
+    syncStatus(label+'에서 로그인을 마쳐 주세요.');
+    if(operation.nativeApple){
+      operation.rawNonce=Array.from(crypto.getRandomValues(new Uint8Array(32)),byte=>byte.toString(16).padStart(2,'0')).join('');
+      const credential=await Promise.race([operation.native.postMessage({action:'apple',request:operation.nonce,nonce:operation.rawNonce}),deadline]);
+      if(!current())return;
+      if(credential?.request!==operation.nonce||credential?.nonce!==operation.rawNonce||typeof credential?.identityToken!=='string'||credential.identityToken.split('.').length!==3)throw Error('apple_credential');
+      syncStatus('Apple 로그인 확인 중…');
+      const exchange=operation.client.auth.signInWithIdToken({provider:'apple',token:credential.identityToken,nonce:operation.rawNonce})
+        .finally(()=>operation.releaseTokens?.());
+      const result=await Promise.race([exchange,deadline]);
+      if(result.error)throw Error('apple_signin');
+      return;
+    }
+    const callback=await Promise.race([operation.native.postMessage({action:'start',request:operation.nonce,url:result.url}),deadline]);
+    if(!current())return;
+    const returned=new URL(String(callback));
+    if(returned.protocol!=='kr.io.breeze.app:'||returned.hostname!=='auth'||returned.username||returned.password||returned.port||returned.pathname!=='/callback'||returned.searchParams.getAll('request').length!==1||returned.searchParams.get('request')!==operation.nonce)throw Error('social_callback');
+    const tokens=new URLSearchParams(returned.hash.slice(1));
+    if(tokens.get('error')||!tokens.get('access_token')||!tokens.get('refresh_token')||tokens.get('token_type')!=='bearer')throw Error('social_callback');
+    // A new app document hands the callback to the same bundled SDK's URL
+    // initialization and persistent session store, rather than a second client
+    // or a cancellable setSession promise that could write after its owner died.
+    // A fragment-only replace is same-document navigation: the SDK would never
+    // reinitialize. A request-bound query forces a fresh document without a
+    // second auth client; the accepted-session listener removes it below.
+    const appURL=new URL(location.href);appURL.search='';appURL.searchParams.set('breeze_auth_return',operation.nonce);appURL.hash=returned.hash;
+    location.replace(appURL.href);
+  }catch(error){
+    if(socialLoginOperation===operation&&operation.epoch===syncSessionEpoch&&operation.client===sb&&!sbUser)syncStatus(String(error).includes('취소')?label+' 로그인을 취소했어요.':label+' 로그인에 연결하지 못했어요. 다시 시도하거나 이메일로 로그인해 주세요.');
+  }finally{
+    clearTimeout(operation.timer);
+    if(operation.native)operation.native.postMessage({action:'cancel',request:operation.nonce}).catch(()=>{});
+    if(socialLoginOperation===operation){socialLoginOperation=null;updateSocialLoginControls();}
+  }
 }
 
 async function sbSendLink(){
@@ -1109,6 +1271,13 @@ function attachSupabaseAuth(){
     const next=session?session.user:storedAuthUser();
     if(!next||!sbUser||sbUser.id!==next.id) resetSyncSession();
     sbUser=next; syncBadge();
+    if(sbUser&&isNativeShell()){
+      const url=new URL(location.href);
+      if(url.searchParams.has('breeze_auth_return')){
+        url.searchParams.delete('breeze_auth_return');
+        history.replaceState(null,'',url.pathname+url.search+url.hash);
+      }
+    }
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
     if(sbUser) syncRemoteChanges(false);
     if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();

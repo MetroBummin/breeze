@@ -63,12 +63,13 @@ try{
     }
    };
    const setting=async(kind,value)=>{
-    const tool=kind==='radius'?'erase':'pen';
+    const tool=kind==='radius'?'erase':kind.startsWith('highlight')?'highlighter':'pen';
+    const attribute=kind.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase());
     const button=page.locator(`[data-ink-mode="${tool}"]`);
     if(await button.getAttribute('aria-pressed')!=='true')await button.click();
     if(await button.getAttribute('aria-expanded')!=='true')await button.click();
-    await page.locator(`[data-ink-${kind}="${value}"]`).click();
-    assert.equal(await page.locator(`[data-ink-${kind}="${value}"]`).getAttribute('aria-pressed'),'true');
+    await page.locator(`[data-ink-${attribute}="${value}"]`).click();
+    assert.equal(await page.locator(`[data-ink-${attribute}="${value}"]`).getAttribute('aria-pressed'),'true');
    };
    const stroke=async(points,{pageNumber=1,type='stylus',cancel=false,noncancel=false,palm=false}={})=>page.evaluate(({points,pageNumber,type,cancel,noncancel,palm})=>{
     const readsBefore=window.qaBoundsReads||0;
@@ -89,6 +90,29 @@ try{
     window.qaStrokeBoundsReads=(window.qaBoundsReads||0)-readsBefore;
     return prevented;
    },{points,pageNumber,type,cancel,noncancel,palm});
+   for(const theme of ['light','dark']){
+    await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
+    let readGeometry;
+    for(const tool of ['read','pen','highlighter']){
+     await mode(tool);await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(350);
+     const geometry=await page.locator('#readpill').evaluate(node=>{
+      const box=node.getBoundingClientRect(),css=getComputedStyle(node);return {width:box.width,height:box.height,padding:css.padding,radius:css.borderRadius};
+     });
+     if(tool==='read')readGeometry=geometry;else{
+      assert.deepEqual(geometry,readGeometry,'expanded reading and writing pills share outer geometry');
+      const selected=await page.locator(`[data-ink-mode="${tool}"]`).evaluate(node=>{
+       const css=getComputedStyle(node),marker=getComputedStyle(node,'::after'),box=node.getBoundingClientRect();
+       const inactive=node.parentElement.querySelector('[data-ink-mode][aria-pressed="false"]');
+       return {width:box.width,height:box.height,background:css.backgroundColor,shadow:css.boxShadow,markerContent:marker.content,color:css.color,inactiveColor:getComputedStyle(inactive).color};
+      });
+      assert.ok(selected.width>=44&&selected.height>=44);
+      assert.equal(selected.background,'rgba(0, 0, 0, 0)');assert.equal(selected.shadow,'none');assert.equal(selected.markerContent,'none','selected tools have no underline or decorative marker');
+      assert.notEqual(selected.color,selected.inactiveColor,'icon color alone identifies the selected tool');
+     }
+     if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`reader-tools-${engine.name()}-${theme}-${tool}-820x1180.png`)});}
+    }
+   }
+   await page.evaluate(()=>{darkMode=false;applyDark();});await mode('pen');
    assert.equal(await page.locator('[data-ink-mode="pen"]').getAttribute('aria-pressed'),'true');
    const penButton=page.locator('[data-ink-mode="pen"]'),eraserButton=page.locator('[data-ink-mode="erase"]');
    const settings=page.locator('#pdf-ink-settings');
@@ -112,6 +136,29 @@ try{
    }));
    assert.equal(selectedSwatch.border,'rgb(38, 127, 168)','selected color uses the Breeze blue ring');
    assert.equal(selectedSwatch.overflow,'auto','color row can horizontally scroll when the palette grows');
+   assert.deepEqual(await page.locator('[data-ink-mode]').evaluateAll(nodes=>nodes.map(node=>node.dataset.inkMode)),['pen','highlighter','erase']);
+   assert.equal(await settings.locator('[data-ink-color]').count(),6);
+   assert.equal(await settings.locator('[data-ink-highlight-color]').count(),6);
+   assert.equal(await settings.locator('input[type="color"]').count(),0,'only predefined colors are offered');
+   for(const theme of ['light','dark'])for(const viewport of [{width:360,height:740},{width:820,height:1180},{width:1180,height:820},{width:1440,height:900},{width:740,height:360}]){
+    await page.setViewportSize(viewport);await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
+    await page.evaluate(()=>expandReaderChrome());
+    if(!await settings.isVisible())await penButton.click();
+    const row=settings.locator('.ink-colors');
+    const layout=await row.evaluate(node=>{
+     const chip=node.firstElementChild.getBoundingClientRect(),box=node.getBoundingClientRect();
+     node.scrollLeft=node.scrollWidth;return {chipWidth:chip.width,chipHeight:chip.height,overflow:node.scrollWidth>node.clientWidth,scroll:node.scrollLeft,right:box.right,left:box.left,screen:innerWidth};
+    });
+    assert.ok(layout.chipWidth>=44&&layout.chipHeight>=44,'color chip touch targets remain usable');
+    assert.ok(layout.overflow&&layout.scroll>0,'fixed palette scrolls horizontally');
+    assert.ok(layout.left>=0&&layout.right<=layout.screen,'palette stays inside viewport');
+    await row.locator('[data-ink-color="#c2410c"]').click();
+    assert.equal(await row.locator('[aria-pressed="true"]').count(),1,'one selected color ring');
+    assert.match(await row.locator('[aria-pressed="true"]').getAttribute('aria-label'),/주황/);
+    if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`ink-palette-${engine.name()}-${theme}-${viewport.width}x${viewport.height}.png`)});}
+   }
+   await page.setViewportSize({width:820,height:1180});await page.evaluate(()=>{darkMode=false;applyDark();});
+   await settings.locator('[data-ink-color="#111111"]').click();
    await context.setOffline(true);
    assert.equal(await page.locator('[data-ink-toggle]').isVisible(),true);
    assert.equal(await stroke([[.2,.2],[.3,.22],[.4,.2]],{palm:true}),true);
@@ -159,6 +206,21 @@ try{
      return Math.max(Math.abs(p.x-s.x),Math.abs(p.y-s.y),Math.abs(p.width-s.width),Math.abs(p.height-s.height));
     });assert.ok(delta<1,`alignment ${delta}`);
    }
+   await page.evaluate(()=>{
+    beginOriginalPinch({x:300,y:300},160,[81,82]);
+    moveOriginalPinch(.4,{x:300,y:300});previewOriginalPinch();finishOriginalPinch();
+    originalPinchReturn.pause();originalPinchReturn.currentTime=80;
+   });
+   const elasticAlignment=await page.evaluate(()=>{
+    const p=originalSession.pages[0].getBoundingClientRect(),s=originalSession.pages[0].querySelector('svg.pdf-ink-layer').getBoundingClientRect();
+    return Math.max(Math.abs(p.x-s.x),Math.abs(p.y-s.y),Math.abs(p.width-s.width),Math.abs(p.height-s.height));
+   });
+   assert.ok(elasticAlignment<1,'ink follows elastic paper without coordinate edits');
+   await stroke([[.25,.4],[.3,.45]]);
+   assert.equal(await page.evaluate(()=>originalPinchReturn),null,'fresh Pencil settles return before drawing');
+   assert.equal(await count(),2);
+   assert.equal(await page.locator('.pdf-ink-layer polyline').first().getAttribute('points'),points);
+   await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    await page.setViewportSize({width:1180,height:820});
    assert.equal(await page.locator('.pdf-ink-layer polyline').first().getAttribute('points'),points);
    await page.evaluate(async()=>{releaseOriginalPdfPage(originalSession,1);await renderOriginalPdfPage(originalSession,1);});
@@ -172,6 +234,12 @@ try{
    await page.reload();await open();assert.equal(await count(),1);
    assert.equal(await page.locator('[data-ink-toggle]').getAttribute('aria-pressed'),'false');
    await mode('pen');assert.equal(await page.locator('[data-ink-undo]').isDisabled(),true);
+   for(const c of ['#15803d','#7c3aed','#c2410c']){
+    await setting('color',c);await stroke([[.5,.5],[.54,.49]]);
+    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').last().getAttribute('stroke'),c);
+    await page.locator('[data-ink-undo]').click();assert.equal(await count(),1,'new colors do not alter the legacy stroke');
+    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer polyline').first().getAttribute('stroke'),'#111111');
+   }
    for(const c of ['#111111','#c43d3d','#2864c5'])for(const w of ['0.75','1.5','3']){
     await setting('color',c);
     await setting('width',w);
@@ -470,6 +538,33 @@ try{
    // Reload only after the serialized redo transaction is durable.
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.ok(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').count()>1);
+   const storedColors=await page.locator('.pdf-ink-layer polyline').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('stroke')));
+   await mode('highlighter');
+   for(const c of ['#2dd4bf','#38bdf8','#f472b6','#a78bfa']){
+    await setting('highlightColor',c);await stroke([[.3,.6],[.6,.6]]);
+    assert.equal(await page.locator('[data-page="1"] .pdf-ink-layer g polyline').last().getAttribute('stroke'),c);
+    await page.locator('[data-ink-undo]').click();
+   }
+   await setting('highlightColor','#a78bfa');await mode('pen');await setting('color','#7c3aed');
+   await mode('highlighter');await highlighter.click();
+   assert.equal(await settings.locator('[data-ink-highlight-color="#a78bfa"]').getAttribute('aria-pressed'),'true','tool colors stay independent');
+   assert.deepEqual(await page.locator('.pdf-ink-layer polyline').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('stroke'))),storedColors,'palette changes leave stored strokes unchanged');
+   await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
+   await page.reload();await open();await mode('pen');await penButton.click();
+   assert.equal(await settings.locator('[data-ink-color="#7c3aed"]').getAttribute('aria-pressed'),'true','new pen preference survives reload');
+   await mode('highlighter');await highlighter.click();
+   assert.equal(await settings.locator('[data-ink-highlight-color="#a78bfa"]').getAttribute('aria-pressed'),'true','new highlighter preference survives reload');
+   assert.ok(await settings.locator('[data-ink-highlight-color="#a78bfa"]').evaluate(node=>{
+    const chip=node.getBoundingClientRect(),row=node.parentElement.getBoundingClientRect();return chip.left>=row.left&&chip.right<=row.right;
+   }),'reopening reveals the selected chip instead of hiding its ring beyond the scroll edge');
+   for(const theme of ['light','dark']){
+    await page.evaluate(theme=>{darkMode=theme==='dark';applyDark();},theme);
+    const row=settings.locator('.ink-highlight-colors');
+    assert.ok(await row.evaluate(node=>node.scrollWidth>node.clientWidth),'highlighter fixed palette scrolls');
+    assert.equal(await row.locator('[aria-pressed="true"]').count(),1);
+    if(process.env.BREEZE_QA_OUTPUT)await page.screenshot({path:resolve(process.env.BREEZE_QA_OUTPUT,`ink-highlighter-palette-${engine.name()}-${theme}.png`)});
+   }
+   await page.evaluate(()=>{darkMode=false;applyDark();});
    console.log(engine.name()+': highlighter pixels '+JSON.stringify(pixels)+', durable settings, partial eraser/undo/redo/reload passed');
    await page.evaluate(()=>{window.breezeInkIPad=false;Object.defineProperty(window,'TouchEvent',{value:undefined});document.body.classList.toggle('qa-platform');});
    await page.waitForFunction(()=>document.getElementById('pdf-ink-status').hidden && window.qaInkScope?.enabled===false);

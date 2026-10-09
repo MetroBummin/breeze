@@ -1,211 +1,222 @@
-/* The tutorial supplies a temporary book and prepared answers to the real Reader.
-   It never inserts a book, Meaning, cache entry, progress row or sync payload. */
+/* PDF media: OpenStax Writing Guide (2021), p. 14; CC BY 4.0.
+   Source and capture changes: docs/qa/onboarding-carousel/pdf-media-credits.md. */
+/* Passive onboarding owns only its overlay and media. The Reader keeps its own state. */
 const ONBOARD_KEY='breeze.onboarding.v1';
-const ONBOARD_DELAY_MS=1000;
-const ONBOARD_PASSAGES=[
-  ['Every story begins with a little curiosity.','모든 이야기는 작은 호기심에서 시작돼요.'],
-  ['Reading should feel easy.','독서는 편안해야 하니까요.'],
-  ['There is always another story waiting for you.','당신을 기다리는 이야기는 언제나 있어요.'],
-  ['Let your reading flow with Breeze.','Breeze와 함께 막힘없이 읽어 나가세요.'],
+const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
+const ONBOARD_WELCOME_KEY='breeze.onboarding.welcome-seen';
+// Apple macOS hello's runtime hold is 750ms; writing/fade are Breeze's
+// review candidate, not a claimed frame-for-frame match to Apple's animation.
+const ONBOARD_WELCOME_TIMING={write:4200,hold:750,fade:900};
+function onboardingPdfAvailable(){
+  // PR128 owns native classification and the safe input adapter.
+  const availability=typeof BreezePdfInk!=='undefined'?Reflect.get(BreezePdfInk,'availability'):null;
+  if(typeof availability==='function')return Promise.resolve().then(()=>availability()).then(value=>value===true,()=>false);
+  return Reflect.get(window,'breezeInkIPad')===true;
+}
+const ONBOARD_PAGES=[
+  ['word','모르는 단어를 가볍게 눌러보세요.','문맥에 맞는 뜻을 바로 확인해요.'],
+  ['details','뜻 옆의 꺾쇠를 눌러보세요.','단어의 자세한 정보를 펼쳐봐요.'],
+  ['sentence','모르는 문장을 꾹 눌러보세요.','문장 전체의 해석을 확인해요.'],
+  ['easy','‘쉬운 설명’을 눌러보세요.','문장을 쉬운 말로 이해해요.'],
+  ['settings','오른쪽 보기 설정을 눌러보세요.','글자 크기와 읽기 화면을 맞춰요.'],
+  ['pdf','PDF에서는 필기 모드를 켜보세요.','펜과 형광펜으로 읽으며 표시해요.'],
+  ['memory','홈의 북마크 아이콘을 눌러보세요.','Breeze Memory에서 만난 단어를 다시 봐요.'],
 ];
-// Each tappable word has an authored meaning and short English definition.
-const ONBOARD_WORDS={
-  should:['~해야 한다','modal verb','Used to say what is right or expected.'],
-  feel:['느껴지다','verb','Give a particular impression or feeling.'],
-  easy:['편안한','adjective','Requiring little effort or difficulty.'],
-  there:['그곳에','adverb','Used with be to say that something exists.'],
-  is:['있다','verb','Exists or is present.'],
-  always:['언제나','adverb','At all times.'],
-  another:['또 다른','determiner','One more or a different one.'],
-  waiting:['기다리는','verb','Staying ready for someone or something.'],
-  for:['~을 위해','preposition','Intended for someone or something.'],
-  you:['당신','pronoun','The person being spoken to.'],
-  every:['모든','determiner','Used to refer to all members of a group.'],
-  story:['이야기','noun','An account of events, real or imagined.'],
-  begins:['시작된다','verb','Starts to happen.'],
-  with:['~와 함께','preposition','Together with someone or something.'],
-  a:['하나의','article','Used before one person or thing.'],
-  little:['작은','adjective','Small in amount or size.'],
-  curiosity:['호기심','noun','A desire to learn or know more.'],
-  tap:['가볍게 누르다','verb','Touch something lightly with a finger.'],
-  word:['단어','noun','A unit of language that has meaning.'],
-  to:['~하기 위해','particle','Used before a verb to show a purpose.'],
-  discover:['알아내다','verb','Find or learn something.'],
-  its:['그것의','determiner','Belonging to the thing just mentioned.'],
-  meaning:['뜻','noun','The idea that a word expresses.'],
-  press:['누르다','verb','Push against something with a finger.'],
-  and:['그리고','conjunction','Used to connect words or actions.'],
-  hold:['누른 채로 유지하다','verb','Keep something in the same position.'],
-  understand:['이해하다','verb','Know what something means.'],
-  the:['그','article','Used before a particular person or thing.'],
-  whole:['전체의','adjective','Complete, with no part missing.'],
-  sentence:['문장','noun','A group of words that expresses a complete thought.'],
-  let:['~하게 하다','verb','Allow something to happen.'],
-  your:['당신의','determiner','Belonging to the person being addressed.'],
-  reading:['독서','noun','The activity of reading written words.'],
-  flow:['자연스럽게 이어지다','verb','Continue smoothly and easily.'],
-  breeze:['브리즈','proper noun','The name of this reading app; a breeze is also a gentle wind.'],
-};
 let onboardingSession=null;
-function onboardingOwnsReader(){ return !!(onboardingSession && curBook===onboardingSession.book); }
-function onboardingDelay(session,delay){
-  return new Promise(resolve=>{
-    const timer=setTimeout(()=>{session.timers.delete(timer);resolve(true);},delay);
-    session.timers.set(timer,resolve);
+let onboardingRequest=0;
+// Retained integration hooks: this guide never opens or owns a live Reader.
+function onboardingOwnsReader(){return false;}
+function onboardingAppearanceOpened(){}
+function openOnboardingWord(node,retry=false){}
+function renderOnboardingWordDetail(card){}
+async function explainOnboardingSentence(clean,life){}
+function persistOnboarding(){
+  if(onboardingSession&&!onboardingSession.replay)save(ONBOARD_PROGRESS_KEY,{page:onboardingSession.page});
+}
+function finishOnboardingWelcome(){
+  const session=onboardingSession;if(!session)return;
+  clearTimeout(session.welcomeTimer);session.welcomeTimer=null;
+  document.getElementById('onboarding').dataset.welcome='ready';
+}
+function startOnboarding(replay){
+  if(onboardingSession)endOnboarding(false);
+  const request=++onboardingRequest,previousView=activeAppView(),available=onboardingPdfAvailable();
+  if(available instanceof Promise)return available.then(value=>{
+    if(request===onboardingRequest&&activeAppView()===previousView)startOnboardingResolved(replay,value);
   });
+  return startOnboardingResolved(replay,available);
 }
-async function startOnboarding(replay){
-  if(onboardingSession) endOnboarding(false,false);
-  saveReadingState(); closePanel(); closeSentence(); closeAa(); closeSettings();
-  const session={
-    book:{id:'breeze-onboarding',title:'Breeze Tutorial',kind:'txt',transient:true,
-      paras:ONBOARD_PASSAGES.map(part=>part[0]),textAvailable:true},
-    previousBook:curBook,previousView:activeAppView(),
-    appearance:{fs,darkMode,readMargin},controller:new AbortController(),
-    timers:new Map(),seen:new Set(),wordSeen:false,sentenceSeen:false,aaSeen:false,
-    frame:0,observer:null,
-  };
+function startOnboardingResolved(replay,pdfAvailable){
+  closeSettings();
+  const progress=load(ONBOARD_PROGRESS_KEY,null);
+  const session={page:replay?0:Math.max(0,Number.isInteger(progress?.page)?progress.page:0),replay:!!replay,
+    previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],paused:false,mediaToken:0,pointer:null,
+    motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,importMessage:''};
+  session.pages=ONBOARD_PAGES.filter(item=>item[0]!=='pdf'||pdfAvailable);
+  session.page=Math.min(session.pages.length+1,session.page);
   onboardingSession=session;
-  const back=/** @type {HTMLButtonElement} */(document.getElementById('readback'));
-  session.backDisabled=back.disabled;
-  back.disabled=true;
-  document.body.classList.add('onboarding-active');
-  document.getElementById('onboarding').hidden=false;
-  const signal=session.controller.signal;
-  const schedule=()=>{
-    if(session.frame) return;
-    session.frame=requestAnimationFrame(()=>{session.frame=0;drawOnboarding();});
-  };
-  session.observer=new MutationObserver(schedule);
-  for(const id of ['word-peek','panel','sentence-modal','aa-pop']){
-    session.observer.observe(document.getElementById(id),{attributes:true,attributeFilter:['hidden','class']});
+  for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
+    session.inert.push([node,node.inert]);node.inert=true;
   }
-  // The real Reader hydrates word spans lazily; mark targets after they arrive.
-  session.observer.observe(document.getElementById('rtext'),{childList:true,subtree:true});
-  document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
-  document.getElementById('onboard-finish').addEventListener('click',()=>endOnboarding(true),{signal});
-  document.getElementById('onboard-next').addEventListener('click',()=>{endOnboarding(true);openAddModal();},{signal});
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape' && !wordLookupOpen() && !sentenceLookupOpen()
-        && !document.getElementById('aa-pop').classList.contains('on') && !event.defaultPrevented){
-      // A lookup dismissal owns its Escape; only a bare Reader Escape ends the tour.
-      if(session.escapeWasOverlay) return;
-      endOnboarding(true);
+  document.body.classList.add('onboarding-active');
+  const root=document.getElementById('onboarding');root.hidden=false;
+  const carousel=document.getElementById('onboard-carousel');carousel.replaceChildren();
+  const pages=document.getElementById('onboard-pages');pages.replaceChildren();
+  for(const [index,item] of session.pages.entries()){
+    const slide=document.createElement('figure');slide.className='onboard-slide';slide.dataset.feature=item[0];
+    slide.setAttribute('role','group');slide.setAttribute('aria-roledescription','페이지');
+    slide.setAttribute('aria-label',`${index+1} / ${session.pages.length} · ${item[1]}`);
+    const video=document.createElement('video');video.muted=true;video.loop=true;video.playsInline=true;video.preload='none';
+    video.setAttribute('aria-hidden','true');video.tabIndex=-1;
+    video.addEventListener('error',()=>video.classList.add('poster-only'),{signal:session.controller.signal});
+    const poster=document.createElement('img');poster.alt='';poster.className='onboard-poster';slide.append(video,poster);carousel.append(slide);
+    const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');pages.append(dot);
+  }
+  const signal=session.controller.signal;
+  root.dataset.welcome='ready';
+  if(session.page===0&&!session.replay&&!load(ONBOARD_WELCOME_KEY,false)){
+    // Mark on entry: closing/reloading never forces another animation wait.
+    save(ONBOARD_WELCOME_KEY,true);
+    if(!session.motion.matches&&typeof CSS.registerProperty==='function'){
+      const {write,hold,fade}=ONBOARD_WELCOME_TIMING;
+      root.style.setProperty('--welcome-write',write+'ms');
+      root.style.setProperty('--welcome-copy-delay',(write+hold)+'ms');
+      root.style.setProperty('--welcome-fade',fade+'ms');
+      root.dataset.welcome='drawing';session.welcomeTimer=setTimeout(finishOnboardingWelcome,write+hold+fade);
     }
-  },{signal});
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape') session.escapeWasOverlay=wordLookupOpen() || sentenceLookupOpen()
-      || document.getElementById('aa-pop').classList.contains('on');
+  }
+  root.addEventListener('click',event=>{
+    if(session.page===0&&root.dataset.welcome==='drawing'){
+      event.preventDefault();event.stopImmediatePropagation();finishOnboardingWelcome();
+    }
   },{signal,capture:true});
-  await openBook(session.book);
-  if(onboardingSession!==session) return;
-  document.getElementById('rhint').hidden=true;
-  const title=document.getElementById('rtitle');
-  title.setAttribute('tabindex','-1');title.focus({preventScroll:true});
-  drawOnboarding();
+  const input=/** @type {HTMLInputElement} */(document.getElementById('onboard-fileinput'));
+  input.value='';
+  document.getElementById('onboard-next').addEventListener('click',()=>{
+    if(session.importController)return;
+    if(session.page===session.pages.length+1){input.value='';input.click();}
+    else goOnboardingPage(session.page+1);
+  },{signal});
+  document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
+  document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
+  input.addEventListener('change',async()=>{
+    const file=input.files[0];input.value='';
+    if(!file||session.page!==session.pages.length+1||session.importController)return;
+    const controller=new AbortController();session.importController=controller;
+    session.importMessage='책을 준비하고 있어요…';drawOnboarding();
+    try{
+      const result=await importFile(file,null,{signal:controller.signal});
+      // Back, Skip, replay and external navigation invalidate this handoff.
+      if(onboardingSession!==session||session.importController!==controller)return;
+      if(result?.bookId){endOnboarding(true);return;}
+      session.importMessage='책을 넣지 못했어요. DRM이 없는 PDF · EPUB · TXT 파일을 다시 골라주세요.';
+    }catch{
+      if(onboardingSession!==session||session.importController!==controller)return;
+      session.importMessage='책을 넣지 못했어요. 파일을 다시 골라주세요.';
+    }
+    session.importController=null;drawOnboarding();
+  },{signal});
+  carousel.addEventListener('click',()=>{if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
+  // WebKit touch can leave focus on body. The active guide owns keyboard input
+  // until its existing session signal aborts, including Escape after a tap.
+  document.addEventListener('keydown',event=>{
+    event.stopPropagation();
+    if(event.key==='Escape'){event.preventDefault();endOnboarding(false);return;}
+    if(session.page>0&&['ArrowLeft','ArrowRight'].includes(event.key)){
+      event.preventDefault();goOnboardingPage(session.page+(event.key==='ArrowRight'?1:-1));
+    }
+    if((event.key===' '||event.key==='Enter')&&event.target===carousel){event.preventDefault();session.paused=!session.paused;syncOnboardingMedia();}
+    if(event.key==='Tab'){
+      const controls=[...root.querySelectorAll(/** @type {'button'} */('button,[tabindex="0"]'))].filter(node=>!node.disabled&&node.getClientRects().length);
+      const first=controls[0],last=controls.at(-1);
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    }
+  },{signal,capture:true});
+  const coach=document.getElementById('onboard-coach');
+  coach.addEventListener('pointerdown',event=>{
+    if(event.target instanceof Element&&event.target.closest('button,input'))return;
+    if(event.isPrimary&&session.page>0){session.swiped=false;session.pointer={id:event.pointerId,x:event.clientX,y:event.clientY};if(event.isTrusted&&event.target instanceof Element)event.target.setPointerCapture?.(event.pointerId);}
+  },{signal});
+  coach.addEventListener('pointerup',event=>{
+    const p=session.pointer;session.pointer=null;if(!p||p.id!==event.pointerId)return;
+    const dx=event.clientX-p.x,dy=event.clientY-p.y;
+    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){session.swiped=true;goOnboardingPage(session.page+(dx<0?1:-1));}
+  },{signal});
+  coach.addEventListener('pointercancel',()=>{session.pointer=null;},{signal});
+  coach.addEventListener('lostpointercapture',()=>{session.pointer=null;},{signal});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)finishOnboardingWelcome();syncOnboardingMedia();},{signal});
+  window.addEventListener('pagehide',()=>{finishOnboardingWelcome();persistOnboarding();for(const v of carousel.querySelectorAll('video'))v.pause();},{signal});
+  window.addEventListener('pageshow',syncOnboardingMedia,{signal});
+  window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
+  session.motion.addEventListener('change',()=>{if(session.motion.matches)finishOnboardingWelcome();syncOnboardingMedia();},{signal});
+  session.theme=new MutationObserver(()=>{
+    if(activeAppView()!==session.previousView){endOnboarding(false);return;}
+    syncOnboardingMedia();
+  });
+  session.theme.observe(document.body,{attributes:true,attributeFilter:['class']});
+  for(const view of document.querySelectorAll('.view'))session.theme.observe(view,{attributes:true,attributeFilter:['class']});
+  drawOnboarding();document.getElementById('onboard-next').focus({preventScroll:true});
 }
-function onboardingAppearanceOpened(){
-  if(onboardingOwnsReader() && onboardingSession.sentenceSeen) onboardingSession.aaSeen=true;
+function goOnboardingPage(page){
+  if(!onboardingSession)return;
+  finishOnboardingWelcome();
+  const next=Math.max(0,Math.min(onboardingSession.pages.length+1,page));
+  if(next!==onboardingSession.page){
+    onboardingSession.importController?.abort();onboardingSession.importController=null;onboardingSession.importMessage='';
+  }
+  onboardingSession.page=next;persistOnboarding();drawOnboarding();
 }
 function drawOnboarding(){
-  const session=onboardingSession;if(!session) return;
-  const aaOpen=document.getElementById('aa-pop').classList.contains('on');
-  if(aaOpen && session.sentenceSeen) session.aaSeen=true;
-  const stage=!session.wordSeen?0:!session.sentenceSeen?1:!session.aaSeen?2:3;
-  const root=document.getElementById('onboarding');root.dataset.stage=String(stage);
-  const coach=document.getElementById('onboard-coach');
-  coach.hidden=wordLookupOpen() || sentenceLookupOpen() || aaOpen;
-  // Guidance yields the whole surface while a lookup or Aa owns the interaction.
-  document.getElementById('onboard-skip').hidden=coach.hidden;
-  const prompts=[
-    '“curiosity”를 눌러보세요.\n단어 뜻을 확인할 수 있어요.',
-    '“Reading”을 길게 눌러보세요.\n문장 전체의 뜻을 확인할 수 있어요.',
-    '“Aa”를 눌러보세요.\n글자 크기와 화면 색을 바꿀 수 있어요.',
-    '이제 내 책으로 읽어볼까요?\n책을 추가하거나 나중에 시작할 수 있어요.',
-  ];
-  document.getElementById('onboard-step').textContent=stage===3?'준비됐어요':`${stage+1} / 3 · ${['단어 눌러보기','문장 꾹 눌러보기','읽기 화면 바꾸기'][stage]}`;
-  document.getElementById('onboard-prompt').textContent=prompts[stage];
-  document.getElementById('onboard-next').hidden=stage!==3;
-  document.getElementById('onboard-finish').hidden=stage!==3;
-  document.getElementById('onboard-note').hidden=stage!==3;
-  document.getElementById('aafab').classList.toggle('onboard-target',stage===2 && !aaOpen);
-  document.querySelectorAll('#rtext .w').forEach(node=>{
-    node.classList.toggle('onboard-target',!coach.hidden &&
-      ((stage===0 && node.textContent==='curiosity') || (stage===1 && node.textContent==='Reading')));
-  });
+  const session=onboardingSession;if(!session)return;
+  const page=session.page,finish=page===session.pages.length+1,root=document.getElementById('onboarding');root.dataset.stage=String(page);root.dataset.finish=String(finish);
+  document.getElementById('onboard-welcome').hidden=page!==0;
+  document.getElementById('onboard-carousel').hidden=page===0||finish;
+  document.getElementById('onboard-pages').hidden=page===0||finish;
+  document.getElementById('onboard-finish').hidden=!finish;
+  document.getElementById('onboard-skip').hidden=!finish;
+  document.getElementById('onboard-back').hidden=page===0;
+  document.getElementById('onboard-step').textContent=finish?'책 넣기':page?`${page} / ${session.pages.length}`:'';
+  document.getElementById('onboard-prompt').textContent=finish?'읽고 싶은 책을 넣어보세요.':page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';
+  document.getElementById('onboard-note').textContent=finish?(session.importMessage||'PDF · EPUB · TXT 파일을 골라주세요. 나중에 서재에서도 넣을 수 있어요.'):page?session.pages[page-1][2]:'막힘없이 읽는 새로운 방법.';
+  document.getElementById('onboard-next').textContent=page===0?'시작하기':finish?'책 넣기':'다음';
+  /** @type {HTMLButtonElement} */(document.getElementById('onboard-next')).disabled=!!session.importController;
+  for(const [i,node] of [...document.querySelectorAll(/** @type {'figure'} */('.onboard-slide'))].entries())node.hidden=i!==page-1;
+  for(const [i,dot] of [...document.getElementById('onboard-pages').children].entries())dot.setAttribute('aria-current',String(i===page-1));
+  syncOnboardingMedia();
 }
-async function openOnboardingWord(node,retry=false){
-  const session=onboardingSession;
-  if(!onboardingOwnsReader() || !node) return;
-  if(!retry && wordPeekActive && node===activeSelectedWordNode) return;
-  const raw=node.textContent.toLowerCase(),entry=ONBOARD_WORDS[raw];
-  if(!entry) return;
-  const example=sentenceOf(node),key='onboarding:'+raw+':'+sentenceHash(example);
-  const ready=!retry && session.seen.has(key);
-  closePanel();
-  const card={key,word:raw,clicked:node.textContent,example,book:session.book.title,
-    ko:ready?entry[0]:'',ai:{ko:ready?entry[0]:'',pos:entry[1],done:true},
-    loading:!ready,aiLoading:!ready,defs:[{pos:entry[1],def:entry[2]}],mark:false,status:1};
-  previewWordCard=card;
-  selectWord(key,node,true);
-  const life=wordLookupLife;
-  if(!ready && !(await onboardingDelay(session,ONBOARD_DELAY_MS))) return;
-  if(onboardingSession!==session || !wordLookupAlive(life) || previewWordCard!==card) return;
-  card.ko=entry[0];card.ai.ko=entry[0];card.loading=false;card.aiLoading=false;
-  session.seen.add(key);session.wordSeen=true;
-  renderWordLookup();drawOnboarding();
-}
-function renderOnboardingWordDetail(card){
-  // Reuse the normal meaning/metadata/utterance surface, without vocabulary actions.
-  document.getElementById('p-ai-saved').hidden=true;
-  document.getElementById('p-aibtn').style.display='none';
-  document.getElementById('p-aihint').style.display='none';
-  document.getElementById('p-alt-sec').className='p-sec';
-  document.getElementById('p-alts').innerHTML='';
-  document.getElementById('p-defs').innerHTML=card.loading?'불러오는 중…':
-    card.defs.map(item=>`<div><span class="pos">${esc(item.pos)}</span>${esc(item.def)}</div>`).join('');
-}
-async function explainOnboardingSentence(clean,life){
-  const session=onboardingSession;
-  const prepared=ONBOARD_PASSAGES.find(part=>part[0]===clean);
-  if(!session || !prepared){closeSentence();return;}
-  const key='sentence:'+clean;
-  if(!session.seen.has(key) && !(await onboardingDelay(session,ONBOARD_DELAY_MS))) return;
-  if(onboardingSession!==session || !sentenceAlive(life)) return;
-  session.seen.add(key);session.sentenceSeen=true;
-  showReaderChrome();
-  paintSentenceFor(life,{en:clean,ko:prepared[1]});
-  drawOnboarding();
+function syncOnboardingMedia(){
+  const session=onboardingSession;if(!session)return;
+  const token=++session.mediaToken,theme=document.body.classList.contains('dark')?'dark':'light';
+  document.getElementById('onboard-carousel').setAttribute('aria-label','브리즈 기능 안내 · 좌우로 넘기기 · 영상을 누르면 '+(session.paused?'재생':'일시정지'));
+  for(const [i,video] of [...document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))].entries()){
+    video.pause();
+    if(i!==session.page-1){if(video.hasAttribute('src')){video.removeAttribute('src');video.load();}continue;}
+    const base=`assets/onboarding/${session.pages[i][0]}-${theme}`;
+    video.poster=base+'.jpg';if(video.nextElementSibling instanceof HTMLImageElement)video.nextElementSibling.src=base+'.jpg';
+    const shouldPlay=!session.motion.matches&&!session.paused&&!document.hidden;
+    video.classList.toggle('poster-only',!shouldPlay);
+    if(!shouldPlay)continue;
+    if(video.getAttribute('src')!==base+'.mp4'){video.src=base+'.mp4';video.load();}
+    video.play().then(()=>{
+      if(onboardingSession!==session||session.page-1!==i||video.getAttribute('src')!==base+'.mp4'||session.paused||session.motion.matches||document.hidden)video.pause();
+    }).catch(()=>{if(token===session.mediaToken)video.classList.add('poster-only');});
+  }
 }
 function endOnboarding(remember,returnToPrevious=true){
-  const session=onboardingSession;if(!session) return;
-  session.controller.abort();session.observer.disconnect();
-  if(session.frame) cancelAnimationFrame(session.frame);
-  session.timers.forEach((resolve,timer)=>{clearTimeout(timer);resolve(false);});session.timers.clear();
-  closePanel();closeSentence();closeAa();
-  onboardingSession=null;
-  document.getElementById('onboarding').hidden=true;
+  ++onboardingRequest;
+  const session=onboardingSession;if(!session)return;
+  finishOnboardingWelcome();persistOnboarding();session.importController?.abort();session.controller.abort();session.theme.disconnect();
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))){video.pause();video.removeAttribute('src');video.load();}
+  onboardingSession=null;document.getElementById('onboarding').hidden=true;
   document.body.classList.remove('onboarding-active');
-  const back=/** @type {HTMLButtonElement} */(document.getElementById('readback'));
-  back.disabled=session.backDisabled;
-  document.getElementById('aafab').classList.remove('onboard-target');
-  document.querySelectorAll('#rtext .onboard-target').forEach(node=>node.classList.remove('onboard-target'));
-  document.getElementById('rhint').hidden=false;
-  document.getElementById('rtitle').removeAttribute('tabindex');
-  fs=session.appearance.fs;darkMode=session.appearance.darkMode;readMargin=session.appearance.readMargin;
-  document.documentElement.style.setProperty('--fs',fs+'px');
-  showFontSize();applyDark();applyReadMargin();
-  curBook=null;
-  if(remember) save(ONBOARD_KEY,'done');
-  if(returnToPrevious){
-    if(session.previousView==='read' && session.previousBook) openBook(session.previousBook);
-    else show(session.previousView,{fromHistory:true});
-  }
+  for(const [node,inert] of session.inert)node.inert=inert;
+  if(remember){save(ONBOARD_KEY,'done');localStorage.removeItem(ONBOARD_PROGRESS_KEY);}
+  if(activeAppView()==='home')renderHome();
+  if(session.focus instanceof HTMLElement&&session.focus.getClientRects().length)session.focus.focus({preventScroll:true});
 }
 function maybeShowOnboarding(){
-  if(load(ONBOARD_KEY,'')==='done') return;
-  if(books.length || Object.keys(words).length || Object.keys(dead).length || Object.keys(positions).length){
-    save(ONBOARD_KEY,'done');return;
-  }
+  if(load(ONBOARD_KEY,'')==='done')return;
+  if(books.length||Object.keys(words).length||Object.keys(dead).length||Object.keys(positions).length){save(ONBOARD_KEY,'done');return;}
   return startOnboarding(false);
 }

@@ -247,6 +247,7 @@ function beginSentenceWaiting(){
 }
 function revealSentenceResult(){
   if(!sentencePendingPaint || !sentenceAlive(sentencePendingPaint.life)) return;
+  if(typeof originalPinchBusy==='function' && originalPinchBusy())return;
   if(typeof sentenceGestureStillPressed==='function' && sentenceGestureStillPressed())return;
   if(sentencePresentationEnded){closeSentence();return;}
   if(sentenceOrigin?.peekTarget && lookupPeekScrollRemaining(sentencePeekLastScroll)>0){deferSentencePeekReveal();return;}
@@ -372,21 +373,24 @@ async function openSentence(text,origin){
     return;
   }
 
-  const localStarted=Date.now();
-  const local=typeof homewardSentenceAnswer==='function'
+  const localStarted=Date.now(),key=sentKey(clean);
+  let local=typeof homewardSentenceAnswer==='function'
     ?homewardSentenceAnswer(clean,origin&&origin.pi):null;
+  if(!local){
+    // A previously stored answer never waits for an optional asset download.
+    const hit=await dictGet(key);
+    if(!sentenceAlive(life))return;
+    if(hit&&hit.ko){paintSentenceFor(life,{en:clean,ko:hit.ko});return;}
+    if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
+      try{await ensureHomewardLookupData();}
+      catch{paintSentenceFor(life,{en:clean,retry:true,foot:'읽기 자료를 준비하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'});return;}
+      if(!sentenceAlive(life))return;
+      local=homewardSentenceAnswer(clean,origin&&origin.pi);
+    }
+  }
   if(local){
     await homewardPresentationWait(localStarted,()=>sentenceAlive(life));
     paintSentenceFor(life,{en:clean,ko:local});
-    return;
-  }
-
-  /* ① 전에 물어본 적 있는 문장이면 그대로 내놓습니다. 한도를 쓰지 않습니다. */
-  const key = sentKey(clean);
-  const hit = await dictGet(key);
-  if(!sentenceAlive(life)) return;
-  if(hit && hit.ko){
-    paintSentenceFor(life,{ en:clean, ko:hit.ko });
     return;
   }
 

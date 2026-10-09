@@ -95,10 +95,11 @@ test('concurrent failed consumers share one request; late failure cannot erase a
   const h=rssDevice({mediumResolve:true,candidates:1});await h.load(false);const entry=h.entries()[12][0];
   let reject,calls=0;h.context.fetchArticleHtml=()=>{calls++;return new Promise((_,fail)=>{reject=fail;});};
   const first=h.context.rssResolveSelectedEntry(entry),second=h.context.rssResolveSelectedEntry(entry);
+  await new Promise(setImmediate); // Allow the VM parser promise to settle.
   assert.equal(calls,1);
   runInContext('rssPublicFeedJobs.clear()',h.context);
   let release;h.context.fetchArticleHtml=()=>{calls++;return new Promise(done=>{release=done;});};
-  const newer=h.context.rssResolveSelectedEntry(entry);assert.equal(calls,2);
+  const newer=h.context.rssResolveSelectedEntry(entry);await new Promise(setImmediate);assert.equal(calls,2);
   reject(Error('Old request failed'));await Promise.all([first,second]);
   assert.equal(runInContext('rssPublicFeedJobs.size',h.context),1);
   release('synthetic xml');await newer;assert.equal(runInContext('rssPublicFeedJobs.size',h.context),1);

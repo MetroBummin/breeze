@@ -203,3 +203,11 @@ its own size changing. The existing cue ResizeObserver now also observes its
 containing surface and document root. It refreshes cached local offsets only
 for real layout changes; ordinary scroll still performs no Range measurement.
 Sentence extraction and request text are unchanged.
+
+## Pending PDF pinch (2026-10-08)
+
+An anchored sentence still waiting for its reply keeps its lifetime and existing
+PDF line cue during pinch. A reply stops pending shimmer but waits for pinch
+release before normal visibility/scroll-idle presentation. Ready/error results
+retain their established pinch dismissal. Explicit cancellation and source/book/
+account ownership still reject obsolete replies; no additional request is made.

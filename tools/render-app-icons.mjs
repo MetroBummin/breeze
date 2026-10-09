@@ -9,7 +9,8 @@ async function render(source,size,target,transparent=false){
  await page.screenshot({path:target,omitBackground:transparent});await page.close();
 }
 try{
- for(const [size,path] of [[1024,'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'],[512,'assets/favicon/icon-512.png'],[192,'assets/favicon/icon-192.png'],[180,'assets/favicon/apple-touch-icon.png'],[64,'assets/favicon/favicon.png']])await render('assets/brand/app-icon.svg',size,path);
+ for(const [theme,file] of [['light','AppIcon-light.png'],['dark','AppIcon-512@2x.png']])await render(`assets/brand/icons/icon-b-flow-${theme}.svg`,1024,`ios/App/App/Assets.xcassets/AppIcon.appiconset/${file}`);
+ for(const [size,path] of [[512,'assets/favicon/icon-512.png'],[192,'assets/favicon/icon-192.png'],[180,'assets/favicon/apple-touch-icon.png'],[64,'assets/favicon/favicon.png']])await render('assets/brand/app-icon.svg',size,path);
  copyFileSync('assets/favicon/icon-512.png','android/app/src/main/res/mipmap-nodpi/ic_launcher.png');
  for(const [density,size] of [['mdpi',108],['hdpi',162],['xhdpi',216],['xxhdpi',324],['xxxhdpi',432]]){
   await render('assets/brand/icons/android-b-foreground.svg',size,`android/app/src/main/res/drawable-${density}/breeze_icon_foreground.png`,true);

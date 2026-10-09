@@ -14,10 +14,8 @@
  * 미리 담아 두지는 않습니다. 기사만 읽는 사람에게 이 1.5MB 는 한 번도 쓰지 않을
  * 짐입니다 — 실제로 PDF 를 열어 본 사람의 기기에만 남습니다.
  *
- * 판 번호는 파일 이름에 넣습니다. `?v=<해시>` 를 쓰지 않는 유일한 자리인데,
- * 이 주소들은 index.html 이 아니라 scripts/core/lazy-lib.js 안에 적혀 있어서
- * `tools/stamp-version.mjs` 가 손대지 못하기 때문입니다. 올려 받으면 이름이
- * 바뀌고, 이름이 바뀌면 캐시가 저절로 빗나갑니다 — 같은 효과입니다.
+ * 라이브러리 판 번호는 파일 이름에 둡니다. Readability는 이전 shell 캐시의
+ * 오프라인 사용도 유지하도록 stamp-version이 내용 해시 주소를 함께 관리합니다.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -30,7 +28,7 @@ const libDir = resolve(root, 'assets/lib');
 /* 올릴 때는 여기만 고치고 `npm run libs` 를 돌리면 됩니다. `local` 이름이
    그것을 부르는 파일(`wiredIn`)에 적힌 이름과 같아야 하고, 아래에서 맞춰 봅니다. */
 const LIBS = [
-  { local:'readability-0.6.0.js', url:'https://cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.js', wiredIn:'index.html' },
+  { local:'readability-0.6.0.js', url:'https://cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.js' },
   /* ---- 동기화 SDK 는 늦게 받지 않습니다 ----
      이것만은 index.html 이 곧바로 부릅니다 — `scripts/sync/sync.js` 가 파일을
      읽는 그 자리에서 `initSupabase()` 를 부르기 때문입니다.

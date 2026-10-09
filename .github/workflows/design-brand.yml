@@ -21,20 +21,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
-      - run: node tests/verify-design-only-boundary.mjs
+      # The original design release pinned auth to its pre-auth baseline.
+      # An explicit auth-only extraction retains all its non-auth boundaries.
+      - run: |
+          if test -f tests/verify-integration-boundary.mjs; then
+            node tests/verify-integration-boundary.mjs
+          elif test -f tests/verify-social-auth-boundary.mjs; then
+            node tests/verify-social-auth-boundary.mjs
+          else
+            node tests/verify-design-only-boundary.mjs
+          fi
       - run: npm run test:brand-icons
       - run: node tests/verify-design-home-browser.mjs
+      - run: node tests/verify-design-memory-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: design-brand-${{ matrix.browser }}
-          path: /tmp/breeze-design-only-final*/
+          path: |
+            /tmp/breeze-design-only-final*/
+            /tmp/breeze-memory-proof/
           if-no-files-found: ignore
           retention-days: 7
   ios-compile:
@@ -44,12 +57,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node tests/verify-design-only-boundary.mjs
+      # The original design release pinned auth to its pre-auth baseline.
+      # An explicit auth-only extraction retains all its non-auth boundaries.
+      - run: |
+          if test -f tests/verify-integration-boundary.mjs; then
+            node tests/verify-integration-boundary.mjs
+          elif test -f tests/verify-social-auth-boundary.mjs; then
+            node tests/verify-social-auth-boundary.mjs
+          else
+            node tests/verify-design-only-boundary.mjs
+          fi
       - run: npm run ios:sync
       - name: Compile without signing or upload
         run: >-

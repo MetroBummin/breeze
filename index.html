@@ -44,15 +44,15 @@
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
   <link rel="stylesheet" href="styles/home.css?v=4c5db19c">
   <link rel="stylesheet" href="styles/article-preview.css?v=fac52977">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=0ca56f76">
-  <link rel="stylesheet" href="styles/reader.css?v=18d64000">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=f4dac3fb">
+  <link rel="stylesheet" href="styles/reader.css?v=f1f2c167">
   <link rel="stylesheet" href="styles/dictionary.css?v=a07bcc13">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=1736245b">
+  <link rel="stylesheet" href="styles/wordbook.css?v=991cfadf">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=73411654">
-  <link rel="stylesheet" href="styles/onboarding.css?v=e80ba10b">
+  <link rel="stylesheet" href="styles/home-shell.css?v=7bb723de">
+  <link rel="stylesheet" href="styles/onboarding.css?v=8f315304">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -67,7 +67,7 @@
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=01738380"></script>
-  <script defer src="scripts/core/lazy-lib.js?v=b9e52b27"></script>
+  <script defer src="scripts/core/lazy-lib.js?v=152792fc"></script>
   <script defer src="scripts/core/storage.js?v=b78b85d3"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
@@ -82,59 +82,53 @@
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=f0e41667"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=dfc710bf"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=7e46e232"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=96463494"></script>
+  <script defer src="scripts/library/library.js?v=b05c7311"></script>
   <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=14fe2693"></script>
-  <script defer src="scripts/library/longreads.js?v=b1224dd1"></script>
-  <script defer src="assets/longreads/homeward-lookup-data.js?v=98cff2b8"></script>
-  <script defer src="scripts/library/homeward-lookup.js?v=0b110c50"></script>
+  <script defer src="scripts/library/longreads.js?v=902909ef"></script>
+  <script defer src="scripts/library/holmes-layout.js?v=16ae497a"></script>
+  <script defer src="scripts/library/homeward-lookup.js?v=24ab4083"></script>
   <script defer src="scripts/importers/importers.js?v=38179a18"></script>
-  <script defer src="assets/lib/readability-0.6.0.js?v=34dcab3d"></script>
-  <script defer src="scripts/importers/article.js?v=dbf953fb"></script>
+  <script defer src="scripts/importers/article.js?v=e33592ae"></script>
   <script defer src="scripts/importers/social.js?v=888fa510"></script>
-  <script defer src="scripts/importers/rss.js?v=b1ba05ea"></script>
+  <script defer src="scripts/importers/rss.js?v=156b7309"></script>
   <script defer src="scripts/library/article-preview.js?v=f431f4b9"></script>
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
-  <script defer src="scripts/dictionary/sentence.js?v=f796cb0b"></script>
+  <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=c9655b45"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=6e7f9af7"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
-  <script defer src="scripts/vendor/ts-fsrs-5.4.2.js?v=59b74441"></script>
-  <script defer src="scripts/core/vocabulary-review.js?v=e3c93ea7"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=0aca3ea6"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=bdeefbb7"></script>
   <script defer src="scripts/ui/wordbook.js?v=aa79687e"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=76c05c94"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=310a3bf0"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=c5620583"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=fe80bdde"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=dafa70b8"></script>
   <script defer src="scripts/reader/epub-original.js?v=c5347589"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=3db30939"></script>
-  <script defer src="scripts/reader/reader.js?v=b344dfbb"></script>
+  <script defer src="scripts/reader/reader.js?v=f34596cb"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
-  <script defer src="scripts/ui/preferences.js?v=17d20ac3"></script>
+  <script defer src="scripts/ui/preferences.js?v=f1e9ebd6"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
-  <script defer src="scripts/sync/sync.js?v=46c6c6f2"></script>
+  <script defer src="scripts/sync/sync.js?v=0485e5de"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=04236e7a"></script>
+  <script defer src="scripts/ui/onboarding.js?v=fd95ad2e"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=1ea70870"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=6b72e077"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
-  <script defer src="scripts/main.js?v=6d3eec76"></script>
-  <!-- 개발용 계측. `?frames=1` 로 켜지 않으면 아무 일도 하지 않습니다. 재는
-       것들이 모두 정의된 뒤여야 하므로 맨 끝입니다 — scripts/reader/frame-trace.js -->
-  <script defer src="scripts/reader/frame-trace.js?v=14df1696"></script>
-  <link rel="stylesheet" href="styles/study.css?v=acf24142">
+  <script defer src="scripts/main.js?v=0c680478"></script>
+  <link rel="stylesheet" href="styles/study.css?v=5c493f55">
   <link rel="stylesheet" href="styles/surfaces.css?v=838a8c6e">
 </head>
 <body>
@@ -432,7 +426,7 @@
 
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
-  <header class="wordbook-brand"><img src="assets/brand/thunderhead.png" alt="" width="38" height="38"><h1>Breeze Memory</h1><button id="wordbook-add" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
+  <header class="wordbook-brand"><h1>Breeze Memory</h1><button id="wordbook-add" class="control-glass" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
   <div id="wordbook-review-entry" class="wordbook-review-entry" hidden><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">전체 범위 정규 학습</button></div>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
@@ -485,7 +479,7 @@
   <nav id="simple-word-navigation" aria-label="단어 카드 이동" hidden><button id="simple-word-previous" type="button">이전</button><button id="simple-word-next" type="button">다음</button></nav>
   <section id="review-result" hidden>
     <div id="review-celebration" hidden>
-      <div id="review-mascot-scene" hidden><img id="review-stage-mascot" src="assets/brand/review/thunderhead-stage-1.png" alt="" width="260" height="260" hidden></div>
+      <div id="review-mascot-scene" hidden><img id="review-stage-mascot" alt="" width="260" height="260" hidden></div>
       <svg class="review-complete-mark" viewBox="0 0 160 160" fill="none" aria-hidden="true">
         <circle class="review-complete-halo" cx="80" cy="80" r="54"/>
         <circle class="review-complete-ring" cx="80" cy="80" r="40"/>
@@ -537,15 +531,28 @@
 
   </div>
 </div>
-<!-- Guidance only: the book, controls and lookup surfaces are the real Reader. -->
-<div id="onboarding" aria-label="Breeze Tutorial" hidden>
-  <button id="onboard-skip" type="button">건너뛰기</button>
+<!-- Passive guide: recorded real app interactions; no Reader session or data writes. -->
+<div id="onboarding" role="dialog" aria-modal="true" aria-label="브리즈 시작 안내" hidden>
   <section id="onboard-coach" aria-labelledby="onboard-prompt">
-    <span id="onboard-step"></span>
+    <div id="onboard-welcome"><span class="breeze-wordmark" role="img" aria-label="Breeze">
+      <svg viewBox="0 0 841 258" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="onboard-flow-light" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#aac4c4"/><stop offset=".55" stop-color="#718f9c"/><stop offset="1" stop-color="#94acbf"/></linearGradient>
+          <linearGradient id="onboard-flow-dark" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#d7ece8"/><stop offset=".55" stop-color="#9db8c5"/><stop offset="1" stop-color="#c7dbe9"/></linearGradient>
+        </defs>
+        <!-- A single visible pen centerline; no wide mask exposing nearby future strokes. -->
+        <g class="onboard-ink"><path id="onboard-pen-path" fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" pathLength="1" d="M13 225 Q60 195 77 171 Q161 91 164 41 Q162 -9 120 26 Q76 64 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q65 203 87 230 Q121 267 161 228 C187.666667 202 221 181 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162"/></g>
+      </svg>
+    </span></div>
+    <div id="onboard-carousel" role="region" aria-roledescription="캐러셀" aria-label="브리즈 기능 안내" tabindex="0" hidden></div>
+    <div id="onboard-finish" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h9l3 3V20.5H6zM15 3.5v4h3M9 12h6M9 15.5h4"/></svg></div>
+    <span id="onboard-step" aria-live="polite"></span>
     <p id="onboard-prompt" role="status" aria-live="polite"></p>
-    <p id="onboard-note" hidden>단어는 가볍게, 문장은 길게 눌러 뜻을 확인해요.</p>
-    <button id="onboard-next" type="button" hidden>책 추가하기</button>
-    <button id="onboard-finish" type="button" hidden>나중에 할게요</button>
+    <p id="onboard-note">막힘없이 읽는 새로운 방법.</p>
+    <div id="onboard-pages" aria-hidden="true" hidden></div>
+    <div id="onboard-navigation"><button id="onboard-back" class="control-glass" type="button" aria-label="이전 안내" hidden>이전</button><button id="onboard-next" class="control-glass" type="button">시작하기</button></div>
+    <button id="onboard-skip" type="button" hidden>건너뛰기</button>
+    <input id="onboard-fileinput" type="file" accept=".pdf,.epub,.txt" hidden>
   </section>
 </div>
 <input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>

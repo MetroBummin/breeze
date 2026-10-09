@@ -1,0 +1,175 @@
+{
+  "sourceSHA": "2dec555656eed5068d47173be03311c02683bc46",
+  "checks": [
+    {
+      "key": "word-light",
+      "frameCallbacks": 215,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "details-light",
+      "frameCallbacks": 214,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "sentence-light",
+      "frameCallbacks": 274,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "easy-light",
+      "frameCallbacks": 274,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "settings-light",
+      "frameCallbacks": 214,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "pdf-light",
+      "frameCallbacks": 244,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "memory-light",
+      "frameCallbacks": 215,
+      "loopWraps": 2,
+      "dropped": 1,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "word-dark",
+      "frameCallbacks": 214,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "details-dark",
+      "frameCallbacks": 214,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "sentence-dark",
+      "frameCallbacks": 274,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "easy-dark",
+      "frameCallbacks": 274,
+      "loopWraps": 2,
+      "dropped": 1,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "settings-dark",
+      "frameCallbacks": 214,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "pdf-dark",
+      "frameCallbacks": 244,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    },
+    {
+      "key": "memory-dark",
+      "frameCallbacks": 214,
+      "loopWraps": 2,
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "activeSourceCount": 1,
+      "errors": []
+    }
+  ],
+  "initializationNote": "Initial measurement reset currentTime to0 while playing: memory-light and easy-dark counted one discarded frame each, but no presented media-time gap. Keep these raw observations. Easy-dark repeat:0. Pause+await seeked diagnostic for memory-light:0, and per-callback decoder counts stayed0 for two loops. Do not call startup seek discard an unexplained spontaneous playback drop.",
+  "rechecks": [
+    {
+      "key": "memory-light",
+      "dropped": 1,
+      "gapsAboveOneFrame": [],
+      "loopWraps": 2
+    },
+    {
+      "key": "easy-dark",
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "loopWraps": 2
+    }
+  ],
+  "pauseSeekDiagnostic": [
+    {
+      "key": "memory-light",
+      "dropped": 0,
+      "gapsAboveOneFrame": [],
+      "loopWraps": 2,
+      "firstDecodedQuality": {
+        "wallMs": 14.799999998509861,
+        "mediaTime": 0.033333,
+        "presentedFrames": 3,
+        "total": 9,
+        "dropped": 0
+      }
+    }
+  ],
+  "regression": {
+    "chromium": "existing verify-onboarding-browser.mjs passed unchanged",
+    "webkit": "existing verify-onboarding-browser.mjs passed unchanged"
+  },
+  "frozenRuntimeSHA256": {
+    "scripts/ui/onboarding.js": "ff22202d52584f255fd9c7deb3dd25cb30232c7ddc076e37f5d1f60e4a27e59c",
+    "styles/onboarding.css": "1382548283dc756347dca805c4e246f0a4d39bd4b2e64dcdb185c7617447a179",
+    "index.html": "73bfca44d7a1d34138341cf5c285feaef4dfbebf32fc3790bbe6d3a4f16b2a10",
+    "scripts/main.js": "0c6804782115d73a41b58ad5606d4f1964a50196cb07efb67798d69eee378ead",
+    "scripts/dictionary/dictionary.js": "6e7f9af7ebaad7c91a00a83e45d3b1d1156ccbdac32a149e735f43fa8e7aa9fe",
+    "scripts/reader/pdf-ink.js": "e117b0ffa6b40c52dc5c924b432123cfdb699247a34c8803f81dc64a57ea1d76",
+    "ios/App/App.xcodeproj/project.pbxproj": "789efa0d0b5d1e441787f8668afb58583b3e551a6846eed56268f337287c0b13"
+  },
+  "limitations": "Headless Chromium/WebKit observations and native iPad flag emulation do not prove physical TestFlight/Pencil behavior."
+}

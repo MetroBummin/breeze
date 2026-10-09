@@ -10,7 +10,7 @@
  * 서빙하고, 이 스크립트는 네이티브 앱을 만들 때만 돕니다. "빌드 도구 없이 정적 배포"
  * 라는 규칙은 웹에 대한 것이고, 앱 번들을 만드는 일에는 복사가 필요합니다.
  */
-import { readdirSync, statSync, mkdirSync, copyFileSync, rmSync, existsSync } from 'node:fs';
+import { readdirSync, statSync, mkdirSync, copyFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +25,11 @@ const DIRS  = ['scripts', 'styles', 'assets', 'modules', 'public'];
 /* 라이선스 원문(OFL-*.txt)은 앱에 함께 들어갑니다 — 글꼴을 실어 나르는 조건입니다.
    빠지는 것은 사람이 읽으려고 둔 메모뿐입니다. */
 const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\/|^assets\/brand\/icons\/|^assets\/brand\/wordmarks\/.*\.png$|^assets\/brand\/(?:app-icon\.svg|README\.md|breeze-day(?:-wide)?\.(?:jpg|avif))$|^assets\/fonts\/gowun-batang-ui\.txt$/;
+// Kept in source for future review/experiments, never needed by the shipped OFF deck.
+const PARKED = /^(?:assets\/brand\/review\/|assets\/brand\/thunderhead-round\.png$|modules\/(?:exam-shorts|dict-seed)\/|scripts\/vendor\/ts-fsrs-5\.4\.2\.js$|scripts\/core\/vocabulary-review\.js$)/;
+if(!/const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;/.test(readFileSync(resolve(root,'scripts/ui/vocabulary-review.js'),'utf8'))){
+  throw new Error('Advanced review requires restoring its entry scripts and native assets before packaging.');
+}
 
 let copied = 0, bytes = 0;
 function copyInto(sourcePath){
@@ -34,7 +39,7 @@ function copyInto(sourcePath){
     return;
   }
   const rel = relative(root, sourcePath);
-  if(SKIP.test(rel)) return;
+  if(SKIP.test(rel)||PARKED.test(rel)) return;
   const target = resolve(out, rel);
   mkdirSync(dirname(target), { recursive: true });
   copyFileSync(sourcePath, target);

@@ -76,14 +76,18 @@ function hydrateWordSpanBatch(elements){
   const starts=savedPhraseStarts();
   elements.forEach(el=>{
     if(!el || el.dataset.wordSpans==='1') return;
-    el.innerHTML=wordSpans(el.textContent,starts,!!(curBook && curBook.transient));
+    const parts=el.querySelectorAll(':scope > .holmes-paragraph-part');
+    if(parts.length)parts.forEach(part=>{part.innerHTML=wordSpans(part.textContent,starts,!!(curBook && curBook.transient));});
+    else el.innerHTML=wordSpans(el.textContent,starts,!!(curBook && curBook.transient));
     decorateArticleWords(el);
     el.dataset.wordSpans='1';
   });
 }
 function dehydrateWordSpan(el){
   if(!el || el.dataset.wordSpans!=='1' || el.querySelector('.sel')) return;
-  el.textContent=el.textContent;
+  const parts=el.querySelectorAll(':scope > .holmes-paragraph-part');
+  if(parts.length)parts.forEach(part=>{part.textContent=part.textContent;});
+  else el.textContent=el.textContent;
   delete el.dataset.wordSpans;
 }
 function beginLazyWordSpans(elements){
@@ -176,7 +180,14 @@ function renderBookBody(b){
       img.alt=illustration.alt;
       img.width=illustration.width||1536; img.height=illustration.height||1024;
       img.loading='lazy'; img.decoding='async';
-      img.onerror=()=>fig.remove();
+      img.onerror=()=>{
+        // Offline artwork failure changes layout, not the saved source location.
+        // Preserve it explicitly: browser scroll anchoring differs by platform.
+        const active=imageGeneration===readerBodyImageGeneration&&curBook===b&&currentReaderMode==='text';
+        const anchor=active?(readerPositionPending()?posOf(b.id):captureAnchor()):null;
+        fig.remove();
+        if(anchor){restoreAnchor(anchor);lastAnchor=captureAnchor();}
+      };
       fig.appendChild(img);
       page.appendChild(fig);
       pageChars+=400;
@@ -243,6 +254,17 @@ function renderBookBody(b){
     el.dataset.pi = bl.f;
     if(bl.bookRole)el.classList.add('holmes-'+bl.bookRole);
     el.textContent = bl.v || bl.t;
+    const parts=holmes&&holmesParagraphParts(b,bl);
+    if(parts){
+      el.textContent='';
+      parts.forEach((text,index)=>{
+        // The separating space keeps textContent and sentence/selection offsets
+        // byte-for-byte identical to the saved paragraph through lazy hydration.
+        if(index)el.appendChild(document.createTextNode(' '));
+        const part=document.createElement('span');
+        part.className='holmes-paragraph-part';part.textContent=text;el.appendChild(part);
+      });
+    }
     if(bl.bookRole==='contents'){
       const entries=bl.t.match(/Chapter \d+ [\s\S]*?(?=Chapter \d+ |$)/g);
       if(entries&&entries.join('')===bl.t){
@@ -349,12 +371,29 @@ function renderReaderAttribution(book){
 /** @param {{prepared?: {book: any, original: any}, onPresented?: ()=>void, signal?: AbortSignal}} [options] */
 async function openBook(b,options={}){
   const intent=++readerOpenIntent;
-  const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted;
+  const homeward=b.longReadId==='backroom-homeward-bound'&&b.kind==='txt'&&!b.transient;
+  const openingAccount=typeof syncSessionEpoch==='number'?syncSessionEpoch:null;
+  const owned=homeward&&books.includes(b);
+  const alive=()=>intent===readerOpenIntent&&!options.signal?.aborted
+    &&(!homeward||(typeof syncSessionEpoch!=='number'||syncSessionEpoch===openingAccount)
+      &&(!owned||books.find(item=>item.id===b.id)===b));
   if(!alive())return;
   const presented=()=>{
     if(!alive())return;
     if(options.onPresented)options.onPresented();
   };
+  if(homeward){
+    // Complete optional source preparation before taking ownership of the Reader.
+    await upgradeHomewardLongRead(b,alive,options.signal);
+    if(!alive())return;
+    if(typeof ensureHomewardLookupData==='function'){
+      try{await ensureHomewardLookupData();}
+      catch(error){
+        if(alive())toast('이 책의 단어 풀이를 준비하지 못했어요. 읽기는 계속할 수 있어요.');
+      }
+    }
+    if(!alive())return;
+  }
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader() && b!==curBook) endOnboarding(true,false);
   if(typeof closeSentence==='function') closeSentence();
   readerModeChangeToken++;

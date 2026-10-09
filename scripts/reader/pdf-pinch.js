@@ -5,6 +5,20 @@
    One-finger scrolling stays native. Never take over an already committed pan. */
 let originalPinch = null;
 let originalPinchFrame = 0;
+let originalPinchReturn = null;
+function cancelOriginalPinchReturn(){
+  const animation=originalPinchReturn;
+  if(!animation)return;
+  originalPinchReturn=null;
+  animation.cancel(); // The committed transform is already underneath; no late style writes.
+  invalidatePdfPageLayout();
+  queueMicrotask(()=>{
+    if(originalPinchBusy())return;
+    layoutOriginalZoom();
+    if(typeof BreezePdfInk!=='undefined')BreezePdfInk.refreshScope();
+    resumeOriginalPdfPaint();resumeOriginalPinchLookup();
+  });
+}
 let originalPinchTouches = false;
 let originalPinchTail = false;
 let originalPinchPan = false;
@@ -84,12 +98,12 @@ function originalUndoEnd(event){
   originalUndoFirst={at:now,points:contact.points,snapshot:contact.snapshot};return false;
 }
 function originalPdfPaintPaused(optional=true){
-  if(!originalPinch && !originalPinchTouches && (!optional || !originalPdfContacts) && !(typeof BreezePdfInk!=='undefined' && BreezePdfInk.busy())) return false;
+  if(!originalPinchBusy() && !originalPinchTouches && (!optional || !originalPdfContacts) && !(typeof BreezePdfInk!=='undefined' && BreezePdfInk.busy())) return false;
   originalPdfRenderPending = true;
   return true;
 }
 function resumeOriginalPdfPaint(){
-  if(originalPdfContacts || originalPinch || !originalPdfRenderPending) return;
+  if(originalPdfContacts || originalPinchBusy() || !originalPdfRenderPending) return;
   originalPdfRenderPending = false;
   if(originalSession?.kind==='pdf'){
     document.querySelectorAll('.pdf-source-page [data-pdf-retired]').forEach(node=>node.remove());
@@ -106,7 +120,7 @@ function countOriginalPdfContacts(event){
     point.target && point.target.closest && point.target.closest('#original-stage')).length;
 }
 
-function originalPinchBusy(){ return !!originalPinch; }
+function originalPinchBusy(){ return !!originalPinch || !!originalPinchReturn; }
 function readerManipulationConsumes(event){
   if(event.type === 'pointerdown' && !originalPinchTouches && !originalPinch){
     originalPinchTail = false;
@@ -127,11 +141,16 @@ function originalPinchDistance(points){
                     points[0].clientY-points[1].clientY);
 }
 function beginOriginalPinch(center, distance, ids){
+  cancelOriginalPinchReturn();
   if(typeof closePdfNavigation==='function')closePdfNavigation();
   if(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored()
+      && !(typeof sentenceWaitingActive==='function'&&sentenceWaitingActive())
       && typeof closeSentence==='function') closeSentence();
-  // The same anchored lookup owner as scroll includes mini, detail and morphing UI.
-  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()&&typeof closePanel==='function') closePanel();
+  // Pending cues live on the paper and scale with it. Retain their request owner;
+  // ready mini, detail and morphing surfaces keep their existing dismissal.
+  if(typeof wordSurfaceAnchored==='function'&&wordSurfaceAnchored()
+      && !(typeof wordPeekPending==='function'&&wordPeekPending())
+      && typeof closePanel==='function') closePanel();
   if(typeof pinReaderChrome==='function') pinReaderChrome(true,'zoom');
   const box = readerScroller(), layer = originalZoomLayer(), stage = originalZoomStage();
   // A deliberate pinch supersedes delayed mode-landing restores (360/900ms).
@@ -140,7 +159,7 @@ function beginOriginalPinch(center, distance, ids){
   const outer = box.getBoundingClientRect(), origin = originalZoomOrigin();
   const level = originalZoom();
   originalPinch = {
-    box, layer, stage, outer, origin, distance, ids, level, next:level,
+    box, layer, stage, outer, origin, distance, ids, level, next:level, elastic:1,
     width:box.clientWidth, viewportHeight:box.clientHeight, height:originalZoomBaseHeight,
     trailing:Math.max(0,box.scrollHeight-origin.y-originalZoomBaseHeight*level),
     paper:{x:(box.scrollLeft+center.x-outer.left-origin.x)/level,
@@ -167,12 +186,19 @@ function previewOriginalPinch(){
   // Native scrolling/bounce can change the offset after pinch acquisition.
   // Cancel that current offset, not the captured one, to keep the paper point
   // under the fingers without writing scrollLeft/Top during the gesture.
-  pinch.layer.style.transform = `translate(${box.scrollLeft-pinch.position.x}px,${box.scrollTop-pinch.position.y}px) scale(${next})`;
+  // Elasticity is visual only, about the live midpoint. Logical limits, paper
+  // coordinates and scroll extents continue to use the clamped scale above.
+  const x=(center.x-outer.left+pinch.position.x-origin.x)*(1-pinch.elastic);
+  const y=(center.y-outer.top+pinch.position.y-origin.y)*(1-pinch.elastic);
+  pinch.rebound=`translate(${x}px,${y}px) scale(${next*pinch.elastic})`;
+  pinch.layer.style.transform = `translate(${box.scrollLeft-pinch.position.x+x}px,${box.scrollTop-pinch.position.y+y}px) scale(${next*pinch.elastic})`;
 }
 function moveOriginalPinch(level, center){
   if(!originalPinch) return;
   originalPinch.manipulated=true;
   originalPinch.next = Math.max(ORIGINAL_ZOOM_MIN,Math.min(ORIGINAL_ZOOM_MAX,level));
+  const under=Math.max(0,1-level/ORIGINAL_ZOOM_MIN);
+  originalPinch.elastic=1-.12*under/(.25+under);
   originalPinch.center = center;
   if(!originalPinchFrame) originalPinchFrame = requestAnimationFrame(previewOriginalPinch);
 }
@@ -192,11 +218,22 @@ function finishOriginalPinch(){
   originalPinch = null;
   pinch.stage.classList.remove('pinching');
   setOriginalZoom(pinch.next,null,pinch.position);
+  if(pinch.elastic<1)invalidatePdfPageLayout();
   resharpenOriginalPages();
   saveReadingState();
+  if(pinch.elastic<1&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const layout=pdfPageLayout(); // Keep page queries in committed coordinates during return.
+    const animation=pinch.layer.animate([{transform:pinch.rebound},{transform:pinch.layer.style.transform||'none'}],
+      {duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});
+    originalPinchReturn=Object.assign(animation,{layout});
+    animation.onfinish=()=>{
+      if(originalPinchReturn===animation)cancelOriginalPinchReturn();
+    };
+  }
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
 }
 function cancelOriginalPinch(){
+  cancelOriginalPinchReturn();
   cancelOriginalUndoTap();
   if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
   cancelAnimationFrame(originalPinchFrame);
@@ -211,6 +248,11 @@ function cancelOriginalPinch(){
   }
   resumeOriginalPdfPaint();
   if(typeof pinReaderChrome==='function') pinReaderChrome(false,'zoom');
+  if(pinch)resumeOriginalPinchLookup();
+}
+function resumeOriginalPinchLookup(){
+  if(typeof wordPeekOpen==='function'&&wordPeekOpen())renderWordLookup();
+  if(typeof revealSentenceResult==='function')revealSentenceResult();
 }
 function originalPinchStart(event){
   // An end/cancel can be lost when UIKit takes a contact. A fresh event's live
@@ -277,9 +319,13 @@ function originalPinchEnd(event){
     originalPinchTouches = false;
     if(undo)BreezePdfInk.undo();
     resumeOriginalPdfPaint();
+    resumeOriginalPinchLookup();
   }
 }
 (function(){
+  // Fresh input settles presentation before lookup/ink sample paper bounds.
+  for(const type of ['pointerdown','touchstart','wheel','keydown'])
+    window.addEventListener(type,cancelOriginalPinchReturn,{capture:true,passive:true});
   const start = ()=>{
     const box = readerScroller();
     if(!box) return;

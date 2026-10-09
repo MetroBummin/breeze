@@ -615,3 +615,21 @@ all bytes immediately and after reload; another rejects an unreadable staged
 Blob and verifies the existing book and image bytes are unchanged. The bounded
 base/current diagnostic retains every baseline failure as evidence and requires
 all current-head attempts to pass; the ordinary full Integrity gate is unchanged.
+
+## Deferred HTML parser and shell continuity (2026-10-08)
+
+Readability is loaded through the existing shared lazy-library loader at article,
+selected RSS, vault restoration, or HTML-paste preparation. Plain-text paste and
+normal startup do not load it. The pure parsing functions remain synchronous;
+callers own readiness. HTML preview ignores an obsolete input after awaiting the
+parser. Paste commit captures its input/folder and checks navigation ownership.
+Failures preserve the input and permit another attempt.
+
+Readability and Homeward lookup data retain their former content-hashed shell
+URLs. An uncontrolled first document caches these exact bytes before use; worker
+activation carries these exact addresses from an older shell, just as immutable
+PDF/ZIP libraries already survive upgrades. Other versioned application scripts
+are not copied. Native bundles include the deferred files and skip web runtime
+caching; Android HTTPS and iOS both skip worker registration via Capacitor.
+`verify-deferred-resources-browser.mjs` and `verify-deferred-offline-browser.mjs`
+exercise failure/retry, HTML import, old-shell carryover and cold offline lookup.

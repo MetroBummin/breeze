@@ -126,7 +126,7 @@ for(const hold of [false,true]){
 for(const onboarding of [true,false]){
  let homes=0,revealed=0;
  const c={startSharedFileImports(){},syncHomeNavigation(){},loadBooks:async()=>{},migrateLibraryFolders(){},upgradeHomewardLongRead:async()=>{},restoreMissingLongReadCovers:async()=>{},
-  maybeShowOnboarding:async()=>{},onboardingOwnsReader:()=>onboarding,renderHome(){homes++;},
+  maybeShowOnboarding:async()=>{},onboardingSession:onboarding?{}:null,onboardingOwnsReader:()=>false,renderHome(){homes++;},
   document:{documentElement:{classList:{remove(){revealed++;}}}},navigator:{},console};
  vm.createContext(c);vm.runInContext(read('scripts/main.js')+'\nglobalThis.boot=homeReady;',c);
  await c.boot;assert.equal(homes,onboarding?0:1);assert.equal(revealed,1);

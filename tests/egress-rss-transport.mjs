@@ -11,7 +11,7 @@ export function rssDevice({source=current,storage=new Map(),now=1000000,offline=
   let feedAt=[];
   class Clock extends Date{static now(){return state.now;}}
   const context=createContext({URL,Date:Clock,TextEncoder,TextDecoder,Uint8Array,Response,AbortSignal,window:{BREEZE_CONFIG:{RSS_CATALOG:catalog}},console:{warn(){},error(){}},
-    setTimeout,clearTimeout,books:[],positions:{},SB_URL:'https://relay.example',SB_KEY:'synthetic-public-key',
+    setTimeout,clearTimeout,ensureReadabilityLib:async()=>{},books:[],positions:{},SB_URL:'https://relay.example',SB_KEY:'synthetic-public-key',
     navigator:{get onLine(){return !state.offline;}},
     localStorage:{getItem:key=>{if(denyStorage)throw Error('storage denied');return storage.get(key)||null;},
       setItem:(key,value)=>{if(denyStorage)throw Error('storage denied');storage.set(key,value);}},

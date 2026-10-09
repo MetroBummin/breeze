@@ -468,6 +468,7 @@ async function ingestArticle(url, options = {}){
     job=(async()=>{
       const existing=books.find(book=>[book.sourceUrl,book.resolvedUrl,book.discoveredFromUrl].some(source=>{try{return source&&articleUrlKey(source)===key;}catch{return false;}}));
       if(existing&&!articleNeedsSourceRefresh(existing))return existing;
+      if(!options.preparedArticle&&!(typeof socialUrlInfo==='function'&&socialUrlInfo(url)))await ensureReadabilityLib();
       const location={};let parsed=options.preparedArticle||parseFeedArticle(options);
       if(!parsed){
         if(typeof socialUrlInfo==='function' && socialUrlInfo(url))parsed=await loadSocialArticle(url);

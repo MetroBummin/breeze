@@ -1,0 +1,94 @@
+{
+  "clips": [
+    {
+      "scene": "word",
+      "light": {
+        "mp4": 269136,
+        "jpg": 39184
+      },
+      "dark": {
+        "mp4": 239166,
+        "jpg": 37932
+      }
+    },
+    {
+      "scene": "details",
+      "light": {
+        "mp4": 234666,
+        "jpg": 71187
+      },
+      "dark": {
+        "mp4": 214021,
+        "jpg": 70017
+      }
+    },
+    {
+      "scene": "sentence",
+      "light": {
+        "mp4": 344183,
+        "jpg": 60438
+      },
+      "dark": {
+        "mp4": 267204,
+        "jpg": 56276
+      }
+    },
+    {
+      "scene": "easy",
+      "light": {
+        "mp4": 367989,
+        "jpg": 77390
+      },
+      "dark": {
+        "mp4": 294674,
+        "jpg": 72891
+      }
+    },
+    {
+      "scene": "settings",
+      "light": {
+        "mp4": 337022,
+        "jpg": 112586
+      },
+      "dark": {
+        "mp4": 260901,
+        "jpg": 107217
+      }
+    },
+    {
+      "scene": "pdf",
+      "light": {
+        "mp4": 905369,
+        "jpg": 245112
+      },
+      "dark": {
+        "mp4": 906762,
+        "jpg": 245631
+      }
+    },
+    {
+      "scene": "memory",
+      "light": {
+        "mp4": 274335,
+        "jpg": 68705
+      },
+      "dark": {
+        "mp4": 276317,
+        "jpg": 68647
+      }
+    }
+  ],
+  "previous_media_total_bytes": 952362,
+  "media_total_bytes": 6524958,
+  "media_added_bytes": 5572596,
+  "ratio": 6.8513422417106105,
+  "measurement_note": "Exact 28 MP4/JPEG bytes and build-www copy/normalized ZIP measurements against source2dec555; no native build, not IPA/TestFlight download size.",
+  "base_www_bytes": 16652705,
+  "base_www_files": 226,
+  "base_www_zip_bytes": 13704778,
+  "new_www_bytes": 22225301,
+  "new_www_files": 226,
+  "new_www_zip_bytes": 18404717,
+  "www_added_bytes": 5572596,
+  "www_added_zip_bytes": 4699939
+}

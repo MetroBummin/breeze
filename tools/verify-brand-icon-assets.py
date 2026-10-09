@@ -39,7 +39,19 @@ for name,size in [('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2
  assert all(tuple(rows[y][x*3:x*3+3])==(44,44,46) for x,y in [(0,0),(w-1,0),(0,h-1),(w-1,h-1)]),name
 assert (ROOT/'assets/favicon/icon-512.png').read_bytes()==(ROOT/'android/app/src/main/res/mipmap-nodpi/ic_launcher.png').read_bytes()
 catalog=json.loads((ROOT/'ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json').read_text())
-assert catalog['images']==[{'filename':'AppIcon-512@2x.png','idiom':'universal','platform':'ios','size':'1024x1024'}]
+assert catalog['images']==[
+ {'filename':'AppIcon-light.png','idiom':'universal','platform':'ios','size':'1024x1024'},
+ {'appearances':[{'appearance':'luminosity','value':'dark'}],'filename':'AppIcon-512@2x.png','idiom':'universal','platform':'ios','size':'1024x1024'}]
+# Native appearance slots select the approved existing art; no runtime icon switch.
+for theme,file,background in [('light','AppIcon-light.png',(242,242,247)),('dark','AppIcon-512@2x.png',(44,44,46))]:
+ name='ios/App/App/Assets.xcassets/AppIcon.appiconset/'+file
+ assert (ROOT/name).read_bytes()==(ROOT/f'assets/brand/icons/icon-b-flow-{theme}-1024.png').read_bytes(),(theme,'approved pixels changed')
+ w,h,color,rows=png(name,True);assert (w,h,color)==(1024,1024,2)
+ assert all(tuple(rows[y][x*3:x*3+3])==background for x,y in [(0,0),(w-1,0),(0,h-1),(w-1,h-1)]),name
+light=(ROOT/'assets/brand/icons/icon-b-flow-light.svg').read_text()
+dark=(ROOT/'assets/brand/icons/icon-b-flow-dark.svg').read_text()
+assert re.findall(r'<path d="([^"]+)"',light)==re.findall(r'<path d="([^"]+)"',dark),'Approved b contour differs'
+assert re.findall(r'<g transform="([^"]+)"',light)==re.findall(r'<g transform="([^"]+)"',dark),'Approved b placement differs'
 for density,size in [('mdpi',108),('hdpi',162),('xhdpi',216),('xxhdpi',324),('xxxhdpi',432)]:
  for layer in ['foreground','monochrome']:
   name=f'android/app/src/main/res/drawable-{density}/breeze_icon_{layer}.png';w,h,color,rows=png(name,True);assert (w,h,color)==(size,size,6),name

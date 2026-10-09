@@ -1,0 +1,42 @@
+name: PDF pending lookup pinch
+on:
+  pull_request:
+    paths:
+      - scripts/reader/pdf-pinch.js
+      - scripts/dictionary/dictionary.js
+      - scripts/dictionary/sentence.js
+      - tests/verify-pdf-pending-pinch-browser.mjs
+      - tests/verify-sentence-help-browser.mjs
+      - .github/workflows/pdf-pending-pinch.yml
+permissions:
+  contents: read
+concurrency:
+  group: pdf-pending-pinch-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Pending word and sentence pinch ownership and stale replies
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BROWSER: ${{ matrix.engine }}
+          BREEZE_QA_OUTPUT: /tmp/breeze-pending-pinch-proof
+        run: node tests/verify-pdf-pending-pinch-browser.mjs && node tests/verify-sentence-help-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pdf-pending-pinch-${{ matrix.engine }}
+          path: /tmp/breeze-pending-pinch-proof/
+          if-no-files-found: error
+          retention-days: 7

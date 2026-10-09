@@ -1,0 +1,103 @@
+# Memory TestFlight header feedback
+
+Base: main e7b61d5304d20d639d45fc8dd23116db5d6446e5 (PR125).
+
+Remove only the decorative Thunder image in the Memory header. Preserve Breeze
+Memory, manual add, filters, review and shared dock. The add control now opts into
+existing `.control-glass` material while keeping its 44×44px target, plus SVG,
+accessible name and native dialog behavior. Add an explicit keyboard focus ring.
+No onboarding, Reader, native build/version or release behavior changes.
+
+## Alignment evidence
+
+Home starts its header at safe-area + 24px; Memory previously started at
+safe-area + 52px. Both rendered rows are 44px high. Home's 132px wordmark uses
+an 841×258 SVG: its contour reaches the top of the viewBox and nearly the bottom,
+so the SVG is not hiding a large blank top margin. Neutral light/dark assets use
+the same contour, although light reflections make the upper thin strokes quieter.
+
+Matching top padding alone leaves the title's visible ink below the wordmark
+center. Set Memory padding to safe-area + 24px, then translate just its title
+up 3.25px to compensate for the text's baseline/line-box metrics. Do not move the
+add button or change the Home logo. Chromium contour/Canvas font measurements:
+
+| 390×844 viewport | Home ink center | Memory before | Memory after |
+| --- | ---: | ---: | ---: |
+| light and dark, safe area 0 | 45.99px | 79px | 47.75px |
+| light and dark, safe area 59 | 104.99px | 138px | 106.75px |
+
+The visible-center delta falls from 33.01px to 1.76px in Chromium. WebKit CI
+revealed different font baseline metrics: the initial -4px correction put its
+ink center 2.49px above Home. A shared -3.25px correction balances both engines
+(Chromium +1.76px, WebKit -1.74px), retaining the strict 2px assertion. Measurements use alpha
+bounds of the rendered SVG and font ascent/descent with the actual DOM baseline,
+not equal CSS boxes. Screenshot antialiasing adds roughly a pixel of uncertainty.
+The 59px safe-area case substitutes CSS env values in intercepted stylesheets;
+it verifies inset propagation, not a physical iPhone or native status bar.
+
+![Home reference, Memory before, Memory after — light](memory-header-20261008/breeze-memory-light-comparison.png)
+![Home reference, Memory before, Memory after — dark](memory-header-20261008/breeze-memory-dark-comparison.png)
+
+## Verification
+
+- Focused browser test covers light/dark at 390×844, 320×568, 820×1180,
+  1440×900 and 844×390, plus a 390×844 safe-area fixture. It asserts visible
+  ink-center alignment within 2px, circular nontransparent surface, 44px target,
+  accessible name, keyboard open, rapid trusted repeat taps preserving typed
+  input, Escape/close/cancel, reopen, save and Home/Memory navigation.
+- Existing Wordbook browser suite passes search, sorting, filters, edit, save,
+  CSV export and Home navigation. Update its obsolete mascot-presence assertion.
+- Existing Home branding/browser and exact design boundary checks pass.
+- `npm test`, `npm run typecheck`, JS syntax and `git diff --check` pass.
+  Typecheck preserves the existing 34-issue baseline. No standalone lint command
+  exists in package.json; use the repository's aggregate structural checks.
+- Local browser is system Chromium. Playwright CDN rejects Chromium/WebKit
+  downloads with HTTP 403; WebKit coverage runs in the existing two-engine
+  design-brand CI matrix, now including the focused Memory test and artifacts.
+- Library's prepared-upload helper failed at app discovery with a network error,
+  before uploads were prepared. PNG proofs remain in this PR and the workspace.
+
+Onboarding remains idea-only here; PR122/124 remain untouched. A separate
+onboarding concept task owns any proposal. This PR is draft; no merge, deployment
+or TestFlight upload is authorized by this feedback task.
+
+
+## CI installation budget follow-up
+
+The original sentence-inline WebKit job on head 1857659 exhausted its 15-minute
+job budget during `playwright install --with-deps`, twice, before any UI checks.
+The first attempt downloaded 126 MB from the Ubuntu mirror in 14m23s (146 kB/s);
+the retry was still downloading packages when cancelled. PR125’s successful
+WebKit job installed dependencies/browser in about 46s and ran the unchanged
+checks/artifact steps in about 4m17s. The old budget covers fast mirrors but not
+these observed cold installs plus the actual tests.
+
+Increase only this workflow’s job budget to 30 minutes, retaining its official
+Playwright install command, both engines, all assertions and artifact steps.
+Runner type, matrix size and tests are unchanged; jobs still stop as soon as they
+finish. No application behavior or release settings change. Validate the new
+exact head by executing the full workflow, rather than waiving the cancelled job.
+
+Evidence: [previous successful WebKit run](https://github.com/MetroBummin/breeze/actions/runs/37648227003/job/112884745580),
+[first installation timeout](https://github.com/MetroBummin/breeze/actions/runs/37711418664/job/113098143218),
+[retry installation timeout](https://github.com/MetroBummin/breeze/actions/runs/37711418664/job/113102531952).
+
+
+The expanded-budget WebKit run completed setup, original palette/geometry checks
+and all 60 inline state cases. Its final gesture test exposed a synthetic input
+bug: PDF repaint detached the canvas saved at pointerdown, and pointerup was
+sent to that detached node, outside the document's capture listener. Diagnostic
+`releaseTarget.connected` was false and `held` remained true.
+
+The WebKit synthetic release now hit-tests the unchanged release coordinates
+against the current document and dispatches to a connected element. This models
+an uncaptured native pointer release and still requires the real document gesture
+owner to clear the hold. Chromium's trusted touch path and every existing
+assertion remain unchanged; no application gesture code is modified.
+Evidence: [WebKit input failure after real test execution](https://github.com/MetroBummin/breeze/actions/runs/37714396500/job/113107448309).
+
+Local causal verification forced canvas replacement during a held synthetic
+PDF touch: dispatch to the detached old target reproduced the unchanged hold
+assertion failure (exit 1); current-point dispatch passed the complete existing
+Text/PDF/EPUB assertions at both widths (exit 0). Temporary QA scripts were
+removed. The ordinary Chromium trusted-touch suite also passed.

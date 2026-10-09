@@ -1,10 +1,42 @@
 # iPad PDF Pencil annotation
 
-## Current platform policy (2026-10-06)
+## Current platform policy (2026-10-08)
 
 The original native-iPad-only gate and Touch-only statements below document the
 historical iPad implementation. The October 6 Pointer route described at the end
-adds ink on other touch runtimes with the required event capabilities. Native iPad
+adds ink on other touch runtimes with the required event capabilities. The
+October 8 restriction now admits only the existing native iPad idiom signal or
+native Android tablet (Capacitor isNativePlatform + getPlatform, native
+BreezePdfPlatform classification) with that input adapter.
+Web/mobile web/PWA, native iPhone and desktop runtimes cannot activate writing;
+their entry is hidden. Android's narrow read-only plugin uses the application
+context to create resources for Display.DEFAULT_DISPLAY, then requires native
+LARGE/XLARGE screenLayout and normal UI mode, excluding PC feature devices. It
+does not classify from the Activity window, responsive width, pen connection or
+first pen event. Pending/missing/failed plugin classification is read-only.
+
+The user approved exposing tools on tablet-class Android devices even without a
+pen; only pen pointers can create ink. This is an OS display configuration policy,
+not a universal manufacturer phone/tablet taxonomy or pen hardware detector.
+Unusual density overrides and foldable device configurations may classify a
+device differently; physical configuration/input acceptance remains separate.
+No model allowlist or new permission is added; supported APIs cover the app's
+existing API 24+ range. Classification is resolved once per document load, so
+window resize, split view and orientation do not independently admit a phone.
+
+Onboarding shares `await BreezePdfInk.availability()` (resolves after native
+classification), or synchronous `BreezePdfInk.available()` (false while pending).
+Both include the safe event-delivery adapter requirement. `writing()` describes
+the active editing state and is not a platform capability query.
+
+Stored-ink loading and SVG rendering no longer depend on write eligibility, so
+all PDF readers retain read-only annotations. No schema, key, stroke or preference
+is deleted or migrated. Write-mode activation rechecks eligibility before
+restoring lastTool or saving preferences; native capability revocation returns
+to read mode and cancels unfinished input. No separate writing route or activation
+shortcut exists in the current reader; hidden programmatic tool clicks and public
+undo pass the same mode/visibility guards. The persisted tool preference is not a
+persisted active write mode. Native iPad
 continues to prefer its original Touch owner. Browser synthetic checks remain
 separate from physical Android stylus, palm-rejection and inertia acceptance.
 
@@ -244,10 +276,40 @@ ordinary Release builds still contain no input trace handler.
 ### Tool settings, partial erasure and input cost
 The user requested pen/eraser options above the pill. Switching tools selects
 the new tool without opening settings; tapping the already selected tool toggles
-its non-modal settings surface. Pen contains the existing three colors/widths,
+its non-modal settings surface. Pen contains fixed colors and three widths,
 eraser contains page-coordinate radii 4, 8 and 16. Tap outside, start paper
 input or press Escape to close settings. The first Pencil contact on paper closes
 settings and edits with that same contact. Settings never reflow the paper.
+
+### Fixed color chips and tool order (2026-10-08)
+
+Pen offers black, blue, red, green, purple and orange; highlighter offers yellow,
+lime, mint, sky blue, pink and purple. The original three pen color values and
+two highlighter values remain in their palettes, preserving existing strokes
+and preferences. New choices affect only new strokes. Each tool remembers its
+own last color using the existing preference record. There is no custom picker
+or add-color action. Colors are circular 44px hit targets in a horizontally
+scrollable row, with a visible selected ring and aria-pressed; color names are
+accessibility labels only. Eraser settings contain no color row.
+
+Tool selection uses only the brand-colored icon, without an underline,
+filled circle or selection ring. This is separate from the circular color
+chips. Expanded read/write modes share the reader pill's 44px height, 24px
+corners, padding and responsive width (400px maximum). Tool targets remain
+44px and the internal strip scrolls horizontally when space is limited;
+controls are not shrunk or removed. The existing read-mode collapse and
+writing-mode expanded behavior are unchanged.
+
+The tool order is pen, highlighter, eraser. Notability's Android reference shows
+Pen/Pencil/Highlighter/Eraser, and Apple Markup shows Pen/Monoline/Marker/Eraser.
+Goodnotes groups writing tools separately from eraser and permits customization;
+this order is a Breeze choice, not a universal standard. Existing gesture,
+translucency (0.3), theme/rendering and stored stroke semantics stay unchanged.
+
+References:
+- https://support.gingerlabs.com/en-us/articles/16299999-getting-started-with-notability-on-android
+- https://support.apple.com/en-kw/guide/ipad/ipad6350b8dc/ipados
+- https://support.goodnotes.com/hc/en-us/articles/8900755183631-Customize-the-toolbar
 
 Eraser input cuts only covered polyline segments, using the swept capsule between
 consecutive samples (plus half the ink width). Sparse, fast movements therefore

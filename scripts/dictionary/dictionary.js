@@ -86,6 +86,20 @@ function homewardWordFor(w,node,input){
     ||typeof homewardWordAnswer!=='function')return null;
   return homewardWordAnswer(input||lookupRequestFor(w,node,false),node);
 }
+async function prepareHomewardWordLookup(k,life){
+  const book=curBook,w=words[k];
+  try{await ensureHomewardLookupData();}
+  catch{
+    if(wordLookupAlive(life)&&curBook===book&&words[k]===w){
+      w.aiOff=navigator.onLine===false?'offline':'error';delete w.aiLoading;
+      const context=currentContext(k);
+      if(context){context.loading='';context.error=w.aiOff;}
+      renderIfAlive(life);
+    }
+    return false;
+  }
+  return wordLookupAlive(life)&&curBook===book&&words[k]===w;
+}
 
 function readerWordNodes(selector){
   const nodes=[...document.querySelectorAll(selector)];
@@ -480,13 +494,21 @@ function openWord(k, node, point){
 }
 async function resolveCurrentLookup(k,input,life,node){
   const w=words[k];if(!w)return;
-  const local=homewardWordFor(w,node,input);
-  let answer=local?homewardAnswerAsLook(local):null;
+  let local=homewardWordFor(w,node,input),answer=null;
+  if(!local){
+    answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
+    if(!wordLookupAlive(life))return;
+    if(!answer&&typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
+      if(!await prepareHomewardWordLookup(k,life))return;
+      local=homewardWordFor(w,node,input);
+    }
+  }
   if(local){
+    answer=homewardAnswerAsLook(local);
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
     await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
   }
-  else answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
+
   if(!wordLookupAlive(life))return;
   if(!answer)answer=await fetchLook(k,{...input,node,hold:true,life});
   if(!wordLookupAlive(life)||!words[k])return;
@@ -567,7 +589,7 @@ function wordPeekUserScrolled(userScroll=true){
 }
 function wordPeekOpen(){ return wordPeekActive; }
 /* Request readiness and presentation readiness are separate. A mini lookup
-   survives scrolling; another word/mode/page/zoom/exit ends its one lifetime. */
+   survives scrolling and pending PDF pinch; another word/mode/page/exit ends it. */
 function wordPeekPending(){
   const w=wordPeekActive&&selKey?displayedWord(selKey):null;
   return !!(w&&wordPeekState(w,currentContext(selKey)).loading);
@@ -741,6 +763,9 @@ function renderWordPeek(){
       &&!(currentContext(selKey)&&currentContext(selKey).error)
       &&!(wordPeekRetryState&&wordPeekRetryState.error));
   if(state.loading){wordPeekHadPending=true;wordPeekPresentation='LOOKING_UP';wordPeekShownAt=null;cancelWordPeekReveal();pill.hidden=true;return;}
+  // A reply can arrive while the paper is being transformed. The request/result
+  // stays owned; pinch release resumes normal live-anchor/scroll-idle reveal.
+  if(typeof originalPinchBusy==='function'&&originalPinchBusy()){pill.hidden=true;cancelWordPeekReveal();return;}
   if(wordPeekPresentation!=='SHOWN')wordPeekPresentation='READY';
   if(wordPeekScrollRemaining()>0){pill.hidden=true;deferWordPeekReveal();return;}
   cancelWordPeekReveal();
@@ -1223,8 +1248,11 @@ async function fetchEnMetadata(form,force=false){
   const key='en:v2:'+form;
   if(englishMetadataRequests.has(key))return englishMetadataRequests.get(key);
   const request=(async()=>{
+    const localOnly=typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook);
     const cached=force?null:await dictGet(key);
     if(cached&&cached.expires>Date.now())return cached;
+    // Preserve cached English details even when optional curated data is absent.
+    if(localOnly||(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)))return null;
     // Offline details can use local metadata, but a cache miss is not a
     // provider failure or a reason to start a request/retry cooldown.
     if(navigator.onLine===false)return null;
@@ -1592,6 +1620,10 @@ async function loadCachedLook(k, began, life, node){
       return true;
     }
   }
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
+    if(!await prepareHomewardWordLookup(k,life))return true;
+    return loadCachedLook(k,began,life,node);
+  }
   return false;
 }
 
@@ -1606,6 +1638,8 @@ async function fetchLook(k, opt){
   if(opt.life === undefined) opt.life = wordLookupLife;
   const life = opt.life;
   const node=opt.node||activeSelectedWordNode;
+  // Missing optional local data must not silently become a charged lookup.
+  if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)&&!await prepareHomewardWordLookup(k,life))return false;
   if(!opt.sentence)Object.assign(opt,lookupRequestFor(w,node,!opt.retry&&!opt.wider));
   else if(!opt.retry&&!opt.wider){
     // A fresh AI request may already carry the selected sentence/index from the
