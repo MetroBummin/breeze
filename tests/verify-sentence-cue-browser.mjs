@@ -223,7 +223,7 @@ try{
       document.documentElement.classList.remove('dark');document.body.classList.remove('dark');
       return {animation,removed:!layer.isConnected,blend};
      },{point,kind,selectionScroll});
-     assert.equal(reduced.animation,'none');assert.ok(reduced.removed);assert.equal(reduced.blend,kind==='pdf'?'multiply':'screen');
+     assert.equal(reduced.animation,'none');assert.ok(reduced.removed);assert.equal(reduced.blend,kind==='txt'?'normal':kind==='pdf'?'multiply':'screen');
      await page.emulateMedia({reducedMotion:'no-preference'});
      reports.push({engine:engine.name(),width,kind,...cue});
      await page.evaluate(()=>show('home'));

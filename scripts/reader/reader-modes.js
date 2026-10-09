@@ -288,6 +288,10 @@ let readerSentenceCue = null;
 const READER_SENTENCE_CUE_CSS = `
 .reader-sentence-cue-layer{position:absolute;left:0;top:0;width:100%;height:100%;
   pointer-events:none;z-index:38;mix-blend-mode:var(--sentence-cue-blend,multiply);}
+/* Text words paint their background below their glyphs. Give the sentence
+   the same paint order inside its paragraph, including punctuation/emphasis. */
+.reader-sentence-cue-host{position:relative;isolation:isolate;}
+.reader-sentence-cue-layer.is-under-text{z-index:-1;mix-blend-mode:normal;}
 .reader-sentence-cue{position:absolute;display:block;pointer-events:none;
   border-radius:8px;background:var(--sentence-cue-color,rgba(77,174,214,.34));
   transform-origin:center;animation:breeze-sentence-cue-in 260ms cubic-bezier(.16,1,.3,1) both;}
@@ -309,14 +313,20 @@ function clearReaderSentenceCue(immediate=false){
   if(active.observer) active.observer.disconnect();
   active.layer.classList.remove('is-pending');
   const layer=active.layer,view=layer.ownerDocument.defaultView;
+  const remove=()=>{
+    layer.remove();
+    // An outgoing fade cannot remove a newer cue's paragraph stacking context.
+    if(active.host&&!active.host.querySelector('.reader-sentence-cue-layer'))
+      active.host.classList.remove('reader-sentence-cue-host');
+  };
   if(immediate || (view.matchMedia&&view.matchMedia('(prefers-reduced-motion: reduce)').matches)){
-    layer.remove();return;
+    remove();return;
   }
   layer.classList.add('is-leaving');
   // The callback owns only the outgoing layer, never a subsequently selected sentence.
-  layer.addEventListener('transitionend',()=>layer.remove(),{once:true});
+  layer.addEventListener('transitionend',remove,{once:true});
   // Parent timer also runs when WebKit suspends a sandboxed EPUB frame.
-  setTimeout(()=>layer.remove(),200);
+  setTimeout(remove,200);
 }
 function createReaderSentenceCue(host,pdf=false){
   clearReaderSentenceCue(true);
@@ -327,6 +337,8 @@ function createReaderSentenceCue(host,pdf=false){
     style.textContent=READER_SENTENCE_CUE_CSS;doc.head.appendChild(style);
   }
   const layer=doc.createElement('div');layer.className='reader-sentence-cue-layer';
+  const textHost=doc===document&&host.closest('#rtext')?host:null;
+  if(textHost){textHost.classList.add('reader-sentence-cue-host');layer.classList.add('is-under-text');}
   layer.setAttribute('aria-hidden','true');
   const dark=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
   layer.style.setProperty('--sentence-cue-color',getComputedStyle(document.documentElement).getPropertyValue('--cue'));
@@ -335,7 +347,7 @@ function createReaderSentenceCue(host,pdf=false){
   layer.style.setProperty('--breeze-lookup-wash',getComputedStyle(document.body).getPropertyValue('--word-lookup-wash')||'rgba(74,151,235,.22)');
   layer.style.setProperty('--breeze-lookup-sheen',getComputedStyle(document.body).getPropertyValue('--word-lookup-sheen'));
   host.appendChild(layer);
-  readerSentenceCue={layer,observer:null,bounds:null};
+  readerSentenceCue={layer,host:textHost,observer:null,bounds:null};
   return layer;
 }
 function sentenceLineRects(rects){
@@ -360,7 +372,7 @@ function readerSentenceCueTarget(active){
     const b=active.bounds;
     if(!layer.isConnected||!b)return {left:0,top:0,right:0,bottom:0,width:0,height:0};
     const r=layer.getBoundingClientRect();
-    const sx=r.width/layer.offsetWidth||1,sy=r.height/layer.offsetHeight||1;
+    const sx=active.host?1:r.width/layer.offsetWidth||1,sy=active.host?1:r.height/layer.offsetHeight||1;
     return {left:r.left+b.left*sx,top:r.top+b.top*sy,
       right:r.left+b.right*sx,bottom:r.top+b.bottom*sy,
       width:(b.right-b.left)*sx,height:(b.bottom-b.top)*sy};
@@ -369,7 +381,10 @@ function readerSentenceCueTarget(active){
 function showSentenceRangeCue(range){
   if(!range) return;
   const doc=range.startContainer.ownerDocument,view=doc.defaultView;
-  const layer=createReaderSentenceCue(doc===document?readerScroller():doc.body);
+  const owner=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
+  const block=doc===document?owner?.closest('#rtext [data-pi]'):null;
+  const textHost=block?.contains(range.endContainer)?block:null;
+  const layer=createReaderSentenceCue(textHost||(doc===document?readerScroller():doc.body));
   const active=readerSentenceCue;
   let signature='';
   const paint=()=>{
@@ -377,7 +392,9 @@ function showSentenceRangeCue(range){
     if(!range.startContainer.isConnected){clearReaderSentenceCue(true);return;}
     const lines=sentenceLineRects(range.getClientRects());
     const base=layer.getBoundingClientRect();
-    const sx=base.width/layer.offsetWidth||1,sy=base.height/layer.offsetHeight||1;
+    // Text has no original-document zoom. Integer offsetHeight would otherwise
+    // round a fractional paragraph height and shrink its line rectangles.
+    const sx=active.host?1:base.width/layer.offsetWidth||1,sy=active.host?1:base.height/layer.offsetHeight||1;
     const rects=lines.map(r=>[(r.left-base.left)/sx,(r.top-base.top)/sy,
       (r.right-r.left)/sx,(r.bottom-r.top)/sy]);
     const next=JSON.stringify(rects);
