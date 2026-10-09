@@ -25,7 +25,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node tests/verify-integration-boundary.mjs
+      - run: node tests/verify-192-integration-boundary.mjs
       - run: npm test
       - name: Verify integrated native asset sync
         run: |

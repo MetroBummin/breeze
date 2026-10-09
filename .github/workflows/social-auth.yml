@@ -49,7 +49,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
       - run: node --test tests/verify-apple-login.mjs tests/verify-provider-artwork.mjs
-      - run: node tests/verify-integration-boundary.mjs
+      - run: node tests/verify-192-integration-boundary.mjs
       - run: node tests/verify-email-login-browser.mjs
       - run: node tests/verify-social-login-browser.mjs
       - uses: actions/upload-artifact@v4
