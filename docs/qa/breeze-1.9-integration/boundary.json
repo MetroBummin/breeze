@@ -2123,11 +2123,10 @@
   },
   "approvedMemoryTitleFollowup": {
     "base": "b55f3df241607c95855a53009aceaa903e1da164",
-    "scope": "Explicit user Yes: match only the Wordbook Breeze Memory title to the authored Breeze lettering. Reuse exact Breeze contour and companion e/r construction; no arbitrary font. Preserve colors, heading name, 44px add button, placement, all storage/auth/lookup/navigation/native/release behavior. Separate draft PR; no merge, deployment, ASC, archive/upload or build-counter change. Extend only title-related browser/strict scope evidence.",
+    "scope": "Explicit 2026-10-09 10:46 UTC user revision after screenshots: use the same Breeze-only logo as Home, with exact existing neutral light/dark asset, 132px proportions, y position and spacing. Preserve accessible Breeze Memory heading/nav name, 44px add button and all Wordbook behavior. Home source is unchanged. Remove only the unused companion Memory mask added in PR139; keep that commit in branch history. Same draft PR, final CI and Home/Wordbook comparison screenshots. Visual-confirmation gate forbids main merge, Cloud/release build, deployment and review/ASC changes; existing PR test/compile CI is permitted.",
     "files": [
       "index.html",
       "styles/wordbook.css",
-      "assets/brand/wordmarks/breeze-memory-mask.svg",
       "tests/verify-design-memory-browser.mjs",
       "tests/verify-integration-boundary.mjs",
       "docs/qa/breeze-1.9-integration/boundary.json",
@@ -2138,12 +2137,12 @@
     "oldTitle": "<h1>Breeze Memory</h1>",
     "newTitle": "<h1 class=\"memory-wordmark\">Breeze Memory</h1>",
     "oldStyles": "/* Match Home\u2019s 44px header row; compensate the text ink inside its line box. */\n#v-vocab .wordbook-brand h1{transform:translateY(-3.25px);}\n",
-    "newStyles": "/* Original Breeze contour with matching Memory lettering; fixed geometry avoids font/asset layout shifts. */\n#v-vocab .wordbook-brand .memory-wordmark{position:relative;flex:0 1 226px;min-width:0;height:44px;font-size:0;line-height:0;letter-spacing:0;}\n#v-vocab .memory-wordmark::before{content:\"\";position:absolute;inset:0;background:var(--settings-ink);mask:url(../assets/brand/wordmarks/breeze-memory-mask.svg) left center/contain no-repeat;-webkit-mask:url(../assets/brand/wordmarks/breeze-memory-mask.svg) left center/contain no-repeat;}\n",
+    "newStyles": "/* Use Home's exact neutral wordmark, proportions and accessibility-preference fallback. */\n#v-vocab .wordbook-brand .memory-wordmark{position:relative;display:block;flex:none;width:132px;aspect-ratio:841/258;font-size:0;line-height:0;color:transparent;background:url(../assets/brand/wordmarks/breeze-neutral-light.svg) center/contain no-repeat;}\nbody.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmarks/breeze-neutral-dark.svg);}\n#v-vocab .memory-wordmark::before{content:\"\";position:absolute;inset:0;display:none;background:var(--settings-ink);mask:url(../assets/brand/wordmark-mask.svg) center/contain no-repeat;-webkit-mask:url(../assets/brand/wordmark-mask.svg) center/contain no-repeat;}\n@media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more){#v-vocab .memory-wordmark{background-image:none!important;}#v-vocab .memory-wordmark::before{display:block;}}\n",
     "sha256": {
-      "styles/wordbook.css": "9d8d00e5e8226c68e4faf237759a39b277a6dd0d03d7a573e71686220d6ecd1b",
-      "assets/brand/wordmarks/breeze-memory-mask.svg": "3d86a0b2ac2269d1d7013f58fb6e0b72a561aa2705c5ef16c455f0ae8d907381",
-      "tests/verify-design-memory-browser.mjs": "ca349ff6ac6a4de3c9621cd98db00ec8f4d88d7fdad9b9ed66b5714474e7228f",
-      "docs/decisions/014-design-only-brand-release.md": "ce821f232219586cc4514d1195d0c9d07e4216d035c90bfb531e0297e1016c6e"
-    }
+      "styles/wordbook.css": "fa6c380d3a1ea0cb7902c2488d0b1dac84d0396d76fd4b72576b4d42bd230e14",
+      "tests/verify-design-memory-browser.mjs": "31336d5e94c59a515ccf6020bca20049950e83f94165b036ea5fcc9aa1faf5e7",
+      "docs/decisions/014-design-only-brand-release.md": "a32cec7bee11262dd4450bf29ab4e1236321dd86174bde42d360497a91762f4d"
+    },
+    "supersedes": "602aa155e894e0bb590c2d58f5085c885d3c9a7e"
   }
 }

@@ -3,9 +3,11 @@ html:has(:is(#v-vocab,#v-study).on),body:has(:is(#v-vocab,#v-study).on){backgrou
 body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) #topbar{display:none;}
 #v-vocab{max-width:1160px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));background:var(--home-background);color:var(--settings-ink);min-height:100svh;}
 #v-vocab .wordbook-brand{display:flex;align-items:center;gap:10px;margin:0 0 32px;min-height:38px;}
-/* Original Breeze contour with matching Memory lettering; fixed geometry avoids font/asset layout shifts. */
-#v-vocab .wordbook-brand .memory-wordmark{position:relative;flex:0 1 226px;min-width:0;height:44px;font-size:0;line-height:0;letter-spacing:0;}
-#v-vocab .memory-wordmark::before{content:"";position:absolute;inset:0;background:var(--settings-ink);mask:url(../assets/brand/wordmarks/breeze-memory-mask.svg) left center/contain no-repeat;-webkit-mask:url(../assets/brand/wordmarks/breeze-memory-mask.svg) left center/contain no-repeat;}
+/* Use Home's exact neutral wordmark, proportions and accessibility-preference fallback. */
+#v-vocab .wordbook-brand .memory-wordmark{position:relative;display:block;flex:none;width:132px;aspect-ratio:841/258;font-size:0;line-height:0;color:transparent;background:url(../assets/brand/wordmarks/breeze-neutral-light.svg) center/contain no-repeat;}
+body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmarks/breeze-neutral-dark.svg);}
+#v-vocab .memory-wordmark::before{content:"";position:absolute;inset:0;display:none;background:var(--settings-ink);mask:url(../assets/brand/wordmark-mask.svg) center/contain no-repeat;-webkit-mask:url(../assets/brand/wordmark-mask.svg) center/contain no-repeat;}
+@media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more){#v-vocab .memory-wordmark{background-image:none!important;}#v-vocab .memory-wordmark::before{display:block;}}
 #v-vocab h1{font:700 26px/32px var(--ui);letter-spacing:-.4px;}
 #v-vocab .cnt{font:600 13px/20px var(--ui);color:var(--settings-muted);font-variant-numeric:tabular-nums;}
 .wordbook-search{display:flex;align-items:center;gap:12px;height:46px;background:var(--wordbook-field);border-radius:17px;padding:0 16px;color:var(--settings-muted);}

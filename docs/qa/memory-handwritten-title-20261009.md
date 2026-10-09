@@ -1,64 +1,67 @@
-# Breeze Memory handwritten title — 2026-10-09 draft
+# Memory header uses the Home Breeze logo — 2026-10-09 PR139 revision
 
 Base: main `b55f3df241607c95855a53009aceaa903e1da164`.
+Supersedes the screenshot-reviewed Memory lettering commit
+`602aa155e894e0bb590c2d58f5085c885d3c9a7e`, retained in branch history.
 
-The existing Memory title was ordinary UI text. The authored Breeze wordmark
-is an SVG path, with no underlying cursive font available in the repository.
-The new 7,346-byte companion mask copies its Breeze path exactly and adds
-Memory lettering at the existing welcome's 26-unit pen weight, repeating its
-e/r loop construction. No new font or third-party font license is introduced.
-The original wordmark, welcome animation and existing font/license files are
-unchanged. The semantic h1 still reads `Breeze Memory`.
+The user's final direction is to display the same Breeze logo on Home and
+Wordbook, with no visible Memory lettering. Wordbook now uses the unchanged
+`breeze-neutral-light.svg` / `breeze-neutral-dark.svg`, exactly as Home does:
+132px wide, 841/258 aspect ratio, identical neutral gradients and actual y
+coordinate. The same original mask/ink fallback is used for reduced motion,
+reduced transparency and increased contrast. No new font or asset is added.
+Only the unused companion mask introduced by the earlier PR139 commit is
+removed; no asset from the main baseline is deleted or changed.
 
-The CSS mask retains `--settings-ink`, the original 44px header/add geometry,
-safe-area + 24px top spacing and 32px space below. Its 226px flexible width
-fits a 320px screen while retaining the existing 10px add-button gap. Actual
-visible ink centers differ from Home by -1.014px in local Chromium, within the
-existing 2px tolerance. Both themes use their original high-contrast ink.
+The semantic h1/nav retain the functional `Breeze Memory` name. Home source
+is unchanged. Wordbook keeps its 44px add button/header row, safe-area + 24px,
+20px content inset and 32px gap below the header. Home's lower spacing is
+12px header padding plus 20px view padding, totaling the same 32px. Wide-screen
+Wordbook's centered 1160px content column remains; its inset is relative to
+that column. On phone/iPad, Home and Wordbook logo bounding boxes and cropped
+pixels are exactly identical, with a 0px visible-ink center delta.
 
-Local checks passed:
+Local validation passed:
 
-- `npm test` (all existing unit/structural contracts; type baseline remains 32).
-- `node tests/verify-integration-boundary.mjs`: only the single heading,
-  its title CSS block, companion asset and explicit validation/decision files;
-  service-worker changes are limited to the generated content-hash version.
-- `node --check` on both changed browser/boundary scripts and `git diff --check`.
-- `BREEZE_CHROMIUM=/usr/bin/chromium node tests/verify-design-memory-browser.mjs`:
-  390×844, safe-top 59px, 320×568, 820×1180, 1440×900 and 844×390 in both themes;
-  actual ink bounds/alignment, no overflow, accessible heading, add-button
-  placement, repeated taps, Escape/cancel/reopen, navigation and save.
-- The same regression blocks fonts and delays the lettering asset at 320×568
-  in both themes: accessible name remains, header bounds do not change.
-- Existing Wordbook browser regression: responsive themes, search, sort,
-  filters, edit, add, CSV export and return Home.
-- Existing Home browser regression: ten layouts, original wordmark/bookmark,
-  accessibility/keyboard navigation and unchanged 42px dock controls.
-- `node tools/build-www.mjs`, native-package/service-worker contracts and exact
-  source/www comparisons: the companion SVG ships unchanged in native www.
+- Full `npm test`; existing type baseline is 32, with no increase.
+- Existing Wordbook and Home browser regressions: responsive themes,
+  search/sort/filter/edit/add/export, controls and navigation unchanged.
+- Memory regression: twelve light/dark layouts at 390×844, safe-top 59px,
+  320×568, 820×1180, 1440×900 and 844×390; exact asset/proportions/y coordinate,
+  content inset, same-position logo pixel equality, no clipping, accessible
+  name, add/repeated taps/Escape/cancel/reopen/save/navigation.
+- Four preference cases compare Home's and Wordbook's actual mask/color and
+  screenshot pixels in both themes (reduced motion / increased contrast).
+- Delayed SVG plus blocked fonts at 320×568 in both themes preserve the
+  accessible heading and header geometry.
+- Syntax/whitespace and strict integration boundaries. Only the same heading,
+  title CSS block and explicit regression/decision evidence are permitted;
+  the worker change is limited to its generated content-hash version.
+- Static www packaging and native-package/service-worker contracts preserve
+  source bytes and exclude the removed companion mask.
 
-Actual before/after Wordbook screenshots use the same six synthetic saved words
-and production app UI, at DPR 3. CSS safe-area fixtures are the only emulation;
-there is no decorative native status bar or device frame. Phone viewport is
-390×844; iPad is 820×1180. Both themes were visually inspected locally.
-Pixel comparisons are identical outside the 44px header in all four
-phone/iPad and light/dark before/after pairs.
+Actual Home/Wordbook comparisons use production UI and the same six synthetic
+saved words, at DPR 2. Phone: 390×844, safe top 59px; iPad: 820×1180, safe top
+24px. CSS safe-area emulation is the only app modification. The comparison
+labels are outside the unchanged app images; no fake status bar or device
+frame is added. Both themes and devices were visually inspected locally.
 
-Requested Library deliverables, in order:
-
-| Screenshot | Library ID |
+| Home / Wordbook comparison | Library ID |
 | --- | --- |
-| Before — full Wordbook | `libfile_98d8df7e7f788191abbc5e642da448f2` |
-| After — full Wordbook | `libfile_50dc28949008819196506b49153f3d9a` |
-| Before — header enlargement | `libfile_8a895d878078819194abcb340a4c883d` |
-| After — header enlargement | `libfile_b23c48698690819194a540aca9558f18` |
+| iPhone light — full screens | `libfile_b741ed14d6888191bfde205294a51a63` |
+| iPhone light — headers | `libfile_ff8b1d1db4b08191b6ef4f1d87a7a604` |
+| iPhone dark — full screens | `libfile_2454620cb41881919845f2fd12edea41` |
+| iPhone dark — headers | `libfile_1ebcb3c359bc8191b023718111273178` |
+| iPad light — full screens | `libfile_af6a15ae2860819184a2c50365ae98fa` |
+| iPad dark — full screens | `libfile_4736ef3a7ecc819188ad6e6f5db252ba` |
 
-Capture receipt, both-device/theme PNGs, browser measurement JSON and complete
-local test logs are in `/workspace/breeze-memory-title-20261009/` and
-`/tmp/breeze-memory-proof/`. CI also saves its browser screenshots/measurements
-as the existing `design-brand-{chromium,webkit}` artifacts.
+Current captures, receipt and complete test logs are in
+`/workspace/breeze-memory-home-logo-20261009/`. Existing CI retains browser
+proof as `design-brand-{chromium,webkit}` artifacts. The previous Memory
+lettering Library images are superseded; they remain in the earlier commit's
+QA record/history and are not deleted or replaced.
 
-Local WebKit/Xcode/physical VoiceOver are unavailable in this Linux environment;
-the existing PR workflow runs WebKit and an unsigned iOS Simulator compile.
-Final-SHA terminal CI conclusions are reported in the draft PR and handoff.
-This task does not merge, deploy, modify ASC, change release metadata or
-create/upload a TestFlight release build.
+Local WebKit/Xcode/physical VoiceOver remain unavailable; existing PR CI runs
+WebKit and an unsigned Simulator compile. Final-SHA terminal CI results are
+reported in the PR/handoff. The visual-confirmation gate forbids integration,
+main merge, Cloud/release build, deployment, ASC or review changes.

@@ -10,12 +10,6 @@ const server=createServer((req,res)=>{try{const f=resolve(root,'.'+new URL(req.u
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='chromium'&&process.env.BREEZE_CHROMIUM?{executablePath:process.env.BREEZE_CHROMIUM}:{});
 const measurements=[];
-if(phase==='after'){
- const original=readFileSync(resolve(root,'assets/brand/wordmark-mask.svg'),'utf8').match(/<path d="([^"]+)"/)[1];
- const companion=readFileSync(resolve(root,'assets/brand/wordmarks/breeze-memory-mask.svg'),'utf8');
- assert.equal(companion.match(/<path d="([^"]+)"/)[1],original,'Keep the authored Breeze contour exactly');
- assert.ok(!/<text\b|@font-face|https?:/.test(companion.replace('http://www.w3.org/2000/svg','')),'Lettering has no external font or network dependency');
-}
 try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',390,844,59],['narrow',320,568,0],['tablet',820,1180,0],['desktop',1440,900,0],['short',844,390,0]])for(const dark of [false,true]){
  const key=`${name}-${dark?'dark':'light'}`,context=await browser.newContext({viewport:{width,height},serviceWorkers:'block'});
  await context.addInitScript(d=>{localStorage.setItem('breeze.dark',JSON.stringify(d));localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));},dark);
@@ -28,20 +22,19 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   const image=new Image();image.src=src;await image.decode();const canvas=document.createElement('canvas');canvas.width=841;canvas.height=258;
   const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0,841,258);const data=ctx.getImageData(0,0,841,258).data;let top=258,bottom=0;
   for(let y=0;y<258;y++)for(let x=0;x<841;x++)if(data[(y*841+x)*4+3]>128){top=Math.min(top,y);bottom=Math.max(bottom,y+1);}
-  return {top:rect.top+top*rect.height/258,bottom:rect.top+bottom*rect.height/258};
+  return {top:rect.top+top*rect.height/258,bottom:rect.top+bottom*rect.height/258,asset:getComputedStyle(e).backgroundImage};
  });await page.screenshot({path:`${out}/${key}-home.png`});await page.locator('#logo .mark').screenshot({path:`${out}/${key}-home-ink.png`});
  await page.locator('#nav-vocab').click();await page.evaluate(()=>document.fonts.ready);
  const title=await page.locator('.wordbook-brand h1').boundingBox(),button=await page.locator('#wordbook-add').boundingBox();
  const titleInk=await page.locator('.wordbook-brand h1').evaluate(async e=>{
   if(e.classList.contains('memory-wordmark')){
-   const rect=e.getBoundingClientRect(),style=getComputedStyle(e,'::before');
-   const image=new Image();image.src=(style.maskImage||style.webkitMaskImage).match(/url\(["']?(.*?)["']?\)/)[1];await image.decode();
-   const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
-   const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-   let top=canvas.height,bottom=0,left=canvas.width,right=0;
-   for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(data[(y*canvas.width+x)*4+3]>128){top=Math.min(top,y);bottom=Math.max(bottom,y+1);left=Math.min(left,x);right=Math.max(right,x+1);}
-   const scale=Math.min(rect.width/canvas.width,rect.height/canvas.height),offset=(rect.height-canvas.height*scale)/2;
-   return {top:rect.top+offset+top*scale,bottom:rect.top+offset+bottom*scale,left:rect.left+left*scale,right:rect.left+right*scale,source:[canvas.width,canvas.height],color:style.backgroundColor};
+   const rect=e.getBoundingClientRect(),style=getComputedStyle(e);
+   const image=new Image();image.src=style.backgroundImage.match(/url\(["']?(.*?)["']?\)/)[1];await image.decode();
+   const canvas=document.createElement('canvas');canvas.width=841;canvas.height=258;
+   const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0,841,258);const data=ctx.getImageData(0,0,841,258).data;
+   let top=258,bottom=0,left=841,right=0;
+   for(let y=0;y<258;y++)for(let x=0;x<841;x++)if(data[(y*841+x)*4+3]>128){top=Math.min(top,y);bottom=Math.max(bottom,y+1);left=Math.min(left,x);right=Math.max(right,x+1);}
+   return {top:rect.top+top*rect.height/258,bottom:rect.top+bottom*rect.height/258,left:rect.left+left*rect.width/841,right:rect.left+right*rect.width/841,asset:style.backgroundImage};
   }
   const style=getComputedStyle(e),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   const metrics=ctx.measureText(e.textContent),marker=document.createElement('span');marker.style.cssText='display:inline-block;width:0;height:0';e.append(marker);
@@ -57,8 +50,12 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   assert.equal(await page.locator('.wordbook-brand h1').textContent(),'Breeze Memory');
   assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
   assert.ok(titleInk.left>=title.x&&titleInk.right<=button.x-10,'Lettering fits with the existing button gap');
-  const ink=await page.locator('#v-vocab').evaluate(e=>getComputedStyle(e).color);
-  assert.equal(titleInk.color,ink,'Preserve the existing light/dark title ink');
+  assert.equal(titleInk.asset,homeInk.asset,'Use the exact same light/dark SVG as Home');
+  assert.equal(title.width,home.width);assert.equal(title.height,home.height);
+  assert.equal(title.y,home.y,'Match Home logo vertical placement exactly');
+  // Same-origin crops must match; wide Wordbook columns have a different raster origin.
+  if(title.x===home.x)assert.ok(readFileSync(`${out}/${key}-memory-ink.png`).equals(readFileSync(`${out}/${key}-home-ink.png`)),'Home and Memory logo pixels must match exactly');
+  const column=await page.locator('#v-vocab').boundingBox();assert.equal(title.x-column.x,20,'Keep Home 20px inset within the Wordbook content column');
   const header=await page.locator('.wordbook-brand').boundingBox();assert.equal(header.height,44);
   assert.equal(button.width,44);assert.equal(button.height,44);assert.ok(Math.abs(button.y-(24+safe))<1);
   assert.equal(await page.locator('#wordbook-add').getAttribute('aria-label'),'단어 추가');
@@ -90,16 +87,27 @@ if(phase==='after')for(const dark of [false,true]){
  await context.route('**/*',async route=>{
   const resource=route.request().url();
   if(!resource.startsWith(url)||/\.(woff2?|ttf)(\?|$)/.test(resource))return route.abort();
-  if(resource.endsWith('/breeze-memory-mask.svg'))await loaded;
+  if(resource.endsWith('/breeze-neutral-light.svg')||resource.endsWith('/breeze-neutral-dark.svg'))await loaded;
   return route.continue();
  });
  const page=await context.newPage();await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
  await page.evaluate(()=>{endOnboarding(true);show('vocab')});
  const before=await page.locator('.wordbook-brand').boundingBox();
  assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
- release();await page.locator('.memory-wordmark').evaluate(async()=>{const img=new Image();img.src='assets/brand/wordmarks/breeze-memory-mask.svg';await img.decode()});
+ release();await page.locator('.memory-wordmark').evaluate(async()=>{const img=new Image();img.src=document.body.classList.contains('dark')?'assets/brand/wordmarks/breeze-neutral-dark.svg':'assets/brand/wordmarks/breeze-neutral-light.svg';await img.decode()});
  assert.deepEqual(await page.locator('.wordbook-brand').boundingBox(),before,'Delayed lettering and missing fonts must not move the header');
  await context.close();
+}
+if(phase==='after')for(const preference of ['reduce','more'])for(const dark of [false,true]){
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block',...(preference==='reduce'?{reducedMotion:'reduce'}:{contrast:'more'})});
+ await context.addInitScript(d=>{localStorage.setItem('breeze.dark',JSON.stringify(d));localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));},dark);
+ await context.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
+ const page=await context.newPage();await page.goto(url);await page.evaluate(()=>homeReady);await page.evaluate(()=>{endOnboarding(true);show('home')});
+ const fallback=await page.locator('#logo .mark').evaluate(e=>{const s=getComputedStyle(e,'::before');return {display:s.display,mask:s.maskImage||s.webkitMaskImage,color:s.backgroundColor}});
+ assert.equal(fallback.display,'block');const image=await page.locator('#logo .mark').screenshot();
+ await page.locator('#nav-vocab').click();const matched=await page.locator('.memory-wordmark').evaluate(e=>{const s=getComputedStyle(e,'::before');return {display:s.display,mask:s.maskImage||s.webkitMaskImage,color:s.backgroundColor}});
+ assert.deepEqual(matched,fallback);assert.ok((await page.locator('.memory-wordmark').screenshot()).equals(image),'Use the same accessible-preference logo treatment as Home');
+ assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);await context.close();
 }
 }finally{await browser.close();await new Promise(r=>server.close(r));}
 writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
