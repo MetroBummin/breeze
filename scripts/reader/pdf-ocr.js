@@ -17,7 +17,9 @@ const BreezePdfOcr=(()=>{
     const cap=window.Capacitor;
     if(!cap?.isNativePlatform?.()||!['ios','android'].includes(cap.getPlatform?.())
         ||!cap.isPluginAvailable?.('BreezePdfOcr'))return null;
-    return cap.registerPlugin('BreezePdfOcr');
+    // Static native shells inject Plugins proxies; registerPlugin belongs to
+    // the optional @capacitor/core web runtime, which this app does not bundle.
+    return cap.Plugins?.BreezePdfOcr || cap.registerPlugin?.('BreezePdfOcr') || null;
   }
   function key(session,n){
     // No durable cache without original-byte identity. Never key by title/page alone.

@@ -813,7 +813,8 @@ const BreezePdfInk = (()=>{
   const platformReady=(async()=>{
     if(!nativeAndroid())return;
     try{
-      const platform=window.Capacitor.registerPlugin('BreezePdfPlatform');
+      const cap=window.Capacitor;
+      const platform=cap.Plugins?.BreezePdfPlatform || cap.registerPlugin?.('BreezePdfPlatform');
       const result=await platform.getCapabilities();
       androidTablet=result?.tablet===true;
     }catch{} // Older native wrappers without this narrow plugin stay read-only.

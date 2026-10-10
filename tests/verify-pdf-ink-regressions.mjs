@@ -13,7 +13,7 @@ const geometrySource=readFileSync(resolve(root,'scripts/reader/pdf-ink-geometry.
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
-function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false}={}){
+function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false,nativeProxy=false}={}){
   const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
   let resolveCapabilities;
   const capabilityPromise=new Promise(resolve=>{resolveCapabilities=resolve;});
@@ -74,6 +74,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
     setTimeout(fn,ms){timers.set(++timerId,{fn,at:now+ms});return timerId;},clearTimeout(id){timers.delete(id);},
     crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
+  if(nativeProxy){context.window.Capacitor.Plugins={BreezePdfPlatform:context.window.Capacitor.registerPlugin()};delete context.window.Capacitor.registerPlugin;}
   const needle='  return {\n    available:supported,';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';androidTablet=${pending?false:tablet};pages.set(state.key,state);},
@@ -552,4 +553,10 @@ test('native ink: resize also retires a delayed UIKit admission before it can wr
  assert.equal(typeof reply,'function');f.emit('resize',f.document);reply('ink');await tick();
  f.qa.touchEnd(f.event('touchend',[],[f.contact(100,100)]));await tick();
  assert.equal(f.qa.active(),null);assert.equal(f.state.strokes.length,0);assert.equal(f.writes.length,0);
+});
+
+test('availability: injected Android proxy works without npm registerPlugin',async()=>{
+ const f=fixture({pointer:true,pending:true,nativeProxy:true});
+ f.resolveCapabilities({tablet:true});
+ assert.equal(await f.engine.availability(),true);
 });

@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../scripts/reader/pdf-ocr.js',import.meta.url
 const word=(word='Bright',extra={})=>({word,line:0,x:.1,y:.2,w:.2,h:.04,confidence:.9,...extra});
 const defer=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {resolve,reject,promise};};
 const flush=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
-function fixture({supported=true,cache=new Map()}={}){
+function fixture({supported=true,cache=new Map(),nativeProxy=false}={}){
  const timers=new Map(),calls=[],statusCalls=[],paints=[],canvases=[],toasts=[];let next=0,now=0;
  const session={kind:'pdf',bookId:'A',hash:'hash-A',pages:[1,2,3].map(n=>({isConnected:true,dataset:{page:String(n)}})),wordBoxes:new Map([[1,[]],[2,[]],[3,[]]]),settled:new Set([1,2,3])};
  const native={recognize(args){const job=defer();calls.push({args,...job});return job.promise;},
@@ -29,6 +29,7 @@ function fixture({supported=true,cache=new Map()}={}){
   currentPdfSession:s=>!!s&&s===context.originalSession,ownsPdfPage:(p,s)=>s===context.originalSession&&s.pages.includes(p)&&p.isConnected,
   pdfPagesInView:()=>context.visible,originalPdfPaintPaused:()=>context.paused,pdfScrollBusy:()=>context.busy,
   renderPdfSavedWordMarkers:(p,boxes)=>paints.push({p,boxes}),toast:m=>toasts.push(m),pdfjsLib:{AnnotationMode:{DISABLE:0}}};
+ if(nativeProxy){context.window.Capacitor.Plugins={BreezePdfOcr:native};delete context.window.Capacitor.registerPlugin;}
  session.pdf={getPage:async()=>({getViewport:({scale})=>({width:600*scale,height:800*scale}),
    render:()=>({promise:Promise.resolve(),cancel(){}}),cleanup(){}})};
  vm.createContext(context);const ocr=vm.runInContext(source+'\nBreezePdfOcr;',context);
@@ -218,4 +219,42 @@ test('a hung status probe is bounded and a stale retry cannot revive a closed do
  f.ocr.close(f.session);f.context.originalSession=null;
  f.statusCalls[0].resolve({finished:true});await flush();await f.advance(1000);
  assert.equal(f.calls.length,1);assert.equal(f.paints.length,0);assert.equal(f.cache.size,0);
+});
+
+// A static Capacitor webview injects Plugins proxies, not the npm core helper.
+test('native injected plugin proxy starts OCR without registerPlugin',async()=>{
+ const f=fixture({nativeProxy:true});
+ await f.inspect();await f.start();
+ assert.equal(f.calls.length,1);
+ f.calls[0].resolve({words:[word()]});await flush();
+ assert.equal(f.session.pages[0].dataset.ocr,'ready');
+ assert.equal(f.session.wordBoxes.get(1)[0].word,'Bright');
+});
+
+test('unmodified iOS native bridge admits scanned pages through exported proxies',async()=>{
+ const calls=[];
+ class Doc{}
+ Object.defineProperty(Doc.prototype,'cookie',{get(){return '';},set(){}});
+ const context={console,Promise,Map,Set,WeakMap,WeakSet,URL,Document:Doc,HTMLDocument:Doc,
+  XMLHttpRequest:class {},prompt:()=> 'false',
+  Capacitor:{DEBUG:false,isLoggingEnabled:false,Plugins:{}},WEBVIEW_SERVER_URL:'breeze://localhost',
+  webkit:{messageHandlers:{bridge:{postMessage:call=>calls.push(call)}}},
+  document:{addEventListener(){},hidden:false},setTimeout:()=>1,clearTimeout(){},
+  openDb:()=>async()=>null,currentPdfSession:()=>true,ownsPdfPage:()=>true};
+ context.window=context;vm.createContext(context);
+ vm.runInContext(readFileSync(new URL('../node_modules/@capacitor/ios/Capacitor/Capacitor/assets/native-bridge.js',import.meta.url),'utf8'),context);
+ // JSExport.swift emits promise wrappers into Plugins at document start.
+ vm.runInContext(`Capacitor.Plugins.BreezePdfOcr={
+  recognize:options=>Capacitor.nativePromise('BreezePdfOcr','recognize',options),
+  getStatus:options=>Capacitor.nativePromise('BreezePdfOcr','getStatus',options)};`,context);
+ assert.equal(context.Capacitor.isPluginAvailable('BreezePdfOcr'),true);
+ assert.equal(typeof context.Capacitor.registerPlugin,'undefined');
+ const ocr=vm.runInContext(source+'\nBreezePdfOcr;',context);
+ const session={pages:[{dataset:{}}]};
+ await ocr.inspect(session,1,{getTextContent:async()=>({items:[]})},[],()=>true);
+ assert.equal(session.pages[0].dataset.ocr,'waiting');
+ void context.Capacitor.Plugins.BreezePdfOcr.recognize({image:'fixture',requestId:'bridge-contract'});
+ const call=calls.find(call=>call.pluginId==='BreezePdfOcr');
+ assert.equal(call.methodName,'recognize');
+ assert.equal(call.options.requestId,'bridge-contract');
 });

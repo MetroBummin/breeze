@@ -123,3 +123,15 @@ Official API references:
 - [Capacitor iOS plugin registration](https://capacitorjs.com/docs/plugins/tutorial/ios-implementation)
 
 See [verification and remaining acceptance](../qa/scanned-pdf-ocr-20261009.md).
+
+## Native bridge contract correction (2026-10-10)
+
+This static app does not import the npm `@capacitor/core` runtime. The native
+iOS/Android bridge injects callable proxies into `Capacitor.Plugins`; it does not
+provide the npm `registerPlugin` helper. OCR and Android tablet capability lookup
+now prefer those injected proxies, with an optional helper fallback for bundled
+web runtimes. Calling the absent helper previously threw before OCR page state
+was recorded, explaining a silent tap path. Regression fixtures cover the native
+proxy shape rather than supplying a helper absent from the shipped shell. This
+contract reproduction does not establish real-device Vision accuracy or a verified
+repair on the reporter's iPhone; those remain release acceptance requirements.
