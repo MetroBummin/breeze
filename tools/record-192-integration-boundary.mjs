@@ -90,8 +90,14 @@ export const owners=[
   'index.html','scripts/core/state.js','scripts/ui/wordbook.js','styles/surfaces.css',
   'styles/wordbook.css','sw.js','tests/verify-memory-edit-filter-browser.mjs']},
 ];
+// Reviewed post-integration correction. Pin exact bytes and exact parent delta,
+// rather than relaxing the original owner or protected-baseline checks.
+const amendments=[{pr:146,parent:'f17971773eb57ffda0b17b520b3d7e57734f6a60',
+ source:'40e5719457c5cf60a6545d994630d9b4fe1379d1',files:[
+ 'docs/decisions/021-scanned-pdf-ocr.md','index.html','scripts/reader/pdf-ink.js',
+ 'scripts/reader/pdf-ocr.js','sw.js','tests/verify-pdf-ink-regressions.mjs','tests/verify-pdf-ocr.mjs']}];
 const receiptFile='docs/qa/breeze-192-integration/boundary.json';
-const authorization='2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot.';
+const authorization='2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied.';
 export const integrationFiles=[receiptFile,'tests/verify-192-integration-boundary.mjs',
  'tools/record-192-integration-boundary.mjs','docs/decisions/022-breeze-192-integration.md',
  'docs/qa/breeze-192-integration-20261009.md'];
@@ -149,7 +155,21 @@ function expectedContract(){
    transformation:'replace tests/verify-integration-boundary.mjs with tests/verify-192-integration-boundary.mjs',
    sha256:hash(original.replaceAll('tests/verify-integration-boundary.mjs','tests/verify-192-integration-boundary.mjs'))};
  }
- return {schemaVersion:1,version:'1.9.2',base,owners,files,integrationFiles,authorization};
+ for(const amendment of amendments){
+  git('merge-base','--is-ancestor',amendment.parent,amendment.source);
+  git('merge-base','--is-ancestor',amendment.source,'HEAD');
+  const parents=git('rev-list','--parents','-n','1',amendment.source).toString().trim().split(' ').slice(1);
+  assert.deepEqual(parents,[amendment.parent],'Unexpected amendment parent');
+  const changed=git('diff','--name-only',amendment.parent,amendment.source).toString().trim().split('\n').filter(Boolean).sort();
+  assert.deepEqual(changed,[...amendment.files].sort(),'Unexpected immutable amendment scope');
+  const amendmentTree=tree(amendment.source);
+  for(const file of amendment.files){
+   assert.ok(amendmentTree[file],'Amendment deletion needs separate review: '+file);
+   files[file]={pr:amendment.pr,source:amendment.source,mode:amendmentTree[file].mode,
+    sha256:hash(normalized(file,sourceBytes(amendment.source,file)))};
+  }
+ }
+ return {schemaVersion:1,version:'1.9.2',base,owners,amendments,files,integrationFiles,authorization};
 }
 
 function verifyCurrent(contract){
