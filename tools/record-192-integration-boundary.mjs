@@ -95,7 +95,8 @@ export const owners=[
 const amendments=[{pr:146,parent:'f17971773eb57ffda0b17b520b3d7e57734f6a60',
  source:'40e5719457c5cf60a6545d994630d9b4fe1379d1',files:[
  'docs/decisions/021-scanned-pdf-ocr.md','index.html','scripts/reader/pdf-ink.js',
- 'scripts/reader/pdf-ocr.js','sw.js','tests/verify-pdf-ink-regressions.mjs','tests/verify-pdf-ocr.mjs']}];
+ 'scripts/reader/pdf-ocr.js','sw.js','tests/verify-pdf-ink-regressions.mjs','tests/verify-pdf-ocr.mjs']},
+ {pr:148,parent:'b72436a2311b9b4a78738abd2b9fa057ab529460',source:'a28ceff31fb750d1ba01e07ae91f1803c2b04b51',files:["docs/decisions/015-rss-intent-and-public-catalog.md", "docs/decisions/023-rss-cloudflare-transport.md", "index.html", "package.json", "scripts/importers/rss.js", "server/rss-worker/README.md", "server/rss-worker/index.mjs", "server/rss-worker/wrangler.json", "sw.js", "tests/verify-rss-worker.mjs", "types/globals.d.ts"]}];
 const receiptFile='docs/qa/breeze-192-integration/boundary.json';
 const authorization='2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied.';
 export const integrationFiles=[receiptFile,'tests/verify-192-integration-boundary.mjs',

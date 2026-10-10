@@ -118,6 +118,24 @@
         "tests/verify-pdf-ink-regressions.mjs",
         "tests/verify-pdf-ocr.mjs"
       ]
+    },
+    {
+      "pr": 148,
+      "parent": "b72436a2311b9b4a78738abd2b9fa057ab529460",
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "files": [
+        "docs/decisions/015-rss-intent-and-public-catalog.md",
+        "docs/decisions/023-rss-cloudflare-transport.md",
+        "index.html",
+        "package.json",
+        "scripts/importers/rss.js",
+        "server/rss-worker/README.md",
+        "server/rss-worker/index.mjs",
+        "server/rss-worker/wrangler.json",
+        "sw.js",
+        "tests/verify-rss-worker.mjs",
+        "types/globals.d.ts"
+      ]
     }
   ],
   "files": {
@@ -212,8 +230,8 @@
       "sha256": "3806fd1e0a85c5207e5ee49d7f4d76f7c879def448394660616bae95e3702ca0"
     },
     "index.html": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
       "mode": "100644",
       "sha256": "44ba17aed313cf781d170a58e5fe6da98991d44b833fa0afa61f1f8491bbf37b"
     },
@@ -243,10 +261,10 @@
       "sha256": "ccc91b2bd331d161be77e99527e927747c6faac420ab81afb9bf370e37a418f8"
     },
     "package.json": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
       "mode": "100644",
-      "sha256": "ea1c8158ef4181983d073c807e647a7e582fafecf99d19bc8454a8bb1583aba6"
+      "sha256": "e18dcb35dc66aee9af2608aa67dc17335bc65ef63d861c76aa0b5be0356b1cb7"
     },
     "scripts/core/storage.js": {
       "pr": 143,
@@ -279,8 +297,8 @@
       "sha256": "f2f41aa9df110abdda96633aabac9f1c391cf21f243b3377399fe242346550f1"
     },
     "sw.js": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
       "mode": "100644",
       "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
     },
@@ -691,6 +709,54 @@
       "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
       "sha256": "21a0601c679a41f1adce62a3fd29547b2c92a0bacb70a993f8f3fce46e88324d"
+    },
+    "docs/decisions/015-rss-intent-and-public-catalog.md": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "b5752989010a757efe7cf9829ace44f499c0006cdae7b244e6dc11627cb38592"
+    },
+    "docs/decisions/023-rss-cloudflare-transport.md": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "497c3d1a327ceb71bdb9682ac8e617728479e067cd357048973243830b4c5483"
+    },
+    "scripts/importers/rss.js": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "ee91c53cf548e29034cb1c6397d400b55ab09fcd5dd78b635e11c7f20f608a8e"
+    },
+    "server/rss-worker/README.md": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "5ce44ad59102fae77d15e06ef9f9d976289af5b1af1ea960cc7d09e64fba3205"
+    },
+    "server/rss-worker/index.mjs": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "9d8fa0628c8c23cd3f25d8eaa5d7a0f2f31dfaa2d0ed235bb2e1c661a7507f7a"
+    },
+    "server/rss-worker/wrangler.json": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "e1393c6d833e14484175a007ca9956bc889c92560f506e9d2115d8441d5c29ef"
+    },
+    "tests/verify-rss-worker.mjs": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "9adea3231c69608b4843d51201d8b40de63dcced4b31be7a9bacb867619caf34"
+    },
+    "types/globals.d.ts": {
+      "pr": 148,
+      "source": "a28ceff31fb750d1ba01e07ae91f1803c2b04b51",
+      "mode": "100644",
+      "sha256": "bfcdcd43fa7e65dee35762753d42f2e18e3aec99bb444ea982bb4d9ffb19dedd"
     }
   },
   "integrationFiles": [
@@ -703,7 +769,7 @@
   "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "0871753b94ae08ee866c7acfd3db60b417f8482da23096ba596d9b58dfad3a81",
+    "tools/record-192-integration-boundary.mjs": "6835f29e05630ba7e95c166ff109ae3600d2868222f95f51f0744b13cd61578f",
     "docs/decisions/022-breeze-192-integration.md": "f196b53344e08e12ea0e56513b9b3344e931cd338684ebcbba54ada47ae92c89",
     "docs/qa/breeze-192-integration-20261009.md": "d5f10dfd82a5a84186322fde83ebb4ee2b0a1e0ea4172c61a28c375100b2c6cc"
   }
