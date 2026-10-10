@@ -513,6 +513,33 @@ function rssSuppliedEntry(entry){
   if(record.at>now || now-record.at>=RSS_CACHE_MS){rssSuppliedBodies.delete(key);return entry;}
   return record.feedUrl===(entry.feedSourceUrl||entry.feedUrl)?{...entry,...record.body}:entry;
 }
+// Built-in feeds may use the isolated Cloudflare transport. An enabled route
+// owns its failures: never silently send the same traffic back through Supabase.
+async function rssFeedHtml(feed,location){
+  const endpoint=window.BREEZE_CONFIG?.RSS_WORKER_URL;
+  const id=RSS_FEEDS.findIndex(item=>item.url===feed.url);
+  if(id<0||endpoint===undefined||endpoint===null||endpoint==='')return fetchArticleHtml(feed.url,location);
+  if(typeof endpoint!=='string')throw Error('rss_worker_config');
+  const base=new URL(endpoint);
+  if(base.protocol!=='https:'||base.username||base.password||base.search||base.hash)
+    throw Error('rss_worker_config');
+  const response=await fetch(base.href.replace(/\/+$/,'')+'/feeds/'+id,{
+    credentials:'omit',signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw Error('feed_unavailable');
+  if(!/xml|rss|atom/i.test(response.headers.get('content-type')||''))throw Error('feed_type');
+  const reader=response.body?.getReader();if(!reader)throw Error('feed_empty');
+  let bytes=0;const chunks=[];
+  try{while(true){const {done,value}=await reader.read();if(done)break;
+    bytes+=value.byteLength;if(bytes>3000000)throw Error('feed_too_big');chunks.push(value);}}
+  catch(error){await reader.cancel().catch(()=>{});throw error;}finally{reader.releaseLock();}
+  const data=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){data.set(chunk,offset);offset+=chunk.byteLength;}
+  const charset=(response.headers.get('content-type')||'').match(/charset=["']?([\w-]+)/i)?.[1]||'utf-8';
+  const finalUrl=new URL(response.headers.get('x-breeze-feed-url')||feed.url);
+  if(finalUrl.protocol!=='https:'||finalUrl.hostname!==new URL(feed.url).hostname)throw Error('feed_location');
+  const fetchedAt=Number(response.headers.get('x-breeze-fetched-at')),now=Date.now();
+  if(!Number.isFinite(fetchedAt)||fetchedAt<=0||fetchedAt>now||now-fetchedAt>RSS_PUBLIC_STALE_MS)throw Error('feed_age');
+  location.url=finalUrl.href;location.fetchedAt=fetchedAt;return new TextDecoder(charset).decode(data);
+}
 async function rssFeedEntries(feed,force){
   const cache=rssPublicCacheEntries(),record=cache[feed.url],now=Date.now();
   const usable=record&&record.at<=now&&now-record.at<=RSS_PUBLIC_STALE_MS;
@@ -523,12 +550,13 @@ async function rssFeedEntries(feed,force){
   }
   if(!rssOnline())throw new Error('feed_offline');
   try{
-    const location={};const html=await fetchArticleHtml(feed.url,location);
+    const location={};const html=await rssFeedHtml(feed,location);
     const supplied=parseRss(html,{...feed,sourceUrl:feed.url,url:location.url||feed.url});
-    rssRememberSuppliedBodies(feed,supplied,now);
+    const fetchedAt=location.fetchedAt||now;
+    rssRememberSuppliedBodies(feed,supplied,fetchedAt);
     const entries=supplied.map(rssCacheEntry).filter(Boolean);
-    rssStorePublicFeed(feed,entries,now);
-    return {at:now,entries};
+    rssStorePublicFeed(feed,entries,fetchedAt);
+    return {at:fetchedAt,entries};
   }catch(error){
     if(usable)return {at:record.at,entries:record.entries.map(entry=>({...entry,source:feed.name,
       category:feed.category,feedSourceUrl:feed.url}))};

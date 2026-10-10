@@ -419,3 +419,11 @@ but additionally requires publisher permission, storage/retention policy and a
 cost budget. None of that service or policy is activated by this client fix.
 
 See [the controlled regression report](../qa/rss-selected-body-20261007.md).
+
+## October 10: opt-in Cloudflare transport
+
+Decision 023 adds a separate fixed-feed transport for legacy built-in RSS.
+WIRED catalog ownership, local parsing, supplied-body reuse and existing photo
+admission remain unchanged. Enabled Worker failures must not silently return to
+Supabase; existing bounded local metadata owns last-good fallback. Activation
+waits for a verified endpoint and real feed/CPU checks.
