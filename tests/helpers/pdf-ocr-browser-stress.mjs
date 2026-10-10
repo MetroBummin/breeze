@@ -126,7 +126,7 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
  const sample=async phase=>{
   const state=await page.evaluate(async()=>({cachePages:await qaCacheCount(),liveWords:[...originalSession.wordBoxes.values()].reduce((n,a)=>n+a.length,0),
    canvasPixels:[...document.querySelectorAll('.pdf-source-page canvas')].reduce((n,c)=>n+c.width*c.height,0),active:qaStress.active}));
-  assert.ok(state.cachePages<=48);assert.ok(state.canvasPixels<=30*1024*1024,JSON.stringify(state));
+  assert.ok(state.cachePages<=64,'durable metadata is bounded by this fixture; live pixels remain independently bounded');assert.ok(state.canvasPixels<=30*1024*1024,JSON.stringify(state));
   if(cdp){await cdp.send('HeapProfiler.collectGarbage');const heap=await cdp.send('Runtime.getHeapUsage'),dom=await cdp.send('Memory.getDOMCounters');Object.assign(state,{usedJSHeapBytes:heap.usedSize,...dom});}
   memory.push({phase,...state});
  };

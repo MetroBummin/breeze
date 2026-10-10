@@ -433,6 +433,8 @@ function homeRegularTile(card,title,meta,canManage=false){
     cover?.append(label);
   }
   tile.append(card,el('div','home-regular-title',title));
+  if(card.dataset.localBook&&typeof BreezePdfOcrLibrary!=='undefined')
+    BreezePdfOcrLibrary.mount(tile,books.find(book=>book.id===card.dataset.localBook));
   if(canManage&&card.dataset.localBook){
     const menu=document.createElement('button');menu.type='button';menu.className='home-card-actions';menu.textContent='관리';menu.setAttribute('aria-label',title+' 관리');
     menu.onclick=event=>{event.stopPropagation();const book=books.find(item=>item.id===card.dataset.localBook);if(book)openEditSheet(book);};tile.append(menu);
@@ -819,6 +821,7 @@ async function applyPreparedBook(target, prepared, file, options={}){
   const committed=await commitImportedBook(next,record,prepared.kind==='epub'?prepared.tmpId:null,options.signal);
   // Live Reader/library state only changes after the complete durable commit.
   Object.assign(target,committed);
+  if(typeof BreezePdfOcrLibrary!=='undefined')BreezePdfOcrLibrary.track(target,{restart:true});
   const position=posOf(target.id);
   if(position.pi!=null && position.pi>=target.paras.length){
     positions[target.id]={...position,pi:Math.max(0,Math.round((position.p||0)*(target.paras.length-1))),dy:0};

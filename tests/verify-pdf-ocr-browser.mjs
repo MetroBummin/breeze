@@ -47,6 +47,10 @@ try{
  });
  await page.goto(url+'index.html');
  await page.evaluate(()=>{
+  // Isolate reader scheduling here; full book scheduling has its own real
+  // import/cache/UI/browser test rather than changing this controlled bridge.
+  BreezePdfOcrLibrary.track=()=>null;BreezePdfOcrLibrary.restore=()=>{};
+  BreezePdfOcrLibrary.mount=()=>{};
   window.qaOcrCalls=[];window.qaOcrStatus=[];window.qaOcrResult=[{word:'Bright',line:0,x:.1,y:.12,w:.12,h:.03,confidence:.99},{word:'world',line:0,x:.24,y:.12,w:.1,h:.03,confidence:.99}];
   window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',isPluginAvailable:name=>name==='BreezePdfOcr',
    registerPlugin:()=>({recognize:({image,requestId})=>new Promise((resolve,reject)=>qaOcrCalls.push({image,requestId,resolve,reject})),

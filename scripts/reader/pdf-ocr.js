@@ -2,7 +2,7 @@
    One raster/native job globally; only currently visible pages enter the lane.
    Native boxes use top-left ratios of PDF.js's intrinsically rotated viewport. */
 const BreezePdfOcr=(()=>{
-  const REVISION='scan-en-v1-2048',MAX_WORDS=3000,MAX_CACHE_PAGES=48;
+  const REVISION='scan-en-v1-2048',MAX_WORDS=3000;
   const states=new WeakMap();
   let active=null,nativeWork=null,nativeSequence=0,timer=0,wanted=null;
   const cacheDb=openDb('breeze-pdf-ocr',1,db=>db.createObjectStore('pages').createIndex('at','at'));
@@ -29,19 +29,13 @@ const BreezePdfOcr=(()=>{
     });}catch{return null;}
   }
   async function remember(k,words,bookId){
-    if(!k)return;
+    if(!k)return false;
     try{await localTransaction(await cacheDb(),'pages','readwrite',tx=>{
       const store=tx.objectStore('pages');store.put({words,bookId,at:Date.now()},k);
-      const count=store.count();count.onsuccess=()=>{
-        let excess=count.result-MAX_CACHE_PAGES;if(excess<=0)return;
-        const oldest=store.index('at').openKeyCursor();oldest.onsuccess=()=>{
-          const cursor=oldest.result;if(!cursor||excess--<=0)return;
-          store.delete(cursor.primaryKey);cursor.continue();
-        };
-      };
-    });}catch{/* Cache quota/private-mode failures do not disable lookup. */}
+    });return true;}catch{return false;}
   }
   async function forget(book){
+    if(typeof BreezePdfOcrLibrary!=='undefined')BreezePdfOcrLibrary.forget(book.id);
     // Retire pending work before deleting entries so a late result cannot refill them.
     for(const session of new Set([wanted,active?.session]))if(session?.bookId===book.id)close(session);
     try{await localTransaction(await cacheDb(),'pages','readwrite',tx=>{
@@ -180,7 +174,26 @@ const BreezePdfOcr=(()=>{
   }
   async function drain(){
     const session=wanted;
-    if(active||!currentPdfSession(session)||state(session).closed||document.hidden)return;
+    if(!currentPdfSession(session)||state(session).closed||document.hidden)return;
+    if(active){
+      // Prepared pages need no raster/native lane. Reading them must not wait
+      // for a different page's background recognition to finish.
+      for(const n of pdfPagesInView(session)){
+        const entry=state(session).pages.get(n);
+        if(!session.settled.has(n)||entry?.status!=='waiting'||entry.readingCache
+            ||originalPdfPaintPaused()||pdfScrollBusy(session))continue;
+        entry.readingCache=true;
+        try{
+          const words=await cached(key(session,n));
+          if(words!==null&&live(session,n,entry)&&session.settled.has(n)&&!document.hidden
+              &&!originalPdfPaintPaused()&&!pdfScrollBusy(session)&&pdfPagesInView(session).includes(n)){
+            const boxes=boxesFromWords(words);status(session,n,entry,boxes.length?'ready':'empty');publish(session,n,entry,boxes);
+          }
+        }catch{/* A corrupt/unavailable cache falls back to the normal OCR lane. */}
+        finally{entry.readingCache=false;}
+      }
+      return;
+    }
     if(originalPdfPaintPaused()||pdfScrollBusy(session)||session.paintActive){schedule(session);return;}
     const pages=state(session).pages;
     const n=pdfPagesInView(session).find(n=>session.settled.has(n)&&pages.get(n)?.status==='waiting');
@@ -235,6 +248,55 @@ const BreezePdfOcr=(()=>{
     }else return false;
     return true;
   }
+  // Background books share this exact lane with foreground OCR. One raster
+  // and one native request remain the global limit; an in-flight native call
+  // is not assumed cancelled merely because its UI deadline elapsed.
+  async function background(book,n,pdf,valid){
+    const admissible=()=>{
+      const session=originalSession;
+      if(active||document.hidden||!valid())return false;
+      if(currentPdfSession(session)){
+        if(originalPdfPaintPaused()||pdfScrollBusy(session)||session.paintActive)return false;
+        const pages=states.get(session)?.pages;
+        if(pdfPagesInView(session).some(p=>['waiting','running'].includes(pages?.get(p)?.status)))return false;
+      }
+      return true;
+    };
+    if(!admissible())return 'busy';
+    if(nativeWork?.expired)await reconcileNative(nativeWork);
+    if(!admissible())return 'busy';
+    if(nativeWork)return 'blocked';
+    const native=plugin();if(!native)return 'unsupported';
+    const owned={bookId:book.id,hash:book.original?.hash||book.sourceHash,pdf};
+    active={session:owned,n,cancel:null};
+    try{
+      let words=await cached(key(owned,n));
+      if(words===null){
+        const page=await pdf.getPage(n),content=await page.getTextContent();
+        if(!valid()||document.hidden)return 'busy';
+        if(content.items.some(item=>String(item.str||'').trim())){words=[];page.cleanup();}
+        else{
+          const image=await raster(owned,n,()=>valid()&&!document.hidden
+            &&!(currentPdfSession()&&(originalPdfPaintPaused()||pdfScrollBusy(originalSession)||originalSession.paintActive)));
+          if(!image)return 'busy';
+          words=(await recognize(native,image)).words;boxesFromWords(words);
+        }
+      }
+      if(!valid())return 'retired';
+      return await remember(key(owned,n),words,book.id)?'done':'storage';
+    }catch{return 'failed';}
+    finally{active=null;if(currentPdfSession(wanted))schedule(wanted);}
+  }
+  async function completed(book){
+    const identity={bookId:book.id,hash:book.original?.hash||book.sourceHash};
+    const prefix=JSON.parse(key(identity,1));prefix.pop();
+    return localTransaction(await cacheDb(),'pages','readonly',(tx,done)=>{
+      const rq=tx.objectStore('pages').getAllKeys();
+      rq.onsuccess=()=>done(new Set(rq.result.flatMap(k=>{
+        try{const parts=JSON.parse(k);return JSON.stringify(parts.slice(0,-1))===JSON.stringify(prefix)?[parts.at(-1)]:[];}catch{return [];}
+      })));
+    });
+  }
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
-  return {inspect,schedule,release,close,tap,forget,boxesFromWords};
+  return {inspect,schedule,release,close,tap,forget,boxesFromWords,background,completed,available:()=>!!plugin()};
 })();
