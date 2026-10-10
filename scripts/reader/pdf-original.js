@@ -628,9 +628,8 @@ function pdfPageAtPoint(clientX,clientY){
   return r&&x>=r[0]&&x<=r[0]+r[2]&&y>=r[1]&&y<=r[1]+r[3]?originalSession.pages[i]:null;
 }
 
-function openPdfWord(page,box,confirmedOcr=false){
+function openPdfWord(page,box){
   if(!box || !ownsPdfBoxes(page,[box])) return;
-  if(box.ocr&&!confirmedOcr){BreezePdfOcr.confirm(page,box,()=>openPdfWord(page,box,true));return;}
   // openWord compares the old source occurrence before transferring marker ownership.
   const savedKey=pdfSavedWordKeys.get(box);
   const key=savedKey&&words[savedKey]?savedKey:keyOf(box.word);
@@ -788,7 +787,7 @@ registerReaderSurface({
     const page=pdfPageAtPoint(clientX,clientY);
     if(!page) return null;
     const box=pdfWordAtPoint(page,clientX,clientY);
-    // OCR confirms an individual spelling; it does not certify a whole sentence.
+    // Recognizing an individual word does not certify a whole sentence.
     if(box?.ocr)return null;
     const sentence=box && box.example ? String(box.example).trim() : '';
     if(!sentence) return null;

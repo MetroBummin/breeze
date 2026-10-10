@@ -70,21 +70,22 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
  await page.waitForFunction(()=>originalSession.wordBoxes.get(60)?.length===2);
  assert.equal(await page.evaluate(()=>qaStress.calls.length),2);
  console.log('OCR browser stress: pending navigation and pinch passed');
- // Replay the spelling error actually observed in native Vision at confidence 1.
- // Browser response remains a controlled replay, not another accuracy measure.
- await page.evaluate(()=>{
+ // Replay the known confidence-1 spelling error without treating confidence as
+ // correctness. Spy only on dictionary dispatch; real meaning UI is covered above.
+ const direct=await page.evaluate(()=>{
   const boxes=BreezePdfOcr.boxesFromWords([{...qaOcrResult[0],word:'Briaht',confidence:1}]);
   originalSession.wordBoxes.set(60,boxes);
-  for(let i=0;i<8;i++)openPdfWord(originalSession.pages[59],boxes[0]);
+  const actual=openWord,keys=[];openWord=key=>keys.push(key);
+  try{for(let i=0;i<8;i++)openPdfWord(originalSession.pages[59],boxes[0]);}
+  finally{openWord=actual;}
+  return {keys,word:boxes[0].word};
  });
- assert.equal(await page.locator('.pdf-ocr-confirm strong').textContent(),'Briaht');
- assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
- assert.equal(await page.evaluate(()=>{const p=originalSession.pages[59],r=p.getBoundingClientRect(),b=originalSession.wordBoxes.get(60)[0];return READER_SURFACES.find(s=>s.name==='pdf').sentenceAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);}),null,'unconfirmed OCR does not enable sentence lookup');
- await page.evaluate(()=>{window.qaRetiredConfirm=document.querySelector('[data-ocr-confirm]');readerModeChangeToken++;qaRetiredConfirm.click();qaRetiredConfirm=null;});
- assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'stale confirmation cannot open lookup');
- await page.evaluate(()=>openPdfWord(originalSession.pages[59],originalSession.wordBoxes.get(60)[0]));
- await page.evaluate(()=>qaTouch('touchstart',[1,2]));
+ assert.equal(direct.word,'Briaht');assert.equal(direct.keys.length,8);
+ assert.ok(direct.keys.every(key=>key==='briaht'),'recognized spelling dispatches without an invented correction');
  assert.equal(await page.locator('.pdf-ocr-confirm').count(),0);
+ assert.equal(await page.evaluate(()=>{const p=originalSession.pages[59],r=p.getBoundingClientRect(),b=originalSession.wordBoxes.get(60)[0];return READER_SURFACES.find(s=>s.name==='pdf').sentenceAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);}),null,'OCR word lookup does not enable sentence lookup');
+ await page.evaluate(()=>qaTouch('touchstart',[1,2]));
+ assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
  await page.evaluate(()=>{qaTouch('touchend',[]);cancelOriginalPinch();setOriginalZoom(1);});
  await page.evaluate(()=>goPdfPage(60));
  // Draw with the production ink owner, then force only the test OCR cache to

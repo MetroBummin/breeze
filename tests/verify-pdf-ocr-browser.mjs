@@ -19,6 +19,13 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const url=`http://127.0.0.1:${server.address().port}/`,engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const profile=mkdtempSync(resolve(tmpdir(),'breeze-ocr-')),errors=[],external=[];
 let browser,lookupAllowed=false;const prematureLookups=[];
+const waitForMeaning=page=>page.waitForFunction(()=>{
+ const node=document.getElementById('word-peek'),meaning=document.getElementById('word-peek-meaning');
+ if(!node||!meaning)return false;
+ const rect=node.getBoundingClientRect(),style=getComputedStyle(node);
+ return wordPeekOpen()&&!wordPeekPending()&&!node.hidden&&style.visibility!=='hidden'&&style.display!=='none'
+  &&rect.width>0&&rect.height>0&&meaning.textContent.trim()==='밝은';
+});
 try{
  browser=await engine.launchPersistentContext(profile,{headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},serviceWorkers:'block'});
  const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
@@ -78,13 +85,13 @@ try{
      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
      await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
      await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]));
-     const prompt=page.locator('.pdf-ocr-confirm');await prompt.waitFor();
-     const geometry=await prompt.evaluate(node=>{const r=node.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:innerWidth,height:innerHeight,buttons:[...node.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height),dark:document.body.classList.contains('dark')};});
+     await waitForMeaning(page);
+     assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'OCR uses the existing one-tap meaning surface');
+     const geometry=await page.locator('#word-peek').evaluate(node=>{const r=node.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:innerWidth,height:innerHeight,dark:document.body.classList.contains('dark')};});
      assert.equal(geometry.dark,dark);assert.ok(geometry.left>=0&&geometry.top>=0&&geometry.right<=geometry.width&&geometry.bottom<=geometry.height,JSON.stringify(geometry));
-     assert.ok(geometry.buttons.every(h=>h>=44));assert.equal(await page.evaluate(()=>wordPeekOpen()),false);
      const proof='/tmp/breeze-ocr-confirm';mkdirSync(proof,{recursive:true});
      await page.screenshot({path:`${proof}/${engine.name()}-${size.width}x${size.height}-${dark?'dark':'light'}.png`});
-     await page.locator('[data-ocr-dismiss]').click();
+     await page.evaluate(()=>closePanel());
     }
    }
   }
@@ -94,37 +101,33 @@ try{
  for(let i=0;i<3;i++){
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   await page.waitForFunction(()=>!readerPositionPending()&&!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
-  lookupAllowed=i>0;
+  lookupAllowed=true;
   await page.evaluate(async()=>{const p=originalSession.pages[0],r=p.getBoundingClientRect(),b=originalSession.wordBoxes.get(1)[0];await openPdfWordAt(r.left+(b.x+b.w/2)*r.width,r.top+(b.y+b.h/2)*r.height);});
-  if(i===0){
-   await page.locator('[data-ocr-confirm]').waitFor();
-   assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'first recognition must be confirmed before showing even a cached meaning');
-   lookupAllowed=true;await page.locator('[data-ocr-confirm]').click();
-  }else assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'repeated tap reuses this explicitly checked occurrence');
-  await page.waitForFunction(()=>wordPeekOpen());await page.evaluate(()=>closePanel());
+  assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'first and repeated taps need no spelling confirmation');
+  await waitForMeaning(page);await page.evaluate(()=>closePanel());
  }
- lookupAllowed=false;
+ lookupAllowed=true;
  for(let i=0;i<2;i++){
   await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[1]));
-  await page.locator('[data-ocr-confirm]').waitFor();
-  assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'another occurrence is not implicitly confirmed');
-  await page.locator('[data-ocr-dismiss]').click();
+  await waitForMeaning(page);
+  assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'another occurrence also opens directly');
+  await page.evaluate(()=>closePanel());
  }
  await page.evaluate(()=>{
   originalSession.wordBoxes.set(1,originalSession.wordBoxes.get(1).map(b=>({...b})));
   openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]);
  });
- await page.locator('[data-ocr-confirm]').waitFor();
- assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'replacement boxes do not inherit confirmation by spelling or coordinates');
- await page.locator('[data-ocr-dismiss]').click();
+ await waitForMeaning(page);
+ assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'current replacement boxes open directly');
+ await page.evaluate(()=>closePanel());
  // Reopen consumes durable results; eviction consumes cache without native rerun.
  await page.evaluate(async()=>{const b=curBook;leaveOriginalReader();await renderOriginalBook(b,await originalGetForBook(b));});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===2);
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),1);
  await page.evaluate(()=>openPdfWord(originalSession.pages[0],originalSession.wordBoxes.get(1)[0]));
- await page.locator('[data-ocr-confirm]').waitFor();
- assert.equal(await page.evaluate(()=>wordPeekOpen()),false,'cache reopen does not inherit confirmation from an old session');
- await page.locator('[data-ocr-dismiss]').click();
+ await waitForMeaning(page);
+ assert.equal(await page.locator('.pdf-ocr-confirm').count(),0,'cache reopen uses one-tap lookup');
+ await page.evaluate(()=>closePanel());
  await page.evaluate(async()=>{releaseOriginalPdfPage(originalSession,1);await renderOriginalPdfPage(originalSession,1);});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===2);
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),1);
