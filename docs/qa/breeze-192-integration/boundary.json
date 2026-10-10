@@ -104,6 +104,22 @@
       ]
     }
   ],
+  "amendments": [
+    {
+      "pr": 146,
+      "parent": "f17971773eb57ffda0b17b520b3d7e57734f6a60",
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "files": [
+        "docs/decisions/021-scanned-pdf-ocr.md",
+        "index.html",
+        "scripts/reader/pdf-ink.js",
+        "scripts/reader/pdf-ocr.js",
+        "sw.js",
+        "tests/verify-pdf-ink-regressions.mjs",
+        "tests/verify-pdf-ocr.mjs"
+      ]
+    }
+  ],
   "files": {
     ".github/workflows/pdf-ocr-native-stress.yml": {
       "pr": 143,
@@ -154,10 +170,10 @@
       "sha256": "6538e41d1f882577ca66112659b45940b90ffba52870fc1abd38e56e16033553"
     },
     "docs/decisions/021-scanned-pdf-ocr.md": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
-      "sha256": "cb57c64659ceff6aea428ed9b40a5990ef87c20aacbc227789c4a0e1f41279b6"
+      "sha256": "47032c2494aa6b0a163701a0d80e3cf9c4843001495a39b3b7b73f70458d43fd"
     },
     "docs/qa/evidence/pdf-ocr-confirm-phone-light.png": {
       "pr": 143,
@@ -196,8 +212,8 @@
       "sha256": "3806fd1e0a85c5207e5ee49d7f4d76f7c879def448394660616bae95e3702ca0"
     },
     "index.html": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
       "sha256": "44ba17aed313cf781d170a58e5fe6da98991d44b833fa0afa61f1f8491bbf37b"
     },
@@ -245,10 +261,10 @@
       "sha256": "fc16eb5f791770f4f9a49b4c275209f814046e56391a81600f6b44b760edd8af"
     },
     "scripts/reader/pdf-ocr.js": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
-      "sha256": "8a0c3028c93fd7a244cce903bc660ebede363b807cd9819dc55330290494073c"
+      "sha256": "2d78ffe46c5f00b767c13f6c8736638b4d78ee72df014767573f8bd95cea7599"
     },
     "scripts/reader/pdf-original.js": {
       "pr": 143,
@@ -263,8 +279,8 @@
       "sha256": "f2f41aa9df110abdda96633aabac9f1c391cf21f243b3377399fe242346550f1"
     },
     "sw.js": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
       "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
     },
@@ -479,10 +495,10 @@
       "sha256": "1a41adb966e0065e54fe32894ecdc846c79c5faa8cc773f3a3dae96777c9599b"
     },
     "tests/verify-pdf-ocr.mjs": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
-      "sha256": "d60b4f52d6cf9fca72f1bd0e60f19a0ceee1f41e41ebb481dacba2e9d80b39a1"
+      "sha256": "aba7d9b48f390cb5c0141709276b9894ef80fbaa035d004d8b1ca59f293e7233"
     },
     "tests/verify-pdf-session-regressions.mjs": {
       "pr": 143,
@@ -663,6 +679,18 @@
       "mode": "100644",
       "transformation": "replace tests/verify-integration-boundary.mjs with tests/verify-192-integration-boundary.mjs",
       "sha256": "ef8abde64f4ead7b272090a9baee735e12f6981ce29cefc494ba490354539c75"
+    },
+    "scripts/reader/pdf-ink.js": {
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "mode": "100644",
+      "sha256": "fef8471444089edc3000f9b83b862acb68df019be7415647c8e30cb4e9ddfa04"
+    },
+    "tests/verify-pdf-ink-regressions.mjs": {
+      "pr": 146,
+      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "mode": "100644",
+      "sha256": "21a0601c679a41f1adce62a3fd29547b2c92a0bacb70a993f8f3fce46e88324d"
     }
   },
   "integrationFiles": [
@@ -672,11 +700,11 @@
     "docs/decisions/022-breeze-192-integration.md",
     "docs/qa/breeze-192-integration-20261009.md"
   ],
-  "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot.",
+  "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "3565b2bfad12266c685e2fcac1e7c3977c50bb07a22e19c18a065b17b43a46aa",
-    "docs/decisions/022-breeze-192-integration.md": "47e4d3590a393e0f7fe06537667b419ab076b486bda63efd90c25259751dcce9",
+    "tools/record-192-integration-boundary.mjs": "0871753b94ae08ee866c7acfd3db60b417f8482da23096ba596d9b58dfad3a81",
+    "docs/decisions/022-breeze-192-integration.md": "f196b53344e08e12ea0e56513b9b3344e931cd338684ebcbba54ada47ae92c89",
     "docs/qa/breeze-192-integration-20261009.md": "d5f10dfd82a5a84186322fde83ebb4ee2b0a1e0ea4172c61a28c375100b2c6cc"
   }
 }

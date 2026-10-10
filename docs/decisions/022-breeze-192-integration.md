@@ -100,3 +100,16 @@ Main merge, Cloud build and review submission stay held. This integration perfor
 no server deployment, key/database change, unrelated learning feature, review
 cancellation or ASC write. Any later release is a separate owner decision after
 reviewing the explicit remaining failures and risks.
+
+## Explicit release amendment: PR146 (2026-10-10)
+
+After the installed build 263 OCR failure, the owner authorized merging the native
+bridge correction and publishing iOS TestFlight build 264 and an Android update.
+The current boundary therefore overlays the exact seven-file delta from immutable
+commit `40e5719457c5cf60a6545d994630d9b4fe1379d1` over parent
+`f17971773eb57ffda0b17b520b3d7e57734f6a60`. It verifies that exact parent,
+path set, ancestry, modes and source hashes. The PR143/144 source validation and
+all historical 1.9.1 checks remain unchanged; unlisted edits still fail. The earlier
+hold above describes the integration's historical authorization, not this later
+explicit release instruction. Physical-device acceptance and App Store review
+submission remain separate from this TestFlight/Android update authorization.
