@@ -108,7 +108,7 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
  });
  await page.waitForFunction(()=>qaStress.calls.length===3);
  assert.equal(await page.evaluate(()=>qaStress.calls[1].hash),await page.evaluate(()=>qaStress.calls[2].hash),'live ink must not enter OCR input');
- console.log('OCR browser stress: misread confirmation and live ink exclusion passed');
+ console.log('OCR browser stress: direct misread lookup and live ink exclusion passed');
  await page.evaluate(()=>{qaStress.calls[2].resolve();qaStress.auto=true;});
  await page.waitForFunction(()=>originalSession.wordBoxes.get(60)?.length===2);
  // A real failure leaves page navigation/zoom available and retries once only
@@ -152,7 +152,7 @@ export async function stressPdfOcrBrowser({page,context,engine,jpeg,scanPdf}){
  const writeReport=async(offlineReopen,reopens)=>{
   const report={native:'controlled bridge responses, not accuracy',completedCoreChecks:true,pages:60,rapidNavigationIntents:6,cachePasses:2,reopens,
    nativeCalls:await page.evaluate(()=>qaStress.calls.length),maximumConcurrentNative:1,liveInkExcluded:true,
-   highConfidenceMisreadRequiresExplicitConfirmation:true,memory,offlineReopen,
+   highConfidenceMisreadDispatchesWithoutConfirmation:true,memory,offlineReopen,
    memoryLimit:'CDP JS heap/DOM only on Chromium, excludes GPU/native memory; bounded samples are not a leak proof'};
   const out=process.env.BREEZE_OCR_STRESS_OUTPUT||'/tmp/breeze-ocr-browser-stress';mkdirSync(out,{recursive:true});writeFileSync(`${out}/${engine}.json`,JSON.stringify(report,null,2)+'\n');
   return report;
