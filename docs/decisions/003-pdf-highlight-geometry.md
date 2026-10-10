@@ -251,3 +251,25 @@ contract is retained; no timing sleep or measurement allowance is added.
 Production-callback tests and a browser counterfactual cover the no-op before/
 after behavior plus a real-change positive control. The diagnostic keeps every
 bounded attempt and fails if any attempt violates its existing assertion.
+
+## Scanned-page fallback (1.9.2 candidate draft, 2026-10-09)
+
+Pages with no text layer now admit on-device OCR in native iOS/Android shells.
+The existing glyph/operator path stays authoritative whenever any text layer
+is present, even if it produces no English word boxes. OCR does not repair or
+overwrite existing hidden OCR text or partially scanned/text pages.
+
+The fallback consumes a bounded, annotation-free PDF.js raster in the same
+intrinsically rotated viewport as the paper. Native word boxes become the same
+normalized top-left boxes used by lookup and markers. OCR does not add gesture
+owners or alter pinch/ink geometry. See [the OCR decision](021-scanned-pdf-ocr.md)
+for queue, cache, privacy and validation limits.
+
+OCR lookup now requires explicit confirmation of the recognized spelling in a
+nonmodal source-adjacent prompt. Confidence 1.0 was observed on a wrong spelling
+in the native stress corpus. The prompt does not intercept reading/zoom gestures;
+it closes and invalidates its action when the source position changes. Existing
+text-layer word lookup remains unchanged, and OCR does not expose sentence lookup.
+An explicitly checked live box supports direct repeat lookup. The WeakSet check
+does not transfer to an identical spelling/position reconstructed from cache or
+another session, and does not persist a user correction.

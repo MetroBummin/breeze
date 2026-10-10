@@ -1,0 +1,1286 @@
+[
+  {
+    "key": "phone-light",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "phone-dark",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 844,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "narrow-light",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "narrow-dark",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 320,
+        "height": 568,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "tablet-light",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "tablet-dark",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 820,
+      "innerHeight": 1180,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 820,
+        "height": 1180,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "desktop-light",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "desktop-dark",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 1440,
+        "height": 900,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "short-light",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 161,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "short-dark",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 161,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 844,
+        "height": 390,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "keyboard-sized-light",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 156,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  },
+  {
+    "key": "keyboard-sized-dark",
+    "engine": "chromium",
+    "coverage": "Browser engine only; keyboard-sized is a resized viewport, not a native keyboard",
+    "collapsed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "expanded": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "focused": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": true,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 156,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "blurred": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": "true",
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "closed": {
+      "fontSize": "14px",
+      "lineHeight": "22px",
+      "editable": null,
+      "focused": false,
+      "innerWidth": 390,
+      "innerHeight": 400,
+      "scrollX": 0,
+      "scrollY": 0,
+      "visualViewport": {
+        "scale": 1,
+        "width": 390,
+        "height": 400,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "dialogs": 0,
+      "menus": []
+    },
+    "bookOutsideTapClosed": false,
+    "bookEscapeClosed": false
+  }
+]

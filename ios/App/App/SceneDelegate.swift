@@ -357,6 +357,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        bridge?.registerPluginInstance(BreezePdfOcrPlugin())
         // Capacitor disables WKWebView rubber-banding by default. Breeze's
         // reader is an inner web scroller, so restoring the native setting
         // brings the same edge bounce to Text, EPUB, and PDF without JS.

@@ -252,6 +252,7 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
+  if(typeof closeWordbookMenus==='function')closeWordbookMenus();
   // Leaving the preview's owning view must invalidate its async preparation.
   // Reader presentation closes its own preview through onPresented instead.
   if(v!=='read'&&typeof articlePreviewClose==='function')articlePreviewClose();

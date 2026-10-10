@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(BreezePdfPlatformPlugin.class);
+        registerPlugin(BreezePdfOcrPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
