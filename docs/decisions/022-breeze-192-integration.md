@@ -1,3 +1,26 @@
+# 2026-10-10 direct integration update
+
+Current OCR input is PR143 `f7e67d3938ea7debed4a61243f5743980f7d4249` (65 paths),
+including `dbceedb53` response recovery plus the two supported JSObject boolean
+API calls. Memory remains `e2bf032af786c8c26e03a8222e135cc9dc3a220f`.
+The owner requested direct continuation of checks and 1.9.2 integration.
+The strict contract, source ancestry, historical verification and all failure
+assertions are retained. Only generated shell/worker stamps resolve overlap.
+
+Source CI completed with 30 successes and 8 failures. Android app and test APK
+compilation now pass. ML Kit execution remains blocked by existing KVM access;
+WebKit offline local-Blob failure remains. Six other source failures are the
+frozen 1.9.1 boundary, addressed only by this existing 1.9.2 contract.
+Actual macOS Vision stress is distinct from iOS-device acceptance. Recovery tests
+use controlled callbacks and do not prove recovery from a permanently hung SDK.
+No main merge, release build, TestFlight availability or review submission is
+claimed. Final integration-head results are reported separately in PR145.
+
+The checks and measurements below are preserved as historical results of the
+previous `0b51a499` candidate, not evidence for the current source.
+
+---
+
 # Breeze 1.9.2 integration boundary
 
 Base: released/integrated 1.9.1 source `83cc182db73ed1d63784e66321a066ccb2943994`.

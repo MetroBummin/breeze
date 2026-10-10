@@ -7,6 +7,7 @@ import vm from 'node:vm';
 const raw=JSON.parse(readFileSync(process.argv[2],'utf8'));
 const corpus=JSON.parse(readFileSync(new URL('./fixtures/pdf-ocr-stress/manifest.json',import.meta.url),'utf8'));
 assert.equal(raw.native,true,'mock results cannot be scored as native accuracy');
+if('completed' in raw)assert.equal(raw.completed,true,'native harness did not complete');
 const context=vm.createContext({openDb:()=>()=>{},document:{addEventListener(){}},window:{}});
 const adapt=vm.runInContext(readFileSync(new URL('../scripts/reader/pdf-ocr.js',import.meta.url),'utf8')+'\nBreezePdfOcr.boxesFromWords;',context);
 const rows=[];const failures=[];
@@ -27,6 +28,7 @@ for(const sample of corpus.cases){
  if(sample.strict&&(row.missed||wrong.length))failures.push(sample.id);
 }
 const report={engine:raw.engine,environment:raw.environment,native:true,rows,repetitions:raw.repetitions,
+ memorySnapshots:raw.memorySnapshots,pluginReleased:raw.pluginReleased,
  limitations:['Synthetic corpus only; vector ink is not representative human handwriting.','macOS Vision differs from iOS-device model/runtime.','PSS/RSS include models and harness; bounded observations cannot prove absence of leaks.'],strictFailures:failures};
 writeFileSync(process.argv[3],JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report));

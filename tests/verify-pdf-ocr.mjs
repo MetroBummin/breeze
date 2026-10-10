@@ -7,11 +7,12 @@ const word=(word='Bright',extra={})=>({word,line:0,x:.1,y:.2,w:.2,h:.04,confiden
 const defer=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {resolve,reject,promise};};
 const flush=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
 function fixture({supported=true,cache=new Map()}={}){
- const timers=new Map(),calls=[],paints=[],canvases=[],toasts=[];let next=0;
+ const timers=new Map(),calls=[],statusCalls=[],paints=[],canvases=[],toasts=[];let next=0,now=0;
  const session={kind:'pdf',bookId:'A',hash:'hash-A',pages:[1,2,3].map(n=>({isConnected:true,dataset:{page:String(n)}})),wordBoxes:new Map([[1,[]],[2,[]],[3,[]]]),settled:new Set([1,2,3])};
- const native={recognize(args){const job=defer();calls.push({args,...job});return job.promise;}};
+ const native={recognize(args){const job=defer();calls.push({args,...job});return job.promise;},
+  getStatus(args){const job=defer();statusCalls.push({args,...job});return job.promise;}};
  const context={Map,Set,WeakMap,console,Number,Date,
-  setTimeout(fn){const id=++next;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),
+  setTimeout(fn,delay=0){const id=++next;timers.set(id,{fn,at:now+delay});return id;},clearTimeout:id=>timers.delete(id),
   openDb:()=>async()=>({}),localTransaction:async(_db,_store,mode,run)=>{
    let result;const pending=[];
    const request=value=>{const rq={result:value};pending.push(()=>rq.onsuccess?.());return rq;};
@@ -32,9 +33,11 @@ function fixture({supported=true,cache=new Map()}={}){
    render:()=>({promise:Promise.resolve(),cancel(){}}),cleanup(){}})};
  vm.createContext(context);const ocr=vm.runInContext(source+'\nBreezePdfOcr;',context);
  async function inspect(n=1,items=[],boxes=[]){await ocr.inspect(session,n,{getTextContent:async()=>({items})},boxes,()=>context.originalSession===session);}
- async function tick(){const item=timers.entries().next().value;if(item){timers.delete(item[0]);item[1]();}await flush();}
+ const firstTimer=()=>[...timers].sort((a,b)=>a[1].at-b[1].at)[0];
+ async function tick(){const item=firstTimer();if(item){now=item[1].at;timers.delete(item[0]);item[1].fn();}await flush();}
+ async function advance(ms){const end=now+ms;while(firstTimer()?.[1].at<=end)await tick();now=end;await flush();}
  async function start(){ocr.schedule(session);await tick();}
- return {context,session,ocr,inspect,tick,start,calls,paints,timers,cache,canvases,toasts};
+ return {context,session,ocr,inspect,tick,advance,start,calls,statusCalls,paints,timers,cache,canvases,toasts};
 }
 test('word adapter rejects unsafe/uncertain geometry and preserves line/occurrence positions',()=>{
  const f=fixture();const boxes=f.ocr.boxesFromWords([word(),word('world',{x:.5}),word('Other',{line:1,y:.3}),word('wrong',{confidence:.1}),word('bad',{x:-1}),word('bad',{w:NaN}),word('<img>'),word('bad',{x:.99,w:.2})]);
@@ -169,4 +172,50 @@ test('raster cancellation, storage failure and malformed native output preserve 
  assert.equal(fresh.session.pages[0].dataset.ocr,'failed');
  fresh.ocr.tap(fresh.session,1);await fresh.tick();fresh.calls[1].resolve({words:[word('Recovered')]});await flush();
  assert.equal(fresh.session.wordBoxes.get(1)[0].word,'Recovered');assert.equal(fresh.cache.size,0);
+});
+
+test('never-settling native work times out without blocking cached words or admitting a second recognizer',async()=>{
+ const f=fixture();for(const n of [1,2,3])await f.inspect(n);
+ f.context.visible=[2];await f.start();f.calls[0].resolve({words:[word('Cached')]});await flush();
+ f.ocr.release(f.session,2);f.session.wordBoxes.set(2,[]);
+ f.context.visible=[1];await f.start();const hung=f.calls[1];
+ await f.advance(30000);assert.equal(f.session.pages[0].dataset.ocr,'failed');
+ f.context.visible=[2];await f.start();assert.equal(f.session.wordBoxes.get(2)[0]?.word,'Cached');
+ f.context.visible=[3];await f.start();assert.equal(f.session.pages[2].dataset.ocr,'blocked');
+ for(let i=0;i<8;i++)f.ocr.tap(f.session,3);
+ assert.equal(f.statusCalls.length,1,'repeated taps share one bounded status probe');
+ assert.equal(f.statusCalls[0].args.requestId,hung.args.requestId);
+ f.statusCalls[0].resolve({finished:false});await flush();
+ assert.equal(f.calls.length,2,'unfinished native work must retain exclusive admission');
+ assert.match(f.toasts.at(-1),/앱 완전 종료/);
+ hung.resolve({words:[word('Expired')]});await flush();await f.tick();
+ assert.equal(f.calls.length,3,'actual settlement wakes the currently visible blocked page');
+ assert.equal(f.session.wordBoxes.get(1).length,0);
+ assert.ok(!JSON.stringify([...f.cache]).includes('Expired'),'expired output is never cached');
+ f.calls[2].resolve({words:[word('Current')]});await flush();
+ assert.equal(f.session.wordBoxes.get(3)[0]?.word,'Current');
+});
+
+test('lost bridge response recovers only after native completion of the matching request is confirmed',async()=>{
+ const f=fixture();await f.inspect();await f.start();const lost=f.calls[0];
+ await f.advance(30000);f.ocr.tap(f.session,1);
+ assert.equal(f.statusCalls[0].args.requestId,lost.args.requestId);
+ f.statusCalls[0].resolve({finished:true});await flush();await f.tick();
+ assert.equal(f.calls.length,2);assert.notEqual(f.calls[1].args.requestId,lost.args.requestId);
+ // A very late response cannot clear the replacement admission or publish/cache.
+ lost.resolve({words:[word('Expired')]});await flush();
+ f.ocr.schedule(f.session);await f.tick();assert.equal(f.calls.length,2);
+ assert.equal(f.cache.size,0);assert.equal(f.paints.length,0);
+ f.calls[1].resolve({words:[word('Recovered')]});await flush();
+ assert.equal(f.session.wordBoxes.get(1)[0]?.word,'Recovered');
+});
+
+test('a hung status probe is bounded and a stale retry cannot revive a closed document',async()=>{
+ const f=fixture();await f.inspect();await f.start();await f.advance(30000);
+ f.ocr.tap(f.session,1);await f.advance(2000);
+ assert.equal(f.calls.length,1);assert.match(f.toasts.at(-1),/앱 완전 종료/);
+ f.ocr.tap(f.session,1);assert.equal(f.statusCalls.length,1,'a later tap reuses the still-pending bridge probe');
+ f.ocr.close(f.session);f.context.originalSession=null;
+ f.statusCalls[0].resolve({finished:true});await flush();await f.advance(1000);
+ assert.equal(f.calls.length,1);assert.equal(f.paints.length,0);assert.equal(f.cache.size,0);
 });

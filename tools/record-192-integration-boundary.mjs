@@ -13,7 +13,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 export const base='83cc182db73ed1d63784e66321a066ccb2943994';
 export const owners=[
- {pr:143,source:'0b51a4992c5ec12c1215381a210584f6b2e66561',files:[
+ {pr:143,source:'f7e67d3938ea7debed4a61243f5743980f7d4249',files:[
   ".github/workflows/pdf-ocr-native-stress.yml",
   ".github/workflows/pdf-ocr.yml",
   "android/app/build.gradle",
@@ -24,6 +24,7 @@ export const owners=[
   "docs/decisions/003-pdf-highlight-geometry.md",
   "docs/decisions/021-scanned-pdf-ocr.md",
   "docs/qa/evidence/pdf-ocr-confirm-phone-light.png",
+  "docs/qa/evidence/pdf-ocr-recovery-small-light.png",
   "docs/qa/evidence/pdf-ocr-vision-5600d0b.json",
   "docs/qa/evidence/pdf-ocr-vision-9e76421.json",
   "docs/qa/scanned-pdf-ocr-20261009.md",
@@ -90,7 +91,7 @@ export const owners=[
   'styles/wordbook.css','sw.js','tests/verify-memory-edit-filter-browser.mjs']},
 ];
 const receiptFile='docs/qa/breeze-192-integration/boundary.json';
-const authorization='2026-10-09 follow-up: parent supplied final OCR PR143 0b51a4992c5ec12c1215381a210584f6b2e66561 and frozen Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Prepare and verify the existing PR145 candidate only. Main merge, Xcode Cloud build and review submission remain held regardless of candidate preparation success. Preserve historical 1.9.1 receipts and tests. Do not hide, skip or delete Android KVM and WebKit offline Blob failures. Retain macOS Vision RSS growth, permanently pending native-call recovery and unverified physical offline/handwriting/ML Kit acceptance as remaining risks.';
+const authorization='2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot.';
 export const integrationFiles=[receiptFile,'tests/verify-192-integration-boundary.mjs',
  'tools/record-192-integration-boundary.mjs','docs/decisions/022-breeze-192-integration.md',
  'docs/qa/breeze-192-integration-20261009.md'];

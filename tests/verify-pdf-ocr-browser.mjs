@@ -1,7 +1,7 @@
 /* Real PDF.js, raster/IndexedDB, hit-test and lookup; native recognition is a
    controlled bridge double. Does not measure Vision/ML Kit accuracy or latency. */
 import assert from 'node:assert/strict';
-import {readFileSync,mkdtempSync,rmSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdtempSync,rmSync,mkdirSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
@@ -40,9 +40,10 @@ try{
  });
  await page.goto(url+'index.html');
  await page.evaluate(()=>{
-  window.qaOcrCalls=[];window.qaOcrResult=[{word:'Bright',line:0,x:.1,y:.12,w:.12,h:.03,confidence:.99},{word:'world',line:0,x:.24,y:.12,w:.1,h:.03,confidence:.99}];
+  window.qaOcrCalls=[];window.qaOcrStatus=[];window.qaOcrResult=[{word:'Bright',line:0,x:.1,y:.12,w:.12,h:.03,confidence:.99},{word:'world',line:0,x:.24,y:.12,w:.1,h:.03,confidence:.99}];
   window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',isPluginAvailable:name=>name==='BreezePdfOcr',
-   registerPlugin:()=>({recognize:({image})=>new Promise((resolve,reject)=>qaOcrCalls.push({image,resolve,reject}))})};
+   registerPlugin:()=>({recognize:({image,requestId})=>new Promise((resolve,reject)=>qaOcrCalls.push({image,requestId,resolve,reject})),
+    getStatus:({requestId})=>new Promise(resolve=>qaOcrStatus.push({requestId,resolve}))})};
  });
  const jpeg=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=600;c.height=800;const g=c.getContext('2d');g.fillStyle='white';g.fillRect(0,0,600,800);g.font='24px sans-serif';g.fillStyle='black';g.fillText('Bright world',60,116);return c.toDataURL('image/jpeg',.98).split(',')[1];});
  await page.locator('#fileinput').setInputFiles({name:'scan.pdf',mimeType:'application/pdf',buffer:scanPdf(jpeg)});
@@ -157,6 +158,45 @@ try{
  assert.equal(await page.evaluate(()=>qaOldOcrSession.wordBoxes.get(1).length),0);
  await page.evaluate(()=>qaOcrCalls[3].resolve({words:[{...qaOcrResult[0],word:'Current'}]}));
  await page.waitForFunction(()=>originalSession.wordBoxes.get(1)?.[0]?.word==='Current');
+ // A lost native response uses the real configured deadline. It must not trap
+ // cached documents, or permit another recognizer without completion evidence.
+ await openFixture('hung-native-scan',rotated);
+ await page.waitForFunction(()=>qaOcrCalls.length===5);
+ await page.waitForFunction(()=>originalSession.pages[0].dataset.ocr==='failed',null,{timeout:35000});
+ await openFixture('new-scan',rotated);
+ await page.waitForFunction(()=>originalSession.wordBoxes.get(1)?.[0]?.word==='Current');
+ assert.equal(await page.evaluate(()=>qaOcrCalls.length),5,'cached words work while native response remains pending');
+ await openFixture('blocked-native-scan',rotated);
+ await page.waitForFunction(()=>originalSession.pages[0].dataset.ocr==='blocked');
+ await page.waitForFunction(()=>!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
+ await page.evaluate(()=>{for(let i=0;i<8;i++)BreezePdfOcr.tap(originalSession,1);});
+ assert.equal(await page.evaluate(()=>qaOcrStatus.length),1);
+ assert.equal(await page.evaluate(()=>qaOcrStatus[0].requestId===qaOcrCalls[4].requestId),true);
+ await page.evaluate(()=>qaOcrStatus[0].resolve({finished:false}));
+ for(const size of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000},{width:844,height:390},{width:320,height:568}]){
+  await page.setViewportSize(size);
+  for(const dark of [false,true]){
+   await page.waitForFunction(()=>!originalPdfPaintPaused()&&!pdfScrollBusy(originalSession));
+   await page.evaluate(dark=>{darkMode=dark;applyDark();readerNotices.reset();BreezePdfOcr.tap(originalSession,1);},dark);
+   await page.evaluate(()=>qaOcrStatus.at(-1).resolve({finished:false}));
+   await page.locator('#reader-notice').filter({hasText:'앱 완전 종료 후 다시 열기'}).waitFor({state:'visible'});
+   const notice=await page.locator('#reader-notice').evaluate(n=>({height:n.clientHeight,scroll:n.scrollHeight,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
+   assert.ok(notice.scroll<=notice.height+1&&notice.left>=0&&notice.right<=notice.width,JSON.stringify({size,dark,notice}));
+   await page.screenshot({path:`/tmp/breeze-ocr-confirm/${engine.name()}-recovery-${size.width}x${size.height}-${dark?'dark':'light'}.png`});
+  }
+ }
+ assert.equal(await page.evaluate(()=>qaOcrCalls.length),5,'uncertain native completion never releases admission');
+ await page.evaluate(()=>{readerNotices.reset();BreezePdfOcr.tap(originalSession,1);});
+ await page.evaluate(()=>qaOcrStatus.at(-1).resolve({finished:true}));
+ await page.waitForFunction(()=>qaOcrCalls.length===6);
+ await page.evaluate(()=>qaOcrCalls[4].resolve({words:[{...qaOcrResult[0],word:'Expired'}]}));
+ assert.equal(await page.evaluate(()=>originalSession.wordBoxes.get(1).length),0);
+ await page.evaluate(()=>qaOcrCalls[5].resolve({words:[{...qaOcrResult[0],word:'Recovered'}]}));
+ await page.waitForFunction(()=>originalSession.wordBoxes.get(1)?.[0]?.word==='Recovered');
+ const recovery={deadline:true,cachedReopenDuringPending:true,noOverlapWithoutReceipt:true,matchingReceiptRetry:true,expiredResponseDiscarded:true,noticeViewportThemes:10,native:'controlled responses'};
+ const recoveryOut=process.env.BREEZE_OCR_STRESS_OUTPUT||'/tmp/breeze-ocr-browser-stress';mkdirSync(recoveryOut,{recursive:true});
+ writeFileSync(`${recoveryOut}/${engine.name()}-recovery.json`,JSON.stringify(recovery,null,2)+'\n');
+ console.log('OCR response recovery passed:',JSON.stringify(recovery));
  lookupAllowed=false;
  const stress=await stressPdfOcrBrowser({page,context:browser,engine:engine.name(),jpeg,openFixture,scanPdf});
  assert.deepEqual(errors,[]);

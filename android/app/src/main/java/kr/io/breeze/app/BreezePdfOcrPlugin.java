@@ -25,7 +25,22 @@ import java.util.regex.Pattern;
 public class BreezePdfOcrPlugin extends Plugin {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final AtomicBoolean busy = new AtomicBoolean(false);
+    private volatile String completedRequestId;
     private static final Pattern WORD = Pattern.compile("^[A-Za-z](?:[A-Za-z'’\\-]*[A-Za-z])?$");
+
+    @PluginMethod
+    public void getStatus(PluginCall call) {
+        String requestId = call.getString("requestId");
+        call.resolve(new JSObject().put("finished", requestId != null && !busy.get() && requestId.equals(completedRequestId)));
+    }
+
+    private void finish(String requestId, TextRecognizer recognizer, Bitmap bitmap) {
+        try { if (recognizer != null) recognizer.close(); }
+        finally {
+            try { if (bitmap != null) bitmap.recycle(); }
+            finally { completedRequestId = requestId; busy.set(false); }
+        }
+    }
 
     @PluginMethod
     public void recognize(PluginCall call) {
@@ -36,6 +51,7 @@ public class BreezePdfOcrPlugin extends Plugin {
         if (!busy.compareAndSet(false, true)) {
             call.reject("OCR is busy", "BUSY"); return;
         }
+        final String requestId = call.getString("requestId");
         worker.execute(() -> {
             Bitmap bitmap = null;
             TextRecognizer recognizer = null;
@@ -54,22 +70,23 @@ public class BreezePdfOcrPlugin extends Plugin {
                 // Rotation is already baked into the PDF.js raster.
                 recognizer.process(InputImage.fromBitmap(bitmap, 0))
                     .addOnCompleteListener(task -> {
+                        JSObject result = null;
                         try {
-                            if (!task.isSuccessful()) {
-                                call.reject("Page text recognition failed", "OCR_FAILED"); return;
+                            if (task.isSuccessful()) {
+                                JSArray words = wordsFromText(task.getResult(), ownedBitmap.getWidth(), ownedBitmap.getHeight());
+                                result = new JSObject(); result.put("words", words);
                             }
-                            JSArray words = wordsFromText(task.getResult(), ownedBitmap.getWidth(), ownedBitmap.getHeight());
-                            JSObject result = new JSObject(); result.put("words", words); call.resolve(result);
                         } catch (RuntimeException error) {
-                            call.reject("Page text recognition failed", "OCR_FAILED");
+                            // Settle after releasing the input/model, even on failure.
                         } finally {
-                            ownedRecognizer.close(); ownedBitmap.recycle(); busy.set(false);
+                            finish(requestId, ownedRecognizer, ownedBitmap);
                         }
+                        if (result != null) call.resolve(result);
+                        else call.reject("Page text recognition failed", "OCR_FAILED");
                     });
             } catch (RuntimeException error) {
-                if (recognizer != null) recognizer.close();
-                if (bitmap != null) bitmap.recycle();
-                busy.set(false); call.reject("Page text recognition failed", "OCR_FAILED");
+                finish(requestId, recognizer, bitmap);
+                call.reject("Page text recognition failed", "OCR_FAILED");
             }
         });
     }

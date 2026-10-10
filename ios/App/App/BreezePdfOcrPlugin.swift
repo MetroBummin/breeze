@@ -9,11 +9,21 @@ public final class BreezePdfOcrPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "BreezePdfOcrPlugin"
     public let jsName = "BreezePdfOcr"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "recognize", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "recognize", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getStatus", returnType: CAPPluginReturnPromise)
     ]
     private let queue = DispatchQueue(label: "kr.io.breeze.pdf-ocr", qos: .utility)
     private let lock = NSLock()
     private var busy = false
+    private var completedRequestId: String?
+
+    @objc func getStatus(_ call: CAPPluginCall) {
+        let requestId = call.getString("requestId")
+        lock.lock()
+        let finished = requestId != nil && !busy && completedRequestId == requestId
+        lock.unlock()
+        call.resolve(["finished": finished])
+    }
 
     @objc func recognize(_ call: CAPPluginCall) {
         guard let encoded = call.getString("image"), encoded.utf8.count <= 24_000_000 else {
@@ -23,9 +33,10 @@ public final class BreezePdfOcrPlugin: CAPPlugin, CAPBridgedPlugin {
         if busy { lock.unlock(); call.reject("OCR is busy", "BUSY"); return }
         busy = true
         lock.unlock()
+        let requestId = call.getString("requestId")
         queue.async { [self] in
-            defer { lock.lock(); busy = false; lock.unlock() }
-            autoreleasepool {
+            var failure = "OCR_FAILED"
+            let result: [String: Any]? = autoreleasepool {
                 guard let data = Data(base64Encoded: encoded),
                       let source = CGImageSourceCreateWithData(data as CFData, nil),
                       let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
@@ -33,7 +44,7 @@ public final class BreezePdfOcrPlugin: CAPPlugin, CAPBridgedPlugin {
                       let height = properties[kCGImagePropertyPixelHeight] as? Int,
                       width > 0, height > 0, width <= 2048, height <= 2048,
                       let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-                    call.reject("Invalid page image", "INVALID_IMAGE"); return
+                    failure = "INVALID_IMAGE"; return nil
                 }
                 do {
                     let request = VNRecognizeTextRequest()
@@ -59,12 +70,17 @@ public final class BreezePdfOcrPlugin: CAPPlugin, CAPBridgedPlugin {
                                           "w": rect.width, "h": rect.height])
                         }
                     }
-                    call.resolve(["words": words])
+                    return ["words": words]
                 } catch {
                     // Do not log source text or image data.
-                    call.reject("Page text recognition failed", "OCR_FAILED")
+                    return nil
                 }
             }
+            // A status receipt proves this request left Vision and released its
+            // image/request scope. It does not force-cancel an active SDK call.
+            lock.lock(); completedRequestId = requestId; busy = false; lock.unlock()
+            if let result { call.resolve(result) }
+            else { call.reject("Page text recognition failed", failure) }
         }
     }
 }

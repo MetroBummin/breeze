@@ -125,6 +125,48 @@ time and a per-query timeout. No host ACL, group, permission or secret changed.
   pages remain readable originals. No cloud fallback or spelling fabrication is
   introduced. Returning to the original dismisses the spelling prompt.
 
+## Response recovery follow-up after `0b51a49`
+
+The owner requested a narrower investigation of permanent pending and RSS growth.
+Three new controlled-promise regressions first failed against `0b51a49`: the page
+stayed `running`, cached pages could not resume, and there was no safe path after
+a lost bridge response. All 21 OCR unit cases pass after the recovery change.
+
+The 30-second JavaScript deadline now leaves a failed page without admitting a
+second native recognizer. Cached positions can be used after that deadline.
+An explicit retry asks the native plugin whether the exact request finished;
+only a receipt recorded after native completion and input/model cleanup permits
+reentry. The status wait is bounded to two seconds, and repeated taps reuse any
+still-pending bridge status call. Real late settlement wakes blocked visible
+pages. Expired results cannot publish, write cache, or unlock a replacement job.
+Closed/background/gesture-interrupted retry intents cannot start lookup.
+
+Local Chromium passed the actual configured deadline, cached document reopening
+while the native promise was held, blocked repeated taps, matching-receipt retry,
+and stale-response rejection. The native responses here are explicitly mocked.
+The new existing-slot notice is checked in ten viewport/theme combinations;
+the first 320px test caught clipped wording, which was shortened to
+`앱 완전 종료 후 다시 열기` without adding a surface or changing shared notice UI.
+The existing 60-page stress, cache passes and nine reopens also passed. Full local
+`npm test` passed; final-head native and browser CI results belong in the PR.
+
+Actual permanent Vision/ML Kit hangs have not been reproduced. A native SDK that
+never finishes still requires process restart; neither a UI timeout nor calling
+an API named `cancel`/`close` proves it is safe to admit overlapping work.
+Spelling editing is still unsupported. No changes bypass WebKit's offline Blob
+assertion or Android's KVM prerequisite.
+
+Memory diagnosis is expanded to a matched input/base64/report control, 384 actual
+repetitions in four blocks, process RSS and malloc in-use/allocated snapshots,
+idle samples and a weak-reference plugin-release check. A separate 24-repeat
+`MallocStackLogging` run uses `leaks --atExit`; it records the tool's exit status
+and output and keeps a leak/tool failure failing. Its instrumented RSS is not
+substituted for the uninstrumented run. This setup is **not a leak fix claim**:
+an app-owned retaining path and equivalent before/after proof are needed to
+attribute or close a leak. The previous +12,992,512-byte observation at
+`0b51a49` remains evidence, regardless of the next run's result. macOS results
+still do not establish physical iOS-device memory behavior.
+
 Final browser/native results and exact head are recorded in the PR. Browser
 stress uses native doubles and the real bundled PDF.js worker through its
 `workerPort` API for offline

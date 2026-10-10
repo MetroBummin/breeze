@@ -28,7 +28,8 @@ public class PdfOcrStressTest {
         final CountDownLatch done = new CountDownLatch(1);
         volatile JSObject result;
         volatile String error;
-        Capture(String image) { super(null, "BreezePdfOcr", "stress", "recognize", new JSObject().put("image", image)); }
+        Capture(String image) { this(image, ""); }
+        Capture(String image, String requestId) { super(null, "BreezePdfOcr", "stress", "recognize", new JSObject().put("image", image).put("requestId", requestId)); }
         @Override public void resolve(JSObject value) { result = value; done.countDown(); }
         @Override public void reject(String message, String code, Exception ex, JSObject data) { error = code; done.countDown(); }
     }
@@ -58,9 +59,13 @@ public class PdfOcrStressTest {
         try {
             for (int i=0; i<corpus.length()+24; i++) {
                 String id = i<corpus.length() ? corpus.getJSONObject(i).getString("id") : "print-48";
-                Capture call = new Capture(Base64.encodeToString(asset(assets, id+".png"), Base64.NO_WRAP));
+                Capture call = new Capture(Base64.encodeToString(asset(assets, id+".png"), Base64.NO_WRAP), "stress-"+i);
                 long started = SystemClock.elapsedRealtime(); plugin.recognize(call);
                 assertTrue("native completion deadline: "+id, call.done.await(45, TimeUnit.SECONDS));
+                Capture receipt = new Capture("", "stress-"+i); plugin.getStatus(receipt);
+                assertTrue("matching native completion receipt", receipt.result.getBoolean("finished", false));
+                Capture unrelated = new Capture("", "unrelated"); plugin.getStatus(unrelated);
+                assertFalse("unrelated request must not release native admission", unrelated.result.getBoolean("finished", true));
                 Debug.MemoryInfo memory = new Debug.MemoryInfo(); Debug.getMemoryInfo(memory);
                 JSONObject row = new JSONObject().put("id", id).put("iteration", i)
                     .put("milliseconds", SystemClock.elapsedRealtime()-started).put("pssKiB", memory.getTotalPss())
