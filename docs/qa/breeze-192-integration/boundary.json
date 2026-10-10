@@ -135,6 +135,14 @@
         "tests/verify-pdf-ocr-browser.mjs",
         "tests/verify-pdf-session-regressions.mjs"
       ]
+    },
+    {
+      "pr": 147,
+      "parent": "e2566f49e4c05f1c9cd0b506378732d9643309b6",
+      "source": "28e6688d3214daf470be562faad7292113a43861",
+      "files": [
+        "tests/helpers/pdf-ocr-browser-stress.mjs"
+      ]
     }
   ],
   "files": {
@@ -465,9 +473,9 @@
     },
     "tests/helpers/pdf-ocr-browser-stress.mjs": {
       "pr": 147,
-      "source": "acdd7c580a5cb88a53049d93021dc171fa5510d5",
+      "source": "28e6688d3214daf470be562faad7292113a43861",
       "mode": "100644",
-      "sha256": "206fed526e6a78a335f9ac39a8bfeff672b58988b73f9bbf96214e088ecbf41c"
+      "sha256": "d878794a0aea59816d338b4f4d680e105adc12a0b941e158f8400a69f99389b8"
     },
     "tests/helpers/pdf-scan-fixture.mjs": {
       "pr": 143,
@@ -720,7 +728,7 @@
   "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied. Amendment 2026-10-10 13:06 UTC: owner requested removing only the OCR spelling-confirmation step so one tap opens the existing meaning. PR147 pins that exact implementation; no correction editor, new merge, build or deployment is authorized.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "07184e742f12332530fce42246652f2f22cd0f8137231b58d8783e8fa71bb3c7",
+    "tools/record-192-integration-boundary.mjs": "a4293709c9d6037a72279b4c9f373a1f38b761f1673fcf1cf3af87b33d1ebe92",
     "docs/decisions/022-breeze-192-integration.md": "33e7aedde6a77857e0c8f3080161ea4de61f6212a8493c9489b2b40ba1e9f340",
     "docs/qa/breeze-192-integration-20261009.md": "d5f10dfd82a5a84186322fde83ebb4ee2b0a1e0ea4172c61a28c375100b2c6cc"
   }
