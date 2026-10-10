@@ -45,6 +45,7 @@ jobs:
           java -jar /tmp/breeze-android-candidate/bundletool.jar validate --bundle=android/app/build/outputs/bundle/release/app-release.aab
           java -jar /tmp/breeze-android-candidate/bundletool.jar dump manifest --bundle=android/app/build/outputs/bundle/release/app-release.aab > /tmp/breeze-android-candidate/AndroidManifest.xml
           jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab > /tmp/breeze-android-candidate/signature-verification.txt 2>&1
+          cat android/app/build/outputs/logs/manifest-merger-release-report.txt
           python3 tools/verify-android-candidate.py
       - uses: actions/upload-artifact@v4
         with:
