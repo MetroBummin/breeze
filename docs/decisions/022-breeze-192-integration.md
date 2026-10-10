@@ -125,3 +125,13 @@ including the documented confidence-1 misrecognition. Historical receipts and
 all unrelated protected bytes stay exact. This amendment permits implementation,
 tests and draft PR publication only; a new merge, build and release require a
 separate owner instruction.
+
+## Bookshelf preparation and next-build amendment (2026-10-10)
+
+At 13:28 UTC the owner explicitly requested implementation of the discussed
+bookshelf OCR count/progress design and upload in the next build. Pin the sixteen
+source files in `8f45c9527c83d43eea9c42815d13938bb8003ccf`, exact parent
+`50fe13ae3acf01d307d0af0365f8189680dd6a02`. The earlier implementation-only
+hold describes the previous instruction. The tested integration and next
+TestFlight upload are now authorized. No delayed tap replay is included;
+App Store review submission remains separate.
