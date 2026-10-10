@@ -57,6 +57,8 @@ try{
   await page.setViewportSize(size);
   for(const dark of [false,true]){
    await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
+   // Short landscape places the book below the fold; inspect it as a reader would.
+   await slot.scrollIntoViewIfNeeded({timeout:5000});
    assert.equal(await page.locator('#onboarding').isVisible(),false,'onboarding must not cover the bookshelf');
    const rect=await slot.evaluate(n=>{const r=n.getBoundingClientRect(),top=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return {x:r.left,w:r.width,h:r.height,viewport:innerWidth,uncovered:!!top&&(n===top||n.contains(top))};});
    assert.ok(rect.uncovered,'OCR progress must be the visible topmost content');
