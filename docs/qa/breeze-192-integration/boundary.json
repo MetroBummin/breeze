@@ -175,6 +175,14 @@
         "tests/verify-pdf-ocr-browser.mjs",
         "tests/verify-pdf-ocr-library-browser.mjs"
       ]
+    },
+    {
+      "pr": 147,
+      "parent": "7e0fc5661bb8dc6cc042fee9bf765324eb25d56d",
+      "source": "d35e517bc263ce25ba6d5fc65631ba52d52ed475",
+      "files": [
+        "tests/verify-pdf-ocr-library-browser.mjs"
+      ]
     }
   ],
   "files": {
@@ -769,9 +777,9 @@
     },
     "tests/verify-pdf-ocr-library-browser.mjs": {
       "pr": 147,
-      "source": "c698e89ff69bdc44c988e0232d7d28fdb3dcb7dd",
+      "source": "d35e517bc263ce25ba6d5fc65631ba52d52ed475",
       "mode": "100644",
-      "sha256": "bd31aae633701cba79c186b43f653f1cb5a8241f1872fc5f6bad3cb12faff1dd"
+      "sha256": "56d0d8fd5106886b88a38631274cfb49e0cba024dc0b167a6071f71563ea57e8"
     },
     "tests/verify-pdf-ocr-library.mjs": {
       "pr": 147,
@@ -790,7 +798,7 @@
   "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied. Amendment 2026-10-10 13:06 UTC: owner requested removing only the OCR spelling-confirmation step so one tap opens the existing meaning. PR147 pins that exact implementation; no correction editor, new merge, build or deployment is authorized by that earlier instruction. Amendment 2026-10-10 13:28 UTC: owner explicitly approved implementing the bookshelf OCR page-count/progress design and uploading the next TestFlight build. Include local whole-book preparation, visible-page priority, nonblocking reading and no delayed tap replay. This authorizes the tested integration and next TestFlight build; App Store review submission remains separate.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "c0624e20f93ca7dc9539597c4e779ccc034e5d75f95b890c7d363adf3a378d59",
+    "tools/record-192-integration-boundary.mjs": "40447fe0a92c6b6401ade3037428bb7ca6421ed7039921155d44e76ecb9b00fa",
     "docs/decisions/022-breeze-192-integration.md": "50b6c4c712b28014b5618530794a277730766334540fe2c6f92ab59602b9b44b",
     "docs/qa/breeze-192-integration-20261009.md": "d5f10dfd82a5a84186322fde83ebb4ee2b0a1e0ea4172c61a28c375100b2c6cc"
   }
