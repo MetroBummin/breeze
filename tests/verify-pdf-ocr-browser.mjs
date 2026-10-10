@@ -31,7 +31,7 @@ try{
  const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
  page.on('console',message=>{if(/pdf|worker/i.test(message.text()))console.log('PDF browser diagnostic:',message.text());});
  page.on('requestfailed',request=>{if(request.url().includes('pdf-3.11.174.worker'))console.log('Bundled worker request failed:',request.failure());});
- await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','done'));
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  // WebKit routes blob: reads as well. Only intercept network protocols so
  // offline emulation does not turn local IndexedDB Blob reads into requests.
  // https://github.com/microsoft/playwright/issues/42727
