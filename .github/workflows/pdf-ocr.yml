@@ -28,6 +28,9 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/verify-pdf-ocr-library-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
       - run: npm run test:pdf-ocr
         env:
           BROWSER: ${{ matrix.engine }}
@@ -38,5 +41,6 @@ jobs:
           path: |
             /tmp/breeze-ocr-browser-stress/
             /tmp/breeze-ocr-confirm/
+            /tmp/breeze-ocr-library/
           if-no-files-found: warn
           retention-days: 7

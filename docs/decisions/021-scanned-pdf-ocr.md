@@ -54,7 +54,7 @@ spelling correction, glyph-width interpolation or whole-PDF AI fallback is added
 
 ## Cache and UI
 
-A separate local IndexedDB cache retains at most 48 pages, including empty
+A separate local IndexedDB cache retains processed pages until book deletion, including empty
 successes. Keys contain schema/raster revision, platform, book ID, source-byte
 hash and page number. Missing byte hashes disable durable reuse. Only native
 word text/confidence/positions are cached, never the page image. Cache failures
@@ -64,19 +64,15 @@ lookup maps; returning to the page can use its durable OCR entry. OS/engine mode
 changes require a revision bump if their cached output must be invalidated.
 
 Completed words feed `session.wordBoxes`, the existing saved/selected markers,
-and `openPdfWord`. An OCR word first opens a nonmodal spelling confirmation.
-Its explicit "맞아요, 뜻 보기" action starts the existing lookup and remembers
-that exact published box in a WeakSet. Repeated taps on that same live occurrence
-then open lookup directly. The check is not shared by word string, another box,
-cache reconstruction, page eviction or document reopening; it is never persisted.
-Unconfirmed repeated source taps never count as confirmation. There is no new
-spelling editor or saved user correction; "원문으로" dismisses the prompt.
-Outside input, scroll, pinch, resize,
-backgrounding or reader exit dismisses the prompt, and its callback rechecks the
-document, occurrence and position generation. Reading and zoom remain available.
-Native stress found `Bright` recognized as `Briaht` at confidence 1.0; raising a
-confidence threshold alone cannot establish correctness. OCR sentence lookup is
-not enabled by confirming an individual word. Text-layer PDFs keep one-tap lookup.
+and `openPdfWord`. As requested after build 264 device testing (2026-10-10),
+a tap opens the existing meaning flow directly, just like text-layer PDFs.
+The earlier per-occurrence spelling confirmation, WeakSet and prompt listeners
+were removed. No new spelling editor or confidence-based confirmation gate is
+added. Existing session/occurrence ownership and gesture admission remain.
+Native stress found `Bright` recognized as `Briaht` at confidence 1.0: OCR can
+still misread a word, and direct lookup does not certify spelling correctness.
+OCR sentence lookup remains disabled. This change removes one interaction rather
+than changing recognition, local cache, dictionary, saved-word or sync behavior.
 OCR never automatically calls the dictionary. A tap on an unrecognized page
 uses the existing toast: processing, unsupported, empty or retry-on-failure.
 It never waits to open lookup from an old screen coordinate. There is no automatic
@@ -135,3 +131,24 @@ was recorded, explaining a silent tap path. Regression fixtures cover the native
 proxy shape rather than supplying a helper absent from the shipped shell. This
 contract reproduction does not establish real-device Vision accuracy or a verified
 repair on the reporter's iPhone; those remain release acceptance requirements.
+
+
+### Book-level preparation and progress (2026-10-10)
+
+The owner approved local whole-book preparation with a small bookshelf label
+and thin progress bar (for example, 12/80 pages), while allowing immediate reading.
+The current visible page has priority; the rest are processed sequentially.
+No pending tap is replayed later. Ready pages retain ordinary one-tap lookup.
+
+The library worker owns at most one headless PDF document, separate from the
+reader document. Both share the existing exclusive raster/native OCR lane.
+It pauses new work while the app is hidden or reader gestures/painting need
+priority. It resumes from durable page records when reopened; background OS
+execution while suspended is not promised.
+
+Progress counts durably processed active pages, including existing text layers
+and successfully empty pages, excluding deleted pages. Recognition/storage
+failures pause with a retry action, not false completion. The former global
+48-page eviction is removed so completion still means earlier pages are usable.
+Only metadata/recognized text persists; raster images and live reader maps
+remain bounded and released. Device-local state never enters book sync.

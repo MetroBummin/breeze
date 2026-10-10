@@ -2,12 +2,9 @@
    One raster/native job globally; only currently visible pages enter the lane.
    Native boxes use top-left ratios of PDF.js's intrinsically rotated viewport. */
 const BreezePdfOcr=(()=>{
-  const REVISION='scan-en-v1-2048',MAX_WORDS=3000,MAX_CACHE_PAGES=48;
+  const REVISION='scan-en-v1-2048',MAX_WORDS=3000;
   const states=new WeakMap();
-  // Explicitly checked spelling belongs to this published occurrence, not to a
-  // word string, persisted cache entry, another page or a later reader session.
-  const checkedOccurrences=new WeakSet();
-  let active=null,nativeWork=null,nativeSequence=0,timer=0,wanted=null,confirmation=null,confirmationNode=null;
+  let active=null,nativeWork=null,nativeSequence=0,timer=0,wanted=null;
   const cacheDb=openDb('breeze-pdf-ocr',1,db=>db.createObjectStore('pages').createIndex('at','at'));
   function state(session){
     if(!states.has(session))states.set(session,{pages:new Map(),closed:false});
@@ -32,19 +29,13 @@ const BreezePdfOcr=(()=>{
     });}catch{return null;}
   }
   async function remember(k,words,bookId){
-    if(!k)return;
+    if(!k)return false;
     try{await localTransaction(await cacheDb(),'pages','readwrite',tx=>{
       const store=tx.objectStore('pages');store.put({words,bookId,at:Date.now()},k);
-      const count=store.count();count.onsuccess=()=>{
-        let excess=count.result-MAX_CACHE_PAGES;if(excess<=0)return;
-        const oldest=store.index('at').openKeyCursor();oldest.onsuccess=()=>{
-          const cursor=oldest.result;if(!cursor||excess--<=0)return;
-          store.delete(cursor.primaryKey);cursor.continue();
-        };
-      };
-    });}catch{/* Cache quota/private-mode failures do not disable lookup. */}
+    });return true;}catch{return false;}
   }
   async function forget(book){
+    if(typeof BreezePdfOcrLibrary!=='undefined')BreezePdfOcrLibrary.forget(book.id);
     // Retire pending work before deleting entries so a late result cannot refill them.
     for(const session of new Set([wanted,active?.session]))if(session?.bookId===book.id)close(session);
     try{await localTransaction(await cacheDb(),'pages','readwrite',tx=>{
@@ -183,7 +174,26 @@ const BreezePdfOcr=(()=>{
   }
   async function drain(){
     const session=wanted;
-    if(active||!currentPdfSession(session)||state(session).closed||document.hidden)return;
+    if(!currentPdfSession(session)||state(session).closed||document.hidden)return;
+    if(active){
+      // Prepared pages need no raster/native lane. Reading them must not wait
+      // for a different page's background recognition to finish.
+      for(const n of pdfPagesInView(session)){
+        const entry=state(session).pages.get(n);
+        if(!session.settled.has(n)||entry?.status!=='waiting'||entry.readingCache
+            ||originalPdfPaintPaused()||pdfScrollBusy(session))continue;
+        entry.readingCache=true;
+        try{
+          const words=await cached(key(session,n));
+          if(words!==null&&live(session,n,entry)&&session.settled.has(n)&&!document.hidden
+              &&!originalPdfPaintPaused()&&!pdfScrollBusy(session)&&pdfPagesInView(session).includes(n)){
+            const boxes=boxesFromWords(words);status(session,n,entry,boxes.length?'ready':'empty');publish(session,n,entry,boxes);
+          }
+        }catch{/* A corrupt/unavailable cache falls back to the normal OCR lane. */}
+        finally{entry.readingCache=false;}
+      }
+      return;
+    }
     if(originalPdfPaintPaused()||pdfScrollBusy(session)||session.paintActive){schedule(session);return;}
     const pages=state(session).pages;
     const n=pdfPagesInView(session).find(n=>session.settled.has(n)&&pages.get(n)?.status==='waiting');
@@ -222,7 +232,6 @@ const BreezePdfOcr=(()=>{
     if(entry&&['ready','empty'].includes(entry.status))status(session,n,entry,'waiting');
   }
   function close(session){
-    if(confirmation?.session===session)dismissConfirmation();
     if(!states.has(session))return;
     state(session).closed=true;
     if(wanted===session){wanted=null;clearTimeout(timer);timer=0;}
@@ -239,58 +248,55 @@ const BreezePdfOcr=(()=>{
     }else return false;
     return true;
   }
-  function dismissConfirmation(){
-    confirmation=null;
-    if(confirmationNode){confirmationNode.remove();confirmationNode=null;}
+  // Background books share this exact lane with foreground OCR. One raster
+  // and one native request remain the global limit; an in-flight native call
+  // is not assumed cancelled merely because its UI deadline elapsed.
+  async function background(book,n,pdf,valid){
+    const admissible=()=>{
+      const session=originalSession;
+      if(active||document.hidden||!valid())return false;
+      if(currentPdfSession(session)){
+        if(originalPdfPaintPaused()||pdfScrollBusy(session)||session.paintActive)return false;
+        const pages=states.get(session)?.pages;
+        if(pdfPagesInView(session).some(p=>['waiting','running'].includes(pages?.get(p)?.status)))return false;
+      }
+      return true;
+    };
+    if(!admissible())return 'busy';
+    if(nativeWork?.expired)await reconcileNative(nativeWork);
+    if(!admissible())return 'busy';
+    if(nativeWork)return 'blocked';
+    const native=plugin();if(!native)return 'unsupported';
+    const owned={bookId:book.id,hash:book.original?.hash||book.sourceHash,pdf};
+    active={session:owned,n,cancel:null};
+    try{
+      let words=await cached(key(owned,n));
+      if(words===null){
+        const page=await pdf.getPage(n),content=await page.getTextContent();
+        if(!valid()||document.hidden)return 'busy';
+        if(content.items.some(item=>String(item.str||'').trim())){words=[];page.cleanup();}
+        else{
+          const image=await raster(owned,n,()=>valid()&&!document.hidden
+            &&!(currentPdfSession()&&(originalPdfPaintPaused()||pdfScrollBusy(originalSession)||originalSession.paintActive)));
+          if(!image)return 'busy';
+          words=(await recognize(native,image)).words;boxesFromWords(words);
+        }
+      }
+      if(!valid())return 'retired';
+      return await remember(key(owned,n),words,book.id)?'done':'storage';
+    }catch{return 'failed';}
+    finally{active=null;if(currentPdfSession(wanted))schedule(wanted);}
   }
-  function confirm(page,box,accept){
-    dismissConfirmation();
-    const session=originalSession,token=readerModeChangeToken;
-    if(!ownsPdfBoxes(page,[box],session)||document.hidden)return;
-    if(checkedOccurrences.has(box)){
-      if(!originalPdfPaintPaused()&&!pdfScrollBusy(session))accept();
-      return;
-    }
-    if(typeof closePanel==='function')closePanel();
-    if(typeof closeSentence==='function')closeSentence();
-    const node=document.createElement('div');node.className='pdf-ocr-confirm control-glass';
-    node.setAttribute('role','group');node.setAttribute('aria-label','스캔 단어 확인');
-    node.setAttribute('aria-live','polite');
-    const label=document.createElement('p');label.textContent='원문과 같은 단어인지 확인해 주세요.';
-    const word=document.createElement('strong');word.textContent=box.word;word.lang='en';
-    const note=document.createElement('p');note.textContent='작은 글자·흐림·손글씨는 잘못 읽을 수 있어요.';
-    const actions=document.createElement('div');actions.className='pdf-ocr-confirm-actions';
-    const yes=document.createElement('button');yes.type='button';yes.dataset.ocrConfirm='';yes.textContent='맞아요, 뜻 보기';
-    const no=document.createElement('button');no.type='button';no.dataset.ocrDismiss='';no.textContent='원문으로';
-    actions.append(yes,no);node.append(label,word,note,actions);document.body.append(node);
-    const entry={session,page,box,token};confirmation=entry;confirmationNode=node;
-    const r=page.getBoundingClientRect(),v=window.visualViewport;
-    const left=v?.offsetLeft||0,top=v?.offsetTop||0,width=v?.width||window.innerWidth,height=v?.height||window.innerHeight;
-    const size=node.getBoundingClientRect(),x=r.left+(box.x+box.w/2)*r.width;
-    const below=r.top+(box.y+box.h)*r.height+8,above=r.top+box.y*r.height-size.height-8;
-    node.style.left=Math.max(left+12,Math.min(left+width-size.width-12,x-size.width/2))+'px';
-    node.style.top=Math.max(top+12,Math.min(top+height-size.height-80,below+size.height<top+height-80?below:above))+'px';
-    yes.addEventListener('click',event=>{
-      event.preventDefault();event.stopPropagation();
-      const valid=confirmation===entry&&currentPdfSession(session)&&readerModeChangeToken===token
-        &&ownsPdfBoxes(page,[box],session)&&!document.hidden&&!originalPdfPaintPaused()&&!pdfScrollBusy(session);
-      dismissConfirmation();if(valid){checkedOccurrences.add(box);accept();}
+  async function completed(book){
+    const identity={bookId:book.id,hash:book.original?.hash||book.sourceHash};
+    const prefix=JSON.parse(key(identity,1));prefix.pop();
+    return localTransaction(await cacheDb(),'pages','readonly',(tx,done)=>{
+      const rq=tx.objectStore('pages').getAllKeys();
+      rq.onsuccess=()=>done(new Set(rq.result.flatMap(k=>{
+        try{const parts=JSON.parse(k);return JSON.stringify(parts.slice(0,-1))===JSON.stringify(prefix)?[parts.at(-1)]:[];}catch{return [];}
+      })));
     });
-    no.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();dismissConfirmation();});
   }
-  // This is a nonmodal spelling check, not a second gesture owner. Every reader
-  // gesture continues normally; leaving the occurrence only removes the prompt.
-  const outside=event=>{if(confirmationNode&&!confirmationNode.contains(event.target))dismissConfirmation();};
-  document.addEventListener('pointerdown',outside,true);
-  document.addEventListener('touchstart',outside,true);
-  document.addEventListener('scroll',dismissConfirmation,true);
-  document.addEventListener('wheel',dismissConfirmation,true);
-  document.addEventListener('keydown',event=>{if(event.key==='Escape')dismissConfirmation();});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)dismissConfirmation();});
-  window.addEventListener?.('resize',dismissConfirmation);
-  window.addEventListener?.('blur',dismissConfirmation);
-  window.visualViewport?.addEventListener('resize',dismissConfirmation);
-  window.visualViewport?.addEventListener('scroll',dismissConfirmation);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
-  return {inspect,schedule,release,close,tap,forget,boxesFromWords,confirm};
+  return {inspect,schedule,release,close,tap,forget,boxesFromWords,background,completed,available:()=>!!plugin()};
 })();

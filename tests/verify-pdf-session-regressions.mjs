@@ -186,3 +186,15 @@ for(const hit of [true,false])test(`uninterrupted deferred word geometry keeps n
  const pending=c.openPdfWordAt(10,10);f.gate.resolve();
  assert.equal(await pending,hit);assert.equal(opened,hit?1:0);
 });
+
+test('recognized OCR words dispatch once per tap without a confirmation gate',()=>{
+ const f=fixture(),c=f.context,page={dataset:{page:'1'},isConnected:true},box={word:'Warning',ocr:true};
+ c.originalSession={kind:'pdf',bookId:'A',hash:'hash-A',loadToken:1,pages:[page],wordBoxes:new Map([[1,[box]]])};
+ const opened=[];
+ Object.assign(c,{words:{},keyOf:word=>word.toLowerCase(),makePdfWordMarker:()=>({ocr:true}),openWord:(key,marker)=>opened.push({key,marker})});
+ c.BreezePdfOcr.confirm=()=>assert.fail('An OCR tap must not require a second confirmation');
+ c.openPdfWord(page,box);assert.equal(opened.length,1);assert.equal(opened[0].key,'warning');
+ c.openPdfWord(page,box);assert.equal(opened.length,2);
+ c.openPdfWord(page,{...box});assert.equal(opened.length,2,'foreign occurrence cannot dispatch');
+ c.originalLoadToken++;c.openPdfWord(page,box);assert.equal(opened.length,2,'stale session cannot dispatch');
+});

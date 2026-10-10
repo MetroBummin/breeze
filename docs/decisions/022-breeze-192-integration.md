@@ -113,3 +113,25 @@ all historical 1.9.1 checks remain unchanged; unlisted edits still fail. The ear
 hold above describes the integration's historical authorization, not this later
 explicit release instruction. Physical-device acceptance and App Store review
 submission remain separate from this TestFlight/Android update authorization.
+
+## Direct-tap implementation amendment: PR147 (2026-10-10)
+
+After personally confirming build 264 lookup, font and scrim behavior, the owner
+requested only removal of the OCR spelling-confirmation step. Pin the exact
+ten-file source delta at `acdd7c580a5cb88a53049d93021dc171fa5510d5` over
+`b72436a2311b9b4a78738abd2b9fa057ab529460`. The existing meaning surface opens
+on one tap; no correction editor is added. Recognizer accuracy is unchanged,
+including the documented confidence-1 misrecognition. Historical receipts and
+all unrelated protected bytes stay exact. This amendment permits implementation,
+tests and draft PR publication only; a new merge, build and release require a
+separate owner instruction.
+
+## Bookshelf preparation and next-build amendment (2026-10-10)
+
+At 13:28 UTC the owner explicitly requested implementation of the discussed
+bookshelf OCR count/progress design and upload in the next build. Pin the sixteen
+source files in `8f45c9527c83d43eea9c42815d13938bb8003ccf`, exact parent
+`50fe13ae3acf01d307d0af0365f8189680dd6a02`. The earlier implementation-only
+hold describes the previous instruction. The tested integration and next
+TestFlight upload are now authorized. No delayed tap replay is included;
+App Store review submission remains separate.

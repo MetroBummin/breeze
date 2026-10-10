@@ -88,6 +88,7 @@ async function loadBooks(){
     ensureBookFingerprint(book);
     if(book.fingerprint !== previousFingerprint) await bookPut(book);
   }
+  if(typeof BreezePdfOcrLibrary!=='undefined')BreezePdfOcrLibrary.restore();
 }
 let positions = load(LS_POS, {});   // bookId -> text anchor + original source anchor
 let curBook = null, selKey = null;

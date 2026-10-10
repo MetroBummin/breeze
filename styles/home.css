@@ -456,3 +456,12 @@
 
 /* Card replacement must not anchor the rail to an outgoing skeleton/card. */
 #v-home #casual-rail{overflow-anchor:none;}
+
+/* OCR preparation is device-local and separate from reading progress. */
+.book-ocr-progress{margin-top:5px;display:grid;gap:5px;color:var(--settings-muted);font-size:11px;line-height:1.4;min-width:0;}
+.book-ocr-progress[hidden]{display:none;}
+.book-ocr-progress progress{appearance:none;-webkit-appearance:none;width:100%;height:2px;border:0;border-radius:2px;overflow:hidden;background:var(--sentence-glass-line);}
+.book-ocr-progress progress::-webkit-progress-bar{background:var(--sentence-glass-line);}
+.book-ocr-progress progress::-webkit-progress-value{background:var(--settings-muted);}
+.book-ocr-progress progress::-moz-progress-bar{background:var(--settings-muted);}
+.book-ocr-progress button{justify-self:start;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;}

@@ -118,6 +118,71 @@
         "tests/verify-pdf-ink-regressions.mjs",
         "tests/verify-pdf-ocr.mjs"
       ]
+    },
+    {
+      "pr": 147,
+      "parent": "b72436a2311b9b4a78738abd2b9fa057ab529460",
+      "source": "acdd7c580a5cb88a53049d93021dc171fa5510d5",
+      "files": [
+        "docs/decisions/021-scanned-pdf-ocr.md",
+        "index.html",
+        "landing/index.html",
+        "scripts/reader/pdf-ocr.js",
+        "scripts/reader/pdf-original.js",
+        "styles/reader.css",
+        "sw.js",
+        "tests/helpers/pdf-ocr-browser-stress.mjs",
+        "tests/verify-pdf-ocr-browser.mjs",
+        "tests/verify-pdf-session-regressions.mjs"
+      ]
+    },
+    {
+      "pr": 147,
+      "parent": "e2566f49e4c05f1c9cd0b506378732d9643309b6",
+      "source": "28e6688d3214daf470be562faad7292113a43861",
+      "files": [
+        "tests/helpers/pdf-ocr-browser-stress.mjs"
+      ]
+    },
+    {
+      "pr": 147,
+      "parent": "50fe13ae3acf01d307d0af0365f8189680dd6a02",
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "files": [
+        ".github/workflows/pdf-ocr.yml",
+        "docs/decisions/021-scanned-pdf-ocr.md",
+        "index.html",
+        "landing/index.html",
+        "package.json",
+        "scripts/core/state.js",
+        "scripts/library/library.js",
+        "scripts/reader/pdf-ocr-library.js",
+        "scripts/reader/pdf-ocr.js",
+        "styles/home.css",
+        "sw.js",
+        "tests/helpers/pdf-ocr-browser-stress.mjs",
+        "tests/verify-pdf-ocr-browser.mjs",
+        "tests/verify-pdf-ocr-library-browser.mjs",
+        "tests/verify-pdf-ocr-library.mjs",
+        "tests/verify-pdf-ocr.mjs"
+      ]
+    },
+    {
+      "pr": 147,
+      "parent": "6afc94d4dae7d535f65ad99e83e8876ae0479c2e",
+      "source": "c698e89ff69bdc44c988e0232d7d28fdb3dcb7dd",
+      "files": [
+        "tests/verify-pdf-ocr-browser.mjs",
+        "tests/verify-pdf-ocr-library-browser.mjs"
+      ]
+    },
+    {
+      "pr": 147,
+      "parent": "7e0fc5661bb8dc6cc042fee9bf765324eb25d56d",
+      "source": "d35e517bc263ce25ba6d5fc65631ba52d52ed475",
+      "files": [
+        "tests/verify-pdf-ocr-library-browser.mjs"
+      ]
     }
   ],
   "files": {
@@ -128,10 +193,10 @@
       "sha256": "afc383a7f4b288c8307a16647bed53a1eaf4789e6ca2bf852f4cb0d5c6f5df06"
     },
     ".github/workflows/pdf-ocr.yml": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "94bcb59f8268c13b4e877efbcee99e16f21bb8229d8f25f1a71ce88021d10a40"
+      "sha256": "cfc74ad37d8220db1da03f631df91a3be19672f999fe8d34298343e3567de506"
     },
     "android/app/build.gradle": {
       "pr": 143,
@@ -170,10 +235,10 @@
       "sha256": "6538e41d1f882577ca66112659b45940b90ffba52870fc1abd38e56e16033553"
     },
     "docs/decisions/021-scanned-pdf-ocr.md": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "47032c2494aa6b0a163701a0d80e3cf9c4843001495a39b3b7b73f70458d43fd"
+      "sha256": "5421d0cb5104be8ac291f0aea04b46a48eacb214535d11e1d11ea4d2e80588bb"
     },
     "docs/qa/evidence/pdf-ocr-confirm-phone-light.png": {
       "pr": 143,
@@ -212,10 +277,10 @@
       "sha256": "3806fd1e0a85c5207e5ee49d7f4d76f7c879def448394660616bae95e3702ca0"
     },
     "index.html": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "44ba17aed313cf781d170a58e5fe6da98991d44b833fa0afa61f1f8491bbf37b"
+      "sha256": "c0147ae43fd298c7807b97cdd7647cba81264faf6e91fd15d3f66d0ef3a78549"
     },
     "ios/App/App.xcodeproj/project.pbxproj": {
       "pr": "version-only",
@@ -237,16 +302,16 @@
       "sha256": "dceb25851a813c0b314d6333286846387826e611eb36afd0a7864edd4948a892"
     },
     "landing/index.html": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "ccc91b2bd331d161be77e99527e927747c6faac420ab81afb9bf370e37a418f8"
+      "sha256": "d0100f5bce9ffe80a41330534faca6e066a7e7afd373c0561ef434eac3e51cb3"
     },
     "package.json": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "ea1c8158ef4181983d073c807e647a7e582fafecf99d19bc8454a8bb1583aba6"
+      "sha256": "d9266c328e011ebd257c3765bf792ba96ced002ce067ce833cb20ce3816cbfd4"
     },
     "scripts/core/storage.js": {
       "pr": 143,
@@ -261,26 +326,26 @@
       "sha256": "fc16eb5f791770f4f9a49b4c275209f814046e56391a81600f6b44b760edd8af"
     },
     "scripts/reader/pdf-ocr.js": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "2d78ffe46c5f00b767c13f6c8736638b4d78ee72df014767573f8bd95cea7599"
+      "sha256": "c0e978a98a05440d0aa011b3ea92bc3ac2d98bb60aa307be38c4af48bad14f90"
     },
     "scripts/reader/pdf-original.js": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "acdd7c580a5cb88a53049d93021dc171fa5510d5",
       "mode": "100644",
-      "sha256": "0c13e1cbee4333722f4c4dc66b552626723a438fd01e215948468e31421301e6"
+      "sha256": "96ea0898eb44d255f3420577097a611d7b82c5748d868408135f852ca8b42742"
     },
     "styles/reader.css": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "acdd7c580a5cb88a53049d93021dc171fa5510d5",
       "mode": "100644",
-      "sha256": "f2f41aa9df110abdda96633aabac9f1c391cf21f243b3377399fe242346550f1"
+      "sha256": "f1f2c167214bb638f54e7e6382b52ed5f06619e860fab203478ab490aa62f150"
     },
     "sw.js": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
       "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
     },
@@ -447,10 +512,10 @@
       "sha256": "7add4371f770cfcbb63554ce3235974eef9a06893bd0aa7227db33d93833c66c"
     },
     "tests/helpers/pdf-ocr-browser-stress.mjs": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "34424cee3a520ee0d5e509b0b7c9fadfead9b4f9a623fdd730e04cc0897eaf7e"
+      "sha256": "32cd62323d2822a17ceec5e052ccd5baf6af5941147f38fd898dd901fe61cc93"
     },
     "tests/helpers/pdf-scan-fixture.mjs": {
       "pr": 143,
@@ -489,22 +554,22 @@
       "sha256": "5a4fedddc526ee5272d64b87a350186e1dd753574969c930392b63bf07674f10"
     },
     "tests/verify-pdf-ocr-browser.mjs": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "c698e89ff69bdc44c988e0232d7d28fdb3dcb7dd",
       "mode": "100644",
-      "sha256": "1a41adb966e0065e54fe32894ecdc846c79c5faa8cc773f3a3dae96777c9599b"
+      "sha256": "75e3862b61ceb35a304c7590536b53baed595a5ac8e4e57e6288b37cbd2e61d8"
     },
     "tests/verify-pdf-ocr.mjs": {
-      "pr": 146,
-      "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "aba7d9b48f390cb5c0141709276b9894ef80fbaa035d004d8b1ca59f293e7233"
+      "sha256": "80c743a618892ac99fd78c96a8fe6b8fa8c58d883985524190775bca476e9e03"
     },
     "tests/verify-pdf-session-regressions.mjs": {
-      "pr": 143,
-      "source": "f7e67d3938ea7debed4a61243f5743980f7d4249",
+      "pr": 147,
+      "source": "acdd7c580a5cb88a53049d93021dc171fa5510d5",
       "mode": "100644",
-      "sha256": "89ac9cd1c0664f46612d4a31b4da277e3fecf591ba88d77575aec482e6feea03"
+      "sha256": "5316d8219fc3b091409676a85efa705aed7b6026c9ba4d7f0d1034020917850d"
     },
     "tests/verify-pdf-visible-repaint.mjs": {
       "pr": 143,
@@ -609,10 +674,10 @@
       "sha256": "db08069b4dd5faf809a38a65beffccd6d19415940e9297eb60fc2ee6a960e758"
     },
     "scripts/core/state.js": {
-      "pr": 144,
-      "source": "e2bf032af786c8c26e03a8222e135cc9dc3a220f",
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
-      "sha256": "cbdeaf1704c0c82142b2b9ab5d89f22cc59973ff491e90f9e573e3585b1c5af1"
+      "sha256": "8922f8ab8e9ccb7a7b5e6b3a34a751c8b267cfc370e958cfcf981ffcc1b17594"
     },
     "scripts/ui/wordbook.js": {
       "pr": 144,
@@ -691,6 +756,36 @@
       "source": "40e5719457c5cf60a6545d994630d9b4fe1379d1",
       "mode": "100644",
       "sha256": "21a0601c679a41f1adce62a3fd29547b2c92a0bacb70a993f8f3fce46e88324d"
+    },
+    "scripts/library/library.js": {
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "mode": "100644",
+      "sha256": "b33b0d4a230baf682f6950512c52c37972b3af055714f53581ce261eabab695a"
+    },
+    "scripts/reader/pdf-ocr-library.js": {
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "mode": "100644",
+      "sha256": "21030a1b757f66af9f0361bb0da0cac679b2a0ac26e95bb808c7b99587e1b216"
+    },
+    "styles/home.css": {
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "mode": "100644",
+      "sha256": "020a3e27607f3419bfe717deed8870fb9cccfd25698d402107076e738d8fb854"
+    },
+    "tests/verify-pdf-ocr-library-browser.mjs": {
+      "pr": 147,
+      "source": "d35e517bc263ce25ba6d5fc65631ba52d52ed475",
+      "mode": "100644",
+      "sha256": "56d0d8fd5106886b88a38631274cfb49e0cba024dc0b167a6071f71563ea57e8"
+    },
+    "tests/verify-pdf-ocr-library.mjs": {
+      "pr": 147,
+      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "mode": "100644",
+      "sha256": "21c8641f59971ca50bb56e1c1e695ebadb06ea0e2462baa2ce8d56747be9808d"
     }
   },
   "integrationFiles": [
@@ -700,11 +795,11 @@
     "docs/decisions/022-breeze-192-integration.md",
     "docs/qa/breeze-192-integration-20261009.md"
   ],
-  "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied.",
+  "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied. Amendment 2026-10-10 13:06 UTC: owner requested removing only the OCR spelling-confirmation step so one tap opens the existing meaning. PR147 pins that exact implementation; no correction editor, new merge, build or deployment is authorized by that earlier instruction. Amendment 2026-10-10 13:28 UTC: owner explicitly approved implementing the bookshelf OCR page-count/progress design and uploading the next TestFlight build. Include local whole-book preparation, visible-page priority, nonblocking reading and no delayed tap replay. This authorizes the tested integration and next TestFlight build; App Store review submission remains separate.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "0871753b94ae08ee866c7acfd3db60b417f8482da23096ba596d9b58dfad3a81",
-    "docs/decisions/022-breeze-192-integration.md": "f196b53344e08e12ea0e56513b9b3344e931cd338684ebcbba54ada47ae92c89",
+    "tools/record-192-integration-boundary.mjs": "40447fe0a92c6b6401ade3037428bb7ca6421ed7039921155d44e76ecb9b00fa",
+    "docs/decisions/022-breeze-192-integration.md": "50b6c4c712b28014b5618530794a277730766334540fe2c6f92ab59602b9b44b",
     "docs/qa/breeze-192-integration-20261009.md": "d5f10dfd82a5a84186322fde83ebb4ee2b0a1e0ea4172c61a28c375100b2c6cc"
   }
 }

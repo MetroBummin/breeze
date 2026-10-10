@@ -30,7 +30,7 @@ function fixture({supported=true,cache=new Map(),nativeProxy=false}={}){
   pdfPagesInView:()=>context.visible,originalPdfPaintPaused:()=>context.paused,pdfScrollBusy:()=>context.busy,
   renderPdfSavedWordMarkers:(p,boxes)=>paints.push({p,boxes}),toast:m=>toasts.push(m),pdfjsLib:{AnnotationMode:{DISABLE:0}}};
  if(nativeProxy){context.window.Capacitor.Plugins={BreezePdfOcr:native};delete context.window.Capacitor.registerPlugin;}
- session.pdf={getPage:async()=>({getViewport:({scale})=>({width:600*scale,height:800*scale}),
+ session.pdf={getPage:async()=>({getTextContent:async()=>({items:[]}),getViewport:({scale})=>({width:600*scale,height:800*scale}),
    render:()=>({promise:Promise.resolve(),cancel(){}}),cleanup(){}})};
  vm.createContext(context);const ocr=vm.runInContext(source+'\nBreezePdfOcr;',context);
  async function inspect(n=1,items=[],boxes=[]){await ocr.inspect(session,n,{getTextContent:async()=>({items})},boxes,()=>context.originalSession===session);}
@@ -103,10 +103,10 @@ test('pinch/ink, active paint and background pause admission; completion cannot 
  await f.start();f.context.paused=true;f.calls[0].resolve({words:[word()]});await flush();assert.equal(f.paints.length,0);
  f.context.paused=false;await f.start();assert.equal(f.calls.length,1);assert.equal(f.paints.length,1);
 });
-test('a bounded durable cache evicts oldest pages without retaining image bytes',async()=>{
+test('durable recognition beyond 48 pages preserves earlier results without image bytes',async()=>{
  const cache=new Map(Array.from({length:48},(_,n)=>[String(n),{words:[word()],bookId:'old',at:n}]));
  const f=fixture({cache});await f.inspect();await f.start();f.calls[0].resolve({words:[word()]});await flush();
- assert.equal(cache.size,48);assert.ok(!cache.has('0'));assert.ok(!JSON.stringify([...cache]).includes('cGFnZQ'));
+ assert.equal(cache.size,49);assert.ok(cache.has('0'));assert.ok(!JSON.stringify([...cache]).includes('cGFnZQ'));
 });
 
 test('deleting assets retires pending work before clearing the durable cache',async()=>{
@@ -138,7 +138,7 @@ test('unrated/nonfinite confidence and clamped zero-area OCR must never become l
  assert.equal(f.ocr.boxesFromWords([word('Rated',{confidence:.9})]).length,1);
 });
 
-test('120 rapid visible-page changes keep one lane, bounded cache and released raster pixels',async()=>{
+test('120 rapid visible-page changes keep one lane, durable pages and released raster pixels',async()=>{
  const f=fixture();f.session.pages=Array.from({length:60},(_,i)=>({isConnected:true,dataset:{page:String(i+1)}}));
  f.session.settled=new Set(Array.from({length:60},(_,i)=>i+1));
  for(let n=1;n<=60;n++){f.session.wordBoxes.set(n,[]);await f.inspect(n);}
@@ -152,11 +152,11 @@ test('120 rapid visible-page changes keep one lane, bounded cache and released r
   pending.resolve({words:[word('Current')]});await flush();
   assert.equal(f.session.wordBoxes.get(n)?.[0]?.word,'Current');
   f.ocr.release(f.session,n);f.session.wordBoxes.set(n,[]);
-  assert.ok(f.cache.size<=48);
+  assert.ok(f.cache.size<=60);
   assert.ok(f.canvases.every(c=>c.width===0&&c.height===0));
  }
- assert.equal(f.calls.length,120,'sequential pass exceeds 48-page cache without an unbounded live map');
- assert.equal(f.cache.size,48);
+ assert.equal(f.calls.length,60,'second pass reuses every durable page without an unbounded live map');
+ assert.equal(f.cache.size,60);
  assert.equal([...f.session.wordBoxes.values()].flat().length,0);
 });
 
@@ -257,4 +257,63 @@ test('unmodified iOS native bridge admits scanned pages through exported proxies
  const call=calls.find(call=>call.pluginId==='BreezePdfOcr');
  assert.equal(call.methodName,'recognize');
  assert.equal(call.options.requestId,'bridge-contract');
+});
+
+test('background and visible OCR share one lane; visible work goes next',async()=>{
+ const f=fixture(),book={id:'A',sourceHash:'hash-A'};
+ const pending=f.ocr.background(book,2,f.session.pdf,()=>true);await flush();assert.equal(f.calls.length,1);
+ await f.inspect(1);await f.start();assert.equal(f.calls.length,1);
+ f.calls[0].resolve({words:[word('Background')]});assert.equal(await pending,'done');await f.tick();
+ assert.equal(f.calls.length,2);f.calls[1].resolve({words:[word('Visible')]});await flush();
+ assert.equal(f.session.wordBoxes.get(1)[0].word,'Visible');
+ assert.deepEqual([...await f.ocr.completed(book)].sort(),[1,2]);
+});
+test('queued visible OCR prevents background admission',async()=>{
+ const f=fixture();await f.inspect(1);
+ assert.equal(await f.ocr.background({id:'A',sourceHash:'hash-A'},2,f.session.pdf,()=>true),'busy');
+ assert.equal(f.calls.length,0);
+});
+test('background results survive reader closure but not book retirement',async()=>{
+ for(const retire of [false,true]){
+  const f=fixture();let alive=true;
+  const pending=f.ocr.background({id:'A',sourceHash:'hash-A'},1,f.session.pdf,()=>alive);await flush();
+  f.context.originalSession=null;if(retire)alive=false;
+  f.calls[0].resolve({words:[word()]});assert.equal(await pending,retire?'retired':'done');
+  assert.equal(f.cache.size,retire?0:1);
+ }
+});
+test('background storage failure never claims completion',async()=>{
+ const f=fixture(),transaction=f.context.localTransaction;
+ f.context.localTransaction=async(db,store,mode,...args)=>{if(mode==='readwrite')throw Error('quota');return transaction(db,store,mode,...args);};
+ const pending=f.ocr.background({id:'A',sourceHash:'hash-A'},1,f.session.pdf,()=>true);await flush();
+ f.calls[0].resolve({words:[word()]});assert.equal(await pending,'storage');assert.equal(f.cache.size,0);
+});
+test('text-layer background page is processed without native OCR or dictionary work',async()=>{
+ const f=fixture(),pdf={getPage:async()=>({getTextContent:async()=>({items:[{str:'Already text'}]}),cleanup(){}})};
+ assert.equal(await f.ocr.background({id:'A',sourceHash:'hash-A'},1,pdf,()=>true),'done');
+ assert.equal(f.calls.length,0);assert.equal(f.cache.size,1);
+});
+test('prepared visible page remains usable during another background native call',async()=>{
+ const f=fixture();await f.inspect(1);await f.start();f.calls[0].resolve({words:[word('Prepared')]});await flush();
+ f.ocr.release(f.session,1);f.session.wordBoxes.set(1,[]);f.context.visible=[];
+ const pending=f.ocr.background({id:'A',sourceHash:'hash-A'},2,f.session.pdf,()=>true);await flush();assert.equal(f.calls.length,2);
+ f.context.visible=[1];await f.start();assert.equal(f.session.wordBoxes.get(1)[0].word,'Prepared');
+ assert.equal(f.calls.length,2);f.calls[1].resolve({words:[word('Next')]});await pending;
+});
+test('native-status await cannot overwrite a newer foreground admission',async()=>{
+ const f=fixture();await f.inspect(1);await f.start();await f.advance(30000);
+ const pending=f.ocr.background({id:'A',sourceHash:'hash-A'},2,f.session.pdf,()=>true);await flush();assert.equal(f.statusCalls.length,1);
+ f.calls[0].resolve({words:[word('Old')]});await flush();
+ f.ocr.tap(f.session,1);await f.tick();assert.equal(f.calls.length,2);
+ f.statusCalls[0].resolve({finished:true});assert.equal(await pending,'busy');
+ assert.equal(f.calls.length,2);f.calls[1].resolve({words:[word('Current')]});await flush();
+});
+test('all cached visible pages publish while an unrelated background call is held',async()=>{
+ const f=fixture();
+ for(const n of [1,2])f.cache.set(JSON.stringify(['scan-en-v1-2048','ios','A','hash-A',n]),{words:[word('Cached')],bookId:'A'});
+ f.context.visible=[];
+ const pending=f.ocr.background({id:'A',sourceHash:'hash-A'},3,f.session.pdf,()=>true);await flush();
+ await f.inspect(1);await f.inspect(2);f.context.visible=[1,2];await f.start();
+ assert.equal(f.session.wordBoxes.get(1).length,1);assert.equal(f.session.wordBoxes.get(2).length,1);
+ assert.equal(f.calls.length,1);f.calls[0].resolve({words:[word()]});await pending;
 });
