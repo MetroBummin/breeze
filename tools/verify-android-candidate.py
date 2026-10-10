@@ -25,7 +25,14 @@ assert sdk.attrib[ANDROID + 'minSdkVersion'] == '24'
 assert sdk.attrib[ANDROID + 'targetSdkVersion'] == '36'
 permissions = [node.attrib[ANDROID + 'name'] for node in manifest.findall('uses-permission')]
 assert 'android.permission.INTERNET' in permissions
-assert set(permissions) <= {'android.permission.INTERNET', 'kr.io.breeze.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'}, permissions
+# Merged manifest evidence in run 38053681539 pins this normal permission to
+# Google's existing transport libraries; no app manifest or dependency is changed.
+assert set(permissions) == {'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE', 'kr.io.breeze.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'}, permissions
+merger = (ROOT / 'android/app/build/outputs/logs/manifest-merger-release-report.txt').read_text()
+section = merger.split('uses-permission#android.permission.ACCESS_NETWORK_STATE\n', 1)[1]
+section = re.split(r'\n(?=[a-z][a-z-]*#)', section, maxsplit=1)[0]
+origins = set(re.findall(r'(?:ADDED|MERGED) from \[([^]]+)\]', section))
+assert origins == {'com.google.android.datatransport:transport-backend-cct:2.3.3', 'com.google.android.datatransport:transport-runtime:2.2.6'}, origins
 application = manifest.find('application')
 assert application.attrib[ANDROID + 'allowBackup'] == 'false'
 assert application.attrib[ANDROID + 'usesCleartextTraffic'] == 'false'
@@ -77,7 +84,7 @@ report = {
     'releaseSourceSha': BASE, 'releaseSourceTree': git('rev-parse', BASE + '^{tree}').decode().strip(), 'candidateBuildSha': git('rev-parse', 'HEAD').decode().strip(),
     'changedPaths': changed, 'syncGeneratedLocatorChanges': generated_changes, 'nativeVersionOverride': 'android/app/build.gradle: versionName appVersion -> versionName "1.9.2"; explicit -PandroidVersionCode=2',
     'applicationId': 'kr.io.breeze.app', 'versionName': '1.9.2', 'versionCode': 2,
-    'minSdk': 24, 'targetSdk': 36, 'compileSdk': 36, 'permissions': permissions,
+    'minSdk': 24, 'targetSdk': 36, 'compileSdk': 36, 'permissions': permissions, 'networkStatePermissionOrigins': sorted(origins),
     'file': destination.name, 'bytes': AAB.stat().st_size, 'sha256': sha(AAB.read_bytes()),
     'unsigned': True, 'bundletoolValidation': 'passed with official bundletool 1.18.3 and verified SHA256',
     'unitTests': totals, 'lintIssues': issues, 'bundledWebFiles': len(assets),
