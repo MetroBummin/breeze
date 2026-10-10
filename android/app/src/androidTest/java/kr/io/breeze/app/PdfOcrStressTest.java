@@ -63,9 +63,9 @@ public class PdfOcrStressTest {
                 long started = SystemClock.elapsedRealtime(); plugin.recognize(call);
                 assertTrue("native completion deadline: "+id, call.done.await(45, TimeUnit.SECONDS));
                 Capture receipt = new Capture("", "stress-"+i); plugin.getStatus(receipt);
-                assertTrue("matching native completion receipt", receipt.result.getBool("finished", false));
+                assertTrue("matching native completion receipt", receipt.result.getBoolean("finished", false));
                 Capture unrelated = new Capture("", "unrelated"); plugin.getStatus(unrelated);
-                assertFalse("unrelated request must not release native admission", unrelated.result.getBool("finished", true));
+                assertFalse("unrelated request must not release native admission", unrelated.result.getBoolean("finished", true));
                 Debug.MemoryInfo memory = new Debug.MemoryInfo(); Debug.getMemoryInfo(memory);
                 JSONObject row = new JSONObject().put("id", id).put("iteration", i)
                     .put("milliseconds", SystemClock.elapsedRealtime()-started).put("pssKiB", memory.getTotalPss())
