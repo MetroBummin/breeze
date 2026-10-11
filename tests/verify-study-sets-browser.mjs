@@ -19,7 +19,12 @@ try{
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  const rows=()=>page.locator('#study-sets-word-list > li');
  const wordRow=word=>rows().filter({has:page.locator('.study-sets-word',{hasText:new RegExp(`^${word}$`)})});
- const closeSheet=async()=>{await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);};
+ const closeSheet=async()=>{
+  // Native close and history popstate are separate tasks. Wait for both before
+  // measuring the refreshed home card for a trusted long press.
+  await page.evaluate(()=>{window.qaStudyClosed=false;document.getElementById('study-sets-dialog').addEventListener('close',()=>{window.qaStudyClosed=true;},{once:true});});
+  await page.locator('#study-sets-close').click();await page.waitForFunction(()=>window.qaStudyClosed&&!studySetsUI.pendingClose);
+ };
  const openHomeMenu=async(method='longpress')=>{
   if(await page.locator('#study-sets-dialog').evaluate(node=>node.open))await closeSheet();
   const card=page.locator('.study-sets-home-card[data-set-id]').first();await card.scrollIntoViewIfNeeded();
