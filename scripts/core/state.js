@@ -225,6 +225,8 @@ function saveReadingState(){
     if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
     return;
   }
+  // Saving on exit can run before the width observer or a queued scroll frame.
+  if(typeof reconcileReaderWidth==='function') reconcileReaderWidth();
   // A delayed illustration can reflow text without another scroll frame.
   // Persist one freshly measured location, rather than a cached paint sample.
   const a = captureAnchor();

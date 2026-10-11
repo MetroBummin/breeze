@@ -469,14 +469,11 @@ function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
   if(wordPeekSameTarget(k,node)){
-    if(!wordPeekHadPending&&!wordPeekPending()){closePanel();return;}
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.repeat(wordLookupLife);
-    // Original surfaces replace their display-only marker on each hit. Transfer
-    // ownership without opening another lookup or losing the pending shimmer.
-    if(node!==activeSelectedWordNode){
-      clearActiveWordSelection();activeSelectedWordNode=node;node.classList.add('sel');
-      renderWordPeek();
-    }
+    // PDF/OCR and EPUB create a disposable marker before dispatching the tap.
+    // Retire that new marker as well as the current lookup's owned selection.
+    if(node!==activeSelectedWordNode&&node.classList?.contains('original-selection-marker'))node.remove();
+    closePanel();
     return;
   }
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.switchTarget(wordLookupLife);
@@ -645,9 +642,8 @@ function wordPeekTargetVisible(node){
   return rect.right>left&&rect.left<right&&rect.bottom>top&&rect.top<bottom;
 }
 function wordPeekSameTarget(k,node){
-  if(!wordPeekActive||!selKey||!words[selKey]||!node) return false;
-  const root=words[selKey].root||selKey;
-  if(k!==root&&k!==selKey) return false;
+  if(!wordPeekActive||!node) return false;
+  // A token's source identity survives canonical/meaning-key changes.
   if(node===activeSelectedWordNode)return true;
   const current=wordLookupTargets.get(activeSelectedWordNode),next=wordLookupTargets.get(node);
   return !!(current&&next&&current.owner===next.owner&&current.start===next.start

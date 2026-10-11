@@ -118,7 +118,7 @@ try{
   await page.locator('#word-peek-more').click();
   assert.equal(await page.locator('#panel').isVisible(),true);
   await move(10);assert.equal(await page.locator('#panel').isVisible(),false,'expanded detail scroll dismissal changed');
-  // An unsaved occurrence owns one request even after its screen position moves.
+  // Retapping an unsaved occurrence cancels even after its screen position moves.
   await page.evaluate(()=>{
     closePanel();readerScroller().scrollTop=0;words={};dead={};recentWordOpens.clear();
     window.retapRequests=[];sb=sb||{};dictGet=async()=>null;dictPut=async()=>{};
@@ -132,10 +132,11 @@ try{
   await page.waitForFunction(()=>retapRequests.length===1);
   const retapLife=await page.evaluate(()=>wordLookupLife);
   await move(18);await page.evaluate(()=>openWord('patient',retapNode));
-  assert.equal(await page.evaluate(()=>wordLookupLife),retapLife,'same source occurrence lost request ownership after scroll');
+  assert.ok(await page.evaluate(()=>wordLookupLife)>retapLife,'same occurrence did not end its lifetime');
   assert.equal(await page.evaluate(()=>retapRequests.length),1);
-  assert.equal(await page.evaluate(()=>retapRequests[0].aborted),false);
-  assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
+  assert.equal(await page.evaluate(()=>retapRequests[0].aborted),true);
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),0);
+  assert.equal(await page.evaluate(()=>wordLookupOpen()),false);
   // Same spelling at another occurrence must start cleanly, not reuse a deleted record.
   await page.evaluate(()=>openWord('patient',otherRetapNode));
   await page.waitForFunction(()=>retapRequests.length===2);

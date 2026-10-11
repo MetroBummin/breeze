@@ -241,7 +241,8 @@ try{
   });
   assert.equal(await page.evaluate(()=>wordQa.calls),1,'repeated tap on the same word duplicated the lookup');
   assert.equal(await page.locator('#word-peek').isVisible(),false,'pending pill covers the next line');
-  assert.equal(await page.locator('.breeze-lookup-pending').count(),1);
+  assert.equal(await page.locator('.breeze-lookup-pending').count(),0,'repeat tap left pending feedback');
+  assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'repeat tap did not cancel');
   await page.evaluate(()=>expandWordDetail());
   assert.equal(await page.evaluate(()=>wordPanelOpen()),false,'hidden pending pill opened a detail panel');
   assert.equal(await page.evaluate(()=>wordQa.calls),1,'repeated tap started another lookup');

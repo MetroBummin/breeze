@@ -887,3 +887,52 @@ console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects dela
   }
 }
 console.log('Explicit mini/detail retries replace stale occurrence errors without touching newer openings');
+
+// Every repeat tap ends the existing opening, independently of result timing.
+// Original formats create a new display marker for the same source occurrence.
+for(const format of ['text','pdf','ocr','epub'])for(const phase of ['pending','ready','saved','error']){
+  const {ctx,net,world}=boot();net.outran=true;
+  const node=makeElement('retap-'+format,world);node.textContent='moon';node.dataset.example='The moon shines.';
+  const next=format==='text'?node:makeElement('retap-new-'+format,world);
+  next.textContent='moon';next.dataset.example=node.dataset.example;
+  if(format!=='text'){
+    node.classList.add('original-selection-marker');next.classList.add('original-selection-marker');
+    ctx.qaNodes=[node,next];ctx.qaOwner={};
+    new Script(`for(const node of qaNodes)wordLookupTargets.set(node,{owner:qaOwner,start:1,end:5});`).runInNewContext(ctx);
+  }
+  if(phase==='saved')ctx.words.moon={word:'moon',clicked:'moon',forms:['moon'],ko:'달',defs:[],example:node.dataset.example,status:1,addedAt:1,up:1};
+  ctx.openWord('moon',node);await settle(20);
+  const signal=ctx.wordLookupSignal();
+  if(phase==='ready'){net.deliver({ko:'달'});await settle(350);}
+  if(phase==='error'){
+    net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
+    net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
+  }
+  const requests=world.sent.length,saved=JSON.stringify(ctx.words.moon);
+  assert.equal(ctx.wordPeekOpen(),true,format+' '+phase+' did not open');
+  // Canonical recognition may change the lexical key, never the source token.
+  ctx.openWord(phase==='ready'?'recognized-moon':'moon',next);
+  assert.equal(ctx.wordLookupOpen(),false,format+' '+phase+' did not close');
+  assert.equal(ctx.selKey,null);assert.equal(signal.aborted,true);
+  assert.equal(world.el('word-peek').hidden,true);
+  assert.equal(node.classList.contains('sel'),false);
+  if(format!=='text'){assert.equal(node.removed,true);assert.equal(next.removed,true);}
+  if(phase==='saved'||phase==='ready')assert.equal(JSON.stringify(ctx.words.moon),saved,'cancel changed saved data');
+  const renders=world.renders;
+  net.deliver({ko:'늦은 뜻'});await settle(350);
+  assert.equal(ctx.wordLookupOpen(),false,'late response reopened '+format);
+  assert.equal(ctx.selKey,null);assert.equal(world.renders,renders);
+  assert.equal(world.sent.length,requests,'repeat tap started another request');
+}
+// Equal spelling at another source token is a new lookup, not cancellation.
+{
+  const {ctx,net,world}=boot();
+  const first=makeElement('first',world),second=makeElement('second',world);
+  for(const node of [first,second]){node.textContent='moon';node.dataset.example='The moon shines.';}
+  ctx.openWord('moon',first);await settle(20);const signal=ctx.wordLookupSignal();
+  ctx.openWord('moon',second);await settle(20);
+  assert.equal(signal.aborted,true);assert.equal(ctx.wordPeekOpen(),true);
+  assert.equal(world.sent.length,2);assert.equal(first.classList.contains('sel'),false);
+  assert.equal(second.classList.contains('sel'),true);ctx.closePanel();net.deliver(null);
+}
+console.log('Repeat-tap cancellation: Text/PDF/OCR/EPUB pending/ready/saved/error, markers, changed keys and late responses passed');
