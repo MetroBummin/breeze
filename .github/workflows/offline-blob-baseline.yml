@@ -1,0 +1,43 @@
+name: WebKit offline Blob baseline comparison
+on:
+  push:
+    branches: [chatgpt/qa-webkit-offline-blob-20261011]
+    paths:
+      - '.github/workflows/offline-blob-baseline.yml'
+      - 'tests/diagnostics/offline-blob-baseline.mjs'
+permissions:
+  contents: read
+jobs:
+  exact-baseline-and-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: 8512e8fd25e51d6aa06cf926bad165d5c3994865
+          path: subjects/baseline
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: fde9cdd7a59b5a40e214856ec49af15cf00641c2
+          path: subjects/candidate
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '22.23.3'}
+      - name: Install identical locked dependencies and one shared browser
+        run: |
+          cmp subjects/baseline/package-lock.json subjects/candidate/package-lock.json
+          (cd subjects/baseline && npm ci --ignore-scripts --no-audit --no-fund)
+          (cd subjects/candidate && npm ci --ignore-scripts --no-audit --no-fund)
+          (cd subjects/baseline && npx playwright install --with-deps webkit)
+      - name: Record isolated controls and run both unmodified OCR gates
+        run: node tests/diagnostics/offline-blob-baseline.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: webkit-offline-blob-baseline-comparison
+          path: /tmp/breeze-offline-blob-proof/
+          if-no-files-found: error
+          retention-days: 7
