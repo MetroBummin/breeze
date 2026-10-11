@@ -1,16 +1,18 @@
 {
-  "source_parent": "c5c0af5a747081eea2c9e620672bdb5e8621d249",
+  "source_parent": "1075644dfe6293fa055f9d2d07eefc89358cf6ef",
   "scope": "Shared lighter border/shadow, consistent20px outline icons at1.8 stroke; geometry/input ownership unchanged",
   "checks": [
     {
       "name": "npm test",
       "result": "passed",
-      "log_sha256": "fa2267cdf10b2931d3163ae7c1aae9bce3110d964d43c483009e8a7ad301dc0d"
+      "log_sha256": "b39c5fa6da898b4469b6f478195c5855f544f46222db2b5fb45eea7d7f5566ce",
+      "verified_exit_code": 0
     },
     {
       "name": "shared geometry/material/44px study header/captures",
       "result": "passed",
-      "log_sha256": "0aa6f6cc164445c63224487d1dbcccc5d4df42097e8ee4f1f489b0ab8b86fdb2"
+      "log_sha256": "0aa6f6cc164445c63224487d1dbcccc5d4df42097e8ee4f1f489b0ab8b86fdb2",
+      "verified_exit_code": 0
     },
     {
       "name": "Home parity",
@@ -57,7 +59,7 @@
     "styles/reader.css": "85af9d299d4ec3f9c8380f0f86f324ae8028cd5beb66819e9bdb8d3f709227a7",
     "styles/study.css": "ae473537f947a10ce26291a4210e1a3542df3f3d829eee5caff83c5a5f032a3e",
     "styles/pdf-ink.css": "7d06a34e1ee591ac40735b2ff1ba55b3bf7cd1949ba3612589783be5850c2aa9",
-    "tests/capture-safari-dock-review.mjs": "9e9ad9de1e31d1e3cba8d470303398aa8f4b5c5a458a41c3bcaf5af056930b15",
+    "tests/capture-safari-dock-review.mjs": "f3124a85aee500541b0c3effaf231f3e24f20308f169816790ed9ef5164ae535",
     "tests/verify-pdf-ocr-browser.mjs": "445a59a84df04736eb9a8af313aa5e3643e0f3dc791f0ed5a11b362da91d7fad",
     "tests/verify-pdf-ink-browser.mjs": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
     "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562",
@@ -65,6 +67,14 @@
     "styles/tokens.css": "3e3b54645254536fd0997cdac8defab7428f8fcfc6670ff7a065df02c933bd7f",
     "styles/home.css": "badc0a70de1a97233442be14a2b3f4d2f934dada629701410a922a07d19cb4a2",
     "styles/wordbook.css": "03815b478a8f230f9dbc15cc1f538f051e306a9b49434cd062bf965161d58f5a",
-    "styles/study-sets.css": "846ea058193c98a987375cfb6361132e356c73d608cbd1e4dc51b01e580395cf"
+    "styles/study-sets.css": "846ea058193c98a987375cfb6361132e356c73d608cbd1e4dc51b01e580395cf",
+    "styles/home-shell.css": "e6a3f713451825d7953fdf393f299fc6edec0bea0175f63285002663446b9d32"
+  },
+  "correction": "The initial npm report at107 was premature: a stale structural token guard failed. Final npm run now verified exit0 after contract corrections.",
+  "additional_verified_exit0": {
+    "Full morph/rotation/navigation/writing/settings/folders": "4382eda0fadc99c64d36dcbd08fce6be31b89ae60315949da97746ce2f2a9d05",
+    "Home bookmark/keyboard/bounded48px geometry ten layouts": "262b52b00033d1f2c341175ce5943ca25e849b1aa22d0dfbcc4eefafe762a8b0",
+    "Word presentation/retry unchanged Lookup and lighter control contracts": "43043060b0d0fcb6700a006034472d7b3f025122b34d79007560cbcd04bef47d",
+    "Structural guard": "ba3826f8758c3b3687b4692a3edb196186e6c40da944c745f1643793364a77ff"
   }
 }

@@ -416,3 +416,16 @@ and44px targets; dock controls retain48px proportions. Shared outline icons use
 remains. Completed badges, writing tools and unrelated functional controls retain
 their own sizes. Scroll/gesture ownership and writing's always-expanded policy
 are unchanged. Real captures and trusted touch tests verify the affected states.
+
+### PDF slot regression contract
+
+The real morph/rotation suite reproduced its old22px-center assertion at320px:
+96px navigation,105.59375×48px pill,48px settings, balanced8px gaps and exactly
+24px pill-center offset. The prior44px side slot implied22px; the approved48px
+row implies24px at all widths, including a bounded centered tablet group. No
+product geometry change is needed. The suite now requires explicit96/48px
+navigation/settings,48px row heights, balanced8px gaps, a centered bounded row
+and pill center in the actual free interval. Compact centering, no-overlap,
+writing alignment, sidebar morph, thumbnail bounds and all later functional/
+rotation checks remain. The page button is checked inside its navigation slot
+rather than against the old viewport-edge assumption on centered tablet rows.

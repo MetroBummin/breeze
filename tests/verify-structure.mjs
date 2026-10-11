@@ -1550,8 +1550,8 @@ assert.match(dictionarySource,
   /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{\.\.\.input,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,
   'Word retry no longer sends the current sentence through the existing lookup request flow');
 assert.match(readerCss,
-  /\.control-glass\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
-  'Bottom Reader controls no longer use the Lookup glass material tokens');
+  /\.control-glass\{[\s\S]{0,260}var\(--control-line\)[\s\S]{0,260}var\(--control-shadow\)/,
+  'Bottom Reader controls no longer use the approved shared control edge/shadow tokens');
 assert.match(readerCss,
   /\.control-glass\{background:var\(--control-glass-surface\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
   'Floating controls no longer share the common glass surface and blur');
