@@ -50,3 +50,23 @@ and geometry JSON files. No version change, native build, upload or merge.
 This is a separate UI review branch on top of the immutable267 candidate. The
 267 release boundary intentionally rejects this later source; its gate and
 receipt are preserved and require a separately approved release integration.
+
+### Recovery and writing regression fixes
+
+At the first review head `b508ca66c436ebf551ec01ef11037e8e3dfec262`, the
+actual Chromium OCR suite reproduced the320×568 recovery failure:35.6px text
+width,30px visible height,76px scroll height. The actual writing suite reproduced
+44px outer writing height against48px reading height, both352px wide.
+
+The narrow expanded recovery capsule now grows upward and gives the notice its
+full width, while preserving the mode/Aa targets. Compact geometry remains
+unchanged. Writing uses48px outer height with44px internal controls. The strict
+OCR readability assertion and reading/writing geometry assertion are preserved.
+
+[Light recovery](web-preview-320x568-pdf-recovery-light.png) and
+[dark recovery](web-preview-320x568-pdf-recovery-dark.png) show the actual controlled
+OCR recovery fixture at320×568. New `pdf-writing` light/dark images cover both
+iPad orientations. All18 ordinary previews were regenerated against the final
+CSS. These remain browser evidence; native retry taps and airplane mode remain
+unverified. The local WebKit runtime is unavailable; exact-head CI must verify
+that engine. Its known offline Blob failure remains an active gate.

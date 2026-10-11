@@ -12,7 +12,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));const url=`http://127.0.0.1:${server.address().port}/`;
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launchPersistentContext('',{viewport:{width:390,height:844},serviceWorkers:'block',hasTouch:true});try{
+ const browser=await engine.launchPersistentContext('',{viewport:{width:390,height:844},serviceWorkers:'block',hasTouch:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{window.breezeInkIPad=true;localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});await page.goto(url);await page.evaluate(()=>homeReady);
@@ -43,13 +43,24 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     const r=e.getBoundingClientRect(),title=document.getElementById('readpill-title').getBoundingClientRect(),pill=document.getElementById('readpill').getBoundingClientRect();
     return {controls:{pill:rect('readpill'),title:rect('readpill-title'),aa:rect('aafab'),mode:rect('modefab')},inside:r.left>=title.left-1&&r.right<=title.right+1&&r.top>=pill.top-1&&r.bottom<=pill.bottom+1,pointer:getComputedStyle(e).pointerEvents};
    })).jsonValue();
-   assert.deepEqual(snapshot.controls,before,'Notices must not move or resize input targets');assert.equal(snapshot.inside,true,'Notice stays within the title slot');assert.equal(snapshot.pointer,'none');
+   if(width<=360&&!compact){
+    assert.deepEqual(snapshot.controls.aa,before.aa,'Narrow status must preserve settings target');
+    assert.deepEqual(snapshot.controls.mode,before.mode,'Narrow status must preserve mode target');
+    assert.equal(await notice.evaluate(n=>n.scrollHeight<=n.clientHeight+1),true,'Narrow status must show all guidance');
+   }else assert.deepEqual(snapshot.controls,before,'Notices must not move or resize input targets');assert.equal(snapshot.inside,true,'Notice stays within the title slot');assert.equal(snapshot.pointer,'none');
    if(width===390&&mode==='original')await page.screenshot({path:`${proof}/${engine.name()}-${dark?'dark':'light'}-${compact?'compact':'expanded'}.png`});
    // Trusted touch at the visible notice's edge, not just the invisible title's center.
    if(compact){const [x,y,,height]=snapshot.controls.title;await page.touchscreen.tap(x+6,y+height/2);assert.equal(await page.evaluate(()=>document.body.classList.contains('chrome-hidden')),false,'Notice area must still expand Reader controls');await page.waitForTimeout(350);}
    await page.evaluate(()=>{readerNotices.reset();chromeHoldUntil=0;readerScrollPauseUntil=0;toast('설정도 바로 열 수 있어요');});await notice.waitFor({state:'visible'});
    await page.locator('#aafab').tap();assert.equal(await page.locator('#aa-pop').evaluate(e=>e.classList.contains('on')),true);assert.equal(await notice.isVisible(),false);
    await page.evaluate(()=>{closeAa();readerNotices.reset();});
+   if(width<=360&&!compact){
+    await page.waitForTimeout(350);assert.deepEqual(await sample(),before,'Narrow controls restore ordinary geometry after guidance clears');
+    if(mode==='original'){
+     await page.evaluate(()=>{chromeHoldUntil=0;readerScrollPauseUntil=0;toast('모드 버튼을 가리지 않아요');});await notice.waitFor({state:'visible'});
+     await page.locator('#modefab').tap();await page.waitForFunction(()=>currentReaderMode==='text');assert.equal(await notice.isVisible(),false);
+    }
+   }
   }
  }
  // A notice must yield to the mode button without intercepting the original/text switch.

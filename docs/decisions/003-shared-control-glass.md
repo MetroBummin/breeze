@@ -385,3 +385,17 @@ scrollable writing targets remain. Materials, functions and gestures are unchang
 Private photos are not committed. This branch is a review candidate; build267
 source and its immutable contract remain on integrate/breeze-193-cloud. No merge,
 version change, archive or upload is authorized for this geometry PR.
+
+### Narrow recovery notices
+
+The first geometry review reproduced the OCR recovery notice regression at
+320×568 in Chromium: the two-line30px title slot had only35.6px width after
+mode controls, so its content required76px height and was clipped. In a readmain
+container360px or narrower, a visible Reader notice with a mode button now uses
+the full capsule width above the unchanged mode target. The capsule grows upward
+only for that status. Text wraps naturally without a line clamp; no font shrink,
+shortened guidance, hidden mode button or weakened OCR assertion is introduced.
+Compact controls retain their existing geometry and tap behavior. Ordinary controls
+return to their approved dimensions when the notice clears; wider notices retain
+the prior layout. The writing pill uses the shared48px outer height while its
+internal controls remain44px and horizontally scrollable.

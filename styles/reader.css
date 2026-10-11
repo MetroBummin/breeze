@@ -567,3 +567,14 @@ body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
 #rtext .article-table-row{font-family:monospace;overflow-wrap:anywhere}
 #rtext .article-links{display:flex;flex-wrap:wrap;gap:.5em 1em;font-size:.7em;margin:-.5em 0 1.4em}
 #rtext .article-links a{color:inherit;text-decoration:underline;overflow-wrap:anywhere}
+/* A narrow PDF title slot cannot carry recovery guidance beside the mode
+   button. Let status text use the capsule width above the unchanged mode hit
+   target. Ordinary and wide controls retain their existing geometry. */
+@container(max-width:360px){
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])){top:auto;bottom:0;transform:none;height:auto;min-height:var(--control-row-height);padding:8px 12px 48px;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-pill-copy{display:block;flex:1 1 100%;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{position:static;inset:auto;transform:none;display:block;-webkit-line-clamp:unset;max-height:none;overflow:visible;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #readpill-title{position:absolute;inset:0;height:100%;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill #modefab{position:absolute;left:12px;bottom:4px;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill.ink-pill-ready #modefab{left:9px;}
+}

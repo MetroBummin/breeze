@@ -2,12 +2,25 @@
   "label": "Actual Chromium WEB PREVIEWS, DPR2; not native iOS",
   "base": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
   "capture_source_sha256": {
-    "styles/reader.css": "33a2b63935d8c23859a71a4dc1772bf59ce0a8304f34d346444d6aef99dd5111",
+    "styles/reader.css": "e8e006165ee5a66d2613362f449f087b7c866e603eea1cb12326eecbc3b0c023",
     "styles/study.css": "d0f63a6121ef47a8b8a7e027c7dbd35362bec45f6b69f1d0c328facee68c9fe7",
-    "styles/pdf-ink.css": "5e8dc28423cf0ff4a089f7a8056105395a96f90d85fd623eb6c59aeab20af16b",
-    "tests/capture-safari-dock-review.mjs": "d269afe39e73c27430928c94a69f24a276d87d25c03ae06b8ee310470b3ddd3e"
+    "styles/pdf-ink.css": "7d06a34e1ee591ac40735b2ff1ba55b3bf7cd1949ba3612589783be5850c2aa9",
+    "tests/capture-safari-dock-review.mjs": "cfcd99c16aa1e2bb915a373929a31b1f91435087f6902001b2db8d96de22b246",
+    "tests/verify-pdf-ocr-browser.mjs": "445a59a84df04736eb9a8af313aa5e3643e0f3dc791f0ed5a11b362da91d7fad",
+    "tests/verify-pdf-ink-browser.mjs": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
+    "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562"
   },
   "images": [
+    {
+      "name": "web-preview-320x568-pdf-recovery-dark.png",
+      "sha256": "d89fd921a7d062a8a96d702690e4272de4937075e5db1af5c8ca9e947682ed09",
+      "bytes": 19238
+    },
+    {
+      "name": "web-preview-320x568-pdf-recovery-light.png",
+      "sha256": "88b91b515ebf5ea2a9f1ec3f0adc490a8ae442f5289593f4955b844986d7dd12",
+      "bytes": 19718
+    },
     {
       "name": "web-preview-ipad-landscape-home-dark.png",
       "sha256": "6a3eaa4a45b6ec3f4d5bab98a853901cd991ea337279501c92db6279cb608fd4",
@@ -17,6 +30,16 @@
       "name": "web-preview-ipad-landscape-home-light.png",
       "sha256": "cfd99df09dc58244e566f7125a7dabba4bf954c0edc8280eadbd99935b99285c",
       "bytes": 1065099
+    },
+    {
+      "name": "web-preview-ipad-landscape-pdf-writing-dark.png",
+      "sha256": "0fdb18518afd3d07b4a209b0f43fd19ad1d7e3375f2c1a0283b054b140e61201",
+      "bytes": 473469
+    },
+    {
+      "name": "web-preview-ipad-landscape-pdf-writing-light.png",
+      "sha256": "ec282acbb106a22e143467db0a5bfa68bffc68fd674f37cc30811da688460e35",
+      "bytes": 464171
     },
     {
       "name": "web-preview-ipad-landscape-reader-dark.png",
@@ -47,6 +70,16 @@
       "name": "web-preview-ipad-portrait-home-light.png",
       "sha256": "986ec47032274b3e5607f8d9aef7febf27121ff2693061855ac8b7c29c5796c0",
       "bytes": 880864
+    },
+    {
+      "name": "web-preview-ipad-portrait-pdf-writing-dark.png",
+      "sha256": "6a80fda1027974d77c407e743b6ff628bd9bf1aa40f518bbed7b640f10184a24",
+      "bytes": 496414
+    },
+    {
+      "name": "web-preview-ipad-portrait-pdf-writing-light.png",
+      "sha256": "ce6353ac5591d26d07e28e021a7f629377a471df7da7826a33bca27bdff4e2aa",
+      "bytes": 484102
     },
     {
       "name": "web-preview-ipad-portrait-reader-dark.png",
