@@ -8,7 +8,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const proof='/tmp/breeze-study-sets-proof';mkdirSync(proof,{recursive:true});
 const server=createServer((req,res)=>{
  const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
- try{if(!path.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
+ try{if(!path.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
@@ -45,7 +45,7 @@ try{
  assert.equal(await page.locator('#study-sets-title').innerText(),'이번 시험 <safe>');
  await page.getByRole('button',{name:'quiet 세트에서 제외',exact:true}).click();assert.equal(await page.locator('#study-sets-word-list li').count(),2);
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await page.locator('#study-sets-word-list li').count(),3);
- const swipeRow=page.locator('#study-sets-word-list li').filter({hasText:'quiet'}),box=await swipeRow.boundingBox();
+ const swipeRow=page.locator('#study-sets-word-list li').filter({hasText:'quiet'});await swipeRow.scrollIntoViewIfNeeded();const box=await swipeRow.boundingBox();
  await page.mouse.move(box.x+box.width*.65,box.y+20);await page.mouse.down();await page.mouse.move(box.x+10,box.y+20,{steps:8});await page.mouse.up();
  assert.equal(await page.locator('#study-sets-word-list li').count(),2,'left swipe excludes only this set');
  await page.evaluate(()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};studySetsReadAndRender();});
@@ -81,7 +81,7 @@ try{
  await page.locator('#study-sets-reveal').click();await page.locator('#study-sets-grade-remembered').click();
  await page.getByRole('button',{name:'전체 새로 학습',exact:true}).click();assert.equal(await page.locator('#study-sets-progress').innerText(),'1 / 6');
  await context.setOffline(false);
- await page.evaluate(()=>{const state=readStudySets(),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3),Date.now());commitStudySets(result.state);studySetsReadAndRender();});
+ await page.evaluate(()=>{const state=readStudySets(),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3).slice(0,100),Date.now());commitStudySets(result.state);studySetsReadAndRender();});
  const layouts=[];
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
@@ -129,9 +129,12 @@ try{
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();window.scrollTo(0,0);},dark);
   assert.equal(await page.locator('#v-memory').evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Memory home overflow ${width}x${height}`);
-  for(const card of await page.locator('.study-sets-home-card').all()){
-   const bounds=await card.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1&&bounds.height>=44,JSON.stringify({width,height,bounds}));
-  }
+  await page.locator('#v-memory').waitFor({state:'visible'});
+  // Read one layout snapshot; dialog's native close event may refresh the home
+  // between separate element-handle measurements without changing its layout.
+  const homeBounds=await page.locator('#v-memory').evaluate(node=>Array.from(node.querySelectorAll('.study-sets-home-card'),card=>{const r=card.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height};}));
+  assert.equal(homeBounds.length,4);
+  for(const bounds of homeBounds)assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1&&bounds.height>=44,JSON.stringify({width,height,bounds}));
   await page.screenshot({path:`${proof}/home-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
   await page.locator('.study-sets-home-card[data-set-id]').first().click();
   for(const selector of ['.study-sets-sheet','#study-sets-content'])assert.equal(await page.locator(selector).evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Detail overflow ${selector} ${width}x${height}`);
