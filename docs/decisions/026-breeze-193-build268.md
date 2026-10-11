@@ -3,7 +3,7 @@
 The user approved polishing and unifying same-family floating controls and
 including PR154 in the next internal TestFlight candidate. Parent confirmed
 Apple Next Build Number268, no queued/running build and successful267. Integrate
-reviewed polished PR154 source7f8e41c2760fa1f739cb64c32471c4356589a799 into
+reviewed polished PR154 sourcec2c244a906983dbab681e971edca8a4b8ebb10bb into
 integrate/breeze-193-cloud. Do not merge main or submit App Store review.
 Parent owns one Cloud start; this preparation does not start Cloud or upload.
 
@@ -58,3 +58,16 @@ opening Settings. Layout, click, persistence and dormant-feature assertions are
 preserved. Chromium passed the entire corrected ten-layout suite; WebKit must
 pass the new exact candidate CI before readiness is claimed. No app geometry or
 review images/videos changed in this test-only correction.
+
+Candidate c0dfc41 passed study cards in both standalone and Integrity Chromium/
+WebKit jobs, but Integrity's transition pixel positive control failed at dark
+768px close: both fixed and legacy corner deltas were zero. The same failure
+was reproduced locally, including matching animated/target capsule bounds. A
+uniform dark footer cannot show blur. The test now puts a deterministic contrast
+pattern behind the real controls, samples the paused group bounds, preserves
+fixed<legacy and every filter/shadow/settled check, and additionally requires a
+nonzero legacy signal. All20 Chromium direction/theme/viewport samples passed.
+Both engines remain mandatory by default in CI. This modifies only test setup
+and its documented coverage; product material, geometry,44 frames/two videos
+and native232-file package bytes stay unchanged. Final exact Integrity remains
+required; no Cloud start/archive/upload has been performed.
