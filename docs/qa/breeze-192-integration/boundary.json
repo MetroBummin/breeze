@@ -183,6 +183,24 @@
       "files": [
         "tests/verify-pdf-ocr-library-browser.mjs"
       ]
+    },
+    {
+      "pr": 148,
+      "parent": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "files": [
+        "docs/decisions/015-rss-intent-and-public-catalog.md",
+        "docs/decisions/023-rss-cloudflare-transport.md",
+        "index.html",
+        "package.json",
+        "scripts/importers/rss.js",
+        "server/rss-worker/README.md",
+        "server/rss-worker/index.mjs",
+        "server/rss-worker/wrangler.json",
+        "sw.js",
+        "tests/verify-rss-worker.mjs",
+        "types/globals.d.ts"
+      ]
     }
   ],
   "files": {
@@ -277,8 +295,8 @@
       "sha256": "3806fd1e0a85c5207e5ee49d7f4d76f7c879def448394660616bae95e3702ca0"
     },
     "index.html": {
-      "pr": 147,
-      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
       "mode": "100644",
       "sha256": "c0147ae43fd298c7807b97cdd7647cba81264faf6e91fd15d3f66d0ef3a78549"
     },
@@ -308,10 +326,10 @@
       "sha256": "d0100f5bce9ffe80a41330534faca6e066a7e7afd373c0561ef434eac3e51cb3"
     },
     "package.json": {
-      "pr": 147,
-      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
       "mode": "100644",
-      "sha256": "d9266c328e011ebd257c3765bf792ba96ced002ce067ce833cb20ce3816cbfd4"
+      "sha256": "e45ea7e3f7ea1f4f127b282dbfdfacbf5ef402d08aca8977ea6885dac3eaa316"
     },
     "scripts/core/storage.js": {
       "pr": 143,
@@ -344,8 +362,8 @@
       "sha256": "f1f2c167214bb638f54e7e6382b52ed5f06619e860fab203478ab490aa62f150"
     },
     "sw.js": {
-      "pr": 147,
-      "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
       "mode": "100644",
       "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
     },
@@ -786,6 +804,54 @@
       "source": "8f45c9527c83d43eea9c42815d13938bb8003ccf",
       "mode": "100644",
       "sha256": "21c8641f59971ca50bb56e1c1e695ebadb06ea0e2462baa2ce8d56747be9808d"
+    },
+    "docs/decisions/015-rss-intent-and-public-catalog.md": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "b5752989010a757efe7cf9829ace44f499c0006cdae7b244e6dc11627cb38592"
+    },
+    "docs/decisions/023-rss-cloudflare-transport.md": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "dcce435c406e6e253d925b2dce229327f636f7e1df6cb774b53fdc84f1e09513"
+    },
+    "scripts/importers/rss.js": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "83d43718dc05751fd1d5330eeeb5996c1e037eb5357f320e230173d468bfed10"
+    },
+    "server/rss-worker/README.md": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "5ce44ad59102fae77d15e06ef9f9d976289af5b1af1ea960cc7d09e64fba3205"
+    },
+    "server/rss-worker/index.mjs": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "9d8fa0628c8c23cd3f25d8eaa5d7a0f2f31dfaa2d0ed235bb2e1c661a7507f7a"
+    },
+    "server/rss-worker/wrangler.json": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "e1393c6d833e14484175a007ca9956bc889c92560f506e9d2115d8441d5c29ef"
+    },
+    "tests/verify-rss-worker.mjs": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "3d90624c6d51162d0b0b43294bdd3e4e96fc2d2d9ed8633fc9796b6afaf23afe"
+    },
+    "types/globals.d.ts": {
+      "pr": 148,
+      "source": "cb453d9fa7f046dca7bf6bd1d37e17071ad4892d",
+      "mode": "100644",
+      "sha256": "bfcdcd43fa7e65dee35762753d42f2e18e3aec99bb444ea982bb4d9ffb19dedd"
     }
   },
   "integrationFiles": [
@@ -798,7 +864,7 @@
   "authorization": "2026-10-10: owner requested direct continuation of OCR checks and 1.9.2 integration without Codex tasks. Pin OCR PR143 f7e67d3938ea7debed4a61243f5743980f7d4249 and Memory PR144 e2bf032af786c8c26e03a8222e135cc9dc3a220f. Publish the existing PR145 candidate for exact-head verification. Preserve all historical 1.9.1 receipts and assertions. Keep Android KVM execution and WebKit offline Blob failures visible; do not skip them. Main merge, release build and submission remain held pending review of those failures and unverified physical-device acceptance. User will supply the separate iPad grading screenshot. Amendment 2026-10-10 11:51 UTC: owner explicitly requested merging the native bridge fix, iOS TestFlight build 264 and an Android update. This adds only immutable PR146 source bytes; App Store review submission is not implied. Amendment 2026-10-10 13:06 UTC: owner requested removing only the OCR spelling-confirmation step so one tap opens the existing meaning. PR147 pins that exact implementation; no correction editor, new merge, build or deployment is authorized by that earlier instruction. Amendment 2026-10-10 13:28 UTC: owner explicitly approved implementing the bookshelf OCR page-count/progress design and uploading the next TestFlight build. Include local whole-book preparation, visible-page priority, nonblocking reading and no delayed tap replay. This authorizes the tested integration and next TestFlight build; App Store review submission remains separate.",
   "integrationSha256": {
     "tests/verify-192-integration-boundary.mjs": "4c89867dd19bfa4974fbd97f173b8ef5d906afeb544b882398c54b0a13a4eb21",
-    "tools/record-192-integration-boundary.mjs": "40447fe0a92c6b6401ade3037428bb7ca6421ed7039921155d44e76ecb9b00fa",
+    "tools/record-192-integration-boundary.mjs": "39a34b6c522678162abab823ce471b838e17cccd28e236ee2448661f74a9c50f",
     "docs/decisions/022-breeze-192-integration.md": "50b6c4c712b28014b5618530794a277730766334540fe2c6f92ab59602b9b44b",
     "docs/qa/breeze-192-integration-20261009.md": "d5f10dfd82a5a84186322fde83ebb4ee2b0a1e0ea4172c61a28c375100b2c6cc"
   }
