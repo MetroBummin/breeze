@@ -948,8 +948,10 @@ assert.doesNotMatch(index, /id="ptrack"|id="pfill"/,
   'The title pill should replace the separate progress bar');
 assert.match(readerCss, /#readpill-progress,#home-resume-progress\{[^}]*transform:scaleX\(0\); transform-origin:left center/,
   'The progress fill no longer uses a composited transform inside the title pill');
-assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
-  'Reader controls do not clear the bottom safe area');
+assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:var\(--control-bottom\)/,
+  'Reader controls must use the shared safe-area bottom offset');
+assert.match(readerCss,/--control-bottom:max\(8px,env\(safe-area-inset-bottom\)\)/,
+  'Shared bottom offset must preserve safe-area clearance and desktop breathing room');
 assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
   'Rapid pronunciation taps can leak into browser double-tap zoom');
 assert.doesNotMatch(index,/id="aa-ink-undo(?:-row)?"/,'Writing-only undo preference remains in Reader Aa');
@@ -1043,7 +1045,7 @@ assert.match(readerCss, /#readchrome, \.control-bar\{[\s\S]{0,320}pointer-events
   'The gap between the floating controls swallows touches meant for the page');
 assert.match(readerCss, /#readchrome > \*, \.control-bar > \*\{pointer-events:auto;\}/,
   'The floating controls themselves stopped taking touches');
-assert.match(readerCssRules, /#readback,#aafab, \.control-circle\{[^}]*height:42px/,
+assert.match(readerCssRules, /#readback,#aafab, \.control-circle\{[^}]*height:var\(--control-side-size\)/,
   'The side controls no longer share a common height');
 assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
   'The old any-scroll fade is back alongside the direction signal');

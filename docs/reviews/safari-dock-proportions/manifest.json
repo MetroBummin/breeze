@@ -1,0 +1,106 @@
+{
+  "label": "Actual Chromium WEB PREVIEWS, DPR2; not native iOS",
+  "base": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
+  "capture_source_sha256": {
+    "styles/reader.css": "33a2b63935d8c23859a71a4dc1772bf59ce0a8304f34d346444d6aef99dd5111",
+    "styles/study.css": "d0f63a6121ef47a8b8a7e027c7dbd35362bec45f6b69f1d0c328facee68c9fe7",
+    "styles/pdf-ink.css": "5e8dc28423cf0ff4a089f7a8056105395a96f90d85fd623eb6c59aeab20af16b",
+    "tests/capture-safari-dock-review.mjs": "d269afe39e73c27430928c94a69f24a276d87d25c03ae06b8ee310470b3ddd3e"
+  },
+  "images": [
+    {
+      "name": "web-preview-ipad-landscape-home-dark.png",
+      "sha256": "6a3eaa4a45b6ec3f4d5bab98a853901cd991ea337279501c92db6279cb608fd4",
+      "bytes": 1073658
+    },
+    {
+      "name": "web-preview-ipad-landscape-home-light.png",
+      "sha256": "cfd99df09dc58244e566f7125a7dabba4bf954c0edc8280eadbd99935b99285c",
+      "bytes": 1065099
+    },
+    {
+      "name": "web-preview-ipad-landscape-reader-dark.png",
+      "sha256": "3b86dfb721bd4b7f1d62b2e65517bf123e5cc345e4ea32e011a15eff851fe495",
+      "bytes": 419232
+    },
+    {
+      "name": "web-preview-ipad-landscape-reader-light.png",
+      "sha256": "c8bf801cef1e307adc48a6904172d0255cc70a98413754a48e68d9848b46b5a7",
+      "bytes": 456574
+    },
+    {
+      "name": "web-preview-ipad-landscape-wordbook-dark.png",
+      "sha256": "d419986da706dab09e403061c374b6d8762d7cbc3c8d2e6e0e70116dd10ddc9e",
+      "bytes": 138887
+    },
+    {
+      "name": "web-preview-ipad-landscape-wordbook-light.png",
+      "sha256": "4ba2ffd8d6e253306b133c9a9d3e82c3ba3581cdac3c97197394f47dc3ce59c2",
+      "bytes": 126228
+    },
+    {
+      "name": "web-preview-ipad-portrait-home-dark.png",
+      "sha256": "58149ca0bbd3f41a89bdea20c7bdfd33e0f3c207068b1e443d481598f34f62c3",
+      "bytes": 890216
+    },
+    {
+      "name": "web-preview-ipad-portrait-home-light.png",
+      "sha256": "986ec47032274b3e5607f8d9aef7febf27121ff2693061855ac8b7c29c5796c0",
+      "bytes": 880864
+    },
+    {
+      "name": "web-preview-ipad-portrait-reader-dark.png",
+      "sha256": "cd355ffa091b407e1cd12c5f7a31db73d6fba6e42a89727587c2155214ea086c",
+      "bytes": 506073
+    },
+    {
+      "name": "web-preview-ipad-portrait-reader-light.png",
+      "sha256": "7eb4a3c5d4b84a376f9d76bf3b3ce064ae09edf84101bbc9bc85118df7ae2d4d",
+      "bytes": 537732
+    },
+    {
+      "name": "web-preview-ipad-portrait-wordbook-dark.png",
+      "sha256": "1479c2e94178bd81ee1e5229de607059c4e7e5eb45bf72fee877930194251cfc",
+      "bytes": 162716
+    },
+    {
+      "name": "web-preview-ipad-portrait-wordbook-light.png",
+      "sha256": "b3109e6d4534cb995045ba4406e14c204b800015321225cf60c2cbf27b7f7837",
+      "bytes": 149785
+    },
+    {
+      "name": "web-preview-iphone-home-dark.png",
+      "sha256": "dada66d90383aa1f0a8d0f7c4d5975b772cd711bd8d882cf4cfffde827131b6c",
+      "bytes": 351692
+    },
+    {
+      "name": "web-preview-iphone-home-light.png",
+      "sha256": "3f200052d1acf9c6ee2685855bd8bcaf83c5cfcb06282fc88faf4c00c96de615",
+      "bytes": 349565
+    },
+    {
+      "name": "web-preview-iphone-reader-dark.png",
+      "sha256": "c4ac2398b7db306419f5158e497e44a8af90a82a8778b452cee5c31c318c15d1",
+      "bytes": 222496
+    },
+    {
+      "name": "web-preview-iphone-reader-light.png",
+      "sha256": "ecb6654095e41e38f929fb2b75ddd9ce193325ad7649ad270f41c714f93719fd",
+      "bytes": 233246
+    },
+    {
+      "name": "web-preview-iphone-wordbook-dark.png",
+      "sha256": "81bb29e60ba4b014fe8ef4358a110a2cc02a0b13710af2fa33f146de938795a8",
+      "bytes": 124272
+    },
+    {
+      "name": "web-preview-iphone-wordbook-light.png",
+      "sha256": "74b79e8bccbce9394b11449ddae2d31038289d467c5d2fe040741c35ad8f3071",
+      "bytes": 120776
+    }
+  ],
+  "measurements_sha256": {
+    "geometry-before.json": "7921d07c5f6ac934a8e77c48ddebe0dc31986121e476b16a84bd7a0cf6edcfa2",
+    "geometry-after.json": "c88227caf83702226c4dc48a7acd5add9ca33a377cfd2897f137276887e5e35e"
+  }
+}

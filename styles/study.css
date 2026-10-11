@@ -1,25 +1,25 @@
 /* Reader-specific content uses the shared glass material. */
 #readmain{container-type:inline-size;}
-#readpill{--reader-pill-max-width:calc(100% - 124px);max-width:var(--reader-pill-max-width);}
-#reader-navigation{--reader-dock-gutter:14px;position:relative;flex:none;width:42px;height:42px;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
-#reader-navigation:has(#pdf-page-control:not([hidden])){width:88px;height:44px;}
-#reader-navigation:has(#pdf-page-control:not([hidden])) #readback{z-index:76;width:44px;height:44px;border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
+#readpill{--reader-pill-max-width:calc(100% - 2 * var(--control-side-size) - 2 * var(--control-slot-gap));max-width:var(--reader-pill-max-width);}
+#reader-navigation{--reader-dock-gutter:max(14px,calc((100cqw - min(83vw,512px)) / 2));position:relative;flex:none;width:var(--control-side-size);height:var(--control-side-size);transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+#reader-navigation:has(#pdf-page-control:not([hidden])){width:calc(2 * var(--control-side-size));height:var(--control-row-height);}
+#reader-navigation:has(#pdf-page-control:not([hidden])) #readback{z-index:76;width:var(--control-side-size);height:var(--control-row-height);border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::before,
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
 #readback svg{width:22px;height:22px;stroke-width:2;}
 #reader-navigation:has(#pdf-page-button[aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
-body #readchrome:has(#pdf-page-control:not([hidden])) #readpill{--reader-pill-max-width:calc(100% - 180px);}
+body #readchrome:has(#pdf-page-control:not([hidden])) #readpill{--reader-pill-max-width:calc(100% - 3 * var(--control-side-size) - 2 * var(--control-slot-gap));}
 #readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
 #readchrome:has(#pdf-page-button[aria-expanded=true])>:not(#reader-navigation){pointer-events:none;}
 
-@media(min-width:761px){#reader-navigation{--reader-dock-gutter:22px;}}
+
 #readpill [hidden],#pdf-page-control[hidden],#pdf-page-button[hidden],#pdf-page-navigation[hidden],#aa-pdf-direction[hidden]{display:none!important;}
 /* One surface changes shape; thumbnail text and canvases are never scaled. */
-#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:88px;height:44px;box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
-#pdf-page-button{position:absolute;right:0;bottom:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
+#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:calc(2 * var(--control-side-size));height:var(--control-row-height);box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:24px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+#pdf-page-button{position:absolute;right:0;bottom:0;width:var(--control-side-size);height:var(--control-row-height);display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
 #pdf-page-button svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 #pdf-page-button circle,#pdf-navigation-toggle circle{fill:currentColor;stroke:none;}
-#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-15px - env(safe-area-inset-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow-pill);}
+#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-1 * var(--control-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow-pill);}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){background:var(--control-glass-surface);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}}
 #pdf-page-control:has(#pdf-page-button[aria-expanded=true]){animation:pdf-sidebar-reveal 220ms cubic-bezier(.45,0,.8,.35) both;}
 #pdf-page-control.pdf-navigation-closing{animation:pdf-sidebar-dismiss 220ms cubic-bezier(.45,0,.8,.35) both;pointer-events:none;}
@@ -59,7 +59,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-paper canvas{display:block;}
 .pdf-thumbnail-jump[aria-current=true] .pdf-thumbnail-paper::after{content:"";position:absolute;inset:0;background:rgba(60,64,68,.28);pointer-events:none;}
 .pdf-thumbnail-more{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:44px;height:44px;padding:14px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
-.pdf-thumbnail-actions{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:88px;height:44px;display:flex;isolation:isolate;animation:pdf-navigation-reveal 140ms ease;}
+.pdf-thumbnail-actions{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:calc(2 * var(--control-side-size));height:var(--control-row-height);display:flex;isolation:isolate;animation:pdf-navigation-reveal 140ms ease;}
 .pdf-thumbnail-actions::before{content:"";position:absolute;inset:6px 0;z-index:-1;background:var(--sentence-glass-solid);border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,.10);}
 .pdf-thumbnail-actions[hidden]{display:none;}
 .pdf-thumbnail-actions button{width:44px;height:44px;padding:13px;border:0;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
@@ -72,7 +72,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
 .pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
-.pdf-thumbnail-bookmark{position:absolute;right:0;top:0;width:44px;height:44px;border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
+.pdf-thumbnail-bookmark{position:absolute;right:0;top:0;width:var(--control-side-size);height:var(--control-row-height);border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}
 .pdf-thumbnail-bookmark svg{width:20px;height:28px;fill:var(--sentence-glass-solid);stroke:currentColor;stroke-width:1.8;}
 .pdf-thumbnail-bookmark[aria-pressed=true]{color:var(--bookmark-ink);}
 .pdf-thumbnail-bookmark[aria-pressed=true] svg{fill:currentColor;}
@@ -118,10 +118,8 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 #readpill.ink-pill-active .ink-pill-toolbar{display:flex;flex:1 1 auto;min-width:0;max-width:none;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
 #readpill.ink-pill-active .ink-pill-toolbar .ink-pill-separator{display:none;}
 #readpill .ink-pill-toolbar .ink-pill-control,#readpill .ink-pill-entry{width:44px;height:44px;flex:none;}
-body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{left:calc(2 * var(--reader-pill-expanded-offset,0px));}
-@container(max-width:650px){
-  #readchrome{--reader-pill-expanded-offset:22px;}
-}
+body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readpill{left:var(--control-side-size);}
+
 .pdf-navigation-head{margin-bottom:8px;}
 #aa-pop{touch-action:pan-y;}
 @media(prefers-reduced-motion:reduce){#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-navigation{animation:none;}}

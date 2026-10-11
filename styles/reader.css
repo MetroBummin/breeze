@@ -134,10 +134,11 @@
 
      위치와 크기는 Reader 조작에 맞춘 채, 재질은 낱말·문장 Lookup과 같은 Breeze
      Glass를 씁니다. 서로 다른 기능이라도 한 화면에서 같은 표면처럼 읽혀야 합니다. */
-  .control-dock{position:fixed;inset:auto 0 0;height:calc(env(safe-area-inset-bottom) + 59px);z-index:70;pointer-events:none;}
-  #readchrome, .control-bar{position:absolute; bottom:calc(env(safe-area-inset-bottom) + 15px); left:0; right:0; z-index:70;
+  .control-dock,#readchrome{--control-side-size:48px;--control-row-height:48px;--control-slot-gap:8px;--control-row-width:min(83vw,512px,calc(100% - 28px));--control-bottom:max(8px,env(safe-area-inset-bottom));}
+  .control-dock{position:fixed;inset:auto 0 0;height:calc(var(--control-bottom) + var(--control-row-height));z-index:70;pointer-events:none;}
+  #readchrome, .control-bar{position:absolute; bottom:var(--control-bottom);left:0;right:0;margin-inline:auto;width:var(--control-row-width);height:var(--control-row-height);z-index:70;
     display:flex; align-items:center; justify-content:space-between;
-    padding:0 14px;
+    padding:0;
     /* 조각 사이의 빈 자리는 본문의 것입니다 — 손짓이 여기서 막히면 안 됩니다. */
     pointer-events:none;}
   #readchrome > *, .control-bar > *{pointer-events:auto;}
@@ -156,10 +157,8 @@
     .control-glass{background:var(--control-glass-surface);
       backdrop-filter:blur(19px) saturate(122%); -webkit-backdrop-filter:blur(19px) saturate(122%);}
   }
-  /* 왼쪽 원과 오른쪽 조각은 **같은 높이·같은 윗변**입니다(36px · 안전 영역 + 10px).
-     둘이 한 줄에 나란히 서는 물건이라, 한쪽만 1px 달라도 줄이 어긋나 보입니다.
-     아래 `#readfabs` 의 높이도 같은 36px 이어야 합니다. */
-  #readback,#aafab, .control-circle{position:relative; width:42px; height:42px; border-radius:50%; padding:0;
+  /* Shared expanded circles and capsule use one aligned 48px row. */
+  #readback,#aafab, .control-circle{position:relative; width:var(--control-side-size);height:var(--control-side-size);flex:none;border-radius:50%;padding:0;
     display:flex; align-items:center; justify-content:center; cursor:pointer;}
   /* 그림은 상자 한가운데 놓여 있지만, 화살표의 **잉크**는 그렇지 않습니다.
      `<` 는 24칸 중 8~14.2 만 차지해서 잉크의 한가운데가 11.1 — 상자 한가운데(12)
@@ -172,13 +171,13 @@
   #readback::after{content:''; position:absolute; inset:-6px;}
   #aafab{font:600 15px var(--ui);}
   #readpill, .control-pill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:min(56vw,400px); height:44px; border-radius:24px;
+    width:calc(100% - 2 * var(--control-side-size) - 2 * var(--control-slot-gap));height:var(--control-row-height);border-radius:24px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
   #readpill{--reader-chrome-duration:.26s;--reader-chrome-ease:cubic-bezier(.2,.75,.25,1);
     /* Center resizing geometry in layout. Percentage X transforms can lag the
        animated width in WKWebView's compositor during a scrolling frame. */
     left:0;right:0;margin-inline:auto;transform:translateY(-50%);
-    width:min(56vw,400px,var(--reader-pill-max-width,calc(100% - 124px)));
+    width:var(--reader-pill-max-width);
     transition:left var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
       padding var(--reader-chrome-duration) var(--reader-chrome-ease),border-radius var(--reader-chrome-duration) var(--reader-chrome-ease),
       box-shadow .34s ease;}
@@ -219,9 +218,7 @@
   /* 들린 자국은 넓은 화면에서도 남깁니다. 어두운 화면에서 조각의 종이색은 바탕과
      같은 색(`--paper`)을 옅게 깐 것이라, 자국까지 지우면 조각이 통째로 사라집니다 —
      글자가 없는 왼쪽 여백 위의 back 이 특히 그렇습니다. */
-  @media (min-width:761px){
-    #readchrome, .control-bar{padding:0 22px;}
-  }
+
   @media (prefers-reduced-motion:reduce){
     #readpill{--reader-chrome-duration:0s;}
     #readpill,#readback,#aafab,#readpill #modefab{transition-duration:var(--sentence-transition);

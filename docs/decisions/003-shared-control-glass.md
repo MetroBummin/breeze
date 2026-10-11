@@ -366,3 +366,22 @@ reversal retains the current presentation, as described above. Browser checks
 cover PDF/EPUB body versus internal movement, programmatic restoration, trusted
 wheel/tap input, pinch cancellation, reopening and zoomed edge exclusions;
 these do not establish physical iOS/Pencil behavior.
+
+## Safari-proportion review candidate (separate from TestFlight267)
+
+The user requested a separate PR with iPhone/iPad screenshots after comparing
+Home, Wordbook and Reader with private Safari reference photos. Shared expanded
+controls now form a centered row: 83vw capped at512px, 48px circles/capsule and
+8px gaps. The narrower total row gives the phone more outer breathing room;
+iPad retains the cap instead of stretching the phone arrangement to screen edges.
+The row bottom is max(8px,safe-area-inset-bottom), retaining desktop clearance
+while removing the former extra15px above the device safe area.
+
+Reader controls remain inside readmain, so lookup-pane space is preserved. The
+PDF/EPUB two-button capsule grows to96px and the central pill uses the remaining
+width with balanced8px gaps. The sidebar expands to the readmain edge using the
+centered row's real gutter. Compact Reader behavior and44px horizontally
+scrollable writing targets remain. Materials, functions and gestures are unchanged.
+Private photos are not committed. This branch is a review candidate; build267
+source and its immutable contract remain on integrate/breeze-193-cloud. No merge,
+version change, archive or upload is authorized for this geometry PR.

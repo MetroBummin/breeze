@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await chromium.launch();
+const browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 const props=['backgroundColor','backgroundImage','opacity','backdropFilter','webkitBackdropFilter','borderTop','borderRadius','boxShadow','color','padding','display','alignItems','justifyContent'];
 async function capture(page,ids){return page.evaluate(({ids,props})=>ids.map(id=>{const e=document.getElementById(id),s=getComputedStyle(e),p=getComputedStyle(e,'::before'),r=e.getBoundingClientRect();return {rect:{x:r.x,y:r.y,w:r.width,h:r.height},style:Object.fromEntries(props.map(k=>[k,s[k]])),highlight:{background:p.backgroundImage,shadow:p.boxShadow}}}),{ids,props});}
 try{

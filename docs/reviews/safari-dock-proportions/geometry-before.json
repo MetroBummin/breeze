@@ -1,0 +1,334 @@
+{
+  "source": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
+  "platform": "Actual Chromium measurements, safe-area env=0",
+  "measurements": [
+    {
+      "view": "home",
+      "w": 390,
+      "h": 844,
+      "values": [
+        {
+          "id": "nav-vocab",
+          "x": 14,
+          "y": 787,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        },
+        {
+          "id": "home-resume",
+          "x": 85.8046875,
+          "y": 786,
+          "w": 218.390625,
+          "h": 44,
+          "bottom": 14,
+          "visibility": "visible",
+          "padding": "4px 12px"
+        },
+        {
+          "id": "home-add",
+          "x": 334,
+          "y": 787,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        29.8046875,
+        29.8046875
+      ]
+    },
+    {
+      "view": "vocab",
+      "w": 390,
+      "h": 844,
+      "values": [
+        {
+          "id": "wordbook-home",
+          "x": 14,
+          "y": 787,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        },
+        {
+          "id": "wordbook-review",
+          "x": 85.8046875,
+          "y": 786,
+          "w": 218.390625,
+          "h": 44,
+          "bottom": 14,
+          "visibility": "visible",
+          "padding": "4px 12px"
+        },
+        {
+          "id": "wordbook-add",
+          "x": 334,
+          "y": 787,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        29.8046875,
+        29.8046875
+      ]
+    },
+    {
+      "view": "read",
+      "w": 390,
+      "h": 844,
+      "values": [
+        {
+          "id": "readback",
+          "x": 14,
+          "y": 787,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        },
+        {
+          "id": "readpill",
+          "x": 85.796875,
+          "y": 786,
+          "w": 218.390625,
+          "h": 44,
+          "bottom": 14,
+          "visibility": "visible",
+          "padding": "4px 12px"
+        },
+        {
+          "id": "aafab",
+          "x": 334,
+          "y": 787,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        29.796875,
+        29.8125
+      ]
+    },
+    {
+      "view": "read-compact",
+      "w": 390,
+      "h": 844,
+      "values": [
+        {
+          "id": "readback",
+          "x": 14,
+          "y": 795,
+          "w": 42,
+          "h": 42,
+          "bottom": 7,
+          "visibility": "hidden",
+          "padding": "0px"
+        },
+        {
+          "id": "readpill",
+          "x": 124.796875,
+          "y": 791,
+          "w": 140.390625,
+          "h": 34,
+          "bottom": 19,
+          "visibility": "visible",
+          "padding": "2px 8px"
+        },
+        {
+          "id": "aafab",
+          "x": 334,
+          "y": 795,
+          "w": 42,
+          "h": 42,
+          "bottom": 7,
+          "visibility": "hidden",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        68.796875,
+        68.8125
+      ]
+    },
+    {
+      "view": "home",
+      "w": 820,
+      "h": 1180,
+      "values": [
+        {
+          "id": "nav-vocab",
+          "x": 22,
+          "y": 1123,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        },
+        {
+          "id": "home-resume",
+          "x": 210,
+          "y": 1122,
+          "w": 400,
+          "h": 44,
+          "bottom": 14,
+          "visibility": "visible",
+          "padding": "4px 12px"
+        },
+        {
+          "id": "home-add",
+          "x": 756,
+          "y": 1123,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        146,
+        146
+      ]
+    },
+    {
+      "view": "vocab",
+      "w": 820,
+      "h": 1180,
+      "values": [
+        {
+          "id": "wordbook-home",
+          "x": 22,
+          "y": 1123,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        },
+        {
+          "id": "wordbook-review",
+          "x": 210,
+          "y": 1122,
+          "w": 400,
+          "h": 44,
+          "bottom": 14,
+          "visibility": "visible",
+          "padding": "4px 12px"
+        },
+        {
+          "id": "wordbook-add",
+          "x": 756,
+          "y": 1123,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        146,
+        146
+      ]
+    },
+    {
+      "view": "read",
+      "w": 820,
+      "h": 1180,
+      "values": [
+        {
+          "id": "readback",
+          "x": 22,
+          "y": 1123,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        },
+        {
+          "id": "readpill",
+          "x": 210,
+          "y": 1122,
+          "w": 400,
+          "h": 44,
+          "bottom": 14,
+          "visibility": "visible",
+          "padding": "4px 12px"
+        },
+        {
+          "id": "aafab",
+          "x": 756,
+          "y": 1123,
+          "w": 42,
+          "h": 42,
+          "bottom": 15,
+          "visibility": "visible",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        146,
+        146
+      ]
+    },
+    {
+      "view": "read-compact",
+      "w": 820,
+      "h": 1180,
+      "values": [
+        {
+          "id": "readback",
+          "x": 22,
+          "y": 1131,
+          "w": 42,
+          "h": 42,
+          "bottom": 7,
+          "visibility": "hidden",
+          "padding": "0px"
+        },
+        {
+          "id": "readpill",
+          "x": 320,
+          "y": 1127,
+          "w": 180,
+          "h": 34,
+          "bottom": 19,
+          "visibility": "visible",
+          "padding": "2px 8px"
+        },
+        {
+          "id": "aafab",
+          "x": 756,
+          "y": 1131,
+          "w": 42,
+          "h": 42,
+          "bottom": 7,
+          "visibility": "hidden",
+          "padding": "0px"
+        }
+      ],
+      "gaps": [
+        256,
+        256
+      ]
+    }
+  ]
+}
