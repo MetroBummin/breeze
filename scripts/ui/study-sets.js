@@ -16,7 +16,8 @@ const studySetsUI={
   screen:'list',setId:'',notice:'',undo:null,historyToken:'',pendingClose:false,homeEntry:false,managementEntry:false,
   swipeClose:/** @type {null|(()=>void)} */(null),
   releaseClickId:/** @type {number|null} */(null),
-  pageOpen:false,transitioning:false,homeScroll:0,
+  pageOpen:false,transitioning:false,homeScroll:0,detailEditing:false,detailScroll:0,
+  editOpen:false,editButton:/** @type {HTMLButtonElement|null} */(null),editMenu:/** @type {HTMLElement|null} */(null),editAnimation:/** @type {Animation|null} */(null),editEpoch:0,
   directoryOrigin:false,directoryDepth:0,directoryScroll:0,vocabScroll:0,createdSetId:'',
   directoryList:/** @type {HTMLElement|null} */(null),
   state:null
@@ -52,14 +53,19 @@ function ensureStudySetsDialog(){
   const back=studySetsIconButton('뒤로','back',studySetsBack);back.id='study-sets-back';
   const title=studySetsNode('h2','','학습 세트');title.id='study-sets-title';title.tabIndex=-1;
   const close=studySetsIconButton('학습 세트 닫기','close',()=>closeStudySets());close.id='study-sets-close';
-  header.append(back,title,close);
+  const more=studySetsIconButton('세트 편집','more',event=>studySetsToggleEditMenu(event.detail===0));more.id='study-sets-edit';more.hidden=true;more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');
+  header.append(back,title,more,close);
   const error=studySetsNode('div','study-sets-error');error.id='study-sets-error';error.hidden=true;error.setAttribute('role','alert');
   const body=studySetsNode('div','study-sets-body');body.id='study-sets-content';
   const footer=studySetsNode('footer','study-sets-footer');footer.hidden=true;
   sheet.addEventListener('keydown',event=>{if(studySetsUI.pageOpen)event.stopPropagation();});
-  sheet.append(header,error,body,footer);dialog.append(sheet);document.body.append(dialog);
-  Object.assign(studySetsUI,{dialog,sheet,body,footer,error,title,back});
-  body.addEventListener('scroll',()=>{if(studySetsUI.directoryOrigin&&studySetsUI.screen==='directory'){studySetsUI.directoryScroll=body.scrollTop;studySetsDirectoryPositions.set(studySetsUI.historyToken,body.scrollTop);}});
+  const editMenu=studySetsNode('div','study-sets-edit-menu');editMenu.id='study-sets-edit-menu';editMenu.hidden=true;editMenu.setAttribute('role','menu');editMenu.setAttribute('aria-label','세트 편집');more.setAttribute('aria-controls',editMenu.id);
+  for(const [label,screen] of [['이름 변경','rename'],['책 추가','books'],['세트 삭제','delete']]){
+    const action=studySetsButton(label,()=>{studySetsCloseEditMenu(false,true);studySetsUI.detailScroll=body.scrollTop;studySetsUI.detailEditing=true;studySetsGo(screen);},screen==='delete'?'study-sets-danger-link':'');action.setAttribute('role','menuitem');action.tabIndex=-1;editMenu.append(action);
+  }
+  sheet.append(header,error,body,footer,editMenu);dialog.append(sheet);document.body.append(dialog);
+  Object.assign(studySetsUI,{dialog,sheet,body,footer,error,title,back,editButton:more,editMenu});
+  body.addEventListener('scroll',()=>{studySetsCloseEditMenu(false,true);if(studySetsUI.directoryOrigin&&studySetsUI.screen==='directory'){studySetsUI.directoryScroll=body.scrollTop;studySetsDirectoryPositions.set(studySetsUI.historyToken,body.scrollTop);}});
   let backdropDown=false;
   dialog.addEventListener('pointerdown',event=>{backdropDown=event.target===dialog;});
   dialog.addEventListener('click',event=>{if(event.target===dialog&&backdropDown)closeStudySets();backdropDown=false;});
@@ -110,9 +116,7 @@ function renderStudySetsHome(){
     const view=BreezeStudySets.view(state,set.id),active=set.cards.length-set.excludedIds.length;
     const progress=view.status==='active'?` · ${view.completed}/${view.total}`:'';
     const button=card(set.name,`${active}개${progress}`,()=>openStudySet(set.id));
-    button.dataset.setId=set.id;studySetsHomeMenuGesture(button,set.id);
-    const menu=studySetsIconButton(`${set.name} 관리`,'more',()=>{button.focus();openStudySetsManagement(set.id);});
-    menu.classList.add('study-sets-home-menu-trigger');button.parentElement.append(menu);
+    button.dataset.setId=set.id;
     button.setAttribute('aria-controls','v-memory-set');
   }
   const create=card('세트 추가','',openStudySetsCreate,'add');
@@ -124,26 +128,25 @@ function renderStudySetsHome(){
     if(replacement instanceof HTMLElement)replacement.focus({preventScroll:true});
   }
 }
-function studySetsHomeMenuGesture(button,id){
-  let timer=null,start=null,suppressClick=false;
-  const cancel=()=>{if(timer!==null)clearTimeout(timer);timer=null;start=null;};
-  const open=()=>{const pointerId=start?.id;cancel();if(!button.isConnected)return;suppressClick=true;
-    // The menu replaces the pressed card. Its release can click a new action
-    // under the same finger, so the initiating press keeps ownership until the
-    // next real pointerdown, including its compatibility click.
-    studySetsUI.releaseClickId=pointerId??null;button.focus();openStudySetsManagement(id);};
-  button.addEventListener('contextmenu',event=>{event.preventDefault();open();});
-  button.addEventListener('keydown',event=>{
-    if(event.key==='ContextMenu'||event.key==='F10'&&event.shiftKey){event.preventDefault();open();}
-  });
-  button.addEventListener('pointerdown',event=>{
-    cancel();suppressClick=false;if(event.button!==0)return;
-    start={x:event.clientX,y:event.clientY,id:event.pointerId};timer=setTimeout(open,500);
-  });
-  button.addEventListener('pointermove',event=>{if(start&&start.id===event.pointerId&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>8){suppressClick=true;cancel();}});
-  for(const type of ['pointerup','lostpointercapture','pointerleave'])button.addEventListener(type,cancel);
-  button.addEventListener('pointercancel',()=>{suppressClick=true;cancel();});
-  button.addEventListener('click',event=>{if(suppressClick&&event.detail!==0){suppressClick=false;event.preventDefault();event.stopImmediatePropagation();}},true);
+function studySetsCloseEditMenu(focus=false,immediate=false){
+  studySetsSetEditMenu(false,focus,immediate);
+}
+function studySetsToggleEditMenu(focus=false){studySetsSetEditMenu(!studySetsUI.editOpen,focus);}
+function studySetsSetEditMenu(open,focus=false,immediate=false){
+  const ui=studySetsUI,panel=ui.editMenu,button=ui.editButton;
+  if(!panel||!button||open&&(ui.screen!=='detail'||!ui.pageOpen||button.hidden))return;
+  if(!open&&panel.hidden)return;
+  const epoch=++ui.editEpoch;
+  const current=!panel.hidden&&ui.editAnimation?getComputedStyle(panel).clipPath:null;
+  ui.editAnimation?.cancel();ui.editAnimation=null;ui.editOpen=open;
+  button.setAttribute('aria-expanded',String(open));panel.hidden=false;
+  panel.style.pointerEvents=open?'auto':'none';
+  const items=[...panel.querySelectorAll('button')];items.forEach(item=>{item.tabIndex=open?0:-1;});
+  const bounds=typeof panel.getBoundingClientRect==='function'?panel.getBoundingClientRect():{width:236,height:194},circle=`inset(0px 0px ${Math.max(0,bounds.height-44)}px ${Math.max(0,bounds.width-44)}px round 22px)`,expanded='inset(0px 0px 0px 0px round 20px)';
+  const finish=()=>{if(epoch!==ui.editEpoch)return;ui.editAnimation?.cancel();ui.editAnimation=null;panel.style.clipPath=open?expanded:circle;panel.hidden=!open;if(focus){const target=open?items[0]:button;target?.focus({preventScroll:true});}};
+  if(immediate||typeof panel.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
+  const animation=panel.animate([{clipPath:current||(open?circle:expanded)},{clipPath:open?expanded:circle}],{duration:open?220:170,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});
+  ui.editAnimation=animation;animation.finished.then(finish,()=>{});
 }
 function replaceStudySetsHistory(patch){
   const current=history.state||{};
@@ -184,15 +187,11 @@ function openStudySet(id){
   if(studySetsUI.directoryOrigin&&studySetsUI.screen==='directory'){studySetsDirectoryFocus.set(studySetsUI.historyToken,id);studySetsGo('detail',id);return;}
   openStudySets(false,'detail',id,true);
 }
-function openStudySetsManagement(id){
-  if(studySetsUI.directoryOrigin&&studySetsUI.screen==='directory'){studySetsDirectoryFocus.set(studySetsUI.historyToken,id);studySetsGo('menu',id);return;}
-  openStudySets(false,'menu',id,true);
-}
 function studySetsReturnDirectory(){
   if(studySetsUI.directoryDepth>0){studySetsUI.pendingClose=true;history.go(-studySetsUI.directoryDepth);}
 }
 function studySetsAttachSurface(){
-  const ui=studySetsUI,page=['detail','study'].includes(ui.screen);
+  const ui=studySetsUI,page=['detail','study'].includes(ui.screen)||ui.detailEditing&&['rename','books','delete','excluded'].includes(ui.screen);
   const view=page?'memory-set':ui.directoryOrigin?'vocab':(history.state?.studySets===ui.historyToken&&history.state.view!=='memory-set'?history.state.view:ui.homeEntry?'memory':typeof activeAppView==='function'&&activeAppView()!=='memory-set'?activeAppView():'memory');
   ui.transitioning=true;
   if(page){
@@ -223,9 +222,11 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
   studySetsUI.directoryScroll=fromHistory?(studySetsDirectoryPositions.get(history.state?.studySets)??(Number(history.state?.studySetsDirectoryScroll)||0)):0;
   studySetsUI.vocabScroll=fromHistory?Number(history.state?.studySetsVocabScroll)||0:window.scrollY||0;
   studySetsUI.screen=fromHistory?history.state?.studySetsScreen||'list':screen;
+  if(fromHistory&&studySetsUI.screen==='menu')studySetsUI.screen='detail';
+  studySetsUI.detailEditing=fromHistory?!!history.state?.studySetsDetailEditing:false;
   studySetsUI.setId=fromHistory?history.state?.studySetsSetId||'':setId;
   studySetsUI.homeEntry=fromHistory?!!history.state?.studySetsHome:homeEntry;
-  studySetsUI.managementEntry=fromHistory?!!history.state?.studySetsManagement:screen==='menu';
+  studySetsUI.managementEntry=false;
   studySetsUI.notice='';studySetsUI.undo=null;
   studySetsUI.state=null;studySetsUI.body.replaceChildren();
   studySetsUI.title.textContent=studySetsUI.screen==='create'?'새 학습 세트':'학습 세트';
@@ -238,6 +239,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
 }
 function closeStudySets(fromHistory=false){
   if(!studySetsIsOpen())return;
+  studySetsCloseEditMenu(false,true);
   studySetsUI.swipeClose?.();
   if(studySetsUI.pageOpen){studySetsUI.pageOpen=false;studySetsReturnHomeFocus();}
   else studySetsUI.dialog.close();
@@ -329,21 +331,23 @@ function studySetsAnimateExit(row){
 }
 function studySetsGo(screen,setId=studySetsUI.setId){
   if(studySetsUI.pendingClose)return;
+  studySetsCloseEditMenu(false,true);
   if(screen==='detail'&&studySetsUI.screen==='study'&&history.state?.studySetsScreen==='study'){history.back();return;}
   if(studySetsUI.directoryOrigin&&screen!==studySetsUI.screen){
     rememberStudySetsDirectory();
     studySetsUI.directoryDepth++;if(screen==='menu')studySetsUI.managementEntry=true;
-    history.pushState({...history.state,studySetsScreen:screen,studySetsSetId:setId,studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsManagement:studySetsUI.managementEntry,view:['detail','study'].includes(screen)?'memory-set':'vocab'},'');
+    history.pushState({...history.state,studySetsScreen:screen,studySetsDetailEditing:studySetsUI.detailEditing,studySetsSetId:setId,studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsManagement:studySetsUI.managementEntry,view:['detail','study'].includes(screen)?'memory-set':'vocab'},'');
   }
   studySetsUI.screen=screen;studySetsUI.setId=setId;studySetsUI.notice='';
   if(screen!=='detail')studySetsUI.undo=null;
   studySetsReadAndRender();
 }
 function studySetsBack(){
+  if(studySetsUI.editOpen){studySetsCloseEditMenu(true);return;}
   const screen=studySetsUI.screen;
   if(studySetsUI.directoryOrigin){if(screen==='directory')closeStudySets();else history.back();return;}
   if(screen==='detail'&&studySetsUI.pageOpen||screen==='list'||studySetsUI.homeEntry&&['detail','create','menu'].includes(screen)){closeStudySets();return;}
-  studySetsGo(studySetsUI.managementEntry&&['excluded','rename','books','delete'].includes(screen)?'menu':['study','excluded','rename','books','delete'].includes(screen)?'detail':'list');
+  studySetsGo(['study','excluded','rename','books','delete'].includes(screen)?'detail':'list');
 }
 function studySetsMessage(text){
   const message=studySetsNode('p','study-sets-caption',text);return message;
@@ -354,6 +358,7 @@ function studySetsEmpty(title,description){
 }
 function renderStudySets(focus=true){
   const ui=studySetsUI;if(!studySetsIsOpen()||!ui.state)return;
+  studySetsCloseEditMenu(false,true);
   const scrollTop=ui.body.scrollTop;
   const active=document.activeElement instanceof HTMLElement?document.activeElement:null;
   const oldRows=[...ui.body.querySelectorAll('.study-sets-word-row')];
@@ -366,7 +371,7 @@ function renderStudySets(focus=true){
     ui.screen=ui.directoryOrigin?'directory':'list';ui.setId='';ui.notice='이 학습 세트가 삭제되었어요.';
   }
   studySetsAttachSurface();
-  ui.sheet.dataset.screen=ui.screen;
+  ui.sheet.dataset.screen=ui.screen;ui.editButton.hidden=ui.screen!=='detail'||!ui.pageOpen||!set;
   ui.swipeClose?.();ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
   const titles={directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제'};
   ui.title.textContent=titles[ui.screen]||set?.name||'학습 세트';
@@ -374,13 +379,12 @@ function renderStudySets(focus=true){
   if(ui.screen==='directory'){renderStudySetsHome();ui.body.append(ui.directoryList);}
   else if(ui.screen==='list')renderStudySetsList();
   else if(ui.screen==='create')renderStudySetsCreate();
-  else if(ui.screen==='menu')renderStudySetsMenu(set);
   else if(ui.screen==='books')renderStudySetsBooks(set);
   else if(ui.screen==='rename'||ui.screen==='delete')renderStudySetsEdit(set);
   else if(ui.screen==='study')renderStudySetsStudy(set);
   else renderStudySetsDetail(set,ui.screen==='excluded');
   if(focus){
-    ui.body.scrollTop=ui.screen==='directory'?ui.directoryScroll:0;
+    ui.body.scrollTop=ui.screen==='directory'?ui.directoryScroll:ui.screen==='detail'&&ui.detailEditing?ui.detailScroll:0;
     const preferred=ui.body.querySelector('[data-study-sets-focus]');
     if(preferred instanceof HTMLElement)preferred.focus({preventScroll:true});else ui.title.focus({preventScroll:true});
     if(ui.screen==='directory'){
@@ -469,7 +473,7 @@ function renderStudySetsEdit(set){
   const save=studySetsButton('이름 저장',()=>{},'study-sets-primary');save.type='submit';
   form.append(label,save);form.addEventListener('submit',event=>{
     event.preventDefault();if(!input.value.trim()){input.setCustomValidity('세트 이름을 입력해 주세요.');input.reportValidity();return;}
-    const name=input.value.trim();studySetsMutate(state=>BreezeStudySets.rename(state,set.id,name,Date.now()),()=>{if(studySetsUI.directoryOrigin){studySetsUI.pendingClose=true;history.back();return;}studySetsUI.screen=studySetsUI.managementEntry?'menu':'detail';studySetsUI.notice='';});
+    const name=input.value.trim();studySetsMutate(state=>BreezeStudySets.rename(state,set.id,name,Date.now()),()=>{if(studySetsUI.directoryOrigin){studySetsUI.pendingClose=true;history.back();return;}studySetsUI.screen='detail';studySetsUI.notice='';});
   });input.addEventListener('input',()=>input.setCustomValidity(''));body.append(form);
 }
 function renderStudySetsBooks(set){
@@ -494,16 +498,9 @@ function renderStudySetsBooks(set){
     event.preventDefault();if(!selection.size)return;
     studySetsMutate(state=>BreezeStudySets.addBooks(state,set.id,[...selection],words,Date.now()),()=>{
       if(studySetsUI.directoryOrigin){studySetsUI.pendingClose=true;history.back();return;}
-      studySetsUI.screen=studySetsUI.managementEntry?'menu':'detail';studySetsUI.notice='';
+      studySetsUI.screen='detail';studySetsUI.notice='';
     });
   });studySetsUI.body.append(form);
-}
-function renderStudySetsMenu(set){
-  const body=studySetsUI.body,menu=studySetsNode('div','study-sets-menu');
-  menu.append(studySetsButton('이름 변경',()=>studySetsGo('rename')),
-    studySetsButton('책 추가',()=>studySetsGo('books')),
-    studySetsButton('제외한 단어',()=>studySetsGo('excluded')));
-  menu.append(studySetsButton('세트 삭제',()=>studySetsGo('delete'),'study-sets-danger-link'));body.append(menu);
 }
 // Undo owns a touch release directly: browsers can omit its compatibility click
 // while the surrounding list is animating. Mouse and keyboard retain click.
@@ -632,6 +629,7 @@ document.addEventListener('click',event=>{
 },true);
 document.addEventListener('pointerdown',event=>{
   studySetsUI.releaseClickId=null;
+  if(studySetsUI.editOpen&&event.target instanceof Node&&!studySetsUI.editMenu?.contains(event.target)&&!studySetsUI.editButton?.contains(event.target)&&!studySetsUI.back?.contains(event.target)){studySetsCloseEditMenu(false);studySetsUI.releaseClickId=event.pointerId;event.stopPropagation();}
   const revealed=document.querySelector('.study-sets-word-row.study-sets-revealed:not(.study-sets-exiting)');
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
@@ -688,3 +686,5 @@ window.addEventListener('storage',event=>{
   if(studySetsIsOpen()&&!studySetsUI.retry&&!['create','rename','books','delete'].includes(studySetsUI.screen))studySetsReadAndRender(false);
 });
 refreshStudySetsEntry();
+
+document.addEventListener('keydown',event=>{if(!studySetsUI.editOpen)return;const items=[...(studySetsUI.editMenu?.querySelectorAll('button')||[])];if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();studySetsCloseEditMenu(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const at=items.findIndex(item=>item===document.activeElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(at+(event.key==='ArrowUp'?-1:1)+items.length)%items.length;items[next]?.focus({preventScroll:true});}else if(event.key==='Tab'){studySetsCloseEditMenu(false,true);}},true);

@@ -38,12 +38,12 @@ try{
  const tap=async locator=>{const p=await point(locator);await send('touchStart',p.x,p.y);await send('touchEnd');await page.waitForTimeout(400);};
  const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${proof}/web-preview-${name}.png`,fullPage:false});};
  const directory=()=>page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
- const back=async()=>{await tap(page.locator('#study-sets-back'));await directory();};
+ const back=async()=>{for(let i=0;i<4&&await page.evaluate(()=>studySetsUI.screen!=='directory');i++)await tap(page.locator('#study-sets-back'));await directory();};
  const row=()=>page.locator('#study-sets-word-list>li').first();
  const offset=()=>row().locator('.study-sets-word-surface').evaluate(n=>{const t=getComputedStyle(n).transform;return t==='none'?0:new DOMMatrixReadOnly(t).m41;});
  const settled=async expected=>{await page.waitForFunction(x=>{const n=document.querySelector('.study-sets-word-surface');if(!n)return false;const t=getComputedStyle(n).transform;return Math.abs((t==='none'?0:new DOMMatrixReadOnly(t).m41)-x)<1;},expected);};
  const openSet=async()=>{await tap(page.locator('.study-sets-home-card[data-set-id]').first());await page.waitForFunction(()=>activeAppView()==='memory-set');};
- const menu=async()=>{const p=await point(page.locator('.study-sets-home-card[data-set-id]').first());await send('touchStart',p.x,p.y);await page.waitForTimeout(550);await send('touchEnd');await page.getByRole('button',{name:'책 추가',exact:true}).waitFor();await tap(page.locator('#study-sets-title'));};
+ const menu=async()=>{if(await page.evaluate(()=>studySetsUI.screen==='directory'))await openSet();await tap(page.locator('#study-sets-edit'));await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);await page.getByRole('menuitem',{name:'책 추가',exact:true}).waitFor();};
  const swipe=async(amount,cancel=false)=>{const r=await row().boundingBox();const x=r.x+r.width-65,y=r.y+r.height/2;await send('touchStart',x,y);for(let i=1;i<=6;i++)await send('touchMove',x-amount*i/6,y);await send(cancel?'touchCancel':'touchEnd');};
  const inventory=await page.evaluate(()=>words);
  const gaps=await page.locator('.study-sets-home-card').evaluateAll(nodes=>{const r=nodes.map(n=>n.getBoundingClientRect());return r.slice(1).map((n,i)=>n.top-r[i].bottom);});
@@ -52,10 +52,19 @@ try{
  await capture('phone-list-light');
  let p=await point(page.locator('.study-sets-home-card[data-set-id]'));
  await send('touchStart',p.x,p.y);await send('touchMove',p.x,p.y-20);await send('touchCancel');await page.waitForTimeout(550);await directory();
+ p=await point(page.locator('.study-sets-home-card[data-set-id]'));await send('touchStart',p.x,p.y);await page.waitForTimeout(550);await send('touchEnd');assert.equal(await page.evaluate(()=>studySetsUI.editOpen),false);if(await page.evaluate(()=>studySetsUI.screen==='detail'))await back();await directory();
 
- await menu();assert.equal(await page.locator('.study-sets-menu #study-sets-import').count(),0);assert.equal(await page.getByRole('button',{name:'제외한 단어',exact:true}).count(),1);assert.equal(await page.evaluate(()=>studySetsUI.directoryDepth),1);await capture('phone-long-press-actions-light');
- await back();await openSet();assert.equal(await page.locator('dialog[open]').count(),0);
- assert.equal(await page.getByRole('button',{name:'세트 삭제',exact:true}).count(),0);
+ await openSet();assert.equal(await page.locator('.study-sets-home-menu-trigger').count(),0);
+ await capture('phone-edit-closed-light');await menu();assert.equal(await page.getByRole('menuitem').count(),3);assert.equal(await page.locator('.study-sets-edit-menu #study-sets-import').count(),0);await capture('phone-edit-open-light');
+ // Interrupt a morph in either direction; stale completion cannot reopen it.
+ p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');await send('touchStart',p.x,p.y);await send('touchEnd');
+ await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
+ await tap(page.locator('#study-sets-back'));await page.waitForFunction(()=>!studySetsUI.editOpen&&studySetsUI.editMenu.hidden);assert.equal(await page.evaluate(()=>studySetsUI.screen),'detail');
+ await menu();await tap(row().locator('.vword'));await page.waitForFunction(()=>studySetsUI.editMenu.hidden);assert.equal(await row().locator('.vmore').count(),0,'outside tap closes without opening example');
+ // Keyboard focus follows the anchored menu and returns on Escape.
+ await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>!studySetsUI.editAnimation);
+ assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('role')),'menuitem');await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'책 추가');await page.keyboard.press('Escape');await page.waitForFunction(()=>studySetsUI.editMenu.hidden);assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-edit');
+ assert.equal(await page.locator('dialog[open]').count(),0);
  const count=await page.locator('#study-sets-word-list>li').count();
  p=await point(row().locator('.vko'));await send('touchStart',p.x,p.y);await send('touchMove',p.x-18,p.y);const first=await offset();await send('touchMove',p.x-60,p.y);const second=await offset();
  assert.ok(first< -10&&second<first-25,'trusted touch follows finger after implicit capture transfer');
@@ -84,10 +93,10 @@ try{
  await tap(row().locator('.vword'));assert.equal(await row().locator('.vmore').count(),1);await tap(row().locator('.vword'));assert.equal(await row().locator('.vmore').count(),0);
  await swipe(90);await settled(-72);await tap(row().locator('.study-sets-row-action'));await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count-1);
  const excluded=await page.evaluate(()=>readStudySets().sets[0].excludedIds.slice());await back();await menu();
- await tap(page.getByRole('button',{name:'이름 변경',exact:true}));await page.locator('#study-sets-rename-input').fill('Holmes · 이번 주');await tap(page.getByRole('button',{name:'이름 저장',exact:true}));
- await page.getByRole('button',{name:'책 추가',exact:true}).waitFor();await tap(page.getByRole('button',{name:'책 추가',exact:true}));
+ await tap(page.getByRole('menuitem',{name:'이름 변경',exact:true}));await page.locator('#study-sets-rename-input').fill('Holmes · 이번 주');await tap(page.getByRole('button',{name:'이름 저장',exact:true}));
+ await menu();await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));
  await tap(page.locator('.study-sets-books').getByRole('checkbox',{name:/이번 주 읽은 기사/}));assert.equal(await page.locator('.study-sets-books input:checked').evaluate(n=>getComputedStyle(n).borderRadius),'50%');await capture('phone-add-books-light');await tap(page.locator('#study-sets-add-books'));
- await page.getByRole('button',{name:'책 추가',exact:true}).waitFor();await back();
+ await page.waitForFunction(()=>studySetsUI.screen==='detail');await back();
  const trace=await page.evaluate(()=>touchTrace),undoTrace=await page.evaluate(()=>undoTouchTrace);
  assert.ok(undoTrace.some(e=>e.type==='pointerup'&&e.exiting&&e.trusted),'trusted release restores during exit');
  assert.ok(undoTrace.some(e=>e.type==='pointerdown'&&e.exiting&&e.trusted),'Undo touch starts during exit');
@@ -96,10 +105,10 @@ try{
  const durable=await page.evaluate(()=>readStudySets().sets[0]);assert.equal(durable.name,'Holmes · 이번 주');assert.deepEqual(durable.excludedIds,excluded);
  assert.equal(durable.cards.length,count+1);assert.equal(new Set(durable.cards.map(c=>c.id)).size,durable.cards.length);
  assert.ok(!durable.cards.some(c=>c.word==='unrelated'));assert.deepEqual(await page.evaluate(()=>words),inventory);
- await menu();await tap(page.getByRole('button',{name:'책 추가',exact:true}));assert.equal(await page.locator('.study-sets-books').getByRole('checkbox',{name:/이번 주 읽은 기사/}).count(),0,'added source cannot be added twice');await tap(page.locator('#study-sets-close'));await page.waitForFunction(()=>!studySetsUI.dialog.open);
+ await menu();await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));assert.equal(await page.locator('.study-sets-books').getByRole('checkbox',{name:/이번 주 읽은 기사/}).count(),0,'added source cannot be added twice');await back();
  await page.evaluate(()=>openStudySetsDirectory());await directory();
  // The immutable default exposes no management trigger or delete menu.
- await page.locator('#study-sets-all').dispatchEvent('contextmenu');await directory();assert.equal(await page.getByRole('button',{name:'세트 삭제',exact:true}).count(),0);
+ await page.locator('#study-sets-all').dispatchEvent('contextmenu');await directory();assert.equal(await page.locator('#study-sets-edit').isVisible(),false);
  const layouts=[];
  for(const [width,height] of [[390,844],[820,1180],[1440,1000],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
@@ -107,14 +116,16 @@ try{
   assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
   if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-list-${dark?'dark':'light'}`);
   if(width===390||width===820){
-   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await menu();await capture(`${device}-long-press-actions-${theme}`);
-   await tap(page.getByRole('button',{name:'책 추가',exact:true}));await tap(page.locator('.study-sets-books input').first());await capture(`${device}-add-books-${theme}`);
-   await tap(page.locator('#study-sets-close'));await page.waitForFunction(()=>!studySetsUI.dialog.open);await page.evaluate(()=>openStudySetsDirectory());await directory();
+   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await menu();await capture(`${device}-edit-open-${theme}`);
+   await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));await tap(page.locator('.study-sets-books input').first());await capture(`${device}-add-books-${theme}`);
+   await back();
   }
   await openSet();assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
   if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-detail-${dark?'dark':'light'}`);
   await back();layouts.push({width,height,dark});
  }
+ await page.setViewportSize({width:390,height:844});await openSet();await menu();const firstRow=await row().elementHandle();await page.locator('#study-sets-content').evaluate(n=>n.scrollTop=80);await page.waitForFunction(()=>studySetsUI.editMenu.hidden);assert.equal(await firstRow.evaluate(n=>n.isConnected),true);await back();
+ await page.emulateMedia({reducedMotion:'reduce'});await openSet();await menu();assert.equal(await page.evaluate(()=>studySetsUI.editAnimation),null);await tap(page.locator('#study-sets-edit'));assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true);await back();await page.emulateMedia({reducedMotion:'no-preference'});
  // Direct detail import is idempotent even if a detached button fires again.
  await openSet();const pending=page.locator('#study-sets-import');assert.match(await pending.innerText(),/새 단어 가져오기 · 1개/);
  const stale=await pending.elementHandle(),beforeImport=await page.evaluate(()=>readStudySets().sets[0]);await tap(pending);
@@ -123,12 +134,12 @@ try{
  assert.equal(new Set(imported.cards.map(c=>c.id)).size,imported.cards.length);assert.equal(await pending.count(),0);assert.deepEqual(await page.evaluate(()=>words),inventory);
  await back();
  // Isolate native scrolling and its inertia from the following tap checks.
- await openSet();const scrollCount=await page.locator('#study-sets-word-list>li').count();
- p=await point(row().locator('.vko'));await send('touchStart',p.x,p.y);
+ await openSet();await menu();const scrollCount=await page.locator('#study-sets-word-list>li').count();
+ p=await point(page.locator('#study-sets-word-list>li').nth(4).locator('.vko'));assert.equal(await page.evaluate(p=>!!document.elementFromPoint(p.x,p.y)?.closest('.study-sets-word-row'),p),true);await send('touchStart',p.x,p.y);
  for(let i=1;i<=5;i++)await send('touchMove',p.x,p.y-i*12);await send('touchEnd');await page.waitForTimeout(160);
- assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');
+ assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true,'outside native scrolling dismisses menu');
  assert.equal(await page.locator('#study-sets-word-list>li').count(),scrollCount);assert.equal(await offset(),0);
  assert.deepEqual(errors,[]);assert.ok(trace.some(e=>e.type==='lostpointercapture'&&e.target==='vko'));assert.ok(trace.every(e=>e.trusted&&e.pointerType==='touch'));
- writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/longpress/cancel/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,trace,undoTrace,errors},null,2));
+ writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,trace,undoTrace,errors},null,2));
  console.log('Trusted touchscreen, persistence and responsive screenshot checks passed: '+proof);
 }finally{await browser?.close();server.close();}

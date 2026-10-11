@@ -18,22 +18,26 @@ be shown to the user before main merge or TestFlight integration.
 
 The home uses existing Memory typography, thin boundaries and neutral theme
 tokens. Names and word counts carry the hierarchy without descriptive copy or
-decorative set icons. The add row uses the same shape and size as saved sets. User-set long press, context click or keyboard context
-menu opens management (rename, add source books, excluded cards and delete).
+decorative set icons. The add row uses the same shape and size as saved sets.
+A set opens on ordinary tap. Directory long press, context click and keyboard
+context no longer open editing, and the hidden directory edit trigger is removed.
+Editing is consolidated in the detail page's top-right circular ellipsis.
 Directory rows use the same 8px gap, including the all-words and add rows;
 counts use the existing small caption. The sheet fits its content, and its
-44px close target is circular. Management uses neutral text rows with thin
-separators. Excluded membership remains durable, but its count is not shown.
+44px close target is circular. The detail ellipsis has a 44px touch target and
+uses existing sentence-glass material. Its compact menu contains exactly Rename,
+Add books and Delete set, with neutral text rows and thin separators. Excluded membership remains durable, but its count is not shown.
 Book checkboxes use circular checkmarks while retaining native checkbox semantics.
 The all-words default is not mutable. Creation asks for the name and source books.
 The add card switches the existing open native dialog from directory to creation;
 it never opens a nested sheet or navigates to a page. Back or Escape returns to
 the directory. Saving also returns to that directory and focuses the new set.
 Only choosing a set or all-word study leaves the sheet for a full page.
-Internal directory/create/manage history transitions keep the same dialog open
-without close/show cycles. X dismisses the entire sheet hierarchy. Renaming
-returns to its existing management frame, and deletion returns directly to the
-directory. Forward into a deleted set falls back to the directory, preserving
+Directory/create history transitions keep the same dialog open without
+close/show cycles. X dismisses the sheet hierarchy. Rename, source selection and
+delete confirmation opened from the detail menu stay in the same page family;
+saving or canceling returns to detail with its scroll position. Confirmed set
+deletion returns directly to the directory and never changes original vocabulary. Forward into a deleted set falls back to the directory, preserving
 access to all-word study and creation. Directory scroll and return-card focus
 are retained independently of the vocabulary background scroll.
 
@@ -54,11 +58,18 @@ intentional swipe can park the action for tapping; a sufficiently deep swipe
 commits, then the row exits and its space collapses. Cancellation or insufficient
 distance returns the row. Exclusion affects only this set, with Undo. Keyboard
 users retain an equivalent operation without persistent row action clutter.
+The ellipsis expands a clipped glass surface from its circular anchor, keeping
+the word DOM and scroll position unchanged. A new toggle cancels the prior
+animation; epoch ownership prevents stale completion from reopening a dismissed
+menu. Back and Escape dismiss it first; outside tap owns dismissal without
+opening the word beneath it. Outside native scroll closes the menu while
+retaining native scrolling. Keyboard arrows, Home and End move menu focus,
+Escape restores ellipsis focus, and reduced motion settles immediately. Old
+menu history entries fall back to detail.
+
 Touch implicitly captures to the hit child. Its bubbling capture-loss during
 transfer to the row does not cancel that row's drag; only loss of the row's own
-active capture does. Long press owns its release click even when management
-replaces the original button under the finger. The next pointerdown starts a
-new interaction. Undo appears as soon as exclusion commits, without waiting for
+active capture does. Undo owns its release click and the next pointerdown starts a new interaction. Undo appears as soon as exclusion commits, without waiting for
 row removal. Collapse never replaces its active touch target. Undo owns a
 stationary touch release directly because browsers can omit the compatibility
 click during surrounding animation; cancellation, moved or outside release does
@@ -77,8 +88,9 @@ source's book label, example, record key, or timestamp. Conservative exact
 matching avoids silently merging differing saved content.
 
 Source deletion or editing cannot erase or rewrite an existing captured card.
-Exclusion removes a card only from this set's active membership, with Undo and
-an excluded-card list for restoration. Excluded identities remain recorded.
+Exclusion removes a card only from this set's active membership, with Undo.
+Excluded identities remain recorded; the old excluded-screen history remains
+readable without adding a fourth action to the new edit menu.
 `새 단어 가져오기 · N개` is an explicit action in the set detail footer,
 shown only when unseen eligible words are available. A tap imports them directly;
 repeated activation cannot duplicate snapshots. It is never automatic synchronization;
@@ -132,7 +144,8 @@ safe-area and keyboard behavior are separate from browser verification.
 `verify-study-sets-touch-browser.mjs` uses trusted Chromium CDP touchscreen
 input for capture transfer, finger-follow, cancellation, parked and deep swipe,
 immediate Undo, a touch held across collapse, canceled/moved Undo, word examples,
-long press, rename, adding books and repeated direct imports.
+ellipsis morph interruptions, outside dismissal, Back, keyboard focus, reduced
+motion, long-press remnants, rename, adding books and repeated direct imports.
 It also verifies persistence, exclusions, deduplication and unchanged global
 vocabulary, plus ten light/dark layouts. Native scrolling is checked separately
 at the end to isolate its inertia from subsequent tap checks. This is browser

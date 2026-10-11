@@ -108,10 +108,10 @@ test('failed storage keeps answer and form retryable; stale grade events cannot 
 test('directly-added words, exclusion restore, set deletion confirmation and source preservation',()=>{
   const {context,document,query,click,run,button,createSet}=harness();createSet('Direct',['']);
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,1);assert.match(query('#study-sets-word-list').textContent,/direct/);
-  click('.study-sets-row-action');run("studySetsGo('menu')");button('제외한 단어');assert.equal(document.querySelectorAll('#study-sets-excluded-list li').length,1);
+  click('.study-sets-row-action');run("studySetsGo('excluded')");assert.equal(document.querySelectorAll('#study-sets-excluded-list li').length,1);
   click('.study-sets-row-action');click('#study-sets-back');assert.equal(document.querySelectorAll('#study-sets-word-list li').length,1);
-  const source=JSON.stringify(context.words);run("studySetsGo('menu')");button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Direct');
-  run("studySetsGo('menu')");button('세트 삭제');button('세트 삭제');assert.equal(document.querySelectorAll('[data-set-id]').length,0);
+  const source=JSON.stringify(context.words);run('studySetsToggleEditMenu()');button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Direct');
+  run('studySetsToggleEditMenu()');button('세트 삭제');button('세트 삭제');assert.equal(document.querySelectorAll('[data-set-id]').length,0);
   assert.equal(JSON.stringify(context.words),source);assert.equal(document.querySelectorAll('.study-sets-home-card').length,2);
   run('closeStudySets(true)');assert.equal(run('studySetsIsOpen()'),false);
 });
@@ -178,9 +178,9 @@ test('direct set cards preserve detail, nested Back, updated counts and focus af
   assert.equal(query('#study-sets-title').textContent,'Exam set');assert.equal(context.history.state.studySetsHome,true);
   assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(document.querySelector('.study-sets-list'),null);
   click('.study-sets-row-action');assert.match(query('.study-sets-home-card[data-set-id]').textContent,/1개/);
-  run("studySetsGo('menu')");button('제외한 단어');click('.study-sets-row-action');click('#study-sets-back');
+  run("studySetsGo('excluded')");click('.study-sets-row-action');click('#study-sets-back');
   assert.equal(query('#study-sets-title').textContent,'Exam set');assert.match(query('.study-sets-home-card[data-set-id]').textContent,/2개/);
-  run("studySetsGo('menu')");button('이름 변경');query('#study-sets-rename-input').value='Midterm';submit('form');
+  run('studySetsToggleEditMenu()');button('이름 변경');query('#study-sets-rename-input').value='Midterm';submit('form');
   assert.equal(query('.study-sets-home-card[data-set-id] strong').textContent,'Midterm');
   click('#study-sets-back');assert.equal(query('#study-sets-dialog').open,false);
   assert.equal(document.activeElement,query('.study-sets-home-card[data-set-id]'));assert.equal(context.currentView,'memory');
@@ -191,8 +191,8 @@ test('direct creation can cancel to Memory and deleting a set returns to its dir
   query('#study-sets-home-create').focus();click('#study-sets-home-create');click('#study-sets-back');
   assert.equal(query('#study-sets-dialog').open,false);assert.equal(document.querySelectorAll('.study-sets-home-card[data-set-id]').length,1);
   const card=query('.study-sets-home-card[data-set-id]');card.focus();card.click();
-  run("studySetsGo('menu')");button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Exam set');
-  run("studySetsGo('menu')");button('세트 삭제');button('세트 삭제');
+  run('studySetsToggleEditMenu()');button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Exam set');
+  run('studySetsToggleEditMenu()');button('세트 삭제');button('세트 삭제');
   assert.equal(query('#study-sets-dialog').open,false);assert.equal(document.querySelectorAll('.study-sets-home-card[data-set-id]').length,0);
   assert.equal(document.activeElement.id,'study-sets-home-create');assert.equal(context.currentView,'memory');
 });
@@ -242,17 +242,15 @@ test('minimal detail shows examples only after tapping and keeps primary action 
   assert.equal(document.querySelector('.study-sets-manage'),null);
 });
 
-test('home management supports keyboard, right-click and long press without opening detail',async()=>{
-  const {query,click,window,context,document,createFromHome}=harness();createFromHome();click('#study-sets-close');
-  let card=query('.study-sets-home-card[data-set-id]');
+test('directory cards have no competing long-press, context or keyboard edit menu',async()=>{
+  const {query,click,window,context,document,run,createFromHome}=harness();createFromHome();click('#study-sets-close');
+  context.currentView='vocab';run('openStudySetsDirectory()');const card=query('.study-sets-home-card[data-set-id]');
   const keyboard=new window.Event('keydown',{cancelable:true});keyboard.key='F10';keyboard.shiftKey=true;card.dispatchEvent(keyboard);
-  assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(document.querySelector('#study-sets-content #study-sets-import'),null);
-  click('#study-sets-back');card=query('.study-sets-home-card[data-set-id]');
-  card.dispatchEvent(new window.Event('contextmenu',{cancelable:true}));assert.equal(context.history.state.studySetsScreen,'menu');
-  click('#study-sets-back');card=query('.study-sets-home-card[data-set-id]');
-  const event=new window.Event('pointerdown');Object.assign(event,{button:0,clientX:20,clientY:20,pointerId:1});card.dispatchEvent(event);
-  await new Promise(resolve=>setTimeout(resolve,530));assert.equal(context.history.state.studySetsScreen,'menu');
-  click('#study-sets-back');
+  card.dispatchEvent(new window.Event('contextmenu',{cancelable:true}));
+  const press=new window.Event('pointerdown');Object.assign(press,{button:0,clientX:20,clientY:20,pointerId:1});card.dispatchEvent(press);
+  await new Promise(resolve=>setTimeout(resolve,530));assert.equal(context.history.state.studySetsScreen,'directory');
+  assert.equal(document.querySelector('.study-sets-home-menu-trigger'),null);assert.equal(query('#study-sets-edit').hidden,true);
+  card.click();assert.equal(query('#study-sets-edit').hidden,false);
 });
 
 test('swipe follows the finger, only commits leftward, and clears transform on cancellation',()=>{
@@ -420,9 +418,9 @@ test('content rerenders spend no history writes; screen transitions update route
   click('#study-sets-reveal');click('#study-sets-grade-remembered');click('#study-sets-reveal');click('#study-sets-grade-repeat');
   assert.equal(replacements,0);assert.equal(pushes,1);
   click('#study-sets-back');assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(replacements,0);
-  run("studySetsGo('menu')");assert.equal(replacements,1);assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(context.history.state.view,'memory');
-  run('studySetsReadAndRender(false)');assert.equal(replacements,1);
-  run("studySetsGo('rename')");assert.equal(replacements,2);assert.equal(context.history.state.studySetsScreen,'rename');
+  run('studySetsToggleEditMenu()');assert.equal(replacements,0);assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(context.history.state.view,'memory-set');
+  run('studySetsReadAndRender(false)');assert.equal(replacements,0);
+  run("studySetsGo('rename')");assert.equal(replacements,1);assert.equal(context.history.state.studySetsScreen,'rename');
 });
 
 
@@ -475,16 +473,15 @@ test('custom page and its study Back reopen the directory sheet at its scroll an
   context.history.forward();assert.equal(context.history.state.studySetsScreen,'detail');context.history.back();assert.equal(query('#study-sets-dialog').open,true);
 });
 
-test('directory management returns to the existing menu and deleting returns directly to the list',()=>{
+test('detail editing returns to detail and confirmed deletion preserves source vocabulary',()=>{
   const {context,query,click,submit,button,run,createFromHome}=harness();createFromHome();click('#study-sets-close');context.currentView='vocab';run('openStudySetsDirectory()');
-  click('.study-sets-home-menu-trigger');assert.equal(context.history.state.studySetsDirectoryDepth,1);
-  button('이름 변경');assert.equal(context.history.state.studySetsDirectoryDepth,2);query('#study-sets-rename-input').value='Renamed in sheet';submit('form');
-  assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(context.history.state.studySetsDirectoryDepth,1);
-  button('세트 삭제');button('취소');assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(context.history.state.studySetsDirectoryDepth,1);
-  button('세트 삭제');button('세트 삭제');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(context.history.state.studySetsDirectoryDepth,0);assert.equal(query('#study-sets-dialog').open,true);
+  click('.study-sets-home-card[data-set-id]');const source=JSON.stringify(context.words);assert.equal(context.history.state.studySetsDirectoryDepth,1);
+  click('#study-sets-edit');button('이름 변경');assert.equal(context.history.state.studySetsDirectoryDepth,2);query('#study-sets-rename-input').value='Renamed in detail';submit('form');
+  assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(context.history.state.studySetsDirectoryDepth,1);assert.equal(context.currentView,'memory-set');
+  click('#study-sets-edit');button('세트 삭제');button('취소');assert.equal(context.history.state.studySetsScreen,'detail');
+  click('#study-sets-edit');button('세트 삭제');button('세트 삭제');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(context.history.state.studySetsDirectoryDepth,0);assert.equal(JSON.stringify(context.words),source);
   context.history.forward();assert.equal(context.history.state.studySetsScreen,'directory');assert.ok(query('#study-sets-all'));assert.ok(query('#study-sets-home-create'));
 });
-
 
 test('global history dispatch preserves the study-set surface for its owning handler',()=>{
   const source=readFileSync(new URL('../scripts/core/state.js',import.meta.url),'utf8');
@@ -539,7 +536,7 @@ test('detail imports pending words once without restoring exclusions or changing
   assert.match(add.textContent,/새 단어 가져오기 · 1개/);add.click();add.click();
   const set=context.readStudySets().sets[0];assert.equal(set.cards.length,3);assert.equal(new Set(set.cards.map(c=>c.id)).size,3);
   assert.equal(JSON.stringify(set.excludedIds),excluded);assert.equal(JSON.stringify(set.session),frozen);assert.equal(JSON.stringify(context.words),source);
-  assert.equal(document.querySelector('#study-sets-import'),null);run("studySetsGo('menu')");
+  assert.equal(document.querySelector('#study-sets-import'),null);run('studySetsToggleEditMenu()');
   assert.equal(document.querySelector('.study-sets-menu #study-sets-import'),null);
-  assert.ok([...document.querySelectorAll('.study-sets-menu button')].some(n=>n.textContent==='제외한 단어'));
+  assert.deepEqual([...document.querySelectorAll('.study-sets-edit-menu button')].map(n=>n.textContent),['이름 변경','책 추가','세트 삭제']);
 });

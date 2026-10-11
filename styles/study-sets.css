@@ -133,3 +133,12 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 @media(max-height:500px){#v-memory-set .study-sets-header{padding-top:4px;padding-bottom:4px;}}
 
 :is(#study-sets-dialog,#v-memory-set) .study-sets-import{display:flex;width:100%;margin:0 0 8px;padding:8px 12px;border:0;background:transparent;font-size:13px;color:var(--settings-muted);}
+
+#v-memory-set .study-sets-sheet{position:relative;}
+#v-memory-set #study-sets-edit{position:relative;z-index:7;border:1px solid var(--sentence-glass-line);background:var(--sentence-glass-surface);box-shadow:var(--sentence-glass-shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.study-sets-edit-menu{position:absolute;z-index:6;top:16px;right:16px;width:min(236px,calc(100% - 32px));padding:52px 8px 8px;border:1px solid var(--sentence-glass-line);border-radius:20px;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow);color:var(--sentence-glass-ink);overflow:hidden;}
+@supports(backdrop-filter:blur(18px)){.study-sets-edit-menu{background:var(--sentence-glass-surface);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}}
+#v-memory-set .study-sets-edit-menu>.study-sets-button{display:flex;width:100%;justify-content:flex-start;min-height:44px;padding:10px 12px;border:0;border-radius:0;background:transparent;font-size:14px;text-align:left;}
+#v-memory-set .study-sets-edit-menu>.study-sets-button+.study-sets-button{border-top:1px solid var(--sentence-glass-line-soft);}
+@media(max-height:500px){.study-sets-edit-menu{top:4px;}}
+@media(prefers-reduced-transparency:reduce){#v-memory-set #study-sets-edit,.study-sets-edit-menu{background:var(--sentence-glass-solid);backdrop-filter:none;-webkit-backdrop-filter:none;}}

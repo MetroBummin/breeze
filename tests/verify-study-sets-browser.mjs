@@ -53,20 +53,17 @@ try{
  };
  // Return from a page or sheet sub-screen to its single directory sheet.
  const closeSheet=async()=>{
-  if(await page.evaluate(()=>activeAppView()==='memory-set')){
-   if(await page.evaluate(()=>studySetsUI.screen==='study')){await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='detail');}
-   await page.locator('#study-sets-back').click();await assertDirectory();return;
+  for(let i=0;i<5&&await page.evaluate(()=>studySetsUI.screen!=='directory');i++){
+   const before=await page.evaluate(()=>({screen:studySetsUI.screen,depth:studySetsUI.directoryDepth,edit:studySetsUI.editOpen}));
+   await page.locator('#study-sets-back').click();await page.waitForFunction(old=>studySetsUI.screen!==old.screen||studySetsUI.directoryDepth!==old.depth||studySetsUI.editOpen!==old.edit,before);
   }
-  if(!await page.locator('#study-sets-dialog').evaluate(node=>node.open))await page.locator('#wordbook-review').click();
-  for(let i=0;i<4&&await page.evaluate(()=>studySetsUI.screen!=='directory');i++){const previous=await page.evaluate(()=>({screen:studySetsUI.screen,depth:studySetsUI.directoryDepth}));await page.locator('#study-sets-back').click();await page.waitForFunction(before=>studySetsUI.screen!==before.screen||studySetsUI.directoryDepth!==before.depth,previous);}
   await assertDirectory();
  };
- const openHomeMenu=async(method='longpress')=>{
-  if(await page.evaluate(()=>activeAppView()==='memory-set'||document.getElementById('study-sets-dialog')?.open))await closeSheet();
-  const card=page.locator('.study-sets-home-card[data-set-id]').first();await card.scrollIntoViewIfNeeded();
-  if(method==='keyboard'){await card.focus();await page.keyboard.press('Shift+F10');}
-  else{const r=await card.boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();await page.waitForTimeout(650);await page.mouse.up();}
-  await page.getByRole('button',{name:'이름 변경',exact:true}).waitFor({state:'visible'});
+ const openHomeMenu=async(method='touch')=>{
+  if(await page.evaluate(()=>studySetsUI.screen!=='detail')){await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();}
+  if(method==='keyboard'){await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');}
+  else await page.locator('#study-sets-edit').click();
+  await page.getByRole('menuitem',{name:'이름 변경',exact:true}).waitFor();await page.waitForFunction(()=>!studySetsUI.editAnimation);
  };
  const gesturePoint=async row=>{
   await row.scrollIntoViewIfNeeded();
@@ -265,11 +262,11 @@ try{
  assert.match(await page.locator('#study-sets-import').innerText(),/2개/);await page.locator('#study-sets-import').click();
  assert.equal(await page.locator('#study-sets-word-list li').count(),4);
  await openHomeMenu('keyboard');
- await page.getByRole('button',{name:'제외한 단어',exact:true}).click();assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
+ await page.evaluate(()=>{studySetsCloseEditMenu(false,true);studySetsGo('excluded');});assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
  await page.getByRole('button',{name:'quiet 다시 담기',exact:true}).click();await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
  assert.equal(await page.locator('#study-sets-word-list li').count(),5);
- await openHomeMenu();await page.getByRole('button',{name:'이름 변경',exact:true}).click();await page.locator('#study-sets-rename-input').fill('중간고사 단어');await page.getByRole('button',{name:'이름 저장',exact:true}).click();
- await openHomeMenu('keyboard');await page.getByRole('button',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'취소',exact:true}).click();
+ await openHomeMenu();await page.getByRole('menuitem',{name:'이름 변경',exact:true}).click();await page.locator('#study-sets-rename-input').fill('중간고사 단어');await page.getByRole('button',{name:'이름 저장',exact:true}).click();
+ await openHomeMenu('keyboard');await page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'취소',exact:true}).click();
  await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
  await page.evaluate(()=>{words={};saveWords();renderVocab();});
  assert.equal(await page.locator('#study-sets-word-list li').count(),5,'source deletion preserves captured content');
@@ -333,7 +330,7 @@ try{
  const shortCTA=await page.locator('#study-sets-start').boundingBox();
  assert.ok(shortCTA.x>=0&&shortCTA.y>=0&&shortCTA.x+shortCTA.width<=845&&shortCTA.y+shortCTA.height<=391,JSON.stringify(shortCTA));
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),countWithPhrase,'long expression Undo restores membership');
- await openHomeMenu();await page.getByRole('button',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'세트 삭제',exact:true}).click();
+ await openHomeMenu();await page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'세트 삭제',exact:true}).click();
  assert.equal(await page.locator('.study-sets-home-card[data-set-id]').count(),0);
  assert.equal(await page.evaluate(()=>words.late.ko),'나중에','set deletion preserves source word');
  await assertDirectory();await page.locator('#study-sets-home-create').click();await page.locator('#study-sets-name').fill('취소할 입력');await page.locator('#study-sets-back').click();await assertDirectory();
@@ -464,6 +461,6 @@ try{
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}
  }
- writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/snapshot-stars/style-parity/bottom-action-layout/page-navigation/home-scroll/row-numbering',layouts,rowMetrics,errors},null,2));
+ writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/detail-ellipsis/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/snapshot-stars/style-parity/bottom-action-layout/page-navigation/home-scroll/row-numbering',layouts,rowMetrics,errors},null,2));
  console.log(`${engine.name()}: study sets lifecycle, offline snapshots, failure recovery, history, 10 light/dark layouts passed`);
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}

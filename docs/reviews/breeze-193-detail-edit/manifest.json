@@ -1,0 +1,111 @@
+{
+  "label": "WEB PREVIEW — Chromium touch emulation; not native iOS",
+  "base": "126145ca2d803b499e220b47d9a9204d42f948c5",
+  "capture_source_sha256": {
+    "scripts/ui/study-sets.js": "4a5eb39e4a5c7f2bd305b9b8e5997cfe068d9a9ebda15361ee2b15d4d574aee2",
+    "styles/study-sets.css": "cded2d2798931710a597aaac1a5e1303b17512f7bf7639594fa8255fbe043f31",
+    "tests/verify-study-sets-touch-browser.mjs": "34f146829e63dc271c0beb59294068e0cc9697b230346105c30541217dce51ae"
+  },
+  "images": [
+    {
+      "name": "web-preview-phone-add-books-dark.png",
+      "sha256": "31525e0b679d33c7d458702377440afdb3dc473c1cbc7f7124c7c95db06405e4",
+      "bytes": 8749
+    },
+    {
+      "name": "web-preview-phone-add-books-light.png",
+      "sha256": "cf1476eaa68604e4c76bb186a46e59342b1d5c391c6f84a171dcf703ce5ab9cb",
+      "bytes": 8815
+    },
+    {
+      "name": "web-preview-phone-detail-dark.png",
+      "sha256": "a45a9915f3d639ef9fb19b40be8981c29e701bcf010470d71750765ce9f61ba4",
+      "bytes": 36818
+    },
+    {
+      "name": "web-preview-phone-detail-light.png",
+      "sha256": "b7e586479f9473c3b085c73d14fd333002fff3923b8a411d2b3e47267c2b02f2",
+      "bytes": 36349
+    },
+    {
+      "name": "web-preview-phone-edit-closed-light.png",
+      "sha256": "eb8e75680cb1c0d59c18c75d73e9ecf729ed758ada45554b2ea2f282ca1b15f9",
+      "bytes": 36383
+    },
+    {
+      "name": "web-preview-phone-edit-open-dark.png",
+      "sha256": "107d69cf1ef1d143496a9ff72ecb73863230d5c9fe4354c6763942e06c6491a4",
+      "bytes": 41387
+    },
+    {
+      "name": "web-preview-phone-edit-open-light.png",
+      "sha256": "c111f2b05bfdec1e0afe0bdab6e0816183b2119ee41090d89eb05182c30b7f0c",
+      "bytes": 38376
+    },
+    {
+      "name": "web-preview-phone-exclusion-undo-light.png",
+      "sha256": "b85fbef15d517fab09136be88af4a5fef74425877a3c7dcfc3d679cd571fce37",
+      "bytes": 35824
+    },
+    {
+      "name": "web-preview-phone-list-dark.png",
+      "sha256": "46a6accd6fd8cc0a78f910702e2fafced3087759eccb9d73f402f5e7d324c590",
+      "bytes": 36920
+    },
+    {
+      "name": "web-preview-phone-list-light.png",
+      "sha256": "0d3d324ad5ab77ba82da0f120b473ef33ab3ea118ed365fe864c82392b33cb50",
+      "bytes": 37273
+    },
+    {
+      "name": "web-preview-phone-swipe-moving-light.png",
+      "sha256": "9fc1ac78bb6ca79ecbc3e96a77618cac5080aee17f54edcdd0a9cffdd6e36126",
+      "bytes": 36144
+    },
+    {
+      "name": "web-preview-phone-swipe-parked-light.png",
+      "sha256": "7035c419080beb21da11606bb1d9fb70dd0b4f6d2a67923def2971fab30856c6",
+      "bytes": 36924
+    },
+    {
+      "name": "web-preview-tablet-add-books-dark.png",
+      "sha256": "98c13b17eb8023ce7231e76e9a3b7965a50c897a7876b994dcac1fdeae87a34f",
+      "bytes": 11592
+    },
+    {
+      "name": "web-preview-tablet-add-books-light.png",
+      "sha256": "6c195a2d7e8d9aad4a02008930c4de4767415583eb802505dd9cfaa6336d5642",
+      "bytes": 11666
+    },
+    {
+      "name": "web-preview-tablet-detail-dark.png",
+      "sha256": "8fa72524f07ec75a3b8f9a29c1fed75c4508bcffcbd296b1b1da5248783ab7db",
+      "bytes": 54368
+    },
+    {
+      "name": "web-preview-tablet-detail-light.png",
+      "sha256": "c9d4971f80ad229ab7b2f876f38e5d30a4d6cf6906f117935cbfc5afe8c8ae50",
+      "bytes": 53398
+    },
+    {
+      "name": "web-preview-tablet-edit-open-dark.png",
+      "sha256": "9ed15fdbce5d4d8f498bf49f574fd6fc93f1d26772371c6fa509e1b57705f7d2",
+      "bytes": 60427
+    },
+    {
+      "name": "web-preview-tablet-edit-open-light.png",
+      "sha256": "8abace4405a91af999cb7bc22ed19fa98a6cfd9562ecce15a95f873c50aeafbe",
+      "bytes": 56901
+    },
+    {
+      "name": "web-preview-tablet-list-dark.png",
+      "sha256": "9181ad42db061aad120993e469dbdd982a9ffc88e479719a847d7e425c0218ae",
+      "bytes": 73400
+    },
+    {
+      "name": "web-preview-tablet-list-light.png",
+      "sha256": "30ac19d023c510185f1bf3df68c9e9720dc2049818bf528b852e698771f7d36b",
+      "bytes": 70625
+    }
+  ]
+}
