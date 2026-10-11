@@ -32,7 +32,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 :is(#v-vocab,.vocabulary-rows) .chip{min-width:38px;min-height:32px;border-radius:13px;padding:5px 10px;font:600 14px var(--ui);}
 :is(#v-vocab,.vocabulary-rows) .vgroup.open .vrow{align-items:start;}
 .wordbook-hint{margin:12px 0;color:var(--settings-muted);font:400 12px/18px var(--ui);}
-#wordbook-controls svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+#wordbook-controls svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 #wordbook-controls .control-pill{font:600 13px var(--ui);cursor:pointer;}
 #wordbook-add-dialog{width:min(420px,calc(100vw - 32px));margin:auto;padding:24px;border:1px solid var(--settings-line);border-radius:24px;background:var(--home-background);color:var(--settings-ink);}
 #wordbook-add-dialog::backdrop{background:var(--settings-scrim);}

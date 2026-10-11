@@ -148,5 +148,5 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 @media(prefers-reduced-transparency:reduce){.study-sets-edit-surface,#v-memory-set #study-sets-back{background:var(--study-set-control-solid);backdrop-filter:none;-webkit-backdrop-filter:none;}}
 @media(prefers-reduced-motion:reduce){#v-memory-set #study-sets-edit,.study-sets-edit-menu{transition:none;}}
 
-#v-memory-set :is(#study-sets-back,#study-sets-edit)>svg{width:20px;height:20px;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#v-memory-set :is(#study-sets-back,#study-sets-edit)>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 #v-memory-set #study-sets-edit>svg circle{fill:currentColor;stroke:none;}

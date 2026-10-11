@@ -6,7 +6,7 @@
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback{z-index:76;width:var(--control-side-size);height:var(--control-row-height);border:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::before,
 #reader-navigation:has(#pdf-page-control:not([hidden])) #readback::after{display:none;}
-#readback svg{width:22px;height:22px;stroke-width:2;}
+
 #reader-navigation:has(#pdf-page-button[aria-expanded=true]) #readback{visibility:hidden;pointer-events:none;}
 body #readchrome:has(#pdf-page-control:not([hidden])) #readpill{--reader-pill-max-width:calc(100% - 3 * var(--control-side-size) - 2 * var(--control-slot-gap));}
 #readchrome:has(#pdf-page-button[aria-expanded=true]){z-index:75;}
@@ -15,9 +15,9 @@ body #readchrome:has(#pdf-page-control:not([hidden])) #readpill{--reader-pill-ma
 
 #readpill [hidden],#pdf-page-control[hidden],#pdf-page-button[hidden],#pdf-page-navigation[hidden],#aa-pdf-direction[hidden]{display:none!important;}
 /* One surface changes shape; thumbnail text and canvases are never scaled. */
-#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:calc(2 * var(--control-side-size));height:var(--control-row-height);box-sizing:border-box;border:1px solid var(--sentence-glass-line);border-radius:24px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:calc(2 * var(--control-side-size));height:var(--control-row-height);box-sizing:border-box;border:1px solid var(--control-line);border-radius:24px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
 #pdf-page-button{position:absolute;right:0;bottom:0;width:var(--control-side-size);height:var(--control-row-height);display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
-#pdf-page-button svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#pdf-page-button svg{width:var(--control-icon-size);height:var(--control-icon-size);flex:none;fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 #pdf-page-button circle,#pdf-navigation-toggle circle{fill:currentColor;stroke:none;}
 #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-1 * var(--control-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow-pill);}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){background:var(--control-glass-surface);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}}

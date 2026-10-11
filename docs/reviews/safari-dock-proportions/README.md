@@ -105,3 +105,21 @@ screenshot before rethrowing the original error. A temporary deliberate failure
 verified that evidence is preserved. Existing assertions and timeouts remain
 unchanged. `study-touch-diagnosis.json` contains local evidence; exact-head CI
 must still evaluate the original gate with the added diagnostics.
+
+### Approved lighter controls for the next internal build268
+
+Current captures were regenerated after the approved polish. Dock glass and study
+header now share restrained border and shadow tokens in both themes. Outline
+icons share20px boxes and1.8 stroke weight. The dock stays48px, study header44px,
+compact Reader34px and writing controls44px; neutral study gradients and existing
+interaction ownership remain. New `study-set` and `study-set-menu` screenshots
+show phone and both iPad orientations, light/dark. This folder now has44 images
+and two actual scroll videos; exact current video durations are in the manifest.
+All shared material/geometry checks, trusted touch, study lifecycle, Wordbook,
+Home, full PDF writing, full60-page OCR and npm test passed locally in Chromium.
+`polish-validation.json` records evidence. Native coverage limits remain.
+
+The user has now approved integrating the polished PR154 into the next internal
+TestFlight candidate268. Earlier no-integration/no-upload wording describes the
+initial review checkpoint. Historical267 and266 sources/contracts are preserved;
+main and App Store submission remain outside scope. Parent owns one Cloud start.

@@ -399,3 +399,20 @@ Compact controls retain their existing geometry and tap behavior. Ordinary contr
 return to their approved dimensions when the notice clears; wider notices retain
 the prior layout. The writing pill uses the shared48px outer height while its
 internal controls remain44px and horizontally scrollable.
+
+### Approved next internal candidate: lighter shared controls
+
+The user approved a further border/shadow polish, consistent same-family circular
+controls across Home, Wordbook, Reader and study sets, and inclusion in the next
+internal TestFlight build268. Integration is authorized; main merge and App Store
+submission remain outside scope. Parent confirmed Apple's next counter268 and
+owns the single Cloud start. Historical267/266 contracts remain unchanged.
+
+Control border/shadow tokens now own both dock glass and the study-set header.
+Light edge alpha and drop-shadow weight are reduced; dark shadow/edge are also
+restrained. The study header retains its existing neutral light/charcoal gradient
+and44px targets; dock controls retain48px proportions. Shared outline icons use
+20px boxes and1.8 strokes; Reader's existing1px optical back-chevron correction
+remains. Completed badges, writing tools and unrelated functional controls retain
+their own sizes. Scroll/gesture ownership and writing's always-expanded policy
+are unchanged. Real captures and trusted touch tests verify the affected states.

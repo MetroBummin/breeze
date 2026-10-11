@@ -37,7 +37,16 @@
         8,
         8
       ],
-      "device": "iphone"
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -75,7 +84,16 @@
         8,
         8
       ],
-      "device": "iphone"
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -113,7 +131,16 @@
         8,
         8
       ],
-      "device": "iphone"
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "home",
@@ -151,7 +178,16 @@
         8,
         8
       ],
-      "device": "iphone"
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -189,7 +225,16 @@
         8,
         8
       ],
-      "device": "iphone"
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -227,7 +272,16 @@
         8,
         8
       ],
-      "device": "iphone"
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -303,7 +357,16 @@
         8,
         8
       ],
-      "device": "ipad-portrait"
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -341,7 +404,16 @@
         8,
         8
       ],
-      "device": "ipad-portrait"
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -379,7 +451,16 @@
         8,
         8
       ],
-      "device": "ipad-portrait"
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "home",
@@ -417,7 +498,16 @@
         8,
         8
       ],
-      "device": "ipad-portrait"
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -455,7 +545,16 @@
         8,
         8
       ],
-      "device": "ipad-portrait"
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -493,7 +592,16 @@
         8,
         8
       ],
-      "device": "ipad-portrait"
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -569,7 +677,16 @@
         8,
         8
       ],
-      "device": "ipad-landscape"
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -607,7 +724,16 @@
         8,
         8
       ],
-      "device": "ipad-landscape"
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -645,7 +771,16 @@
         8,
         8
       ],
-      "device": "ipad-landscape"
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "home",
@@ -683,7 +818,16 @@
         8,
         8
       ],
-      "device": "ipad-landscape"
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -721,7 +865,16 @@
         8,
         8
       ],
-      "device": "ipad-landscape"
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -759,7 +912,16 @@
         8,
         8
       ],
-      "device": "ipad-landscape"
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -835,7 +997,16 @@
         8,
         8
       ],
-      "device": "narrow"
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -873,7 +1044,16 @@
         8,
         8
       ],
-      "device": "narrow"
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -911,7 +1091,16 @@
         8,
         8
       ],
-      "device": "narrow"
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "home",
@@ -949,7 +1138,16 @@
         8,
         8
       ],
-      "device": "narrow"
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -987,7 +1185,16 @@
         8,
         8
       ],
-      "device": "narrow"
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -1025,7 +1232,16 @@
         8,
         8
       ],
-      "device": "narrow"
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -1101,7 +1317,16 @@
         8,
         8
       ],
-      "device": "desktop"
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -1139,7 +1364,16 @@
         8,
         8
       ],
-      "device": "desktop"
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -1177,7 +1411,16 @@
         8,
         8
       ],
-      "device": "desktop"
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "home",
@@ -1215,7 +1458,16 @@
         8,
         8
       ],
-      "device": "desktop"
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "vocab",
@@ -1253,7 +1505,16 @@
         8,
         8
       ],
-      "device": "desktop"
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
     },
     {
       "view": "read",
@@ -1291,7 +1552,16 @@
         8,
         8
       ],
-      "device": "desktop"
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 1,
+        "centerY": 0
+      }
     },
     {
       "view": "read",

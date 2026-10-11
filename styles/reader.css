@@ -143,8 +143,8 @@
     pointer-events:none;}
   #readchrome > *, .control-bar > *{pointer-events:auto;}
   .control-glass{isolation:isolate; overflow:hidden;
-    border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-solid);
-    box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
+    border:1px solid var(--control-line); background:var(--sentence-glass-solid);
+    box-shadow:var(--control-shadow);
     color:var(--sentence-glass-ink);}
   .control-glass::before{content:""; position:absolute; z-index:-1;
     inset:0; pointer-events:none; border-radius:inherit;
@@ -165,7 +165,7 @@
      보다 0.9칸(19px 로 그리면 0.71px) 왼쪽입니다. 뾰족한 끝이 열린 쪽보다 가볍게
      보이는 것까지 더해 1px 만 오른쪽으로 밉니다. 상자는 그대로입니다 — 옮기는
      것은 그림 하나입니다. */
-  #readback svg{width:19px; height:19px; transform:translateX(1px);}
+  #readback svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
   /* 보이는 것은 작게, 누르는 자리는 넉넉하게. 그림을 키우면 종이 위에서 무거워
      지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
   #readback::after{content:''; position:absolute; inset:-6px;}
@@ -530,7 +530,7 @@
 
 /* One light material for Reader and Home. Dark mode intentionally uses the existing rules. */
 body:not(.dark) .control-glass{
-  border-color:var(--control-light-line);box-shadow:var(--control-light-shadow);
+  border-color:var(--control-line);box-shadow:var(--control-shadow);
 }
 body:not(.dark) .control-glass::before{
   background:var(--control-light-reflection);box-shadow:var(--control-light-edge);

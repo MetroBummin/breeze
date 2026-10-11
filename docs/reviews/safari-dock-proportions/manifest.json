@@ -2,175 +2,239 @@
   "label": "Actual Chromium WEB PREVIEWS, DPR2; not native iOS",
   "base": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
   "capture_source_sha256": {
-    "styles/reader.css": "e8e006165ee5a66d2613362f449f087b7c866e603eea1cb12326eecbc3b0c023",
-    "styles/study.css": "d0f63a6121ef47a8b8a7e027c7dbd35362bec45f6b69f1d0c328facee68c9fe7",
+    "styles/reader.css": "85af9d299d4ec3f9c8380f0f86f324ae8028cd5beb66819e9bdb8d3f709227a7",
+    "styles/study.css": "ae473537f947a10ce26291a4210e1a3542df3f3d829eee5caff83c5a5f032a3e",
     "styles/pdf-ink.css": "7d06a34e1ee591ac40735b2ff1ba55b3bf7cd1949ba3612589783be5850c2aa9",
-    "tests/capture-safari-dock-review.mjs": "cfcd99c16aa1e2bb915a373929a31b1f91435087f6902001b2db8d96de22b246",
+    "tests/capture-safari-dock-review.mjs": "9e9ad9de1e31d1e3cba8d470303398aa8f4b5c5a458a41c3bcaf5af056930b15",
     "tests/verify-pdf-ocr-browser.mjs": "445a59a84df04736eb9a8af313aa5e3643e0f3dc791f0ed5a11b362da91d7fad",
     "tests/verify-pdf-ink-browser.mjs": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
     "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562",
-    "tests/capture-pdf-dock-motion.mjs": "fdb21a478e1f25c889347b5eb3a783fafb791d99ab8e9aafa97a270622cf9e65"
+    "tests/capture-pdf-dock-motion.mjs": "fdb21a478e1f25c889347b5eb3a783fafb791d99ab8e9aafa97a270622cf9e65",
+    "styles/tokens.css": "3e3b54645254536fd0997cdac8defab7428f8fcfc6670ff7a065df02c933bd7f",
+    "styles/home.css": "badc0a70de1a97233442be14a2b3f4d2f934dada629701410a922a07d19cb4a2",
+    "styles/wordbook.css": "03815b478a8f230f9dbc15cc1f538f051e306a9b49434cd062bf965161d58f5a",
+    "styles/study-sets.css": "846ea058193c98a987375cfb6361132e356c73d608cbd1e4dc51b01e580395cf"
   },
   "images": [
     {
       "name": "web-preview-320x568-pdf-recovery-dark.png",
-      "sha256": "d89fd921a7d062a8a96d702690e4272de4937075e5db1af5c8ca9e947682ed09",
-      "bytes": 19238
+      "sha256": "dd478c789435341b4069f858dc7cf290b0a4345c88989aedea3d94e025c12245",
+      "bytes": 17849
     },
     {
       "name": "web-preview-320x568-pdf-recovery-light.png",
-      "sha256": "88b91b515ebf5ea2a9f1ec3f0adc490a8ae442f5289593f4955b844986d7dd12",
-      "bytes": 19718
+      "sha256": "750f3b9682767bdb0d22d44a8ef21c8dea824e11410c576409e269184a3950e6",
+      "bytes": 17092
     },
     {
       "name": "web-preview-ipad-landscape-home-dark.png",
-      "sha256": "6a3eaa4a45b6ec3f4d5bab98a853901cd991ea337279501c92db6279cb608fd4",
-      "bytes": 1073658
+      "sha256": "3bc85968f1140452877860690b65094bdf300f4e4148ae17282fa406839670ec",
+      "bytes": 1070003
     },
     {
       "name": "web-preview-ipad-landscape-home-light.png",
-      "sha256": "cfd99df09dc58244e566f7125a7dabba4bf954c0edc8280eadbd99935b99285c",
-      "bytes": 1065099
+      "sha256": "572c203a2cae74e971cdab20a45a510c99e0171503aca4044a470607c9bffc9f",
+      "bytes": 1056770
     },
     {
       "name": "web-preview-ipad-landscape-pdf-writing-dark.png",
-      "sha256": "0fdb18518afd3d07b4a209b0f43fd19ad1d7e3375f2c1a0283b054b140e61201",
-      "bytes": 473469
+      "sha256": "e92292ef53ae24367c11f521a7d47633280edb18ffe10e604e4bfc5cef61a25c",
+      "bytes": 471256
     },
     {
       "name": "web-preview-ipad-landscape-pdf-writing-light.png",
-      "sha256": "ec282acbb106a22e143467db0a5bfa68bffc68fd674f37cc30811da688460e35",
-      "bytes": 464171
+      "sha256": "a8111edbe1d19eb6588bfd620b6fe204c7352f9f8369ab650ef9dd9a722e7158",
+      "bytes": 457995
     },
     {
       "name": "web-preview-ipad-landscape-reader-dark.png",
-      "sha256": "3b86dfb721bd4b7f1d62b2e65517bf123e5cc345e4ea32e011a15eff851fe495",
-      "bytes": 419232
+      "sha256": "fd2245d0868875ed359869c9571cec206637415aed990ab27efc2565a3fbce45",
+      "bytes": 417695
     },
     {
       "name": "web-preview-ipad-landscape-reader-light.png",
-      "sha256": "c8bf801cef1e307adc48a6904172d0255cc70a98413754a48e68d9848b46b5a7",
-      "bytes": 456574
+      "sha256": "921b1c512cc3b72b3c84ddfce85a7baa6791c81ebd2ebf42678261080835307e",
+      "bytes": 451711
+    },
+    {
+      "name": "web-preview-ipad-landscape-study-set-dark.png",
+      "sha256": "7bd33af53f74a734154c347e8fb9d9eb30fc1437cd92d117b15e5dce557e0527",
+      "bytes": 102150
+    },
+    {
+      "name": "web-preview-ipad-landscape-study-set-light.png",
+      "sha256": "77e30df533f8c340cd8bc7a591af205dc3e586c5d928e65e61bc4a23b5370abc",
+      "bytes": 101705
+    },
+    {
+      "name": "web-preview-ipad-landscape-study-set-menu-dark.png",
+      "sha256": "335431085b06453f992e95b4b4313c09c825a412cd8cb1a03502783cd9d6460a",
+      "bytes": 154322
+    },
+    {
+      "name": "web-preview-ipad-landscape-study-set-menu-light.png",
+      "sha256": "33c4c78d8285d3d02a98ae3f2d788b8c81a56333b8ecfa5b4d617f2416e2a047",
+      "bytes": 184446
     },
     {
       "name": "web-preview-ipad-landscape-wordbook-dark.png",
-      "sha256": "d419986da706dab09e403061c374b6d8762d7cbc3c8d2e6e0e70116dd10ddc9e",
-      "bytes": 138887
+      "sha256": "cb623bdf301892b5d17549c0fcdce157882c908ef296032c5d0524889e3fb753",
+      "bytes": 134519
     },
     {
       "name": "web-preview-ipad-landscape-wordbook-light.png",
-      "sha256": "4ba2ffd8d6e253306b133c9a9d3e82c3ba3581cdac3c97197394f47dc3ce59c2",
-      "bytes": 126228
+      "sha256": "729ed96af3bec3fb00cd10e555b25ced69fcb05e0ea6a2794f3107d53ce352b7",
+      "bytes": 117734
     },
     {
       "name": "web-preview-ipad-pdf-collapsed-dark.png",
-      "sha256": "a40552e1eb241787366d6160307bee0f23d1dee892a7a04d79373b4e0f152477",
-      "bytes": 519364
+      "sha256": "c0d7ee8096f680a1a27517db94e873927ee0260bc66f59c4c30475b174e21ab7",
+      "bytes": 518353
     },
     {
       "name": "web-preview-ipad-pdf-collapsed-light.png",
-      "sha256": "93b69040d2b348eb72430a937063f84066715b339e7c5e14f555882a6ae3d82e",
-      "bytes": 519112
+      "sha256": "9f1d67dbee8d5950f8493ca96b85271055a14a4e2cc30a07607226ac09ea365b",
+      "bytes": 516111
     },
     {
       "name": "web-preview-ipad-pdf-two-buttons-dark.png",
-      "sha256": "9b1f9ff72c898dfd3ab6bfef0e90c8522f4fe3a6b536717147d9a959846591a0",
-      "bytes": 516588
+      "sha256": "15bcebd3643f921f43b9b3cfe438ebc89bb6a28dfbf69e2f394519556cb264ec",
+      "bytes": 513856
     },
     {
       "name": "web-preview-ipad-pdf-two-buttons-light.png",
-      "sha256": "c0e555618292c477fa57d19ce84c24a2e441c5cabcb3f09d79d2c8f16a44b1c2",
-      "bytes": 482146
+      "sha256": "65de459177abf2d0939840d26e7855fde1ca7cd031091a91bf5e916a701ca0ec",
+      "bytes": 475997
     },
     {
       "name": "web-preview-ipad-portrait-home-dark.png",
-      "sha256": "58149ca0bbd3f41a89bdea20c7bdfd33e0f3c207068b1e443d481598f34f62c3",
-      "bytes": 890216
+      "sha256": "3626097a008580d1eac3d8536f3e5e3657eb91c1272c798130a3a965d142f1d6",
+      "bytes": 886640
     },
     {
       "name": "web-preview-ipad-portrait-home-light.png",
-      "sha256": "986ec47032274b3e5607f8d9aef7febf27121ff2693061855ac8b7c29c5796c0",
-      "bytes": 880864
+      "sha256": "ec8a4528a60342a3f60f264edc7b40d9ae85f637860c603720a5b5a28bdf1cdc",
+      "bytes": 872155
     },
     {
       "name": "web-preview-ipad-portrait-pdf-writing-dark.png",
-      "sha256": "6a80fda1027974d77c407e743b6ff628bd9bf1aa40f518bbed7b640f10184a24",
-      "bytes": 496414
+      "sha256": "a008a19d5a0ac03daf6226831bcaec45a4607cbe3353a75fe8088bde7aa07d21",
+      "bytes": 493717
     },
     {
       "name": "web-preview-ipad-portrait-pdf-writing-light.png",
-      "sha256": "ce6353ac5591d26d07e28e021a7f629377a471df7da7826a33bca27bdff4e2aa",
-      "bytes": 484102
+      "sha256": "40779fb7790881e852d81379022ff13dc0702a63fe9d91b707a1e226191d477e",
+      "bytes": 477740
     },
     {
       "name": "web-preview-ipad-portrait-reader-dark.png",
-      "sha256": "cd355ffa091b407e1cd12c5f7a31db73d6fba6e42a89727587c2155214ea086c",
-      "bytes": 506073
+      "sha256": "cbd75903483c8743aa275ebead7de48d48b19dd45e4bfc89327ca96316e5bd61",
+      "bytes": 504557
     },
     {
       "name": "web-preview-ipad-portrait-reader-light.png",
-      "sha256": "7eb4a3c5d4b84a376f9d76bf3b3ce064ae09edf84101bbc9bc85118df7ae2d4d",
-      "bytes": 537732
+      "sha256": "8676199fba8cbde346d4cd87cc40ba3474c3530632ded216adae5bcd1ea33317",
+      "bytes": 533162
+    },
+    {
+      "name": "web-preview-ipad-portrait-study-set-dark.png",
+      "sha256": "69653f30f6e5caab1c43c763b073b58e6b3700bd332f0b2f3acb761466bd6aa1",
+      "bytes": 102895
+    },
+    {
+      "name": "web-preview-ipad-portrait-study-set-light.png",
+      "sha256": "3c62eb8d1c4686da8b0ffde53baa10a01faa3f6125eb0d90cc07c151fdbe3f57",
+      "bytes": 102366
+    },
+    {
+      "name": "web-preview-ipad-portrait-study-set-menu-dark.png",
+      "sha256": "37141cf2f41a63e0ce5f1b8cc10706e70efde91eefb69dd22653a40bcdfc2169",
+      "bytes": 154164
+    },
+    {
+      "name": "web-preview-ipad-portrait-study-set-menu-light.png",
+      "sha256": "dde05ee544d2712c62bc3cbb476f9bcbaff441180ee0393c73a195774a1c4199",
+      "bytes": 183231
     },
     {
       "name": "web-preview-ipad-portrait-wordbook-dark.png",
-      "sha256": "1479c2e94178bd81ee1e5229de607059c4e7e5eb45bf72fee877930194251cfc",
-      "bytes": 162716
+      "sha256": "43117cf82c1734b22bbbe94bf0396092b9a53628a33e5801e516c088e69c1214",
+      "bytes": 159213
     },
     {
       "name": "web-preview-ipad-portrait-wordbook-light.png",
-      "sha256": "b3109e6d4534cb995045ba4406e14c204b800015321225cf60c2cbf27b7f7837",
-      "bytes": 149785
+      "sha256": "c263086df8caa7a8139ab6d67a5e19f2c7d85351adc6d535d576d36eff4db4af",
+      "bytes": 141876
     },
     {
       "name": "web-preview-iphone-home-dark.png",
-      "sha256": "dada66d90383aa1f0a8d0f7c4d5975b772cd711bd8d882cf4cfffde827131b6c",
-      "bytes": 351692
+      "sha256": "45dc854b308ef3ad0843aead5fb204113f2d3c229753cfb4b03bb720b2dabc9f",
+      "bytes": 348732
     },
     {
       "name": "web-preview-iphone-home-light.png",
-      "sha256": "3f200052d1acf9c6ee2685855bd8bcaf83c5cfcb06282fc88faf4c00c96de615",
-      "bytes": 349565
+      "sha256": "df5734ab61273196a477317fe57120519a2ead2870c9164eafb5a58cc10d6adc",
+      "bytes": 341144
     },
     {
       "name": "web-preview-iphone-pdf-collapsed-dark.png",
-      "sha256": "de36af8bcd4d1f1114077f7d4ec36e93ff223d5880be5ddd4ddf932a9e116f98",
-      "bytes": 250756
+      "sha256": "311408fea354b19f00714db0e319541c9630f3516970be23dd4b891ed5934076",
+      "bytes": 249786
     },
     {
       "name": "web-preview-iphone-pdf-collapsed-light.png",
-      "sha256": "9bbcc58bcb46f2a694d5ca6146ca61aa06247628b605f9a5d6476a46dead00b7",
-      "bytes": 251198
+      "sha256": "cdef0f1698d299aad3d92b7879c73216773e2cb79ceceb43c23b17fea2bdab0a",
+      "bytes": 248506
     },
     {
       "name": "web-preview-iphone-pdf-two-buttons-dark.png",
-      "sha256": "bf946779d1fc97947dc2bc3b1eb18ffe89c56aa2dee4f9659f01442ee5c54afa",
-      "bytes": 294151
+      "sha256": "b0d9c9475255be51162e8b5b34c34c9b4561dd22d8bb318793e0e2ee458caf0a",
+      "bytes": 291703
     },
     {
       "name": "web-preview-iphone-pdf-two-buttons-light.png",
-      "sha256": "5fc3b6f031e1e9b9cbed971da197c3488b5933033721036b0d68af5eb8630634",
-      "bytes": 280404
+      "sha256": "c9565e822c7241f6ea3e8ba408ca2af32bb757daac82f5291619013fa3d84aa5",
+      "bytes": 274801
     },
     {
       "name": "web-preview-iphone-reader-dark.png",
-      "sha256": "c4ac2398b7db306419f5158e497e44a8af90a82a8778b452cee5c31c318c15d1",
-      "bytes": 222496
+      "sha256": "6fae84b13582e9b0846f1699de53e625cda3e5e4441f45b5936dc1038eda4d0c",
+      "bytes": 221128
     },
     {
       "name": "web-preview-iphone-reader-light.png",
-      "sha256": "ecb6654095e41e38f929fb2b75ddd9ce193325ad7649ad270f41c714f93719fd",
-      "bytes": 233246
+      "sha256": "72ae3bfadcab2e403d06a2f2fff4b727c45f6a8ad2f76e3e8817b6e07b6532c2",
+      "bytes": 229600
+    },
+    {
+      "name": "web-preview-iphone-study-set-dark.png",
+      "sha256": "32b19bdbfed469e8f2bdf0502f9cd425424c239fac824081290398cb52ee8184",
+      "bytes": 89514
+    },
+    {
+      "name": "web-preview-iphone-study-set-light.png",
+      "sha256": "76b6d77552dcef17fa00be1532531966347c141f4d3fb9caaf6aa7c7482d5020",
+      "bytes": 89244
+    },
+    {
+      "name": "web-preview-iphone-study-set-menu-dark.png",
+      "sha256": "0aa423ee7dfaa83313079c2b2be61a56081ad676d46d661bf25b5e065f5a595b",
+      "bytes": 134771
+    },
+    {
+      "name": "web-preview-iphone-study-set-menu-light.png",
+      "sha256": "9a99d74abe61c9723d78bd852204093ad492bebb51a3c98b949ea728582fbe2a",
+      "bytes": 161395
     },
     {
       "name": "web-preview-iphone-wordbook-dark.png",
-      "sha256": "81bb29e60ba4b014fe8ef4358a110a2cc02a0b13710af2fa33f146de938795a8",
-      "bytes": 124272
+      "sha256": "e5b6256a0a794eadd3cbf92faafe9f7662bda17ca84ce6e27cbbdd9b81102d17",
+      "bytes": 122082
     },
     {
       "name": "web-preview-iphone-wordbook-light.png",
-      "sha256": "74b79e8bccbce9394b11449ddae2d31038289d467c5d2fe040741c35ad8f3071",
-      "bytes": 120776
+      "sha256": "b272ee83230cd3454505b5da9714386d889200726fb8dcedecacf2d4529b01de",
+      "bytes": 113485
     }
   ],
   "measurements_sha256": {
@@ -180,15 +244,17 @@
   "videos": [
     {
       "name": "web-preview-ipad-pdf-scroll.mp4",
-      "sha256": "941307cdff0ba7dadd0bc2a2948630ce910fad9916e72133faabd191a397f4b1",
-      "bytes": 2213755,
-      "format": "H264 MP4, actual browser video converted from Playwright WebM; no synthesized animation"
+      "sha256": "2d0b14684898d79f8b2ed6fd4ef2e5457c83607bd95318864d6d3b036e5a49be",
+      "bytes": 2348802,
+      "duration_seconds": 14.4,
+      "format": "Actual browser recording, H264/yuv420p MP4; no still-image animation"
     },
     {
       "name": "web-preview-iphone-pdf-scroll.mp4",
-      "sha256": "5647d2090b422ba877b3c3549e3f6b670b652db1343586a1a0b7b0eddf1da95a",
-      "bytes": 779832,
-      "format": "H264 MP4, actual browser video converted from Playwright WebM; no synthesized animation"
+      "sha256": "9d8989d4466499fd0f4abefd1982ebea0bc767818f171cc45c4181c6d58ba774",
+      "bytes": 617697,
+      "duration_seconds": 12.8,
+      "format": "Actual browser recording, H264/yuv420p MP4; no still-image animation"
     }
   ]
 }
