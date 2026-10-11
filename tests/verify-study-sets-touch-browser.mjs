@@ -1,0 +1,103 @@
+/* Trusted Chromium touchscreen gestures; web preview, not native iOS QA. */
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {resolve,extname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {chromium} from 'playwright';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const proof=process.env.BREEZE_STUDY_TOUCH_PROOF||'/tmp/breeze-study-touch-preview';mkdirSync(proof,{recursive:true});
+const server=createServer((req,res)=>{
+ const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
+ try{if(!path.startsWith(root))throw Error();res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
+});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
+let browser;
+try{
+ browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
+ const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route(/^https?:\/\//,r=>r.request().url().startsWith(url)?r.continue():r.abort());
+ await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','"done"'));
+ await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.evaluate(()=>{
+  const data=[['observe','관찰하다','She stopped to observe the room.'],['evidence','증거','There was no evidence of a struggle.'],['remarkable','놀라운','It was a remarkable discovery.'],['peculiar','특이한','He had a peculiar habit.'],['hesitate','망설이다','Do not hesitate to ask.'],['sufficient','충분한','We have sufficient time.'],['sensible','분별 있는','That seems a sensible choice.'],['deduce','추론하다','What can you deduce from this?'],['reliable','믿을 수 있는','We need a reliable source.'],['emerge','나타나다','A new idea began to emerge.'],['maintain','유지하다','They maintain a close relationship.'],['perspective','관점','Consider a different perspective.'],['subtle','미묘한','A subtle change.'],['patient','참을성 있는','Be patient.'],['curious','호기심 많은','She was curious.'],['calm','차분한','Stay calm.'],['careful','신중한','Be careful.'],['precise','정확한','A precise answer.']];
+  words=Object.fromEntries(data.map(([word,ko,example],i)=>[word,{word,ko,example,book:'The Adventures of Sherlock Holmes',status:1,addedAt:i+1}]));
+  words.same={...words.observe,book:'이번 주 읽은 기사'};
+  words.newArticle={word:'insight',ko:'통찰',book:'이번 주 읽은 기사',example:'A fresh insight.',status:2,addedAt:30};
+  words.unrelated={word:'unrelated',ko:'관련 없는',book:'별도 책',status:3,addedAt:40};saveWords();
+  const state=BreezeStudySets.create(null,{name:'이번 주 읽은 글',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
+  commitStudySets(state);show('vocab');renderVocab();openStudySetsDirectory();
+  window.touchTrace=[];for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-word-row'))touchTrace.push({type,target:e.target.className,pointerType:e.pointerType,trusted:e.isTrusted});},true);
+ });
+ await page.evaluate(()=>document.fonts.ready);
+ const cdp=await context.newCDPSession(page);
+ const send=async(type,x=0,y=0)=>{await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:['touchEnd','touchCancel'].includes(type)?[]:[{x,y,id:1,force:1,radiusX:4,radiusY:4}]});await page.waitForTimeout(35);};
+ const point=async locator=>{const r=await locator.boundingBox();assert.ok(r);return {x:r.x+r.width/2,y:r.y+r.height/2};};
+ const tap=async locator=>{const p=await point(locator);await send('touchStart',p.x,p.y);await send('touchEnd');await page.waitForTimeout(400);};
+ const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${proof}/web-preview-${name}.png`,fullPage:false});};
+ const directory=()=>page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
+ const back=async()=>{await tap(page.locator('#study-sets-back'));await directory();};
+ const row=()=>page.locator('#study-sets-word-list>li').first();
+ const offset=()=>row().locator('.study-sets-word-surface').evaluate(n=>{const t=getComputedStyle(n).transform;return t==='none'?0:new DOMMatrixReadOnly(t).m41;});
+ const settled=async expected=>{await page.waitForFunction(x=>{const n=document.querySelector('.study-sets-word-surface');if(!n)return false;const t=getComputedStyle(n).transform;return Math.abs((t==='none'?0:new DOMMatrixReadOnly(t).m41)-x)<1;},expected);};
+ const openSet=async()=>{await tap(page.locator('.study-sets-home-card[data-set-id]').first());await page.waitForFunction(()=>activeAppView()==='memory-set');};
+ const menu=async()=>{const p=await point(page.locator('.study-sets-home-card[data-set-id]').first());await send('touchStart',p.x,p.y);await page.waitForTimeout(550);await send('touchEnd');await page.getByRole('button',{name:'책 추가',exact:true}).waitFor();};
+ const swipe=async(amount,cancel=false)=>{const r=await row().boundingBox();const x=r.x+r.width-65,y=r.y+r.height/2;await send('touchStart',x,y);for(let i=1;i<=6;i++)await send('touchMove',x-amount*i/6,y);await send(cancel?'touchCancel':'touchEnd');};
+ const inventory=await page.evaluate(()=>words);
+ const gaps=await page.locator('.study-sets-home-card').evaluateAll(nodes=>{const r=nodes.map(n=>n.getBoundingClientRect());return r.slice(1).map((n,i)=>n.top-r[i].bottom);});
+ assert.ok(gaps.every(g=>Math.abs(g-8)<1),'all/custom/add have equal gaps');
+ assert.equal(await page.locator('#study-sets-close').evaluate(n=>getComputedStyle(n).borderRadius),'50%');
+ await capture('phone-list-light');
+ let p=await point(page.locator('.study-sets-home-card[data-set-id]'));
+ await send('touchStart',p.x,p.y);await send('touchMove',p.x,p.y-20);await send('touchCancel');await page.waitForTimeout(550);await directory();
+
+ await menu();assert.equal(await page.evaluate(()=>studySetsUI.directoryDepth),1);await capture('phone-long-press-actions-light');
+ await back();await openSet();assert.equal(await page.locator('dialog[open]').count(),0);
+ assert.equal(await page.getByRole('button',{name:'세트 삭제',exact:true}).count(),0);
+ const count=await page.locator('#study-sets-word-list>li').count();
+ p=await point(row().locator('.vko'));await send('touchStart',p.x,p.y);await send('touchMove',p.x-18,p.y);const first=await offset();await send('touchMove',p.x-60,p.y);const second=await offset();
+ assert.ok(first< -10&&second<first-25,'trusted touch follows finger after implicit capture transfer');
+ await send('touchMove',p.x-90,p.y);await capture('phone-swipe-moving-light');await send('touchCancel');await settled(0);
+ assert.equal(await page.locator('#study-sets-word-list>li').count(),count);assert.equal(await row().locator('.vmore').count(),0);
+ await swipe(90);await settled(-72);await capture('phone-swipe-parked-light');await tap(page.locator('#study-sets-title'));await settled(0);
+ await swipe(270);await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count-1);await capture('phone-exclusion-undo-light');
+ assert.equal(await page.evaluate(()=>readStudySets().sets[0].excludedIds.length),1);assert.deepEqual(await page.evaluate(()=>words),inventory);
+ // Wait for committed row removal and the browser's touch synthesis to settle.
+ await page.waitForTimeout(800);await tap(page.getByRole('button',{name:'실행 취소',exact:true}));await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count);
+ await tap(row().locator('.vword'));assert.equal(await row().locator('.vmore').count(),1);await tap(row().locator('.vword'));assert.equal(await row().locator('.vmore').count(),0);
+ await swipe(90);await settled(-72);await tap(row().locator('.study-sets-row-action'));await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count-1);
+ const excluded=await page.evaluate(()=>readStudySets().sets[0].excludedIds.slice());await back();await menu();
+ await tap(page.getByRole('button',{name:'이름 변경',exact:true}));await page.locator('#study-sets-rename-input').fill('Holmes · 이번 주');await tap(page.getByRole('button',{name:'이름 저장',exact:true}));
+ await page.getByRole('button',{name:'책 추가',exact:true}).waitFor();await tap(page.getByRole('button',{name:'책 추가',exact:true}));
+ await tap(page.locator('.study-sets-books').getByRole('checkbox',{name:/이번 주 읽은 기사/}));await capture('phone-add-books-light');await tap(page.locator('#study-sets-add-books'));
+ await page.getByRole('button',{name:'책 추가',exact:true}).waitFor();await back();
+ const trace=await page.evaluate(()=>touchTrace);
+ await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await directory();
+ const durable=await page.evaluate(()=>readStudySets().sets[0]);assert.equal(durable.name,'Holmes · 이번 주');assert.deepEqual(durable.excludedIds,excluded);
+ assert.equal(durable.cards.length,count+1);assert.equal(new Set(durable.cards.map(c=>c.id)).size,durable.cards.length);
+ assert.ok(!durable.cards.some(c=>c.word==='unrelated'));assert.deepEqual(await page.evaluate(()=>words),inventory);
+ await menu();await tap(page.getByRole('button',{name:'책 추가',exact:true}));assert.equal(await page.locator('.study-sets-books').getByRole('checkbox',{name:/이번 주 읽은 기사/}).count(),0,'added source cannot be added twice');await tap(page.locator('#study-sets-close'));await page.waitForFunction(()=>!studySetsUI.dialog.open);
+ await page.evaluate(()=>openStudySetsDirectory());await directory();
+ // The immutable default exposes no management trigger or delete menu.
+ await page.locator('#study-sets-all').dispatchEvent('contextmenu');await directory();assert.equal(await page.getByRole('button',{name:'세트 삭제',exact:true}).count(),0);
+ const layouts=[];
+ for(const [width,height] of [[390,844],[820,1180],[1440,1000],[320,568],[844,390]])for(const dark of [false,true]){
+  await page.setViewportSize({width,height});await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
+  await directory();const sheet=await page.locator('.study-sets-sheet').boundingBox();assert.ok(sheet.width<=width&&sheet.height<=height);
+  assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
+  if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-list-${dark?'dark':'light'}`);
+  await openSet();assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
+  if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-detail-${dark?'dark':'light'}`);
+  await back();layouts.push({width,height,dark});
+ }
+ // Isolate native scrolling and its inertia from the following tap checks.
+ await openSet();const scrollCount=await page.locator('#study-sets-word-list>li').count();
+ p=await point(row().locator('.vko'));await send('touchStart',p.x,p.y);
+ for(let i=1;i<=5;i++)await send('touchMove',p.x,p.y-i*12);await send('touchEnd');await page.waitForTimeout(160);
+ assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');
+ assert.equal(await page.locator('#study-sets-word-list>li').count(),scrollCount);assert.equal(await offset(),0);
+ assert.deepEqual(errors,[]);assert.ok(trace.some(e=>e.type==='lostpointercapture'&&e.target==='vko'));assert.ok(trace.every(e=>e.trusted&&e.pointerType==='touch'));
+ writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/undo/examples/longpress/cancel/menu-dismiss/rename/reload/add-books/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,trace,errors},null,2));
+ console.log('Trusted touchscreen, persistence and responsive screenshot checks passed: '+proof);
+}finally{await browser?.close();server.close();}

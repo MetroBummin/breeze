@@ -380,3 +380,23 @@ test('snapshot star status survives reload independently and old cards default s
   assert.throws(()=>sets.normalize(broken),/Invalid study sets data/);
   assert.throws(()=>sets.setStatus(created.state,created.set.id,created.set.cards[0].id,0,NOW),/Invalid study card status/);
 });
+
+test('adding books preserves exclusions, frozen rounds and source vocabulary without duplicates',()=>{
+ const inventory={...words,dupe:saved('a',{book:'Book C'}),excluded:saved('c',{book:'Book C'}),fresh:saved('fresh',{book:'Book C'}),unrelated:saved('unrelated',{book:'Other'})};
+ const original=plain(inventory);
+ let state=sets.create(null,{name:'Selected',bookTitles:['Book A']},inventory,NOW).state,id=state.sets[0].id;
+ const excludedId=state.sets[0].cards.find(card=>card.word==='c').id;
+ state=sets.exclude(state,id,excludedId,NOW+1).state;
+ state=sets.start(state,id,NOW+2).state;
+ const session=plain(state.sets[0].session),cards=plain(state.sets[0].cards);
+ const result=sets.addBooks(freeze(state),id,['Book C','Book C','Book A'],inventory,NOW+3);
+ assert.equal(result.accepted,true);assert.equal(result.added,1);
+ assert.deepEqual(plain(result.set.bookTitles),['Book A','Book C']);
+ assert.deepEqual(plain(result.set.excludedIds),[excludedId]);
+ assert.deepEqual(plain(result.set.session),session);
+ assert.deepEqual(plain(result.set.cards.slice(0,cards.length)),cards);
+ assert.deepEqual(plain(result.set.cards.map(card=>card.word).sort()),['a','c','fresh']);
+ assert.equal(sets.addBooks(result.state,id,['Book C'],inventory,NOW+4).accepted,false);
+ assert.deepEqual(plain(inventory),original);
+ assert.deepEqual(plain(sets.decode(JSON.stringify(result.state)).sets[0]),plain(result.set));
+});

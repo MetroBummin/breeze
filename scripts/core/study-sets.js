@@ -154,6 +154,17 @@ const BreezeStudySets = (() => {
     const state=normalize(raw),set=get(state,id),pending=set?newCards(set,words):[];
     return {cards:pending,count:pending.length};
   }
+  function addBooks(raw,id,bookTitles,words,now){
+    const state=normalize(raw),set=get(state,id),at=time(now);
+    if(!set||!Array.isArray(bookTitles))return result(state,id,false);
+    const additions=[...new Set(bookTitles.filter(text))].filter(title=>!set.bookTitles.includes(title));
+    if(!additions.length)return result(state,id,false);
+    // Capture only the explicitly added sources. Existing snapshots, exclusions
+    // and the current frozen learning queue keep their identities and contents.
+    const pending=newCards({...set,bookTitles:additions},words);
+    set.bookTitles.push(...additions);set.cards.push(...pending);set.updatedAt=Math.max(set.updatedAt,at);
+    return result(state,id,true,pending.length);
+  }
   function importNew(raw,id,words,now){
     const state=normalize(raw),set=get(state,id),at=time(now);
     if(!set)return result(state,id,false);
@@ -219,5 +230,5 @@ const BreezeStudySets = (() => {
     return {...snapshot(current.state,id),accepted:true};
   }
   return Object.freeze({VERSION,normalize,decode,cards,create,rename,remove,exclude,restore,setStatus,
-    importPreview,importNew,view,start,reveal,grade,nextRound});
+    importPreview,importNew,addBooks,view,start,reveal,grade,nextRound});
 })();

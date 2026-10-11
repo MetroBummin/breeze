@@ -161,7 +161,7 @@ test('Memory directory keeps all words first, appends sets and add, and enters t
   const {context,document,query,click,run,createFromHome}=harness();
   context.words.b.root='a';context.words.c.root='a';context.words.unresolved={word:'pending',ko:''};
   run('renderStudySetsHome()');
-  assert.equal(query('#study-sets-all strong').textContent,'전체 단어 · 2개');
+  assert.equal(query('#study-sets-all strong').textContent,'전체 단어');
   assert.equal(document.querySelectorAll('.study-sets-home-cards>li').length,2);
   click('#study-sets-all');assert.equal(context.currentView,'study');assert.equal(document.querySelector('#study-sets-dialog'),null);
   createFromHome('시험 준비');

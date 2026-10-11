@@ -19,7 +19,10 @@ be shown to the user before main merge or TestFlight integration.
 The home uses existing Memory typography, thin boundaries and neutral theme
 tokens. Names and word counts carry the hierarchy without descriptive copy or
 decorative set icons. The add row uses the same shape and size as saved sets. User-set long press, context click or keyboard context
-menu opens management (rename, delete, explicit imports and excluded cards).
+menu opens management (rename, add source books, delete, explicit imports and excluded cards).
+Directory rows use the same 8px gap, including the all-words and add rows;
+counts use the existing small caption. The sheet fits its content, and its
+44px close target is circular. Management uses neutral text rows.
 The all-words default is not mutable. Creation asks for the name and source books.
 The add card switches the existing open native dialog from directory to creation;
 it never opens a nested sheet or navigates to a page. Back or Escape returns to
@@ -49,6 +52,11 @@ intentional swipe can park the action for tapping; a sufficiently deep swipe
 commits, then the row exits and its space collapses. Cancellation or insufficient
 distance returns the row. Exclusion affects only this set, with Undo. Keyboard
 users retain an equivalent operation without persistent row action clutter.
+Touch implicitly captures to the hit child. Its bubbling capture-loss during
+transfer to the row does not cancel that row's drag; only loss of the row's own
+active capture does. Long press owns its release click even when management
+replaces the original button under the finger. The next pointerdown starts a
+new interaction.
 Reduced motion removes settle animation. The primary study action remains at
 the bottom, outside the scrolling list, with safe-area padding. Set learning
 stays in the same page navigation family; create/management remain short tasks.
@@ -68,6 +76,11 @@ an excluded-card list for restoration. Excluded identities remain recorded.
 `새 단어 N개 가져오기` is an explicit action, never automatic synchronization;
 it adds only unseen, non-excluded identities. No automatic import prompt or
 synchronization toggle is introduced.
+
+`책 추가` explicitly extends a set with selected additional source titles and
+captures only unseen, non-excluded identities from those new titles. It never
+rewrites captured cards, exclusions, source vocabulary, or an active learning
+queue. A previously selected title cannot be added twice.
 
 Book selection uses the existing vocabulary `book` title field, as Memory's
 filter does. Vocabulary currently lacks a durable source-book ID. Two distinct
@@ -105,3 +118,15 @@ repeated answer tokens, unsupported schemas and storage failure. Browser tests
 exercise creation, selection counts, exclusion/Undo/restoration, offline review,
 Back/Forward, keyboard closure and responsive light/dark layouts. Native iOS
 safe-area and keyboard behavior are separate from browser verification.
+
+## Follow-up review evidence after build 266
+
+`verify-study-sets-touch-browser.mjs` uses trusted Chromium CDP touchscreen
+input for capture transfer, finger-follow, cancellation, parked and deep swipe,
+Undo after removal settles, word examples, long press, rename and adding books.
+It also verifies persistence, exclusions, deduplication and unchanged global
+vocabulary, plus ten light/dark layouts. Native scrolling is checked separately
+at the end to isolate its inertia from subsequent tap checks. This is browser
+evidence, not actual iOS interaction coverage or an immediate-during-animation
+Undo guarantee. Review screenshots remain web previews. A new native build
+requires user review; historical build 266 retains its existing boundary.

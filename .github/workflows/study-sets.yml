@@ -61,6 +61,8 @@ jobs:
       - run: node tests/verify-study-sets-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-study-sets-touch-browser.mjs
+        if: matrix.engine == 'chromium'
       - run: node tests/verify-simple-word-cards-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
@@ -73,6 +75,8 @@ jobs:
         if: always()
         with:
           name: study-sets-${{ matrix.engine }}
-          path: /tmp/breeze-study-sets-proof/
+          path: |
+            /tmp/breeze-study-sets-proof/
+            /tmp/breeze-study-touch-preview/
           if-no-files-found: ignore
           retention-days: 14

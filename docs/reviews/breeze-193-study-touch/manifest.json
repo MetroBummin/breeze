@@ -1,0 +1,71 @@
+{
+  "label": "WEB PREVIEW — Chromium touch emulation; not native iOS",
+  "base": "e9dc1f6986e1d73f1fd5df1aea9c50ad3723cae4",
+  "images": [
+    {
+      "name": "web-preview-phone-add-books-light.png",
+      "sha256": "7d8dc5d640d1ed20d81a249fd00ea399164f2c77e7ac7c4f5b21031dd212d66e",
+      "bytes": 35538
+    },
+    {
+      "name": "web-preview-phone-detail-dark.png",
+      "sha256": "04edda274d48ae6b21df6e5158e28754b87e56e516cfa59717f069d35233fb2f",
+      "bytes": 34927
+    },
+    {
+      "name": "web-preview-phone-detail-light.png",
+      "sha256": "5286544b6ac4e23aa7b59ad45837cab86d7ed279758d9ca9b2abf28a74729968",
+      "bytes": 34140
+    },
+    {
+      "name": "web-preview-phone-exclusion-undo-light.png",
+      "sha256": "97218cfd269f89f66f32fa190f0d165df5969fc0f6386c365a0617285deaf258",
+      "bytes": 33530
+    },
+    {
+      "name": "web-preview-phone-list-dark.png",
+      "sha256": "2a2ecbc83d50de1f800e61096511855d5342830b09ae2f555b671c5b90da6fc4",
+      "bytes": 37264
+    },
+    {
+      "name": "web-preview-phone-list-light.png",
+      "sha256": "d0349c6cf13e9a3251a1f4ee5d7781614c02977e617bded7bccad36ed6bc8eb3",
+      "bytes": 37605
+    },
+    {
+      "name": "web-preview-phone-long-press-actions-light.png",
+      "sha256": "d37918b470fe1c5bdfd4abc40ce6ca7a9ea19c85b9d93179b7ee528c8ac5e298",
+      "bytes": 34160
+    },
+    {
+      "name": "web-preview-phone-swipe-moving-light.png",
+      "sha256": "ded39ffc042497d977f92781710b0718bec2c2d606d029e12c71267d615f8440",
+      "bytes": 33817
+    },
+    {
+      "name": "web-preview-phone-swipe-parked-light.png",
+      "sha256": "8c7063d9437ceb5815051988beab4adec9ad584486c0ba4730dd5a922907327a",
+      "bytes": 34603
+    },
+    {
+      "name": "web-preview-tablet-detail-dark.png",
+      "sha256": "e39ff29d6b1f7dcdef895c4fb3fa950fa5ae22ae138bab6746b7ac92d7f395b7",
+      "bytes": 52816
+    },
+    {
+      "name": "web-preview-tablet-detail-light.png",
+      "sha256": "e2d9b9ca374474379641bb1b332dc747c4b5fc231e59442fa4bb04eb2ac11adf",
+      "bytes": 51514
+    },
+    {
+      "name": "web-preview-tablet-list-dark.png",
+      "sha256": "c8bb19e210424a749229793bee2d2b9a2a0db06e9500b0a7d07512fdcff8936d",
+      "bytes": 73360
+    },
+    {
+      "name": "web-preview-tablet-list-light.png",
+      "sha256": "e5046e1dfc3f752bc593affaab8fe2a6e7827e6c6535ae1ac052d473d0fdb77c",
+      "bytes": 70575
+    }
+  ]
+}
