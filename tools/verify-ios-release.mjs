@@ -4,10 +4,11 @@ import {pathToFileURL} from 'node:url';
 
 export function validateBuildNumber(value) {
   assert.match(value ?? '', /^[1-9]\d{0,17}$/, 'Build number must be a positive integer of at most 18 digits');
+  assert.ok(BigInt(value) > 265n, '1.9.3 build number must exceed released build 265');
   return value;
 }
 
-export function verifyRelease(project, expectedBuild = '253') {
+export function verifyRelease(project, expectedBuild = '266') {
   validateBuildNumber(expectedBuild);
   const blocks = [...project.matchAll(/isa = XCBuildConfiguration;([\s\S]*?)name = (Debug|Release);/g)]
     .filter(m => /PRODUCT_BUNDLE_IDENTIFIER = kr\.io\.breeze\.app(?:\.share)?;/.test(m[1]));
@@ -28,7 +29,7 @@ export function applyCloudBuild(project, build) {
   validateBuildNumber(build);
   // Validate the checked-in release before rewriting; do not hide drift or missing settings.
   verifyRelease(project);
-  const updated = project.replace(/CURRENT_PROJECT_VERSION = 253;/g, `CURRENT_PROJECT_VERSION = ${build};`);
+  const updated = project.replace(/CURRENT_PROJECT_VERSION = 266;/g, `CURRENT_PROJECT_VERSION = ${build};`);
   verifyRelease(updated, build);
   return updated;
 }
@@ -39,7 +40,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (process.argv.includes('--apply-cloud-build')) {
     writeFileSync(path, applyCloudBuild(project, process.env.CI_BUILD_NUMBER));
   } else {
-    verifyRelease(project, process.env.CI_BUILD_NUMBER ?? '253');
+    verifyRelease(project, process.env.CI_BUILD_NUMBER ?? '266');
   }
-  console.log(`Breeze and Share Extension: 1.9.3 (${process.env.CI_BUILD_NUMBER ?? '253'})`);
+  console.log(`Breeze and Share Extension: 1.9.3 (${process.env.CI_BUILD_NUMBER ?? '266'})`);
 }

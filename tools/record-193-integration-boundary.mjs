@@ -119,7 +119,17 @@ export function expectedContract(){
   }
   files[file]={sources:list.map(({pr,source})=>({pr,source})),mode:'100644',method,sha256:hash(expected)};
  }
- for(const file of versionFiles){assert.ok(!files[file],'Version source overlap requires review');const original=bytes(base,file).toString();assert.ok(original.includes('1.9.2'));files[file]={source:base,mode:tree(base)[file].mode,method:'replace every literal 1.9.2 with 1.9.3; build253 unchanged',sha256:hash(original.replaceAll('1.9.2','1.9.3'))};}
+ for(const file of versionFiles){
+  assert.ok(!files[file],'Version source overlap requires review');
+  const original=bytes(base,file).toString();assert.ok(original.includes('1.9.2'));
+  let expected=original.replaceAll('1.9.2','1.9.3').replaceAll('253','266');
+  if(file==='tools/verify-ios-release.mjs')expected=expected.replace('  return value;', "  assert.ok(BigInt(value) > 265n, '1.9.3 build number must exceed released build 265');\n  return value;");
+  if(file==='tests/verify-ios-cloud-build.mjs')expected=expected
+   .replace("['251', '252', '266', '260']","['266', '267', '900', '999999999999999999']")
+   .replace("[undefined, '', '0',","[undefined, '', '1', '253', '264', '265', '0',")
+   .replace("applyCloudBuild(altered, '238')","applyCloudBuild(altered, '267')");
+  files[file]={source:base,mode:tree(base)[file].mode,method:'exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests',sha256:hash(expected)};
+ }
  for(const file of runnerFiles){assert.ok(!files[file]);const original=bytes(base,file).toString();assert.ok(original.includes('tests/verify-192-integration-boundary.mjs'));files[file]={source:base,mode:tree(base)[file].mode,method:'select new 1.9.3 verifier; historical 1.9.2 verifier remains unchanged',sha256:hash(original.replaceAll('tests/verify-192-integration-boundary.mjs','tests/verify-193-integration-boundary.mjs'))};}
  return {schemaVersion:1,version:'1.9.3',base,owners,files,integrationFiles};
 }

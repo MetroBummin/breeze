@@ -14,9 +14,12 @@ rotation-test insertion. index.html semantics come from PR149; other owners
 change only generated hashes. All resource hashes are independently recomputed.
 
 Release changes replace literal 1.9.2 with 1.9.3 in exactly four version contract
-files. The checked-in build counter remains 253; Xcode Cloud supplies the actual
-CI_BUILD_NUMBER to both app and extension. Three existing CI runners select the
-new verifier. The old receipts, checkers and every other baseline byte remain
+files. The checked-in build counter is 266, above released 1.9.2 build 265. Xcode
+Cloud supplies the actual CI_BUILD_NUMBER to both app and extension; the release
+verifier rejects counters at or below 265 before mutation or dependency install.
+The local archive/upload script also verifies the 266 contract before building.
+This floor is the last confirmed release, not evidence that 266 is unused in ASC.
+Three existing CI runners select the new verifier. The old receipts, checkers and every other baseline byte remain
 protected. Historical 1.9.2 checks run unchanged in a detached checkout of the
 baseline, including their historical 1.9.1 checks.
 
@@ -30,7 +33,7 @@ The owner requested completion and TestFlight after QA. Integration remains on
 a separate branch; the parent task coordinates the exact tested candidate and
 any Xcode Cloud start. No main update is needed merely to construct this branch.
 
-The boundary runs on the committed, build-253 source before cloud mutation.
+The boundary runs on the committed, build-266 source before cloud mutation.
 It is deliberately outside npm test because ci_post_clone applies CI_BUILD_NUMBER
 first. Before starting an archive, the resolved Xcode Cloud source commit must
 match the exact integration commit whose boundary and CI passed. A newer branch

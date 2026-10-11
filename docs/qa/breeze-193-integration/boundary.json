@@ -541,26 +541,26 @@
     "ios/App/App.xcodeproj/project.pbxproj": {
       "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
       "mode": "100644",
-      "method": "replace every literal 1.9.2 with 1.9.3; build253 unchanged",
-      "sha256": "f50a6e650664ed71de292b20243adde2296a39ecbea49f9433f7815f631873b4"
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "e762c1db8ae1b0170e7347f37edd2e118e454e804f6b6894ff4efb607466644d"
     },
     "tools/verify-ios-release.mjs": {
       "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
       "mode": "100644",
-      "method": "replace every literal 1.9.2 with 1.9.3; build253 unchanged",
-      "sha256": "3f64f328b66ca740241e48e6b0927038739a1bf8cc3e909480bd1bf79a98ea1c"
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "6688fcc8aca616ca0e421a8b974fba9f66b4faad52b97662ee1146fc6c80ea71"
     },
     "tests/verify-ios-cloud-build.mjs": {
       "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
       "mode": "100644",
-      "method": "replace every literal 1.9.2 with 1.9.3; build253 unchanged",
-      "sha256": "2bc00634111f36824fd31a75540012fbae5319c0be1a87699636f7c7c575e78f"
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "580aedb97048cffb3c71c77a8f2d4e687be3d1a4f9dfe6597f011399c747617e"
     },
     "tools/ios-testflight.sh": {
       "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
       "mode": "100644",
-      "method": "replace every literal 1.9.2 with 1.9.3; build253 unchanged",
-      "sha256": "ebe706fa1af9e425b586a9739cc7932d2c468fd30be4e858e6923e75bdb58f6d"
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "f7016fbe771ce4b30dd28093e0f56f435d369cfb75174ee7a880468130f8af73"
     },
     ".github/workflows/design-brand.yml": {
       "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
@@ -588,8 +588,8 @@
     "docs/decisions/024-breeze-193-integration.md"
   ],
   "integrationSha256": {
-    "tools/record-193-integration-boundary.mjs": "ce22aa879067d86555605c5f6442d19a2102a232bf23755a2e2868fdb296cc16",
+    "tools/record-193-integration-boundary.mjs": "00ea5cc61a7ad1c1517965c039a23753482222905e575ab89a216d359e06db9a",
     "tests/verify-193-integration-boundary.mjs": "bed797a51f0fe8f23bfb5c716bca233211e7baaa46ef54581046274ef96dcf5f",
-    "docs/decisions/024-breeze-193-integration.md": "f206854006f8dd1230f4bf18f0dbc003844b4a6858f17dc8e0c9fb011e9871d4"
+    "docs/decisions/024-breeze-193-integration.md": "1945be5e7cbe38679184154b021aacc4711123d2922a2c1841a672771c6144ed"
   }
 }
