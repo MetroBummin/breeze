@@ -316,7 +316,9 @@ window.addEventListener('popstate',event=>{
   const settingsModal=document.getElementById('settings-modal');
   if(settingsModal&&settingsModal.classList.contains('on')){ closeSettings(); return; }
   const target=event.state&&event.state.breeze ? event.state.view : 'home';
-  show(target,{fromHistory:true});
+  // A study-set history entry owns its open sheet/page transition. Do not
+  // close the same native dialog before the study-set popstate handler runs.
+  show(target,{fromHistory:true,studySetsTransition:!!event.state?.studySets});
 });
 /* 첫 기록을 Breeze의 홈으로 바꿔 둡니다. 이후 앱 안에서 이동할 때만 새 기록을
    쌓으므로, 홈에서 뒤로가기는 원래 방문한 사이트로 자연스럽게 나갑니다. */

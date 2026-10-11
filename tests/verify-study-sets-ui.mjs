@@ -484,3 +484,17 @@ test('directory management returns to the existing menu and deleting returns dir
   button('세트 삭제');button('세트 삭제');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(context.history.state.studySetsDirectoryDepth,0);assert.equal(query('#study-sets-dialog').open,true);
   context.history.forward();assert.equal(context.history.state.studySetsScreen,'directory');assert.ok(query('#study-sets-all'));assert.ok(query('#study-sets-home-create'));
 });
+
+
+test('global history dispatch preserves the study-set surface for its owning handler',()=>{
+  const source=readFileSync(new URL('../scripts/core/state.js',import.meta.url),'utf8');
+  const start=source.indexOf("window.addEventListener('popstate',event=>{");
+  const end=source.indexOf("\n});",start)+4;
+  let handler;const calls=[];
+  const context={window:{addEventListener:(_type,fn)=>{handler=fn;}},document:{getElementById:()=>null},show:(...args)=>calls.push(args)};
+  vm.runInNewContext(source.slice(start,end),context);
+  handler({state:{breeze:true,view:'vocab',studySets:'same-sheet'}});
+  assert.equal(calls[0][0],'vocab');assert.equal(calls[0][1].studySetsTransition,true);
+  handler({state:{breeze:true,view:'home'}});
+  assert.equal(calls[1][0],'home');assert.equal(calls[1][1].studySetsTransition,false);
+});
