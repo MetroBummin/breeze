@@ -64,6 +64,11 @@ jobs:
       - run: node tests/verify-simple-word-cards-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-design-memory-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-wordbook-browser.mjs
+        if: matrix.engine == 'chromium'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

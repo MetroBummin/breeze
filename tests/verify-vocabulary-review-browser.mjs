@@ -333,7 +333,7 @@ try{
     tree:fixture('tree',3,{book:'Book B',ko:'나무',status:1})
   },async page=>{
     const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(n=>n.id));
-    assert.deepEqual(dock,['wordbook-home','wordbook-review','btn-export']);
+    assert.deepEqual(dock,['wordbook-home','wordbook-review','wordbook-add']);
     await page.locator('#vbooks summary').click();
     await page.locator('#vbook-options label').filter({hasText:'Book B'}).locator('input').check();
     await page.locator('#vbooks summary').click();

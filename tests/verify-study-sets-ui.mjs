@@ -438,3 +438,15 @@ test('ordinal uses a separate clipped leading gutter without becoming a fourth v
   assert.match(style,/#v-memory-set \.study-sets-body\{flex:1;padding:8px 20px 24px;/);
   assert.match(style,/study-sets-word-clip\{[^}]*margin-left:-20px;[^}]*width:calc\(100% \+ 20px\)/);
 });
+
+test('vocabulary share is top-right and add is bottom-right with original handlers and dock order',()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),{document}=parseHTML(html).window;
+  const header=document.querySelector('#v-vocab .wordbook-brand'),dock=document.querySelector('#wordbook-controls .control-bar');
+  assert.equal(header.querySelectorAll('#btn-export').length,1);assert.equal(header.querySelector('#wordbook-add'),null);
+  assert.deepEqual([...dock.querySelectorAll('button')].map(button=>button.id),['wordbook-home','wordbook-review','wordbook-add']);
+  const add=document.getElementById('wordbook-add'),share=document.getElementById('btn-export');
+  assert.equal(add.getAttribute('onclick'),'openWordbookAdd()');assert.equal(add.getAttribute('aria-label'),'단어 추가');assert.equal(add.classList.contains('control-circle'),true);
+  assert.equal(share.getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(document.querySelectorAll('#btn-export').length,1);assert.equal(document.querySelectorAll('#wordbook-add').length,1);
+  assert.match(readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8'),/document\.getElementById\('btn-export'\)\.onclick = async/);
+  assert.match(readFileSync(new URL('../styles/wordbook.css',import.meta.url),'utf8'),/\.wordbook-brand #btn-export\{[^}]*width:44px;height:44px/);
+});
