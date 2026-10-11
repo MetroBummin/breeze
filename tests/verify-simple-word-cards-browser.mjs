@@ -47,7 +47,11 @@ try{
  assert.equal(await page.locator('#review-progress').innerText(),'2100 / 2100');assert.equal(await page.locator('#simple-word-next').isDisabled(),true);
  await page.evaluate(()=>{gradeVocabularyReview('easy');saveReviewLimits();openVocabularyReview(true,true);document.getElementById('review-limit-form').dispatchEvent(new Event('change'));});
  for(const id of ['review-grade','review-journey','review-celebration','review-more','review-extra'])assert.equal(await page.locator('#'+id).isVisible(),false);
- await page.evaluate(()=>{closeVocabularyReview();openSettings();});
+ // The all-words close traverses history asynchronously. Finish that real
+ // transition before opening Settings or preparing the viewport loop.
+ await page.locator('#review-close').click();
+ await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog').open);
+ await page.evaluate(()=>openSettings());
  assert.equal(await page.locator('#review-settings').isVisible(),false);assert.equal(await page.locator('#review-daily-limit').isDisabled(),true);
  await page.evaluate(()=>{closeSettings();show('study',{fromHistory:true});});assert.equal(await page.locator('#review-progress').innerText(),'2100 / 2100');
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
