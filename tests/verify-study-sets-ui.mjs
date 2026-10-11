@@ -391,3 +391,37 @@ test('rating rerender retains chip focus without revealing exclusion; removed ro
   const action=query('.study-sets-row-action');action.focus();action.click();
   assert.equal(document.activeElement===query('.vword'),true);assert.equal(document.querySelector('.study-sets-revealed'),null);
 });
+
+
+test('swipe rows cancel native text selection and drag without claiming original vocabulary or pointer scrolling',()=>{
+  const {document,query,window,createFromHome}=harness();createFromHome();
+  const meaning=query('#study-sets-word-list .vko');
+  for(const type of ['selectstart','dragstart']){
+    const event=new window.Event(type,{cancelable:true,bubbles:true});meaning.dispatchEvent(event);assert.equal(event.defaultPrevented,true);
+  }
+  const original=document.createElement('div');original.className='vko';document.body.append(original);
+  for(const type of ['selectstart','dragstart']){
+    const event=new window.Event(type,{cancelable:true,bubbles:true});original.dispatchEvent(event);assert.equal(event.defaultPrevented,false);
+  }
+  const down=new window.Event('pointerdown',{cancelable:true,bubbles:true});Object.assign(down,{button:0,pointerId:7,clientX:200,clientY:20});meaning.dispatchEvent(down);assert.equal(down.defaultPrevented,false);
+  const vertical=new window.Event('pointermove',{cancelable:true,bubbles:true});Object.assign(vertical,{pointerId:7,clientX:200,clientY:70});meaning.dispatchEvent(vertical);assert.equal(vertical.defaultPrevented,false);
+  assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
+});
+
+
+test('content rerenders spend no history writes; screen transitions update route once',()=>{
+  const {context,query,click,run,createFromHome}=harness();createFromHome();
+  const replace=context.history.replaceState,push=context.history.pushState;let replacements=0,pushes=0;
+  context.history.replaceState=function(value){replacements++;return replace.call(this,value);};
+  context.history.pushState=function(value){pushes++;return push.call(this,value);};
+  const route=JSON.stringify(context.history.state);
+  for(let index=0;index<30;index++){query('.chip').click();run('studySetsReadAndRender(false)');}
+  assert.equal(replacements,0);assert.equal(pushes,0);assert.equal(JSON.stringify(context.history.state),route);
+  click('#study-sets-start');assert.equal(pushes,1);assert.equal(replacements,0);assert.equal(context.history.state.studySetsScreen,'study');
+  click('#study-sets-reveal');click('#study-sets-grade-remembered');click('#study-sets-reveal');click('#study-sets-grade-repeat');
+  assert.equal(replacements,0);assert.equal(pushes,1);
+  click('#study-sets-back');assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(replacements,0);
+  run("studySetsGo('menu')");assert.equal(replacements,1);assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(context.history.state.view,'memory');
+  run('studySetsReadAndRender(false)');assert.equal(replacements,1);
+  run("studySetsGo('rename')");assert.equal(replacements,2);assert.equal(context.history.state.studySetsScreen,'rename');
+});

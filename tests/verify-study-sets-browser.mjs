@@ -123,6 +123,15 @@ try{
  await page.locator('#study-sets-save').click();await assertSetPage();assert.equal(await page.locator('#study-sets-word-list li').count(),3);await assertNumbers();
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore);
  assert.equal(await page.locator('#study-sets-title').innerText(),'이번 시험 <safe>');
+ // Rendering unchanged navigation must not consume WebKit's history quota.
+ // Count real calls; never suppress exceptions or stub the browser's writer.
+ const renderHistoryWrites=await page.evaluate(()=>{
+  const native=history.replaceState;let writes=0;
+  history.replaceState=function(...args){writes++;return native.apply(this,args);};
+  try{for(let i=0;i<120;i++)studySetsReadAndRender(false);return writes;}
+  finally{history.replaceState=native;}
+ });
+ assert.equal(renderHistoryWrites,0,'unchanged render cannot rewrite browser history');await assertSetPage();
  // Minimal rows show saved meaning immediately, and reveal examples only on tap.
  assert.equal(await page.locator('#study-sets-word-list .vex:visible').count(),0);
  const quiet=()=>wordRow('quiet');
@@ -139,6 +148,13 @@ try{
  assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star drag does not expand the word');
  await quiet().locator('.vword').click();assert.equal(await quiet().locator('.vex').isVisible(),true);
  await quiet().locator('.vword').click();assert.equal(await quiet().locator('.vex').isVisible(),false);
+ // A pre-existing selected meaning must remain a row gesture, never initiate
+ // the unrelated library's native drag/drop overlay (trusted mouse events).
+ await quiet().locator('.vko').evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
+ await dragRow(quiet(),-24,0,{inspect:true});await waitTranslation(quiet(),0);
+ assert.equal(await page.locator('#drop-overlay').evaluate(node=>node.classList.contains('on')),false,'selected-text row drag cannot open library drop overlay');
+ assert.equal(await rows().count(),3);
+ await page.evaluate(()=>getSelection()?.removeAllRanges());
  // Short horizontal drags follow the finger but neither exclude nor become taps.
  await dragRow(quiet(),-24,0,{inspect:true});assert.equal(await rows().count(),3);
  assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','drag release must not reveal example');
@@ -324,7 +340,7 @@ try{
  assert.ok(Math.abs(addCardBounds.height-setCardBounds.height)<2,'add card matches set card size');
  const defaultStyle=await originalVocabularyStyle({captureEntry:true});await page.mouse.move(0,0);
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:true});
- await page.locator('.study-sets-home-card[data-set-id]').first().click();
+ await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();
  const setGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
  assert.deepEqual(await vocabularyStyle(setGroup),defaultStyle,'set words, meanings and stars reuse actual default vocabulary styles');
  // The original renderer owns wrapping; the ordinal is its only added gutter.

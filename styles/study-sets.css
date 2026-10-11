@@ -74,6 +74,7 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
 .study-sets-actions>.study-sets-button{flex:1 1 auto;}
 .study-sets-word-row{position:relative;overflow:hidden;border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
+#study-sets-word-list .study-sets-word-surface,#study-sets-word-list .study-sets-word-surface *{-webkit-user-select:none;user-select:none;-webkit-user-drag:none;}
 .study-sets-word-surface{position:relative;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:transform .2s ease,border-radius .2s ease;}
 .study-sets-revealed .study-sets-word-surface{border-radius:0 24px 24px 0;background:var(--wordbook-field);}
 .study-sets-dragging .study-sets-word-surface{transition:none;}

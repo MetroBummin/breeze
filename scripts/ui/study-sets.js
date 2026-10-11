@@ -134,11 +134,22 @@ function studySetsHomeMenuGesture(button,id){
   button.addEventListener('pointercancel',()=>{suppressClick=true;cancel();});
   button.addEventListener('click',event=>{if(suppressClick&&event.detail!==0){suppressClick=false;event.preventDefault();event.stopImmediatePropagation();}},true);
 }
+function replaceStudySetsHistory(patch){
+  const current=history.state||{};
+  if(Object.entries(patch).some(([key,value])=>current[key]!==value))history.replaceState({...current,...patch},'');
+}
+function syncStudySetsHistoryView(view){
+  const ui=studySetsUI;if(history.state?.studySets!==ui.historyToken)return;
+  // Route and presentation ownership change together. Content-only updates
+  // must not spend browser history writes (WebKit rate-limits these calls).
+  replaceStudySetsHistory({view,studySetsScreen:ui.screen,studySetsSetId:ui.setId,
+    studySetsHome:ui.homeEntry,studySetsManagement:ui.managementEntry,studySetsHomeScroll:ui.homeScroll});
+}
 function openStudySetsDirectory(){
   const scroll=window.scrollY||0;
-  history.replaceState({...history.state,studySetsVocabScroll:scroll},'');
+  replaceStudySetsHistory({studySetsVocabScroll:scroll});
   show('memory');
-  history.replaceState({...history.state,studySetsDirectory:true,studySetsVocabScroll:scroll},'');
+  replaceStudySetsHistory({studySetsDirectory:true,studySetsVocabScroll:scroll});
 }
 function closeStudySetsDirectory(){
   if(history.state?.studySetsDirectory){history.back();return;}
@@ -146,9 +157,9 @@ function closeStudySetsDirectory(){
   show('vocab',{replace:true});window.scrollTo?.(0,scroll);
 }
 function openStudySetsAllWords(){
-  history.replaceState({...history.state,studySetsDirectoryScroll:window.scrollY||0},'');
+  replaceStudySetsHistory({studySetsDirectoryScroll:window.scrollY||0});
   openVocabularyReview();
-  if(typeof activeAppView==='function'&&activeAppView()==='study')history.replaceState({...history.state,studySetsAllWords:true},'');
+  if(typeof activeAppView==='function'&&activeAppView()==='study')replaceStudySetsHistory({studySetsAllWords:true});
 }
 function openStudySetsCreate(){openStudySets(false,'create','',true);}
 function openStudySet(id){openStudySets(false,'detail',id,true);}
@@ -168,7 +179,7 @@ function studySetsAttachSurface(){
   if(typeof show==='function'&&typeof activeAppView==='function'&&activeAppView()!==view)show(view,{fromHistory:true,studySetsTransition:true});
   if(!page&&!ui.dialog.open)ui.dialog.showModal();
   ui.transitioning=false;
-  if(history.state?.studySets===ui.historyToken)history.replaceState({...history.state,view},'');
+  syncStudySetsHistoryView(view);
 }
 function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false){
   if(studySetsUI.pendingClose)return;
@@ -176,7 +187,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
   if(studySetsIsOpen())return;
   if(!fromHistory)studySetsUI.returnFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
   if(!fromHistory&&typeof activeAppView==='function'&&activeAppView()==='memory'){
-    studySetsUI.homeScroll=window.scrollY||0;history.replaceState({...history.state,studySetsDirectoryScroll:studySetsUI.homeScroll},'');
+    studySetsUI.homeScroll=window.scrollY||0;replaceStudySetsHistory({studySetsDirectoryScroll:studySetsUI.homeScroll});
   }
   if(fromHistory)studySetsUI.homeScroll=Number(history.state?.studySetsHomeScroll)||0;
   studySetsUI.screen=fromHistory?history.state?.studySetsScreen||'list':screen;
@@ -189,7 +200,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
   studySetsUI.back.hidden=studySetsUI.screen==='list';
   if(!fromHistory){
     studySetsUI.historyToken=String(Date.now())+'-'+String(Math.random()).slice(2);
-    history.pushState({breeze:true,view:typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll},'');
+    history.pushState({breeze:true,view:['detail','study'].includes(studySetsUI.screen)?'memory-set':typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll},'');
   }else studySetsUI.historyToken=history.state?.studySets||'';
   studySetsAttachSurface();studySetsReadAndRender();
 }
@@ -308,7 +319,6 @@ function renderStudySets(focus=true){
     if(ui.homeEntry){closeStudySets();return;}
     ui.screen='list';ui.setId='';ui.notice='이 학습 세트가 삭제되었어요.';
   }
-  if(history.state?.studySets===ui.historyToken)history.replaceState({...history.state,studySetsScreen:ui.screen,studySetsSetId:ui.setId,studySetsHome:ui.homeEntry,studySetsManagement:ui.managementEntry,studySetsHomeScroll:ui.homeScroll},'');
   studySetsAttachSurface();
   ui.sheet.dataset.screen=ui.screen;
   ui.swipeClose?.();ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=ui.screen==='list';
@@ -457,6 +467,11 @@ function renderStudySetsDetail(set,excluded){
   body.append(list);
 }
 function studySetsSwipe(row,surface,action){
+  // These read-only rows own a horizontal gesture. Native text dragging would
+  // cancel pointer events and hand the gesture to the app's file-drop overlay.
+  // Cancel only selection/drag defaults here, not pointerdown or vertical scroll.
+  row.addEventListener('selectstart',event=>event.preventDefault(),true);
+  row.addEventListener('dragstart',event=>{event.preventDefault();event.stopPropagation();},true);
   let start=null,suppressClick=false,offset=0;
   const width=()=>row.getBoundingClientRect().width||320;
   const fullThreshold=()=>Math.max(144,width()*.62);

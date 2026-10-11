@@ -73,8 +73,8 @@ content bounds and the fully scrolled final row in all ten viewport/theme cases.
 
 Minimal candidate `51cf1418` passed contracts, Chromium and WebKit in Actions
 run 38103843607. Its reviewed phone screenshots precede the owner's additional
-round-action/capsule swipe reference. The latest local gesture revision and
-124px minimum word column are separate pending verification/publication work.
+round-action/capsule swipe reference. Later full-page revisions supersede those images and the temporary custom
+word-column sizing; the final renderer reuses the original vocabulary layout.
 
 The additional swipe revision uses durable commit before visual exit/collapse.
 Animation completion removes only its own row, retaining a neighboring active
@@ -101,3 +101,31 @@ Final chosen-route local aggregate `npm test` completed successfully after the
 shared-renderer structure assertion was updated to keep its same collapsed-
 example guard with the new editable parameter. Typecheck remains at32 baseline
 diagnostics. No 1.9.2 boundary receipt or release version was changed.
+
+
+## Final-route review captures (2026-10-11)
+
+Commit `bcf4f4852195d8e3367979bf399286bd2dced13f`, run 38105891242,
+produced independent real-application Chromium and WebKit review captures
+before extended interaction QA. WebKit 390×844 entry, directory, full-page
+set detail and parked circular swipe action were inspected: original typography
+and star chips, subtle ordinals, dashed add card and bottom actions are present.
+The synthetic 12-word fixture is not user vocabulary. The independent capture
+step does not stand in for the full interaction suite.
+
+The same run passed all 53 focused domain/storage/UI tests and aggregate npm
+test, but remains failed: cache stamp files need publication with the focus fix;
+Chromium detected native selected-text drag activating the global file-drop
+overlay during a row swipe; WebKit reached later review capture setup and timed
+out scrolling a non-visible row. These remaining issues are being diagnosed;
+these captures do not establish release readiness. The 1.9.2 boundary and
+version gates remain unchanged.
+
+Follow-up fixes cancel native selection/drag only within a set's swipe surface
+and deduplicate history metadata by actual primitive route values. Unchanged
+renders no longer rewrite history; actual navigation remains immediate. Unit
+coverage checks 30 star cycles, 30 unchanged renders, reveal and answers without
+history replacements; browser coverage performs 120 renders with the real
+history writer and explicitly drags a pre-selected meaning. No test sleeps or
+suppressed SecurityErrors substitute for these regressions. All 55 focused
+tests pass locally; the subsequent exact-head browser run is still required.
