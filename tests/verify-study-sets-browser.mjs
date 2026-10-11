@@ -24,7 +24,7 @@ try{
  const assertGeometry=(actual,expected,label)=>{for(const selector of [':scope','.vrow','.vword','.vko','.chip'])for(const key of ['x','width'])assert.ok(Math.abs(actual[selector][key]-expected[selector][key])<=1,`${label} ${selector}.${key}: ${actual[selector][key]} vs original ${expected[selector][key]}`);assert.ok(Math.abs(actual['.vword'].height-expected['.vword'].height)<=1,`${label} word wrapping differs from original`);};
  const vocabularyStyle=async group=>group.evaluate(node=>Object.fromEntries(['.vword','.vko','.chip'].map(selector=>{const style=getComputedStyle(node.querySelector(selector));return [selector,Object.fromEntries(['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','color','backgroundColor','borderRadius'].map(key=>[key,style[key]]))];})));
  const originalVocabularyStyle=async({captureEntry=false}={})=>{
-  await page.locator('#study-sets-directory-back').click();await page.waitForFunction(()=>activeAppView()==='vocab');
+  await dismissDirectory();
   const group=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
   const style=await vocabularyStyle(group),geometry=await vocabularyGeometry(group);
   if(captureEntry){await page.evaluate(()=>window.scrollTo(0,0));await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-entry-${engine.name()}-phone-light.png`,fullPage:false});}
@@ -34,22 +34,32 @@ try{
  const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
  const waitTranslation=(row,x)=>row.locator('.study-sets-word-surface').evaluate(async(node,target)=>{for(let i=0;i<60;i++){const t=getComputedStyle(node).transform,actual=t==='none'?0:new DOMMatrixReadOnly(t).m41;if(Math.abs(actual-target)<1)return;await new Promise(resolve=>requestAnimationFrame(resolve));}throw Error('row translation did not settle at '+target);},x);
  const wordRow=word=>rows().filter({has:page.locator('.vword',{hasText:new RegExp(`${word}$`)})});
+ const assertDirectory=async()=>{
+  await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog')?.open);
+  assert.equal(await page.locator('dialog[open]').count(),1,'one directory sheet over the original vocabulary');
+  assert.equal(await page.locator('#v-vocab').isVisible(),true);
+  assert.equal(await page.locator('#study-sets-all').isVisible(),true);
+ };
+ const dismissDirectory=async()=>{
+  await page.evaluate(()=>{window.qaStudyClosed=false;document.getElementById('study-sets-dialog').addEventListener('close',()=>{window.qaStudyClosed=true;},{once:true});});
+  await page.locator('#study-sets-close').click();
+  await page.waitForFunction(()=>window.qaStudyClosed&&!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose&&activeAppView()==='vocab');
+ };
  const assertSetPage=async()=>{
   await page.waitForFunction(()=>activeAppView()==='memory-set');
   assert.equal(await page.locator('#v-memory-set').isVisible(),true);
   assert.equal(await page.locator('dialog[open]').count(),0,'set detail/study is a real page, not a modal');
   assert.equal(await page.locator('#study-sets-close').isVisible(),false,'set page has Back instead of an X');
  };
+ // Return from a page or sheet sub-screen to its single directory sheet.
  const closeSheet=async()=>{
   if(await page.evaluate(()=>activeAppView()==='memory-set')){
    if(await page.evaluate(()=>studySetsUI.screen==='study')){await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='detail');}
-   await page.locator('#study-sets-back').click();
-   await page.waitForFunction(()=>activeAppView()==='memory'&&!studySetsUI.pendingClose);return;
+   await page.locator('#study-sets-back').click();await assertDirectory();return;
   }
-  // Native close and history popstate are separate tasks. Wait for both before
-  // measuring the refreshed home card for a trusted long press.
-  await page.evaluate(()=>{window.qaStudyClosed=false;document.getElementById('study-sets-dialog').addEventListener('close',()=>{window.qaStudyClosed=true;},{once:true});});
-  await page.locator('#study-sets-close').click();await page.waitForFunction(()=>window.qaStudyClosed&&!studySetsUI.pendingClose);
+  if(!await page.locator('#study-sets-dialog').evaluate(node=>node.open))await page.locator('#wordbook-review').click();
+  for(let i=0;i<4&&await page.evaluate(()=>studySetsUI.screen!=='directory');i++){const previous=await page.evaluate(()=>({screen:studySetsUI.screen,depth:studySetsUI.directoryDepth}));await page.locator('#study-sets-back').click();await page.waitForFunction(before=>studySetsUI.screen!==before.screen||studySetsUI.directoryDepth!==before.depth,previous);}
+  await assertDirectory();
  };
  const openHomeMenu=async(method='longpress')=>{
   if(await page.evaluate(()=>activeAppView()==='memory-set'||document.getElementById('study-sets-dialog')?.open))await closeSheet();
@@ -106,26 +116,36 @@ try{
  await originalQuiet.locator('.vword').click();assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'false');
  const entry=page.locator('#wordbook-review');assert.equal(await entry.innerText(),'학습하기');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'default vocabulary adds no top row or breadcrumb');
- await entry.click();assert.equal(await page.evaluate(()=>activeAppView()),'memory');
+ await entry.click();await assertDirectory();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='study');
  assert.equal(await page.locator('#vocabulary-review-page').isVisible(),true,'default all card opens the original all-word study directly');
  assert.equal(await page.locator('#v-vocab').isVisible(),false,'all-card entry does not loop to vocabulary');
  assert.equal(await page.locator('dialog[open]').count(),0);
  await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
- await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory');
+ await page.goBack();await assertDirectory();
  await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');
- await page.locator('#review-close').click();await page.waitForFunction(()=>activeAppView()==='memory');
+ await page.locator('#review-close').click();await assertDirectory();
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word study returns focus to the directory card');
- await page.locator('#study-sets-directory-back').click();await page.waitForFunction(()=>activeAppView()==='vocab');
- await entry.focus();await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>activeAppView()),'memory');
+ await dismissDirectory();
+ await entry.focus();await page.keyboard.press('Enter');await assertDirectory();
+ await page.evaluate(()=>{window.qaDirectoryDialog=document.getElementById('study-sets-dialog');window.qaDirectorySheet=studySetsUI.sheet;window.qaDirectoryVocabScroll=window.scrollY;window.qaDirectoryCloseEvents=0;window.qaDirectoryDialog.addEventListener('close',()=>{window.qaDirectoryCloseEvents++;});});
  await page.locator('#study-sets-home-create').click();assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
- await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
+ assert.equal(await page.locator('dialog[open]').count(),1);
+ assert.equal(await page.evaluate(()=>activeAppView()==='vocab'&&window.qaDirectoryDialog===document.getElementById('study-sets-dialog')&&window.qaDirectorySheet===studySetsUI.sheet&&window.scrollY===window.qaDirectoryVocabScroll),true,'create replaces content in the same sheet');
+ await page.locator('#study-sets-back').click();await assertDirectory();
+ await page.locator('#study-sets-home-create').click();await page.goBack();await assertDirectory();
+ await page.goForward();await page.waitForFunction(()=>studySetsUI.screen==='create'&&document.getElementById('study-sets-dialog').open);
+ assert.equal(await page.locator('dialog[open]').count(),1);await page.locator('#study-sets-back').click();await assertDirectory();
  const sourceBefore=await page.evaluate(()=>JSON.stringify(words));
  await page.locator('#study-sets-home-create').click();
  await page.locator('#study-sets-name').fill('이번 시험 <safe>');
  await page.locator('.study-sets-book input[value="A"]').check();await page.locator('.study-sets-book input[value="B"]').check();
  assert.match(await page.locator('#study-sets-selection-count').innerText(),/3개/);
- await page.locator('#study-sets-save').click();await assertSetPage();assert.equal(await page.locator('#study-sets-word-list li').count(),3);await assertNumbers();
+ await page.locator('#study-sets-save').click();await assertDirectory();
+ assert.equal(await page.evaluate(()=>window.qaDirectoryDialog===document.getElementById('study-sets-dialog')),true);assert.equal(await page.locator('.study-sets-home-card[data-set-id]').count(),1,'saving returns to the list containing the new set');
+ assert.equal(await page.evaluate(()=>window.qaDirectoryCloseEvents),0,'internal create/back/forward/save never closes or reopens the sheet');
+ assert.equal(await page.evaluate(()=>document.activeElement?.dataset.setId),await page.locator('.study-sets-home-card[data-set-id]').first().getAttribute('data-set-id'),'newly created set is focused in the directory');
+ await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();assert.equal(await page.locator('#study-sets-word-list li').count(),3);await assertNumbers();
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore);
  assert.equal(await page.locator('#study-sets-title').innerText(),'이번 시험 <safe>');
  // Rendering unchanged navigation must not consume WebKit's history quota.
@@ -266,7 +286,7 @@ try{
  await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();
  assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 5');
  await closeSheet();
- await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>show('memory'));await page.locator('.study-sets-home-card[data-set-id]').click();
+ await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('.study-sets-home-card[data-set-id]').click();
  await page.evaluate(()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();studySetsReadAndRender();});
  await openHomeMenu();assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
  await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
@@ -294,12 +314,12 @@ try{
   await page.screenshot({path:`${proof}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}-study.png`,fullPage:true});layouts.push({width,height,dark,bounds});
  }
  await page.locator('#study-sets-back').click();await page.screenshot({path:`${proof}/${engine.name()}-detail.png`,fullPage:true});
- await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory');assert.equal(await page.locator('dialog[open]').count(),0);
+ await page.goBack();await assertDirectory();
  await page.goForward();await assertSetPage();
  await closeSheet();
- await page.evaluate(()=>{show('home');show('memory');openStudySet(readStudySets().sets[0].id);});
- await page.evaluate(()=>history.go(-2));await page.waitForFunction(()=>activeAppView()==='home'&&!document.querySelector('dialog[open]'));
- await page.evaluate(()=>history.go(2));await page.waitForFunction(()=>activeAppView()==='memory-set'&&!document.querySelector('dialog[open]'));
+ await dismissDirectory();await page.evaluate(()=>{show('home');show('vocab');openStudySetsDirectory();openStudySet(readStudySets().sets[0].id);});
+ await page.evaluate(()=>history.go(-3));await page.waitForFunction(()=>activeAppView()==='home'&&!document.querySelector('dialog[open]'));
+ await page.evaluate(()=>history.go(3));await page.waitForFunction(()=>activeAppView()==='memory-set'&&!document.querySelector('dialog[open]'));
  assert.equal(await page.locator('#study-sets-word-list').isVisible(),true);
  // Very long captured expressions must not grow Undo over the short-screen CTA.
  const longExpression='a deliberately long captured expression '.repeat(80).trim();
@@ -319,32 +339,34 @@ try{
  await openHomeMenu();await page.getByRole('button',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'세트 삭제',exact:true}).click();
  assert.equal(await page.locator('.study-sets-home-card[data-set-id]').count(),0);
  assert.equal(await page.evaluate(()=>words.late.ko),'나중에','set deletion preserves source word');
- await page.waitForFunction(()=>!studySetsUI.pendingClose);await page.locator('#study-sets-home-create').click();await page.locator('#study-sets-name').fill('취소할 입력');await page.keyboard.press('Escape');await page.waitForFunction(()=>!studySetsUI.pendingClose);
- assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-home-create');
+ await assertDirectory();await page.locator('#study-sets-home-create').click();await page.locator('#study-sets-name').fill('취소할 입력');await page.locator('#study-sets-back').click();await assertDirectory();
+ await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'wordbook-review','closing the one sheet restores its vocabulary opener');
  // Review images use synthetic sample vocabulary in the actual shipped app.
  // They are screenshots of this source, never image-generated mockups.
  await page.evaluate(()=>{
   const fixtures=[['observe','관찰하다','She stopped to observe the room.'],['evidence','증거','There was no evidence of a struggle.'],['remarkable','놀라운','It was a remarkable discovery.'],['peculiar','특이한','He had a peculiar habit.'],['hesitate','망설이다','Do not hesitate to ask.'],['sufficient','충분한','We have sufficient time.'],['sensible','분별 있는','That seems a sensible choice.'],['deduce','추론하다','What can you deduce from this?'],['reliable','신뢰할 수 있는','We need a reliable source.'],['emerge','나타나다','A new idea began to emerge.'],['maintain','유지하다','They maintain a close relationship.'],['perspective','관점','Consider a different perspective.']];
   words=Object.fromEntries(fixtures.map(([word,ko,example],i)=>[word,{word,ko,example,book:i<8?'The Adventures of Sherlock Holmes':'이번 주 읽은 기사',status:1,addedAt:i+1}]));saveWords();
   let state=readStudySets();state=BreezeStudySets.create(state,{name:'중간고사 · 1–3과',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
-  state=BreezeStudySets.create(state,{name:'이번 주 읽은 글',bookTitles:['이번 주 읽은 기사']},words,101).state;commitStudySets(state);show('memory');darkMode=false;applyDark();
+  state=BreezeStudySets.create(state,{name:'이번 주 읽은 글',bookTitles:['이번 주 읽은 기사']},words,101).state;commitStudySets(state);show('vocab');openStudySetsDirectory();darkMode=false;applyDark();
  });
  // Populate an actual scrollable directory to verify page Back restores its
  // prior position. Remove only this synthetic fixture before review captures.
  await page.setViewportSize({width:390,height:844});
  await page.evaluate(()=>{window.qaBeforeScrollSets=readStudySets();let state=window.qaBeforeScrollSets;for(let i=0;i<18;i++)state=BreezeStudySets.create(state,{name:'스크롤 확인 '+(i+1),bookTitles:['The Adventures of Sherlock Holmes']},words,200+i).state;commitStudySets(state);renderStudySetsHome();});
  await page.locator('.study-sets-home-card[data-set-id]').last().scrollIntoViewIfNeeded();
- const homeScroll=await page.evaluate(()=>window.scrollY);assert.ok(homeScroll>100,'directory fixture must really scroll');
+ const vocabularyScroll=await page.evaluate(()=>window.scrollY);
+ const homeScroll=await page.locator('#study-sets-content').evaluate(node=>node.scrollTop);assert.ok(homeScroll>100,'directory fixture must really scroll');
  await page.locator('.study-sets-home-card[data-set-id]').last().click();await assertSetPage();
- await closeSheet();await page.waitForFunction(expected=>Math.abs(window.scrollY-expected)<2,homeScroll);
- await page.evaluate(()=>{readStudySets();commitStudySets(window.qaBeforeScrollSets);delete window.qaBeforeScrollSets;renderStudySetsHome();window.scrollTo(0,0);});
+ await closeSheet();await page.waitForFunction(expected=>Math.abs(document.getElementById('study-sets-content').scrollTop-expected)<2,homeScroll);assert.ok(Math.abs(await page.evaluate(()=>window.scrollY)-vocabularyScroll)<2,'sheet return preserves underlying vocabulary scroll');
+ await page.evaluate(()=>{readStudySets();commitStudySets(window.qaBeforeScrollSets);delete window.qaBeforeScrollSets;renderStudySetsHome();studySetsUI.body.scrollTop=0;});
  await page.evaluate(()=>document.fonts.ready);await page.mouse.move(0,0);
  assert.match(await page.locator('#study-sets-home-create').innerText(),/세트 추가/);
  assert.equal(await page.locator('#study-sets-home-create').evaluate(node=>getComputedStyle(node).borderTopStyle),'dashed');
  const addCardBounds=await page.locator('#study-sets-home-create').boundingBox(),setCardBounds=await page.locator('.study-sets-home-card[data-set-id]').first().boundingBox();
  assert.ok(Math.abs(addCardBounds.height-setCardBounds.height)<2,'add card matches set card size');
  const defaultStyle=await originalVocabularyStyle({captureEntry:true});await page.mouse.move(0,0);
- await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:true});
+ await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:false});
  await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();
  const setGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
  assert.deepEqual(await vocabularyStyle(setGroup),defaultStyle.style,'set words, meanings and stars reuse actual default vocabulary styles');
@@ -361,21 +383,25 @@ try{
  await page.screenshot({path:`${proof}/ui-set-example-${engine.name()}-phone-light.png`,fullPage:true});
  await closeSheet();
  await page.setViewportSize({width:820,height:1180});
- await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-tablet-light.png`,fullPage:true});
+ await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-tablet-light.png`,fullPage:false});
  await page.locator('.study-sets-home-card[data-set-id]').first().click();
  await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-tablet-light.png`,fullPage:true});
  await closeSheet();
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();window.scrollTo(0,0);},dark);
-  assert.equal(await page.locator('#v-memory').evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Memory home overflow ${width}x${height}`);
-  await page.locator('#v-memory').waitFor({state:'visible'});
+  assert.equal(await page.locator('#study-sets-dialog').evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Memory home overflow ${width}x${height}`);
+  await page.locator('#study-sets-dialog').waitFor({state:'visible'});
   const matrixDefaultStyle=await originalVocabularyStyle();
   // Read one layout snapshot; dialog's native close event may refresh the home
   // between separate element-handle measurements without changing its layout.
-  const homeBounds=await page.locator('#v-memory').evaluate(node=>Array.from(node.querySelectorAll('.study-sets-home-card'),card=>{const r=card.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height};}));
+  const homeBounds=await page.locator('#study-sets-dialog').evaluate(node=>Array.from(node.querySelectorAll('.study-sets-home-card'),card=>{const r=card.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height};}));
   assert.equal(homeBounds.length,4);
   for(const bounds of homeBounds)assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1&&bounds.height>=44,JSON.stringify({width,height,bounds}));
-  await page.screenshot({path:`${proof}/home-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
+  await page.locator('#study-sets-home-create').scrollIntoViewIfNeeded();
+  const add=await page.locator('#study-sets-home-create').boundingBox(),scrollArea=await page.locator('#study-sets-content').boundingBox();
+  assert.ok(add.y>=scrollArea.y-1&&add.y+add.height<=scrollArea.y+scrollArea.height+1,'last directory action scrolls fully inside same sheet');
+  await page.locator('#study-sets-content').evaluate(node=>{node.scrollTop=0;});
+  await page.screenshot({path:`${proof}/home-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:false});
   await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();await assertNumbers();
   const matrixSetGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});assert.deepEqual(await vocabularyStyle(matrixSetGroup),matrixDefaultStyle.style,`actual vocabulary style parity ${width}x${height} ${dark}`);
   const matrixGeometry=await vocabularyGeometry(matrixSetGroup);recordRowMetrics({width,height,dark,original:matrixDefaultStyle.geometry,set:matrixGeometry});assertGeometry(matrixGeometry,matrixDefaultStyle.geometry,`${width}x${height} dark=${dark}`);
@@ -434,9 +460,9 @@ try{
    });
    await warm.close();await offline.setOffline(true);
    const cold=await offline.newPage();await cold.goto(url);await cold.evaluate(()=>homeReady);
-   await cold.evaluate(()=>show('memory'));await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();await cold.locator('#study-sets-reveal').click();
+   await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();await cold.locator('#study-sets-reveal').click();
    assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await cold.locator('#study-sets-grade-remembered').click();
-   await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>show('memory'));await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();
+   await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();
    assert.match(await cold.locator('.study-sets-result').innerText(),/기억나요 1개/);
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}

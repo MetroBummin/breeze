@@ -40,8 +40,8 @@ try{
  await page.locator('#simple-word-next').click();assert.equal(await page.locator('#review-expression').innerText(),'word1');
  await page.locator('#review-reveal').click();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#review-front').isVisible(),true);
  await page.locator('#simple-word-previous').click();assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
- await page.locator('#review-close').click();await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'memory');await page.locator('#study-sets-all').click();assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
- await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory');
+ await page.locator('#review-close').click();await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await page.locator('#study-sets-dialog').evaluate(node=>node.open),true);await page.locator('#study-sets-all').click();assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
+ await page.goBack();await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog').open);
  await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
  await page.evaluate(()=>{simpleWordCards.index=2099;simpleWordCards.flipped=false;renderSimpleWordCards();});
  assert.equal(await page.locator('#review-progress').innerText(),'2100 / 2100');assert.equal(await page.locator('#simple-word-next').isDisabled(),true);

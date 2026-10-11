@@ -33,10 +33,13 @@ try{
  const capture=async name=>page.screenshot({path:`${proof}/ui-set-${name}-${engine.name()}-phone-light.png`,fullPage:false});
  const originalGeometry=await geometry(page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})}));
  await capture('entry');
- await page.locator('#wordbook-review').click();await page.waitForFunction(()=>activeAppView()==='memory');
+ await page.locator('#wordbook-review').click();await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog').open);
+ assert.equal(await page.locator('dialog[open]').count(),1);
+ await page.evaluate(()=>{window.qaCaptureSheet=studySetsUI.sheet;window.qaCaptureDialog=studySetsUI.dialog;window.qaCaptureCloseEvents=0;studySetsUI.dialog.addEventListener('close',()=>{window.qaCaptureCloseEvents++;});});
  await capture('home');
  await page.locator('#study-sets-home-create').click();
  await page.locator('#study-sets-name').waitFor({state:'visible'});
+ assert.equal(await page.evaluate(()=>activeAppView()==='vocab'&&window.qaCaptureSheet===studySetsUI.sheet&&window.qaCaptureDialog===studySetsUI.dialog),true,'creation remains inside the same directory sheet');assert.equal(await page.locator('dialog[open]').count(),1);
  await capture('create-empty');
  await page.locator('#study-sets-name').fill('이번 주 복습');
  for(const checkbox of await page.locator('.study-sets-books input[type=checkbox]').all())await checkbox.check();
@@ -44,8 +47,9 @@ try{
  assert.equal(await page.locator('#study-sets-save').isEnabled(),true);
  await page.locator('.study-sets-books legend').click();await page.mouse.move(0,0);
  await capture('create-selected');
- await page.locator('#study-sets-close').click();
- await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
+ await page.locator('#study-sets-back').click();
+ await page.waitForFunction(()=>studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog').open);
+ assert.equal(await page.evaluate(()=>window.qaCaptureCloseEvents),0,'list and creation stay in one continuously open sheet');
  await page.locator('.study-sets-home-card[data-set-id]').first().click();
  await page.waitForFunction(()=>activeAppView()==='memory-set');
  assert.equal(await page.locator('dialog[open]').count(),0);

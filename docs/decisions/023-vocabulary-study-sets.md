@@ -2,12 +2,11 @@
 
 Memory keeps its existing full wordbook (`v-vocab`) as the default entry. The
 existing bottom-center pill is labeled `학습하기` and opens the single-column
-set directory (`v-memory`); no row is added between search and filters. The
+set directory in one bottom sheet over `v-vocab`; no row is added between search and filters. The
 first immutable `전체 단어` row opens the existing full-vocabulary card study
 directly, followed by saved sets and a matching dashed `+ 세트 추가` row.
 A selected custom set opens its captured word list as an independent full page.
-Page Back returns to the directory and restores its scroll position; directory
-Back returns to the full wordbook. Whole-vocabulary study returns to the
+Page Back reopens the directory sheet and restores its internal scroll position; closing the directory leaves the original full wordbook and scroll position intact. Whole-vocabulary study returns to the
 directory when launched there, while existing direct study callers retain their
 normal return target. Detail has no modal semantics, scrim, or X-close control.
 Existing search, filters and saved-Meaning editing retain their ownership.
@@ -21,7 +20,17 @@ The home uses existing Memory typography, thin boundaries and neutral theme
 tokens. Names and word counts carry the hierarchy without descriptive copy or
 decorative set icons. The add row uses the same shape and size as saved sets. User-set long press, context click or keyboard context
 menu opens management (rename, delete, explicit imports and excluded cards).
-The all-words default is not mutable. Creation asks for the name.
+The all-words default is not mutable. Creation asks for the name and source books.
+The add card switches the existing open native dialog from directory to creation;
+it never opens a nested sheet or navigates to a page. Back or Escape returns to
+the directory. Saving also returns to that directory and focuses the new set.
+Only choosing a set or all-word study leaves the sheet for a full page.
+Internal directory/create/manage history transitions keep the same dialog open
+without close/show cycles. X dismisses the entire sheet hierarchy. Renaming
+returns to its existing management frame, and deletion returns directly to the
+directory. Forward into a deleted set falls back to the directory, preserving
+access to all-word study and creation. Directory scroll and return-card focus
+are retained independently of the vocabulary background scroll.
 
 Inside a set, `createVocabularyGroup` adapts captured cards to the exact
 `vocabGroupMarkup`, `bindVocabularyGroupToggle` and `vocabMoreHtml` functions

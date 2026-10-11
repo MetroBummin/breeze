@@ -98,7 +98,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>show('home'));await page.screenshot({path:resolve(out,`${engine.name()}-cover-${width}-${theme}.png`)});
  }
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'presentation does not change saved schedule');
- await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'memory');await page.locator('#study-sets-all').click();assert.equal(await page.evaluate(()=>activeAppView()),'study');
+ await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await page.locator('#study-sets-dialog').evaluate(node=>node.open),true);await page.locator('#study-sets-all').click();assert.equal(await page.evaluate(()=>activeAppView()),'study');
  assert.equal(await page.locator('#review-progress').innerText(),'1 / 4','simple cards include all saved meanings regardless of schedule');
  assert.equal(await page.locator('#review-grades').isVisible(),false,'simple cards do not grade scheduled review');
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'opening simple cards preserves the existing schedule');

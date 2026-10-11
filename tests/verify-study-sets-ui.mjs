@@ -12,9 +12,9 @@ function harness(){
   let focused=document.body;
   Object.defineProperty(document,'activeElement',{get:()=>focused});
   const entries=[{breeze:true,view:'vocab'}];let historyIndex=0;
-  const history={state:entries[0],pushState(value){entries[historyIndex]=this.state;entries.splice(++historyIndex);entries.push(value);this.state=value;},replaceState(value){this.state=value;entries[historyIndex]=value;},back(){
-    this.state=entries[Math.max(0,--historyIndex)];const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
-  }};
+  const history={state:entries[0],pushState(value){entries[historyIndex]=this.state;entries.splice(++historyIndex);entries.push(value);this.state=value;},replaceState(value){this.state=value;entries[historyIndex]=value;},go(delta){
+    historyIndex=Math.max(0,Math.min(entries.length-1,historyIndex+delta));this.state=entries[historyIndex];const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
+  },back(){this.go(-1);},forward(){this.go(1);}};
   const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,
     activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},openVocabularyReview:()=>{context.currentView='study';history.pushState({breeze:true,view:'study'});},history,words:{
       a:{word:'quiet',ko:'조용한',book:'One',example:'Stay quiet.',addedAt:1},
@@ -356,23 +356,22 @@ test('older page history retains its own home scroll and restarting study does n
 });
 
 
-test('bottom study entry opens the directory; all-word cards and directory Back preserve original routes and scroll',()=>{
+test('bottom study entry keeps its directory sheet over vocabulary and all-word cards return to that sheet',()=>{
   const {context,window,document,query,run}=harness();let restored=-1;window.scrollY=250;window.scrollTo=(x,y)=>{restored=y;};
-  context.show=(view,options={})=>{context.currentView=view;if(!options.fromHistory){if(options.replace)context.history.replaceState({breeze:true,view});else context.history.pushState({breeze:true,view});}};
-  window.addEventListener('popstate',event=>{context.show(event.state.view,{fromHistory:true});window.scrollTo(0,event.state.view==='vocab'?event.state.studySetsVocabScroll||0:event.state.studySetsDirectoryScroll||0);});
+  context.show=(view,options={})=>{context.currentView=view;if(!options.fromHistory){if(options.replace)context.history.replaceState({breeze:true,view});else context.history.pushState({breeze:true,view});}if(options.fromHistory&&view==='vocab')window.scrollTo(0,context.history.state.studySetsVocabScroll||0);};
+  window.addEventListener('popstate',event=>context.show(event.state.view,{fromHistory:true}));
   const button=document.createElement('button');button.id='wordbook-review';document.body.append(button);
   const review=readFileSync(new URL('../scripts/ui/vocabulary-review.js',import.meta.url),'utf8');
   vm.runInContext(review.slice(review.indexOf('function closeVocabularyReview(){'),review.indexOf("document.getElementById('review-close').addEventListener")),context);
-  run('openStudySetsDirectory()');assert.equal(context.currentView,'memory');assert.equal(context.history.state.studySetsDirectory,true);
-  window.scrollY=70;query('#study-sets-all').click();assert.equal(context.currentView,'study');assert.equal(context.history.state.studySetsAllWords,true);
-  run('closeVocabularyReview()');assert.equal(context.currentView,'memory');assert.equal(restored,70);
-  run('closeStudySetsDirectory()');assert.equal(context.currentView,'vocab');assert.equal(restored,250);
+  run('openStudySetsDirectory()');assert.equal(context.currentView,'vocab');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(query('#study-sets-dialog').open,true);
+  query('#study-sets-content').scrollTop=70;query('#study-sets-all').click();assert.equal(context.currentView,'study');assert.equal(context.history.state.studySetsAllWords,true);
+  run('closeVocabularyReview()');assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,true);assert.equal(query('#study-sets-content').scrollTop,70);
+  run('closeStudySetsDirectory()');assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,false);assert.equal(restored,250);
   context.openVocabularyReview();run('closeVocabularyReview()');assert.equal(context.currentView,'vocab');assert.equal(document.activeElement.id,'wordbook-review');
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
   assert.match(html,/id="wordbook-review"[^>]*onclick="openStudySetsDirectory\(\)">학습하기/);
   assert.equal(html.includes('id="wordbook-sets-back"'),false);assert.equal(html.includes('id="wordbook-study-sets-entry"'),false);
 });
-
 
 test('a drag beginning on the status chip neither rates nor owns the row swipe',()=>{
   const {document,query,window,createFromHome}=harness();createFromHome();
@@ -449,4 +448,39 @@ test('vocabulary share is top-right and add is bottom-right with original handle
   assert.equal(share.getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(document.querySelectorAll('#btn-export').length,1);assert.equal(document.querySelectorAll('#wordbook-add').length,1);
   assert.match(readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8'),/document\.getElementById\('btn-export'\)\.onclick = async/);
   assert.match(readFileSync(new URL('../styles/wordbook.css',import.meta.url),'utf8'),/\.wordbook-brand #btn-export\{[^}]*width:44px;height:44px/);
+});
+
+test('directory, create, cancel and save reuse one continuously open native sheet',()=>{
+  const {context,document,window,query,click,submit,run}=harness();run('openStudySetsDirectory()');
+  const dialog=query('#study-sets-dialog');let closes=0;dialog.addEventListener('close',()=>{closes++;});
+  const choose=()=>{query('#study-sets-name').value='Sheet created';const checkbox=query('.study-sets-book input');checkbox.checked=true;checkbox.dispatchEvent(new window.Event('change'));};
+  click('#study-sets-home-create');assert.equal(context.currentView,'vocab');assert.equal(context.history.state.studySetsScreen,'create');assert.equal(context.history.state.studySetsDirectoryDepth,1);
+  click('#study-sets-back');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(document.activeElement.id,'study-sets-home-create');
+  context.history.forward();assert.equal(context.history.state.studySetsScreen,'create');
+  dialog.dispatchEvent(new window.Event('cancel',{cancelable:true}));assert.equal(context.history.state.studySetsScreen,'directory');
+  click('#study-sets-home-create');choose();submit('#study-sets-create-form');
+  assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(context.history.state.studySetsDirectoryDepth,0);assert.equal(context.currentView,'vocab');
+  assert.equal(query('#study-sets-dialog')===dialog,true);assert.equal(dialog.open,true);assert.equal(closes,0);assert.equal(document.querySelectorAll('#study-sets-dialog').length,1);
+  assert.equal(query('.study-sets-home-card[data-set-id] strong').textContent,'Sheet created');assert.equal(document.activeElement===query('.study-sets-home-card[data-set-id]'),true);
+  click('#study-sets-home-create');choose();click('#study-sets-close');assert.equal(dialog.open,false);assert.equal(context.currentView,'vocab');assert.equal(document.querySelectorAll('.study-sets-home-card[data-set-id]').length,1);
+});
+
+test('custom page and its study Back reopen the directory sheet at its scroll and selected card',()=>{
+  const {context,document,window,query,click,run,createFromHome}=harness();createFromHome();click('#study-sets-close');context.currentView='vocab';run('openStudySetsDirectory()');
+  const list=query('#study-sets-content');list.scrollTop=185;list.dispatchEvent(new window.Event('scroll'));
+  const card=query('.study-sets-home-card[data-set-id]'),id=card.dataset.setId;card.click();assert.equal(context.currentView,'memory-set');assert.equal(query('#study-sets-dialog').open,false);
+  click('#study-sets-start');assert.equal(context.history.state.studySetsDirectoryDepth,2);context.history.back();assert.equal(context.history.state.studySetsScreen,'detail');
+  click('#study-sets-back');assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,true);assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(query('#study-sets-content').scrollTop,185);
+  assert.equal(document.activeElement.getAttribute('data-set-id'),id);
+  context.history.forward();assert.equal(context.history.state.studySetsScreen,'detail');context.history.back();assert.equal(query('#study-sets-dialog').open,true);
+});
+
+test('directory management returns to the existing menu and deleting returns directly to the list',()=>{
+  const {context,query,click,submit,button,run,createFromHome}=harness();createFromHome();click('#study-sets-close');context.currentView='vocab';run('openStudySetsDirectory()');
+  click('.study-sets-home-menu-trigger');assert.equal(context.history.state.studySetsDirectoryDepth,1);
+  button('이름 변경');assert.equal(context.history.state.studySetsDirectoryDepth,2);query('#study-sets-rename-input').value='Renamed in sheet';submit('form');
+  assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(context.history.state.studySetsDirectoryDepth,1);
+  button('세트 삭제');button('취소');assert.equal(context.history.state.studySetsScreen,'menu');assert.equal(context.history.state.studySetsDirectoryDepth,1);
+  button('세트 삭제');button('세트 삭제');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(context.history.state.studySetsDirectoryDepth,0);assert.equal(query('#study-sets-dialog').open,true);
+  context.history.forward();assert.equal(context.history.state.studySetsScreen,'directory');assert.ok(query('#study-sets-all'));assert.ok(query('#study-sets-home-create'));
 });
