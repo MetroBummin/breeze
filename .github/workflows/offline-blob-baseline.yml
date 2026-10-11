@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/offline-blob-baseline.yml'
       - 'tests/diagnostics/offline-blob-baseline.mjs'
+      - 'tests/diagnostics/pdf-http-denied-reopen.mjs'
 permissions:
   contents: read
 jobs:
@@ -34,6 +35,15 @@ jobs:
           (cd subjects/baseline && npx playwright install --with-deps webkit)
       - name: Record isolated controls and run both unmodified OCR gates
         run: node tests/diagnostics/offline-blob-baseline.mjs
+      - name: Complementary full-app HTTP-denied reopen on exact sources
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          node tests/diagnostics/pdf-http-denied-reopen.mjs baseline || status=1
+          node tests/diagnostics/pdf-http-denied-reopen.mjs candidate || status=1
+          git -C subjects/baseline diff --exit-code
+          git -C subjects/candidate diff --exit-code
+          exit "$status"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
