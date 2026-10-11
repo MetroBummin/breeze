@@ -7,7 +7,7 @@ import {textRotationSource} from './helpers/text-rotation-source.mjs';
 const source=textRotationSource(),css=readFileSync(new URL('../styles/reader.css',import.meta.url),'utf8');
 const html=`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}
 *{box-sizing:border-box}body{margin:0;--serif:Georgia,serif;--ink-body:#222;--page:#faf8f2;--readw:1000px}
-#reader-scroll{overflow-anchor:none}#v-read{display:block}#readmain{flex:none}
+#reader-scroll{overflow-anchor:none}#v-read{display:block}#readmain{flex:none;width:100%}
 </style></head><body class="reading"><div id="v-read" class="on"><div id="readmain"><div id="reader-scroll"><div id="readwrap"><h1 id="rtitle">Synthetic rotation fixture</h1><div id="rtext"></div></div></div></div></div>
 <script>
 let curBook={id:'synthetic'},lastAnchor=null,positions={},LS_POS='positions';
@@ -50,6 +50,8 @@ try{
  // progress rAF forces the changed width before ResizeObserver delivery.
  await page.evaluate(()=>qa.setup());await page.waitForTimeout(50);
  const beforeRace=await page.evaluate(()=>qa.sample());
+ assert.equal(beforeRace.width,1180,'fixture must start at a real iPad-width viewport');
+ assert.equal(beforeRace.anchor.pi,250,'fixture must start at the requested source paragraph');
  await page.evaluate(()=>new Promise(resolve=>{
   requestAnimationFrame(()=>{document.getElementById('readmain').style.width='820px';});
   scheduleProgressUpdate();
@@ -94,6 +96,7 @@ try{
  assert.deepEqual(errors,[]);await page.screenshot({path:`${proof}/final.png`});
  console.log(`${engine.name()}: ${rows.length} real-layout rotation/restore assertions passed`);
 }finally{
+ console.log(JSON.stringify({engine:engine.name(),last:rows.at(-1)}));
  writeFileSync(`${proof}/results.json`,JSON.stringify({engine:engine.name(),rows},null,2));
  await browser?.close();await new Promise(done=>server.close(done));
 }
