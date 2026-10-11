@@ -38,6 +38,8 @@ function harness(){
   vm.createContext(context);
   const dictionary=readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8');
   vm.runInContext(dictionary.slice(dictionary.indexOf('function vocabMoreHtml('),dictionary.indexOf('function renderVocab(){')),context,{filename:'shared-vocabulary-renderer'});
+  const createGroup=context.createVocabularyGroup;
+  context.createVocabularyGroup=(...args)=>{const group=createGroup(...args);for(const node of group.querySelectorAll('[tabindex],button'))node.focus=function(){focused=this;this.dispatchEvent(new window.Event('focus'));};return group;};
   for(const path of ['scripts/core/study-sets.js','scripts/core/study-sets-storage.js','scripts/ui/study-sets.js'])
     vm.runInContext(readFileSync(new URL('../'+path,import.meta.url),'utf8'),context,{filename:path});
   const run=source=>vm.runInContext(source,context);
@@ -378,4 +380,14 @@ test('a drag beginning on the status chip neither rates nor owns the row swipe',
   const pointer=(target,type,x)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{button:0,pointerId:3,clientX:x,clientY:20});target.dispatchEvent(event);};
   pointer(chip,'pointerdown',280);pointer(row,'pointermove',80);pointer(row,'pointerup',80);
   assert.equal(query('.study-sets-word-surface').style.transform,undefined);assert.equal(chip.textContent,'★');assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
+});
+
+
+test('rating rerender retains chip focus without revealing exclusion; removed rows focus the next word',()=>{
+  const {document,query,createFromHome}=harness();createFromHome();
+  const chip=query('.chip');chip.focus();chip.click();
+  assert.equal(document.activeElement===query('.chip'),true);assert.equal(query('.chip').textContent,'★★');
+  assert.equal(document.querySelector('.study-sets-revealed'),null);
+  const action=query('.study-sets-row-action');action.focus();action.click();
+  assert.equal(document.activeElement===query('.vword'),true);assert.equal(document.querySelector('.study-sets-revealed'),null);
 });

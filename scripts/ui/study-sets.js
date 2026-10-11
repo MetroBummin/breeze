@@ -329,7 +329,11 @@ function renderStudySets(focus=true){
     ui.body.scrollTop=scrollTop;
     const sameControl=focusId?document.getElementById(focusId):null;
     const rows=ui.body.querySelectorAll('.study-sets-word-row');
-    const nearby=focusedIndex>=0?rows[Math.min(focusedIndex,rows.length-1)]?.querySelector('[role=button],button'):null;
+    const retainedRow=focusedRow?[...rows].find(row=>row.getAttribute('data-card-id')===focusedRow.getAttribute('data-card-id')):null;
+    const sameRowControl=retainedRow?.querySelector(active?.closest('.chip')?'.chip':'.vword');
+    // The exclusion action precedes the word surface in DOM order and focusing
+    // it reveals a swipe. Restore semantic controls, never the first button.
+    const nearby=sameRowControl||(focusedIndex>=0?rows[Math.min(focusedIndex,rows.length-1)]?.querySelector('.vword'):null);
     if(sameControl instanceof HTMLElement)sameControl.focus({preventScroll:true});
     else if(nearby instanceof HTMLElement)nearby.focus({preventScroll:true});
     else if(focusedIndex>=0)ui.title.focus({preventScroll:true});

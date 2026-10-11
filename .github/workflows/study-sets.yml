@@ -12,6 +12,7 @@ on:
       - 'scripts/core/state.js'
       - 'scripts/dictionary/dictionary.js'
       - 'tests/verify-study-sets*.mjs'
+      - 'tests/capture-study-sets-browser.mjs'
       - '.github/workflows/study-sets.yml'
   workflow_dispatch:
 permissions:
@@ -47,6 +48,16 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/capture-study-sets-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-sets-review-${{ matrix.engine }}
+          path: /tmp/breeze-study-sets-proof/ui-set-*.png
+          if-no-files-found: ignore
+          retention-days: 14
       - run: node tests/verify-study-sets-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
