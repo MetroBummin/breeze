@@ -21,7 +21,7 @@ Contract and known source-identity limits are in decision 023.
 
 - `node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs`:
   26 passed, zero failures.
-- `node --test tests/verify-study-sets-ui.mjs`: 16 event-level DOM tests pass (42 total focused tests).
+- `node --test tests/verify-study-sets-ui.mjs`: 20 event-level DOM tests pass (46 total focused tests).
   This harness is not a browser layout or native gesture simulator.
 - `npm test`: passed the existing aggregate suite, including typecheck
   (32 existing diagnostics, unchanged), saved vocabulary lifecycle, simple-card
@@ -70,3 +70,15 @@ tap suppression, keyboard equivalents and reduced motion. Synthetic touch
 PointerEvents test handler ownership separately from trusted mouse input; they
 do not claim native iPhone scrolling physics. The footer is checked against
 content bounds and the fully scrolled final row in all ten viewport/theme cases.
+
+Minimal candidate `51cf1418` passed contracts, Chromium and WebKit in Actions
+run 38103843607. Its reviewed phone screenshots precede the owner's additional
+round-action/capsule swipe reference. The latest local gesture revision and
+124px minimum word column are separate pending verification/publication work.
+
+The additional swipe revision uses durable commit before visual exit/collapse.
+Animation completion removes only its own row, retaining a neighboring active
+pointer capture and any later failed-write retry. Both overlapping cases have
+DOM regressions; browser coverage holds the second trusted pointer through the
+first row's collapse. Short reveal/action tap and deep capsule commit are
+separate tested paths, with real-pointer capture frames for UI review.

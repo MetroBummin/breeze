@@ -119,7 +119,7 @@ test('horizontal swipe excludes; vertical movement and cancellation keep members
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);
   pointer(row,'pointerdown',240,20);pointer(row,'pointermove',130,20);pointer(row,'pointercancel',130,20);pointer(row,'pointerup',130,20);
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);
-  pointer(row,'pointerdown',240,20);pointer(row,'pointermove',130,20);pointer(row,'pointerup',130,20);
+  pointer(row,'pointerdown',280,20);pointer(row,'pointermove',40,20);pointer(row,'pointerup',40,20);
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,1);assert.ok(query('.study-sets-undo button'));
 });
 
@@ -257,4 +257,60 @@ test('swipe follows the finger, only commits leftward, and clears transform on c
   pointer(row,'pointerup',210,20);assert.equal(surface.style.transform,'');assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
   pointer(row,'pointerdown',240,20);pointer(row,'pointermove',300,20);pointer(row,'pointerup',350,20);assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
   pointer(row,'pointerdown',240,20);pointer(row,'pointermove',130,20);pointer(row,'pointercancel',130,20);assert.equal(surface.style.transform,'');
+});
+
+
+test('reference swipe parks its circular action, grows a capsule, and closes on another row or outside tap',()=>{
+  const {document,query,window,createFromHome}=harness();createFromHome();
+  const pointer=(row,type,x,y=20)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
+  const rows=[...document.querySelectorAll('.study-sets-word-row')],row=rows[0],surface=row.querySelector('.study-sets-word-surface'),action=row.querySelector('.study-sets-row-action');
+  pointer(row,'pointerdown',280);pointer(row,'pointermove',220);pointer(row,'pointerup',220);
+  assert.equal(surface.style.transform,'translateX(-72px)');assert.equal(action.style.width,'44px');assert.equal(rows.length,2);
+  pointer(rows[1],'pointerdown',280);assert.equal(surface.style.transform,'');pointer(rows[1],'pointercancel',280);
+  pointer(row,'pointerdown',280);pointer(row,'pointermove',220);pointer(row,'pointerup',220);
+  pointer(document.body,'pointerdown',0);assert.equal(surface.style.transform,'');
+  pointer(row,'pointerdown',280);pointer(row,'pointermove',180);assert.equal(action.style.width,'72px');
+  pointer(row,'pointercancel',180);assert.equal(surface.style.transform,'');
+  pointer(row,'pointerdown',280);pointer(row,'pointermove',220);pointer(row,'pointerup',220);action.click();
+  assert.equal(document.querySelectorAll('.study-sets-word-row').length,1);query('.study-sets-undo button').click();assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
+});
+
+test('failed full swipe resets visual state and retry excludes exactly once',()=>{
+  const {context,document,query,window,storage,createFromHome}=harness();createFromHome();
+  const row=query('.study-sets-word-row'),surface=query('.study-sets-word-surface'),before=storage.get('breeze.study-sets.v1'),nativeSet=context.localStorage.setItem;
+  const pointer=(type,x)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:20});row.dispatchEvent(event);};
+  context.localStorage.setItem=()=>{throw new Error('Synthetic quota');};
+  pointer('pointerdown',280);pointer('pointermove',20);pointer('pointerup',20);
+  assert.equal(surface.style.transform,'');assert.equal(storage.get('breeze.study-sets.v1'),before);assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
+  context.localStorage.setItem=nativeSet;query('#study-sets-error button').click();assert.equal(document.querySelectorAll('.study-sets-word-row').length,1);
+});
+
+
+test('finishing a committed row animation preserves a later failed row retry',async()=>{
+  const {context,document,query,createFromHome}=harness();createFromHome();
+  const rows=[...document.querySelectorAll('.study-sets-word-row')],first=rows[0],surface=first.querySelector('.study-sets-word-surface');
+  let finishExit,finishCollapse;
+  const exit=new Promise(resolve=>{finishExit=resolve;}),collapse=new Promise(resolve=>{finishCollapse=resolve;});
+  first.getBoundingClientRect=()=>({width:320,height:62});first.animate=()=>({finished:collapse});surface.animate=()=>({finished:exit});
+  first.querySelector('.study-sets-row-action').click();assert.equal(first.classList.contains('study-sets-exiting'),true);
+  const nativeSet=context.localStorage.setItem;context.localStorage.setItem=()=>{throw new Error('Synthetic quota');};
+  rows[1].querySelector('.study-sets-row-action').click();assert.equal(query('#study-sets-error').hidden,false);
+  finishExit();await new Promise(resolve=>setImmediate(resolve));finishCollapse();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(document.querySelectorAll('.study-sets-word-row').length,1);assert.equal(query('#study-sets-error').hidden,false);
+  context.localStorage.setItem=nativeSet;query('#study-sets-error button').click();assert.equal(document.querySelectorAll('.study-sets-word-row').length,0);
+});
+
+
+test('a second row keeps pointer ownership while the first committed row collapses',async()=>{
+  const {document,query,window,createFromHome}=harness();createFromHome();
+  const rows=[...document.querySelectorAll('.study-sets-word-row')],first=rows[0],second=rows[1];
+  let finishExit,finishCollapse;const exit=new Promise(resolve=>{finishExit=resolve;}),collapse=new Promise(resolve=>{finishCollapse=resolve;});
+  first.getBoundingClientRect=()=>({width:320,height:62});first.animate=()=>({finished:collapse});first.querySelector('.study-sets-word-surface').animate=()=>({finished:exit});
+  first.querySelector('.study-sets-row-action').click();
+  const pointer=(type,x)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{button:0,pointerId:2,clientX:x,clientY:20});second.dispatchEvent(event);};
+  pointer('pointerdown',280);pointer('pointermove',190);
+  finishExit();await new Promise(resolve=>setImmediate(resolve));finishCollapse();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(second.isConnected,true);assert.equal(second.classList.contains('study-sets-dragging'),true);
+  assert.equal(second.querySelector('.study-sets-word-surface').style.transform,'translateX(-90px)');
+  pointer('pointermove',20);pointer('pointerup',20);assert.equal(document.querySelectorAll('.study-sets-word-row').length,0);assert.ok(query('.study-sets-undo button'));
 });

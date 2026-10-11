@@ -22,8 +22,11 @@ The all-words default is not mutable. Creation asks for the name.
 Inside a set, words and meanings use the existing vocabulary visual language.
 Tapping reveals the captured example; swipe must not also trigger that tap.
 A left drag follows the pointer after horizontal direction lock, while vertical
-scrolling keeps its native owner. Cancellation or insufficient distance returns
-the row; completed gestures exclude only from this set, with Undo. Keyboard
+scrolling keeps its native owner. The moving row gains rounded trailing corners;
+a single separate action grows from a circle into a capsule behind it. A short
+intentional swipe can park the action for tapping; a sufficiently deep swipe
+commits, then the row exits and its space collapses. Cancellation or insufficient
+distance returns the row. Exclusion affects only this set, with Undo. Keyboard
 users retain an equivalent operation without persistent row action clutter.
 Reduced motion removes settle animation. The primary study action remains at
 the bottom, outside the scrolling list, with safe-area padding.

@@ -18,6 +18,8 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  const rows=()=>page.locator('#study-sets-word-list > li');
+ const waitRows=count=>page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);
+ const waitTranslation=(row,x)=>row.locator('.study-sets-word-surface').evaluate(async(node,target)=>{for(let i=0;i<60;i++){const t=getComputedStyle(node).transform,actual=t==='none'?0:new DOMMatrixReadOnly(t).m41;if(Math.abs(actual-target)<1)return;await new Promise(resolve=>requestAnimationFrame(resolve));}throw Error('row translation did not settle at '+target);},x);
  const wordRow=word=>rows().filter({has:page.locator('.study-sets-word',{hasText:new RegExp(`^${word}$`)})});
  const closeSheet=async()=>{
   // Native close and history popstate are separate tasks. Wait for both before
@@ -32,18 +34,23 @@ try{
   else{const r=await card.boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();await page.waitForTimeout(650);await page.mouse.up();}
   await page.getByRole('button',{name:'이름 변경',exact:true}).waitFor({state:'visible'});
  };
- const dragRow=async(row,dx,dy=0,{cancel=false,inspect=false}={})=>{
+ const dragRow=async(row,dx,dy=0,{cancel=false,inspect=false,inspectAction=false,capture=''}={})=>{
   await row.scrollIntoViewIfNeeded();const r=await row.boundingBox(),x=r.x+r.width*.8,y=r.y+Math.min(24,r.height/2);
   await row.evaluate(node=>node.addEventListener('pointerdown',event=>{node.dataset.testPointerId=String(event.pointerId);},{once:true}));
   await page.mouse.move(x,y);await page.mouse.down();
   await page.mouse.move(x+dx/2,y+dy/2,{steps:4});
   const translation=()=>row.locator('.study-sets-word-surface').evaluate(node=>{const t=getComputedStyle(node).transform;return t==='none'?0:new DOMMatrixReadOnly(t).m41;});
   const middle=inspect?await translation():0;
+  const actionMiddle=inspectAction?await row.locator('.study-sets-row-action').boundingBox():null;
   await page.mouse.move(x+dx,y+dy,{steps:4});
   if(inspect){const end=await translation();assert.ok(middle< -5&&end<middle-5,`row follows finger: ${middle} -> ${end}`);}
+  if(inspectAction){const actionEnd=await row.locator('.study-sets-row-action').boundingBox();assert.ok(actionEnd.width>actionMiddle.width+8&&Math.abs(actionEnd.height-actionMiddle.height)<1,'single action expands horizontally into capsule');const radius=await row.locator('.study-sets-word-surface').evaluate(node=>parseFloat(getComputedStyle(node).borderTopRightRadius));assert.ok(radius>=12,'translated row keeps rounded trailing edge');}
+  if(capture)await page.screenshot({path:capture,fullPage:true});
   if(cancel)await row.evaluate(node=>node.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:Number(node.dataset.testPointerId),pointerType:'mouse'})));
   await page.mouse.up();
  };
+
+ const fullSwipe=async(row,options={})=>{const r=await row.boundingBox();await dragRow(row,-Math.max(144,r.width*.62)-20,0,options);};
 
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
@@ -79,7 +86,7 @@ try{
  await quiet().locator('.study-sets-word-toggle').click();assert.equal(await quiet().locator('.study-sets-example').isVisible(),true);
  await quiet().locator('.study-sets-word-toggle').click();assert.equal(await quiet().locator('.study-sets-example').isVisible(),false);
  // Short horizontal drags follow the finger but neither exclude nor become taps.
- await dragRow(quiet(),-44,0,{inspect:true});assert.equal(await rows().count(),3);
+ await dragRow(quiet(),-24,0,{inspect:true});assert.equal(await rows().count(),3);
  assert.equal(await quiet().locator('.study-sets-word-toggle').getAttribute('aria-expanded'),'false','drag release must not reveal example');
  await dragRow(quiet(),-105,0,{cancel:true,inspect:true});assert.equal(await rows().count(),3,'pointer cancellation preserves membership');
  await quiet().locator('.study-sets-word-surface').evaluate(async node=>{await new Promise(resolve=>setTimeout(resolve,300));const t=getComputedStyle(node).transform;if(t!=='none'&&Math.abs(new DOMMatrixReadOnly(t).m41)>1)throw Error('cancel did not restore row');});
@@ -100,7 +107,7 @@ try{
  });
  assert.equal(await rows().count(),3,'touch vertical lock and cancellation preserve membership');
  await page.emulateMedia({reducedMotion:'reduce'});
- await dragRow(quiet(),-44,0,{inspect:true});
+ await dragRow(quiet(),-24,0,{inspect:true});
  const motion=await quiet().locator('.study-sets-word-surface').evaluate(node=>({transition:getComputedStyle(node).transitionDuration,animation:getComputedStyle(node).animationDuration}));
  for(const duration of [motion.transition,motion.animation])assert.ok(duration.split(',').every(value=>parseFloat(value)<=0.01),`reduced motion duration ${duration}`);
  await page.emulateMedia({reducedMotion:'no-preference'});
@@ -108,15 +115,55 @@ try{
  assert.equal(await quiet().locator('.study-sets-example').isVisible(),true,'keyboard opens example');
  await page.keyboard.press('Space');assert.equal(await quiet().locator('.study-sets-example').isVisible(),false,'keyboard closes example');
  const hiddenAction=quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true});await hiddenAction.focus();
- await page.keyboard.press('Enter');assert.equal(await rows().count(),2,'keyboard fallback excludes without swipe');
+ await page.keyboard.press('Enter');await waitRows(2);assert.equal(await rows().count(),2,'keyboard fallback excludes without swipe');
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),3);
  await dragRow(quiet(),70);assert.equal(await rows().count(),3,'right swipe does not exclude');
- await dragRow(quiet(),-115,0,{inspect:true});assert.equal(await rows().count(),2,'left swipe excludes only this set');
+ // Partial swipe parks a single circular action; the user can tap or dismiss it.
+ await dragRow(quiet(),-68,0,{inspect:true});await waitTranslation(quiet(),-72);
+ assert.equal(await rows().count(),3,'partial reveal does not mutate membership');
+ assert.equal(await quiet().locator('.study-sets-row-action').count(),1,'exactly one swipe action');
+ const parkedAction=await quiet().locator('.study-sets-row-action').boundingBox();
+ assert.ok(parkedAction.width>=44&&Math.abs(parkedAction.width-parkedAction.height)<2,'parked action is a touch-sized circle');
+ assert.equal(await quiet().locator('.study-sets-word-toggle').getAttribute('aria-expanded'),'false','partial swipe is not a tap');
+
+ await quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true}).click();await waitRows(2);
+ await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
+ await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
+ await rows().first().locator('.study-sets-word-toggle').click();await waitTranslation(quiet(),0);
+ await rows().first().locator('.study-sets-word-toggle').click();
+ await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
+ await page.locator('#study-sets-title').click();await waitTranslation(quiet(),0);
+ assert.equal(await rows().count(),3,'outside touch dismisses action without excluding');
+ // A failed durable write never starts the exit/collapse or loses the row.
+ const beforeSwipeFailure=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
+ await page.evaluate(()=>{window.qaSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===STUDY_SETS_STORAGE)throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,key,value);};});
+ await fullSwipe(quiet(),{inspect:true,inspectAction:true});
+ assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await quiet().isVisible(),true);
+ assert.equal(await rows().count(),3);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),beforeSwipeFailure);
+ await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});
+ await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();await waitRows(2);
+ await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
+ await fullSwipe(quiet(),{inspect:true,inspectAction:true});await waitRows(2);
  assert.equal(await page.locator('#study-sets-word-list .study-sets-example:visible').count(),0,'completed swipe does not tap another row');
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),3);
- // Repeated exclusions preserve each membership decision; Undo restores the latest.
- await dragRow(quiet(),-115);await dragRow(rows().first(),-115);assert.equal(await rows().count(),1);
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),2);
+ await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
+ // Start B during A's exit, then hold past A's collapse. Finalizing A must
+ // preserve B's original DOM node and real pointer capture throughout the drag.
+ const continuousRow=rows().first();await continuousRow.scrollIntoViewIfNeeded();
+ const continuousBox=await continuousRow.boundingBox(),continuousX=continuousBox.x+continuousBox.width*.8,continuousY=continuousBox.y+24;
+ const continuousDistance=Math.max(144,continuousBox.width*.62)+20;
+ await quiet().evaluate(node=>node.addEventListener('pointerup',()=>{window.qaFirstSwipeUp=performance.now();},{once:true}));
+ await continuousRow.evaluate(node=>{window.qaContinuousRow=node;node.addEventListener('pointerdown',event=>{window.qaSecondSwipeDown=performance.now();window.qaSecondPointerId=event.pointerId;},{once:true});});
+ await fullSwipe(quiet());
+ await page.mouse.move(continuousX,continuousY);await page.mouse.down();
+ const overlapDelay=await page.evaluate(()=>window.qaSecondSwipeDown-window.qaFirstSwipeUp);
+ assert.ok(overlapDelay>=0&&overlapDelay<140,`second pointer must start during first exit, got ${overlapDelay}ms`);
+ await page.mouse.move(continuousX-continuousDistance/2,continuousY,{steps:3});
+ await page.mouse.move(continuousX-continuousDistance,continuousY,{steps:3});
+ await page.waitForTimeout(400);
+ const held=await page.evaluate(()=>({connected:window.qaContinuousRow.isConnected,captured:window.qaContinuousRow.hasPointerCapture(window.qaSecondPointerId),rows:document.querySelectorAll('#study-sets-word-list > li').length}));
+ assert.deepEqual(held,{connected:true,captured:true,rows:2},'first exit must not replace or cancel the second held gesture');
+ await page.mouse.up();await waitRows(1);
+ await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(2);
  assert.equal(await quiet().count(),0,'undo of second swipe does not silently restore first');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore,'all gesture and undo paths preserve source vocabulary');
  await page.evaluate(()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};studySetsReadAndRender();});
@@ -185,7 +232,7 @@ try{
  await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
  const countWithPhrase=await rows().count();
  await page.setViewportSize({width:844,height:390});
- await page.getByRole('button',{name:longExpression+' 세트에서 제외',exact:true}).focus();await page.keyboard.press('Enter');
+ await page.getByRole('button',{name:longExpression+' 세트에서 제외',exact:true}).focus();await page.keyboard.press('Enter');await waitRows(countWithPhrase-1);
  assert.equal(await rows().count(),countWithPhrase-1);
  const undoLayout=await page.locator('.study-sets-undo > span').evaluate(node=>{const r=node.getBoundingClientRect(),style=getComputedStyle(node);return {height:r.height,width:r.width,scrollWidth:node.scrollWidth,lineHeight:parseFloat(style.lineHeight),overflow:style.overflow,textOverflow:style.textOverflow};});
  assert.ok(undoLayout.height<=undoLayout.lineHeight+1&&undoLayout.scrollWidth>undoLayout.width,JSON.stringify(undoLayout));
@@ -206,10 +253,18 @@ try{
   let state=readStudySets();state=BreezeStudySets.create(state,{name:'중간고사 · 1–3과',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
   state=BreezeStudySets.create(state,{name:'이번 주 읽은 글',bookTitles:['이번 주 읽은 기사']},words,101).state;commitStudySets(state);show('memory');darkMode=false;applyDark();
  });
- await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.fonts.ready);
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.fonts.ready);await page.mouse.move(0,0);
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:true});
  await page.locator('.study-sets-home-card[data-set-id]').first().click();
- await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-phone-light.png`,fullPage:true});
+ const wordMetrics=await page.locator('.study-sets-word').filter({hasText:'remarkable'}).evaluate(node=>({height:node.getBoundingClientRect().height,size:getComputedStyle(node).fontSize,weight:getComputedStyle(node).fontWeight}));
+ assert.equal(wordMetrics.size,'17px');assert.equal(wordMetrics.weight,'600');assert.ok(wordMetrics.height<=24,JSON.stringify(wordMetrics));
+ await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-phone-light.png`,fullPage:true});
+ // Gesture references use trusted pointer input; cancel preserves fixture data.
+ await dragRow(rows().first(),-68);await waitTranslation(rows().first(),-72);
+ await page.screenshot({path:`${proof}/ui-set-swipe-circle-${engine.name()}-phone-light.png`,fullPage:true});
+ await page.locator('#study-sets-title').click();await waitTranslation(rows().first(),0);
+ await fullSwipe(rows().first(),{cancel:true,inspect:true,inspectAction:true,capture:`${proof}/ui-set-swipe-capsule-${engine.name()}-phone-light.png`});
+ await waitTranslation(rows().first(),0);assert.equal(await rows().count(),8,'capture cancellation preserves sample set');
  await page.locator('#study-sets-word-list .study-sets-word-toggle').first().click();
  await page.screenshot({path:`${proof}/ui-set-example-${engine.name()}-phone-light.png`,fullPage:true});
  await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);
@@ -268,6 +323,6 @@ try{
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}
  }
- writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/bottom-action-layout',layouts,errors},null,2));
+ writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/bottom-action-layout',layouts,errors},null,2));
  console.log(`${engine.name()}: study sets lifecycle, offline snapshots, failure recovery, history, 10 light/dark layouts passed`);
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
