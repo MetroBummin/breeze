@@ -1,0 +1,64 @@
+name: Text rotation source anchor
+on:
+  pull_request:
+    paths:
+      - 'scripts/core/state.js'
+      - 'scripts/reader/**'
+      - 'styles/reader.css'
+      - 'tests/verify-text-*.mjs'
+      - 'tests/helpers/text-rotation-source.mjs'
+      - '.github/workflows/text-rotation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: text-rotation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  rotation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: actions/checkout@v4
+        with:
+          ref: 8512e8fd25e51d6aa06cf926bad165d5c3994865
+          path: baseline
+          persist-credentials: false
+      - name: Prove pre-fix browser reproducer fails for source drift
+        run: |
+          if BREEZE_ROTATION_SOURCE_ROOT="$PWD/baseline" BREEZE_ROTATION_CASE=race node tests/verify-text-rotation-browser.mjs > /tmp/text-rotation-before.log 2>&1; then
+            cat /tmp/text-rotation-before.log
+            echo 'Baseline unexpectedly passed the race reproducer'
+            exit 1
+          fi
+          cat /tmp/text-rotation-before.log
+          grep -q 'source paragraph moved' /tmp/text-rotation-before.log
+      - name: Verify exact-head source and actual browser layout
+        run: |
+          node --test tests/verify-text-rotation.mjs tests/verify-text-anchor-restoration.mjs tests/verify-epub-navigation-motion.mjs tests/verify-pdf-session-regressions.mjs
+          node tests/verify-text-rotation-browser.mjs
+      - name: Existing full-app opening and navigation ownership
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+        run: node tests/verify-reader-restoration-navigation-browser.mjs
+      - name: Rotation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: text-rotation-${{ matrix.engine }}
+          path: |
+            /tmp/breeze-text-rotation-*/
+            /tmp/text-rotation-before.log
+          retention-days: 7
