@@ -3,7 +3,7 @@
 The user approved polishing and unifying same-family floating controls and
 including PR154 in the next internal TestFlight candidate. Parent confirmed
 Apple Next Build Number268, no queued/running build and successful267. Integrate
-reviewed polished PR154 sourcec2c244a906983dbab681e971edca8a4b8ebb10bb into
+reviewed polished PR154 source22098b6057e5088b7fc262c9fb2844f771ed5bcb into
 integrate/breeze-193-cloud. Do not merge main or submit App Store review.
 Parent owns one Cloud start; this preparation does not start Cloud or upload.
 
@@ -71,3 +71,13 @@ Both engines remain mandatory by default in CI. This modifies only test setup
 and its documented coverage; product material, geometry,44 frames/two videos
 and native232-file package bytes stay unchanged. Final exact Integrity remains
 required; no Cloud start/archive/upload has been performed.
+
+Before waiting for another complete CI cycle, the previously unexecuted chrome
+motion suite reproduced its obsolete narrow22px/wide0px center wait. It now
+requires the96px navigation/48px settings slots and centered row, deriving the
+expanded anchor from their actual free interval. Every continuity, easing,
+overshoot, settling, reversal/interruption, writing and reduced-motion assertion
+remains. The entire Chromium motion suite passed, followed by Reader work,
+horizontal progress/painted EPUB and Home controls suites. CI must still run
+these on the exact final candidate; local151 is not CI153 or native iOS proof.
+No product bytes or browser review images/videos changed.

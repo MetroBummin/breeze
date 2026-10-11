@@ -5,11 +5,11 @@
   "previousTestFlightBuild": "267",
   "historical267": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
   "historical266": "e9dc1f6986e1d73f1fd5df1aea9c50ad3723cae4",
-  "reviewedSource": "c2c244a906983dbab681e971edca8a4b8ebb10bb",
-  "reviewedTree": "3fc67ca81134acd40c958977eb007aa1dfb82e48",
+  "reviewedSource": "22098b6057e5088b7fc262c9fb2844f771ed5bcb",
+  "reviewedTree": "4d0acfc219d5b99453e915520124da87e1018d7b",
   "reviewedPR": 154,
   "followupSha256": {
-    "docs/decisions/003-shared-control-glass.md": "b061b6fdae7a37b496edf8351e7a168027c8f50221ff0fb7699e45631395b81a",
+    "docs/decisions/003-shared-control-glass.md": "cd032acccd85f41a0dc79eb9b94ce4fa4fc13dc9e108be87a99892b2548ce153",
     "docs/reviews/safari-dock-proportions/README.md": "37ab773dbf9d058a00b5e567a5c22a93fe698ebf87fc39385b2ca54fbac00805",
     "docs/reviews/safari-dock-proportions/geometry-after.json": "3b9be1768c37bdb3ffdb0e652c3c221577a3cb1de82a080f6785c3508e8d6c81",
     "docs/reviews/safari-dock-proportions/geometry-before.json": "7921d07c5f6ac934a8e77c48ddebe0dc31986121e476b16a84bd7a0cf6edcfa2",
@@ -84,6 +84,7 @@
     "tests/verify-design-home-browser.mjs": "a52e5a22efc75633ca880736ca0420d969d7ea6681569f8c6c64ad35ffb385d1",
     "tests/verify-home-controls-browser.mjs": "8645f522126436d676b9f861c624cca1b61a05c532dad4465ae1cf80dbe5c943",
     "tests/verify-pdf-ocr-browser.mjs": "445a59a84df04736eb9a8af313aa5e3643e0f3dc791f0ed5a11b362da91d7fad",
+    "tests/verify-reader-chrome-motion-browser.mjs": "761ba3868e1719f70194ccf330ae07814d846c10f33686c73652fb4ed6c8241c",
     "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562",
     "tests/verify-simple-word-cards-browser.mjs": "81837899bbfcd85bbd450c36591e63ab91f74532b6f66799d2415ca37e9bebad",
     "tests/verify-structure.mjs": "1f70bc7b14b4f87fb8f7e8c41e609471bf4a54a65b7d36338bd4240d67da5732",
@@ -134,8 +135,8 @@
     "docs/decisions/026-breeze-193-build268.md"
   ],
   "integrationSha256": {
-    "tools/record-193-build268-boundary.mjs": "a50790596c15f91f9e7ecddaf5cc57d292ccdc867f1dc98b526affdc95871083",
+    "tools/record-193-build268-boundary.mjs": "4953a4e46ad64af579924c61cb872fc529471b3f6f1ce8deba142d7ad112b84f",
     "tests/verify-193-build268-boundary.mjs": "7edf279be7a65f99075f4a761dafecbb84f0cfc5c79f5a0ac1db1e120f9696f7",
-    "docs/decisions/026-breeze-193-build268.md": "f96bcf61e15a5a72648827dc0f537b87f3a30342c05dbc8c2c5949c1ae03e67b"
+    "docs/decisions/026-breeze-193-build268.md": "f14b62455be108ccbae74de081c8d0c76ea25440d9aa47a45e0e1ab49f71e7df"
   }
 }
