@@ -27,7 +27,9 @@ counts use the existing small caption. The sheet fits its content, and its
 44px close target is circular. The detail ellipsis has a 44px touch target and
 uses paired theme materials: light translucent glass with dark ink in light mode,
 and charcoal glass with bright ink in dark mode. Back is a matching 44px circle
-with the same rim and elevation. Theme changes update both controls immediately,
+with the same rim and elevation. Header icons share a centered 20px SVG grid,
+rounded 2-unit chevron stroke and optically matched filled ellipsis dots; the
+chevron is centered on the same grid rather than shifted to the left. Theme changes update both controls immediately,
 including during the morph; only geometry and icon/content opacity animate. Its compact menu contains exactly Rename,
 Add books and Delete set, with neutral text rows and thin separators. Excluded membership remains durable, but its count is not shown.
 Book checkboxes use circular checkmarks while retaining native checkbox semantics.

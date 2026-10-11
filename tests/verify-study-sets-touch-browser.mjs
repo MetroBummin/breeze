@@ -36,7 +36,15 @@ try{
  const send=async(type,x=0,y=0)=>{await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:['touchEnd','touchCancel'].includes(type)?[]:[{x,y,id:1,force:1,radiusX:4,radiusY:4}]});await page.waitForTimeout(35);};
  const point=async locator=>{const r=await locator.boundingBox();assert.ok(r);return {x:r.x+r.width/2,y:r.y+r.height/2};};
  const tap=async locator=>{const p=await point(locator);await send('touchStart',p.x,p.y);await send('touchEnd');await page.waitForTimeout(400);};
- const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${proof}/web-preview-${name}.png`,fullPage:false});};
+ const capture=async name=>{
+  await page.evaluate(()=>document.fonts.ready);
+  if(process.env.BREEZE_STUDY_HEADER_ONLY){
+   if(!/^phone-edit-closed-(light|dark)$/.test(name))return;
+   const header=await page.locator('#v-memory-set .study-sets-header').boundingBox();
+   await page.screenshot({path:`${proof}/web-preview-phone-header-${name.endsWith('dark')?'dark':'light'}.png`,clip:{x:header.x,y:header.y,width:header.width,height:header.height+12}});return;
+  }
+  await page.screenshot({path:`${proof}/web-preview-${name}.png`,fullPage:false});
+ };
  const directory=()=>page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  const back=async()=>{for(let i=0;i<4&&await page.evaluate(()=>studySetsUI.screen!=='directory');i++)await tap(page.locator('#study-sets-back'));await directory();};
  const row=()=>page.locator('#study-sets-word-list>li').first();
@@ -67,6 +75,15 @@ try{
   for(const s of samples){const rgb=s.background.match(/rgba?\((\d+), (\d+), (\d+)/).slice(1).map(Number),ink=s.ink.match(/\d+/g).slice(0,3).map(Number);assert.ok(dark?rgb.every(x=>x<120)&&ink.every(x=>x>200):rgb.every(x=>x>230)&&ink.every(x=>x<80),'material and readable ink follow theme without a dark flash');assert.equal(s.backBackground,s.background);assert.equal(s.backInk,s.ink);assert.equal(s.backLine,s.line);assert.equal(s.backShadow,s.shadow);assert.equal(s.backWidth,44);assert.equal(s.backHeight,44);assert.equal(s.backRadius,'22px');assert.ok(s.aligned);}
   materialSamples.push(...samples);
  };
+ const checkHeaderIcons=async()=>{
+  const icons=await page.evaluate(()=>['study-sets-back','study-sets-edit'].map(id=>{
+   const button=document.getElementById(id),svg=button.querySelector('svg'),b=button.getBoundingClientRect(),r=svg.getBoundingClientRect(),s=getComputedStyle(svg);
+   return {id,width:r.width,height:r.height,stroke:s.strokeWidth,cap:s.strokeLinecap,join:s.strokeLinejoin,centerX:r.x+r.width/2-b.x-b.width/2,centerY:r.y+r.height/2-b.y-b.height/2,ink:s.color};
+  }));
+  assert.equal(icons[0].width,icons[1].width);assert.equal(icons[0].height,icons[1].height);assert.equal(icons[0].stroke,icons[1].stroke);assert.equal(icons[0].cap,'round');assert.equal(icons[0].join,'round');assert.equal(icons[0].ink,icons[1].ink);for(const icon of icons){assert.ok(Math.abs(icon.centerX)<.1&&Math.abs(icon.centerY)<.1,'header icons centered inside circle');}
+  return icons;
+ };
+ const headerIcons=[];
  const inventory=await page.evaluate(()=>words);
  const gaps=await page.locator('.study-sets-home-card').evaluateAll(nodes=>{const r=nodes.map(n=>n.getBoundingClientRect());return r.slice(1).map((n,i)=>n.top-r[i].bottom);});
  assert.ok(gaps.every(g=>Math.abs(g-8)<1),'all/custom/add have equal gaps');
@@ -146,7 +163,7 @@ try{
   assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
   if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-list-${dark?'dark':'light'}`);
   if(width===390||width===820){
-   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await openSet();await capture(`${device}-edit-closed-${theme}`);await menu(`${device}-edit-mid-${theme}`);await capture(`${device}-edit-open-${theme}`);
+   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await openSet();headerIcons.push({device,theme,icons:await checkHeaderIcons()});await capture(`${device}-edit-closed-${theme}`);await menu(`${device}-edit-mid-${theme}`);await capture(`${device}-edit-open-${theme}`);
    await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));await tap(page.locator('.study-sets-books input').first());await capture(`${device}-add-books-${theme}`);
    await back();
   }
@@ -170,6 +187,6 @@ try{
  assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true,'outside native scrolling dismisses menu');
  assert.equal(await page.locator('#study-sets-word-list>li').count(),scrollCount);assert.equal(await offset(),0);
  assert.deepEqual(errors,[]);assert.ok(trace.some(e=>e.type==='lostpointercapture'&&e.target==='vko'));assert.ok(trace.every(e=>e.trusted&&e.pointerType==='touch'));
- writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/theme-material/no-light-dark-flash/matching-circular-back/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,materialSamples,trace,undoTrace,errors},null,2));
+ writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/theme-material/no-light-dark-flash/matching-circular-back/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,headerIcons,materialSamples,trace,undoTrace,errors},null,2));
  console.log('Trusted touchscreen, persistence and responsive screenshot checks passed: '+proof);
 }finally{await browser?.close();server.close();}

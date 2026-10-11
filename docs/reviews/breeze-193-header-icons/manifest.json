@@ -1,0 +1,23 @@
+{
+  "label": "CROPPED WEB PREVIEW \u2014 actual Chromium header screenshot; not native iOS",
+  "base": "3188b9b7d9183b68b859995586039369edfb01f3",
+  "capture_source_sha256": {
+    "scripts/ui/study-sets.js": "27b97dce5403d610dea970c24bfb589ccc5e9b4831c00418fbc1212309ab17e8",
+    "styles/study-sets.css": "0d8f122c657460dfd6e067b71806f6eafb63aed12abc41b32996014dd2682bce",
+    "styles/tokens.css": "920bf7759371b3fa11d769a018f5315af06a3c23d1f5093a0bbb495ffe9231f2",
+    "tests/verify-study-sets-touch-browser.mjs": "f33c3e18e78037b4b4c7d40c6e419f32a6cfad721b8f8740b98a2cb1b6738795"
+  },
+  "images": [
+    {
+      "name": "web-preview-phone-header-dark.png",
+      "sha256": "b3e852a6617669bbba11319f11c908ff1d75af12b49862775baae3af41205274",
+      "bytes": 5613
+    },
+    {
+      "name": "web-preview-phone-header-light.png",
+      "sha256": "825fecd864a24668794e279fd1c32091f2be846330405aeefc4855de4776905c",
+      "bytes": 6385
+    }
+  ],
+  "touch_verification_sha256": "96e47990e80b0b05a41ee895a0018d91ff6a19defc7bffd846af1f6cb06553a8"
+}

@@ -36,8 +36,11 @@ function studySetsButton(text,action,className=''){
 function studySetsIcon(kind){
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+  if(kind==='more'){
+    for(const x of [5,12,19]){const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('cx',String(x));dot.setAttribute('cy','12');dot.setAttribute('r','1.25');svg.append(dot);}return svg;
+  }
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  path.setAttribute('d',kind==='close'?'M6 6l12 12M18 6L6 18':kind==='back'?'M14 5l-7 7 7 7':kind==='chevron'?'M9 5l7 7-7 7':kind==='more'?'M5 12h.01M12 12h.01M19 12h.01':kind==='remove'?'M6 12h12':'M12 5v14M5 12h14');
+  path.setAttribute('d',kind==='close'?'M6 6l12 12M18 6L6 18':kind==='back'?'M15 6l-6 6 6 6':kind==='chevron'?'M9 5l7 7-7 7':kind==='remove'?'M6 12h12':'M12 5v14M5 12h14');
   svg.append(path);return svg;
 }
 function studySetsIconButton(label,kind,action){
