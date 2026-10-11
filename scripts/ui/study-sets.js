@@ -262,7 +262,8 @@ function studySetsMutate(change,success,exitRow=null){
 }
 function studySetsAnimateExit(row){
   if(!row.isConnected||typeof row.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return false;
-  const surface=row.querySelector('.study-sets-word-surface'),height=row.getBoundingClientRect().height,width=row.getBoundingClientRect().width;
+  const surface=row.querySelector('.study-sets-word-surface'),height=row.getBoundingClientRect().height;
+  const width=surface?.getBoundingClientRect().width||row.getBoundingClientRect().width;
   if(!surface||!height)return false;
   const screen=studySetsUI.screen,setId=studySetsUI.setId;
   studySetsUI.swipeClose=null;row.classList.add('study-sets-exiting');row.setAttribute('aria-busy','true');
@@ -447,6 +448,7 @@ function renderStudySetsDetail(set,excluded){
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id=excluded?'study-sets-excluded-list':'study-sets-word-list';
   for(const [index,card] of cards.entries()){
     const item=studySetsNode('li','study-sets-word-row');item.dataset.cardId=card.id;
+    const clip=studySetsNode('div','study-sets-word-clip');
     const surface=studySetsNode('div','study-sets-word-surface');
     if(!studySetsOpened.has(set.id))studySetsOpened.set(set.id,new Set());
     const copy=createVocabularyGroup([[card.id,{...card,status:card.status||1}]],{
@@ -460,8 +462,8 @@ function renderStudySetsDetail(set,excluded){
       },excluded?null:item);
     },'study-sets-row-action'+(excluded?' study-sets-restore':''));action.setAttribute('aria-label',`${card.word} ${excluded?'다시 담기':'세트에서 제외'}`);
     surface.append(copy);
-    if(excluded)surface.append(action);else{action.textContent='';action.append(studySetsIcon('remove'));action.title='세트에서 제외';item.append(action);}
-    item.append(surface);list.append(item);
+    if(excluded)surface.append(action);else{action.textContent='';action.append(studySetsIcon('remove'));action.title='세트에서 제외';clip.append(action);}
+    clip.append(surface);item.append(clip);list.append(item);
     if(!excluded)studySetsSwipe(item,surface,action);
   }
   body.append(list);

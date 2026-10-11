@@ -18,12 +18,17 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  const rows=()=>page.locator('#study-sets-word-list > li');
+ const rowMetrics=[];
+ const recordRowMetrics=record=>{rowMetrics.push(record);writeFileSync(`${proof}/row-metrics-${engine.name()}.json`,JSON.stringify(rowMetrics,null,2));};
+ const vocabularyGeometry=async group=>group.evaluate(node=>Object.fromEntries([':scope','.vrow','.vword','.vko','.chip'].map(selector=>{const r=(selector===':scope'?node:node.querySelector(selector)).getBoundingClientRect();return [selector,{x:r.x,width:r.width,height:r.height}];})));
+ const assertGeometry=(actual,expected,label)=>{for(const selector of [':scope','.vrow','.vword','.vko','.chip'])for(const key of ['x','width'])assert.ok(Math.abs(actual[selector][key]-expected[selector][key])<=1,`${label} ${selector}.${key}: ${actual[selector][key]} vs original ${expected[selector][key]}`);assert.ok(Math.abs(actual['.vword'].height-expected['.vword'].height)<=1,`${label} word wrapping differs from original`);};
  const vocabularyStyle=async group=>group.evaluate(node=>Object.fromEntries(['.vword','.vko','.chip'].map(selector=>{const style=getComputedStyle(node.querySelector(selector));return [selector,Object.fromEntries(['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','color','backgroundColor','borderRadius'].map(key=>[key,style[key]]))];})));
  const originalVocabularyStyle=async({captureEntry=false}={})=>{
   await page.locator('#study-sets-directory-back').click();await page.waitForFunction(()=>activeAppView()==='vocab');
-  const style=await vocabularyStyle(page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})}));
+  const group=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
+  const style=await vocabularyStyle(group),geometry=await vocabularyGeometry(group);
   if(captureEntry){await page.evaluate(()=>window.scrollTo(0,0));await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-entry-${engine.name()}-phone-light.png`,fullPage:false});}
-  await page.locator('#wordbook-review').click();return style;
+  await page.locator('#wordbook-review').click();return {style,geometry};
  };
  const assertNumbers=async()=>{const count=await rows().count();assert.deepEqual(await page.locator('#study-sets-word-list .vordinal').allTextContents(),Array.from({length:count},(_,i)=>String(i+1)),'row numbers follow current active order');};
  const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
@@ -342,7 +347,8 @@ try{
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:true});
  await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();
  const setGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
- assert.deepEqual(await vocabularyStyle(setGroup),defaultStyle,'set words, meanings and stars reuse actual default vocabulary styles');
+ assert.deepEqual(await vocabularyStyle(setGroup),defaultStyle.style,'set words, meanings and stars reuse actual default vocabulary styles');
+ const setGeometry=await vocabularyGeometry(setGroup);recordRowMetrics({viewport:page.viewportSize(),dark:false,original:defaultStyle.geometry,set:setGeometry});assertGeometry(setGeometry,defaultStyle.geometry,'phone capture');
  // The original renderer owns wrapping; the ordinal is its only added gutter.
  await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-phone-light.png`,fullPage:true});
  // Gesture references use trusted pointer input; cancel preserves fixture data.
@@ -371,7 +377,8 @@ try{
   for(const bounds of homeBounds)assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1&&bounds.height>=44,JSON.stringify({width,height,bounds}));
   await page.screenshot({path:`${proof}/home-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
   await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();await assertNumbers();
-  const matrixSetGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});assert.deepEqual(await vocabularyStyle(matrixSetGroup),matrixDefaultStyle,`actual vocabulary style parity ${width}x${height} ${dark}`);
+  const matrixSetGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});assert.deepEqual(await vocabularyStyle(matrixSetGroup),matrixDefaultStyle.style,`actual vocabulary style parity ${width}x${height} ${dark}`);
+  const matrixGeometry=await vocabularyGeometry(matrixSetGroup);recordRowMetrics({width,height,dark,original:matrixDefaultStyle.geometry,set:matrixGeometry});assertGeometry(matrixGeometry,matrixDefaultStyle.geometry,`${width}x${height} dark=${dark}`);
   for(const selector of ['.study-sets-sheet','#study-sets-content'])assert.equal(await page.locator(selector).evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Detail overflow ${selector} ${width}x${height}`);
   const opaque=await page.locator('.study-sets-sheet').evaluate(node=>{const color=getComputedStyle(node).backgroundColor;return color.startsWith('rgb(')||color.startsWith('color(')&&/\/\s*1\s*\)$/.test(color)||color.startsWith('rgba(')&&/[,/]\s*1\s*\)$/.test(color);});
   assert.equal(opaque,true,'set page must have an opaque background');
@@ -386,6 +393,29 @@ try{
   assert.ok(last.y+last.height<=start.y+1,`last word is obscured by bottom action ${width}x${height}`);
   await page.locator('#study-sets-content').evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:`${proof}/detail-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
+  await closeSheet();
+ }
+ // Real snapshot rows, not modified ordinal text: check 999 and 1000 in the
+ // original row gutter while preserving the default long-word wrapping geometry.
+ const largeSetId=await page.evaluate(()=>{
+  const word='pneumonoultramicroscopicsilicovolcanoconiosis';
+  words={layoutReference:{word,ko:'뜻 1000',book:'Layout',status:1}};saveWords();
+  const source=Object.fromEntries(Array.from({length:1001},(_,i)=>['layout'+i,{word,ko:'뜻 '+(i+1),book:'Layout',status:1,addedAt:i}]));
+  const result=BreezeStudySets.create(readStudySets(),{name:'숫자 너비 확인',bookTitles:['Layout']},source,500);commitStudySets(result.state);show('vocab');return result.set.id;
+ });
+ for(const width of [390,320,820]){
+  await page.setViewportSize({width,height:844});await page.evaluate(()=>{show('vocab');window.scrollTo(0,0);});
+  const original=await vocabularyGeometry(page.locator('#v-vocab .vgroup').first());
+  await page.locator('#wordbook-review').click();
+  await page.locator('.study-sets-home-card[data-set-id]').filter({hasText:'숫자 너비 확인'}).click();await assertSetPage();
+  assert.equal(await page.evaluate(()=>studySetsUI.setId),largeSetId);assert.equal(await rows().count(),1001);await assertNumbers();
+  for(const ordinal of [999,1000]){
+   const row=rows().nth(ordinal-1);await row.scrollIntoViewIfNeeded();
+   const bounds=await row.evaluate(node=>{const number=node.querySelector('.vordinal').getBoundingClientRect(),word=node.querySelector('.vword').getBoundingClientRect();return {number:{left:number.left,right:number.right,width:number.width},word:{left:word.left,right:word.right}};});
+   assert.ok(bounds.number.left>=0&&bounds.number.right<=bounds.word.left-1,JSON.stringify({width,ordinal,bounds}));
+   assert.equal(await row.locator('.vordinal').innerText(),String(ordinal));
+   const geometry=await vocabularyGeometry(row.locator('.vgroup'));recordRowMetrics({width,ordinal,original,set:geometry,bounds});assertGeometry(geometry,original,`${width}px ordinal ${ordinal}`);
+  }
   await closeSheet();
  }
  assert.deepEqual(errors,[]);
@@ -411,6 +441,6 @@ try{
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}
  }
- writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/snapshot-stars/style-parity/bottom-action-layout/page-navigation/home-scroll/row-numbering',layouts,errors},null,2));
+ writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/snapshot-stars/style-parity/bottom-action-layout/page-navigation/home-scroll/row-numbering',layouts,rowMetrics,errors},null,2));
  console.log(`${engine.name()}: study sets lifecycle, offline snapshots, failure recovery, history, 10 light/dark layouts passed`);
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}

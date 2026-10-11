@@ -73,19 +73,20 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-selection-count{font-size:13px;font-weight:600;}
 .study-sets-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
 .study-sets-actions>.study-sets-button{flex:1 1 auto;}
-.study-sets-word-row{position:relative;overflow:hidden;border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
+.study-sets-word-row{position:relative;border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
 #study-sets-word-list .study-sets-word-surface,#study-sets-word-list .study-sets-word-surface *{-webkit-user-select:none;user-select:none;-webkit-user-drag:none;}
-.study-sets-word-surface{position:relative;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:transform .2s ease,border-radius .2s ease;}
+.study-sets-word-clip{position:relative;overflow:hidden;margin-left:-20px;width:calc(100% + 20px);}
+.study-sets-word-surface{position:relative;padding-left:20px;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:transform .2s ease,border-radius .2s ease;}
 .study-sets-revealed .study-sets-word-surface{border-radius:0 24px 24px 0;background:var(--wordbook-field);}
 .study-sets-dragging .study-sets-word-surface{transition:none;}
-.study-sets-exiting{pointer-events:none;}
+.study-sets-exiting{overflow:hidden;pointer-events:none;}
 .study-sets-word-surface>.vgroup{width:100%;border-bottom:0;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-row-action{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;min-width:44px;width:44px;height:44px;min-height:44px;max-width:calc(100% - 24px);padding:0;border:0;border-radius:999px;background:var(--danger-tint2);color:var(--danger);opacity:0;pointer-events:none;transition:width .2s ease,opacity .15s ease;}
-:is(#study-sets-dialog,#v-memory-set) .study-sets-revealed>.study-sets-row-action{pointer-events:auto;}
-:is(#study-sets-dialog,#v-memory-set) .study-sets-dragging>.study-sets-row-action{transition:none;}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-revealed .study-sets-row-action{pointer-events:auto;}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-dragging .study-sets-row-action{transition:none;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-row-action:focus-visible{opacity:1!important;pointer-events:auto;z-index:1;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-restore{position:relative;right:auto;top:auto;transform:none;opacity:1;pointer-events:auto;flex:none;width:auto;max-width:88px;padding:8px 10px;border-radius:12px;font-size:12px;}
-:is(#study-sets-dialog,#v-memory-set) .study-sets-swiped>.study-sets-row-action{background:var(--danger-bg-hover);}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-swiped .study-sets-row-action{background:var(--danger-bg-hover);}
 .study-sets-undo{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;margin:12px 0;border:1px solid var(--sentence-glass-line-soft);border-radius:12px;background:var(--sentence-glass-action);font-size:13px;}
 .study-sets-undo>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .study-sets-undo .study-sets-button{flex:none;}
@@ -116,13 +117,12 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 /* Set contents are an independent app page; only short setup/manage work is modal. */
 html:has(#v-memory-set.on),body:has(#v-memory-set.on){background:var(--home-background);}
 body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#v-memory-set.on) .control-dock{display:none;}
-#v-memory-set{height:100dvh;max-width:760px;margin:0 auto;padding:env(safe-area-inset-top) 0 0;box-sizing:border-box;background:var(--home-background);color:var(--settings-ink);font:400 14px/1.6 var(--ui);}
+#v-memory-set{height:100dvh;max-width:1160px;margin:0 auto;padding:env(safe-area-inset-top) 0 0;box-sizing:border-box;background:var(--home-background);color:var(--settings-ink);font:400 14px/1.6 var(--ui);}
 #v-memory-set.on{display:flex;}
 #v-memory-set *{box-sizing:border-box;}
 #v-memory-set [hidden]{display:none!important;}
 #v-memory-set .study-sets-sheet{height:100%;max-height:none;min-height:0;max-width:none;border:0;border-radius:0;box-shadow:none;background:var(--home-background);}
 #v-memory-set .study-sets-header{padding:16px 16px 12px;}
-#v-memory-set .study-sets-body{flex:1;padding:8px 24px 24px;}
+#v-memory-set .study-sets-body{flex:1;padding:8px 20px 24px;}
 #v-memory-set .study-sets-footer{padding-bottom:max(16px,env(safe-area-inset-bottom));}
-@media(max-width:359px){#v-memory-set .study-sets-body{padding-left:16px;padding-right:16px;}}
 @media(max-height:500px){#v-memory-set .study-sets-header{padding-top:4px;padding-bottom:4px;}}

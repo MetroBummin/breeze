@@ -17,6 +17,7 @@ try{
  browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ const geometry=async group=>group.evaluate(node=>Object.fromEntries([':scope','.vrow','.vword','.vko','.chip'].map(selector=>{const r=(selector===':scope'?node:node.querySelector(selector)).getBoundingClientRect();return [selector,{x:r.x,width:r.width,height:r.height}];})));
 
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
@@ -30,6 +31,7 @@ try{
 
  await page.evaluate(()=>document.fonts.ready);await page.mouse.move(0,0);
  const capture=async name=>page.screenshot({path:`${proof}/ui-set-${name}-${engine.name()}-phone-light.png`,fullPage:false});
+ const originalGeometry=await geometry(page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})}));
  await capture('entry');
  await page.locator('#wordbook-review').click();await page.waitForFunction(()=>activeAppView()==='memory');
  await capture('home');
@@ -38,6 +40,10 @@ try{
  assert.equal(await page.locator('dialog[open]').count(),0);
  assert.equal(await page.locator('#study-sets-word-list .vordinal').count(),8);
  await capture('detail');
+ const setGeometry=await geometry(page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})}));
+ writeFileSync(`${proof}/ui-set-row-metrics-${engine.name()}.json`,JSON.stringify({engine:engine.name(),viewport:page.viewportSize(),original:originalGeometry,set:setGeometry},null,2));
+ for(const selector of [':scope','.vrow','.vword','.vko','.chip'])for(const key of ['x','width'])assert.ok(Math.abs(setGeometry[selector][key]-originalGeometry[selector][key])<=1,`${selector}.${key} differs from original: ${setGeometry[selector][key]} vs ${originalGeometry[selector][key]}`);
+ assert.ok(Math.abs(setGeometry['.vword'].height-originalGeometry['.vword'].height)<=1,'word wrapping differs from original');
  const row=page.locator('#study-sets-word-list > li').first();
  const point=await row.locator('.vko').evaluate(n=>{const r=n.getBoundingClientRect();return{x:r.right-4,y:r.y+r.height/2};});
  await page.mouse.move(point.x,point.y);await page.mouse.down();await page.mouse.move(point.x-68,point.y,{steps:10});await page.mouse.up();

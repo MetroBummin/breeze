@@ -199,6 +199,6 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 @keyframes simple-word-turn{from{opacity:.4;}to{opacity:1;}}
 @media(prefers-reduced-motion:reduce){.simple-word-cards #review-back:not([hidden]){animation:none;}}
 
-/* Optional snapshot ordinal adds only a quiet gutter to the shared row. */
-:is(#v-vocab,.vocabulary-rows) .vrow.vrow-numbered{grid-template-columns:18px minmax(0,clamp(90px,30%,220px)) minmax(0,1fr) auto;column-gap:10px;}
-.vocabulary-rows .vordinal{font:400 10px/23px var(--ui);color:var(--settings-muted);opacity:.6;text-align:right;pointer-events:none;user-select:none;}
+/* Snapshot ordinals sit in the outer gutter, leaving the shared three columns unchanged. */
+.vocabulary-rows .vrow.vrow-numbered{position:relative;}
+.vocabulary-rows .vordinal{position:absolute;right:calc(100% - 6px);top:14px;font:400 9px/23px var(--ui);font-variant-numeric:tabular-nums;color:var(--settings-muted);opacity:.6;text-align:right;white-space:nowrap;pointer-events:none;user-select:none;}

@@ -425,3 +425,16 @@ test('content rerenders spend no history writes; screen transitions update route
   run('studySetsReadAndRender(false)');assert.equal(replacements,1);
   run("studySetsGo('rename')");assert.equal(replacements,2);assert.equal(context.history.state.studySetsScreen,'rename');
 });
+
+
+test('ordinal uses a separate clipped leading gutter without becoming a fourth vocabulary column',()=>{
+  const {document,query,createFromHome}=harness();createFromHome();
+  const row=query('.study-sets-word-row'),clip=query('.study-sets-word-clip'),surface=query('.study-sets-word-surface');
+  assert.equal(row.firstElementChild,clip);assert.equal(surface.parentElement,clip);assert.equal(query('.study-sets-row-action').parentElement,clip);
+  assert.equal(query('.vordinal').parentElement,query('.vrow'));
+  const shared=readFileSync(new URL('../styles/wordbook.css',import.meta.url),'utf8');
+  assert.match(shared,/\.vrow\.vrow-numbered\{position:relative;\}/);assert.doesNotMatch(shared,/vrow-numbered\{[^}]*grid-template-columns/);
+  const style=readFileSync(new URL('../styles/study-sets.css',import.meta.url),'utf8');
+  assert.match(style,/#v-memory-set \.study-sets-body\{flex:1;padding:8px 20px 24px;/);
+  assert.match(style,/study-sets-word-clip\{[^}]*margin-left:-20px;[^}]*width:calc\(100% \+ 20px\)/);
+});

@@ -129,3 +129,13 @@ history replacements; browser coverage performs 120 renders with the real
 history writer and explicitly drags a pre-selected meaning. No test sleeps or
 suppressed SecurityErrors substitute for these regressions. All 55 focused
 tests pass locally; the subsequent exact-head browser run is still required.
+
+Commit `8fb61825d1948a7f806b66e70c131edf4873a97c` passed all three
+scoped jobs in run 38106339620: aggregate contracts, Chromium and WebKit,
+including the original simple-card browser regression. This confirms the
+native-drag and redundant-history fixes, not the later horizontal alignment
+revision. The owner then identified that the extra ordinal grid column and
+24px set-body padding shifted words inward. The next revision restores the
+original 20px body and three-column geometry, placing small tabular ordinals
+in a clipped leading gutter. Its exact-head bounding-box and pixel checks are
+tracked separately; focused local coverage is now 56 tests.
