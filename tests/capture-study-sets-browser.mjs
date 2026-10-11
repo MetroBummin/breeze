@@ -35,6 +35,17 @@ try{
  await capture('entry');
  await page.locator('#wordbook-review').click();await page.waitForFunction(()=>activeAppView()==='memory');
  await capture('home');
+ await page.locator('#study-sets-home-create').click();
+ await page.locator('#study-sets-name').waitFor({state:'visible'});
+ await capture('create-empty');
+ await page.locator('#study-sets-name').fill('이번 주 복습');
+ for(const checkbox of await page.locator('.study-sets-books input[type=checkbox]').all())await checkbox.check();
+ assert.match(await page.locator('#study-sets-selection-count').innerText(),/12개/);
+ assert.equal(await page.locator('#study-sets-save').isEnabled(),true);
+ await page.locator('.study-sets-books legend').click();await page.mouse.move(0,0);
+ await capture('create-selected');
+ await page.locator('#study-sets-close').click();
+ await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
  await page.locator('.study-sets-home-card[data-set-id]').first().click();
  await page.waitForFunction(()=>activeAppView()==='memory-set');
  assert.equal(await page.locator('dialog[open]').count(),0);
