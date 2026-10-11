@@ -83,7 +83,12 @@ try{
     await page.evaluate(index=>qaRequests[index].resolve({error:'lookup_failed',httpStatus:400}),count);
     await page.waitForFunction(()=>!wordPeekPending()&&!document.getElementById('word-peek').hidden);
    }
-   if(phase==='saved')assert.equal(await page.evaluate(()=>wordPeekPending()),false,'saved meaning unexpectedly waited');
+   if(phase==='saved'){
+    assert.equal(await page.evaluate(()=>wordPeekPending()),false,'saved meaning unexpectedly waited');
+    // Existing first-open pick/star persistence is deferred to the next frame.
+    // Let that opening settle before testing whether the second tap mutates it.
+    await page.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
+   }
    const before=await page.evaluate(()=>({count:qaRequests.length,scroll:readerScrollTop(),data:JSON.stringify(words.patient)}));
    await page.evaluate(()=>qaTap());
    assert.equal(await page.evaluate(()=>qaClosed()),true,`${format} ${phase} ${width} ${dark}`);
