@@ -112,7 +112,8 @@ try{
   await node.click();await page.waitForFunction(()=>wordLookupOpen());
   await node.click();assert.equal(await page.evaluate(()=>wordLookupOpen()),false);
   await node.click();await page.waitForFunction(()=>wordLookupOpen());
-  await page.mouse.click(20,200);assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'blank tap no longer dismisses');
+  const blank=await node.evaluate(n=>{const r=n.closest('p').getBoundingClientRect();return {x:r.right-2,y:r.top+r.height/2};});
+  await page.mouse.click(blank.x,blank.y);assert.equal(await page.evaluate(()=>wordLookupOpen()),false,'blank tap no longer dismisses');
  }
  assert.deepEqual(errors,[],format+' page errors');
  console.log(engine.name(),format,'repeat tap: pending, ready, saved, error, identity, late completion, themes/viewports passed');
