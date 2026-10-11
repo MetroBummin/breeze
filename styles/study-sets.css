@@ -41,12 +41,13 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 #study-sets-title{flex:1;min-width:0;margin:0;padding:0 4px;font:600 20px/1.4 var(--ui);letter-spacing:-.25px;overflow-wrap:anywhere;}
 #study-sets-title:focus{outline:none;}
 .study-sets-footer{flex:none;padding:12px 24px max(16px,env(safe-area-inset-bottom));border-top:1px solid var(--wordbook-toolbar-line);background:var(--home-background);}
-.study-sets-menu{display:grid;gap:4px;}
+.study-sets-menu{display:grid;gap:0;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-menu>.study-sets-button{justify-content:flex-start;background:transparent;border:0;min-height:48px;}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-menu>.study-sets-button+.study-sets-button{border-top:1px solid var(--settings-line);border-radius:0;}
 .study-sets-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:8px 24px max(24px,env(safe-area-inset-bottom));scroll-padding:16px;}
 :is(#study-sets-dialog,#v-memory-set) p{margin:0 0 12px;overflow-wrap:anywhere;}
 :is(#study-sets-dialog,#v-memory-set) h3{margin:0 0 12px;font:600 19px/1.5 var(--ui);overflow-wrap:anywhere;}
-:is(#study-sets-dialog,#v-memory-set) .study-sets-button:where(:not(.study-sets-home-card)){display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;max-width:100%;padding:10px 14px;border:1px solid var(--sentence-glass-line-soft);border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:500 13px/1.5 var(--ui);white-space:normal;overflow-wrap:anywhere;text-align:center;cursor:pointer;}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-button:where(:not(.study-sets-home-card)){display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;max-width:100%;padding:10px 14px;border:1px solid var(--sentence-glass-line-soft);border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);font:500 13px/1.5 var(--ui);white-space:normal;overflow-wrap:anywhere;text-align:center;cursor:pointer;touch-action:manipulation;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-button:where(:not(.study-sets-home-card)):active{background:var(--sentence-glass-action-hover);}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-button:disabled{opacity:.48;cursor:default;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-primary{display:flex;width:100%;min-height:48px;border-radius:16px;font-weight:600;font-size:15px;}
@@ -69,7 +70,10 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-books legend{padding:0 0 8px;font-size:13px;font-weight:500;}
 .study-sets-book{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 0;cursor:pointer;}
 .study-sets-book+.study-sets-book{border-top:1px solid var(--sentence-glass-line-soft);}
-.study-sets-book input{flex:none;width:20px;height:20px;margin:0;accent-color:var(--selection-ink,var(--blue));}
+.study-sets-book input{appearance:none;-webkit-appearance:none;position:relative;flex:none;width:22px;height:22px;margin:0;border:1.5px solid var(--settings-muted);border-radius:50%;background:transparent;cursor:pointer;}
+.study-sets-book input:checked{border-color:var(--selection-ink,var(--blue));background:var(--selection-ink,var(--blue));}
+.study-sets-book input:checked::after{content:'';position:absolute;left:7px;top:3px;width:5px;height:10px;border:solid var(--home-background);border-width:0 2px 2px 0;transform:rotate(45deg);}
+@media(forced-colors:active){.study-sets-book input{appearance:auto;-webkit-appearance:auto;}.study-sets-book input::after{display:none;}}
 .study-sets-book-name{flex:1;min-width:0;overflow-wrap:anywhere;font-size:14px;}
 .study-sets-selection-count{font-size:13px;font-weight:600;}
 .study-sets-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
@@ -127,3 +131,5 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set .study-sets-body{flex:1;padding:8px 20px 24px;}
 #v-memory-set .study-sets-footer{padding-bottom:max(16px,env(safe-area-inset-bottom));}
 @media(max-height:500px){#v-memory-set .study-sets-header{padding-top:4px;padding-bottom:4px;}}
+
+:is(#study-sets-dialog,#v-memory-set) .study-sets-import{display:flex;width:100%;margin:0 0 8px;padding:8px 12px;border:0;background:transparent;font-size:13px;color:var(--settings-muted);}

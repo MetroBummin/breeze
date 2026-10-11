@@ -262,11 +262,10 @@ try{
  assert.equal(await quiet().count(),0,'undo of second swipe does not silently restore first');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore,'all gesture and undo paths preserve source vocabulary');
  await page.evaluate(()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};studySetsReadAndRender();});
- await openHomeMenu();assert.match(await page.locator('#study-sets-import').innerText(),/2개/);await page.locator('#study-sets-import').click();
- await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
+ assert.match(await page.locator('#study-sets-import').innerText(),/2개/);await page.locator('#study-sets-import').click();
  assert.equal(await page.locator('#study-sets-word-list li').count(),4);
  await openHomeMenu('keyboard');
- await page.getByRole('button',{name:'제외한 단어 1개',exact:true}).click();assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
+ await page.getByRole('button',{name:'제외한 단어',exact:true}).click();assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
  await page.getByRole('button',{name:'quiet 다시 담기',exact:true}).click();await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
  assert.equal(await page.locator('#study-sets-word-list li').count(),5);
  await openHomeMenu();await page.getByRole('button',{name:'이름 변경',exact:true}).click();await page.locator('#study-sets-rename-input').fill('중간고사 단어');await page.getByRole('button',{name:'이름 저장',exact:true}).click();
@@ -288,8 +287,7 @@ try{
  await closeSheet();
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('.study-sets-home-card[data-set-id]').click();
  await page.evaluate(()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();studySetsReadAndRender();});
- await openHomeMenu();assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
- await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
+ assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
  await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 5');
  await context.setOffline(true);
  for(let i=0;i<4;i++){await page.locator('#study-sets-reveal').click();await page.locator('#study-sets-grade-remembered').click();}
@@ -323,9 +321,8 @@ try{
  assert.equal(await page.locator('#study-sets-word-list').isVisible(),true);
  // Very long captured expressions must not grow Undo over the short-screen CTA.
  const longExpression='a deliberately long captured expression '.repeat(80).trim();
- await page.evaluate(expression=>{words.longPhrase={word:expression,ko:'긴 표현',book:'A',addedAt:30};saveWords();},longExpression);
- await openHomeMenu();assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
- await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
+ await page.evaluate(expression=>{words.longPhrase={word:expression,ko:'긴 표현',book:'A',addedAt:30};saveWords();studySetsReadAndRender();},longExpression);
+ assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
  const countWithPhrase=await rows().count();
  await page.setViewportSize({width:844,height:390});
  await page.getByRole('button',{name:longExpression+' 세트에서 제외',exact:true}).focus();await page.keyboard.press('Enter');await waitRows(countWithPhrase-1);

@@ -15,7 +15,7 @@ const studySetsUI={
   retry:/** @type {null|(()=>void)} */(null),
   screen:'list',setId:'',notice:'',undo:null,historyToken:'',pendingClose:false,homeEntry:false,managementEntry:false,
   swipeClose:/** @type {null|(()=>void)} */(null),
-  menuPressId:/** @type {number|null} */(null),
+  releaseClickId:/** @type {number|null} */(null),
   pageOpen:false,transitioning:false,homeScroll:0,
   directoryOrigin:false,directoryDepth:0,directoryScroll:0,vocabScroll:0,createdSetId:'',
   directoryList:/** @type {HTMLElement|null} */(null),
@@ -131,7 +131,7 @@ function studySetsHomeMenuGesture(button,id){
     // The menu replaces the pressed card. Its release can click a new action
     // under the same finger, so the initiating press keeps ownership until the
     // next real pointerdown, including its compatibility click.
-    studySetsUI.menuPressId=pointerId??null;button.focus();openStudySetsManagement(id);};
+    studySetsUI.releaseClickId=pointerId??null;button.focus();openStudySetsManagement(id);};
   button.addEventListener('contextmenu',event=>{event.preventDefault();open();});
   button.addEventListener('keydown',event=>{
     if(event.key==='ContextMenu'||event.key==='F10'&&event.shiftKey){event.preventDefault();open();}
@@ -303,6 +303,10 @@ function studySetsAnimateExit(row){
   const screen=studySetsUI.screen,setId=studySetsUI.setId;
   studySetsUI.swipeClose=null;row.classList.add('study-sets-exiting');row.setAttribute('aria-busy','true');
   const action=row.querySelector('.study-sets-row-action');if(action){action.disabled=true;action.style.width=Math.max(44,width-24)+'px';}
+  // Undo owns the committed state immediately, including during row removal.
+  // Keep its target stable when the row finishes, even if a finger is down.
+  const committed=studySetsUI.state?.sets.find(item=>item.id===setId);
+  if(committed)renderStudySetsDetailFooter(committed);
   // Membership is already durable. Animate only the committed visual removal.
   let exit;
   try{exit=surface.animate([{transform:surface.style.transform||'translateX(0)'},{transform:`translateX(${-width}px)`}],{duration:140,easing:'ease-in',fill:'forwards'});}catch(_){row.classList.remove('study-sets-exiting');return false;}
@@ -313,7 +317,6 @@ function studySetsAnimateExit(row){
     row.remove();
     studySetsUI.body.querySelectorAll('.study-sets-number').forEach((node,index)=>{node.textContent=String(index+1);});
     // Keep neighboring rows and their pointer capture alive during consecutive swipes.
-    renderStudySetsDetailFooter(set);
     if(!studySetsUI.body.querySelector('.study-sets-word-row'))studySetsUI.body.replaceChildren(studySetsEmpty('세트에 학습할 단어가 없어요',''));
     if(focused){const target=next?.querySelector('.vword')||studySetsUI.title;target.focus({preventScroll:true});}
   };
@@ -499,15 +502,36 @@ function renderStudySetsMenu(set){
   const body=studySetsUI.body,menu=studySetsNode('div','study-sets-menu');
   menu.append(studySetsButton('이름 변경',()=>studySetsGo('rename')),
     studySetsButton('책 추가',()=>studySetsGo('books')),
-    studySetsButton(`제외한 단어 ${set.excludedIds.length}개`,()=>studySetsGo('excluded')));
-  const preview=BreezeStudySets.importPreview(studySetsUI.state,set.id,words);
-  const importButton=studySetsButton(`새 단어 가져오기 · ${preview.count}개`,()=>studySetsMutate(state=>BreezeStudySets.importNew(state,set.id,words,Date.now()),result=>{
-    studySetsUI.notice=result.added?`${result.added}개 추가됨`:'';
-  }));importButton.id='study-sets-import';importButton.disabled=!preview.count;
-  menu.append(importButton,studySetsButton('세트 삭제',()=>studySetsGo('delete'),'study-sets-danger-link'));body.append(menu);
+    studySetsButton('제외한 단어',()=>studySetsGo('excluded')));
+  menu.append(studySetsButton('세트 삭제',()=>studySetsGo('delete'),'study-sets-danger-link'));body.append(menu);
+}
+// Undo owns a touch release directly: browsers can omit its compatibility click
+// while the surrounding list is animating. Mouse and keyboard retain click.
+function studySetsTouchAction(button,action){
+  let press=null;
+  button.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='touch'||event.isPrimary===false)return;
+    press={id:event.pointerId,x:event.clientX,y:event.clientY,canceled:false};
+  });
+  button.addEventListener('pointermove',event=>{
+    if(press&&event.pointerId===press.id&&Math.hypot(event.clientX-press.x,event.clientY-press.y)>8)press.canceled=true;
+  });
+  button.addEventListener('pointercancel',()=>{if(press)studySetsUI.releaseClickId=press.id;press=null;});
+  button.addEventListener('pointerup',event=>{
+    const start=press;press=null;if(!start||event.pointerId!==start.id||!button.isConnected)return;
+    studySetsUI.releaseClickId=event.pointerId;event.preventDefault();
+    const bounds=button.getBoundingClientRect();
+    if(start.canceled||event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)return;
+    action(event);
+  });
 }
 function renderStudySetsDetailFooter(set){
   studySetsUI.footer.replaceChildren();
+  const preview=BreezeStudySets.importPreview(studySetsUI.state,set.id,words);
+  if(preview.count){
+    const add=studySetsButton(`새 단어 가져오기 · ${preview.count}개`,()=>studySetsMutate(state=>BreezeStudySets.importNew(state,set.id,words,Date.now()),()=>{studySetsUI.notice='';}),'study-sets-import');
+    add.id='study-sets-import';studySetsUI.footer.append(add);
+  }
   {
     const view=BreezeStudySets.view(studySetsUI.state,set.id);
     const startText=view.status==='active'?`이어서 학습 · ${view.completed}/${view.total}`:view.status==='complete'?'학습 결과 보기':'학습 시작';
@@ -516,7 +540,9 @@ function renderStudySetsDetailFooter(set){
   }
   if(studySetsUI.undo){
     const undo=studySetsUI.undo;const notice=studySetsNode('div','study-sets-undo');notice.setAttribute('role','status');
-    notice.append(studySetsNode('span','',`“${undo.word}” 제외됨`),studySetsButton('실행 취소',()=>studySetsMutate(state=>BreezeStudySets.restore(state,set.id,undo.id,Date.now()),()=>{studySetsUI.undo=null;studySetsUI.notice='';})));studySetsUI.footer.prepend(notice);
+    const restore=()=>studySetsMutate(state=>BreezeStudySets.restore(state,set.id,undo.id,Date.now()),()=>{studySetsUI.undo=null;studySetsUI.notice='';});
+    const button=studySetsButton('실행 취소',restore);studySetsTouchAction(button,restore);
+    notice.append(studySetsNode('span','',`“${undo.word}” 제외됨`),button);studySetsUI.footer.prepend(notice);
   }
 }
 function renderStudySetsDetail(set,excluded){
@@ -599,13 +625,13 @@ function studySetsSwipe(row,surface,action){
   // No per-row document listener: one shared owner closes a parked row.
 }
 document.addEventListener('click',event=>{
-  const id=studySetsUI.menuPressId;
+  const id=studySetsUI.releaseClickId;
   if(id!==null&&event.detail>0&&(!('pointerId' in event)||event.pointerId===id)){
-    studySetsUI.menuPressId=null;event.preventDefault();event.stopImmediatePropagation();
+    studySetsUI.releaseClickId=null;event.preventDefault();event.stopImmediatePropagation();
   }
 },true);
 document.addEventListener('pointerdown',event=>{
-  studySetsUI.menuPressId=null;
+  studySetsUI.releaseClickId=null;
   const revealed=document.querySelector('.study-sets-word-row.study-sets-revealed:not(.study-sets-exiting)');
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);

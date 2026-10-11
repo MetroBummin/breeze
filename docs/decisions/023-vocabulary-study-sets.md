@@ -19,10 +19,12 @@ be shown to the user before main merge or TestFlight integration.
 The home uses existing Memory typography, thin boundaries and neutral theme
 tokens. Names and word counts carry the hierarchy without descriptive copy or
 decorative set icons. The add row uses the same shape and size as saved sets. User-set long press, context click or keyboard context
-menu opens management (rename, add source books, delete, explicit imports and excluded cards).
+menu opens management (rename, add source books, excluded cards and delete).
 Directory rows use the same 8px gap, including the all-words and add rows;
 counts use the existing small caption. The sheet fits its content, and its
-44px close target is circular. Management uses neutral text rows.
+44px close target is circular. Management uses neutral text rows with thin
+separators. Excluded membership remains durable, but its count is not shown.
+Book checkboxes use circular checkmarks while retaining native checkbox semantics.
 The all-words default is not mutable. Creation asks for the name and source books.
 The add card switches the existing open native dialog from directory to creation;
 it never opens a nested sheet or navigates to a page. Back or Escape returns to
@@ -56,7 +58,11 @@ Touch implicitly captures to the hit child. Its bubbling capture-loss during
 transfer to the row does not cancel that row's drag; only loss of the row's own
 active capture does. Long press owns its release click even when management
 replaces the original button under the finger. The next pointerdown starts a
-new interaction.
+new interaction. Undo appears as soon as exclusion commits, without waiting for
+row removal. Collapse never replaces its active touch target. Undo owns a
+stationary touch release directly because browsers can omit the compatibility
+click during surrounding animation; cancellation, moved or outside release does
+not restore a card. Mouse and keyboard continue to use click.
 Reduced motion removes settle animation. The primary study action remains at
 the bottom, outside the scrolling list, with safe-area padding. Set learning
 stays in the same page navigation family; create/management remain short tasks.
@@ -73,7 +79,9 @@ matching avoids silently merging differing saved content.
 Source deletion or editing cannot erase or rewrite an existing captured card.
 Exclusion removes a card only from this set's active membership, with Undo and
 an excluded-card list for restoration. Excluded identities remain recorded.
-`새 단어 N개 가져오기` is an explicit action, never automatic synchronization;
+`새 단어 가져오기 · N개` is an explicit action in the set detail footer,
+shown only when unseen eligible words are available. A tap imports them directly;
+repeated activation cannot duplicate snapshots. It is never automatic synchronization;
 it adds only unseen, non-excluded identities. No automatic import prompt or
 synchronization toggle is introduced.
 
@@ -123,10 +131,10 @@ safe-area and keyboard behavior are separate from browser verification.
 
 `verify-study-sets-touch-browser.mjs` uses trusted Chromium CDP touchscreen
 input for capture transfer, finger-follow, cancellation, parked and deep swipe,
-Undo after removal settles, word examples, long press, rename and adding books.
+immediate Undo, a touch held across collapse, canceled/moved Undo, word examples,
+long press, rename, adding books and repeated direct imports.
 It also verifies persistence, exclusions, deduplication and unchanged global
 vocabulary, plus ten light/dark layouts. Native scrolling is checked separately
 at the end to isolate its inertia from subsequent tap checks. This is browser
-evidence, not actual iOS interaction coverage or an immediate-during-animation
-Undo guarantee. Review screenshots remain web previews. A new native build
+evidence, not actual iOS interaction coverage. Review screenshots remain web previews. A new native build
 requires user review; historical build 266 retains its existing boundary.

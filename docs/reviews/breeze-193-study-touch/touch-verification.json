@@ -1,6 +1,6 @@
 {
   "platform": "Chromium web touchscreen emulation, not native iOS",
-  "checks": "finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/undo/examples/longpress/cancel/menu-dismiss/rename/reload/add-books/dedup/exclusions/global-vocabulary/all-words-immutable",
+  "checks": "finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/longpress/cancel/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable",
   "layouts": [
     {
       "width": 390,
@@ -218,6 +218,126 @@
     },
     {
       "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
       "target": "vword",
       "pointerType": "touch",
       "trusted": true
@@ -329,6 +449,56 @@
       "target": {},
       "pointerType": "touch",
       "trusted": true
+    }
+  ],
+  "undoTrace": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
     }
   ],
   "errors": []
