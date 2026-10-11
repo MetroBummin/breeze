@@ -339,7 +339,12 @@ whole group: doing so also cuts off the approved shadow.
 
 Browser coverage samples both directions, themes and viewport sizes, checks the
 animated filter and settled controls, and compares painted capsule corners with
-the underlying scene. Linux WebKit cannot establish physical iPhone rendering;
+the underlying scene. The regression fixture places a high-contrast pattern
+behind the controls so a legacy rectangular blur has a measurable positive
+signal even over the otherwise uniform dark tablet footer. Samples use the
+paused transition group's animated bounds, and require both a nonzero legacy
+signal and smaller fixed corner deltas; filter, shadow and settled controls
+checks remain. Linux WebKit cannot establish physical iPhone rendering;
 real-device confirmation remains separate from these browser checks.
 
 ## Sidebar dismissal on body manipulation
