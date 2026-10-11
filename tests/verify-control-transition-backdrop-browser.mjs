@@ -12,14 +12,22 @@ const server=createServer((req,res)=>{
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const output=process.env.BREEZE_QA_OUTPUT;if(output)mkdirSync(output,{recursive:true});
-try{for(const engine of [chromium,webkit]){
- const browser=await engine.launch();
+const engines=process.env.BREEZE_QA_ENGINE?[{chromium,webkit}[process.env.BREEZE_QA_ENGINE]]:[chromium,webkit];
+assert.ok(engines.every(Boolean),'unsupported browser engine');
+try{for(const engine of engines){
+ const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
  try{for(const viewport of [{width:390,height:844},{width:320,height:740},{width:768,height:1024},{width:1440,height:900},{width:390,height:480}]){
  const page=await browser.newPage({viewport,serviceWorkers:'block'});
  await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  await page.goto(url);await page.evaluate(()=>homeReady);
  await page.evaluate(()=>{
+  // Blur is invisible over a uniform scene (notably the dark tablet footer).
+  // Give the positive regression control a deterministic backdrop signal in
+  // both snapshots, behind the actual live/captured controls.
+  const backdrop=document.createElement('div');backdrop.id='qa-control-backdrop';
+  backdrop.style.cssText='position:fixed;left:0;right:0;bottom:0;height:180px;z-index:1;pointer-events:none;background:repeating-linear-gradient(45deg,#183052 0 8px,#dae3ee 8px 16px)';
+  document.body.append(backdrop);
   books=[{id:'transition-fixture',title:'A gentle breeze',kind:'txt',paras:Array.from({length:60},()=>('A gentle breeze makes reading feel easy. ').repeat(8))}];
   positions={'transition-fixture':{t:1,p:.5,y:900,mode:'text'}};renderHomeResume();
   const original=document.startViewTransition.bind(document);
@@ -35,16 +43,24 @@ try{for(const engine of [chromium,webkit]){
   for(const direction of ['open','close']){
    await page.evaluate(direction=>{if(direction==='open')void resumeHomeBook(document.getElementById('home-resume'));else void returnHomeFromReader();},direction);
    await page.waitForFunction(()=>window.controlFrameReady);
-   const state=await page.evaluate(()=>{
+   const state=await page.evaluate(samplePixels=>{
     const group=getComputedStyle(document.documentElement,'::view-transition-group(reader-control)');
     const node=document.querySelector(activeAppView()==='read'?'#readpill':'#home-resume');
-    return {filter:group.backdropFilter||group.webkitBackdropFilter,overflow:group.overflow,rect:node.getBoundingClientRect().toJSON(),shadow:getComputedStyle(node).boxShadow};
-   });
+    const targetRect=node.getBoundingClientRect().toJSON();let rect=targetRect;
+    if(samplePixels){
+     const transform=new DOMMatrixReadOnly(group.transform);
+     const x=transform.m41+(parseFloat(group.left)||0),y=transform.m42+(parseFloat(group.top)||0);
+     const width=parseFloat(group.width),height=parseFloat(group.height);
+     rect={x,y,width,height,right:x+width,bottom:y+height};
+    }
+    return {filter:group.backdropFilter||group.webkitBackdropFilter,overflow:group.overflow,rect,targetRect,shadow:getComputedStyle(node).boxShadow};
+   },engine===chromium);
    assert.equal(state.filter,'none',`${engine.name()} ${direction}: rectangular backdrop still active`);
    assert.notEqual(state.overflow,'clip','must preserve outer capsule shadow');
    assert.notEqual(state.shadow,'none');
    const shot=await page.screenshot({path:output?`${output}/${engine.name()}-${viewport.width}x${viewport.height}-${dark?'dark':'light'}-${direction}.png`:undefined});
    if(engine===chromium){
+    assert.ok(state.rect.width>0&&state.rect.height>0&&state.rect.x>=0&&state.rect.right<=viewport.width&&state.rect.y>=0&&state.rect.bottom<=viewport.height,'animated group samples must remain in the viewport');
     // Sample the very corners of the rectangular group, outside the rounded
     // capsule. Compare to the actual scene with the group hidden; allow only
     // the existing soft shadow, not the bright rectangular blur patch.
@@ -59,7 +75,9 @@ try{for(const engine of [chromium,webkit]){
       const i=(y*a.width+x)*4;for(let channel=0;channel<3;channel++){fixedDelta+=Math.abs(a.data[i+channel]-b.data[i+channel]);oldDelta+=Math.abs(old.data[i+channel]-b.data[i+channel]);}
      }return {fixed:fixedDelta,old:oldDelta};
     },{shot:shot.toString('base64'),oldShot:oldShot.toString('base64'),scene:scene.toString('base64'),rect:state.rect});
-    assert.ok(delta.fixed<delta.old,`${direction}, ${viewport.width}, dark=${dark}: rectangular corner deltas ${JSON.stringify(delta)}`);
+    assert.ok(delta.old>0,`legacy blur positive control produced no pixel signal: ${JSON.stringify({delta,rect:state.rect})}`);
+    assert.ok(delta.fixed<delta.old,`${direction}, ${viewport.width}, dark=${dark}: rectangular corner deltas ${JSON.stringify({delta,rect:state.rect,targetRect:state.targetRect})}`);
+    console.log('Control backdrop pixels: '+JSON.stringify({engine:engine.name(),viewport,dark,direction,...delta,rect:state.rect}));
    }
    await page.evaluate(()=>controlAnimations.forEach(a=>a.finish()));
    await page.waitForFunction(()=>!homeResumeOpening&&!homeReturnTransition);
