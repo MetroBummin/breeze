@@ -434,3 +434,9 @@ and pill center in the actual free interval. Compact centering, no-overlap,
 writing alignment, sidebar morph, thumbnail bounds and all later functional/
 rotation checks remain. The page button is checked inside its navigation slot
 rather than against the old viewport-edge assumption on centered tablet rows.
+
+The follow-on chrome-motion suite also derives the expanded PDF anchor from
+the actual free interval between the96px navigation and48px settings slots.
+Its former narrow22px/wide0px and reduced-motion217px expectations are obsolete
+under the approved row. Immediate continuity, synchronized easing, no overshoot,
+settling, interruption/reversal, writing and reduced-motion assertions remain.
