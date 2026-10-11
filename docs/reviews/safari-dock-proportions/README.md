@@ -123,3 +123,23 @@ The user has now approved integrating the polished PR154 into the next internal
 TestFlight candidate268. Earlier no-integration/no-upload wording describes the
 initial review checkpoint. Historical267 and266 sources/contracts are preserved;
 main and App Store submission remain outside scope. Parent owns one Cloud start.
+
+### Integrity contract corrections before final268
+
+The full PDF morph suite reproduced the stale22px offset assertion with an actual
+24px center offset,96/48px targets and8px gaps at320px. The test now checks actual
+free-space centering, approved sizes/gaps and bounded centered rows; compact,
+non-overlap and all later functional/rotation assertions remain. Its complete
+Chromium run passed. `pdf-slot-validation.json` records reading at320/390/650
+and writing in eight viewports/both themes. Home's remaining selected-bookmark
+override now shares20px/1.8 icons, retaining the original bookmark shape and
+accessibility name. Updated Home and word presentation tests strictly verify
+approved48px geometry and lighter control edges while protecting Lookup's
+unchanged background/blur/edge/shadow treatment.
+
+Correction: npm test was initially reported before checking its failed exit code
+at107. Its stale structural-token guard is corrected; the final full run and
+all targeted runs are now confirmed exit0, recorded in polish-validation.json.
+These corrections require a new pinned UI source and a superseding268 candidate;
+13b3495 is not the final upload source. Exact final Integrity/WebKit CI remains
+required. No candidate Cloud start has occurred.

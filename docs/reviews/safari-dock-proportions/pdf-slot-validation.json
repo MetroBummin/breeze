@@ -1,0 +1,503 @@
+{
+  "reproduced_before": {
+    "width": 320,
+    "nav": {
+      "x": 27.203125,
+      "y": 788,
+      "width": 96,
+      "height": 48
+    },
+    "pill": {
+      "x": 131.203125,
+      "y": 788,
+      "width": 105.59375,
+      "height": 48
+    },
+    "settings": {
+      "x": 244.796875,
+      "y": 788,
+      "width": 48,
+      "height": 48
+    },
+    "centerOffset": 24,
+    "gaps": [
+      8,
+      8
+    ]
+  },
+  "root_cause": "Old22px numeric expectation implied44px slots; approved48px slots require24px offset. Actual8px gaps and non-overlap passed. Product geometry is preserved.",
+  "after": [
+    {
+      "mode": "reading",
+      "width": 320,
+      "nav": {
+        "x": 27.203125,
+        "y": 788,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 131.203125,
+        "y": 788,
+        "width": 105.59375,
+        "height": 48
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 788,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "reading",
+      "width": 390,
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 137.15625,
+        "y": 788,
+        "width": 163.6875,
+        "height": 48
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "reading",
+      "width": 650,
+      "nav": {
+        "x": 69,
+        "y": 788,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 173,
+        "y": 788,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 533,
+        "y": 788,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 320,
+      "height": 900,
+      "dark": false,
+      "nav": {
+        "x": 27.203125,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 131.203125,
+        "y": 844,
+        "width": 105.59375,
+        "height": 48
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 320,
+      "height": 900,
+      "dark": true,
+      "nav": {
+        "x": 27.203125,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 131.203125,
+        "y": 844,
+        "width": 105.59375,
+        "height": 48
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 390,
+      "height": 844,
+      "dark": false,
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 137.15625,
+        "y": 788,
+        "width": 163.6875,
+        "height": 48
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 390,
+      "height": 844,
+      "dark": true,
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 137.15625,
+        "y": 788,
+        "width": 163.6875,
+        "height": 48
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 507,
+      "height": 900,
+      "dark": false,
+      "nav": {
+        "x": 43.09375,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 147.09375,
+        "y": 844,
+        "width": 260.796875,
+        "height": 48
+      },
+      "settings": {
+        "x": 415.890625,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 23.9921875
+    },
+    {
+      "mode": "writing",
+      "width": 507,
+      "height": 900,
+      "dark": true,
+      "nav": {
+        "x": 43.09375,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 147.09375,
+        "y": 844,
+        "width": 260.796875,
+        "height": 48
+      },
+      "settings": {
+        "x": 415.890625,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 23.9921875
+    },
+    {
+      "mode": "writing",
+      "width": 650,
+      "height": 900,
+      "dark": false,
+      "nav": {
+        "x": 69,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 173,
+        "y": 844,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 533,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 650,
+      "height": 900,
+      "dark": true,
+      "nav": {
+        "x": 69,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 173,
+        "y": 844,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 533,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 820,
+      "height": 1180,
+      "dark": false,
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 820,
+      "height": 1180,
+      "dark": true,
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 1180,
+      "height": 820,
+      "dark": false,
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 438,
+        "y": 764,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 1180,
+      "height": 820,
+      "dark": true,
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 438,
+        "y": 764,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 1440,
+      "height": 900,
+      "dark": false,
+      "nav": {
+        "x": 464,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 568,
+        "y": 844,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 928,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 1440,
+      "height": 900,
+      "dark": true,
+      "nav": {
+        "x": 464,
+        "y": 844,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 568,
+        "y": 844,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 928,
+        "y": 844,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 844,
+      "height": 390,
+      "dark": false,
+      "nav": {
+        "x": 166,
+        "y": 334,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 270,
+        "y": 334,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 630,
+        "y": 334,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    },
+    {
+      "mode": "writing",
+      "width": 844,
+      "height": 390,
+      "dark": true,
+      "nav": {
+        "x": 166,
+        "y": 334,
+        "width": 96,
+        "height": 48
+      },
+      "pill": {
+        "x": 270,
+        "y": 334,
+        "width": 352,
+        "height": 48
+      },
+      "settings": {
+        "x": 630,
+        "y": 334,
+        "width": 48,
+        "height": 48
+      },
+      "centerOffset": 24
+    }
+  ],
+  "full_suite_exit_code": 0,
+  "full_suite_log_sha256": "4382eda0fadc99c64d36dcbd08fce6be31b89ae60315949da97746ce2f2a9d05",
+  "limits": "Chromium browser fixture; exact-head WebKit and Integrity CI pending"
+}

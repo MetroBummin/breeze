@@ -109,7 +109,7 @@ html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 @media(prefers-reduced-motion:reduce){#library-refresh{transition:none;}#library-refresh.refreshing .refresh-spinner{animation:none;}}
 
 /* Selected bookmark; shared glass geometry stays unchanged. */
-#home-controls #nav-vocab svg{width:21px;height:21px;fill:none;stroke:var(--settings-ink);stroke-width:1.5;}
+#home-controls #nav-vocab svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:var(--settings-ink);stroke-width:var(--control-icon-stroke);}
 
 .home-resume-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;}
 #home-resume-percent{font-size:10px;line-height:13px;opacity:.8;}

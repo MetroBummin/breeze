@@ -5,7 +5,7 @@
     "styles/reader.css": "85af9d299d4ec3f9c8380f0f86f324ae8028cd5beb66819e9bdb8d3f709227a7",
     "styles/study.css": "ae473537f947a10ce26291a4210e1a3542df3f3d829eee5caff83c5a5f032a3e",
     "styles/pdf-ink.css": "7d06a34e1ee591ac40735b2ff1ba55b3bf7cd1949ba3612589783be5850c2aa9",
-    "tests/capture-safari-dock-review.mjs": "9e9ad9de1e31d1e3cba8d470303398aa8f4b5c5a458a41c3bcaf5af056930b15",
+    "tests/capture-safari-dock-review.mjs": "f3124a85aee500541b0c3effaf231f3e24f20308f169816790ed9ef5164ae535",
     "tests/verify-pdf-ocr-browser.mjs": "445a59a84df04736eb9a8af313aa5e3643e0f3dc791f0ed5a11b362da91d7fad",
     "tests/verify-pdf-ink-browser.mjs": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
     "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562",
@@ -13,7 +13,8 @@
     "styles/tokens.css": "3e3b54645254536fd0997cdac8defab7428f8fcfc6670ff7a065df02c933bd7f",
     "styles/home.css": "badc0a70de1a97233442be14a2b3f4d2f934dada629701410a922a07d19cb4a2",
     "styles/wordbook.css": "03815b478a8f230f9dbc15cc1f538f051e306a9b49434cd062bf965161d58f5a",
-    "styles/study-sets.css": "846ea058193c98a987375cfb6361132e356c73d608cbd1e4dc51b01e580395cf"
+    "styles/study-sets.css": "846ea058193c98a987375cfb6361132e356c73d608cbd1e4dc51b01e580395cf",
+    "styles/home-shell.css": "e6a3f713451825d7953fdf393f299fc6edec0bea0175f63285002663446b9d32"
   },
   "images": [
     {
@@ -28,13 +29,13 @@
     },
     {
       "name": "web-preview-ipad-landscape-home-dark.png",
-      "sha256": "3bc85968f1140452877860690b65094bdf300f4e4148ae17282fa406839670ec",
-      "bytes": 1070003
+      "sha256": "2f7b13510976432b0cfa557fa1d0b1ec52053cd219265bb83d89984b4af0700d",
+      "bytes": 1069732
     },
     {
       "name": "web-preview-ipad-landscape-home-light.png",
-      "sha256": "572c203a2cae74e971cdab20a45a510c99e0171503aca4044a470607c9bffc9f",
-      "bytes": 1056770
+      "sha256": "6d72696bb476ba8090e462026d16c8906c40b69a18254fcde4fa851ea583d62a",
+      "bytes": 1056666
     },
     {
       "name": "web-preview-ipad-landscape-pdf-writing-dark.png",
@@ -68,8 +69,8 @@
     },
     {
       "name": "web-preview-ipad-landscape-study-set-menu-dark.png",
-      "sha256": "335431085b06453f992e95b4b4313c09c825a412cd8cb1a03502783cd9d6460a",
-      "bytes": 154322
+      "sha256": "303d952391e7e9ddd42d2c858ccc2a2d6de4d40abd263fa8675d0158ea12b018",
+      "bytes": 154026
     },
     {
       "name": "web-preview-ipad-landscape-study-set-menu-light.png",
@@ -103,18 +104,18 @@
     },
     {
       "name": "web-preview-ipad-pdf-two-buttons-light.png",
-      "sha256": "65de459177abf2d0939840d26e7855fde1ca7cd031091a91bf5e916a701ca0ec",
-      "bytes": 475997
+      "sha256": "cbb3200e4aee2bdbf6c35ea588b2adadadcc3aef21b780abd0f2d0d562070432",
+      "bytes": 475969
     },
     {
       "name": "web-preview-ipad-portrait-home-dark.png",
-      "sha256": "3626097a008580d1eac3d8536f3e5e3657eb91c1272c798130a3a965d142f1d6",
-      "bytes": 886640
+      "sha256": "254c4b8a8dec698e224c4c199dcd3592b1df2cfbaafc94c8afe2ee7a029896c0",
+      "bytes": 886396
     },
     {
       "name": "web-preview-ipad-portrait-home-light.png",
-      "sha256": "ec8a4528a60342a3f60f264edc7b40d9ae85f637860c603720a5b5a28bdf1cdc",
-      "bytes": 872155
+      "sha256": "57f652e9bf3f228da1b7a08ce1484843f602a54adb58a561055ed8c291865ffe",
+      "bytes": 872033
     },
     {
       "name": "web-preview-ipad-portrait-pdf-writing-dark.png",
@@ -168,13 +169,13 @@
     },
     {
       "name": "web-preview-iphone-home-dark.png",
-      "sha256": "45dc854b308ef3ad0843aead5fb204113f2d3c229753cfb4b03bb720b2dabc9f",
-      "bytes": 348732
+      "sha256": "8146f02ba3aa475ee579da41ecd1857ee0aba78b147849cebd34e4fe963ea620",
+      "bytes": 348613
     },
     {
       "name": "web-preview-iphone-home-light.png",
-      "sha256": "df5734ab61273196a477317fe57120519a2ead2870c9164eafb5a58cc10d6adc",
-      "bytes": 341144
+      "sha256": "92189674ce5303483e21d6631ac1d5b8f3dd928b8c653e4cd69b6d81f85cdd25",
+      "bytes": 340986
     },
     {
       "name": "web-preview-iphone-pdf-collapsed-dark.png",
@@ -218,13 +219,13 @@
     },
     {
       "name": "web-preview-iphone-study-set-menu-dark.png",
-      "sha256": "0aa423ee7dfaa83313079c2b2be61a56081ad676d46d661bf25b5e065f5a595b",
-      "bytes": 134771
+      "sha256": "554e23651f1955cfbe564a1ccd8fd53bc3411f07cd27360465c07880893d156b",
+      "bytes": 135232
     },
     {
       "name": "web-preview-iphone-study-set-menu-light.png",
-      "sha256": "9a99d74abe61c9723d78bd852204093ad492bebb51a3c98b949ea728582fbe2a",
-      "bytes": 161395
+      "sha256": "ec45808f5a480dfa1e16584f3eecdb793cf0ddc2885e45babc36437c161bfa0e",
+      "bytes": 161559
     },
     {
       "name": "web-preview-iphone-wordbook-dark.png",
@@ -244,16 +245,16 @@
   "videos": [
     {
       "name": "web-preview-ipad-pdf-scroll.mp4",
-      "sha256": "2d0b14684898d79f8b2ed6fd4ef2e5457c83607bd95318864d6d3b036e5a49be",
-      "bytes": 2348802,
-      "duration_seconds": 14.4,
+      "sha256": "1063548d0773cdfffe327335c576fa82a479e2d294f947852742d2f1af23aeed",
+      "bytes": 2284613,
+      "duration_seconds": 14.16,
       "format": "Actual browser recording, H264/yuv420p MP4; no still-image animation"
     },
     {
       "name": "web-preview-iphone-pdf-scroll.mp4",
-      "sha256": "9d8989d4466499fd0f4abefd1982ebea0bc767818f171cc45c4181c6d58ba774",
-      "bytes": 617697,
-      "duration_seconds": 12.8,
+      "sha256": "e1c58c64925393a3d60230508aad06d5e41be7114b651da256b48431f9d59586",
+      "bytes": 636741,
+      "duration_seconds": 12.44,
       "format": "Actual browser recording, H264/yuv420p MP4; no still-image animation"
     }
   ]

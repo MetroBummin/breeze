@@ -26,6 +26,7 @@ try{
     const geometry=m.rects.map(({id,...r})=>r);if(baseline)assert.deepEqual(geometry,baseline,'Home/Wordbook/Reader expanded geometry must remain shared');else baseline=geometry;
     const control=await page.locator(view==='home'?'#home-add':view==='vocab'?'#wordbook-home':'#readback').evaluate(n=>{const c=getComputedStyle(n),svg=n.querySelector('svg'),i=getComputedStyle(svg),r=svg.getBoundingClientRect(),b=n.getBoundingClientRect();return {line:c.borderTopColor,shadow:c.boxShadow,iconWidth:r.width,iconHeight:r.height,stroke:i.strokeWidth,centerX:r.x+r.width/2-b.x-b.width/2,centerY:r.y+r.height/2-b.y-b.height/2};});
     assert.equal(control.iconWidth,20);assert.equal(control.iconHeight,20);assert.equal(control.stroke,'1.8px');assert.ok(Math.abs(control.centerX)<=1.01&&Math.abs(control.centerY)<.1);
+    if(view==='home'){const bookmark=await page.locator('#nav-vocab svg').evaluate(n=>({width:n.getBoundingClientRect().width,stroke:getComputedStyle(n).strokeWidth}));assert.deepEqual(bookmark,{width:20,stroke:'1.8px'},'Selected Home bookmark shares outline geometry');}
     const common={line:control.line,shadow:control.shadow};if(material)assert.deepEqual(common,material,'Same family uses one line and shadow');else material=common;
     m.control=control;measurements.push(m);
     if(!['narrow','desktop'].includes(device))await page.screenshot({path:`${proof}/web-preview-${device}-${view==='vocab'?'wordbook':view==='read'?'reader':view}-${dark?'dark':'light'}.png`});

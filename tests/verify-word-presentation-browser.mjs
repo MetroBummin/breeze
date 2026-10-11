@@ -85,13 +85,18 @@ try{
   });
   const lightGlass=await glassMaterial();
   // PR 11 gives shared bottom controls their own light reflection tokens.
-  // Lookup keeps the existing sentence-glass material; dark material stays shared.
+  // Lookup keeps its existing material; approved lighter controls retain shared surface/blur but own their edge/shadow.
   assert.equal(lightGlass.bottom.blur,lightGlass.word.blur,'Lookup lost its shared glass blur');
   assert.notEqual(lightGlass.word.background,'rgba(0, 0, 0, 0)','Lookup lost its readable glass surface');
   await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.classList.add('dark');});
   await page.locator('#readpill').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const darkGlass=await glassMaterial();
-  assert.deepEqual(darkGlass.bottom,darkGlass.word,'dark Reader controls and Lookup use different glass materials');
+  assert.equal(darkGlass.bottom.background,darkGlass.word.background,'dark controls retain the shared readable surface');
+  assert.equal(darkGlass.bottom.blur,darkGlass.word.blur,'dark controls retain the shared blur');
+  assert.equal(darkGlass.bottom.border,'rgba(255, 255, 255, 0.12)','approved lighter control edge');
+  assert.match(darkGlass.bottom.shadow,/rgba\(0, 0, 0, 0\.18\) 0px 3px 12px/,'approved lighter control shadow');
+  assert.equal(darkGlass.word.border,'rgba(255, 255, 255, 0.13)','Lookup edge remains unchanged');
+  assert.match(darkGlass.word.shadow,/rgba\(0, 0, 0, 0\.24\) 0px 6px 18px/,'Lookup shadow remains unchanged');
   assert.notDeepEqual(darkGlass.word,lightGlass.word,'light and dark glass materials did not adapt to theme');
   await page.evaluate(()=>{document.documentElement.classList.remove('dark');document.body.classList.remove('dark');});
   await page.evaluate(()=>{
