@@ -1,0 +1,1035 @@
+{
+  "platform": "Chromium web touchscreen emulation, not native iOS",
+  "checks": "finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/theme-material/no-light-dark-flash/matching-circular-back/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable",
+  "layouts": [
+    {
+      "width": 390,
+      "height": 844,
+      "dark": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "dark": true
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "dark": false
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "dark": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "dark": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "dark": true
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "dark": false
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "dark": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "dark": false
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "dark": true
+    }
+  ],
+  "materialSamples": [
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": true,
+      "background": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "ink": "rgb(241, 241, 238)",
+      "backBackground": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+      "backInk": "rgb(241, 241, 238)",
+      "backLine": "rgba(255, 255, 255, 0.2)",
+      "line": "rgba(255, 255, 255, 0.2)",
+      "backShadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.13) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    },
+    {
+      "dark": false,
+      "background": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "ink": "rgb(41, 48, 52)",
+      "backBackground": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+      "backInk": "rgb(41, 48, 52)",
+      "backLine": "rgba(255, 255, 255, 0.78)",
+      "line": "rgba(255, 255, 255, 0.78)",
+      "backShadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "shadow": "rgba(255, 255, 255, 0.72) 0px 1px 0px 0px inset, rgba(35, 39, 41, 0.12) 0px 8px 24px 0px",
+      "backWidth": 44,
+      "backHeight": 44,
+      "aligned": true,
+      "backRadius": "22px"
+    }
+  ],
+  "trace": [
+    {
+      "type": "pointerdown",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointercancel",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": {},
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": {},
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": {},
+      "pointerType": "touch",
+      "trusted": true
+    }
+  ],
+  "undoTrace": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    }
+  ],
+  "errors": []
+}

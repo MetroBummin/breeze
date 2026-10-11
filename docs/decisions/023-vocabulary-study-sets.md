@@ -25,7 +25,10 @@ Editing is consolidated in the detail page's top-right circular ellipsis.
 Directory rows use the same 8px gap, including the all-words and add rows;
 counts use the existing small caption. The sheet fits its content, and its
 44px close target is circular. The detail ellipsis has a 44px touch target and
-uses charcoal glass, a subtle bright rim and white dots. Its compact menu contains exactly Rename,
+uses paired theme materials: light translucent glass with dark ink in light mode,
+and charcoal glass with bright ink in dark mode. Back is a matching 44px circle
+with the same rim and elevation. Theme changes update both controls immediately,
+including during the morph; only geometry and icon/content opacity animate. Its compact menu contains exactly Rename,
 Add books and Delete set, with neutral text rows and thin separators. Excluded membership remains durable, but its count is not shown.
 Book checkboxes use circular checkmarks while retaining native checkbox semantics.
 The all-words default is not mutable. Creation asks for the name and source books.

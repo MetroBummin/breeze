@@ -53,6 +53,20 @@ try{
  };
 
  const swipe=async(amount,cancel=false)=>{const r=await row().boundingBox();const x=r.x+r.width-65,y=r.y+r.height/2;await send('touchStart',x,y);for(let i=1;i<=6;i++)await send('touchMove',x-amount*i/6,y);await send(cancel?'touchCancel':'touchEnd');};
+ const materialSamples=[];
+ const checkMaterial=async(dark,frames=1)=>{
+  const samples=await page.evaluate(async({dark,frames})=>{
+   darkMode=dark;applyDark();const samples=[];
+   for(let i=0;i<frames;i++){
+    const surface=document.querySelector('#study-sets-edit-surface'),back=document.querySelector('#study-sets-back');
+    const a=getComputedStyle(surface),b=getComputedStyle(back),r=back.getBoundingClientRect(),shell=surface.getBoundingClientRect();
+    samples.push({dark,background:a.backgroundImage,ink:a.color,backBackground:b.backgroundImage,backInk:b.color,backLine:b.borderColor,line:a.borderColor,backShadow:b.boxShadow,shadow:a.boxShadow,backWidth:r.width,backHeight:r.height,aligned:Math.abs(r.top-shell.top)<1,backRadius:b.borderRadius});
+    await new Promise(requestAnimationFrame);
+   }return samples;
+  },{dark,frames});
+  for(const s of samples){const rgb=s.background.match(/rgba?\((\d+), (\d+), (\d+)/).slice(1).map(Number),ink=s.ink.match(/\d+/g).slice(0,3).map(Number);assert.ok(dark?rgb.every(x=>x<120)&&ink.every(x=>x>200):rgb.every(x=>x>230)&&ink.every(x=>x<80),'material and readable ink follow theme without a dark flash');assert.equal(s.backBackground,s.background);assert.equal(s.backInk,s.ink);assert.equal(s.backLine,s.line);assert.equal(s.backShadow,s.shadow);assert.equal(s.backWidth,44);assert.equal(s.backHeight,44);assert.equal(s.backRadius,'22px');assert.ok(s.aligned);}
+  materialSamples.push(...samples);
+ };
  const inventory=await page.evaluate(()=>words);
  const gaps=await page.locator('.study-sets-home-card').evaluateAll(nodes=>{const r=nodes.map(n=>n.getBoundingClientRect());return r.slice(1).map((n,i)=>n.top-r[i].bottom);});
  assert.ok(gaps.every(g=>Math.abs(g-8)<1),'all/custom/add have equal gaps');
@@ -64,6 +78,14 @@ try{
 
  await openSet();assert.equal(await page.locator('.study-sets-home-menu-trigger').count(),0);
  await capture('phone-edit-closed-light');await menu('phone-edit-mid-light');assert.equal(await page.getByRole('menuitem').count(),3);assert.equal(await page.locator('.study-sets-edit-menu #study-sets-import').count(),0);await capture('phone-edit-open-light');
+ // Theme changes must affect the shared shell and Back immediately, even mid-morph.
+ await checkMaterial(false);await checkMaterial(true);await checkMaterial(false);
+ await tap(page.locator('#study-sets-edit'));await checkMaterial(false);
+ p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');
+ assert.ok(await page.evaluate(()=>!!studySetsUI.editAnimation));await checkMaterial(true,3);await checkMaterial(false,12);
+ await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
+ await send('touchStart',p.x,p.y);await send('touchEnd');await checkMaterial(true,3);await checkMaterial(false,12);
+ await page.waitForFunction(()=>studySetsUI.editMenu.hidden);await menu();
  // Interrupt a morph in either direction; stale completion cannot reopen it.
  p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');await send('touchStart',p.x,p.y);await send('touchEnd');
  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
@@ -124,7 +146,7 @@ try{
   assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
   if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-list-${dark?'dark':'light'}`);
   if(width===390||width===820){
-   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await menu(`${device}-edit-mid-${theme}`);await capture(`${device}-edit-open-${theme}`);
+   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await openSet();await capture(`${device}-edit-closed-${theme}`);await menu(`${device}-edit-mid-${theme}`);await capture(`${device}-edit-open-${theme}`);
    await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));await tap(page.locator('.study-sets-books input').first());await capture(`${device}-add-books-${theme}`);
    await back();
   }
@@ -148,6 +170,6 @@ try{
  assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true,'outside native scrolling dismisses menu');
  assert.equal(await page.locator('#study-sets-word-list>li').count(),scrollCount);assert.equal(await offset(),0);
  assert.deepEqual(errors,[]);assert.ok(trace.some(e=>e.type==='lostpointercapture'&&e.target==='vko'));assert.ok(trace.every(e=>e.trusted&&e.pointerType==='touch'));
- writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,trace,undoTrace,errors},null,2));
+ writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/theme-material/no-light-dark-flash/matching-circular-back/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,materialSamples,trace,undoTrace,errors},null,2));
  console.log('Trusted touchscreen, persistence and responsive screenshot checks passed: '+proof);
 }finally{await browser?.close();server.close();}

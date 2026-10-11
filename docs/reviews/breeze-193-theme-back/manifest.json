@@ -1,0 +1,148 @@
+{
+  "label": "WEB PREVIEW \u2014 Chromium touch emulation; not native iOS",
+  "base": "89cee8ee7b8ef43f80f74db550163d92789293cb",
+  "capture_source_sha256": {
+    "scripts/ui/study-sets.js": "e0d2e6178e4fd218d82536c2f6dcfca50c4b7861d4658d89039d2d8938213df0",
+    "styles/study-sets.css": "ebc81fb8263345475324a997dabc3ac3148e5c9884a62722bdcd2f7f3e13e812",
+    "styles/tokens.css": "920bf7759371b3fa11d769a018f5315af06a3c23d1f5093a0bbb495ffe9231f2",
+    "tests/verify-study-sets-touch-browser.mjs": "0e0eeb79fe80d34955372cefb08115af6c6ee74011adecdc00e0941f31ea7e94"
+  },
+  "images": [
+    {
+      "name": "web-preview-phone-add-books-dark.png",
+      "sha256": "552f735a07217620635d3d5b36164b9d17bf31dea1b3ef394b8e6a75ab60c258",
+      "bytes": 11286
+    },
+    {
+      "name": "web-preview-phone-add-books-light.png",
+      "sha256": "7aeb70839a764e710ba8bf18ddca11e6edc56099bc42048492f7e6824948094f",
+      "bytes": 12239
+    },
+    {
+      "name": "web-preview-phone-detail-dark.png",
+      "sha256": "0d2cb28c022f1b043640b5edde156f0a7080a5d35cd161c660732a2daeefad86",
+      "bytes": 37312
+    },
+    {
+      "name": "web-preview-phone-detail-light.png",
+      "sha256": "ade1db1f91a515ab200d0ce891f73ac0acacddd96d2c7049b20c5c02bc8b641e",
+      "bytes": 37499
+    },
+    {
+      "name": "web-preview-phone-edit-closed-dark.png",
+      "sha256": "0d2cb28c022f1b043640b5edde156f0a7080a5d35cd161c660732a2daeefad86",
+      "bytes": 37312
+    },
+    {
+      "name": "web-preview-phone-edit-closed-light.png",
+      "sha256": "ade1db1f91a515ab200d0ce891f73ac0acacddd96d2c7049b20c5c02bc8b641e",
+      "bytes": 37499
+    },
+    {
+      "name": "web-preview-phone-edit-mid-dark.png",
+      "sha256": "b904c0d289d3ce8fa7122566e093250f4d90e69744b2527a5234b86dac154bc1",
+      "bytes": 46829
+    },
+    {
+      "name": "web-preview-phone-edit-mid-light.png",
+      "sha256": "ed6cf3e65a76547884543e637c719c48ac6d3f24b3876ac9f60587304ca63c32",
+      "bytes": 51321
+    },
+    {
+      "name": "web-preview-phone-edit-open-dark.png",
+      "sha256": "deccc851c635d33ea31dc055d6684bbd13f7fd20b7eecb1c4541b7f3457c89ce",
+      "bytes": 51472
+    },
+    {
+      "name": "web-preview-phone-edit-open-light.png",
+      "sha256": "4c3316a9c64cb5f14836b8783507d1be5a00357b39d1a21d3ed34a506b4fc8d3",
+      "bytes": 60879
+    },
+    {
+      "name": "web-preview-phone-exclusion-undo-light.png",
+      "sha256": "13c6487380b1d40ab25ad0458bb802f155d146ff57439a9154488bf650741f5b",
+      "bytes": 36930
+    },
+    {
+      "name": "web-preview-phone-list-dark.png",
+      "sha256": "9a216ab7a8962c99ab555ab85e4fd5a614679f6b46a80e5d9f4644d7576e6741",
+      "bytes": 36921
+    },
+    {
+      "name": "web-preview-phone-list-light.png",
+      "sha256": "0d3d324ad5ab77ba82da0f120b473ef33ab3ea118ed365fe864c82392b33cb50",
+      "bytes": 37273
+    },
+    {
+      "name": "web-preview-phone-swipe-moving-light.png",
+      "sha256": "70e50f2b06e9ec97766f344789f1b318ec402995da2d7054545afbdc899882db",
+      "bytes": 37312
+    },
+    {
+      "name": "web-preview-phone-swipe-parked-light.png",
+      "sha256": "3c8f86adb5b59f2a13fd36829a4e91300d29eaa0810b9e02f586ff785760f38d",
+      "bytes": 38091
+    },
+    {
+      "name": "web-preview-tablet-add-books-dark.png",
+      "sha256": "aec435feae648633e79679c543aa047ff6dcb498517516d3fd6877ad91479441",
+      "bytes": 14273
+    },
+    {
+      "name": "web-preview-tablet-add-books-light.png",
+      "sha256": "740d8b0e875c197deef5d91d73fb7ba33e2064511178c41ea9407bdd423df2da",
+      "bytes": 15302
+    },
+    {
+      "name": "web-preview-tablet-detail-dark.png",
+      "sha256": "8742f2ef6fcfdccc1d482c865c3ec6fd95463d659734748d6bc73a7030d78f19",
+      "bytes": 54825
+    },
+    {
+      "name": "web-preview-tablet-detail-light.png",
+      "sha256": "69a111d323d5d2578ce492b2687cc5c270cffcee3c0f9a58b9ea5f8326eb182f",
+      "bytes": 54559
+    },
+    {
+      "name": "web-preview-tablet-edit-closed-dark.png",
+      "sha256": "8742f2ef6fcfdccc1d482c865c3ec6fd95463d659734748d6bc73a7030d78f19",
+      "bytes": 54825
+    },
+    {
+      "name": "web-preview-tablet-edit-closed-light.png",
+      "sha256": "69a111d323d5d2578ce492b2687cc5c270cffcee3c0f9a58b9ea5f8326eb182f",
+      "bytes": 54559
+    },
+    {
+      "name": "web-preview-tablet-edit-mid-dark.png",
+      "sha256": "cb8e44046aa2d441835c8d255551e50a165c6a743cd3a3b21d5c40773e8ece70",
+      "bytes": 63554
+    },
+    {
+      "name": "web-preview-tablet-edit-mid-light.png",
+      "sha256": "aab16bf5ee6a161b33c9d40606241ebefc17f70d1a501240e96a3aa9c82eb6e3",
+      "bytes": 69106
+    },
+    {
+      "name": "web-preview-tablet-edit-open-dark.png",
+      "sha256": "3350d7b2db0783caef6d150c064dc7ef22bea4907ef9bd667bc22ac60bdbc617",
+      "bytes": 70518
+    },
+    {
+      "name": "web-preview-tablet-edit-open-light.png",
+      "sha256": "d47375ee465f738b0d86d548d61095bf64362f83887083bdb70dc4eb3dd351e8",
+      "bytes": 80141
+    },
+    {
+      "name": "web-preview-tablet-list-dark.png",
+      "sha256": "9181ad42db061aad120993e469dbdd982a9ffc88e479719a847d7e425c0218ae",
+      "bytes": 73400
+    },
+    {
+      "name": "web-preview-tablet-list-light.png",
+      "sha256": "30ac19d023c510185f1bf3df68c9e9720dc2049818bf528b852e698771f7d36b",
+      "bytes": 70625
+    }
+  ],
+  "touch_verification_sha256": "826c44226fe3d963294f7d69ee332dc978e90a2bf2acb9ead86f8814c4cdf72a"
+}
