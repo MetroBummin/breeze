@@ -3,7 +3,7 @@
 The user approved polishing and unifying same-family floating controls and
 including PR154 in the next internal TestFlight candidate. Parent confirmed
 Apple Next Build Number268, no queued/running build and successful267. Integrate
-reviewed polished PR154 source79fdfd1dfe98b326cf7bde7e9117197fc6cbf822 into
+reviewed polished PR154 source7f8e41c2760fa1f739cb64c32471c4356589a799 into
 integrate/breeze-193-cloud. Do not merge main or submit App Store review.
 Parent owns one Cloud start; this preparation does not start Cloud or upload.
 
@@ -49,3 +49,12 @@ Lookup's unchanged material. Structural guard now selects the shared control
 edge/shadow tokens. Final UI npm test and all targeted runs were verified exit0;
 the earlier premature npm success report is corrected in the review evidence.
 This supersedes13b3495 as the268 candidate; Cloud has not been started.
+
+Exact candidate a0fcc33 exposed an asynchronous history race in the WebKit
+simple-word-card test: closing all-words calls history.back(), but the test
+opened Settings and re-entered study before traversal completed. The test now
+clicks the actual close button and waits for the vocabulary directory before
+opening Settings. Layout, click, persistence and dormant-feature assertions are
+preserved. Chromium passed the entire corrected ten-layout suite; WebKit must
+pass the new exact candidate CI before readiness is claimed. No app geometry or
+review images/videos changed in this test-only correction.
