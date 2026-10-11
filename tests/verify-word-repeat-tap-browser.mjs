@@ -61,7 +61,7 @@ try{
   window.qaReset=phase=>{
    closePanel();words={};dead={};recentWordOpens.clear();
    if(phase==='saved')words.patient={word:'patient',clicked:'patient',forms:['patient'],ko:'참을성 있는',defs:[],example:'A patient reader meets another patient reader.',status:1,addedAt:1,up:1};
-   qaTap();window.qaLife=wordLookupLife;
+   qaTap();window.qaLife=wordLookupLife;window.qaSignal=wordLookupSignal();
   };
   window.qaResolve=index=>{const r=qaRequests[index];r.resolve({kind:'word',canonical:'patient',members:[r.payload.clickedIndex],ko:'참을성 있는'});};
   window.qaClosed=()=>!wordLookupOpen()&&selKey===null&&!wordLookupAlive(qaLife)&&document.getElementById('word-peek').hidden&&
@@ -87,7 +87,8 @@ try{
    const before=await page.evaluate(()=>({count:qaRequests.length,scroll:readerScrollTop(),data:JSON.stringify(words.patient)}));
    await page.evaluate(()=>qaTap());
    assert.equal(await page.evaluate(()=>qaClosed()),true,`${format} ${phase} ${width} ${dark}`);
-   if(phase!=='saved')assert.equal(await page.evaluate(index=>qaRequests[index].signal.aborted,count),true);
+   assert.equal(await page.evaluate(()=>qaSignal.aborted),true,'opening lifetime was not aborted');
+   if(phase==='pending')assert.equal(await page.evaluate(index=>qaRequests[index].signal.aborted,count),true,'pending transport was not aborted');
    if(phase==='pending')await page.evaluate(index=>qaResolve(index),count);
    await page.waitForTimeout(320);
    assert.equal(await page.evaluate(()=>qaClosed()),true,'delayed result resurrected lookup');
