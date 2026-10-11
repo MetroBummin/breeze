@@ -12,11 +12,12 @@ const server=createServer((req,res)=>{
  try{if(!path.startsWith(root))throw Error();res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
-let browser;
+let browser,page,actionSnapshot;
+let stage='setup';const actionDiagnostics=[];
 try{
  browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
- const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route(/^https?:\/\//,r=>r.request().url().startsWith(url)?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','"done"'));
  await page.goto(url);await page.evaluate(()=>homeReady);
@@ -30,6 +31,18 @@ try{
   words.pending={word:'method',ko:'방법',book:'The Adventures of Sherlock Holmes',example:'His method was simple.',status:1,addedAt:50};saveWords();
   commitStudySets(state);show('vocab');renderVocab();openStudySetsDirectory();
   window.undoTouchTrace=[];for(const type of ['pointerdown','pointerup','click'])window.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-undo button'))undoTouchTrace.push({type,trusted:e.isTrusted,pointerType:e.pointerType,exiting:!!document.querySelector('.study-sets-exiting')});},true);window.touchTrace=[];for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-word-row'))touchTrace.push({type,target:e.target.className,pointerType:e.pointerType,trusted:e.isTrusted});},true);
+ });
+ await page.evaluate(()=>{
+  window.studyActionTrace=[];
+  for(const type of ['pointerdown','pointerup','pointercancel','click'])for(const capture of [true,false])document.addEventListener(type,e=>{
+   if(!e.target.closest?.('.study-sets-word-row'))return;
+   const target=e.target,hit=document.elementFromPoint(e.clientX,e.clientY);
+   studyActionTrace.push({type,phase:capture?'capture':'bubble',target:target.tagName+'.'+(target.getAttribute('class')||''),hit:hit?.tagName+'.'+(hit?.getAttribute('class')||''),trusted:e.isTrusted,pointerType:e.pointerType,pointerId:e.pointerId,x:e.clientX,y:e.clientY,defaultPrevented:e.defaultPrevented,releaseClickId:studySetsUI.releaseClickId,time:performance.now()});
+  },capture);
+ });
+ actionSnapshot=()=>page.evaluate(()=>{
+  const row=document.querySelector('#study-sets-word-list>li'),action=row?.querySelector('.study-sets-row-action'),r=action?.getBoundingClientRect(),p=r&&{x:r.x+r.width/2,y:r.y+r.height/2},hit=p&&document.elementFromPoint(p.x,p.y);
+  return {cardId:row?.dataset.cardId,action:r?.toJSON(),point:p,hit:hit?.outerHTML.slice(0,500),hitOwned:!!action&&(action===hit||action.contains(hit)),row:row?.getBoundingClientRect().toJSON(),offset:row&&getComputedStyle(row.querySelector('.study-sets-word-surface')).transform,excludedIds:readStudySets().sets[0]?.excludedIds,count:document.querySelectorAll('#study-sets-word-list>li').length,scroll:document.getElementById('study-sets-content').scrollTop,releaseClickId:studySetsUI.releaseClickId,trace:studyActionTrace.slice(-100),pointerTrace:touchTrace.slice(-60),userAgent:navigator.userAgent};
  });
  await page.evaluate(()=>document.fonts.ready);
  const cdp=await context.newCDPSession(page);
@@ -138,7 +151,11 @@ try{
  await send('touchStart',p.x,p.y);await send('touchMove',p.x-18,p.y);await send('touchEnd');assert.equal(await page.evaluate(()=>readStudySets().sets[0].excludedIds.length),1);
  await tap(undo);await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count);
  await tap(row().locator('.vword'));assert.equal(await row().locator('.vmore').count(),1);await tap(row().locator('.vword'));assert.equal(await row().locator('.vmore').count(),0);
- await swipe(90);await settled(-72);await tap(row().locator('.study-sets-row-action'));await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count-1);
+ stage='parked exclusion action';await swipe(90);await settled(-72);
+ actionDiagnostics.push({stage:'before action',...await actionSnapshot()});
+ await tap(row().locator('.study-sets-row-action'));
+ actionDiagnostics.push({stage:'after action',...await actionSnapshot()});
+ await page.waitForFunction(n=>document.querySelectorAll('#study-sets-word-list>li').length===n,count-1);stage='remaining lifecycle';
  const excluded=await page.evaluate(()=>readStudySets().sets[0].excludedIds.slice());await back();await menu();
  await tap(page.getByRole('menuitem',{name:'이름 변경',exact:true}));await page.locator('#study-sets-rename-input').fill('Holmes · 이번 주');await tap(page.getByRole('button',{name:'이름 저장',exact:true}));
  await menu();await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));
@@ -187,6 +204,14 @@ try{
  assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true,'outside native scrolling dismisses menu');
  assert.equal(await page.locator('#study-sets-word-list>li').count(),scrollCount);assert.equal(await offset(),0);
  assert.deepEqual(errors,[]);assert.ok(trace.some(e=>e.type==='lostpointercapture'&&e.target==='vko'));assert.ok(trace.every(e=>e.trusted&&e.pointerType==='touch'));
- writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/theme-material/no-light-dark-flash/matching-circular-back/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,headerIcons,materialSamples,trace,undoTrace,errors},null,2));
+ writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/theme-material/no-light-dark-flash/matching-circular-back/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,headerIcons,materialSamples,trace,undoTrace,actionDiagnostics,errors},null,2));
  console.log('Trusted touchscreen, persistence and responsive screenshot checks passed: '+proof);
+}catch(error){
+ if(page){
+  const current=await actionSnapshot?.().catch(()=>null);
+  writeFileSync(`${proof}/touch-failure.json`,JSON.stringify({stage,error:String(error),actionDiagnostics,current},null,2));
+  await page.screenshot({path:`${proof}/touch-failure.png`}).catch(()=>{});
+  console.error('Trusted touch failure evidence: '+proof+'/touch-failure.json');
+ }
+ throw error;
 }finally{await browser?.close();server.close();}

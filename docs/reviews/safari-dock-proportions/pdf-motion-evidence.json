@@ -1,0 +1,126 @@
+{
+  "platform": "Actual Chromium CDP touchscreen browser recording; not native iOS",
+  "policy": "Existing scroll owner and thresholds; no forced chrome classes or animation frames",
+  "evidence": [
+    {
+      "device": "iphone",
+      "theme": "light",
+      "label": "expanded",
+      "scroll": 22,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "iphone",
+      "theme": "light",
+      "label": "collapsed",
+      "scroll": 345,
+      "collapsed": true,
+      "pillHeight": 34,
+      "navigationInert": true,
+      "settingsInert": true
+    },
+    {
+      "device": "iphone",
+      "theme": "light",
+      "label": "scroll-expanded",
+      "scroll": 64,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "iphone",
+      "theme": "dark",
+      "label": "expanded",
+      "scroll": 64,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "iphone",
+      "theme": "dark",
+      "label": "collapsed",
+      "scroll": 387,
+      "collapsed": true,
+      "pillHeight": 34,
+      "navigationInert": true,
+      "settingsInert": true
+    },
+    {
+      "device": "iphone",
+      "theme": "dark",
+      "label": "scroll-expanded",
+      "scroll": 106,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "label": "expanded",
+      "scroll": 22,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "label": "collapsed",
+      "scroll": 479,
+      "collapsed": true,
+      "pillHeight": 34,
+      "navigationInert": true,
+      "settingsInert": true
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "label": "scroll-expanded",
+      "scroll": 81,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "label": "expanded",
+      "scroll": 81,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "label": "collapsed",
+      "scroll": 538,
+      "collapsed": true,
+      "pillHeight": 34,
+      "navigationInert": true,
+      "settingsInert": true
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "label": "scroll-expanded",
+      "scroll": 140,
+      "collapsed": false,
+      "pillHeight": 48,
+      "navigationInert": false,
+      "settingsInert": false
+    }
+  ]
+}

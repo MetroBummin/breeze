@@ -8,7 +8,8 @@
     "tests/capture-safari-dock-review.mjs": "cfcd99c16aa1e2bb915a373929a31b1f91435087f6902001b2db8d96de22b246",
     "tests/verify-pdf-ocr-browser.mjs": "445a59a84df04736eb9a8af313aa5e3643e0f3dc791f0ed5a11b362da91d7fad",
     "tests/verify-pdf-ink-browser.mjs": "5f665b070ce5a751e1c683037c3f71945ca86f67e1c6e68f17751420435a5950",
-    "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562"
+    "tests/verify-reader-notice-controls-browser.mjs": "f5d1f27e663113df2529180e346107935f51ff2f45ad93441372f4edf1a5a562",
+    "tests/capture-pdf-dock-motion.mjs": "fdb21a478e1f25c889347b5eb3a783fafb791d99ab8e9aafa97a270622cf9e65"
   },
   "images": [
     {
@@ -62,6 +63,26 @@
       "bytes": 126228
     },
     {
+      "name": "web-preview-ipad-pdf-collapsed-dark.png",
+      "sha256": "a40552e1eb241787366d6160307bee0f23d1dee892a7a04d79373b4e0f152477",
+      "bytes": 519364
+    },
+    {
+      "name": "web-preview-ipad-pdf-collapsed-light.png",
+      "sha256": "93b69040d2b348eb72430a937063f84066715b339e7c5e14f555882a6ae3d82e",
+      "bytes": 519112
+    },
+    {
+      "name": "web-preview-ipad-pdf-two-buttons-dark.png",
+      "sha256": "9b1f9ff72c898dfd3ab6bfef0e90c8522f4fe3a6b536717147d9a959846591a0",
+      "bytes": 516588
+    },
+    {
+      "name": "web-preview-ipad-pdf-two-buttons-light.png",
+      "sha256": "c0e555618292c477fa57d19ce84c24a2e441c5cabcb3f09d79d2c8f16a44b1c2",
+      "bytes": 482146
+    },
+    {
       "name": "web-preview-ipad-portrait-home-dark.png",
       "sha256": "58149ca0bbd3f41a89bdea20c7bdfd33e0f3c207068b1e443d481598f34f62c3",
       "bytes": 890216
@@ -112,6 +133,26 @@
       "bytes": 349565
     },
     {
+      "name": "web-preview-iphone-pdf-collapsed-dark.png",
+      "sha256": "de36af8bcd4d1f1114077f7d4ec36e93ff223d5880be5ddd4ddf932a9e116f98",
+      "bytes": 250756
+    },
+    {
+      "name": "web-preview-iphone-pdf-collapsed-light.png",
+      "sha256": "9bbcc58bcb46f2a694d5ca6146ca61aa06247628b605f9a5d6476a46dead00b7",
+      "bytes": 251198
+    },
+    {
+      "name": "web-preview-iphone-pdf-two-buttons-dark.png",
+      "sha256": "bf946779d1fc97947dc2bc3b1eb18ffe89c56aa2dee4f9659f01442ee5c54afa",
+      "bytes": 294151
+    },
+    {
+      "name": "web-preview-iphone-pdf-two-buttons-light.png",
+      "sha256": "5fc3b6f031e1e9b9cbed971da197c3488b5933033721036b0d68af5eb8630634",
+      "bytes": 280404
+    },
+    {
       "name": "web-preview-iphone-reader-dark.png",
       "sha256": "c4ac2398b7db306419f5158e497e44a8af90a82a8778b452cee5c31c318c15d1",
       "bytes": 222496
@@ -135,5 +176,19 @@
   "measurements_sha256": {
     "geometry-before.json": "7921d07c5f6ac934a8e77c48ddebe0dc31986121e476b16a84bd7a0cf6edcfa2",
     "geometry-after.json": "c88227caf83702226c4dc48a7acd5add9ca33a377cfd2897f137276887e5e35e"
-  }
+  },
+  "videos": [
+    {
+      "name": "web-preview-ipad-pdf-scroll.mp4",
+      "sha256": "941307cdff0ba7dadd0bc2a2948630ce910fad9916e72133faabd191a397f4b1",
+      "bytes": 2213755,
+      "format": "H264 MP4, actual browser video converted from Playwright WebM; no synthesized animation"
+    },
+    {
+      "name": "web-preview-iphone-pdf-scroll.mp4",
+      "sha256": "5647d2090b422ba877b3c3549e3f6b670b652db1343586a1a0b7b0eddf1da95a",
+      "bytes": 779832,
+      "format": "H264 MP4, actual browser video converted from Playwright WebM; no synthesized animation"
+    }
+  ]
 }

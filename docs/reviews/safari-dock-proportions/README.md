@@ -70,3 +70,38 @@ iPad orientations. All18 ordinary previews were regenerated against the final
 CSS. These remain browser evidence; native retry taps and airplane mode remain
 unverified. The local WebKit runtime is unavailable; exact-head CI must verify
 that engine. Its known offline Blob failure remains an active gate.
+
+### PDF two-button and scroll-collapse previews
+
+Actual PDF reading now has separate `pdf-two-buttons` and `pdf-collapsed`
+light/dark screenshots at390×844 and820×1180. The closed controls remain34px;
+Back/sidebar and Aa are inert. Scroll reversal naturally restores48px controls.
+The unchanged scroll owner and thresholds perform these transitions: the capture
+never forces a chrome class, calls setReaderChrome, or seeks an animation.
+
+[Phone scroll video](web-preview-iphone-pdf-scroll.mp4) (12.84s) and
+[iPad scroll video](web-preview-ipad-pdf-scroll.mp4) (15.28s) are actual browser
+recordings, including light and dark scroll-collapse/expand. Playwright recorded
+WebM; system FFmpeg converted it to H264/yuv420p MP4 with faststart. No still-image
+animation is synthesized. Synthetic PDF pages and Chromium touch emulation are
+used; these do not establish native iOS safe-area or Pencil behavior. See
+`pdf-motion-evidence.json` for actual scroll positions,48→34→48 heights and
+control interactivity. The iPad preview is portrait; existing writing previews
+cover both tablet orientations and writing policy is unchanged.
+
+### Chromium trusted-touch CI investigation
+
+The exact d1 review head failed the parked exclusion action in CI. Study UI,
+swipe code and its touch test were unchanged from267. Local Chromium151 passed
+the unmodified d1 suite, archived267 baseline, a CPU4x diagnostic run and the
+new diagnostic suite. The target was the remove SVG path; the trusted action
+reduced18 rows to17 and persisted the excluded ID. CI uses Chromium153, whose
+normal download route is blocked here by403. These observations do not establish
+that the CI failure is flaky or resolved. No product behavior was changed.
+
+The touch test now records action rect, elementFromPoint, offset, exclusions and
+capture/bubble pointer/click traces. On failure it saves touch-failure.json and a
+screenshot before rethrowing the original error. A temporary deliberate failure
+verified that evidence is preserved. Existing assertions and timeouts remain
+unchanged. `study-touch-diagnosis.json` contains local evidence; exact-head CI
+must still evaluate the original gate with the added diagnostics.
