@@ -308,7 +308,7 @@ try{
     await page.evaluate(()=>show('home'));
     assert.equal(await page.locator('#v-study').isVisible(),false,'Leaving Study changes the page');
     assert.equal(await page.locator('dialog:modal').count(),0);
-    await page.locator('#nav-vocab').click();await openReview(page);await assertHiddenAnswer(page);
+    await page.locator('#nav-vocab').click();await page.locator('#study-sets-all').click();await openReview(page);await assertHiddenAnswer(page);
     await page.goBack();
     await page.waitForFunction(()=>activeAppView()==='vocab');
     assert.equal(await page.locator('dialog:modal').count(),0);

@@ -1,0 +1,59 @@
+name: Vocabulary study sets
+on:
+  pull_request:
+    paths:
+      - 'scripts/core/study-sets*.js'
+      - 'scripts/ui/study-sets.js'
+      - 'styles/study-sets.css'
+      - 'index.html'
+      - 'scripts/core/state.js'
+      - 'scripts/dictionary/dictionary.js'
+      - 'tests/verify-study-sets*.mjs'
+      - '.github/workflows/study-sets.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: study-sets-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs
+      - run: npm test
+      - run: npm run www
+      - run: git diff --exit-code -- index.html sw.js
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/verify-study-sets-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-simple-word-cards-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-sets-${{ matrix.engine }}
+          path: /tmp/breeze-study-sets-proof/
+          if-no-files-found: ignore
+          retention-days: 14

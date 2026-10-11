@@ -50,6 +50,7 @@
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=34962cec">
+  <link rel="stylesheet" href="styles/study-sets.css?v=67081c46">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=7bb723de">
   <link rel="stylesheet" href="styles/onboarding.css?v=8f315304">
@@ -72,7 +73,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=114c4fca"></script>
-  <script defer src="scripts/core/state.js?v=8922f8ab"></script>
+  <script defer src="scripts/core/state.js?v=ce8424c3"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
@@ -100,11 +101,14 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=29a24ea8"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=0f2be0b0"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/vocabulary-review.js?v=bdeefbb7"></script>
   <script defer src="scripts/ui/wordbook.js?v=55ebd609"></script>
+  <script defer src="scripts/core/study-sets.js?v=f3e082f2"></script>
+  <script defer src="scripts/core/study-sets-storage.js?v=5f1f03f4"></script>
+  <script defer src="scripts/ui/study-sets.js?v=3a24a0b3"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=fc16eb5f"></script>
@@ -146,7 +150,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg>
       <span data-i18n="nav.home">Home</span>
     </button>
-    <button class="navbtn" id="nav-vocab" type="button" aria-label="Breeze Memory" title="Breeze Memory" onclick="show('vocab')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 4.5h10v15l-5-3.5-5 3.5z"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
+    <button class="navbtn" id="nav-vocab" type="button" aria-label="Breeze Memory" title="Breeze Memory" onclick="show('memory')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 4.5h10v15l-5-3.5-5 3.5z"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
     <button class="navbtn" id="nav-settings" type="button" onclick="openSettings()">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.1-.6-2.5 4.2 1.6 1.7v2.3L2.3 15.5l2.5 4.2 2.1-.6 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.6 2.5-4.2-1.6-1.7v-2.3l1.6-1.7-2.5-4.2-2.1.6-2-.9-.6-2.3z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="12" r="3"/></svg>
       <span data-i18n="nav.settings">Settings</span>
@@ -426,9 +430,19 @@
   </div>
 </div>
 
+<!-- ================= MEMORY SETS ================= -->
+<section class="view" id="v-memory" aria-label="Breeze Memory 학습 세트">
+  <header class="memory-home-header"><h1 class="memory-home-wordmark">Breeze Memory</h1></header>
+  <main id="study-sets-home-list" aria-label="학습 세트 목록"></main>
+  <div id="memory-home-controls" class="control-dock"><nav class="control-bar" aria-label="Memory 메뉴">
+    <button class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg></button>
+  </nav></div>
+</section>
+
 <!-- ================= VOCAB ================= -->
 <div class="view" id="v-vocab">
   <header class="wordbook-brand"><h1 class="memory-wordmark">Breeze Memory</h1><button id="wordbook-add" class="control-glass" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
+  <button id="wordbook-sets-back" class="study-sets-vocab-back" type="button" aria-label="학습 세트로 돌아가기" onclick="show('memory')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5-7 7 7 7"/></svg><span>학습 세트</span></button>
   <div id="wordbook-review-entry" class="wordbook-review-entry" hidden><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">전체 범위 정규 학습</button></div>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">

@@ -1886,6 +1886,7 @@ function vocabMoreHtml(w){
   </div>`;
 }
 function renderVocab(){
+  if(typeof refreshStudySetsEntry==='function')refreshStudySetsEntry();
   const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
     .sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
