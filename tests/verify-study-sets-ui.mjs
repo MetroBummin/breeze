@@ -14,7 +14,7 @@ function harness(){
   const history={state:{breeze:true,view:'vocab'},previous:{breeze:true,view:'vocab'},pushState(value){this.previous=this.state;this.state=value;},replaceState(value){this.state=value;},back(){
     this.state=this.previous;const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
   }};
-  const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,
+  const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,
     activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},history,words:{
       a:{word:'quiet',ko:'조용한',book:'One',example:'Stay quiet.',addedAt:1},
       b:{word:'quiet',ko:'조용한',book:'Two',addedAt:2},
@@ -73,8 +73,8 @@ test('study set UI creates safe deduplicated snapshots, excludes with undo, impo
   click('#study-sets-reveal');assert.equal(query('#study-sets-answer').hidden,false);
   assert.equal(document.activeElement.id,'study-sets-answer');click('#study-sets-grade-repeat');
   click('#study-sets-back');context.words.new={word:'new',ko:'새로운',book:'One',addedAt:8};run('studySetsReadAndRender()');
-  assert.match(query('#study-sets-import').textContent,/1개/);assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);
-  click('#study-sets-import');assert.equal(document.querySelectorAll('#study-sets-word-list li').length,3);
+  assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);run("studySetsGo('menu')");assert.match(query('#study-sets-import').textContent,/1개/);
+  click('#study-sets-import');run("studySetsGo('detail')");assert.equal(document.querySelectorAll('#study-sets-word-list li').length,3);
   click('#study-sets-start');assert.equal(query('#study-sets-progress').textContent,'2 / 2');
   click('#study-sets-reveal');click('#study-sets-grade-remembered');click('#study-sets-repeat-round');
   assert.equal(query('#study-sets-progress').textContent,'1 / 1');click('#study-sets-reveal');click('#study-sets-grade-remembered');
@@ -103,10 +103,10 @@ test('failed storage keeps answer and form retryable; stale grade events cannot 
 test('directly-added words, exclusion restore, set deletion confirmation and source preservation',()=>{
   const {context,document,query,click,run,button,createSet}=harness();createSet('Direct',['']);
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,1);assert.match(query('#study-sets-word-list').textContent,/direct/);
-  click('.study-sets-row-action');button('제외한 단어 1개');assert.equal(document.querySelectorAll('#study-sets-excluded-list li').length,1);
+  click('.study-sets-row-action');run("studySetsGo('menu')");button('제외한 단어 1개');assert.equal(document.querySelectorAll('#study-sets-excluded-list li').length,1);
   click('.study-sets-row-action');click('#study-sets-back');assert.equal(document.querySelectorAll('#study-sets-word-list li').length,1);
-  const source=JSON.stringify(context.words);button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Direct');
-  button('세트 삭제');button('세트 삭제');assert.equal(document.querySelectorAll('[data-set-id]').length,0);
+  const source=JSON.stringify(context.words);run("studySetsGo('menu')");button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Direct');
+  run("studySetsGo('menu')");button('세트 삭제');button('세트 삭제');assert.equal(document.querySelectorAll('[data-set-id]').length,0);
   assert.equal(JSON.stringify(context.words),source);assert.equal(document.querySelectorAll('.study-sets-home-card').length,2);
   run('closeStudySets(true)');assert.equal(context.history.state.studySets,undefined);
 });
@@ -162,32 +162,32 @@ test('Memory directory keeps all words first, appends sets and add, and enters t
   createFromHome('시험 준비');
   const cards=[...document.querySelectorAll('.study-sets-home-card')];
   assert.equal(cards[0].id,'study-sets-all');assert.equal(cards[1].querySelector('strong').textContent,'시험 준비');
-  assert.equal(cards[2].id,'study-sets-home-create');assert.match(cards[1].textContent,/2개 · 2권/);
+  assert.equal(cards[2].id,'study-sets-home-create');assert.match(cards[1].textContent,/2개/);
   click('#study-sets-back');assert.equal(query('#study-sets-dialog').open,false);
   assert.equal(context.currentView,'memory');assert.equal(document.activeElement.id,'study-sets-home-create');
 });
 
 test('direct set cards preserve detail, nested Back, updated counts and focus after closing',()=>{
-  const {context,document,query,click,button,submit,createFromHome}=harness();createFromHome();click('#study-sets-close');
+  const {context,document,query,click,button,submit,run,createFromHome}=harness();createFromHome();click('#study-sets-close');
   const card=query('.study-sets-home-card[data-set-id]');card.focus();card.click();
   assert.equal(query('#study-sets-title').textContent,'Exam set');assert.equal(context.history.state.studySetsHome,true);
   assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(document.querySelector('.study-sets-list'),null);
   click('.study-sets-row-action');assert.match(query('.study-sets-home-card[data-set-id]').textContent,/1개/);
-  button('제외한 단어 1개');click('.study-sets-row-action');click('#study-sets-back');
+  run("studySetsGo('menu')");button('제외한 단어 1개');click('.study-sets-row-action');click('#study-sets-back');
   assert.equal(query('#study-sets-title').textContent,'Exam set');assert.match(query('.study-sets-home-card[data-set-id]').textContent,/2개/);
-  button('이름 변경');query('#study-sets-rename-input').value='Midterm';submit('form');
+  run("studySetsGo('menu')");button('이름 변경');query('#study-sets-rename-input').value='Midterm';submit('form');
   assert.equal(query('.study-sets-home-card[data-set-id] strong').textContent,'Midterm');
   click('#study-sets-back');assert.equal(query('#study-sets-dialog').open,false);
   assert.equal(document.activeElement,query('.study-sets-home-card[data-set-id]'));assert.equal(context.currentView,'memory');
 });
 
 test('direct creation can cancel to Memory and deleting a set returns to its directory',()=>{
-  const {context,document,query,click,button,createFromHome}=harness();createFromHome();click('#study-sets-close');
+  const {context,document,query,click,button,run,createFromHome}=harness();createFromHome();click('#study-sets-close');
   query('#study-sets-home-create').focus();click('#study-sets-home-create');click('#study-sets-back');
   assert.equal(query('#study-sets-dialog').open,false);assert.equal(document.querySelectorAll('.study-sets-home-card[data-set-id]').length,1);
   const card=query('.study-sets-home-card[data-set-id]');card.focus();card.click();
-  button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Exam set');
-  button('세트 삭제');button('세트 삭제');
+  run("studySetsGo('menu')");button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Exam set');
+  run("studySetsGo('menu')");button('세트 삭제');button('세트 삭제');
   assert.equal(query('#study-sets-dialog').open,false);assert.equal(document.querySelectorAll('.study-sets-home-card[data-set-id]').length,0);
   assert.equal(document.activeElement.id,'study-sets-home-create');assert.equal(context.currentView,'memory');
 });
@@ -222,4 +222,39 @@ test('storage refresh leaves an in-progress creation form intact and refreshes h
   assert.equal(query('#study-sets-name').value,'Keep typed Korean 한글');
   assert.equal(query('.study-sets-home-card[data-set-id] strong').textContent,'Renamed elsewhere');
   assert.equal(document.querySelectorAll('.study-sets-home-card[data-set-id]').length,1);assert.equal(context.currentView,'memory');
+});
+
+
+test('minimal detail shows examples only after tapping and keeps primary action outside scroll body',()=>{
+  const {query,document,click,createFromHome}=harness();createFromHome();
+  const toggle=query('.study-sets-word-toggle'),example=query('.study-sets-example');
+  assert.equal(example.hidden,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');
+  toggle.click();assert.equal(example.hidden,false);toggle.click();assert.equal(example.hidden,true);
+  assert.ok(query('.study-sets-footer #study-sets-start'));
+  assert.equal(document.querySelector('#study-sets-content #study-sets-start'),null);
+  assert.equal(document.querySelector('#study-sets-content #study-sets-import'),null);
+  assert.equal(document.querySelector('.study-sets-manage'),null);
+});
+
+test('home management supports keyboard, right-click and long press without opening detail',async()=>{
+  const {query,click,window,context,createFromHome}=harness();createFromHome();click('#study-sets-close');
+  let card=query('.study-sets-home-card[data-set-id]');
+  const keyboard=new window.Event('keydown',{cancelable:true});keyboard.key='F10';keyboard.shiftKey=true;card.dispatchEvent(keyboard);
+  assert.equal(context.history.state.studySetsScreen,'menu');assert.ok(query('#study-sets-import'));
+  click('#study-sets-back');card=query('.study-sets-home-card[data-set-id]');
+  card.dispatchEvent(new window.Event('contextmenu',{cancelable:true}));assert.equal(context.history.state.studySetsScreen,'menu');
+  click('#study-sets-back');card=query('.study-sets-home-card[data-set-id]');
+  const event=new window.Event('pointerdown');Object.assign(event,{button:0,clientX:20,clientY:20,pointerId:1});card.dispatchEvent(event);
+  await new Promise(resolve=>setTimeout(resolve,530));assert.equal(context.history.state.studySetsScreen,'menu');
+  click('#study-sets-back');
+});
+
+test('swipe follows the finger, only commits leftward, and clears transform on cancellation',()=>{
+  const {query,document,window,createFromHome}=harness();createFromHome();
+  const pointer=(row,type,x,y)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
+  const row=query('.study-sets-word-row'),surface=query('.study-sets-word-surface');
+  pointer(row,'pointerdown',240,20);pointer(row,'pointermove',210,20);assert.match(surface.style.transform,/-30px/);
+  pointer(row,'pointerup',210,20);assert.equal(surface.style.transform,'');assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
+  pointer(row,'pointerdown',240,20);pointer(row,'pointermove',300,20);pointer(row,'pointerup',350,20);assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
+  pointer(row,'pointerdown',240,20);pointer(row,'pointermove',130,20);pointer(row,'pointercancel',130,20);assert.equal(surface.style.transform,'');
 });

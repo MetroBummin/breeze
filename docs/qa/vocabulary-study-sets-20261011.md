@@ -9,7 +9,7 @@ outside this change.
 
 - A single-column Memory set-card home and accessible set-management sheet
 - Multiple-book snapshot creation with semantic duplicate counts
-- Set-local swipe/button exclusion, Undo, excluded list and restoration
+- Set-local swipe/keyboard exclusion, Undo, excluded list and restoration
 - Explicit imports that preserve exclusions and source independence
 - Offline captured word/meaning/example/source review
 - Saved reveal/self-assessment progress, fixed rounds and repeat-only rounds
@@ -21,7 +21,7 @@ Contract and known source-identity limits are in decision 023.
 
 - `node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs`:
   26 passed, zero failures.
-- `node --test tests/verify-study-sets-ui.mjs`: 13 event-level DOM tests pass (39 total focused tests).
+- `node --test tests/verify-study-sets-ui.mjs`: 16 event-level DOM tests pass (42 total focused tests).
   This harness is not a browser layout or native gesture simulator.
 - `npm test`: passed the existing aggregate suite, including typecheck
   (32 existing diagnostics, unchanged), saved vocabulary lifecycle, simple-card
@@ -55,3 +55,18 @@ remain unchanged. This is a known release-integration gate, not a passing
 historical-boundary claim. A coordinated 1.9.3 boundary must pin the reviewed
 feature source separately; this PR does not regenerate an old receipt to hide
 new feature changes.
+
+## Minimal UI revision verification
+
+The first candidate at `9286d7b` passed dedicated Chromium, WebKit and aggregate
+CI in run 38102780936; the independent iOS Simulator compile also passed
+(no signing, archive, or upload). The owner requested a subsequent minimal
+visual/gesture revision. Its exact final commit and browser artifacts must be
+verified separately; prior screenshots are not evidence for this revision.
+
+The revised browser suite adds pointer-follow translation, canceled/short/right
+drags, vertical direction locking, repeated exclusions and last-action Undo,
+tap suppression, keyboard equivalents and reduced motion. Synthetic touch
+PointerEvents test handler ownership separately from trusted mouse input; they
+do not claim native iPhone scrolling physics. The footer is checked against
+content bounds and the fully scrolled final row in all ten viewport/theme cases.

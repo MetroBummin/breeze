@@ -1,15 +1,32 @@
 # Snapshot-backed vocabulary study sets (1.9.3)
 
-Memory opens a single-column card home (`v-memory`). The first immutable card,
+Memory opens a single-column, compact row home (`v-memory`). The first immutable card,
 `전체 단어`, opens the existing `v-vocab` screen and counts words with its existing
-root grouping. User-created sets and a create card follow. A set opens its
-captured word list in the study-set sheet; creation reuses the book-selection
+root grouping. User-created sets and a simple add row follow. A set opens its
+captured word list in an opaque study-set sheet; creation reuses the book-selection
 form. Closing or backing out of a directly opened sheet returns to the card
 home. Memory search, filters, saved-Meaning editing and the general word-card
 flow retain their existing ownership and behavior inside the default card.
 
 The card home and set detail are a UI review candidate: real screenshots must
 be shown to the user before main merge or TestFlight integration.
+
+## Minimal interaction (UI revision)
+
+The home uses existing Memory typography, thin boundaries and neutral theme
+tokens. Names and word counts carry the hierarchy without descriptive copy or
+decorative set icons. User-set long press, context click or keyboard context
+menu opens management (rename, delete, explicit imports and excluded cards).
+The all-words default is not mutable. Creation asks for the name.
+
+Inside a set, words and meanings use the existing vocabulary visual language.
+Tapping reveals the captured example; swipe must not also trigger that tap.
+A left drag follows the pointer after horizontal direction lock, while vertical
+scrolling keeps its native owner. Cancellation or insufficient distance returns
+the row; completed gestures exclude only from this set, with Undo. Keyboard
+users retain an equivalent operation without persistent row action clutter.
+Reduced motion removes settle animation. The primary study action remains at
+the bottom, outside the scrolling list, with safe-area padding.
 
 ## Content and identity
 
