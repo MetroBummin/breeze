@@ -25,7 +25,7 @@ Editing is consolidated in the detail page's top-right circular ellipsis.
 Directory rows use the same 8px gap, including the all-words and add rows;
 counts use the existing small caption. The sheet fits its content, and its
 44px close target is circular. The detail ellipsis has a 44px touch target and
-uses existing sentence-glass material. Its compact menu contains exactly Rename,
+uses charcoal glass, a subtle bright rim and white dots. Its compact menu contains exactly Rename,
 Add books and Delete set, with neutral text rows and thin separators. Excluded membership remains durable, but its count is not shown.
 Book checkboxes use circular checkmarks while retaining native checkbox semantics.
 The all-words default is not mutable. Creation asks for the name and source books.
@@ -58,10 +58,15 @@ intentional swipe can park the action for tapping; a sufficiently deep swipe
 commits, then the row exits and its space collapses. Cancellation or insufficient
 distance returns the row. Exclusion affects only this set, with Undo. Keyboard
 users retain an equivalent operation without persistent row action clutter.
-The ellipsis expands a clipped glass surface from its circular anchor, keeping
-the word DOM and scroll position unchanged. A new toggle cancels the prior
-animation; epoch ownership prevents stale completion from reopening a dismissed
-menu. Back and Escape dismiss it first; outside tap owns dismissal without
+The ellipsis circle itself is the shared material surface: its actual width,
+height and radius grow into the menu, then return to the same circle on closure.
+The inner button and menu have transparent backgrounds; no separate visible
+button remains over the expanded menu. Dots fade out while it grows and unscaled
+action text fades in after expansion, following the existing Breeze pill morph
+behavior. Word DOM and scroll position remain unchanged. A new toggle snapshots
+the current geometry before canceling the prior animation; epoch ownership
+prevents stale completion from reopening a dismissed menu. Actions cannot be
+activated during shell expansion. Back and Escape dismiss it first; outside tap owns dismissal without
 opening the word beneath it. Outside native scroll closes the menu while
 retaining native scrolling. Keyboard arrows, Home and End move menu focus,
 Escape restores ellipsis focus, and reduced motion settles immediately. Old
@@ -151,3 +156,10 @@ vocabulary, plus ten light/dark layouts. Native scrolling is checked separately
 at the end to isolate its inertia from subsequent tap checks. This is browser
 evidence, not actual iOS interaction coverage. Review screenshots remain web previews. A new native build
 requires user review; historical build 266 retains its existing boundary.
+
+Shared-surface review evidence is in `docs/reviews/breeze-193-shared-morph/`.
+Closed, real mid-animation and open frames are captured from trusted touch input,
+without seeking or replacing animation frames. The private reference image
+could not be downloaded through Library, so its pixels were not inspected;
+material choices use the parent’s charcoal/rim/white-icon description. The
+private reference image is not committed or published.

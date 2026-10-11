@@ -43,7 +43,15 @@ try{
  const offset=()=>row().locator('.study-sets-word-surface').evaluate(n=>{const t=getComputedStyle(n).transform;return t==='none'?0:new DOMMatrixReadOnly(t).m41;});
  const settled=async expected=>{await page.waitForFunction(x=>{const n=document.querySelector('.study-sets-word-surface');if(!n)return false;const t=getComputedStyle(n).transform;return Math.abs((t==='none'?0:new DOMMatrixReadOnly(t).m41)-x)<1;},expected);};
  const openSet=async()=>{await tap(page.locator('.study-sets-home-card[data-set-id]').first());await page.waitForFunction(()=>activeAppView()==='memory-set');};
- const menu=async()=>{if(await page.evaluate(()=>studySetsUI.screen==='directory'))await openSet();await tap(page.locator('#study-sets-edit'));await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);await page.getByRole('menuitem',{name:'책 추가',exact:true}).waitFor();};
+ const menu=async(midName='')=>{
+  if(await page.evaluate(()=>studySetsUI.screen==='directory'))await openSet();
+  if(midName){const p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');const shell=await page.locator('#study-sets-edit-surface').boundingBox();assert.ok(shell.width>44&&shell.width<236,'the shared surface grows continuously');await capture(midName);}
+  else await tap(page.locator('#study-sets-edit'));
+  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation&&Number(getComputedStyle(studySetsUI.editMenu).opacity)>.99);
+  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0','no duplicate ellipsis remains visible');
+  await page.getByRole('menuitem',{name:'책 추가',exact:true}).waitFor();
+ };
+
  const swipe=async(amount,cancel=false)=>{const r=await row().boundingBox();const x=r.x+r.width-65,y=r.y+r.height/2;await send('touchStart',x,y);for(let i=1;i<=6;i++)await send('touchMove',x-amount*i/6,y);await send(cancel?'touchCancel':'touchEnd');};
  const inventory=await page.evaluate(()=>words);
  const gaps=await page.locator('.study-sets-home-card').evaluateAll(nodes=>{const r=nodes.map(n=>n.getBoundingClientRect());return r.slice(1).map((n,i)=>n.top-r[i].bottom);});
@@ -55,7 +63,7 @@ try{
  p=await point(page.locator('.study-sets-home-card[data-set-id]'));await send('touchStart',p.x,p.y);await page.waitForTimeout(550);await send('touchEnd');assert.equal(await page.evaluate(()=>studySetsUI.editOpen),false);if(await page.evaluate(()=>studySetsUI.screen==='detail'))await back();await directory();
 
  await openSet();assert.equal(await page.locator('.study-sets-home-menu-trigger').count(),0);
- await capture('phone-edit-closed-light');await menu();assert.equal(await page.getByRole('menuitem').count(),3);assert.equal(await page.locator('.study-sets-edit-menu #study-sets-import').count(),0);await capture('phone-edit-open-light');
+ await capture('phone-edit-closed-light');await menu('phone-edit-mid-light');assert.equal(await page.getByRole('menuitem').count(),3);assert.equal(await page.locator('.study-sets-edit-menu #study-sets-import').count(),0);await capture('phone-edit-open-light');
  // Interrupt a morph in either direction; stale completion cannot reopen it.
  p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');await send('touchStart',p.x,p.y);await send('touchEnd');
  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
@@ -116,7 +124,7 @@ try{
   assert.equal(await page.locator('#study-sets-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
   if(width===390||width===820)await capture(`${width===390?'phone':'tablet'}-list-${dark?'dark':'light'}`);
   if(width===390||width===820){
-   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await menu();await capture(`${device}-edit-open-${theme}`);
+   const device=width===390?'phone':'tablet',theme=dark?'dark':'light';await menu(`${device}-edit-mid-${theme}`);await capture(`${device}-edit-open-${theme}`);
    await tap(page.getByRole('menuitem',{name:'책 추가',exact:true}));await tap(page.locator('.study-sets-books input').first());await capture(`${device}-add-books-${theme}`);
    await back();
   }
@@ -140,6 +148,6 @@ try{
  assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop)>10,'real vertical touch scrolls');assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true,'outside native scrolling dismisses menu');
  assert.equal(await page.locator('#study-sets-word-list>li').count(),scrollCount);assert.equal(await offset(),0);
  assert.deepEqual(errors,[]);assert.ok(trace.some(e=>e.type==='lostpointercapture'&&e.target==='vko'));assert.ok(trace.every(e=>e.trusted&&e.pointerType==='touch'));
- writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,trace,undoTrace,errors},null,2));
+ writeFileSync(`${proof}/touch-verification.json`,JSON.stringify({platform:'Chromium web touchscreen emulation, not native iOS',checks:'finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/shared-surface-growth/dot-content-crossfade/no-visible-duplicate/detail-ellipsis/morph-interruption/outside-dismiss/back/keyboard-focus/longpress-remnants/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable',layouts,trace,undoTrace,errors},null,2));
  console.log('Trusted touchscreen, persistence and responsive screenshot checks passed: '+proof);
 }finally{await browser?.close();server.close();}
