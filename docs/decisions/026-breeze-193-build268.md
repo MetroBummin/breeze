@@ -3,7 +3,7 @@
 The user approved polishing and unifying same-family floating controls and
 including PR154 in the next internal TestFlight candidate. Parent confirmed
 Apple Next Build Number268, no queued/running build and successful267. Integrate
-reviewed polished PR154 source1075644dfe6293fa055f9d2d07eefc89358cf6ef into
+reviewed polished PR154 source79fdfd1dfe98b326cf7bde7e9117197fc6cbf822 into
 integrate/breeze-193-cloud. Do not merge main or submit App Store review.
 Parent owns one Cloud start; this preparation does not start Cloud or upload.
 
@@ -36,3 +36,16 @@ sizes/both themes, study lifecycle, trusted touch, Wordbook/Home functions, full
 PDF ink and60-page OCR/recovery tests in Chromium.44 screenshots and two real
 scroll videos were regenerated. Exact candidate GitHub CI is pending; no actual
 archive/signing/upload or Cloud start has run in this preparation.
+
+
+Before finalization, full Integrity contracts were corrected to the approved
+48px/96px/8px centered dock instead of old42/44px and22px numeric assumptions.
+The actual320px PDF layout had24px center offset and balanced8px gaps; geometry
+was preserved. The full morph/rotation/navigation/writing/settings/folders suite
+passed in Chromium after strict size/gap/free-space checks. Home's remaining
+bookmark override now shares20px/1.8 icons; shape/accessibility are unchanged.
+Word presentation verifies the approved lighter control edge/shadow and protects
+Lookup's unchanged material. Structural guard now selects the shared control
+edge/shadow tokens. Final UI npm test and all targeted runs were verified exit0;
+the earlier premature npm success report is corrected in the review evidence.
+This supersedes13b3495 as the268 candidate; Cloud has not been started.
