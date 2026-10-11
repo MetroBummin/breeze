@@ -104,8 +104,8 @@
     },
     {
       "name": "web-preview-ipad-pdf-two-buttons-light.png",
-      "sha256": "65de459177abf2d0939840d26e7855fde1ca7cd031091a91bf5e916a701ca0ec",
-      "bytes": 475997
+      "sha256": "cbb3200e4aee2bdbf6c35ea588b2adadadcc3aef21b780abd0f2d0d562070432",
+      "bytes": 475969
     },
     {
       "name": "web-preview-ipad-portrait-home-dark.png",
@@ -245,16 +245,16 @@
   "videos": [
     {
       "name": "web-preview-ipad-pdf-scroll.mp4",
-      "sha256": "2d0b14684898d79f8b2ed6fd4ef2e5457c83607bd95318864d6d3b036e5a49be",
-      "bytes": 2348802,
-      "duration_seconds": 14.4,
+      "sha256": "1063548d0773cdfffe327335c576fa82a479e2d294f947852742d2f1af23aeed",
+      "bytes": 2284613,
+      "duration_seconds": 14.16,
       "format": "Actual browser recording, H264/yuv420p MP4; no still-image animation"
     },
     {
       "name": "web-preview-iphone-pdf-scroll.mp4",
-      "sha256": "9d8989d4466499fd0f4abefd1982ebea0bc767818f171cc45c4181c6d58ba774",
-      "bytes": 617697,
-      "duration_seconds": 12.8,
+      "sha256": "e1c58c64925393a3d60230508aad06d5e41be7114b651da256b48431f9d59586",
+      "bytes": 636741,
+      "duration_seconds": 12.44,
       "format": "Actual browser recording, H264/yuv420p MP4; no still-image animation"
     }
   ]
