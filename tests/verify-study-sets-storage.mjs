@@ -41,7 +41,9 @@ test('static app ships set model, storage and UI in dependency order without ena
  const core=html.indexOf('scripts/core/study-sets.js'),storage=html.indexOf('scripts/core/study-sets-storage.js'),ui=html.indexOf('scripts/ui/study-sets.js');
  assert.ok(core>0&&storage>core&&ui>storage);
  const home=html.indexOf('id="v-memory"'),vocab=html.indexOf('id="v-vocab"');assert.ok(home>0&&vocab>home);
- assert.match(html,/id="study-sets-home-list"/);assert.match(html,/id="wordbook-sets-back"/);
+ assert.match(html,/id="study-sets-home-list"/);assert.match(html,/id="v-memory-set"/);
+ assert.doesNotMatch(html,/id="wordbook-sets-back"|id="wordbook-study-sets-entry"/);
+ assert.match(html,/id="wordbook-review"[^>]+onclick="openStudySetsDirectory\(\)"[^>]*>학습하기<\/button>/);
  assert.match(html,/styles\/study-sets\.css/);
  assert.match(readFileSync(new URL('../scripts/ui/vocabulary-review.js',import.meta.url),'utf8'),/const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;/);
  const model=readFileSync(new URL('../scripts/core/study-sets.js',import.meta.url),'utf8');assert.doesNotMatch(model,/\b(?:fetch|XMLHttpRequest|saveWords|queueWordSync)\s*\(/);

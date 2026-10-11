@@ -23,14 +23,14 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #vbook-options{position:absolute;top:36px;right:0;width:min(260px,70vw);max-height:260px;overflow:auto;padding:10px;background:var(--wordbook-field);border:1px solid var(--settings-line);border-radius:14px;box-shadow:var(--sentence-glass-shadow);z-index:5;}
 #vbook-options label{display:flex;align-items:center;gap:8px;min-height:38px;overflow-wrap:anywhere;}
 #vbook-options input{flex:none;}
-#v-vocab #vtablewrap,#v-vocab .vgroup{border-color:var(--settings-line);}
-#v-vocab .vrow{grid-template-columns:minmax(0,clamp(90px,30%,220px)) minmax(0,1fr) auto;gap:16px;align-items:center;min-height:62px;padding:14px 0;}
-#v-vocab .vword{font:600 17px/23px var(--ui);color:var(--settings-ink);}
-#v-vocab .vko{font:400 14px/22px var(--ui);color:var(--settings-muted);}
+#v-vocab #vtablewrap,:is(#v-vocab,.vocabulary-rows) .vgroup{border-color:var(--settings-line);}
+:is(#v-vocab,.vocabulary-rows) .vrow{grid-template-columns:minmax(0,clamp(90px,30%,220px)) minmax(0,1fr) auto;gap:16px;align-items:center;min-height:62px;padding:14px 0;}
+:is(#v-vocab,.vocabulary-rows) .vword{font:600 17px/23px var(--ui);color:var(--settings-ink);}
+:is(#v-vocab,.vocabulary-rows) .vko{font:400 14px/22px var(--ui);color:var(--settings-muted);}
 /* Set the editing size before focus; keep larger browser text preferences. */
-#v-vocab .vko[contenteditable="true"]{font-size:max(16px,1rem);line-height:1.5;}
-#v-vocab .chip{min-width:38px;min-height:32px;border-radius:13px;padding:5px 10px;font:600 14px var(--ui);}
-#v-vocab .vgroup.open .vrow{align-items:start;}
+:is(#v-vocab,.vocabulary-rows) .vko[contenteditable="true"]{font-size:max(16px,1rem);line-height:1.5;}
+:is(#v-vocab,.vocabulary-rows) .chip{min-width:38px;min-height:32px;border-radius:13px;padding:5px 10px;font:600 14px var(--ui);}
+:is(#v-vocab,.vocabulary-rows) .vgroup.open .vrow{align-items:start;}
 .wordbook-hint{margin:12px 0;color:var(--settings-muted);font:400 12px/18px var(--ui);}
 #wordbook-controls svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
 #wordbook-controls .control-pill{font:600 13px var(--ui);cursor:pointer;}
@@ -42,7 +42,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #wordbook-add-form input{width:100%;padding:12px;border:1px solid var(--settings-line);border-radius:12px;background:var(--wordbook-field);color:var(--settings-ink);font:400 16px var(--ui);}
 #wordbook-add-form>div{display:flex;justify-content:flex-end;gap:12px;}
 #wordbook-add-form button{padding:10px 16px;border:0;border-radius:16px;background:var(--wordbook-field);color:var(--settings-ink);font:600 14px var(--ui);cursor:pointer;}
-@media(max-width:359px){#v-vocab .vrow{gap:10px;grid-template-columns:minmax(0,28%) minmax(0,1fr) auto;}.wordbook-filter-row{gap:6px;}}
+@media(max-width:359px){:is(#v-vocab,.vocabulary-rows) .vrow{gap:10px;grid-template-columns:minmax(0,28%) minmax(0,1fr) auto;}.wordbook-filter-row{gap:6px;}}
 
 /* A quiet toolbar separates choosing a view from reading the word list. */
 .wordbook-filters{margin:16px 0 0;padding:14px 16px;background:var(--wordbook-field);border:1px solid var(--wordbook-toolbar-line);border-radius:18px;gap:12px;font-size:13px;}
@@ -58,13 +58,13 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #vbook-options{top:44px;}
 .wordbook-results{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 0 10px;}
 #vfilter-clear{border:0;background:none;color:var(--blue);font:500 12px var(--ui);padding:6px 0;cursor:pointer;}
-#v-vocab .vrow{padding-left:10px;padding-right:10px;background:transparent;border-radius:0;}
-#v-vocab .vgroup{transition:background-color .14s ease;}
-@media(hover:hover){#v-vocab .vgroup:hover{background:var(--wordbook-row-hover);}#v-vocab .vrow:hover{background:transparent;border-radius:0;}}
-#v-vocab .vgroup:focus-within{background:var(--wordbook-row-hover);}
+:is(#v-vocab,.vocabulary-rows) .vrow{padding-left:10px;padding-right:10px;background:transparent;border-radius:0;}
+:is(#v-vocab,.vocabulary-rows) .vgroup{transition:background-color .14s ease;}
+@media(hover:hover){:is(#v-vocab,.vocabulary-rows) .vgroup:hover{background:var(--wordbook-row-hover);}:is(#v-vocab,.vocabulary-rows) .vrow:hover{background:transparent;border-radius:0;}}
+:is(#v-vocab,.vocabulary-rows) .vgroup:focus-within{background:var(--wordbook-row-hover);}
 .wordbook-filters :is(button,select,summary):focus-visible,#vfilter-clear:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
 @media(max-width:359px){.wordbook-sort{grid-template-columns:auto minmax(0,1fr) auto;gap:7px;}.wordbook-filters{padding:12px;}}
-@media(prefers-reduced-motion:reduce){#v-vocab .vgroup{transition:none;}}
+@media(prefers-reduced-motion:reduce){:is(#v-vocab,.vocabulary-rows) .vgroup{transition:none;}}
 
 .wordbook-search svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
 
@@ -83,9 +83,9 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 @media(hover:hover){#vsort-options label:hover{background:var(--wordbook-row-hover);}}
 
 /* Same difficulty palette as Reader .stbtn, for both saved rows and filters. */
-#v-vocab .chip.s1{background:var(--s1);color:var(--s1-ink);}
-#v-vocab .chip.s2{background:var(--s2);color:var(--s2-ink);}
-#v-vocab .chip.s3{background:var(--s3);color:var(--s3-ink);}
+:is(#v-vocab,.vocabulary-rows) .chip.s1{background:var(--s1);color:var(--s1-ink);}
+:is(#v-vocab,.vocabulary-rows) .chip.s2{background:var(--s2);color:var(--s2-ink);}
+:is(#v-vocab,.vocabulary-rows) .chip.s3{background:var(--s3);color:var(--s3-ink);}
 
 /* Context recall uses the shared task surface; the reader and dock are untouched. */
 .wordbook-review-entry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px;}
@@ -198,3 +198,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 .simple-word-cards #review-back:not([hidden]){animation:simple-word-turn .18s ease-out;}
 @keyframes simple-word-turn{from{opacity:.4;}to{opacity:1;}}
 @media(prefers-reduced-motion:reduce){.simple-word-cards #review-back:not([hidden]){animation:none;}}
+
+/* Optional snapshot ordinal adds only a quiet gutter to the shared row. */
+:is(#v-vocab,.vocabulary-rows) .vrow.vrow-numbered{grid-template-columns:18px minmax(0,clamp(90px,30%,220px)) minmax(0,1fr) auto;column-gap:10px;}
+.vocabulary-rows .vordinal{font:400 10px/23px var(--ui);color:var(--settings-muted);opacity:.6;text-align:right;pointer-events:none;user-select:none;}

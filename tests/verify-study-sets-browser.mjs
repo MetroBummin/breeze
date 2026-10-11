@@ -18,32 +18,55 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  const rows=()=>page.locator('#study-sets-word-list > li');
- const waitRows=count=>page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);
+ const vocabularyStyle=async group=>group.evaluate(node=>Object.fromEntries(['.vword','.vko','.chip'].map(selector=>{const style=getComputedStyle(node.querySelector(selector));return [selector,Object.fromEntries(['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','color','backgroundColor','borderRadius'].map(key=>[key,style[key]]))];})));
+ const originalVocabularyStyle=async({captureEntry=false}={})=>{
+  await page.locator('#study-sets-directory-back').click();await page.waitForFunction(()=>activeAppView()==='vocab');
+  const style=await vocabularyStyle(page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})}));
+  if(captureEntry){await page.evaluate(()=>window.scrollTo(0,0));await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-entry-${engine.name()}-phone-light.png`,fullPage:false});}
+  await page.locator('#wordbook-review').click();return style;
+ };
+ const assertNumbers=async()=>{const count=await rows().count();assert.deepEqual(await page.locator('#study-sets-word-list .vordinal').allTextContents(),Array.from({length:count},(_,i)=>String(i+1)),'row numbers follow current active order');};
+ const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
  const waitTranslation=(row,x)=>row.locator('.study-sets-word-surface').evaluate(async(node,target)=>{for(let i=0;i<60;i++){const t=getComputedStyle(node).transform,actual=t==='none'?0:new DOMMatrixReadOnly(t).m41;if(Math.abs(actual-target)<1)return;await new Promise(resolve=>requestAnimationFrame(resolve));}throw Error('row translation did not settle at '+target);},x);
- const wordRow=word=>rows().filter({has:page.locator('.study-sets-word',{hasText:new RegExp(`^${word}$`)})});
+ const wordRow=word=>rows().filter({has:page.locator('.vword',{hasText:new RegExp(`${word}$`)})});
+ const assertSetPage=async()=>{
+  await page.waitForFunction(()=>activeAppView()==='memory-set');
+  assert.equal(await page.locator('#v-memory-set').isVisible(),true);
+  assert.equal(await page.locator('dialog[open]').count(),0,'set detail/study is a real page, not a modal');
+  assert.equal(await page.locator('#study-sets-close').isVisible(),false,'set page has Back instead of an X');
+ };
  const closeSheet=async()=>{
+  if(await page.evaluate(()=>activeAppView()==='memory-set')){
+   if(await page.evaluate(()=>studySetsUI.screen==='study')){await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='detail');}
+   await page.locator('#study-sets-back').click();
+   await page.waitForFunction(()=>activeAppView()==='memory'&&!studySetsUI.pendingClose);return;
+  }
   // Native close and history popstate are separate tasks. Wait for both before
   // measuring the refreshed home card for a trusted long press.
   await page.evaluate(()=>{window.qaStudyClosed=false;document.getElementById('study-sets-dialog').addEventListener('close',()=>{window.qaStudyClosed=true;},{once:true});});
   await page.locator('#study-sets-close').click();await page.waitForFunction(()=>window.qaStudyClosed&&!studySetsUI.pendingClose);
  };
  const openHomeMenu=async(method='longpress')=>{
-  if(await page.locator('#study-sets-dialog').evaluate(node=>node.open))await closeSheet();
+  if(await page.evaluate(()=>activeAppView()==='memory-set'||document.getElementById('study-sets-dialog')?.open))await closeSheet();
   const card=page.locator('.study-sets-home-card[data-set-id]').first();await card.scrollIntoViewIfNeeded();
   if(method==='keyboard'){await card.focus();await page.keyboard.press('Shift+F10');}
   else{const r=await card.boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();await page.waitForTimeout(650);await page.mouse.up();}
   await page.getByRole('button',{name:'이름 변경',exact:true}).waitFor({state:'visible'});
  };
+ const gesturePoint=async row=>{
+  await row.scrollIntoViewIfNeeded();
+  return row.evaluate(node=>{const r=node.getBoundingClientRect(),meaning=node.querySelector('.vko').getBoundingClientRect(),x=meaning.right-4,y=meaning.y+meaning.height/2,target=document.elementFromPoint(x,y);if(!target||!node.contains(target)||target.closest('.chip,.study-sets-row-action'))throw Error('swipe anchor must hit vocabulary content: '+target?.outerHTML.slice(0,200));return {x,y,width:r.width};});
+ };
  const dragRow=async(row,dx,dy=0,{cancel=false,inspect=false,inspectAction=false,capture=''}={})=>{
-  await row.scrollIntoViewIfNeeded();const r=await row.boundingBox(),x=r.x+r.width*.8,y=r.y+Math.min(24,r.height/2);
-  await row.evaluate(node=>node.addEventListener('pointerdown',event=>{node.dataset.testPointerId=String(event.pointerId);},{once:true}));
+  const {x,y}=await gesturePoint(row);
+  await row.evaluate(node=>{node.dataset.qaPointerTrace='[]';if(!node.dataset.qaPointerInstrumented){node.dataset.qaPointerInstrumented='true';for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])node.addEventListener(type,event=>{const trace=JSON.parse(node.dataset.qaPointerTrace);trace.push({type,id:event.pointerId,x:event.clientX,y:event.clientY,target:event.target.className});node.dataset.qaPointerTrace=JSON.stringify(trace.slice(-24));});}node.addEventListener('pointerdown',event=>{node.dataset.testPointerId=String(event.pointerId);},{once:true});});
   await page.mouse.move(x,y);await page.mouse.down();
   await page.mouse.move(x+dx/2,y+dy/2,{steps:4});
   const translation=()=>row.locator('.study-sets-word-surface').evaluate(node=>{const t=getComputedStyle(node).transform;return t==='none'?0:new DOMMatrixReadOnly(t).m41;});
   const middle=inspect?await translation():0;
   const actionMiddle=inspectAction?await row.locator('.study-sets-row-action').boundingBox():null;
   await page.mouse.move(x+dx,y+dy,{steps:4});
-  if(inspect){const end=await translation();assert.ok(middle< -5&&end<middle-5,`row follows finger: ${middle} -> ${end}`);}
+  if(inspect){const end=await translation();assert.ok(middle< -5&&end<middle-5,`row follows finger: ${middle} -> ${end}; trace=${await row.getAttribute('data-qa-pointer-trace')}; hit=${await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.outerHTML.slice(0,300),{x,y})}`);}
   if(inspectAction){const actionEnd=await row.locator('.study-sets-row-action').boundingBox();assert.ok(actionEnd.width>actionMiddle.width+8&&Math.abs(actionEnd.height-actionMiddle.height)<1,'single action expands horizontally into capsule');const radius=await row.locator('.study-sets-word-surface').evaluate(node=>parseFloat(getComputedStyle(node).borderTopRightRadius));assert.ok(radius>=12,'translated row keeps rounded trailing edge');}
   if(capture)await page.screenshot({path:capture,fullPage:true});
   if(cancel)await row.evaluate(node=>node.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:Number(node.dataset.testPointerId),pointerType:'mouse'})));
@@ -55,13 +78,7 @@ try{
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
  await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#nav-vocab').click();
- assert.equal(await page.evaluate(()=>activeAppView()),'memory');
- await page.locator('#study-sets-all').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
- await page.locator('#wordbook-sets-back').click();assert.equal(await page.evaluate(()=>activeAppView()),'memory');
- await page.locator('#study-sets-home-create').click();
- assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
- await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open);
- await page.waitForFunction(()=>!studySetsUI.pendingClose);
+ assert.equal(await page.evaluate(()=>activeAppView()),'vocab','Memory dock preserves the original vocabulary entry');
  await page.evaluate(()=>{
   words={a:{word:'wind',ko:'바람',book:'A',example:'A cold wind blew.',addedAt:1,status:1},
    duplicate:{word:'wind',ko:'바람',book:'B',example:'The wind rose.',addedAt:2,status:3},
@@ -70,50 +87,87 @@ try{
    manual:{word:'manual',ko:'수동의',book:'',addedAt:5,status:1},pending:{word:'pending',ko:'',book:'A'}};
   saveWords();renderVocab();
  });
+ // The shared renderer must preserve original Memory editing and star writes.
+ const originalQuiet=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:/^quiet$/})});
+ await originalQuiet.locator('.vword').click();
+ assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'true');
+ assert.equal(await originalQuiet.locator('.vko').getAttribute('contenteditable'),'true');
+ assert.equal(await originalQuiet.locator('.vex').isVisible(),true);
+ await originalQuiet.locator('.vko').fill('조용하고 차분한');await page.locator('#vcnt').click();
+ assert.equal(await page.evaluate(()=>words.q.ko),'조용하고 차분한','original wordbook meaning blur persists editing');
+ await originalQuiet.locator('.vko').fill('조용한');await page.locator('#vcnt').click();
+ assert.equal(await page.evaluate(()=>words.q.ko),'조용한','restore original fixture meaning');
+ for(const expected of [2,3,1]){await originalQuiet.locator('.chip').click();assert.equal(await page.evaluate(()=>words.q.status),expected,'original star control updates source status');assert.equal(await originalQuiet.locator('.chip').innerText(),'★'.repeat(expected));}
+ await originalQuiet.locator('.vword').click();assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'false');
+ const entry=page.locator('#wordbook-review');assert.equal(await entry.innerText(),'학습하기');
+ assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'default vocabulary adds no top row or breadcrumb');
+ await entry.click();assert.equal(await page.evaluate(()=>activeAppView()),'memory');
+ await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='study');
+ assert.equal(await page.locator('#vocabulary-review-page').isVisible(),true,'default all card opens the original all-word study directly');
+ assert.equal(await page.locator('#v-vocab').isVisible(),false,'all-card entry does not loop to vocabulary');
+ assert.equal(await page.locator('dialog[open]').count(),0);
+ await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
+ await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory');
+ await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');
+ await page.locator('#review-close').click();await page.waitForFunction(()=>activeAppView()==='memory');
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word study returns focus to the directory card');
+ await page.locator('#study-sets-directory-back').click();await page.waitForFunction(()=>activeAppView()==='vocab');
+ await entry.focus();await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>activeAppView()),'memory');
+ await page.locator('#study-sets-home-create').click();assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
+ await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
  const sourceBefore=await page.evaluate(()=>JSON.stringify(words));
  await page.locator('#study-sets-home-create').click();
  await page.locator('#study-sets-name').fill('이번 시험 <safe>');
  await page.locator('.study-sets-book input[value="A"]').check();await page.locator('.study-sets-book input[value="B"]').check();
  assert.match(await page.locator('#study-sets-selection-count').innerText(),/3개/);
- await page.locator('#study-sets-save').click();assert.equal(await page.locator('#study-sets-word-list li').count(),3);
+ await page.locator('#study-sets-save').click();await assertSetPage();assert.equal(await page.locator('#study-sets-word-list li').count(),3);await assertNumbers();
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore);
  assert.equal(await page.locator('#study-sets-title').innerText(),'이번 시험 <safe>');
  // Minimal rows show saved meaning immediately, and reveal examples only on tap.
- assert.equal(await page.locator('#study-sets-word-list .study-sets-example:visible').count(),0);
+ assert.equal(await page.locator('#study-sets-word-list .vex:visible').count(),0);
  const quiet=()=>wordRow('quiet');
  assert.equal(await quiet().locator('.study-sets-row-action').evaluate(node=>getComputedStyle(node).opacity),'0','per-row exclusion control is hidden until keyboard focus');
  assert.equal(await page.locator('#study-sets-import').count(),0,'management actions stay out of detail list');
- await quiet().locator('.study-sets-word-toggle').click();assert.equal(await quiet().locator('.study-sets-example').isVisible(),true);
- await quiet().locator('.study-sets-word-toggle').click();assert.equal(await quiet().locator('.study-sets-example').isVisible(),false);
+ const starBefore=await page.evaluate(()=>JSON.stringify(words));
+ for(const expected of [2,3,1]){await quiet().locator('.chip').click();assert.equal(await quiet().locator('.chip').innerText(),'★'.repeat(expected));assert.equal(await page.evaluate(()=>JSON.stringify(words)),starBefore,'set star cycle cannot mutate source vocabulary');assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star click does not expand example');}
+ await assertNumbers();
+ const chipBefore=await quiet().locator('.chip').innerText(),chipBounds=await quiet().locator('.chip').boundingBox();
+ await page.mouse.move(chipBounds.x+chipBounds.width/2,chipBounds.y+chipBounds.height/2);await page.mouse.down();
+ await page.mouse.move(chipBounds.x+chipBounds.width/2-100,chipBounds.y+chipBounds.height/2,{steps:8});await page.mouse.up();
+ assert.equal(await quiet().locator('.chip').innerText(),chipBefore,'drag beginning on star cannot change its rating');
+ assert.equal(await rows().count(),3,'drag beginning on star cannot exclude the row');await waitTranslation(quiet(),0);
+ assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star drag does not expand the word');
+ await quiet().locator('.vword').click();assert.equal(await quiet().locator('.vex').isVisible(),true);
+ await quiet().locator('.vword').click();assert.equal(await quiet().locator('.vex').isVisible(),false);
  // Short horizontal drags follow the finger but neither exclude nor become taps.
  await dragRow(quiet(),-24,0,{inspect:true});assert.equal(await rows().count(),3);
- assert.equal(await quiet().locator('.study-sets-word-toggle').getAttribute('aria-expanded'),'false','drag release must not reveal example');
+ assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','drag release must not reveal example');
  await dragRow(quiet(),-105,0,{cancel:true,inspect:true});assert.equal(await rows().count(),3,'pointer cancellation preserves membership');
  await quiet().locator('.study-sets-word-surface').evaluate(async node=>{await new Promise(resolve=>setTimeout(resolve,300));const t=getComputedStyle(node).transform;if(t!=='none'&&Math.abs(new DOMMatrixReadOnly(t).m41)>1)throw Error('cancel did not restore row');});
  // Once a vertical intent wins, later horizontal movement cannot steal scrolling.
- await quiet().scrollIntoViewIfNeeded();
- const vertical=await quiet().boundingBox();const vx=vertical.x+vertical.width*.8,vy=vertical.y+20;
+ const vertical=await gesturePoint(quiet());const vx=vertical.x,vy=vertical.y;
  await page.mouse.move(vx,vy);await page.mouse.down();await page.mouse.move(vx-2,vy+25,{steps:4});await page.mouse.move(vx-115,vy+26,{steps:6});await page.mouse.up();
  assert.equal(await rows().count(),3,'vertical-first drag is permanently axis-locked');
- assert.equal(await quiet().locator('.study-sets-word-toggle').getAttribute('aria-expanded'),'false');
+ assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false');
  // Synthetic touch PointerEvents supplement the trusted mouse path above.
  // They verify handlers and axis ownership, not native device scrolling physics.
  await quiet().evaluate(node=>{
-  const target=node.querySelector('.study-sets-word-toggle');
+  const target=node.querySelector('.vword');
   const send=(type,x,y,id)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:id,pointerType:'touch',isPrimary:true,button:0,buttons:type==='pointerup'?0:1,clientX:x,clientY:y}));
   send('pointerdown',200,30,91);send('pointermove',198,55,91);send('pointermove',80,56,91);send('pointerup',80,56,91);
   if(!node.isConnected)throw Error('touch vertical gesture excluded the row');
   send('pointerdown',200,30,92);send('pointermove',100,31,92);send('pointercancel',100,31,92);send('pointerup',100,31,92);
  });
  assert.equal(await rows().count(),3,'touch vertical lock and cancellation preserve membership');
- await page.emulateMedia({reducedMotion:'reduce'});
+ await waitTranslation(quiet(),0);await page.emulateMedia({reducedMotion:'reduce'});
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  await dragRow(quiet(),-24,0,{inspect:true});
  const motion=await quiet().locator('.study-sets-word-surface').evaluate(node=>({transition:getComputedStyle(node).transitionDuration,animation:getComputedStyle(node).animationDuration}));
  for(const duration of [motion.transition,motion.animation])assert.ok(duration.split(',').every(value=>parseFloat(value)<=0.01),`reduced motion duration ${duration}`);
  await page.emulateMedia({reducedMotion:'no-preference'});
- await quiet().locator('.study-sets-word-toggle').focus();await page.keyboard.press('Enter');
- assert.equal(await quiet().locator('.study-sets-example').isVisible(),true,'keyboard opens example');
- await page.keyboard.press('Space');assert.equal(await quiet().locator('.study-sets-example').isVisible(),false,'keyboard closes example');
+ await quiet().locator('.vword').focus();await page.keyboard.press('Enter');
+ assert.equal(await quiet().locator('.vex').isVisible(),true,'keyboard opens example');
+ await page.keyboard.press('Space');assert.equal(await quiet().locator('.vex').isVisible(),false,'keyboard closes example');
  const hiddenAction=quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true});await hiddenAction.focus();
  await page.keyboard.press('Enter');await waitRows(2);assert.equal(await rows().count(),2,'keyboard fallback excludes without swipe');
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),3);
@@ -124,13 +178,13 @@ try{
  assert.equal(await quiet().locator('.study-sets-row-action').count(),1,'exactly one swipe action');
  const parkedAction=await quiet().locator('.study-sets-row-action').boundingBox();
  assert.ok(parkedAction.width>=44&&Math.abs(parkedAction.width-parkedAction.height)<2,'parked action is a touch-sized circle');
- assert.equal(await quiet().locator('.study-sets-word-toggle').getAttribute('aria-expanded'),'false','partial swipe is not a tap');
+ assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','partial swipe is not a tap');
 
  await quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true}).click();await waitRows(2);
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
  await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
- await rows().first().locator('.study-sets-word-toggle').click();await waitTranslation(quiet(),0);
- await rows().first().locator('.study-sets-word-toggle').click();
+ await rows().first().locator('.vword').click();await waitTranslation(quiet(),0);
+ await rows().first().locator('.vword').click();
  await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
  await page.locator('#study-sets-title').click();await waitTranslation(quiet(),0);
  assert.equal(await rows().count(),3,'outside touch dismisses action without excluding');
@@ -144,12 +198,12 @@ try{
  await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();await waitRows(2);
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
  await fullSwipe(quiet(),{inspect:true,inspectAction:true});await waitRows(2);
- assert.equal(await page.locator('#study-sets-word-list .study-sets-example:visible').count(),0,'completed swipe does not tap another row');
+ assert.equal(await page.locator('#study-sets-word-list .vex:visible').count(),0,'completed swipe does not tap another row');
  await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
  // Start B during A's exit, then hold past A's collapse. Finalizing A must
  // preserve B's original DOM node and real pointer capture throughout the drag.
- const continuousRow=rows().first();await continuousRow.scrollIntoViewIfNeeded();
- const continuousBox=await continuousRow.boundingBox(),continuousX=continuousBox.x+continuousBox.width*.8,continuousY=continuousBox.y+24;
+ const continuousRow=rows().first();
+ const continuousBox=await gesturePoint(continuousRow),continuousX=continuousBox.x,continuousY=continuousBox.y;
  const continuousDistance=Math.max(144,continuousBox.width*.62)+20;
  await quiet().evaluate(node=>node.addEventListener('pointerup',()=>{window.qaFirstSwipeUp=performance.now();},{once:true}));
  await continuousRow.evaluate(node=>{window.qaContinuousRow=node;node.addEventListener('pointerdown',event=>{window.qaSecondSwipeDown=performance.now();window.qaSecondPointerId=event.pointerId;},{once:true});});
@@ -190,7 +244,7 @@ try{
  assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),rawBefore);
  await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();
  assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 5');
- await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);
+ await closeSheet();
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>show('memory'));await page.locator('.study-sets-home-card[data-set-id]').click();
  await page.evaluate(()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();studySetsReadAndRender();});
  await openHomeMenu();assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
@@ -207,10 +261,11 @@ try{
  const layouts=[];
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
-  const bounds=await page.locator('#study-sets-dialog').evaluate(node=>({left:node.getBoundingClientRect().left,right:node.getBoundingClientRect().right,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.getBoundingClientRect().height}));
+  await assertSetPage();
+  const bounds=await page.locator('#v-memory-set').evaluate(node=>({left:node.getBoundingClientRect().left,right:node.getBoundingClientRect().right,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.getBoundingClientRect().height}));
   assert.ok(bounds.left>=-1&&bounds.right<=width+1&&bounds.scrollWidth<=bounds.width+1&&bounds.height<=height+1,JSON.stringify({width,height,dark,bounds}));
   for(const selector of ['.study-sets-sheet','#study-sets-content'])assert.equal(await page.locator(selector).evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`${selector} overflows at ${width}x${height}`);
-  for(const selector of ['#study-sets-close','#study-sets-reveal']){
+  for(const selector of ['#study-sets-back','#study-sets-reveal']){
    await page.locator(selector).scrollIntoViewIfNeeded();const control=await page.locator(selector).boundingBox();
    assert.ok(control.x>=0&&control.y>=0&&control.x+control.width<=width+1&&control.y+control.height<=height+1,JSON.stringify({selector,width,height,control}));
    assert.ok(control.width>=44&&control.height>=44,`${selector} touch target`);
@@ -218,12 +273,12 @@ try{
   await page.screenshot({path:`${proof}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}-study.png`,fullPage:true});layouts.push({width,height,dark,bounds});
  }
  await page.locator('#study-sets-back').click();await page.screenshot({path:`${proof}/${engine.name()}-detail.png`,fullPage:true});
- await page.goBack();await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open);assert.equal(await page.evaluate(()=>activeAppView()),'memory');
- await page.goForward();await page.waitForFunction(()=>document.getElementById('study-sets-dialog').open);
- await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);
+ await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory');assert.equal(await page.locator('dialog[open]').count(),0);
+ await page.goForward();await assertSetPage();
+ await closeSheet();
  await page.evaluate(()=>{show('home');show('memory');openStudySet(readStudySets().sets[0].id);});
- await page.evaluate(()=>history.go(-2));await page.waitForFunction(()=>activeAppView()==='home'&&!document.getElementById('study-sets-dialog').open);
- await page.evaluate(()=>history.go(2));await page.waitForFunction(()=>activeAppView()==='memory'&&document.getElementById('study-sets-dialog').open);
+ await page.evaluate(()=>history.go(-2));await page.waitForFunction(()=>activeAppView()==='home'&&!document.querySelector('dialog[open]'));
+ await page.evaluate(()=>history.go(2));await page.waitForFunction(()=>activeAppView()==='memory-set'&&!document.querySelector('dialog[open]'));
  assert.equal(await page.locator('#study-sets-word-list').isVisible(),true);
  // Very long captured expressions must not grow Undo over the short-screen CTA.
  const longExpression='a deliberately long captured expression '.repeat(80).trim();
@@ -253,11 +308,26 @@ try{
   let state=readStudySets();state=BreezeStudySets.create(state,{name:'중간고사 · 1–3과',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
   state=BreezeStudySets.create(state,{name:'이번 주 읽은 글',bookTitles:['이번 주 읽은 기사']},words,101).state;commitStudySets(state);show('memory');darkMode=false;applyDark();
  });
- await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.fonts.ready);await page.mouse.move(0,0);
+ // Populate an actual scrollable directory to verify page Back restores its
+ // prior position. Remove only this synthetic fixture before review captures.
+ await page.setViewportSize({width:390,height:844});
+ await page.evaluate(()=>{window.qaBeforeScrollSets=readStudySets();let state=window.qaBeforeScrollSets;for(let i=0;i<18;i++)state=BreezeStudySets.create(state,{name:'스크롤 확인 '+(i+1),bookTitles:['The Adventures of Sherlock Holmes']},words,200+i).state;commitStudySets(state);renderStudySetsHome();});
+ await page.locator('.study-sets-home-card[data-set-id]').last().scrollIntoViewIfNeeded();
+ const homeScroll=await page.evaluate(()=>window.scrollY);assert.ok(homeScroll>100,'directory fixture must really scroll');
+ await page.locator('.study-sets-home-card[data-set-id]').last().click();await assertSetPage();
+ await closeSheet();await page.waitForFunction(expected=>Math.abs(window.scrollY-expected)<2,homeScroll);
+ await page.evaluate(()=>{readStudySets();commitStudySets(window.qaBeforeScrollSets);delete window.qaBeforeScrollSets;renderStudySetsHome();window.scrollTo(0,0);});
+ await page.evaluate(()=>document.fonts.ready);await page.mouse.move(0,0);
+ assert.match(await page.locator('#study-sets-home-create').innerText(),/세트 추가/);
+ assert.equal(await page.locator('#study-sets-home-create').evaluate(node=>getComputedStyle(node).borderTopStyle),'dashed');
+ const addCardBounds=await page.locator('#study-sets-home-create').boundingBox(),setCardBounds=await page.locator('.study-sets-home-card[data-set-id]').first().boundingBox();
+ assert.ok(Math.abs(addCardBounds.height-setCardBounds.height)<2,'add card matches set card size');
+ const defaultStyle=await originalVocabularyStyle({captureEntry:true});await page.mouse.move(0,0);
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:true});
  await page.locator('.study-sets-home-card[data-set-id]').first().click();
- const wordMetrics=await page.locator('.study-sets-word').filter({hasText:'remarkable'}).evaluate(node=>({height:node.getBoundingClientRect().height,size:getComputedStyle(node).fontSize,weight:getComputedStyle(node).fontWeight}));
- assert.equal(wordMetrics.size,'17px');assert.equal(wordMetrics.weight,'600');assert.ok(wordMetrics.height<=24,JSON.stringify(wordMetrics));
+ const setGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
+ assert.deepEqual(await vocabularyStyle(setGroup),defaultStyle,'set words, meanings and stars reuse actual default vocabulary styles');
+ // The original renderer owns wrapping; the ordinal is its only added gutter.
  await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-phone-light.png`,fullPage:true});
  // Gesture references use trusted pointer input; cancel preserves fixture data.
  await dragRow(rows().first(),-68);await waitTranslation(rows().first(),-72);
@@ -265,40 +335,42 @@ try{
  await page.locator('#study-sets-title').click();await waitTranslation(rows().first(),0);
  await fullSwipe(rows().first(),{cancel:true,inspect:true,inspectAction:true,capture:`${proof}/ui-set-swipe-capsule-${engine.name()}-phone-light.png`});
  await waitTranslation(rows().first(),0);assert.equal(await rows().count(),8,'capture cancellation preserves sample set');
- await page.locator('#study-sets-word-list .study-sets-word-toggle').first().click();
+ await page.locator('#study-sets-word-list .vword').first().click();
  await page.screenshot({path:`${proof}/ui-set-example-${engine.name()}-phone-light.png`,fullPage:true});
- await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);
+ await closeSheet();
  await page.setViewportSize({width:820,height:1180});
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-tablet-light.png`,fullPage:true});
  await page.locator('.study-sets-home-card[data-set-id]').first().click();
  await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-tablet-light.png`,fullPage:true});
- await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);
+ await closeSheet();
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();window.scrollTo(0,0);},dark);
   assert.equal(await page.locator('#v-memory').evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Memory home overflow ${width}x${height}`);
   await page.locator('#v-memory').waitFor({state:'visible'});
+  const matrixDefaultStyle=await originalVocabularyStyle();
   // Read one layout snapshot; dialog's native close event may refresh the home
   // between separate element-handle measurements without changing its layout.
   const homeBounds=await page.locator('#v-memory').evaluate(node=>Array.from(node.querySelectorAll('.study-sets-home-card'),card=>{const r=card.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height};}));
   assert.equal(homeBounds.length,4);
   for(const bounds of homeBounds)assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1&&bounds.height>=44,JSON.stringify({width,height,bounds}));
   await page.screenshot({path:`${proof}/home-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
-  await page.locator('.study-sets-home-card[data-set-id]').first().click();
+  await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();await assertNumbers();
+  const matrixSetGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});assert.deepEqual(await vocabularyStyle(matrixSetGroup),matrixDefaultStyle,`actual vocabulary style parity ${width}x${height} ${dark}`);
   for(const selector of ['.study-sets-sheet','#study-sets-content'])assert.equal(await page.locator(selector).evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Detail overflow ${selector} ${width}x${height}`);
   const opaque=await page.locator('.study-sets-sheet').evaluate(node=>{const color=getComputedStyle(node).backgroundColor;return color.startsWith('rgb(')||color.startsWith('color(')&&/\/\s*1\s*\)$/.test(color)||color.startsWith('rgba(')&&/[,/]\s*1\s*\)$/.test(color);});
-  assert.equal(opaque,true,'detail sheet must have an opaque background to avoid underlying text bleed');
-  for(const selector of ['#study-sets-close','#study-sets-start','#study-sets-word-list .study-sets-word-toggle']){
+  assert.equal(opaque,true,'set page must have an opaque background');
+  for(const selector of ['#study-sets-back','#study-sets-start','#study-sets-word-list .vgroup']){
    const control=page.locator(selector).first();await control.scrollIntoViewIfNeeded();const bounds=await control.boundingBox();
    assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width+1&&bounds.y+bounds.height<=height+1&&bounds.width>=44&&bounds.height>=44,JSON.stringify({selector,width,height,bounds}));
   }
   const noOverlap=await page.evaluate(()=>{const body=document.getElementById('study-sets-content').getBoundingClientRect(),footer=document.querySelector('.study-sets-footer').getBoundingClientRect();return body.bottom<=footer.top+1;});
   assert.equal(noOverlap,true,`bottom action overlaps scrolling content ${width}x${height}`);
-  await page.locator('#study-sets-word-list .study-sets-word-toggle').last().scrollIntoViewIfNeeded();
-  const last=await page.locator('#study-sets-word-list .study-sets-word-toggle').last().boundingBox(),start=await page.locator('#study-sets-start').boundingBox();
+  await page.locator('#study-sets-word-list .vgroup').last().scrollIntoViewIfNeeded();
+  const last=await page.locator('#study-sets-word-list .vgroup').last().boundingBox(),start=await page.locator('#study-sets-start').boundingBox();
   assert.ok(last.y+last.height<=start.y+1,`last word is obscured by bottom action ${width}x${height}`);
   await page.locator('#study-sets-content').evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:`${proof}/detail-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
-  await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsUI.pendingClose);
+  await closeSheet();
  }
  assert.deepEqual(errors,[]);
  // Chromium supports automated service-worker cold launches. Native bundles
@@ -323,6 +395,6 @@ try{
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}
  }
- writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/bottom-action-layout',layouts,errors},null,2));
+ writeFileSync(`${proof}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),checks:'create/dedup/finger-follow/circle-capsule/partial-reveal/action-tap/outside-dismiss/swipe-quota/axis-lock/cancel/swipe-click-suppression/repeated-undo/tap-examples/longpress/keyboard-menu/restore/import/exclusions/source-deletion/reload/offline/rounds/quota/history/delete/reduced-motion/snapshot-stars/style-parity/bottom-action-layout/page-navigation/home-scroll/row-numbering',layouts,errors},null,2));
  console.log(`${engine.name()}: study sets lifecycle, offline snapshots, failure recovery, history, 10 light/dark layouts passed`);
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}

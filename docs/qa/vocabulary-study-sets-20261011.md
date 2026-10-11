@@ -20,8 +20,8 @@ Contract and known source-identity limits are in decision 023.
 ## Local checks
 
 - `node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs`:
-  26 passed, zero failures.
-- `node --test tests/verify-study-sets-ui.mjs`: 20 event-level DOM tests pass (46 total focused tests).
+  27 passed, zero failures.
+- `node --test tests/verify-study-sets-ui.mjs`: 25 event-level DOM tests pass (52 total focused tests).
   This harness is not a browser layout or native gesture simulator.
 - `npm test`: passed the existing aggregate suite, including typecheck
   (32 existing diagnostics, unchanged), saved vocabulary lifecycle, simple-card
@@ -82,3 +82,22 @@ pointer capture and any later failed-write retry. Both overlapping cases have
 DOM regressions; browser coverage holds the second trusted pointer through the
 first row's collapse. Short reveal/action tap and deep capsule commit are
 separate tested paths, with real-pointer capture frames for UI review.
+
+The next candidate moves detail/study to a real app page (no open dialog,
+backdrop or X close). Shared original Memory row markup/toggle/styles and star
+chips replace the earlier separate set renderer. Tests compare computed style
+parity with the default wordbook and retain original editing/status behavior;
+set star changes never write source vocabulary. History covers study-to-detail
+Back and per-entry home-scroll restoration. The final chosen route keeps the existing wordbook first, opens the directory
+from its bottom `학습하기` pill and sends `전체 단어` directly to the existing
+all-word card study; it does not loop back to the wordbook.
+
+Final-route browser proof includes three real flow screenshots (wordbook entry,
+set directory, set detail) plus held partial/deep swipe frames. Legacy advanced
+review algorithm tests keep their direct-function contract; the study-set and
+simple-card browser suites exercise the new actual navigation route.
+
+Final chosen-route local aggregate `npm test` completed successfully after the
+shared-renderer structure assertion was updated to keep its same collapsed-
+example guard with the new editable parameter. Typecheck remains at32 baseline
+diagnostics. No 1.9.2 boundary receipt or release version was changed.

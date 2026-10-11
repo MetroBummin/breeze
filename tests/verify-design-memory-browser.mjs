@@ -24,7 +24,9 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   for(let y=0;y<258;y++)for(let x=0;x<841;x++)if(data[(y*841+x)*4+3]>128){top=Math.min(top,y);bottom=Math.max(bottom,y+1);}
   return {top:rect.top+top*rect.height/258,bottom:rect.top+bottom*rect.height/258,asset:getComputedStyle(e).backgroundImage};
  });await page.screenshot({path:`${out}/${key}-home.png`});await page.locator('#logo .mark').screenshot({path:`${out}/${key}-home-ink.png`});
- await page.locator('#nav-vocab').click();await page.locator('#study-sets-all').click();await page.evaluate(()=>document.fonts.ready);
+ await page.locator('#nav-vocab').click();await page.evaluate(()=>document.fonts.ready);
+ assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
+ assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0);
  const title=await page.locator('.wordbook-brand h1').boundingBox(),button=await page.locator('#wordbook-add').boundingBox();
  const titleInk=await page.locator('.wordbook-brand h1').evaluate(async e=>{
   if(e.classList.contains('memory-wordmark')){
@@ -72,7 +74,7 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   await page.locator('#wordbook-add').click();assert.equal(await page.locator('#wordbook-new-word').inputValue(),'');
   await page.locator('#wordbook-add-form .task-close').click();
   await page.locator('#wordbook-add').click();await page.locator('#wordbook-add-form button').filter({hasText:'취소'}).click();
-  await page.locator('#wordbook-home').click();await page.locator('#nav-vocab').click();await page.locator('#study-sets-all').click();
+  await page.locator('#wordbook-home').click();await page.locator('#nav-vocab').click();
   await page.locator('#wordbook-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');
   await page.locator('#wordbook-add-form button[type=submit]').click();assert.equal(await page.locator('#wordbook-add-dialog').evaluate(e=>e.open),false);
   assert.equal(await page.evaluate(()=>words.breeze.ko),'산들바람');
@@ -105,7 +107,7 @@ if(phase==='after')for(const preference of ['reduce','more'])for(const dark of [
  const page=await context.newPage();await page.goto(url);await page.evaluate(()=>homeReady);await page.evaluate(()=>{endOnboarding(true);show('home')});
  const fallback=await page.locator('#logo .mark').evaluate(e=>{const s=getComputedStyle(e,'::before');return {display:s.display,mask:s.maskImage||s.webkitMaskImage,color:s.backgroundColor}});
  assert.equal(fallback.display,'block');const image=await page.locator('#logo .mark').screenshot();
- await page.locator('#nav-vocab').click();await page.locator('#study-sets-all').click();const matched=await page.locator('.memory-wordmark').evaluate(e=>{const s=getComputedStyle(e,'::before');return {display:s.display,mask:s.maskImage||s.webkitMaskImage,color:s.backgroundColor}});
+ await page.locator('#nav-vocab').click();const matched=await page.locator('.memory-wordmark').evaluate(e=>{const s=getComputedStyle(e,'::before');return {display:s.display,mask:s.maskImage||s.webkitMaskImage,color:s.backgroundColor}});
  assert.deepEqual(matched,fallback);assert.ok((await page.locator('.memory-wordmark').screenshot()).equals(image),'Use the same accessible-preference logo treatment as Home');
  assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);await context.close();
 }

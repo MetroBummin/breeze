@@ -362,3 +362,21 @@ test('directly added words use the empty-string source and import through the sa
   assert.equal(imported.added,1);
   assert.equal(sets.start(imported.state,created.set.id,NOW+2).total,2);
 });
+
+
+test('snapshot star status survives reload independently and old cards default safely',()=>{
+  const inventory={a:saved('a',{status:3})},before=JSON.stringify(inventory);
+  const created=create(inventory,{name:'Stars',bookTitles:['Book A']});
+  assert.equal(created.set.cards[0].status,3);
+  const active=sets.start(created.state,created.set.id,NOW+1);
+  const changed=sets.setStatus(active.state,created.set.id,created.set.cards[0].id,2,NOW+2);
+  assert.equal(changed.set.cards[0].status,2);
+  assert.equal(changed.set.session.queue[0].status,3,'current round keeps its snapshot');
+  assert.equal(sets.decode(JSON.stringify(changed.state)).sets[0].cards[0].status,2);
+  assert.equal(JSON.stringify(inventory),before);
+  const legacy=plain(created.state);delete legacy.sets[0].cards[0].status;
+  assert.equal(sets.normalize(legacy).sets[0].cards[0].status,1);
+  const broken=plain(created.state);broken.sets[0].cards[0].status=4;
+  assert.throws(()=>sets.normalize(broken),/Invalid study sets data/);
+  assert.throws(()=>sets.setStatus(created.state,created.set.id,created.set.cards[0].id,0,NOW),/Invalid study card status/);
+});

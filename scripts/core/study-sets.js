@@ -2,7 +2,7 @@
    inputs. No storage, vocabulary writes, scheduling, network or AI calls. */
 const BreezeStudySets = (() => {
   const VERSION=1;
-  /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number}} Card */
+  /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number,status:number}} Card */
   /** @typedef {{id:string,outcome:string,at:number}} Answer */
   /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean}} Session */
   /** @typedef {{id:string,name:string,bookTitles:string[],createdAt:number,updatedAt:number,cards:Card[],excludedIds:string[],session:Session|null}} StudySet */
@@ -27,8 +27,8 @@ const BreezeStudySets = (() => {
   /** @returns {Card} */
   function copyCard(raw){
     if(!record(raw)||!nonblank(raw.word)||!nonblank(raw.ko)||!nonblank(raw.key)
-      ||raw.id!==identity(raw.word,raw.ko)||!text(raw.example)||!text(raw.book)||!count(raw.addedAt))fail();
-    return {id:raw.id,key:raw.key,word:raw.word,ko:raw.ko,example:raw.example,book:raw.book,addedAt:raw.addedAt};
+      ||raw.id!==identity(raw.word,raw.ko)||!text(raw.example)||!text(raw.book)||!count(raw.addedAt)||(raw.status!==undefined&&![1,2,3].includes(raw.status)))fail();
+    return {id:raw.id,key:raw.key,word:raw.word,ko:raw.ko,example:raw.example,book:raw.book,addedAt:raw.addedAt,status:raw.status||1};
   }
   /** @returns {Card[]} */
   function copyCards(raw){
@@ -93,7 +93,7 @@ const BreezeStudySets = (() => {
       &&own(item,'word')&&own(item,'ko')&&nonblank(item.word)&&nonblank(item.ko)
       &&(!selected||selected.has(text(item.book)?item.book:'')))
       .map(([key,item])=>({id:identity(item.word,item.ko),key,word:item.word,ko:item.ko,
-        example:text(item.example)?item.example:'',book:text(item.book)?item.book:'',addedAt:count(item.addedAt)?item.addedAt:0}))
+        example:text(item.example)?item.example:'',book:text(item.book)?item.book:'',addedAt:count(item.addedAt)?item.addedAt:0,status:[1,2,3].includes(item.status)?item.status:1}))
       .sort((a,b)=>a.addedAt-b.addedAt||compare(a.key,b.key));
     const seen=new Set();
     return available.filter(card=>{if(seen.has(card.id))return false;seen.add(card.id);return true;});
@@ -135,6 +135,13 @@ const BreezeStudySets = (() => {
     if(!set||!set.cards.some(card=>card.id===cardId)||set.excludedIds.includes(cardId)===excluded)return result(state,id,false);
     set.excludedIds=excluded?[...set.excludedIds,cardId]:set.excludedIds.filter(value=>value!==cardId);
     set.updatedAt=Math.max(set.updatedAt,at);
+    return result(state,id,true);
+  }
+  function setStatus(raw,id,cardId,status,now){
+    if(![1,2,3].includes(status))throw new TypeError('Invalid study card status');
+    const state=normalize(raw),set=get(state,id),at=time(now),card=set?.cards.find(item=>item.id===cardId);
+    if(!card||card.status===status)return result(state,id,false);
+    card.status=status;set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true);
   }
   function exclude(raw,id,cardId,now){return setExcluded(raw,id,cardId,true,now);}
@@ -211,6 +218,6 @@ const BreezeStudySets = (() => {
     session(current.state,set,previous.queue.filter(card=>repeat.has(card.id)),at,previous.round+1);
     return {...snapshot(current.state,id),accepted:true};
   }
-  return Object.freeze({VERSION,normalize,decode,cards,create,rename,remove,exclude,restore,
+  return Object.freeze({VERSION,normalize,decode,cards,create,rename,remove,exclude,restore,setStatus,
     importPreview,importNew,view,start,reveal,grade,nextRound});
 })();

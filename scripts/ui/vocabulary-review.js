@@ -58,7 +58,7 @@ function refreshVocabularyReviewEntry(){
   /** @type {HTMLFieldSetElement} */(document.getElementById('review-settings-controls')).disabled=!ADVANCED_VOCABULARY_REVIEW_ENABLED;
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){
     document.getElementById('wordbook-review-entry').hidden=true;
-    document.getElementById('wordbook-review').textContent='단어 카드';
+    document.getElementById('wordbook-review').textContent='학습하기';
     /** @type {HTMLButtonElement} */(document.getElementById('wordbook-review')).disabled=false;
     return;
   }
@@ -283,12 +283,9 @@ function refreshReviewSetup(){
   if(!reviewControlsReady)restoreReviewControls();
   const raw=readVocabularyReview(),scope=reviewScope(raw),view=reviewSetupPreview();
   const button=/** @type {HTMLButtonElement} */(document.getElementById('wordbook-review'));
-  const remaining=scope.custom&&!scope.keys.length?0:view.total-view.completed;
-  const resume=view.state.session?.index>view.state.session?.batchStart;
-  const label=scope.custom?`${remaining}개 연습${resume?' 이어 하기':''}`:view.card?(resume?'학습 이어 하기':'학습 시작'):'학습 현황';
-  // Keep the button's text node stable through input blur (WebKit click target).
-  if(button.textContent!==label)button.textContent=label;
-  button.disabled=scope.custom&&!scope.keys.length;
+  // This entry opens the set directory even when the current vocabulary filter is empty.
+  if(button.textContent!=='학습하기')button.textContent='학습하기';
+  button.disabled=false;
   document.getElementById('review-use-daily').hidden=!scope.custom;
   document.getElementById('wordbook-review-entry').hidden=!scope.custom;
   document.getElementById('review-setup-scope').textContent=scope.custom?'연습 · 복습 일정에 영향 없음':'';
@@ -344,6 +341,7 @@ function resetVocabularyReviewSurface(){
 }
 function closeVocabularyReview(){
   if(activeAppView()!=='study')return;
+  if(history.state?.studySetsAllWords){history.back();return;}
   show('vocab',{replace:true});document.getElementById('wordbook-review').focus();
 }
 document.getElementById('review-close').addEventListener('click',closeVocabularyReview);

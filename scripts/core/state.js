@@ -253,7 +253,7 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
-  if(typeof closeStudySets==='function')closeStudySets(true);
+  if(!options?.studySetsTransition&&typeof closeStudySets==='function')closeStudySets(true);
   if(typeof closeWordbookMenus==='function')closeWordbookMenus();
   // Leaving the preview's owning view must invalidate its async preparation.
   // Reader presentation closes its own preview through onPresented instead.
@@ -267,7 +267,7 @@ function show(v,options){
   document.getElementById('v-'+v).classList.add('on');
   document.getElementById('nav-home').classList.toggle('on',
     v==='home' || v==='casuals' || v==='longform');
-  document.getElementById('nav-vocab').classList.toggle('on', v==='memory'||v==='vocab'||v==='study');
+  document.getElementById('nav-vocab').classList.toggle('on', v==='memory'||v==='memory-set'||v==='vocab'||v==='study');
   if(v!=='read'){
     if(typeof closeSentence==='function') closeSentence();
     const retained=v==='home'&&typeof retainReaderForHome==='function'&&retainReaderForHome();
@@ -291,7 +291,10 @@ function show(v,options){
   if(v==='memory'&&typeof renderStudySetsHome==='function')renderStudySetsHome();
   if(v==='vocab') renderVocab();
   if(v==='study'&&typeof resumeVocabularyReview==='function')resumeVocabularyReview();
-  window.scrollTo(0,0);
+  const restoredScroll=settings.fromHistory?(v==='vocab'?history.state?.studySetsVocabScroll:v==='memory'?history.state?.studySetsDirectoryScroll:0):0;
+  window.scrollTo(0,Number(restoredScroll)||0);
+  if(settings.fromHistory&&v==='vocab'&&history.state?.studySetsVocabScroll!==undefined)document.getElementById('wordbook-review')?.focus({preventScroll:true});
+  if(settings.fromHistory&&v==='memory'&&history.state?.studySetsDirectoryScroll!==undefined)document.getElementById('study-sets-all')?.focus({preventScroll:true});
   const box = readerScroller();
   if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }
   if(typeof syncHomeNavigation==='function') syncHomeNavigation();

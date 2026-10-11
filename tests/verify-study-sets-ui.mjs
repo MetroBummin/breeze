@@ -11,16 +11,17 @@ function harness(){
   const {document}=window,storage=new Map();
   let focused=document.body;
   Object.defineProperty(document,'activeElement',{get:()=>focused});
-  const history={state:{breeze:true,view:'vocab'},previous:{breeze:true,view:'vocab'},pushState(value){this.previous=this.state;this.state=value;},replaceState(value){this.state=value;},back(){
-    this.state=this.previous;const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
+  const entries=[{breeze:true,view:'vocab'}];let historyIndex=0;
+  const history={state:entries[0],pushState(value){entries[historyIndex]=this.state;entries.splice(++historyIndex);entries.push(value);this.state=value;},replaceState(value){this.state=value;entries[historyIndex]=value;},back(){
+    this.state=entries[Math.max(0,--historyIndex)];const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
   }};
   const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,
-    activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},history,words:{
+    activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},openVocabularyReview:()=>{context.currentView='study';history.pushState({breeze:true,view:'study'});},history,words:{
       a:{word:'quiet',ko:'조용한',book:'One',example:'Stay quiet.',addedAt:1},
       b:{word:'quiet',ko:'조용한',book:'Two',addedAt:2},
       c:{word:'quiet',ko:'고요한',book:'Two',addedAt:3},
       d:{word:'direct',ko:'직접',book:'',addedAt:4}
-    },validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
+    },esc:value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
     localStorage:{getItem:key=>storage.has(key)?storage.get(key):null,setItem:(key,value)=>{storage.set(key,value);}}
   };
   const create=document.createElement.bind(document);
@@ -35,6 +36,8 @@ function harness(){
     return node;
   };
   vm.createContext(context);
+  const dictionary=readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8');
+  vm.runInContext(dictionary.slice(dictionary.indexOf('function vocabMoreHtml('),dictionary.indexOf('function renderVocab(){')),context,{filename:'shared-vocabulary-renderer'});
   for(const path of ['scripts/core/study-sets.js','scripts/core/study-sets-storage.js','scripts/ui/study-sets.js'])
     vm.runInContext(readFileSync(new URL('../'+path,import.meta.url),'utf8'),context,{filename:path});
   const run=source=>vm.runInContext(source,context);
@@ -80,7 +83,7 @@ test('study set UI creates safe deduplicated snapshots, excludes with undo, impo
   assert.equal(query('#study-sets-progress').textContent,'1 / 1');click('#study-sets-reveal');click('#study-sets-grade-remembered');
   assert.equal(document.querySelector('#study-sets-repeat-round'),null);
   assert.equal(JSON.stringify(Object.fromEntries(Object.entries(context.words).filter(([key])=>key!=='new'))),source);
-  click('#study-sets-close');assert.equal(query('#study-sets-dialog').open,false);
+  click('#study-sets-back');click('#study-sets-back');assert.equal(query('#study-sets-dialog').open,false);
   run('openStudySets()');assert.equal(document.querySelectorAll('.study-sets-list li').length,1);
 });
 
@@ -108,7 +111,7 @@ test('directly-added words, exclusion restore, set deletion confirmation and sou
   const source=JSON.stringify(context.words);run("studySetsGo('menu')");button('세트 삭제');button('취소');assert.equal(query('#study-sets-title').textContent,'Direct');
   run("studySetsGo('menu')");button('세트 삭제');button('세트 삭제');assert.equal(document.querySelectorAll('[data-set-id]').length,0);
   assert.equal(JSON.stringify(context.words),source);assert.equal(document.querySelectorAll('.study-sets-home-card').length,2);
-  run('closeStudySets(true)');assert.equal(context.history.state.studySets,undefined);
+  run('closeStudySets(true)');assert.equal(run('studySetsIsOpen()'),false);
 });
 
 test('horizontal swipe excludes; vertical movement and cancellation keep membership',()=>{
@@ -152,13 +155,13 @@ test('a repeated pointer click after answer reveal is not an assessment',()=>{
   click('#study-sets-grade-repeat');assert.equal(query('#study-sets-progress').textContent,'2 / 2');
 });
 
-test('Memory directory keeps all words first, appends sets and add, and enters the unchanged full wordbook',()=>{
+test('Memory directory keeps all words first, appends sets and add, and enters the unchanged all-word card study',()=>{
   const {context,document,query,click,run,createFromHome}=harness();
   context.words.b.root='a';context.words.c.root='a';context.words.unresolved={word:'pending',ko:''};
   run('renderStudySetsHome()');
   assert.equal(query('#study-sets-all strong').textContent,'전체 단어 · 2개');
   assert.equal(document.querySelectorAll('.study-sets-home-cards>li').length,2);
-  click('#study-sets-all');assert.equal(context.currentView,'vocab');assert.equal(document.querySelector('#study-sets-dialog'),null);
+  click('#study-sets-all');assert.equal(context.currentView,'study');assert.equal(document.querySelector('#study-sets-dialog'),null);
   createFromHome('시험 준비');
   const cards=[...document.querySelectorAll('.study-sets-home-card')];
   assert.equal(cards[0].id,'study-sets-all');assert.equal(cards[1].querySelector('strong').textContent,'시험 준비');
@@ -196,11 +199,11 @@ test('Back and Forward restore the selected set over Memory including cross-view
   const {context,window,query,click,createFromHome}=harness();createFromHome();
   window.addEventListener('popstate',event=>context.show(event.state?.breeze?event.state.view:'home'));
   const pop=state=>{context.history.state=state;const event=new window.Event('popstate');event.state=state;window.dispatchEvent(event);};
-  const detailState={...context.history.state};assert.equal(detailState.view,'memory');
+  const detailState={...context.history.state};assert.equal(detailState.view,'memory-set');
   click('#study-sets-close');assert.equal(query('#study-sets-dialog').open,false);
-  pop(detailState);assert.equal(context.currentView,'memory');assert.equal(query('#study-sets-title').textContent,'Exam set');
+  pop(detailState);assert.equal(context.currentView,'memory-set');assert.equal(query('#study-sets-title').textContent,'Exam set');
   pop({breeze:true,view:'home'});assert.equal(query('#study-sets-dialog').open,false);assert.equal(context.currentView,'home');
-  pop(detailState);assert.equal(context.currentView,'memory');assert.equal(query('#study-sets-title').textContent,'Exam set');
+  pop(detailState);assert.equal(context.currentView,'memory-set');assert.equal(query('#study-sets-title').textContent,'Exam set');
   click('#study-sets-back');assert.equal(query('#study-sets-dialog').open,false);
 });
 
@@ -209,7 +212,7 @@ test('directory corruption preserves source access and recovers without mutating
   storage.set('breeze.study-sets.v1',damaged);run('renderStudySetsHome()');
   assert.ok(query('.study-sets-home-error[role="alert"]'));assert.equal(query('#study-sets-home-create').disabled,true);
   click('.study-sets-home-error button');assert.equal(storage.get('breeze.study-sets.v1'),damaged);
-  click('#study-sets-all');assert.equal(context.currentView,'vocab');
+  click('#study-sets-all');assert.equal(context.currentView,'study');
   storage.delete('breeze.study-sets.v1');click('.study-sets-home-error button');
   assert.equal(document.querySelector('.study-sets-home-error'),null);assert.equal(query('#study-sets-home-create').disabled,false);
 });
@@ -227,9 +230,10 @@ test('storage refresh leaves an in-progress creation form intact and refreshes h
 
 test('minimal detail shows examples only after tapping and keeps primary action outside scroll body',()=>{
   const {query,document,click,createFromHome}=harness();createFromHome();
-  const toggle=query('.study-sets-word-toggle'),example=query('.study-sets-example');
-  assert.equal(example.hidden,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');
-  toggle.click();assert.equal(example.hidden,false);toggle.click();assert.equal(example.hidden,true);
+  const toggle=query('.vword');
+  assert.equal(document.querySelector('.vex'),null);assert.equal(toggle.getAttribute('aria-expanded'),'false');
+  toggle.click();assert.ok(query('.vex'));toggle.click();assert.equal(document.querySelector('.vex'),null);
+  assert.ok(query('.chip'));assert.equal(document.querySelector('[contenteditable]'),null);assert.equal(document.querySelector('.rowdel'),null);
   assert.ok(query('.study-sets-footer #study-sets-start'));
   assert.equal(document.querySelector('#study-sets-content #study-sets-start'),null);
   assert.equal(document.querySelector('#study-sets-content #study-sets-import'),null);
@@ -313,4 +317,65 @@ test('a second row keeps pointer ownership while the first committed row collaps
   assert.equal(second.isConnected,true);assert.equal(second.classList.contains('study-sets-dragging'),true);
   assert.equal(second.querySelector('.study-sets-word-surface').style.transform,'translateX(-90px)');
   pointer('pointermove',20);pointer('pointerup',20);assert.equal(document.querySelectorAll('.study-sets-word-row').length,0);assert.ok(query('.study-sets-undo button'));
+});
+
+
+test('set detail and study are real pages with no modal close control and return home with scroll intact',()=>{
+  const {context,window,document,query,click,run,createFromHome}=harness();
+  window.scrollY=420;let restored=-1;window.scrollTo=(x,y)=>{restored=y;};
+  createFromHome();assert.equal(context.currentView,'memory-set');assert.equal(query('#study-sets-dialog').open,false);
+  assert.equal(query('#v-memory-set').contains(query('#study-sets-content')),true);assert.equal(query('#study-sets-close').hidden,true);
+  assert.deepEqual([...document.querySelectorAll('.study-sets-number')].map(node=>node.textContent),['1','2']);
+  click('.study-sets-row-action');assert.deepEqual([...document.querySelectorAll('.study-sets-number')].map(node=>node.textContent),['1']);
+  click('.study-sets-undo button');assert.deepEqual([...document.querySelectorAll('.study-sets-number')].map(node=>node.textContent),['1','2']);
+  click('#study-sets-start');assert.equal(context.history.state.studySetsScreen,'study');assert.equal(context.currentView,'memory-set');assert.equal(query('#study-sets-dialog').open,false);
+  context.history.back();assert.equal(context.history.state.studySetsScreen,'detail');assert.ok(query('#study-sets-word-list'));
+  click('#study-sets-back');assert.equal(context.currentView,'memory');assert.equal(run('studySetsIsOpen()'),false);assert.equal(restored,420);assert.equal(document.activeElement.id,'study-sets-home-create');
+});
+
+test('shared vocabulary status chip changes only snapshot status and retains expanded examples',()=>{
+  const {context,document,query,run,createFromHome}=harness();createFromHome();
+  const source=JSON.stringify(context.words);query('.vword').click();assert.ok(query('.vex'));
+  query('.chip').click();assert.equal(query('.chip').textContent,'★★');assert.ok(query('.vex'));
+  assert.equal(run('readStudySets().sets[0].cards[0].status'),2);assert.equal(JSON.stringify(context.words),source);
+  assert.equal(document.querySelector('[contenteditable]'),null);assert.equal(document.querySelector('.rowdel'),null);
+  run('studySetsReadAndRender(false)');assert.equal(query('.chip').getAttribute('aria-label'),'quiet 별점 2개');
+});
+
+
+test('older page history retains its own home scroll and restarting study does not stack frames',()=>{
+  const {context,window,query,click,run,createFromHome}=harness();window.scrollY=360;let restored=-1;window.scrollTo=(x,y)=>{restored=y;};
+  createFromHome();const firstPage={...context.history.state};assert.equal(firstPage.studySetsHomeScroll,360);
+  click('#study-sets-start');run('studySetsStart(studySetsUI.setId,true)');context.history.back();assert.equal(context.history.state.studySetsScreen,'detail');
+  click('#study-sets-back');window.scrollY=70;query('.study-sets-home-card[data-set-id]').click();assert.equal(context.history.state.studySetsHomeScroll,70);
+  const event=new window.Event('popstate');context.history.state=firstPage;event.state=firstPage;window.dispatchEvent(event);
+  const home=new window.Event('popstate');home.state={breeze:true,view:'memory'};context.history.state=home.state;window.dispatchEvent(home);
+  assert.equal(restored,360);assert.equal(context.currentView,'memory');
+});
+
+
+test('bottom study entry opens the directory; all-word cards and directory Back preserve original routes and scroll',()=>{
+  const {context,window,document,query,run}=harness();let restored=-1;window.scrollY=250;window.scrollTo=(x,y)=>{restored=y;};
+  context.show=(view,options={})=>{context.currentView=view;if(!options.fromHistory){if(options.replace)context.history.replaceState({breeze:true,view});else context.history.pushState({breeze:true,view});}};
+  window.addEventListener('popstate',event=>{context.show(event.state.view,{fromHistory:true});window.scrollTo(0,event.state.view==='vocab'?event.state.studySetsVocabScroll||0:event.state.studySetsDirectoryScroll||0);});
+  const button=document.createElement('button');button.id='wordbook-review';document.body.append(button);
+  const review=readFileSync(new URL('../scripts/ui/vocabulary-review.js',import.meta.url),'utf8');
+  vm.runInContext(review.slice(review.indexOf('function closeVocabularyReview(){'),review.indexOf("document.getElementById('review-close').addEventListener")),context);
+  run('openStudySetsDirectory()');assert.equal(context.currentView,'memory');assert.equal(context.history.state.studySetsDirectory,true);
+  window.scrollY=70;query('#study-sets-all').click();assert.equal(context.currentView,'study');assert.equal(context.history.state.studySetsAllWords,true);
+  run('closeVocabularyReview()');assert.equal(context.currentView,'memory');assert.equal(restored,70);
+  run('closeStudySetsDirectory()');assert.equal(context.currentView,'vocab');assert.equal(restored,250);
+  context.openVocabularyReview();run('closeVocabularyReview()');assert.equal(context.currentView,'vocab');assert.equal(document.activeElement.id,'wordbook-review');
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(html,/id="wordbook-review"[^>]*onclick="openStudySetsDirectory\(\)">학습하기/);
+  assert.equal(html.includes('id="wordbook-sets-back"'),false);assert.equal(html.includes('id="wordbook-study-sets-entry"'),false);
+});
+
+
+test('a drag beginning on the status chip neither rates nor owns the row swipe',()=>{
+  const {document,query,window,createFromHome}=harness();createFromHome();
+  const row=query('.study-sets-word-row'),chip=query('.chip');
+  const pointer=(target,type,x)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{button:0,pointerId:3,clientX:x,clientY:20});target.dispatchEvent(event);};
+  pointer(chip,'pointerdown',280);pointer(row,'pointermove',80);pointer(row,'pointerup',80);
+  assert.equal(query('.study-sets-word-surface').style.transform,undefined);assert.equal(chip.textContent,'★');assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
 });

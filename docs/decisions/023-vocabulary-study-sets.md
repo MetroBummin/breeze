@@ -1,12 +1,16 @@
 # Snapshot-backed vocabulary study sets (1.9.3)
 
-Memory opens a single-column, compact row home (`v-memory`). The first immutable card,
-`전체 단어`, opens the existing `v-vocab` screen and counts words with its existing
-root grouping. User-created sets and a simple add row follow. A set opens its
-captured word list in an opaque study-set sheet; creation reuses the book-selection
-form. Closing or backing out of a directly opened sheet returns to the card
-home. Memory search, filters, saved-Meaning editing and the general word-card
-flow retain their existing ownership and behavior inside the default card.
+Memory keeps its existing full wordbook (`v-vocab`) as the default entry. The
+existing bottom-center pill is labeled `학습하기` and opens the single-column
+set directory (`v-memory`); no row is added between search and filters. The
+first immutable `전체 단어` row opens the existing full-vocabulary card study
+directly, followed by saved sets and a matching dashed `+ 세트 추가` row.
+A selected custom set opens its captured word list as an independent full page.
+Page Back returns to the directory and restores its scroll position; directory
+Back returns to the full wordbook. Whole-vocabulary study returns to the
+directory when launched there, while existing direct study callers retain their
+normal return target. Detail has no modal semantics, scrim, or X-close control.
+Existing search, filters and saved-Meaning editing retain their ownership.
 
 The card home and set detail are a UI review candidate: real screenshots must
 be shown to the user before main merge or TestFlight integration.
@@ -15,11 +19,19 @@ be shown to the user before main merge or TestFlight integration.
 
 The home uses existing Memory typography, thin boundaries and neutral theme
 tokens. Names and word counts carry the hierarchy without descriptive copy or
-decorative set icons. User-set long press, context click or keyboard context
+decorative set icons. The add row uses the same shape and size as saved sets. User-set long press, context click or keyboard context
 menu opens management (rename, delete, explicit imports and excluded cards).
 The all-words default is not mutable. Creation asks for the name.
 
-Inside a set, words and meanings use the existing vocabulary visual language.
+Inside a set, `createVocabularyGroup` adapts captured cards to the exact
+`vocabGroupMarkup`, `bindVocabularyGroupToggle` and `vocabMoreHtml` functions
+also used by `renderVocab`. The shared `.vocabulary-rows` scope receives the
+existing wordbook.css and surfaces.css row typography, meanings and star chips;
+there is no parallel set-word renderer. Snapshot meanings are read-only, and
+star taps update only the captured card. Legacy set cards without a captured
+status default to one star; new cards capture their source status.
+A small leading ordinal follows current visible list order and is recalculated
+after exclusion or Undo without taking away ordinary word width.
 Tapping reveals the captured example; swipe must not also trigger that tap.
 A left drag follows the pointer after horizontal direction lock, while vertical
 scrolling keeps its native owner. The moving row gains rounded trailing corners;
@@ -29,11 +41,12 @@ commits, then the row exits and its space collapses. Cancellation or insufficien
 distance returns the row. Exclusion affects only this set, with Undo. Keyboard
 users retain an equivalent operation without persistent row action clutter.
 Reduced motion removes settle animation. The primary study action remains at
-the bottom, outside the scrolling list, with safe-area padding.
+the bottom, outside the scrolling list, with safe-area padding. Set learning
+stays in the same page navigation family; create/management remain short tasks.
 
 ## Content and identity
 
-A set captures the current saved word/definition/example/source from selected
+A set captures the current saved word/definition/example/source/status from selected
 books. It does not own or modify source vocabulary. The same exact saved word
 and contextual definition appear once across selected books; spelling alone
 never merges different definitions. The stored identity is independent of a
