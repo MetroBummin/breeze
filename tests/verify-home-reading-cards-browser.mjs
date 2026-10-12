@@ -159,8 +159,15 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     invalidateReaderMeasurements();updatePfill(true);
    },percent);
    await page.waitForFunction(percent=>Math.floor(visibleReaderProgress()*100)===percent&&readerPillRawProgress===visibleReaderProgress(),percent);
-   const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureOriginalAnchor()}));
-   assert.equal(Math.floor(actual.p*100),percent);
+   const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureOriginalAnchor(),
+    phase:{pending:readerPositionPending(),mode:currentReaderMode,presented:originalSession?.presented,
+      restoreBook:readerPositionRestoration?.book?.id||null,saved:posOf(curBook.id).p,
+      scroll:readerScrollTop(),pill:readerPillRawProgress,held:readerAnchorHeld(),pauseUntil:readerScrollPauseUntil,
+      viewport:[readerScroller().clientWidth,readerScroller().clientHeight],
+      observed:[originalZoomObservedWidth,originalZoomObservedHeight],readingAnchor:originalSession?.readingAnchor}}));
+   // Same immediate snapshot and strict expected progress: retain state evidence
+   // if an asynchronous original-surface owner changes after the readiness wait.
+   assert.equal(Math.floor(actual.p*100),percent,JSON.stringify({percent,actual}));
    await page.evaluate(()=>returnHomeFromReader());const home=await homeState(page,pdfId);
    await page.screenshot({animations:'disabled',path:`${proof}/${engine.name()}-pdf-${percent}.png`});
    await page.evaluate(()=>show('longform'));
