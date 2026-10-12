@@ -23,6 +23,7 @@ const allowed=new Set([
   ".github/workflows/all-words-picker.yml",
   "tests/verify-study-motion-browser.mjs",
   "tests/verify-simple-study-session.mjs",
+  "tests/verify-simple-word-cards-browser.mjs",
   "tests/helpers/all-words-fixture.mjs",
   "tests/measure-all-words-browser.mjs",
   "tests/measure-study-picker-scroll-browser.mjs",
