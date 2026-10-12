@@ -276,3 +276,11 @@ pause, Back, Next and Skip inside the viewport and no hint/meaning overlap.
 The practice carousel's accessible label describes the exercise rather than a
 video. Portrait fallback remains vertically scrollable for unusually short
 screens, and practice gestures preserve vertical scroll ownership.
+
+A repeated real-touch recording produced trustedpointerdown/pointerup with no
+compatibilityclick after an unrevealed drag. The practice now reveals on an
+unmoved primary touch release inside the card, while preventing the release's
+compatibilityclick from also revealing the next example. Mouse/assistive click
+and keyboard remain; cancelled/vertical releases cannot grade and outside taps cannot reveal.
+The browser regression deliberately drops one compatibilityclick while retaining
+actual touch input; waiting alone is not treated as the gesture fix.

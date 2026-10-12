@@ -34,9 +34,9 @@ function onboardingStudyExample(slide,session){
   card.append(word,meaning,cue);demo.append(card);slide.append(demo);
   const alternatives=document.createElement('div');alternatives.className='onboard-study-actions';
   const play=document.createElement('button');play.type='button';play.className='onboard-study-play';play.textContent='모션 힌트 일시정지';slide.append(play);
-  let revealed=false,busy=false,timer=null,drag=null,suppress=false;
+  let revealed=false,busy=false,timer=null,drag=null,suppress=false,touchClickPending=false;
   const active=()=>onboardingSession===session&&!session.controller.signal.aborted&&onboardingStudyActive(session);
-  const cancel=()=>{clearTimeout(timer);timer=null;busy=false;drag=null;suppress=false;card.removeAttribute('data-dragging');card.removeAttribute('data-direction');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');};
+  const cancel=()=>{if(drag?.touch)touchClickPending=true;clearTimeout(timer);timer=null;busy=false;drag=null;suppress=false;card.removeAttribute('data-dragging');card.removeAttribute('data-direction');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');};
   const render=()=>{
     cancel();revealed=session.studyStep===1||session.studyStep===3;
     word.textContent=session.studyStep<2?'observe':'breeze';meaning.textContent=word.textContent==='observe'?'관찰하다':'산들바람';meaning.hidden=!revealed;
@@ -62,15 +62,24 @@ function onboardingStudyExample(slide,session){
     timer=setTimeout(finish,180);
   };
   for(const [direction,label] of [['left','다시 볼게요'],['right','기억나요']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>grade(direction),{signal:session.controller.signal});alternatives.append(button);}slide.append(alternatives);
-  card.addEventListener('click',()=>reveal(),{signal:session.controller.signal});
-  card.addEventListener('pointerdown',event=>{if(!active()||busy||!event.isPrimary||event.button!==0)return;suppress=false;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,axis:''};},{signal:session.controller.signal});
+  // Touch owns its release: a browser may omit the compatibility click after a drag.
+  card.addEventListener('click',event=>{if(touchClickPending&&event.detail!==0){touchClickPending=false;event.preventDefault();return;}reveal();},{signal:session.controller.signal});
+  card.addEventListener('pointerdown',event=>{if(!active()||busy||!event.isPrimary||event.button!==0)return;suppress=false;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,axis:'',touch:event.pointerType==='touch'};touchClickPending=false;},{signal:session.controller.signal});
   card.addEventListener('pointermove',event=>{
     if(!drag||drag.id!==event.pointerId)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
     if(!drag.axis){if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;drag.axis=Math.abs(dx)>Math.abs(dy)*1.2?'x':'y';suppress=true;}
     if(drag.axis!=='x'||!revealed)return;drag.dx=dx;card.setAttribute('data-dragging','');try{card.setPointerCapture(event.pointerId);}catch{}
     card.dataset.direction=dx<0?'repeat':'remembered';card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(dx)/120)));card.style.transform=`translateX(${dx}px) rotate(${dx/35}deg)`;event.preventDefault();
   },{signal:session.controller.signal});
-  const release=(event,canceled)=>{if(!drag||drag.id!==event.pointerId)return;const saved=drag;drag=null;card.removeAttribute('data-dragging');card.removeAttribute('data-direction');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');if(!canceled&&saved.axis==='x'&&Math.abs(saved.dx)>=Math.min(90,card.clientWidth*.24))grade(saved.dx<0?'left':'right');};
+  const release=(event,canceled)=>{
+    if(!drag||drag.id!==event.pointerId)return;const saved=drag;drag=null;
+    card.removeAttribute('data-dragging');card.removeAttribute('data-direction');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');
+    if(saved.touch){touchClickPending=true;event.preventDefault();}
+    const bounds=card.getBoundingClientRect(),inside=event.clientX>=bounds.left&&event.clientX<=bounds.right&&event.clientY>=bounds.top&&event.clientY<=bounds.bottom;
+    if(canceled)return;
+    if(saved.touch&&!saved.axis){if(inside){reveal(true);card.focus({preventScroll:true});}return;}
+    if(saved.axis==='x'&&Math.abs(saved.dx)>=Math.min(90,card.clientWidth*.24))grade(saved.dx<0?'left':'right');
+  };
   card.addEventListener('pointerup',event=>release(event,false),{signal:session.controller.signal});card.addEventListener('pointercancel',event=>release(event,true),{signal:session.controller.signal});
   play.addEventListener('click',()=>{session.paused=!session.paused;syncOnboardingMedia();},{signal:session.controller.signal});
   session.controller.signal.addEventListener('abort',cancel,{once:true});
