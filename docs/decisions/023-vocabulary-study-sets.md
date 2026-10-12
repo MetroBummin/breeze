@@ -265,3 +265,14 @@ backup or collection write preserves the original collection. Extra backup
 space is a documented constraint, not waived or hidden by destructive cleanup.
 Fault-injected268 reproduces the generic warning and duplicate retry risk; this
 does not prove the physical phone's original exception.
+
+
+Actual short-landscape review exposed the newly added practice slide's minimum
+height clipping its card and overlapping its motion hint with the meaning.
+Only the practice uses two columns below600px height/above600px width; existing
+carousel slides keep their approved design. The card reserves a hint area and
+its minimum includes the44px pause control. Short-view tests require card,
+pause, Back, Next and Skip inside the viewport and no hint/meaning overlap.
+The practice carousel's accessible label describes the exercise rather than a
+video. Portrait fallback remains vertically scrollable for unusually short
+screens, and practice gestures preserve vertical scroll ownership.

@@ -237,7 +237,7 @@ function goOnboardingPage(page){
 }
 function drawOnboarding(){
   const session=onboardingSession;if(!session)return;
-  const page=session.page,finish=page===session.pages.length+1,root=document.getElementById('onboarding');root.dataset.stage=String(page);root.dataset.finish=String(finish);
+  const page=session.page,finish=page===session.pages.length+1,root=document.getElementById('onboarding');root.dataset.stage=String(page);root.dataset.finish=String(finish);root.dataset.feature=session.pages[page-1]?.[0]||'';
   document.getElementById('onboard-welcome').hidden=page!==0;
   document.getElementById('onboard-carousel').hidden=page===0||finish;
   document.getElementById('onboard-pages').hidden=page===0||finish;
@@ -259,7 +259,7 @@ function syncOnboardingMedia(){
   const session=onboardingSession;if(!session)return;
   const token=++session.mediaToken,theme=document.body.classList.contains('dark')?'dark':'light';
   session.studyPractice?.motion(session.paused||session.motion.matches||document.hidden);
-  document.getElementById('onboard-carousel').setAttribute('aria-label','브리즈 기능 안내 · 좌우로 넘기기 · 영상을 누르면 '+(session.paused?'재생':'일시정지'));
+  document.getElementById('onboard-carousel').setAttribute('aria-label',onboardingStudyActive(session)?'단어 학습 연습 · 예제 카드를 탭한 뒤 왼쪽 다시 보기, 오른쪽 기억하기':'브리즈 기능 안내 · 좌우로 넘기기 · 영상을 누르면 '+(session.paused?'재생':'일시정지'));
   for(const [i,video] of [...document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))].entries()){
     video.pause();
     if(i!==session.page-1){if(video.hasAttribute('src')){video.removeAttribute('src');video.load();}continue;}

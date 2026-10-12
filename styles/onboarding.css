@@ -66,9 +66,9 @@ body.dark #onboard-pages i[aria-current="true"]{background:#bacbc2;}
 #onboarding[data-stage="0"] #onboard-navigation{margin-top:0;}
 
 /* One appended hands-on lesson; prior media/layout remains unchanged. */
-.onboard-slide[data-feature=study]{height:calc(100dvh - 356px);max-height:calc(100dvh - 356px);display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;min-height:180px;}
-.onboard-study-example.study-session-stack{width:100%;min-height:160px;flex:1;max-height:100%;overflow:hidden;border-radius:28px;}
-#onboard-study-card{padding:24px;min-height:160px;gap:20px;}
+.onboard-slide[data-feature=study]{height:calc(100dvh - 356px);max-height:calc(100dvh - 356px);display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;min-height:256px;}
+.onboard-study-example.study-session-stack{width:100%;min-height:200px;flex:1;max-height:100%;overflow:hidden;border-radius:28px;}
+#onboard-study-card{padding:24px 24px 64px;min-height:200px;gap:20px;}
 #onboard-study-expression{font:600 32px/1.4 var(--ui);margin:0;}
 #onboard-study-answer{margin:0;font-size:24px;}
 .onboard-study-motion{position:absolute;bottom:24px;left:calc(50% - 12px);width:24px;height:24px;color:var(--onboard-muted);font:600 24px/1 var(--ui);pointer-events:none;animation:onboard-study-hint 1.6s ease-in-out infinite;}
@@ -84,3 +84,16 @@ body.dark #onboard-pages i[aria-current="true"]{background:#bacbc2;}
 @keyframes onboard-study-hint{0%,100%{transform:translateX(0);opacity:.45;}50%{transform:translateX(calc(var(--onboard-hint-direction,1)*36px));opacity:1;}}
 @keyframes onboard-study-tap{0%,100%{transform:scale(1);opacity:.45;}50%{transform:scale(1.3);opacity:1;}}
 @media(prefers-reduced-motion:reduce){.onboard-study-motion{animation:none!important;}}
+
+/* Only the added lesson uses landscape columns. All existing slides retain
+   their original composition; the card and escape controls fit short screens. */
+@media(max-height:600px) and (min-width:600px){
+  #onboarding[data-feature=study] #onboard-coach{width:min(800px,100%);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto 1fr auto auto;column-gap:24px;padding:16px 24px calc(16px + env(safe-area-inset-bottom));}
+  #onboarding[data-feature=study] #onboard-carousel{grid-column:1;grid-row:1 / 6;}
+  #onboarding[data-feature=study] .onboard-slide{height:calc(100dvh - 32px - env(safe-area-inset-bottom));max-height:calc(100dvh - 32px - env(safe-area-inset-bottom));}
+  #onboarding[data-feature=study] #onboard-prompt{grid-column:2;grid-row:1;margin:0 0 8px;}
+  #onboarding[data-feature=study] #onboard-note{grid-column:2;grid-row:2;margin:0;}
+  #onboarding[data-feature=study] #onboard-pages{grid-column:2;grid-row:3;align-self:end;margin:12px 0;}
+  #onboarding[data-feature=study] #onboard-navigation{grid-column:2;grid-row:4;}
+  #onboarding[data-feature=study] #onboard-skip{grid-column:2;grid-row:5;}
+}
