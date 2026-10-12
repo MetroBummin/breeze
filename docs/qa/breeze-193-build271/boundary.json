@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "version": "1.9.3",
+  "buildNumber": "271",
+  "previousTestFlightBuild": "270",
+  "reviewedPR": 158,
+  "reviewedSource": "78967ed9f61091f25fa42a9df0eebdb11e770e82",
+  "reviewedTree": "f2ceadb5492137911217f1c48a989bca39560292",
+  "files": {
+    "ios/App/App.xcodeproj/project.pbxproj": {
+      "mode": "100644",
+      "sha256": "94910d1cd70e76ed9a9f595a575483e6ca0771b8619071d01cc56c5be6a6cc6b"
+    },
+    "tools/verify-ios-release.mjs": {
+      "mode": "100644",
+      "sha256": "2a0765fc312374326197ba9c06f9937551e4337c312e74a93d874bad12263e4e"
+    },
+    "tests/verify-ios-cloud-build.mjs": {
+      "mode": "100644",
+      "sha256": "264c51029d611cbba5c1cdc9e03fa7d138d808da70f551106d9d8243ababf79a"
+    },
+    "tools/ios-testflight.sh": {
+      "mode": "100644",
+      "sha256": "49191e7ead07c485292d7d09446a5f34f6cc55504f3bf9ee39de1abec05e1630"
+    },
+    ".github/workflows/design-brand.yml": {
+      "mode": "100644",
+      "sha256": "6bee028d8727d09af65f7020c53131b7d96c38f9aa6e8931e71db7eb99673c96"
+    },
+    ".github/workflows/social-auth.yml": {
+      "mode": "100644",
+      "sha256": "10dfbeee2f3af86379481632cb9ed778b3bca5830fad8965b98c36190b750077"
+    },
+    ".github/workflows/integrity.yml": {
+      "mode": "100644",
+      "sha256": "7a52dbb53e751544e83777387b9850b9b62fb80f9c4894b0be942dcc696b6199"
+    }
+  },
+  "integrationFiles": [
+    "docs/qa/breeze-193-build271/boundary.json",
+    "tools/record-193-build271-boundary.mjs",
+    "tests/verify-193-build271-boundary.mjs",
+    "docs/decisions/029-breeze-193-build271.md",
+    "docs/qa/breeze-193-build271/native-assets.json",
+    "docs/qa/breeze-193-build271/local-validation.json"
+  ],
+  "integrationSha256": {
+    "tools/record-193-build271-boundary.mjs": "daf3aa347fda63bbeee6de7e75cca559f4845e479ce657b25d362bc225336be6",
+    "tests/verify-193-build271-boundary.mjs": "40841d6b211f265c46b3688a32f48dff66492dfa4cb694191bdfb75a50831eaa",
+    "docs/decisions/029-breeze-193-build271.md": "54f8f85c24554ed3e1877972948bccb90f16943c8919cb809adb0c55c12b2ff9",
+    "docs/qa/breeze-193-build271/native-assets.json": "6e747491d8cafff0ec1e2371c506a7d861ababaec9b0cebd65f93bc1c31792ed",
+    "docs/qa/breeze-193-build271/local-validation.json": "4d22f1459fdedb49289cf808589dafeed483330c7e14d3f9ded2149c683a0765"
+  }
+}
