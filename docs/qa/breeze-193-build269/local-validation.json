@@ -1,5 +1,5 @@
 {
-  "reviewedSource": "1163e00cfe20694d3ec32d0271199d27bc2be9d1",
+  "reviewedSource": "849403a7a1084de8258399f327f56dcb75b7f995",
   "buildNumber": "269",
   "localPassed": [
     "269 boundary/historical/negative checks",
@@ -9,14 +9,21 @@
     "native package",
     "native service-worker guard",
     "App/Share Debug/Release269",
-    "signature touch/contrast on set and all-word decks"
+    "signature touch/contrast on set and all-word decks",
+    "71 study storage/UI/model contracts including quota, migration and post-commit retry",
+    "existing strict welcome/carousel browser suite",
+    "isolated onboarding10 light/dark layouts and real-data preservation",
+    "create45-book10 light/dark layouts, fixed actions, selection and quota retry",
+    "Chromium study lifecycle and cold offline launch"
   ],
   "exactCandidateGitHubCI": "pending; prior-head passes are not candidate coverage",
   "nativeSigningArchiveUpload": "not executed; parent owns one manual Default workflow start",
   "remainingNativeQA": [
     "physical airplane mode",
     "56-page native restart",
-    "physical retry tap"
+    "physical retry tap",
+    "actual iOS software keyboard on creation sheet",
+    "physical iPhone initial exception not yet captured"
   ],
   "preservedFailedGate": "baseline WebKit offline Blob/FileReader; not waived",
   "mainMerged": false,

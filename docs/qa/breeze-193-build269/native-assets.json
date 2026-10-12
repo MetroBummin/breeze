@@ -1,5 +1,5 @@
 {
-  "reviewedSource": "1163e00cfe20694d3ec32d0271199d27bc2be9d1",
+  "reviewedSource": "849403a7a1084de8258399f327f56dcb75b7f995",
   "checkedInVersion": "1.9.3(269)",
   "filesMatchSourceWwwAndIosPublic": true,
   "fileCount": 232,
@@ -762,7 +762,7 @@
     {
       "path": "index.html",
       "bytes": 53115,
-      "sha256": "67bab0a29bea1f461c2a25e31231600fd43a765c9634d99c9eaaa96a7037fde7"
+      "sha256": "6caee85f771a69ace4fbfe3761f485c52379add1b81a3e9141a76ee8db9c84d8"
     },
     {
       "path": "modules/lexical/core.js",
@@ -1036,8 +1036,8 @@
     },
     {
       "path": "scripts/ui/onboarding.js",
-      "bytes": 15703,
-      "sha256": "f847746e8d9cb7d3e30d1742d53a8a8a48fdb318fe444ccf220a8d694a1620fe"
+      "bytes": 24151,
+      "sha256": "ee1044358684400c2957dcdbe118f93e569a9cacea8b8fb7fff42ae1354440f9"
     },
     {
       "path": "scripts/ui/preferences.js",
@@ -1056,8 +1056,8 @@
     },
     {
       "path": "scripts/ui/study-sets.js",
-      "bytes": 55380,
-      "sha256": "101d1728914973c704c75ca21543fe04c16fefec68beba4f5b288c4b506dbc73"
+      "bytes": 58029,
+      "sha256": "88ec8bdf4b822d857aae43e531f43bb31c21254b73685a5a57630a1040f6b145"
     },
     {
       "path": "scripts/ui/task-dialog.js",
@@ -1121,8 +1121,8 @@
     },
     {
       "path": "styles/onboarding.css",
-      "bytes": 7192,
-      "sha256": "8f315304ce0eca54b0e85225855100c3efe506adfc9e357de3a7938baaa94b63"
+      "bytes": 9342,
+      "sha256": "0bbe462a06f2d74c0d1e2c3f473d03f25c19a6dc1e29b407b18c90e2d3ee2aea"
     },
     {
       "path": "styles/pdf-ink.css",
@@ -1141,8 +1141,8 @@
     },
     {
       "path": "styles/study-sets.css",
-      "bytes": 23593,
-      "sha256": "c34b6ba195a4f48b090b16cb2e3b2a27ab9a9a9f1014ca6b7eb89cead0f22181"
+      "bytes": 24090,
+      "sha256": "50e78d534feb0e715549a58fed6f02371c5fa635cfe8d774838d6a842f2a698c"
     },
     {
       "path": "styles/study.css",
