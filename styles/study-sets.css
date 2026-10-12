@@ -149,4 +149,5 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 @media(prefers-reduced-motion:reduce){#v-memory-set #study-sets-edit,.study-sets-edit-menu{transition:none;}}
 
 #v-memory-set :is(#study-sets-back,#study-sets-edit)>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+#v-memory-set #study-sets-back>svg{width:var(--control-back-icon-size);height:var(--control-back-icon-size);stroke-width:var(--control-back-icon-stroke);}
 #v-memory-set #study-sets-edit>svg circle{fill:currentColor;stroke:none;}

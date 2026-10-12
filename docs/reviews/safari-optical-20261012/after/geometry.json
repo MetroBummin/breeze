@@ -1,0 +1,1606 @@
+{
+  "platform": "Chromium touch emulation; CSS pixels, safe-area env=0; not native iOS",
+  "measurements": [
+    {
+      "view": "home",
+      "dark": false,
+      "pdf": false,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 33.15625,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 89.15625,
+          "y": 788,
+          "width": 211.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": false,
+      "pdf": false,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 33.15625,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 89.15625,
+          "y": 788,
+          "width": 211.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": false,
+      "pdf": false,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 33.15625,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 89.15625,
+          "y": 788,
+          "width": 211.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "home",
+      "dark": true,
+      "pdf": false,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 33.15625,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 89.15625,
+          "y": 788,
+          "width": 211.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": true,
+      "pdf": false,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 33.15625,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 89.15625,
+          "y": 788,
+          "width": 211.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": false,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 33.15625,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 89.15625,
+          "y": 788,
+          "width": 211.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": true,
+      "width": 390,
+      "height": 844,
+      "rects": [
+        {
+          "id": "reader-navigation",
+          "x": 33.15625,
+          "y": 788,
+          "width": 88,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 129.15625,
+          "y": 788,
+          "width": 171.6875,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 308.84375,
+          "y": 788,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "iphone"
+    },
+    {
+      "view": "home",
+      "dark": false,
+      "pdf": false,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 154,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 210,
+          "y": 1124,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": false,
+      "pdf": false,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 154,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 210,
+          "y": 1124,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": false,
+      "pdf": false,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 154,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 210,
+          "y": 1124,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "home",
+      "dark": true,
+      "pdf": false,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 154,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 210,
+          "y": 1124,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": true,
+      "pdf": false,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 154,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 210,
+          "y": 1124,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": false,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 154,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 210,
+          "y": 1124,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": true,
+      "width": 820,
+      "height": 1180,
+      "rects": [
+        {
+          "id": "reader-navigation",
+          "x": 154,
+          "y": 1124,
+          "width": 88,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 250,
+          "y": 1124,
+          "width": 360,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 618,
+          "y": 1124,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-portrait"
+    },
+    {
+      "view": "home",
+      "dark": false,
+      "pdf": false,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 334,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 390,
+          "y": 764,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": false,
+      "pdf": false,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 334,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 390,
+          "y": 764,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": false,
+      "pdf": false,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 334,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 390,
+          "y": 764,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "home",
+      "dark": true,
+      "pdf": false,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 334,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 390,
+          "y": 764,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": true,
+      "pdf": false,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 334,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 390,
+          "y": 764,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": false,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 334,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 390,
+          "y": 764,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": true,
+      "width": 1180,
+      "height": 820,
+      "rects": [
+        {
+          "id": "reader-navigation",
+          "x": 334,
+          "y": 764,
+          "width": 88,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 430,
+          "y": 764,
+          "width": 360,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 798,
+          "y": 764,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "ipad-landscape"
+    },
+    {
+      "view": "home",
+      "dark": false,
+      "pdf": false,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 27.203125,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 83.203125,
+          "y": 512,
+          "width": 153.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": false,
+      "pdf": false,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 27.203125,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 83.203125,
+          "y": 512,
+          "width": 153.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": false,
+      "pdf": false,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 27.203125,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 83.203125,
+          "y": 512,
+          "width": 153.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "home",
+      "dark": true,
+      "pdf": false,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 27.203125,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 83.203125,
+          "y": 512,
+          "width": 153.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": true,
+      "pdf": false,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 27.203125,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 83.203125,
+          "y": 512,
+          "width": 153.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": false,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 27.203125,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 83.203125,
+          "y": 512,
+          "width": 153.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": true,
+      "width": 320,
+      "height": 568,
+      "rects": [
+        {
+          "id": "reader-navigation",
+          "x": 27.203125,
+          "y": 512,
+          "width": 88,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 123.203125,
+          "y": 512,
+          "width": 113.59375,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 244.796875,
+          "y": 512,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "narrow"
+    },
+    {
+      "view": "home",
+      "dark": false,
+      "pdf": false,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 464,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 520,
+          "y": 944,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": false,
+      "pdf": false,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 464,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 520,
+          "y": 944,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": false,
+      "pdf": false,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 464,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 520,
+          "y": 944,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "home",
+      "dark": true,
+      "pdf": false,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "nav-vocab",
+          "x": 464,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-resume",
+          "x": 520,
+          "y": 944,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "home-add",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "vocab",
+      "dark": true,
+      "pdf": false,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "wordbook-home",
+          "x": 464,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-review",
+          "x": 520,
+          "y": 944,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "wordbook-add",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 20,
+        "iconHeight": 20,
+        "stroke": "1.8px",
+        "centerX": 0,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": false,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "readback",
+          "x": 464,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 520,
+          "y": 944,
+          "width": 400,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop",
+      "control": {
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "iconWidth": 32,
+        "iconHeight": 32,
+        "stroke": "2.1px",
+        "centerX": 1,
+        "centerY": 0
+      }
+    },
+    {
+      "view": "read",
+      "dark": true,
+      "pdf": true,
+      "width": 1440,
+      "height": 1000,
+      "rects": [
+        {
+          "id": "reader-navigation",
+          "x": 464,
+          "y": 944,
+          "width": 88,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "readpill",
+          "x": 560,
+          "y": 944,
+          "width": 360,
+          "height": 48,
+          "bottom": 8
+        },
+        {
+          "id": "aafab",
+          "x": 928,
+          "y": 944,
+          "width": 48,
+          "height": 48,
+          "bottom": 8
+        }
+      ],
+      "gaps": [
+        8,
+        8
+      ],
+      "device": "desktop"
+    }
+  ],
+  "errors": []
+}

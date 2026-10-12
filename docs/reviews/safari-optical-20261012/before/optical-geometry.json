@@ -1,0 +1,1726 @@
+{
+  "phase": "before",
+  "sourceRoot": "exact268 Git archive",
+  "platform": "Actual Chromium touch browser renders, DPR2 CSS pixels; mocked tablet capability; not native iOS or Safari",
+  "privateReferencePixelsSeen": false,
+  "cases": [
+    {
+      "device": "phone",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 96,
+        "height": 48,
+        "right": 129.15625,
+        "bottom": 836
+      },
+      "pill": {
+        "x": 137.15625,
+        "y": 788,
+        "width": 163.6875,
+        "height": 48,
+        "right": 300.84375,
+        "bottom": 836
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48,
+        "right": 356.84375,
+        "bottom": 836
+      },
+      "back": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 48,
+        "height": 48,
+        "right": 81.15625,
+        "bottom": 836
+      },
+      "pages": {
+        "x": 80.15625,
+        "y": 787,
+        "width": 48,
+        "height": 48,
+        "right": 128.15625,
+        "bottom": 835
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 96,
+        "height": 48,
+        "right": 129.15625,
+        "bottom": 836
+      },
+      "pill": {
+        "x": 137.15625,
+        "y": 788,
+        "width": 163.6875,
+        "height": 48,
+        "right": 300.84375,
+        "bottom": 836
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48,
+        "right": 356.84375,
+        "bottom": 836
+      },
+      "back": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 48,
+        "height": 48,
+        "right": 81.15625,
+        "bottom": 836
+      },
+      "pages": {
+        "x": 80.15625,
+        "y": 787,
+        "width": 48,
+        "height": 48,
+        "right": 128.15625,
+        "bottom": 835
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone",
+      "state": "safe-area-34",
+      "method": "Emulation.setSafeAreaInsetsOverride",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 33.15625,
+        "y": 762,
+        "width": 96,
+        "height": 48,
+        "right": 129.15625,
+        "bottom": 810
+      },
+      "pill": {
+        "x": 137.15625,
+        "y": 762,
+        "width": 163.6875,
+        "height": 48,
+        "right": 300.84375,
+        "bottom": 810
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 762,
+        "width": 48,
+        "height": 48,
+        "right": 356.84375,
+        "bottom": 810
+      },
+      "back": {
+        "x": 33.15625,
+        "y": 762,
+        "width": 48,
+        "height": 48,
+        "right": 81.15625,
+        "bottom": 810
+      },
+      "pages": {
+        "x": 80.15625,
+        "y": 761,
+        "width": 48,
+        "height": 48,
+        "right": 128.15625,
+        "bottom": 809
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 34,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48,
+        "right": 250,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 202,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 201,
+        "y": 1123,
+        "width": 48,
+        "height": 48,
+        "right": 249,
+        "bottom": 1171
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48,
+        "right": 250,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 202,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 201,
+        "y": 1123,
+        "width": 48,
+        "height": 48,
+        "right": 249,
+        "bottom": 1171
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-portrait",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48,
+        "right": 250,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 202,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 201,
+        "y": 1123,
+        "width": 48,
+        "height": 48,
+        "right": 249,
+        "bottom": 1171
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 96,
+        "height": 48,
+        "right": 430,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 438,
+        "y": 764,
+        "width": 352,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 382,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 381,
+        "y": 763,
+        "width": 48,
+        "height": 48,
+        "right": 429,
+        "bottom": 811
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48,
+        "right": 250,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 202,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 201,
+        "y": 1123,
+        "width": 48,
+        "height": 48,
+        "right": 249,
+        "bottom": 1171
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 96,
+        "height": 48,
+        "right": 430,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 438,
+        "y": 764,
+        "width": 352,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 382,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 381,
+        "y": 763,
+        "width": 48,
+        "height": 48,
+        "right": 429,
+        "bottom": 811
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 96,
+        "height": 48,
+        "right": 430,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 438,
+        "y": 764,
+        "width": 352,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 382,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 381,
+        "y": 763,
+        "width": 48,
+        "height": 48,
+        "right": 429,
+        "bottom": 811
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-landscape",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48,
+        "right": 250,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 202,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 201,
+        "y": 1123,
+        "width": 48,
+        "height": 48,
+        "right": 249,
+        "bottom": 1171
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 96,
+        "height": 48,
+        "right": 430,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 438,
+        "y": 764,
+        "width": 352,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 382,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 381,
+        "y": 763,
+        "width": 48,
+        "height": 48,
+        "right": 429,
+        "bottom": 811
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 96,
+        "height": 48,
+        "right": 250,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 258,
+        "y": 1124,
+        "width": 352,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 202,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 201,
+        "y": 1123,
+        "width": 48,
+        "height": 48,
+        "right": 249,
+        "bottom": 1171
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "narrow",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 96,
+        "height": 48,
+        "right": 123.203125,
+        "bottom": 560
+      },
+      "pill": {
+        "x": 131.203125,
+        "y": 512,
+        "width": 105.59375,
+        "height": 48,
+        "right": 236.796875,
+        "bottom": 560
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 512,
+        "width": 48,
+        "height": 48,
+        "right": 292.796875,
+        "bottom": 560
+      },
+      "back": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 48,
+        "height": 48,
+        "right": 75.203125,
+        "bottom": 560
+      },
+      "pages": {
+        "x": 74.203125,
+        "y": 511,
+        "width": 48,
+        "height": 48,
+        "right": 122.203125,
+        "bottom": 559
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "narrow",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 96,
+        "height": 48,
+        "right": 123.203125,
+        "bottom": 560
+      },
+      "pill": {
+        "x": 131.203125,
+        "y": 512,
+        "width": 105.59375,
+        "height": 48,
+        "right": 236.796875,
+        "bottom": 560
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 512,
+        "width": 48,
+        "height": 48,
+        "right": 292.796875,
+        "bottom": 560
+      },
+      "back": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 48,
+        "height": 48,
+        "right": 75.203125,
+        "bottom": 560
+      },
+      "pages": {
+        "x": 74.203125,
+        "y": 511,
+        "width": 48,
+        "height": 48,
+        "right": 122.203125,
+        "bottom": 559
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone-landscape",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 166,
+        "y": 334,
+        "width": 96,
+        "height": 48,
+        "right": 262,
+        "bottom": 382
+      },
+      "pill": {
+        "x": 270,
+        "y": 334,
+        "width": 352,
+        "height": 48,
+        "right": 622,
+        "bottom": 382
+      },
+      "settings": {
+        "x": 630,
+        "y": 334,
+        "width": 48,
+        "height": 48,
+        "right": 678,
+        "bottom": 382
+      },
+      "back": {
+        "x": 166,
+        "y": 334,
+        "width": 48,
+        "height": 48,
+        "right": 214,
+        "bottom": 382
+      },
+      "pages": {
+        "x": 213,
+        "y": 333,
+        "width": 48,
+        "height": 48,
+        "right": 261,
+        "bottom": 381
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone-landscape",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 166,
+        "y": 334,
+        "width": 96,
+        "height": 48,
+        "right": 262,
+        "bottom": 382
+      },
+      "pill": {
+        "x": 270,
+        "y": 334,
+        "width": 352,
+        "height": 48,
+        "right": 622,
+        "bottom": 382
+      },
+      "settings": {
+        "x": 630,
+        "y": 334,
+        "width": 48,
+        "height": 48,
+        "right": 678,
+        "bottom": 382
+      },
+      "back": {
+        "x": 166,
+        "y": 334,
+        "width": 48,
+        "height": 48,
+        "right": 214,
+        "bottom": 382
+      },
+      "pages": {
+        "x": 213,
+        "y": 333,
+        "width": 48,
+        "height": 48,
+        "right": 261,
+        "bottom": 381
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 464,
+        "y": 844,
+        "width": 96,
+        "height": 48,
+        "right": 560,
+        "bottom": 892
+      },
+      "pill": {
+        "x": 568,
+        "y": 844,
+        "width": 352,
+        "height": 48,
+        "right": 920,
+        "bottom": 892
+      },
+      "settings": {
+        "x": 928,
+        "y": 844,
+        "width": 48,
+        "height": 48,
+        "right": 976,
+        "bottom": 892
+      },
+      "back": {
+        "x": 464,
+        "y": 844,
+        "width": 48,
+        "height": 48,
+        "right": 512,
+        "bottom": 892
+      },
+      "pages": {
+        "x": 511,
+        "y": 843,
+        "width": 48,
+        "height": 48,
+        "right": 559,
+        "bottom": 891
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 464,
+        "y": 844,
+        "width": 96,
+        "height": 48,
+        "right": 560,
+        "bottom": 892
+      },
+      "pill": {
+        "x": 568,
+        "y": 844,
+        "width": 352,
+        "height": 48,
+        "right": 920,
+        "bottom": 892
+      },
+      "settings": {
+        "x": 928,
+        "y": 844,
+        "width": 48,
+        "height": 48,
+        "right": 976,
+        "bottom": 892
+      },
+      "back": {
+        "x": 464,
+        "y": 844,
+        "width": 48,
+        "height": 48,
+        "right": 512,
+        "bottom": 892
+      },
+      "pages": {
+        "x": 511,
+        "y": 843,
+        "width": 48,
+        "height": 48,
+        "right": 559,
+        "bottom": 891
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round"
+      },
+      "modeIcon": {
+        "width": 21,
+        "height": 21,
+        "stroke": "1.7px",
+        "cap": "round"
+      },
+      "textPath": "M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6",
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 1,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "readback",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    }
+  ],
+  "errors": []
+}

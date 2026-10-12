@@ -165,7 +165,7 @@
      보다 0.9칸(19px 로 그리면 0.71px) 왼쪽입니다. 뾰족한 끝이 열린 쪽보다 가볍게
      보이는 것까지 더해 1px 만 오른쪽으로 밉니다. 상자는 그대로입니다 — 옮기는
      것은 그림 하나입니다. */
-  #readback svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
+  #readback svg{width:var(--control-back-icon-size);height:var(--control-back-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-back-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
   /* 보이는 것은 작게, 누르는 자리는 넉넉하게. 그림을 키우면 종이 위에서 무거워
      지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
   #readback::after{content:''; position:absolute; inset:-6px;}
@@ -239,7 +239,7 @@
 
   /* 원본 ↔ 글자 — 글자 하나 없이 지금 모드의 반대쪽을 그립니다.
      종이(모서리 접힌 문서)면 원본으로, 글줄이면 글자 화면으로 갑니다. */
-  #modefab svg{width:21px; height:21px;}
+  #modefab svg{width:24px; height:24px;stroke-width:var(--control-back-icon-stroke);}
   #modefab svg g{transform-origin:12px 12px; transition:opacity .22s ease, transform .22s ease;}
   #modefab .mf-text{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}

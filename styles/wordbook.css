@@ -122,7 +122,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #v-study{max-width:760px;min-height:100svh;box-sizing:border-box;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));color:var(--settings-ink);}
 #vocabulary-review-page{min-height:calc(100svh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column;}
 #review-close{display:grid;place-items:center;align-self:flex-start;flex:none;width:44px;height:44px;margin:0 0 12px -10px;padding:0;border:0;background:transparent;color:var(--settings-ink);cursor:pointer;}
-#review-close svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+#review-close svg{width:var(--control-back-icon-size);height:var(--control-back-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-back-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
 #review-card{display:flex;flex-direction:column;flex:1;padding:24px 0;border:0;background:transparent;}
 #vocabulary-review-page #review-expression{font-size:27px;}
 #vocabulary-review-page #review-sentence{font-size:21px;}

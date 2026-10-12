@@ -16,10 +16,10 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const qaDir=resolve(tmpdir(),'breeze16-qa');
 mkdirSync(qaDir,{recursive:true});
-// Approved48px dock:96px navigation,48px settings and balanced8px gaps.
-// Center the pill in the available interval; the old44px slots implied22px.
+// Optical review:88px navigation with independent44px targets,48px settings
+// and balanced8px gaps. Center the pill in the actual available interval.
 function assertPdfDock(nav,pill,settings,width,label){
- assert.equal(nav.width,96,label+': two navigation targets');assert.equal(settings.width,48,label+': settings target');
+ assert.equal(nav.width,88,label+': two44px navigation targets');assert.equal(settings.width,48,label+': settings target');
  for(const r of [nav,pill,settings])assert.equal(r.height,48,label+': common row height');
  const gaps=[pill.x-nav.x-nav.width,settings.x-pill.x-pill.width];
  assert.ok(gaps.every(g=>Math.abs(g-8)<1),label+': balanced8px gaps '+JSON.stringify({nav,pill,settings,gaps}));
@@ -209,9 +209,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const [inkPill,navPill,aaPill]=await Promise.all(['#readpill','#pdf-page-control','#aafab'].map(id=>page.locator(id).boundingBox()));
    assert.ok(Math.abs(inkPill.y+inkPill.height-navPill.y-navPill.height)<4&&Math.abs(inkPill.y+inkPill.height-aaPill.y-aaPill.height)<4,`${width}: writing pill stays on the bottom row`);
    assertPdfDock(navPill,inkPill,aaPill,width,'Expanded writing');
-   const navBorder=await page.locator('#pdf-page-control').evaluate(n=>parseFloat(getComputedStyle(n).borderRightWidth));
-   assert.equal(position.width,48,'Page button preserves its48px target');
-   assert.ok(position.x>=navPill.x&&Math.abs(position.x+position.width-(navPill.x+navPill.width-navBorder))<.5,'Page button owns the right navigation slot inside its border');
+   assert.equal(position.width,44,'Page button preserves its44px target');
+   assert.ok(position.x>=navPill.x&&Math.abs(position.x+position.width-(navPill.x+navPill.width))<.5,'Page button owns the independent right navigation slot');
    dockEvidence.push({mode:'writing',width,height,dark,nav:navPill,pill:inkPill,settings:aaPill,centerOffset:inkPill.x+inkPill.width/2-width/2});
    assert.ok(navPill.x+navPill.width+4<=inkPill.x&&inkPill.x+inkPill.width+4<=aaPill.x,`${width}: writing pill stays between navigation and settings`);
    if(!dark)await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-writing.png`});

@@ -440,3 +440,33 @@ the actual free interval between the96px navigation and48px settings slots.
 Its former narrow22px/wide0px and reduced-motion217px expectations are obsolete
 under the approved row. Immediate continuity, synchronized easing, no overshoot,
 settling, interruption/reversal, writing and reduced-motion assertions remain.
+
+### Post268 optical review,2026-10-12 (Draft only)
+
+Parent verified private946×2048 reference images and supplied optical targets.
+The consumer's supported Library materialization failed; the consumer has not
+seen those original pixels. Parent owns direct comparison and final visual review.
+These are product requirements derived from screenshots, not published Safari
+capsule/glyph specifications. No merge, deployment or new release is authorized.
+
+Preserve48px row height, bottom safe-area rule,24px capsule radius,8px outer gaps,
+row cap and all material tokens. The PDF/EPUB pair uses two independent44×48px
+regions inside88px; the central capsule gains8px. Its center is the actual free
+interval (20px offset for the balanced row), and compact controls remain34px.
+The page button is anchored to the outer border edge and closed-only overflow
+is visible to prevent the old1px hit-rectangle overlap. The drawer keeps its
+contained overflow; no gesture owner, storage or navigation function changes.
+
+Reader and study back glyphs share32px frames and2.1 rounded stroke. Their actual
+painted area is much smaller than the SVG frame. The mode glyph uses24px/2.1
+and three paragraph lines, preserving the original/text semantics and labels.
+Unrelated glyphs, header44px targets and writing44px targets keep their sizes.
+
+Paired renders use identical fixtures/viewport/theme. Geometry guards require
+88px/48px slots,48px heights,8px gaps and real free-space centering. Touch tests
+keep exact44px rectangles, no overlap and subpixel DOM owner checks. Chromium's
+2px touch footprint straddled a0.25px seam sample and its synthesized click
+rounded to an integer; actual trusted taps now use the first unambiguous whole
+pixel inside each region. Assertions are retained; no delay/gesture workaround
+is added to product code. Both native reference comparison and native-device
+touch/rendering remain outside this browser evidence.
