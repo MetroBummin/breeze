@@ -31,5 +31,11 @@
     "native": "actual airplane mode,56-page native restart,physical retry and iPad Pencil/palm/playback unverified",
     "Library": "current prepared batch helper failed before preparation/network; no new IDs",
     "release": "no archive/upload/dispatch/main merge, parent sole dispatcher"
+  },
+  "CI877c60e": {
+    "WebKit study creation/quota/All Words": "passed",
+    "WebKit app-family runner": "wrong engine because env moved to following step; exact CI-only repair",
+    "Reader header equality/diagnostics": "both engines passed",
+    "OCR offline exception": "same269 NotReadableError both original/fresh local blobs at line209; unwaived"
   }
 }

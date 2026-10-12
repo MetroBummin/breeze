@@ -15,7 +15,7 @@ export const historical266='e9dc1f6986e1d73f1fd5df1aea9c50ad3723cae4';
 const receiptFile='docs/qa/breeze-193-build270/boundary.json';
 export const integrationFiles=[receiptFile,'tools/record-193-build270-boundary.mjs','tests/verify-193-build270-boundary.mjs','docs/decisions/028-breeze-193-build270.md','docs/qa/breeze-193-build270/native-assets.json','docs/qa/breeze-193-build270/local-validation.json'];
 const versionFiles=['ios/App/App.xcodeproj/project.pbxproj','tools/verify-ios-release.mjs','tests/verify-ios-cloud-build.mjs','tools/ios-testflight.sh'];
-const runnerFiles=['.github/workflows/design-brand.yml','.github/workflows/social-auth.yml','.github/workflows/integrity.yml'];
+const runnerFiles=['.github/workflows/design-brand.yml','.github/workflows/social-auth.yml','.github/workflows/integrity.yml','.github/workflows/study-sets.yml'];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});
 const bytes=(sha,file)=>git('show',sha+':'+file);
 const read=file=>readFileSync(join(root,file));
@@ -32,7 +32,13 @@ export function expectedContract(){
   if(file==='tests/verify-ios-cloud-build.mjs')expected=expected.replace("['270', '270',","['270', '271',").replace("'267', '268', '0'","'267', '268', '269', '0'");
   files[file]={mode:tree(reviewedSource)[file].mode,method:'exact270 increment; reject existing269 or lower; preserve counter/drift tests',sha256:hash(expected)};
  }
- for(const file of runnerFiles)files[file]={mode:'100644',method:'select270 verifier; preserve historical269/268/267/266 checkers',sha256:hash(bytes(reviewedSource,file).toString().replaceAll('tests/verify-193-build269-boundary.mjs','tests/verify-193-build270-boundary.mjs'))};
+ for(const file of runnerFiles){
+  let expected=bytes(reviewedSource,file).toString().replaceAll('tests/verify-193-build269-boundary.mjs','tests/verify-193-build270-boundary.mjs');
+  if(file==='.github/workflows/study-sets.yml')expected=expected.replace(
+   '      - run: node tests/capture-app-icon-family.mjs\n      - run: node tests/verify-control-optics-browser.mjs\n        env:\n          BROWSER: ${{ matrix.engine }}\n          BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}',
+   '      - run: node tests/capture-app-icon-family.mjs\n        env:\n          BROWSER: ${{ matrix.engine }}\n          BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}\n      - run: node tests/verify-control-optics-browser.mjs\n        env:\n          BROWSER: ${{ matrix.engine }}');
+  files[file]={mode:'100644',method:file==='.github/workflows/study-sets.yml'?'exact engine env ownership correction for both matrix steps':'select270 verifier; preserve historical269/268/267/266 checkers',sha256:hash(expected)};
+ }
  const followup=git('diff','--name-only',historical269,reviewedSource).toString().trim().split('\n');
  return {schemaVersion:1,version:'1.9.3',buildNumber:'270',previousTestFlightBuild:'269',historical269,historical268,historical267,historical266,reviewedSource,reviewedTree:git('rev-parse',reviewedSource+'^{tree}').toString().trim(),reviewedPR:156,storageOrigin:'b5ec2f3755917b978c5d344f9a07bf173851e7b7',storageIntegration:'075922e',followupSha256:Object.fromEntries(followup.map(file=>[file,hash(bytes(reviewedSource,file))])),files,integrationFiles};
 }

@@ -136,6 +136,11 @@
       "mode": "100644",
       "method": "select270 verifier; preserve historical269/268/267/266 checkers",
       "sha256": "8b4fad2fb34e25202f40398ddcb912a6e4eb61cdb2a7e87f5a1b71c1db6f482e"
+    },
+    ".github/workflows/study-sets.yml": {
+      "mode": "100644",
+      "method": "exact engine env ownership correction for both matrix steps",
+      "sha256": "57f5346e337f71806e68609a7000d12fa7075fe12e72167a21204aeafe90a8af"
     }
   },
   "integrationFiles": [
@@ -147,10 +152,10 @@
     "docs/qa/breeze-193-build270/local-validation.json"
   ],
   "integrationSha256": {
-    "tools/record-193-build270-boundary.mjs": "34271d8820c1f4c85c309004baede3382aa571467cc917340db556fa3b0d78dd",
+    "tools/record-193-build270-boundary.mjs": "01c245da87cb98984fa32e0e17060c79cdfa03bf687818a839d4e6dd270fa17e",
     "tests/verify-193-build270-boundary.mjs": "90ddec59403bf7b8617b65c4bb808911e4f1bd5968a2df0e83f1a169e295a32e",
-    "docs/decisions/028-breeze-193-build270.md": "40862c9ee1e79f3446ce1e099b1e580a064b12244c242b255bea38cb2bd05c07",
+    "docs/decisions/028-breeze-193-build270.md": "497e4413c4c829abb88302f2857b7b226844bcec7eae932933612874afb97c3e",
     "docs/qa/breeze-193-build270/native-assets.json": "002adaacb1f0eacfd9bddcf56188334534f08ce82d454b170f83f236a76f2025",
-    "docs/qa/breeze-193-build270/local-validation.json": "cad1f8db9875670f5ce9041fe4fecc06f7bcc475857ecd661d1992c9acf0a67b"
+    "docs/qa/breeze-193-build270/local-validation.json": "5bb6682cb0efab8be94c2f418f36492a0d8b5fa9c7b39a6e5aff9dfbad7cc37c"
   }
 }

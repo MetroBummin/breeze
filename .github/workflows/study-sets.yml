@@ -95,10 +95,12 @@ jobs:
         env:
           BROWSER: ${{ matrix.engine }}
       - run: node tests/capture-app-icon-family.mjs
-      - run: node tests/verify-control-optics-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
           BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}
+      - run: node tests/verify-control-optics-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
       - run: node tests/verify-design-memory-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}

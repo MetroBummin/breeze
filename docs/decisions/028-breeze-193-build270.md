@@ -16,7 +16,8 @@ cross-version downgrade and vocabulary-only localStorage exhaustion are outside
 the bounded migration.
 
 The release boundary pins this full source tree with only the four exact269→270
-release-file deltas and three runner selections. Existing269/lower counters are
+release-file deltas, three boundary runner selections and one exact matrix-engine
+environment correction. Existing269/lower counters are
 rejected; both App/Share Debug/Release use1.9.3(270). Historical269/268/267/266
 and earlier receipts/checkers remain byte-identical, verified in isolated269
 with nested historical/negative checks. New270 negatives reject source, release,
@@ -41,3 +42,14 @@ extracted and no pixel-identical Safari claim is made.
 Library batch saving failed before preparation due to its connection; no new
 Library IDs were returned. Requested screenshots and current source-video bytes
 are preserved in the repo and /workspace/artifacts/breeze-193-followup-review.
+
+
+Exact877c60e CI passed WebKit set lifecycle, creation, real-quota migration and
+All Words before the icon-family step attempted uninstalled Chromium. Adding
+the optics step had moved the prior step's BROWSER env onto the new step. Restore
+BROWSER separately to both steps and keep capture output ownership on capture.
+The270 boundary permits only this exact workflow correction; product source,
+269 history, behavior assertions and the frozen source tree stay unchanged.
+The same CI's OCR offline Blob/FileReader failure matches269 exactly at line209
+(NotReadableError for original and fresh blobs while offline, online reads work).
+It remains unwaived. Final corrected-head CI is required before promotion.
