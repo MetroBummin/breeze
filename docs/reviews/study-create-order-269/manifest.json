@@ -1,0 +1,28 @@
+{
+  "sourceCommit": "c7455ea4cb1892e8a0598ffd54f75845b245e18b",
+  "engine": "system Chromium151",
+  "DPR": 1,
+  "capture": "actual browser UI; not native keyboard or original mockup frames",
+  "files": [
+    {
+      "path": "ipad-order-boundary.png",
+      "bytes": 103115,
+      "sha256": "01318a2a7bf2de6c220b99894c6b82894460039d9c82b477afa902bbe75bb879"
+    },
+    {
+      "path": "ipad-order-top.png",
+      "bytes": 102758,
+      "sha256": "41e45fc8bfc8c05c5659f18f379d9346fd84a0b44e65bf004fec48b5dfe3b83a"
+    },
+    {
+      "path": "phone-order-boundary.png",
+      "bytes": 38501,
+      "sha256": "cbdceb1379716032bed6ffdf21bbefe87c94111d7fe4638c6d9a73fd7a333d7e"
+    },
+    {
+      "path": "phone-order-top.png",
+      "bytes": 38164,
+      "sha256": "b236803900f1e09d8a41f98e0b603ec47c6d1d4616895aa868db9d45748a5b42"
+    }
+  ]
+}

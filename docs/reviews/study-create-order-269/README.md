@@ -1,0 +1,1 @@
+Sourcec7455ea. Actual browser screenshots show45-book creation with fixed submit actions and descending4→3 card counts; equal-count books preserve source order. This media-only branch is not a build candidate and does not update PR155 or integration. Library saving failed before preparation because its hosted tool connection was unavailable.
