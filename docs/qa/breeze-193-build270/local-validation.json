@@ -1,0 +1,35 @@
+{
+  "reviewedSource": "d86bf3d9fa0183aa25416979743dd2be17e24846",
+  "sourceScope": [
+    "Astra quota-safe IDB migration",
+    "stored source examples before reveal",
+    "All Words readonly detail/start/back",
+    "passive light/dark study onboarding",
+    "all-app control optical consistency"
+  ],
+  "checks": {
+    "full npm test": "passed on integrated full UI/storage/icon source before exact270 counter increment",
+    "typecheck": "passed; unchanged32 baseline",
+    "storage/UI/source examples": "55 passed",
+    "real Chromium quota": "passed5000meanings, exact archives/vocabulary, create/All Words, aborted transaction/retry, relaunch history, pending navigation, duplicate-input and postcommit display retry",
+    "set lifecycle/cold offline": "passed with All Words readonly swipe/10layouts and both-front example assertions",
+    "All Words": "passed empty/one/2100, grading/history/relaunch/10layouts",
+    "trusted touchscreen": "passed storage/gesture/menu/immediate Undo contracts",
+    "client polish": "passed updated detail/start path, dormant schedule preservation and20layout captures",
+    "passive onboarding": "passed Next/Skip/Back/Escape/replay/interrupt/reduced-motion/isolation10layouts",
+    "onboarding full suite": "passed initialUI; shared media behavior unchanged",
+    "control family": "170 scenes,5viewports/both themes;46 paired target width/height comparisons unchanged",
+    "Reader/guide/writing optics": "passed phone/iPad/short boththemes actual2px and selected fill",
+    "store All Words source captures": "passed12high-resolution front/reveal/drag captures and4.5 contrast",
+    "native counter contracts": "passed App/Share1.9.3(270), existing269/lower rejected",
+    "native sync": "passed 238 source/www/iOSpublic byte-matched application files"
+  },
+  "limitations": {
+    "WebKit": "unavailable locally; final exact-head CI required",
+    "reader-refinements unused legacy suite": "same placement assertion null!=below fails on candidate and unchanged269 baseline, retained unwaived; no product lookup fix",
+    "offline Blob/FileReader gate": "known baseline failure retained, not waived",
+    "native": "actual airplane mode,56-page native restart,physical retry and iPad Pencil/palm/playback unverified",
+    "Library": "current prepared batch helper failed before preparation/network; no new IDs",
+    "release": "no archive/upload/dispatch/main merge, parent sole dispatcher"
+  }
+}
