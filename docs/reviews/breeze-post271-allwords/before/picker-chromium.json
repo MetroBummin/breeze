@@ -1,0 +1,30 @@
+{
+  "engine": "chromium",
+  "native": false,
+  "touch": "trusted Chromium CDP",
+  "before": {
+    "window": 450,
+    "body": 0,
+    "reader": 0
+  },
+  "wheelHeader": {
+    "window": 450,
+    "body": 0,
+    "reader": 0
+  },
+  "touchHeader": {
+    "window": 450,
+    "body": 0,
+    "reader": 0
+  },
+  "internal": {
+    "window": 450,
+    "body": 350,
+    "reader": 0
+  },
+  "closed": {
+    "window": 450,
+    "body": 0,
+    "reader": 0
+  }
+}

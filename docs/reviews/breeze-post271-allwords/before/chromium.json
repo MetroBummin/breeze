@@ -1,0 +1,193 @@
+{
+  "engine": "chromium",
+  "version": "151.0.7922.173",
+  "platform": "Linux browser; no CPU throttle; long examples and multiple meanings; heap is browser JS heap, not native RSS; native termination unverified",
+  "cases": [
+    {
+      "count": 2399,
+      "start": 2898.1000000089407,
+      "renderMs": 1149.2999999970198,
+      "layoutMs": 1.2000000029802322,
+      "nextPaintMs": 1235.7999999970198,
+      "nodes": 20856,
+      "height": 152622,
+      "rows": 2294,
+      "metrics": {
+        "Nodes": 101783,
+        "LayoutCount": 13,
+        "RecalcStyleCount": 36,
+        "JSHeapUsedSize": 9112304
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 4.200000002980232,
+            "restoreMs": 4.5999999940395355
+          },
+          {
+            "ensureMs": 4,
+            "restoreMs": 4.299999997019768
+          },
+          {
+            "ensureMs": 3.9000000059604645,
+            "restoreMs": 4.200000002980232
+          },
+          {
+            "ensureMs": 3.8999999910593033,
+            "restoreMs": 4.200000002980232
+          },
+          {
+            "ensureMs": 4,
+            "restoreMs": 4.0999999940395355
+          }
+        ],
+        "openMs": 100,
+        "revealMs": 5.5,
+        "againMs": 36.70000000298023,
+        "retainedAllRows": 2294,
+        "queue": 2399
+      },
+      "longTasks": [
+        {
+          "start": 4048.6000000089407,
+          "duration": 84
+        },
+        {
+          "start": 4264.70000000298,
+          "duration": 66
+        }
+      ]
+    },
+    {
+      "count": 6000,
+      "start": 4073.5,
+      "renderMs": 2023.5,
+      "layoutMs": 1.9000000059604645,
+      "nextPaintMs": 2227.5,
+      "nodes": 49800,
+      "height": 363063,
+      "rows": 5400,
+      "metrics": {
+        "Nodes": 241281,
+        "LayoutCount": 12,
+        "RecalcStyleCount": 39,
+        "JSHeapUsedSize": 19122304
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 25.5,
+            "restoreMs": 25.600000008940697
+          },
+          {
+            "ensureMs": 25,
+            "restoreMs": 25.599999994039536
+          },
+          {
+            "ensureMs": 24.700000002980232,
+            "restoreMs": 25.399999991059303
+          },
+          {
+            "ensureMs": 24.5,
+            "restoreMs": 25.200000002980232
+          },
+          {
+            "ensureMs": 24.799999997019768,
+            "restoreMs": 25
+          }
+        ],
+        "openMs": 295.90000000596046,
+        "revealMs": 27.900000005960464,
+        "againMs": 149,
+        "retainedAllRows": 5400,
+        "queue": 6000
+      },
+      "longTasks": [
+        {
+          "start": 6099,
+          "duration": 200
+        },
+        {
+          "start": 6642.4000000059605,
+          "duration": 192
+        },
+        {
+          "start": 6836.600000008941,
+          "duration": 155
+        },
+        {
+          "start": 7028.70000000298,
+          "duration": 54
+        }
+      ]
+    },
+    {
+      "count": 12000,
+      "start": 6026.800000011921,
+      "renderMs": 3301.199999988079,
+      "layoutMs": 17.400000005960464,
+      "nextPaintMs": 3779.699999988079,
+      "nodes": 99600,
+      "height": 726063,
+      "rows": 10800,
+      "metrics": {
+        "Nodes": 545502,
+        "LayoutCount": 12,
+        "RecalcStyleCount": 40,
+        "JSHeapUsedSize": 35770364
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 107.8999999910593,
+            "restoreMs": 107.80000001192093
+          },
+          {
+            "ensureMs": 106.19999998807907,
+            "restoreMs": 108.5
+          },
+          {
+            "ensureMs": 106.90000000596046,
+            "restoreMs": 108.40000000596046
+          },
+          {
+            "ensureMs": 106.59999999403954,
+            "restoreMs": 108.20000000298023
+          },
+          {
+            "ensureMs": 105.5,
+            "restoreMs": 107.5
+          }
+        ],
+        "openMs": 836.0999999940395,
+        "revealMs": 113.6000000089407,
+        "againMs": 557.3999999910593,
+        "retainedAllRows": 10800,
+        "queue": 12000
+      },
+      "longTasks": [
+        {
+          "start": 9345.70000000298,
+          "duration": 437
+        },
+        {
+          "start": 10998.800000011921,
+          "duration": 489
+        },
+        {
+          "start": 11500.300000011921,
+          "duration": 538
+        },
+        {
+          "start": 12133.20000000298,
+          "duration": 220
+        },
+        {
+          "start": 12371.20000000298,
+          "duration": 115
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

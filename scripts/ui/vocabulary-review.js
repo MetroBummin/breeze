@@ -20,7 +20,7 @@ const SimpleStudySession=(()=>{
   };
   const restore=raw=>{
     try{const s=JSON.parse(raw);if(s?.version!==1||!Array.isArray(s.initial)||!s.initial.every(k=>typeof k==='string')||new Set(s.initial).size!==s.initial.length||!Array.isArray(s.queue)||!Array.isArray(s.passed)||!Array.isArray(s.history)||!Number.isSafeInteger(s.serial)||s.serial<0)return null;
-      const all=[...s.queue,...s.passed];if(all.length!==s.initial.length||new Set(all).size!==all.length||all.some(k=>!s.initial.includes(k))||s.history.some(h=>!s.initial.includes(h.key)||!['again','remember'].includes(h.outcome)))return null;return s;
+      const initial=new Set(s.initial),all=[...s.queue,...s.passed];if(all.length!==s.initial.length||new Set(all).size!==all.length||all.some(k=>!initial.has(k))||s.history.some(h=>!initial.has(h.key)||!['again','remember'].includes(h.outcome)))return null;return s;
     }catch{return null;}
   };
   return {start,token,grade,undo,restore};
@@ -42,8 +42,9 @@ async function loadSimpleStudySession(){
 }
 function ensureSimpleStudySession(){
   const keys=Object.keys(words).filter(key=>validWordMeaning(words[key])&&typeof words[key].word==='string'&&words[key].word.trim());
+  const available=new Set(keys);
   // Removed records invalidate the old scope; added vocabulary waits for the next session.
-  if(!simpleStudySession||simpleStudySession.initial.some(k=>!keys.includes(k))||!simpleStudySession.initial.length&&keys.length)simpleStudySession=SimpleStudySession.start(keys);
+  if(!simpleStudySession||simpleStudySession.initial.some(k=>!available.has(k))||!simpleStudySession.initial.length&&keys.length)simpleStudySession=SimpleStudySession.start(keys);
   return simpleStudySession;
 }
 async function commitSimpleStudySession(next){

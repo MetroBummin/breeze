@@ -38,6 +38,9 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 #study-sets-dialog[open]{display:flex;align-items:flex-end;justify-content:center;}
 #study-sets-dialog:not([open]),:is(#study-sets-dialog,#v-memory-set) [hidden]{display:none!important;}
 #study-sets-dialog::backdrop{background:transparent;}
+/* Restore the exact root scroll when this modal closes or becomes a page. */
+html.study-sets-modal-open{overflow:hidden;overscroll-behavior:none;}
+html.study-sets-modal-open body{position:fixed;top:var(--study-sets-scroll-top);left:0;right:0;width:100%;overflow:hidden;overscroll-behavior:none;}
 :is(#study-sets-dialog,#v-memory-set) *{box-sizing:border-box;}
 .study-sets-sheet{display:flex;flex-direction:column;width:100%;max-width:680px;max-height:100%;min-height:0;overflow:hidden;border:1px solid var(--sentence-glass-line);border-bottom:0;border-radius:24px 24px 0 0;background:var(--home-background);color:var(--settings-ink);box-shadow:none;}
 .study-sets-sheet[data-screen=detail],.study-sets-sheet[data-screen=excluded]{height:min(720px,100%);}
@@ -191,5 +194,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 .study-sets-sheet[data-screen=all]{height:min(720px,100%);}
 .study-sets-sheet[data-screen=all] .study-sets-body{flex:1;}
 .study-all-words-row{border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
+.study-all-words-spacer{padding:0;margin:0;border:0;pointer-events:none;}
+#study-all-words-list{overflow-anchor:none;}
 
 .study-sets-card-example strong{font-weight:700;}

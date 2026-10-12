@@ -1,0 +1,155 @@
+{
+  "engine": "chromium",
+  "version": "151.0.7922.173",
+  "platform": "Linux browser; no CPU throttle; long examples and multiple meanings; heap is browser JS heap, not native RSS; native termination unverified",
+  "cases": [
+    {
+      "count": 2399,
+      "start": 1651.7999999970198,
+      "renderMs": 63.3999999910593,
+      "layoutMs": 6,
+      "nextPaintMs": 72.5,
+      "nodes": 210,
+      "height": 147165,
+      "rows": 19,
+      "metrics": {
+        "Nodes": 49256,
+        "LayoutCount": 17,
+        "RecalcStyleCount": 35,
+        "JSHeapUsedSize": 11935868
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 0.9000000059604645,
+            "restoreMs": 1
+          },
+          {
+            "ensureMs": 0.5999999940395355,
+            "restoreMs": 0.7000000029802322
+          },
+          {
+            "ensureMs": 0.29999999701976776,
+            "restoreMs": 0.7000000029802322
+          },
+          {
+            "ensureMs": 0.29999999701976776,
+            "restoreMs": 0.6000000089406967
+          },
+          {
+            "ensureMs": 0.5,
+            "restoreMs": 0.5
+          }
+        ],
+        "openMs": 31.700000002980232,
+        "revealMs": 1.199999988079071,
+        "againMs": 15.300000011920929,
+        "retainedAllRows": 0,
+        "queue": 2399
+      },
+      "longTasks": []
+    },
+    {
+      "count": 6000,
+      "start": 2983.5,
+      "renderMs": 199.79999999701977,
+      "layoutMs": 16.400000005960464,
+      "nextPaintMs": 220.09999999403954,
+      "nodes": 210,
+      "height": 345949,
+      "rows": 19,
+      "metrics": {
+        "Nodes": 114319,
+        "LayoutCount": 16,
+        "RecalcStyleCount": 42,
+        "JSHeapUsedSize": 20391472
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 1.5,
+            "restoreMs": 2
+          },
+          {
+            "ensureMs": 1.2999999970197678,
+            "restoreMs": 2.2000000029802322
+          },
+          {
+            "ensureMs": 1.0999999940395355,
+            "restoreMs": 1.4000000059604645
+          },
+          {
+            "ensureMs": 1.199999988079071,
+            "restoreMs": 1.2000000029802322
+          },
+          {
+            "ensureMs": 1.1000000089406967,
+            "restoreMs": 1.8999999910593033
+          }
+        ],
+        "openMs": 49.900000005960464,
+        "revealMs": 2.2000000029802322,
+        "againMs": 26,
+        "retainedAllRows": 0,
+        "queue": 6000
+      },
+      "longTasks": []
+    },
+    {
+      "count": 12000,
+      "start": 5513,
+      "renderMs": 294.69999998807907,
+      "layoutMs": 32.6000000089407,
+      "nextPaintMs": 332.5,
+      "nodes": 210,
+      "height": 691549,
+      "rows": 19,
+      "metrics": {
+        "Nodes": 225919,
+        "LayoutCount": 16,
+        "RecalcStyleCount": 43,
+        "JSHeapUsedSize": 38257024
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 3.2999999970197678,
+            "restoreMs": 3.9000000059604645
+          },
+          {
+            "ensureMs": 2.7000000029802322,
+            "restoreMs": 3
+          },
+          {
+            "ensureMs": 2.5,
+            "restoreMs": 2.8999999910593033
+          },
+          {
+            "ensureMs": 2.4000000059604645,
+            "restoreMs": 3.0999999940395355
+          },
+          {
+            "ensureMs": 2.4000000059604645,
+            "restoreMs": 3
+          }
+        ],
+        "openMs": 120,
+        "revealMs": 5.5999999940395355,
+        "againMs": 59.6000000089407,
+        "retainedAllRows": 0,
+        "queue": 12000
+      },
+      "longTasks": [
+        {
+          "start": 5965.0999999940395,
+          "duration": 71
+        },
+        {
+          "start": 6040.0999999940395,
+          "duration": 52
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,14 @@
+{
+  "engine": "chromium",
+  "native": false,
+  "input": "trusted CDP touch plus wheel",
+  "checks": [
+    "top boundary/header/backdrop",
+    "bottom boundary/header/backdrop",
+    "nested books, Escape hierarchy, exact root restoration",
+    "full-page/back/forward lifecycle",
+    "rapid reopen, overlapping owner, navigation",
+    "long imported book, reader scroll retained"
+  ],
+  "errors": []
+}

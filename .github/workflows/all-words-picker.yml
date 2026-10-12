@@ -1,0 +1,52 @@
+name: Large All Words and picker scrolling
+on:
+  pull_request:
+    paths:
+      - 'scripts/ui/study-sets.js'
+      - 'scripts/ui/vocabulary-review.js'
+      - 'styles/study-sets.css'
+      - 'tests/*all-words*'
+      - 'tests/*study-picker*'
+      - 'tests/measure-breeze271-baseline.mjs'
+      - 'tests/helpers/all-words-fixture.mjs'
+      - '.github/workflows/all-words-picker.yml'
+permissions:
+  contents: read
+concurrency:
+  group: all-words-picker-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Measure shipped build271 with the identical workload
+        run: node tests/measure-breeze271-baseline.mjs
+        env:
+          BREEZE_ALL_WORDS_OUTPUT: /tmp/breeze-all-words/before
+      - name: Measure the proposed fixes
+        run: node tests/measure-all-words-browser.mjs && node tests/measure-study-picker-scroll-browser.mjs
+        env:
+          BREEZE_ALL_WORDS_OUTPUT: /tmp/breeze-all-words/after
+      - name: Window, data, history and scroll-ownership regressions
+        run: node tests/verify-all-words-window-browser.mjs && node tests/verify-study-picker-scroll-browser.mjs
+        env:
+          BREEZE_ALL_WORDS_OUTPUT: /tmp/breeze-all-words/after
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: all-words-picker-${{ matrix.engine }}
+          path: /tmp/breeze-all-words/
+          retention-days: 14

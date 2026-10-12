@@ -372,3 +372,11 @@ retain their view owner and read fresh state; duplicate pending-row input cannot
 commit twice. Existing Undo/neighbor pointer ownership survives collapse.
 See `docs/reviews/breeze-post270-gestures/` for shipped-source reproduction,
 actual timed motion frames, browser regressions and native limitations.
+
+## Build271 followup: large All Words and modal scroll ownership
+
+All Words retains the shared read-only vocabulary renderer and full study scope, but lists over 100 groups mount a measured viewport with overscan. Offscreen spacers preserve scroll geometry; visible rows retain original ordinals, multiple meanings, expansion and keyboard traversal. Leaving this page releases its DOM and observers. Simple-session membership validation uses Sets with unchanged validation rules and serialized history. Vocabulary, migration, sync, exclusions and limits are unchanged.
+
+The directory/create modal owns the document scroll while open, keeps its lists independently scrollable, and restores the exact document position when dismissed. Transitions to a full page release this ownership before the page scrolls. This ownership is separate from other overlays' CSS classes and styles. The background wordbook is hidden before native dialog focus restoration to avoid laying out thousands of hidden-bound rows during navigation.
+
+Evidence, before/after measurements and physical-device limitations: [build271 followup review](../reviews/breeze-post271-allwords/README.md).
