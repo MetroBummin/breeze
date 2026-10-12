@@ -82,6 +82,13 @@ page and no more than 1.5 CSS px of scroll rounding.
 
 ## Validation
 
+This is a review-only followup to shipped build 270. CI verifies its explicit
+file scope and runs the unchanged build-270 positive/negative boundary tests in
+a detached checkout of the shipped commit. Historical receipts, native release
+counters and onboarding media are unchanged. This does not approve a new build,
+merge or upload. Aggregate tests and native sync passed locally; all 240 packaged
+application files match source, `www` and the iOS public bundle byte-for-byte.
+
 Local Chromium, `/usr/bin/chromium`, with the ordinary application scripts:
 
 - New study motion regression: trusted CDP touch, readonly 2,294/2,399 inventory,
