@@ -565,7 +565,7 @@ function studySetsWindowAllWords(list,groups,createRow){
   const spacer=height=>{const node=studySetsNode('li','study-all-words-spacer');node.setAttribute('aria-hidden','true');node.setAttribute('role','presentation');node.style.height=height+'px';return node;};
   const schedule=()=>{if(!disposed&&!frame)frame=requestAnimationFrame(()=>{frame=0;refresh();});};
   const observer=new ResizeObserver(schedule);
-  function refresh(){
+  function refresh(requiredIndex=null){
     if(disposed||!list.isConnected)return;
     const origin=top(),y=Math.max(0,body.scrollTop-origin),anchor=locate(y),within=y-offsets[anchor];
     const resized=width!==body.clientWidth;width=body.clientWidth;
@@ -581,6 +581,7 @@ function studySetsWindowAllWords(list,groups,createRow){
     const corrected=offsets[anchor]+within;
     const start=locate(Math.max(0,corrected-body.clientHeight)),end=Math.min(groups.length,locate(corrected+body.clientHeight*2)+1);
     const indices=new Set(Array.from({length:end-start},(_,i)=>start+i));
+    if(Number.isInteger(requiredIndex))indices.add(requiredIndex);
     const focused=document.activeElement?.closest('.study-all-words-row');
     const active=document.activeElement;
     if(focused&&list.contains(focused))indices.add(Number(focused.getAttribute('data-index')));
@@ -605,7 +606,9 @@ function studySetsWindowAllWords(list,groups,createRow){
     if(event.key!=='Tab'||!row||!event.target.matches('.vword'))return;
     const index=Number(row.dataset.index)+(event.shiftKey?-1:1);
     if(index<0||index>=groups.length)return;
-    event.preventDefault();body.scrollTop=top()+offsets[index];refresh();
+    // Expansion/rotation may precede ResizeObserver delivery. Measure first,
+    // then mount the requested row even if the browser clamps the old scroll.
+    event.preventDefault();refresh();body.scrollTop=top()+offsets[index];refresh(index);
     rows.get(index)?.querySelector('.vword').focus({preventScroll:true});
   };
   body.addEventListener('scroll',schedule,{passive:true});list.addEventListener('keydown',keyboard);
