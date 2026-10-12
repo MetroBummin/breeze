@@ -25,7 +25,16 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node tests/verify-192-integration-boundary.mjs
+      - name: Verify release or isolated Unlimited-OCR boundary
+        env:
+          BREEZE_PR_HEAD: ${{ github.head_ref }}
+        run: |
+          if [ "$BREEZE_PR_HEAD" = "experiment/unlimited-ocr-comparison" ]; then
+            node experiments/unlimited-ocr/verify-boundary.mjs
+            node --test experiments/unlimited-ocr/contract.test.mjs experiments/unlimited-ocr/boundary.test.mjs
+          else
+            node tests/verify-192-integration-boundary.mjs
+          fi
       - run: npm test
       - name: Verify integrated native asset sync
         run: |

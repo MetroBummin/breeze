@@ -39,8 +39,42 @@ an immutable model revision remains unverified. The harness requires operators
 to record the actual model/runtime used for a future run.
 
 Branch isolation: a separate worktree `/workspace/breeze-unlimited-ocr` was
-created on `experiment/unlimited-ocr-comparison` from `origin/main`. All tracked
-changes are new files under `experiments/unlimited-ocr/`. No release assets,
+created on `experiment/unlimited-ocr-comparison` from `origin/main`. At the
+initial published head all changes were new files under this experiment. The
+CI follow-up below adds only the exact branch-specific Integrity gate. No release assets,
 production OCR, existing corpus, PR156 branch or 1.9.3 integration branch changed.
 No merge, deploy, native archive, paid server provisioning, credentials, private
 document uploads, model downloads or upstream custom-code execution occurred.
+
+## Fresh CI follow-up
+
+The original published SHA `a4a1946b0fbd0221a828aa4dbb62f46bdb31591c` ran
+[Integrity 38235156586](https://github.com/MetroBummin/breeze/actions/runs/38235156586).
+Its contracts job failed at the frozen 1.9.2 boundary with `Unapproved 1.9.2
+path: experiments/unlimited-ocr/.gitignore`; the full npm test step was skipped.
+This was a scope mismatch: a non-release experiment is outside the historical
+release receipt. No historical receipt or verifier was modified to allow it.
+
+The follow-up changes only that workflow gate on this exact experimental branch.
+`verify-boundary.mjs` verifies every pinned `main` production/config/release byte
+and file mode, accepts only regular additions under the experiment directory and
+the exact gate text, then runs the original 1.9.2 and nested 1.9.1 verifier on
+the pinned base in a temporary worktree. Other branches retain the original
+gate. The full npm test and all browser checks remain enabled for this branch.
+
+Local follow-up validation passed:
+
+```sh
+node experiments/unlimited-ocr/verify-boundary.mjs
+# unchanged historical 1.9.2 + nested 1.9.1 checks passed
+node --test experiments/unlimited-ocr/contract.test.mjs experiments/unlimited-ocr/boundary.test.mjs
+# 15 tests passed, including negative production/receipt/deletion/mode/symlink/workflow checks
+npm test
+# full repository test command passed, exit 0
+git diff --check
+```
+
+See [prerequisites.md](prerequisites.md) for the official no-cost Space research.
+It does not change the benchmark status: all real inference measurements remain
+not run. Final remote CI results are recorded in the draft PR description after
+the follow-up head's checks become terminal.

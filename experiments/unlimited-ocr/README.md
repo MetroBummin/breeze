@@ -2,6 +2,8 @@
 
 This is an opt-in assessment, isolated from the reader, native plugins, caches,
 release assets and deployment workflows. It is not a replacement OCR engine.
+The only existing-file change is a branch-specific Integrity CI gate described
+below; every production and historical release byte remains pinned.
 Branch `experiment/unlimited-ocr-comparison` starts from `main`
 `8512e8fd25e51d6aa06cf926bad165d5c3994865`, which includes PR147's current
 scanned-PDF path. The draft targets `main` so only this experiment is reviewed;
@@ -92,8 +94,14 @@ The second command needs the repository's locked dependencies (`npm ci
 --ignore-scripts --no-audit --no-fund`). Tests use authored responses to verify
 scoring and a loopback mock server to verify transport. A `contract` report is
 rejected by the comparison command. Mock test durations and perfect authored
-words are not OCR latency/accuracy observations. Tests are not added to release
-workflows or the product test script.
+words are not OCR latency/accuracy observations. Tests run in Integrity only for
+this experimental branch; the product test script and release-branch gates are
+unchanged. The experimental boundary checks every file against the pinned
+`main` tree, permits only regular additions under this directory plus the exact
+reviewed CI gate, and runs the unchanged historical 1.9.2/1.9.1 checks on the
+pinned base. Negative tests reject production or receipt drift, deletion,
+executable/symlink additions and unrelated workflow changes. The original
+release checker and receipts are unchanged.
 
 ## Real native baseline
 
@@ -170,4 +178,6 @@ toolchain or configured Android runtime). No comparative numbers, cost estimate,
 or production replacement recommendation are available. The next useful result
 requires matched real outputs plus verified word coordinate semantics. The
 harness makes those gaps reviewable without changing production or borrowing
-another experiment's budget.
+another experiment's budget. See [the researched prerequisites](prerequisites.md)
+for the existing official ZeroGPU demo's limited no-provisioning option and its
+unverified availability and reproducibility constraints.
