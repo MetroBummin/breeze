@@ -522,3 +522,13 @@ the generic task popup keeps its existing separate compact style. Home settings
 alone moves4 CSSpx downward for optical alignment with the wordmark's ink;
 header/logo boxes and the44px touch target remain. Paired phone/tablet/desktop/
 short light/dark captures record the exact4px shift and unchanged logo/actions.
+
+
+## Reader icon optics after 269
+
+Approved Reader-only adjustment keeps all existing touch targets, positions and
+materials: the 32px back SVG uses 1.5 viewBox units and the 24px page-navigation
+and mode SVGs use 2 units, each rendering a 2px stroke. Standalone and grouped
+Reader back now share that weight. General controls, study back icons and
+bookmark drawings retain their existing tokens. This addresses the Reader's
+previous 3.07px back/page stroke without a global icon or layout change.

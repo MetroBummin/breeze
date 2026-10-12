@@ -3,10 +3,10 @@
 Memory keeps its existing full wordbook (`v-vocab`) as the default entry. The
 existing bottom-center pill is labeled `학습하기` and opens the single-column
 set directory in one bottom sheet over `v-vocab`; no row is added between search and filters. The
-first immutable `전체 단어` row opens the existing full-vocabulary card study
-directly, followed by saved sets and a matching dashed `+ 세트 추가` row.
+first immutable `전체 단어` row opens a read-only full-vocabulary word list
+with its own `학습 시작` action, followed by saved sets and a matching dashed `+ 세트 추가` row.
 A selected custom set opens its captured word list as an independent full page.
-Page Back reopens the directory sheet and restores its internal scroll position; closing the directory leaves the original full wordbook and scroll position intact. Whole-vocabulary study returns to the
+Page Back reopens the directory sheet and restores its internal scroll position; closing the directory leaves the original full wordbook and scroll position intact. Whole-vocabulary study returns to this word list, whose Back restores the
 directory when launched there, while existing direct study callers retain their
 normal return target. Detail has no modal semantics, scrim, or X-close control.
 Existing search, filters and saved-Meaning editing retain their ownership.
@@ -209,7 +209,7 @@ original intact and the revealed answer retryable. Corruption/future formats
 remain blocked. Added/excluded inventory does not change an active denominator.
 
 The study page uses a large central card and available safe-area height with a
-680px reading-width cap. Answer/example are concealed before tap. Horizontal
+680px reading-width cap. The stored source example is visible on the front, while the answer is concealed before tap. Horizontal
 drag follows the finger, rotates slightly, returns below threshold, and exits
 on an accepted swipe to expose the next card. Vertical scroll, cancellation,
 movement before reveal and repeated input cannot grade. Normal layouts show
@@ -284,3 +284,26 @@ compatibilityclick from also revealing the next example. Mouse/assistive click
 and keyboard remain; cancelled/vertical releases cannot grade and outside taps cannot reveal.
 The browser regression deliberately drops one compatibilityclick while retaining
 actual touch input; waiting alone is not treated as the gesture fix.
+
+## Approved follow-up after 269
+
+All Words uses the existing full-page detail family and shared vocabulary rows,
+with meanings/examples readable in the list and a fixed Study Start footer. Its
+list has no exclusion/deletion swipe, editable meaning, or rating write. The
+original wordbook retains its editing/deletion behavior; custom-set exclusion
+remains unchanged. Study Back restores the all-word detail and its scroll; detail
+Back restores the originating directory or Memory.
+
+Both learning fronts show only the already stored source example. Position
+metadata selects the saved occurrence; absent metadata permits one unique
+whole-token/inflection or saved phrase match. Repeated ambiguous occurrences
+remain plain text. Bold text preserves every original character and uses safe
+DOM text nodes. Missing source text is omitted. No lookup, AI request, vocabulary
+repair, or persistence-schema change is part of this display adjustment.
+
+The former 269 interactive lesson is superseded by a passive study video in the
+same guide and Settings replay path. Next requires no practice acknowledgement.
+The light/dark clips are newly captured actual learning UI with isolated authored
+examples, showing tap, left repeat and right remember. Existing pause, poster,
+reduced-motion, interruption and guide completion owners remain. Native playback
+and physical gesture acceptance require separate device verification.

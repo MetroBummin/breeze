@@ -185,8 +185,8 @@ try{
  await page.locator('#onboard-back').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#onboard-next').textContent(),'시작하기','Back skipped welcome');
  await page.evaluate(()=>{for(let i=0;i<50;i++)document.getElementById('onboard-next').click();});
  assert.equal(await page.locator('#onboarding').isVisible(),true);
- assert.equal(await page.locator('#onboard-next').isDisabled(),true,'rapid Next cannot bypass the appended practice');
- await page.locator('#onboard-skip').tap();assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');await page.locator('#onboard-skip').tap();
+ assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기','passive slides allow rapid Next to reach the existing finish');
+ await page.locator('#onboard-skip').tap();
  assert.equal(await page.locator('#onboarding').isVisible(),false);assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
  await page.reload();await page.evaluate(()=>homeReady);assert.equal(await page.locator('#onboarding').isVisible(),false);
  await page.evaluate(()=>startOnboarding(true));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','replay skipped welcome');
@@ -245,7 +245,7 @@ try{
  assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');
  await swipe(-1);assert.equal(await page.evaluate(()=>onboardingSession.page),8,'final swipe escaped boundary');
  await swipe(1);assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'study');
- assert.equal(await page.locator('#onboard-next').isDisabled(),true);await page.locator('#onboard-skip').tap();await page.locator('#onboard-back').tap();
+ assert.equal(await page.locator('#onboard-next').isEnabled(),true);await page.locator('#onboard-skip').tap();await page.locator('#onboard-back').tap();
  assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'study');
  await context.close();
  }
@@ -346,7 +346,7 @@ try{
  const recording=(async()=>{let i=0;while(running){const p=resolve(frames,String(i++).padStart(5,'0')+'.png');await page.screenshot({path:p});rows.push({p,t:Date.now()});await wait(100);}})();
  await wait(1800);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  for(let i=1;i<=7;i++){await wait(3600);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();}
- await page.locator('#onboard-study-card').press('Enter');await page.locator('#onboard-study-card').press('ArrowLeft');await page.waitForFunction(()=>onboardingSession.studyStep===2);await wait(250);await page.locator('#onboard-study-card').press('Enter');await page.locator('#onboard-study-card').press('ArrowRight');await page.waitForFunction(()=>onboardingSession.studyStep===3);await wait(250);await page.locator('#onboard-next').tap();await page.locator('#onboard-skip').tap();await wait(1600);running=false;await recording;await context.close();
+ await page.locator('#onboard-skip').tap();await wait(1600);running=false;await recording;await context.close();
  writeFileSync(resolve(frames,'frames.txt'),rows.map((r,i)=>`file '${r.p}'\nduration ${i<rows.length-1?(rows[i+1].t-r.t)/1000:.1}`).join('\n'));
  const r=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',resolve(out,'Breeze-onboarding-full-flow.mp4')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
  }

@@ -21,7 +21,7 @@ function harness(){
       b:{word:'quiet',ko:'조용한',book:'Two',addedAt:2},
       c:{word:'quiet',ko:'고요한',book:'Two',addedAt:3},
       d:{word:'direct',ko:'직접',book:'',addedAt:4}
-    },esc:value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
+    },esc:value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),renderStoredStudyExample:(target,card)=>{target.textContent=card.example||'';},validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
     localStorage:{getItem:key=>storage.has(key)?storage.get(key):null,setItem:(key,value)=>{storage.set(key,value);}}
   };
   const create=document.createElement.bind(document);
@@ -163,7 +163,7 @@ test('Memory directory keeps all words first, appends sets and add, and enters t
   run('renderStudySetsHome()');
   assert.equal(query('#study-sets-all strong').textContent,'전체 단어');
   assert.equal(document.querySelectorAll('.study-sets-home-cards>li').length,2);
-  click('#study-sets-all');assert.equal(context.currentView,'study');assert.equal(document.querySelector('#study-sets-dialog'),null);
+  click('#study-sets-all');assert.equal(context.currentView,'memory-set');assert.equal(!!query('#study-sets-dialog').open,false);click('#study-all-words-start');assert.equal(context.currentView,'study');run('closeStudySets(true)');
   createFromHome('시험 준비');
   const cards=[...document.querySelectorAll('.study-sets-home-card')];
   assert.equal(cards[0].id,'study-sets-all');assert.equal(cards[1].querySelector('strong').textContent,'시험 준비');
@@ -214,7 +214,7 @@ test('directory corruption preserves source access and recovers without mutating
   storage.set('breeze.study-sets.v1',damaged);run('renderStudySetsHome()');
   assert.ok(query('.study-sets-home-error[role="alert"]'));assert.equal(query('#study-sets-home-create').disabled,true);
   click('.study-sets-home-error button');assert.equal(storage.get('breeze.study-sets.v1'),damaged);
-  click('#study-sets-all');assert.equal(context.currentView,'study');
+  click('#study-sets-all');assert.equal(context.currentView,'memory-set');click('#study-all-words-start');assert.equal(context.currentView,'study');
   storage.delete('breeze.study-sets.v1');click('.study-sets-home-error button');
   assert.equal(document.querySelector('.study-sets-home-error'),null);assert.equal(query('#study-sets-home-create').disabled,false);
 });
@@ -362,8 +362,8 @@ test('bottom study entry keeps its directory sheet over vocabulary and all-word 
   const review=readFileSync(new URL('../scripts/ui/vocabulary-review.js',import.meta.url),'utf8');
   vm.runInContext(review.slice(review.indexOf('function closeVocabularyReview(){'),review.indexOf("document.getElementById('review-close').addEventListener")),context);
   run('openStudySetsDirectory()');assert.equal(context.currentView,'vocab');assert.equal(context.history.state.studySetsScreen,'directory');assert.equal(query('#study-sets-dialog').open,true);
-  query('#study-sets-content').scrollTop=70;query('#study-sets-all').click();assert.equal(context.currentView,'study');assert.equal(context.history.state.studySetsAllWords,true);
-  run('closeVocabularyReview()');assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,true);assert.equal(query('#study-sets-content').scrollTop,70);
+  query('#study-sets-content').scrollTop=70;query('#study-sets-all').click();assert.equal(context.currentView,'memory-set');query('#study-all-words-start').click();assert.equal(context.currentView,'study');assert.equal(context.history.state.studySetsAllWords,true);
+  run('closeVocabularyReview()');assert.equal(context.currentView,'memory-set');query('#study-sets-back').click();assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,true);assert.equal(query('#study-sets-content').scrollTop,70);
   run('closeStudySetsDirectory()');assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,false);assert.equal(restored,250);
   context.openVocabularyReview();run('closeVocabularyReview()');assert.equal(context.currentView,'vocab');assert.equal(document.activeElement.id,'wordbook-review');
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');

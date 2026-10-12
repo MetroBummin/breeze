@@ -1,0 +1,26 @@
+{
+  "base": "2c82442b082ae148bcf41c0377d0f7ec108e9c23",
+  "scope": [
+    "All Words read-only detail and Study Start",
+    "stored source example on learning fronts",
+    "passive onboarding study video",
+    "Reader-only 2px icon adjustment"
+  ],
+  "checks": {
+    "npm test": "passed (session92446 completed exit0)",
+    "typecheck": "passed, unchanged 32 baseline findings",
+    "study UI unit": "40 passed",
+    "stored source examples": "5 passed",
+    "custom set browser": "Chromium passed including front example assertions, All Words readonly swipe/10 layouts, cold offline snapshots",
+    "simple cards browser": "Chromium passed empty/one/2100, session/history/relaunch/10 layouts",
+    "onboarding browser": "Chromium full suite passed",
+    "passive study browser": "Chromium passed10layouts, Next/Skip/Back/Escape/replay/reduced-motion/data isolation",
+    "WebKit": "not installed locally; exact-commit CI remains required"
+  },
+  "boundaries": {
+    "build269": "frozen; historical guard intentionally unchanged",
+    "storage": "Astra owns separate follow-up; no storage model/read/commit implementation modified",
+    "native": "not verified by browser tests",
+    "upload": "parent owns next dispatch, no upload performed"
+  }
+}

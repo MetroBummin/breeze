@@ -147,3 +147,5 @@ body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readp
 
 .epub-thumbnail-paper{border-radius:6px;}
 .epub-page-preview{position:absolute;left:0;top:0;border:0;pointer-events:none;transform-origin:top left;}
+
+#pdf-page-button svg,#pdf-navigation-toggle svg{stroke-width:2;}

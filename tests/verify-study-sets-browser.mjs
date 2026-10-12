@@ -114,15 +114,26 @@ try{
  const entry=page.locator('#wordbook-review');assert.equal(await entry.innerText(),'학습하기');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'default vocabulary adds no top row or breadcrumb');
  await entry.click();await assertDirectory();
- await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='study');
- assert.equal(await page.locator('#vocabulary-review-page').isVisible(),true,'default all card opens the original all-word study directly');
- assert.equal(await page.locator('#v-vocab').isVisible(),false,'all-card entry does not loop to vocabulary');
- assert.equal(await page.locator('dialog[open]').count(),0);
+ await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
+ assert.equal(await page.locator('#study-all-words-list > li').count(),5);
+ assert.equal(await page.locator('#study-all-words-list .study-sets-row-action,#study-all-words-list .rowdel,#study-all-words-list [contenteditable]').count(),0);
+ const allWordsBytes=await page.evaluate(()=>JSON.stringify(words)),allSetBytes=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
+ const allRow=page.locator('#study-all-words-list > li').first(),allBox=await allRow.boundingBox();await page.mouse.move(allBox.x+allBox.width*.8,allBox.y+allBox.height/2);await page.mouse.down();await page.mouse.move(allBox.x+10,allBox.y+allBox.height/2,{steps:10});await page.mouse.up();
+ assert.equal(await page.locator('#study-all-words-list > li').count(),5,'all-word swipe neither excludes nor deletes');
+ for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
+  await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
+  const button=await page.locator('#study-all-words-start').boundingBox();assert.ok(button&&button.x>=0&&button.y>=0&&button.x+button.width<=width+1&&button.y+button.height<=height+1,'All Words start remains inside safe viewport '+JSON.stringify(button));
+  assert.equal(await page.locator('#v-memory-set').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);await page.screenshot({path:`${proof}/all-detail-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`});
+ }
+ assert.equal(await page.evaluate(()=>JSON.stringify(words)),allWordsBytes);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
+
+ await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study');
  await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
- await page.goBack();await assertDirectory();
+ await page.goBack();await page.waitForFunction(()=>studySetsUI.screen==='all'&&activeAppView()==='memory-set');
  await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');
- await page.locator('#review-close').click();await assertDirectory();
- assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word study returns focus to the directory card');
+ await page.locator('#review-close').click();await page.waitForFunction(()=>studySetsUI.screen==='all'&&activeAppView()==='memory-set');
+ await page.locator('#study-sets-back').click();await assertDirectory();
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word detail returns focus to the directory card');
  await dismissDirectory();
  await entry.focus();await page.keyboard.press('Enter');await assertDirectory();
  await page.evaluate(()=>{window.qaDirectoryDialog=document.getElementById('study-sets-dialog');window.qaDirectorySheet=studySetsUI.sheet;window.qaDirectoryVocabScroll=window.scrollY;window.qaDirectoryCloseEvents=0;window.qaDirectoryDialog.addEventListener('close',()=>{window.qaDirectoryCloseEvents++;});});
@@ -271,7 +282,7 @@ try{
  await page.evaluate(()=>{words={};saveWords();renderVocab();});
  assert.equal(await page.locator('#study-sets-word-list li').count(),5,'source deletion preserves captured content');
  console.log(`${engine.name()}: snapshot study starts`);await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
- assert.equal(await page.locator('#study-sets-answer').isVisible(),false);
+ assert.equal(await page.locator('#study-sets-answer').isVisible(),false);assert.equal(await page.locator('.study-sets-card-example').isVisible(),true);assert.equal(await page.locator('.study-sets-card-example').innerText(),'A cold wind blew.');assert.equal(await page.locator('.study-sets-card-example strong').innerText(),'wind');
  await page.locator('#study-sets-flashcard').click();assert.equal(await page.locator('#study-sets-answer').innerText(),'바람');
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-flashcard');
  // Failure must leave the revealed answer and the exact durable value retryable.

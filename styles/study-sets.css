@@ -187,3 +187,9 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #study-sets-create-form{display:flex;flex:1;flex-direction:column;min-height:0;}
 #study-sets-create-form>.study-sets-field{flex:none;}
 #study-sets-create-form>.study-sets-books{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;}
+
+.study-sets-sheet[data-screen=all]{height:min(720px,100%);}
+.study-sets-sheet[data-screen=all] .study-sets-body{flex:1;}
+.study-all-words-row{border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
+
+.study-sets-card-example strong{font-weight:700;}

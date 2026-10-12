@@ -193,9 +193,13 @@ function rememberStudySetsDirectory(){
   replaceStudySetsHistory({studySetsDirectoryScroll:studySetsUI.directoryScroll});
 }
 function openStudySetsAllWords(){
-  if(studySetsUI.directoryOrigin)studySetsDirectoryFocus.set(studySetsUI.historyToken,'@all');
-  rememberStudySetsDirectory();
-  if(!studySetsUI.directoryOrigin)replaceStudySetsHistory({studySetsDirectoryScroll:window.scrollY||0});
+  if(studySetsUI.directoryOrigin&&studySetsUI.screen==='directory'){
+    studySetsDirectoryFocus.set(studySetsUI.historyToken,'@all');studySetsGo('all','');return;
+  }
+  openStudySets(false,'all','',true);
+}
+function startStudySetsAllWords(){
+  replaceStudySetsHistory({studySetsAllWordsScroll:studySetsUI.body.scrollTop});
   openVocabularyReview();
   if(typeof activeAppView==='function'&&activeAppView()==='study')replaceStudySetsHistory({studySetsAllWords:true});
 }
@@ -211,7 +215,7 @@ function studySetsReturnDirectory(){
   if(studySetsUI.directoryDepth>0){studySetsUI.pendingClose=true;history.go(-studySetsUI.directoryDepth);}
 }
 function studySetsAttachSurface(){
-  const ui=studySetsUI,page=['detail','study'].includes(ui.screen)||ui.detailEditing&&['rename','books','delete','excluded'].includes(ui.screen);
+  const ui=studySetsUI,page=['detail','study','all'].includes(ui.screen)||ui.detailEditing&&['rename','books','delete','excluded'].includes(ui.screen);
   const view=page?'memory-set':ui.directoryOrigin?'vocab':(history.state?.studySets===ui.historyToken&&history.state.view!=='memory-set'?history.state.view:ui.homeEntry?'memory':typeof activeAppView==='function'&&activeAppView()!=='memory-set'?activeAppView():'memory');
   ui.transitioning=true;
   if(page){
@@ -264,7 +268,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
   studySetsUI.back.hidden=studySetsUI.screen==='list';
   if(!fromHistory){
     studySetsUI.historyToken=String(Date.now())+'-'+String(Math.random()).slice(2);
-    history.pushState({breeze:true,view:['detail','study'].includes(studySetsUI.screen)?'memory-set':typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll,studySetsDirectoryOrigin:studySetsUI.directoryOrigin,studySetsDirectoryDepth:0,studySetsDirectoryScroll:studySetsUI.directoryScroll,studySetsVocabScroll:studySetsUI.vocabScroll},'');
+    history.pushState({breeze:true,view:['detail','study','all'].includes(studySetsUI.screen)?'memory-set':typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll,studySetsDirectoryOrigin:studySetsUI.directoryOrigin,studySetsDirectoryDepth:0,studySetsDirectoryScroll:studySetsUI.directoryScroll,studySetsVocabScroll:studySetsUI.vocabScroll},'');
   }else studySetsUI.historyToken=history.state?.studySets||'';
   studySetsAttachSurface();studySetsReadAndRender();
 }
@@ -281,7 +285,7 @@ function closeStudySets(fromHistory=false){
 window.addEventListener('popstate',event=>{
   const wasOpen=studySetsIsOpen(),pending=studySetsUI.pendingClose;
   studySetsUI.pendingClose=false;
-  const sameSheet=wasOpen&&studySetsUI.dialog?.open&&studySetsUI.directoryOrigin&&event.state?.studySetsDirectoryOrigin&&event.state.studySets===studySetsUI.historyToken&&!['detail','study'].includes(event.state.studySetsScreen);
+  const sameSheet=wasOpen&&studySetsUI.dialog?.open&&studySetsUI.directoryOrigin&&event.state?.studySetsDirectoryOrigin&&event.state.studySets===studySetsUI.historyToken&&!['detail','study','all'].includes(event.state.studySetsScreen);
   if(wasOpen&&!sameSheet)closeStudySets(true);
   if(event.state?.studySets){
     event.stopImmediatePropagation();openStudySets(true);return;
@@ -308,6 +312,7 @@ function studySetsShowError(error,retry,context={phase:'read',committed:false}){
 }
 function studySetsClearError(){studySetsUI.retry=null;studySetsUI.error.hidden=true;studySetsUI.error.replaceChildren();}
 function studySetsReadAndRender(focus=true,context={phase:'read',committed:false}){
+  if(studySetsUI.screen==='all'){studySetsClearError();renderStudySets(focus);return;}
   try{studySetsUI.state=readStudySets();studySetsClearError();renderStudySets(focus);}
   catch(error){studySetsShowError(error,()=>studySetsReadAndRender(focus,context),context);}
 }
@@ -378,7 +383,7 @@ function studySetsGo(screen,setId=studySetsUI.setId){
   if(studySetsUI.directoryOrigin&&screen!==studySetsUI.screen){
     rememberStudySetsDirectory();
     studySetsUI.directoryDepth++;if(screen==='menu')studySetsUI.managementEntry=true;
-    history.pushState({...history.state,studySetsScreen:screen,studySetsDetailEditing:studySetsUI.detailEditing,studySetsSetId:setId,studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsManagement:studySetsUI.managementEntry,view:['detail','study'].includes(screen)?'memory-set':'vocab'},'');
+    history.pushState({...history.state,studySetsScreen:screen,studySetsDetailEditing:studySetsUI.detailEditing,studySetsSetId:setId,studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsManagement:studySetsUI.managementEntry,view:['detail','study','all'].includes(screen)?'memory-set':'vocab'},'');
   }
   studySetsUI.screen=screen;studySetsUI.setId=setId;studySetsUI.notice='';
   if(screen!=='detail')studySetsUI.undo=null;
@@ -388,7 +393,7 @@ function studySetsBack(){
   if(studySetsUI.editOpen){studySetsCloseEditMenu(true);return;}
   const screen=studySetsUI.screen;
   if(studySetsUI.directoryOrigin){if(screen==='directory')closeStudySets();else history.back();return;}
-  if(screen==='detail'&&studySetsUI.pageOpen||screen==='list'||studySetsUI.homeEntry&&['detail','create','menu'].includes(screen)){closeStudySets();return;}
+  if(['detail','all'].includes(screen)&&studySetsUI.pageOpen||screen==='list'||studySetsUI.homeEntry&&['detail','create','menu'].includes(screen)){closeStudySets();return;}
   studySetsGo(['study','excluded','rename','books','delete'].includes(screen)?'detail':'list');
 }
 function studySetsMessage(text){
@@ -399,7 +404,7 @@ function studySetsEmpty(title,description){
   empty.append(studySetsNode('h3','',title),studySetsMessage(description));return empty;
 }
 function renderStudySets(focus=true){
-  const ui=studySetsUI;if(!studySetsIsOpen()||!ui.state)return;
+  const ui=studySetsUI;if(!studySetsIsOpen()||!ui.state&&ui.screen!=='all')return;
   studySetsCloseEditMenu(false,true);
   const scrollTop=ui.body.scrollTop;
   const active=document.activeElement instanceof HTMLElement?document.activeElement:null;
@@ -407,15 +412,15 @@ function renderStudySets(focus=true){
   const focusedRow=active?.closest('.study-sets-word-row');
   const focusedIndex=focusedRow?oldRows.indexOf(focusedRow):-1;
   const focusId=active?.id;
-  const set=ui.state.sets.find(item=>item.id===ui.setId);
-  if(ui.screen!=='list'&&ui.screen!=='directory'&&ui.screen!=='create'&&!set){
+  const set=ui.state?.sets.find(item=>item.id===ui.setId);
+  if(ui.screen!=='list'&&ui.screen!=='directory'&&ui.screen!=='create'&&ui.screen!=='all'&&!set){
     if(ui.homeEntry){closeStudySets();return;}
     ui.screen=ui.directoryOrigin?'directory':'list';ui.setId='';ui.notice='이 학습 세트가 삭제되었어요.';
   }
   studySetsAttachSurface();
   ui.sheet.dataset.screen=ui.screen;ui.editButton.hidden=ui.screen!=='detail'||!ui.pageOpen||!set;ui.editSurface.hidden=ui.editButton.hidden;ui.editSlot.hidden=ui.editButton.hidden;
   ui.swipeClose?.();ui.body.classList.remove('study-session-body');ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
-  const titles={directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제'};
+  const titles={all:'전체 단어',directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제'};
   ui.title.textContent=titles[ui.screen]||set?.name||'학습 세트';
   if(ui.notice){const notice=studySetsNode('p','study-sets-notice',ui.notice);notice.setAttribute('role','status');ui.body.append(notice);}
   if(ui.screen==='directory'){renderStudySetsHome(ui.state);ui.body.append(ui.directoryList);}
@@ -424,9 +429,10 @@ function renderStudySets(focus=true){
   else if(ui.screen==='books')renderStudySetsBooks(set);
   else if(ui.screen==='rename'||ui.screen==='delete')renderStudySetsEdit(set);
   else if(ui.screen==='study')renderStudySetsStudy(set);
+  else if(ui.screen==='all')renderStudySetsAllWords();
   else renderStudySetsDetail(set,ui.screen==='excluded');
   if(focus){
-    ui.body.scrollTop=ui.screen==='directory'?ui.directoryScroll:ui.screen==='detail'&&ui.detailEditing?ui.detailScroll:0;
+    ui.body.scrollTop=ui.screen==='all'?(Number(history.state?.studySetsAllWordsScroll)||0):ui.screen==='directory'?ui.directoryScroll:ui.screen==='detail'&&ui.detailEditing?ui.detailScroll:0;
     const preferred=ui.body.querySelector('[data-study-sets-focus]');
     if(preferred instanceof HTMLElement)preferred.focus({preventScroll:true});else ui.title.focus({preventScroll:true});
     if(ui.screen==='directory'){
@@ -467,6 +473,23 @@ function renderStudySetsList(){
     button.append(copy,studySetsIcon('chevron'));item.append(button);list.append(item);
   }
   body.append(list);
+}
+function renderStudySetsAllWords(){
+  const ui=studySetsUI,entries=Object.entries(words).filter(([,item])=>validWordMeaning(item)&&typeof item.word==='string'&&item.word.trim()).sort((a,b)=>(b[1].addedAt||0)-(a[1].addedAt||0));
+  const groups=new Map();for(const entry of entries){const id=entry[1].root||entry[0];if(!groups.has(id))groups.set(id,[]);groups.get(id).push(entry);}
+  ui.body.append(studySetsNode('p','study-sets-caption',`${groups.size}단어 · ${entries.length}개 뜻 카드`));
+  ui.footer.hidden=false;const start=studySetsButton('학습 시작',startStudySetsAllWords,'study-sets-primary');start.id='study-all-words-start';start.disabled=!entries.length;ui.footer.append(start);
+  if(!entries.length){ui.body.append(studySetsEmpty('저장된 단어가 없어요','읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));return;}
+  const list=studySetsNode('ul','study-sets-word-list');list.id='study-all-words-list';
+  if(!studySetsOpened.has('@all'))studySetsOpened.set('@all',new Set());
+  let ordinal=0;for(const entries of groups.values()){
+    const row=studySetsNode('li','study-all-words-row'),copy=createVocabularyGroup(entries,{ordinal:++ordinal,opened:studySetsOpened.get('@all')});
+    // This detail is a projection of saved vocabulary, with no deletion,
+    // exclusion gesture or incidental storage write from its rating display.
+    const chip=copy.querySelector('.chip');if(chip){const rating=studySetsNode('span',chip.className,chip.textContent);rating.setAttribute('role','img');rating.setAttribute('aria-label',chip.getAttribute('aria-label'));chip.replaceWith(rating);}
+    copy.querySelector('.vordinal')?.classList.add('study-sets-number');row.append(copy);list.append(row);
+  }
+  ui.body.append(list);
 }
 function renderStudySetsCreate(){
   const body=studySetsUI.body,form=document.createElement('form');form.id='study-sets-create-form';form.className='study-sets-form';
@@ -695,10 +718,10 @@ function renderStudySetsStudy(set){
   const stack=studySetsNode('div','study-session-stack');
   const next=view.set.session.queue.find(c=>c.id===(view.pendingIds[1]||view.pendingIds[0]));
   const underneath=studySetsNode('div','study-session-next',next?.word||'');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
-  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.revealed?view.card.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
+  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.card.example||''} ${view.revealed?view.card.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
+  if(view.card.example){const example=studySetsNode('p','study-sets-card-example');renderStoredStudyExample(example,view.card);card.append(example);}
   const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?view.card.ko:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
-  if(view.revealed&&view.card.example)card.append(studySetsNode('p','study-sets-card-example',view.card.example));
   stack.append(card);body.append(stack);
   const hint=studySetsNode('p','study-session-hint',view.revealed?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인');hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
   let busy=false,drag=null,suppress=false;

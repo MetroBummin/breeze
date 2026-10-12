@@ -201,17 +201,17 @@ function renderSimpleWordCards(){
     document.getElementById('review-back-expression').textContent=record.word;
     document.getElementById('review-source').textContent=record.book||'';
     document.getElementById('review-source').hidden=!record.book;
-    highlightReviewSentence({...record,key,example:record.example||''});
+    renderStoredStudyExample(document.getElementById('review-sentence'),{...record,key,example:record.example||''});
     document.getElementById('review-meaning').textContent=simpleWordCards.flipped?record.ko:'';
     document.getElementById('review-meaning').hidden=!simpleWordCards.flipped;
   }
   document.getElementById('review-front').hidden=false;
   document.getElementById('review-back').hidden=!simpleWordCards.flipped;
-  document.getElementById('review-sentence').hidden=!simpleWordCards.flipped;
+  document.getElementById('review-sentence').hidden=!record?.example;
   document.getElementById('review-source').hidden=true;
   document.getElementById('review-reveal').hidden=!record||simpleWordCards.flipped;
   document.getElementById('review-reveal').textContent='정답 확인';
-  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${simpleWordCards.flipped?record?.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
+  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${record?.example||''} ${simpleWordCards.flipped?record?.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;

@@ -1,6 +1,6 @@
 /* PDF media: OpenStax Writing Guide (2021), p. 14; CC BY 4.0.
    Source and capture changes: docs/qa/onboarding-carousel/pdf-media-credits.md. */
-/* The existing guide owns its overlay, media and isolated study example. The Reader keeps its own state. */
+/* The existing guide owns its overlay, media and passive study demonstration. The Reader keeps its own state. */
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
 const ONBOARD_WELCOME_KEY='breeze.onboarding.welcome-seen';
@@ -21,70 +21,11 @@ const ONBOARD_PAGES=[
   ['settings','오른쪽 보기 설정을 눌러보세요.','글자 크기와 읽기 화면을 맞춰요.'],
   ['pdf','PDF에서는 필기 모드를 켜보세요.','펜과 형광펜으로 읽으며 표시해요.'],
   ['memory','홈의 북마크 아이콘을 눌러보세요.','Breeze Memory에서 만난 단어를 다시 봐요.'],
-  ['study','예제 카드로 한 번 해보세요.','탭으로 정답을 확인하고, 좌우로 넘겨요.'],
+  ['study','한 장씩 가볍게 익혀보세요.','탭으로 뜻을 확인해요. 왼쪽은 다시 볼게요, 오른쪽은 기억나요.'],
 ];
 let onboardingSession=null;
 let onboardingRequest=0;
 function onboardingStudyActive(session=onboardingSession){return session?.pages[session.page-1]?.[0]==='study';}
-function onboardingStudyExample(slide,session){
-  const demo=document.createElement('div');demo.className='onboard-study-example study-session-stack';
-  const card=document.createElement('div');card.id='onboard-study-card';card.className='study-sets-flashcard';card.tabIndex=0;card.setAttribute('role','button');
-  const word=document.createElement('h3'),meaning=document.createElement('p');word.id='onboard-study-expression';meaning.id='onboard-study-answer';meaning.className='study-sets-card-meaning';
-  const cue=document.createElement('span');cue.className='onboard-study-motion';cue.setAttribute('aria-hidden','true');cue.textContent='↔';
-  card.append(word,meaning,cue);demo.append(card);slide.append(demo);
-  const alternatives=document.createElement('div');alternatives.className='onboard-study-actions';
-  const play=document.createElement('button');play.type='button';play.className='onboard-study-play';play.textContent='모션 힌트 일시정지';slide.append(play);
-  let revealed=false,busy=false,timer=null,drag=null,suppress=false,touchClickPending=false;
-  const active=()=>onboardingSession===session&&!session.controller.signal.aborted&&onboardingStudyActive(session);
-  const cancel=()=>{if(drag?.touch)touchClickPending=true;clearTimeout(timer);timer=null;busy=false;drag=null;suppress=false;card.removeAttribute('data-dragging');card.removeAttribute('data-direction');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');};
-  const render=()=>{
-    cancel();revealed=session.studyStep===1||session.studyStep===3;
-    word.textContent=session.studyStep<2?'observe':'breeze';meaning.textContent=word.textContent==='observe'?'관찰하다':'산들바람';meaning.hidden=!revealed;
-    demo.dataset.hint=session.studyStep===0?'tap':session.studyStep===1?'left':session.studyStep===2?'right':'done';
-    card.setAttribute('aria-label',word.textContent+'. '+(revealed?meaning.textContent+'. 왼쪽 다시 볼게요, 오른쪽 기억나요':'탭하여 정답 확인'));
-    document.getElementById('onboard-prompt').textContent=['예제 카드를 눌러보세요.','왼쪽으로 넘겨보세요.','확인한 뒤 오른쪽으로 넘겨보세요.','이제 한 장씩 익혀보세요.'][session.studyStep];
-    document.getElementById('onboard-note').textContent=['탭하면 정답이 나타나요.','다시 볼게요 · 기억한 카드 수는 그대로예요.','기억나요 · 이번 학습에서 기억한 카드예요.','다시 볼 카드는 뒤에서 만나고, 다음 학습에도 단어는 남아요.'][session.studyStep];
-    /** @type {HTMLButtonElement} */(document.getElementById('onboard-next')).disabled=session.studyStep<3;
-    for(const button of alternatives.querySelectorAll('button'))button.disabled=!revealed||session.studyStep===3;
-  };
-  const reveal=(keyboard=false)=>{
-    if(!active()||busy||(!keyboard&&suppress)||revealed||session.studyStep===3)return;
-    revealed=true;meaning.hidden=false;card.setAttribute('aria-label',word.textContent+'. '+meaning.textContent+'. 왼쪽 다시 볼게요, 오른쪽 기억나요');
-    if(session.studyStep===0){session.studyStep=1;persistOnboarding();render();}
-    else for(const button of alternatives.querySelectorAll('button'))button.disabled=false;
-  };
-  const grade=direction=>{
-    if(!active()||busy||!revealed||session.studyStep!== (direction==='left'?1:2))return;
-    busy=true;session.studyStep++;persistOnboarding();card.dataset.direction=direction==='left'?'repeat':'remembered';
-    const finish=()=>{timer=null;if(active()){render();card.focus({preventScroll:true});}};
-    if(session.motion.matches){finish();return;}
-    card.style.transform=`translateX(${direction==='left'?'-':''}100%) rotate(${direction==='left'?-8:8}deg)`;
-    timer=setTimeout(finish,180);
-  };
-  for(const [direction,label] of [['left','다시 볼게요'],['right','기억나요']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>grade(direction),{signal:session.controller.signal});alternatives.append(button);}slide.append(alternatives);
-  // Touch owns its release: a browser may omit the compatibility click after a drag.
-  card.addEventListener('click',event=>{if(touchClickPending&&event.detail!==0){touchClickPending=false;event.preventDefault();return;}reveal();},{signal:session.controller.signal});
-  card.addEventListener('pointerdown',event=>{if(!active()||busy||!event.isPrimary||event.button!==0)return;suppress=false;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,axis:'',touch:event.pointerType==='touch'};touchClickPending=false;},{signal:session.controller.signal});
-  card.addEventListener('pointermove',event=>{
-    if(!drag||drag.id!==event.pointerId)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
-    if(!drag.axis){if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;drag.axis=Math.abs(dx)>Math.abs(dy)*1.2?'x':'y';suppress=true;}
-    if(drag.axis!=='x'||!revealed)return;drag.dx=dx;card.setAttribute('data-dragging','');try{card.setPointerCapture(event.pointerId);}catch{}
-    card.dataset.direction=dx<0?'repeat':'remembered';card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(dx)/120)));card.style.transform=`translateX(${dx}px) rotate(${dx/35}deg)`;event.preventDefault();
-  },{signal:session.controller.signal});
-  const release=(event,canceled)=>{
-    if(!drag||drag.id!==event.pointerId)return;const saved=drag;drag=null;
-    card.removeAttribute('data-dragging');card.removeAttribute('data-direction');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');
-    if(saved.touch){touchClickPending=true;event.preventDefault();}
-    const bounds=card.getBoundingClientRect(),inside=event.clientX>=bounds.left&&event.clientX<=bounds.right&&event.clientY>=bounds.top&&event.clientY<=bounds.bottom;
-    if(canceled)return;
-    if(saved.touch&&!saved.axis){if(inside){reveal(true);card.focus({preventScroll:true});}return;}
-    if(saved.axis==='x'&&Math.abs(saved.dx)>=Math.min(90,card.clientWidth*.24))grade(saved.dx<0?'left':'right');
-  };
-  card.addEventListener('pointerup',event=>release(event,false),{signal:session.controller.signal});card.addEventListener('pointercancel',event=>release(event,true),{signal:session.controller.signal});
-  play.addEventListener('click',()=>{session.paused=!session.paused;syncOnboardingMedia();},{signal:session.controller.signal});
-  session.controller.signal.addEventListener('abort',cancel,{once:true});
-  session.studyPractice={render,reveal,grade,cancel,motion:paused=>{demo.dataset.paused=String(paused);play.textContent=paused?'모션 힌트 재생':'모션 힌트 일시정지';}};
-}
 // Retained integration hooks: this guide never opens or owns a live Reader.
 function onboardingOwnsReader(){return false;}
 function onboardingAppearanceOpened(){}
@@ -92,7 +33,7 @@ function openOnboardingWord(node,retry=false){}
 function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
 function persistOnboarding(){
-  if(onboardingSession&&!onboardingSession.replay){const session=onboardingSession;save(ONBOARD_PROGRESS_KEY,{page:session.page,feature:session.page===0?'welcome':session.page===session.pages.length+1?'finish':session.pages[session.page-1][0],studyStep:session.studyStep});}
+  if(onboardingSession&&!onboardingSession.replay){const session=onboardingSession;save(ONBOARD_PROGRESS_KEY,{page:session.page,feature:session.page===0?'welcome':session.page===session.pages.length+1?'finish':session.pages[session.page-1][0]});}
 }
 function finishOnboardingWelcome(){
   const session=onboardingSession;if(!session)return;
@@ -114,7 +55,6 @@ function startOnboardingResolved(replay,pdfAvailable){
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],paused:false,mediaToken:0,pointer:null,
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,importMessage:''};
   session.pages=ONBOARD_PAGES.filter(item=>item[0]!=='pdf'||pdfAvailable);
-  session.studyStep=replay?0:Math.max(0,Math.min(3,Number.isInteger(progress?.studyStep)?progress.studyStep:0));
   if(!replay&&progress?.feature==='finish')session.page=session.pages.length+1;
   else if(!replay&&typeof progress?.feature==='string'&&progress.feature!=='welcome'){const index=session.pages.findIndex(p=>p[0]===progress.feature);if(index>=0)session.page=index+1;}
   else if(!replay&&!progress?.feature&&session.page>=session.pages.length)session.page=session.pages.length+1;
@@ -131,7 +71,6 @@ function startOnboardingResolved(replay,pdfAvailable){
     const slide=document.createElement('figure');slide.className='onboard-slide';slide.dataset.feature=item[0];
     slide.setAttribute('role','group');slide.setAttribute('aria-roledescription','페이지');
     slide.setAttribute('aria-label',`${index+1} / ${session.pages.length} · ${item[1]}`);
-    if(item[0]==='study'){onboardingStudyExample(slide,session);carousel.append(slide);const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');pages.append(dot);continue;}
     const video=document.createElement('video');video.muted=true;video.loop=true;video.playsInline=true;video.preload='none';
     video.setAttribute('aria-hidden','true');video.tabIndex=-1;
     video.addEventListener('error',()=>video.classList.add('poster-only'),{signal:session.controller.signal});
@@ -169,7 +108,7 @@ function startOnboardingResolved(replay,pdfAvailable){
     else goOnboardingPage(session.page+1);
   },{signal});
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
-  document.getElementById('onboard-skip').addEventListener('click',()=>{if(onboardingStudyActive(session)){session.studyStep=3;persistOnboarding();goOnboardingPage(session.page+1);}else endOnboarding(true);},{signal});
+  document.getElementById('onboard-skip').addEventListener('click',()=>{if(onboardingStudyActive(session)){goOnboardingPage(session.page+1);}else endOnboarding(true);},{signal});
   input.addEventListener('change',async()=>{
     const file=input.files[0];input.value='';
     if(!file||session.page!==session.pages.length+1||session.importController)return;
@@ -187,16 +126,13 @@ function startOnboardingResolved(replay,pdfAvailable){
     }
     session.importController=null;drawOnboarding();
   },{signal});
-  carousel.addEventListener('click',()=>{if(onboardingStudyActive(session))return;if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
+  carousel.addEventListener('click',()=>{if(session.swiped){session.swiped=false;return;}session.paused=!session.paused;syncOnboardingMedia();},{signal});
   // WebKit touch can leave focus on body. The active guide owns keyboard input
   // until its existing session signal aborts, including Escape after a tap.
   document.addEventListener('keydown',event=>{
     event.stopPropagation();
     if(event.key==='Escape'){event.preventDefault();endOnboarding(false);return;}
-    if(onboardingStudyActive(session)&&event.target instanceof Element&&event.target.closest('#onboard-study-card')){
-      if(['Enter',' '].includes(event.key)){event.preventDefault();session.studyPractice.reveal(true);}
-      if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();session.studyPractice.grade(event.key==='ArrowLeft'?'left':'right');}
-    }else if(session.page>0&&['ArrowLeft','ArrowRight'].includes(event.key)){
+    if(session.page>0&&['ArrowLeft','ArrowRight'].includes(event.key)){
       event.preventDefault();goOnboardingPage(session.page+(event.key==='ArrowRight'?1:-1));
     }
     if((event.key===' '||event.key==='Enter')&&event.target===carousel){event.preventDefault();session.paused=!session.paused;syncOnboardingMedia();}
@@ -209,18 +145,17 @@ function startOnboardingResolved(replay,pdfAvailable){
   },{signal,capture:true});
   const coach=document.getElementById('onboard-coach');
   coach.addEventListener('pointerdown',event=>{
-    if(event.target instanceof Element&&event.target.closest('button,input,.onboard-study-example'))return;
+    if(event.target instanceof Element&&event.target.closest('button,input'))return;
     if(event.isPrimary&&session.page>0){session.swiped=false;session.pointer={id:event.pointerId,x:event.clientX,y:event.clientY};if(event.isTrusted&&event.target instanceof Element)event.target.setPointerCapture?.(event.pointerId);}
   },{signal});
   coach.addEventListener('pointerup',event=>{
-    if(event.target instanceof Element&&event.target.closest('.onboard-study-example')){session.pointer=null;return;}
     const p=session.pointer;session.pointer=null;if(!p||p.id!==event.pointerId)return;
     const dx=event.clientX-p.x,dy=event.clientY-p.y;
     if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){session.swiped=true;goOnboardingPage(session.page+(dx<0?1:-1));}
   },{signal});
   coach.addEventListener('pointercancel',()=>{session.pointer=null;},{signal});
   coach.addEventListener('lostpointercapture',()=>{session.pointer=null;},{signal});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){finishOnboardingWelcome();session.studyPractice?.cancel();}else if(onboardingStudyActive(session))session.studyPractice.render();syncOnboardingMedia();},{signal});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)finishOnboardingWelcome();syncOnboardingMedia();},{signal});
   window.addEventListener('pagehide',()=>{finishOnboardingWelcome();persistOnboarding();for(const v of carousel.querySelectorAll('video'))v.pause();},{signal});
   window.addEventListener('pageshow',syncOnboardingMedia,{signal});
   window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
@@ -231,18 +166,16 @@ function startOnboardingResolved(replay,pdfAvailable){
   });
   session.theme.observe(document.body,{attributes:true,attributeFilter:['class']});
   for(const view of document.querySelectorAll('.view'))session.theme.observe(view,{attributes:true,attributeFilter:['class']});
-  drawOnboarding();document.getElementById(onboardingStudyActive(session)?'onboard-study-card':'onboard-next').focus({preventScroll:true});
+  drawOnboarding();document.getElementById('onboard-next').focus({preventScroll:true});
 }
 function goOnboardingPage(page){
   if(!onboardingSession)return;
   finishOnboardingWelcome();
   const next=Math.max(0,Math.min(onboardingSession.pages.length+1,page));
-  if(onboardingStudyActive()&&onboardingSession.studyStep<3&&next>onboardingSession.page)return;
-  onboardingSession.studyPractice?.cancel();
   if(next!==onboardingSession.page){
     onboardingSession.importController?.abort();onboardingSession.importController=null;onboardingSession.importMessage='';
   }
-  onboardingSession.page=next;persistOnboarding();drawOnboarding();if(onboardingStudyActive())document.getElementById('onboard-study-card').focus({preventScroll:true});
+  onboardingSession.page=next;persistOnboarding();drawOnboarding();
 }
 function drawOnboarding(){
   const session=onboardingSession;if(!session)return;
@@ -258,8 +191,7 @@ function drawOnboarding(){
   document.getElementById('onboard-prompt').textContent=finish?'읽고 싶은 책을 넣어보세요.':page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';
   document.getElementById('onboard-note').textContent=finish?(session.importMessage||'PDF · EPUB · TXT 파일을 골라주세요. 나중에 서재에서도 넣을 수 있어요.'):page?session.pages[page-1][2]:'막힘없이 읽는 새로운 방법.';
   document.getElementById('onboard-next').textContent=page===0?'시작하기':finish?'책 넣기':'다음';
-  /** @type {HTMLButtonElement} */(document.getElementById('onboard-next')).disabled=!!session.importController||(study&&session.studyStep<3);
-  if(study)session.studyPractice.render();
+  /** @type {HTMLButtonElement} */(document.getElementById('onboard-next')).disabled=!!session.importController;
   for(const [i,node] of [...document.querySelectorAll(/** @type {'figure'} */('.onboard-slide'))].entries())node.hidden=i!==page-1;
   for(const [i,dot] of [...document.getElementById('onboard-pages').children].entries())dot.setAttribute('aria-current',String(i===page-1));
   syncOnboardingMedia();
@@ -267,8 +199,7 @@ function drawOnboarding(){
 function syncOnboardingMedia(){
   const session=onboardingSession;if(!session)return;
   const token=++session.mediaToken,theme=document.body.classList.contains('dark')?'dark':'light';
-  session.studyPractice?.motion(session.paused||session.motion.matches||document.hidden);
-  document.getElementById('onboard-carousel').setAttribute('aria-label',onboardingStudyActive(session)?'단어 학습 연습 · 예제 카드를 탭한 뒤 왼쪽 다시 보기, 오른쪽 기억하기':'브리즈 기능 안내 · 좌우로 넘기기 · 영상을 누르면 '+(session.paused?'재생':'일시정지'));
+  document.getElementById('onboard-carousel').setAttribute('aria-label','브리즈 기능 안내 · 좌우로 넘기기 · 영상을 누르면 '+(session.paused?'재생':'일시정지'));
   for(const [i,video] of [...document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))].entries()){
     video.pause();
     if(i!==session.page-1){if(video.hasAttribute('src')){video.removeAttribute('src');video.load();}continue;}
@@ -286,7 +217,7 @@ function syncOnboardingMedia(){
 function endOnboarding(remember,returnToPrevious=true){
   ++onboardingRequest;
   const session=onboardingSession;if(!session)return;
-  finishOnboardingWelcome();persistOnboarding();session.studyPractice?.cancel();session.importController?.abort();session.controller.abort();session.theme.disconnect();
+  finishOnboardingWelcome();persistOnboarding();session.importController?.abort();session.controller.abort();session.theme.disconnect();
   for(const video of document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))){video.pause();video.removeAttribute('src');video.load();}
   onboardingSession=null;document.getElementById('onboarding').hidden=true;
   document.body.classList.remove('onboarding-active');

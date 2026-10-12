@@ -17,7 +17,7 @@ export async function serveStudyFixture({uiSource,instrument=false}={}){
    let body=readFileSync(path);
    if(path.endsWith('/scripts/ui/study-sets.js')&&uiSource)body=readFileSync(uiSource);
    if(instrument&&path.endsWith('/scripts/core/study-sets.js'))body=body.toString().replace('function normalize(raw){','function normalize(raw){ window.studyListMetrics.normalizes++;');
-   res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp'})[extname(path)]||'application/octet-stream');res.end(body);
+   res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.mp4':'video/mp4'})[extname(path)]||'application/octet-stream');res.end(body);
   }catch{res.writeHead(404).end();}
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));

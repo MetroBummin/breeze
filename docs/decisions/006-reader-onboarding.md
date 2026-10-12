@@ -133,3 +133,16 @@ welcome state. Existing abort/skip/hidden/reduced-motion paths still finish
 explicitly. CSS durations, continuous stroke, exact pen===1, hold and30s test
 limits remain unchanged. Chromium passed the strict full suite; exact-head
 WebKit CI is required, not substituted by local Chromium evidence.
+
+
+## Study media follow-up after 269
+
+The appended study page now uses the same passive video/poster path as existing
+features, superseding the 269 required interactive practice. Next is immediately
+available; its Skip reaches the existing final import page. Settings replay and
+first-run interruption/resume retain the same owner and progress key. Examples
+in the media are isolated authored data captured from the real production card
+UI, with no AI/network lookup or changes to live vocabulary/study data. Muted
+inline loop playback, tap pause, reduced-motion poster and playback-error poster
+are shared with prior slides. No physical iOS playback claim follows from browser
+verification.
