@@ -17,7 +17,17 @@ function studySpring(from,to,velocity,paint,done=()=>{}){
 }
 function studyReleaseVelocity(samples,now){
   const last=samples.at(-1);if(!last||now-last.t>80)return 0;
-  const first=samples.find(p=>last.t-p.t<=70)||last;
+  // A fast reversal can fit entirely inside the sampling window. Measure the
+  // last uninterrupted direction, so earlier outward travel cannot grade/remove
+  // after the finger has deliberately turned back toward the resting position.
+  let first=last,direction=0;
+  for(let i=samples.length-2;i>=0;i--){
+    const point=samples[i];if(last.t-point.t>70)break;
+    const step=Math.sign(first.x-point.x);
+    if(step&&direction&&step!==direction)break;
+    if(step)direction=step;
+    first=point;
+  }
   return last.t>first.t?(last.x-first.x)/(last.t-first.t):0;
 }
 function studyCardMotion(card,{ready,reveal,grade,enabled=()=>true}){

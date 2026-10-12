@@ -109,7 +109,7 @@ Local Chromium, `/usr/bin/chromium`, with the ordinary application scripts:
   Existing min/max, anchor and ownership assertions remain.
 - Existing PDF interruption suite: native-offset race and missing/stale endings.
 - Existing header equality suite and complete app icon-family capture passed.
-- Study DOM contracts: all 40 tests pass using the actual new motion owner.
+- Study DOM contracts: all 41 tests pass using the actual new motion owner.
   Coordinate-only Node events use a fixed clock; real timing belongs to browser
   velocity tests. No assertion was dropped.
 - Typecheck retains the existing 32 diagnostics. Parent ran aggregate `npm test`
@@ -129,3 +129,18 @@ pointer/touch events and is labeled accordingly. Local WebKit download is
 blocked; actual WebKit CI, native physical scrolling/annotation coexistence,
 120Hz feel and physical pinch acceptance remain unverified. Onboarding clips,
 front example content, other icons and release counters are preserved.
+
+## Actual CI follow-up
+
+The first WebKit run exposed a real release-trajectory defect: its complete
+forward/reverse trace fit inside the70ms velocity window, so averaging the whole
+window still pointed outward and excluded a row after reversal. Velocity now
+uses only the final uninterrupted direction within that window. A deterministic
+60ms trace verifies positive/negative final turns, stationary release and
+zero-time events; existing browser reversal assertions remain unchanged.
+
+The parked-action screenshot fixture also released its68px drag immediately;
+that can now be a legitimate flick. It explicitly holds100ms before release to
+capture the stationary72px parked action, retains the exact geometry assertion
+and additionally requires all eight rows to remain. This changes capture intent,
+not gesture thresholds or behavior. Actual WebKit rerun is required.

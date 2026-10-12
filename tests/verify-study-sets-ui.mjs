@@ -581,3 +581,14 @@ test('post-commit start history failure retries the committed session without an
   await afterAction(h.click('#study-sets-start'));const before=h.storage.get('breeze.study-sets.v1');assert.ok(JSON.parse(before).sets[0].session);assert.equal(await afterAction(h.run('studySetsUI.diagnostic.phase')),'navigation');assert.equal(await afterAction(h.run('studySetsUI.lastError.stack')),error.stack);
   h.context.history.pushState=push;await afterAction(h.click('#study-sets-error button'));assert.equal(h.storage.get('breeze.study-sets.v1'),before);assert.equal(h.query('#study-sets-progress').textContent,'0 / 2');
 });
+
+
+test('release velocity follows the final turn even when the complete reversal fits inside70ms',()=>{
+  const {run}=harness();
+  const right=run('studyReleaseVelocity([{x:0,t:0},{x:-80,t:15},{x:-210,t:30},{x:-140,t:45},{x:-90,t:60}],61)');
+  const left=run('studyReleaseVelocity([{x:0,t:0},{x:80,t:15},{x:210,t:30},{x:140,t:45},{x:90,t:60}],61)');
+  assert.equal(right,4);assert.equal(left,-4);
+  assert.equal(run('studyReleaseVelocity([{x:0,t:0},{x:50,t:25},{x:100,t:50}],51)'),2);
+  assert.equal(run('studyReleaseVelocity([{x:0,t:0},{x:50,t:25},{x:100,t:50}],131)'),0,'held release has no stale velocity');
+  assert.equal(run('studyReleaseVelocity([{x:0,t:0},{x:50,t:0}],0)'),0,'zero-time fixture cannot invent infinite velocity');
+});
