@@ -1,0 +1,111 @@
+{
+  "baseline": "303986945a35219d83b077c0933ebde767d89a3d",
+  "privateReferencePixelsSeen": false,
+  "testsUnchanged": true,
+  "files": [
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/sidebar-geometry.json",
+      "sha256": "59198737896eb47aa84794314cd7f32decc40be303ce9f6379cda0bb43787111"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-landscape-dark-header-crop.png",
+      "sha256": "06589129bb1ccffdaf02ffaba13fb08722865da714f137412424cc3c733ac58b"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-landscape-dark-sidebar.png",
+      "sha256": "78b8314981a8956fb936aa4fead271e5d101d547f177c16dc9edcc19a3cd7e20"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-landscape-light-header-crop.png",
+      "sha256": "25c1f88fc688f9bcbe1174b3f05a734953892232369d753908d37003e8d9f46a"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-landscape-light-sidebar.png",
+      "sha256": "de25aff5605fd9512367a7909e63ceb066b7e92ae415bdb6f217351e1031964c"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-portrait-dark-header-crop.png",
+      "sha256": "55c8f4305d8ba6cef6d2ba2efaaaa4c5883b09e51279ffbfee6cf73334cc7e62"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-portrait-dark-sidebar.png",
+      "sha256": "dc6c03daabc80845f1ae74a5c54aed32c4c247f06bb4e985f33e72f63afccbc4"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-portrait-light-header-crop.png",
+      "sha256": "78bdece09e3254b1e09befe5762f0a4d22acfdce37aa4e8e295b8ccf2cbfd4b3"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/ipad-portrait-light-sidebar.png",
+      "sha256": "6cffa221da68ff91b7919e0e920c25671307ea0a681b05357a70b9d3b488d17f"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/phone-dark-header-crop.png",
+      "sha256": "031297b73d46ca95c344303ee0110136f9dc6cd111eaf9807a9447ab14c8b7c1"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/phone-dark-sidebar.png",
+      "sha256": "e381eb108b718eeb07ca7defbf270a20b5dd777da59c2b865f16d48f04352c8b"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/phone-light-header-crop.png",
+      "sha256": "8aa1ba500ae958a0527abe4c4548ce84f481bca0cdc125e379fd4d415daa596c"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/before/phone-light-sidebar.png",
+      "sha256": "a994ab461542b117f513f7f068f518e0407b035ef2c0c84ba39a5f40ef814c19"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/sidebar-geometry.json",
+      "sha256": "f4555bfa5aa65af95f552eb4a0303754db267ede64bcb39543ab7cfb78535046"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-landscape-dark-header-crop.png",
+      "sha256": "21581ac720e95bd4cba1f9c9fa989ec18a94d182b0cb58b096a8b0637af30e72"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-landscape-dark-sidebar.png",
+      "sha256": "7b823575d8daaf3cdd2a44ef6d4daec9225a194ede7c41c3c252944ed575ebf9"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-landscape-light-header-crop.png",
+      "sha256": "994d484f228593598c594d2076b13cf7ccccf1ac9fc17e8363490dc2844ff466"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-landscape-light-sidebar.png",
+      "sha256": "5fa044f7132f34d871aacef0aca34b5a04f84faedb5addfbb89ffa6896901519"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-portrait-dark-header-crop.png",
+      "sha256": "9e7bcc81683b4b2003e0494716ac2745a151197a162687853f56f2178c6e752b"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-portrait-dark-sidebar.png",
+      "sha256": "80953eab2be5bd8c45cdfe8c4a3254971d4d07c2f16e782cd632e9a6688acb88"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-portrait-light-header-crop.png",
+      "sha256": "c54dbdeaf534df868e44887ba0f33a0ca790e4456d47c5e5e08d8e3b602330c9"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/ipad-portrait-light-sidebar.png",
+      "sha256": "79a932f40d158ae7c9abc7cd5dcea5c9d0c0256af53d41b1c41959f258d7e247"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/phone-dark-header-crop.png",
+      "sha256": "ebabebeaa62089813a6fc14677c5290ad84d718ae18848bd408f05e1e3d08c4e"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/phone-dark-sidebar.png",
+      "sha256": "e995524213909737814ac823d99758ba955baa9b8ee7813f12f58a4ec83e0b8b"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/phone-light-header-crop.png",
+      "sha256": "1f2b9ddeca0eab573420f93ed4658da5b025bb4c465b4065aea6f29f62db1b3d"
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/sidebar-consistency/after/phone-light-sidebar.png",
+      "sha256": "dc99cb490bdb8c473eac0bd890ee5b9722cf924a4c607a994900ca37edbf90ac"
+    }
+  ]
+}

@@ -489,3 +489,13 @@ Onboarding's separate WebKit timeout is unproven: its pen property resets once
 the ready state removes the drawing animation. Add failure state/timeline/caption
 diagnostics only; retain exact pen===1, hold/ready assertions and30s deadlines.
 No product animation, deployment, merge or release boundary is changed.
+
+### Sidebar header consistency correction
+
+The30398694 CI comparison caught an actual asymmetry: the page-navigation
+toggle alone had24px/3.07px SVG styling while its44px bookmark peer retained
+22px/2px. Move both onto the shared sidebar-header rule (24px frame, matching
+stroke scale); remove the one-button override. Preserve44×44 circles,50% radius,
+background, fill/pressed semantics and all existing deep-equality assertions.
+Before/after own-browser sidebar renders ground the change. This does not force
+the differently shaped bookmark/page glyphs to equal painted widths.

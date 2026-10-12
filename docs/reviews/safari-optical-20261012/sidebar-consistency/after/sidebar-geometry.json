@@ -1,0 +1,200 @@
+{
+  "phase": "after",
+  "privateReferencePixelsSeen": false,
+  "platform": "Actual Chromium touch renders; not native iOS",
+  "cases": [
+    {
+      "device": "phone",
+      "theme": "light",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "scroll": 22,
+      "styles": [
+        {
+          "id": "pdf-bookmarks-only",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(50, 55, 58, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        },
+        {
+          "id": "pdf-navigation-toggle",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(50, 55, 58, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "scroll": 22,
+      "styles": [
+        {
+          "id": "pdf-bookmarks-only",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(255, 255, 255, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        },
+        {
+          "id": "pdf-navigation-toggle",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(255, 255, 255, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "scroll": 22,
+      "styles": [
+        {
+          "id": "pdf-bookmarks-only",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(50, 55, 58, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        },
+        {
+          "id": "pdf-navigation-toggle",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(50, 55, 58, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "scroll": 22,
+      "styles": [
+        {
+          "id": "pdf-bookmarks-only",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(255, 255, 255, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        },
+        {
+          "id": "pdf-navigation-toggle",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(255, 255, 255, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "scroll": 22,
+      "styles": [
+        {
+          "id": "pdf-bookmarks-only",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(50, 55, 58, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        },
+        {
+          "id": "pdf-navigation-toggle",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(50, 55, 58, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "scroll": 22,
+      "styles": [
+        {
+          "id": "pdf-bookmarks-only",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(255, 255, 255, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        },
+        {
+          "id": "pdf-navigation-toggle",
+          "width": 44,
+          "height": 44,
+          "radius": "50%",
+          "background": "rgba(255, 255, 255, 0.06)",
+          "iconWidth": 24,
+          "iconHeight": 24,
+          "stroke": "calc(3.06667px)"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -97,3 +97,15 @@ property, so the transient exact1 window needs diagnosis. The strict test now
 records pen/dataset/caption/animation times and failure screenshots; pen===1,
 hold/ready assertions and existing deadlines remain. Product onboarding code is
 unchanged. No flake cause or unrelated product regression is claimed as confirmed.
+
+## Sidebar header consistency correction
+
+Exact30398694 CI caught a real one-sided style override: page toggle24px/3.07px
+versus bookmark22px/2px, despite equal44×44 buttons/material. The two peers now
+share one24px/stroke-scale rule; the toggle-only override is removed. Existing
+deep-equality tests remain unchanged. `sidebar-consistency/` includes three
+viewports/both themes and live header crops before/after. Local Chromium Reader
+work and all twelve paired sidebar renders passed. The prior six footer/full
+screens remain valid: footer geometry/material/icons did not change in this fix.
+Latest exact-head WebKit/CI results are pending. Prior onboarding timeout remains
+unproven;30398694 onboarding passed, with product animations unchanged.
