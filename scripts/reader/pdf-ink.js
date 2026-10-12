@@ -484,8 +484,32 @@ const BreezePdfInk = (()=>{
     if(changed.length && changed.every(t=>suppressed.has(t.identifier))
         && !Array.from(event.touches).some(finger))stop(event);
   }
+  function reconcileTouchOwner(event){
+    // A fresh Touch list is evidence of which contacts still exist. Never
+    // infer an end from elapsed time, motion, or a different Pointer ID.
+    // Android geometry has a Pointer owner; its Touch IDs are unrelated.
+    if(pointerInk())return;
+    const live=new Set(Array.from(event.touches,t=>t.identifier));
+    const retirePointer=id=>{
+      if(id==null)return;
+      blockedPointers.delete(id);
+      if(paperPenPointer===id)paperPenPointer=null;
+    };
+    if(active&&!live.has(active.id)){
+      const id=active.pointerId;
+      cancel('touch-owner-no-longer-live');retirePointer(id);
+    }
+    // An ended contact may still legitimately await its native admission
+    // reply. Keep that completed snapshot; retire only an orphaned live owner.
+    if(pendingAdmission&&!pendingAdmission.ended&&!live.has(pendingAdmission.id)){
+      retirePointer(pendingAdmission.pointerId);pendingAdmission=null;
+    }
+    for(const id of suppressed)if(!live.has(id))suppressed.delete(id);
+    for(const id of nativeOwnedStylus)if(!live.has(id))nativeOwnedStylus.delete(id);
+  }
   function touchStart(event){
     if(!visible()||mode==='read')return;
+    reconcileTouchOwner(event);
     const changed=Array.from(event.changedTouches);
     if(pointerInk()){
       // Pointer and Touch identifiers are unrelated. A pen pointer is delivered
@@ -574,6 +598,7 @@ const BreezePdfInk = (()=>{
     }
   }
   function touchMove(event){
+    reconcileTouchOwner(event);
     consumeTouches(event);
     if(pointerInk()){
       if(active&&!event.cancelable)cancel('noncancelable-touchmove');
@@ -658,6 +683,9 @@ const BreezePdfInk = (()=>{
     const live=new Set(Array.from(event.touches,t=>t.identifier));
     for(const id of suppressed)if(!live.has(id))suppressed.delete(id);
     for(const id of nativeOwnedStylus)if(!live.has(id))nativeOwnedStylus.delete(id);
+    // Handle the matching normal end/cancel above before reconciling other
+    // owners. An unrelated terminal event can also prove an old Touch ended.
+    reconcileTouchOwner(event);
     resumeOriginalPdfPaint();
     // Capture-phase delivery precedes the Reader's pinch-end handler. rAF here
     // therefore sees committed geometry, including a cancelled/no-op pinch.
