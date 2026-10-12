@@ -81,6 +81,7 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #wordbook-add-form>div,.task-actions{gap:8px;}
 #wordbook-add-form>div button,.task-actions button{min-height:44px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:500;}
 #wordbook-add-form .task-close,#task-form .task-close{top:12px;right:12px;border:0;background:transparent;}
+#wordbook-add-form .task-close{border:1px solid var(--sentence-glass-line-soft);background:var(--sentence-glass-action);}
 #wordbook-add-form .task-close:hover,#task-form .task-close:hover{background:var(--sentence-glass-action-hover);}
 /* Match the lookup and Reader star proportions, with separate 44px touch targets. */
 #vstars{padding:4px 0;gap:8px;}

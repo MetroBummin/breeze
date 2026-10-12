@@ -11,6 +11,7 @@ body.dark:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark{background-ima
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark::before{content:"";position:absolute;inset:0;display:none;background:var(--settings-ink);mask:url("../assets/brand/wordmark-mask.svg") center/contain no-repeat;-webkit-mask:url("../assets/brand/wordmark-mask.svg") center/contain no-repeat;}
 @media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more){body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark{background-image:none!important;}body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark::before{display:block;}}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings{margin-left:auto;flex:none;width:44px;height:44px;}
+body:has(#v-home.on) #nav-settings{transform:translateY(4px);}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #v-home{padding-top:20px;}
