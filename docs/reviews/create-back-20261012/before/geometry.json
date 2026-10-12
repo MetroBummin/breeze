@@ -1,0 +1,1125 @@
+{
+  "phase": "before",
+  "cases": [
+    {
+      "device": "phone",
+      "dark": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 326,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "backgroundImage": "none",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-light.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 314,
+        "y": 290,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(50, 55, 58, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 21,
+        "y": 477.21875,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 16,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 326,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "backgroundImage": "none",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-dark.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 314,
+        "y": 290,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(255, 255, 255, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 21,
+        "y": 477.21875,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 16,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "ipad-portrait",
+      "dark": false,
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 756,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "backgroundImage": "none",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-light.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 543,
+        "y": 458,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(50, 55, 58, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 91,
+        "y": 408.609375,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 16,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "ipad-portrait",
+      "dark": true,
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 756,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "backgroundImage": "none",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-dark.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 543,
+        "y": 458,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(255, 255, 255, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 91,
+        "y": 408.609375,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 16,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "ipad-landscape",
+      "dark": false,
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1116,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "backgroundImage": "none",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-light.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 723,
+        "y": 278,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(50, 55, 58, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 271,
+        "y": 228.609375,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 26,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "ipad-landscape",
+      "dark": true,
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1116,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "backgroundImage": "none",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-dark.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 723,
+        "y": 278,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(255, 255, 255, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 271,
+        "y": 228.609375,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 26,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "desktop",
+      "dark": false,
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1376,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "backgroundImage": "none",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-light.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 853,
+        "y": 368,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(50, 55, 58, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 401,
+        "y": 318.609375,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 156,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "desktop",
+      "dark": true,
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1376,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "backgroundImage": "none",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-dark.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 853,
+        "y": 368,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(255, 255, 255, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 401,
+        "y": 318.609375,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 156,
+        "y": 16,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 780,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "backgroundImage": "none",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-light.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 555,
+        "y": 63,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(50, 55, 58, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 103,
+        "y": 29,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 16,
+        "y": 4,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88))",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 780,
+          "y": 28,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "backgroundImage": "none",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "svg": {
+            "width": "20px",
+            "stroke": "2px"
+          },
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "url(\"http://127.0.0.1:36681/assets/brand/wordmarks/breeze-neutral-dark.svg\")",
+          "shadow": "none",
+          "svg": null,
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 555,
+        "y": 63,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(255, 255, 255, 0.06)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "20px",
+          "stroke": "2px"
+        },
+        "border": "1px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "backgroundImage": "none",
+          "shadow": "none",
+          "svg": null,
+          "border": "1px",
+          "radius": "12px"
+        }
+      ],
+      "createBack": {
+        "x": 103,
+        "y": 29,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "shadow": "none",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "detailBack": {
+        "x": 16,
+        "y": 4,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96))",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "svg": {
+          "width": "32px",
+          "stroke": "2.3px"
+        },
+        "border": "1px",
+        "radius": "22px",
+        "text": ""
+      }
+    }
+  ]
+}

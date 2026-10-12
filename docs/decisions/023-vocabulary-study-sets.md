@@ -204,3 +204,8 @@ direction text and Undo, with no visible rating buttons; keyboard/assistive
 controls remain, and focus reveals their alternatives. Reduced motion preserves
 the contracts without exit animation. Tests/videos are browser evidence;
 physical iOS interaction still needs native QA.
+
+The separately approved create-sheet back circle reuses the set-detail back's
+theme material and reduced-transparency fallback. Preserve44px touch geometry,
+32px/2.3 SVG and the existing same-dialog Back/history/close ownership. Paired
+sheet captures assert material equality and actual Back returns to directory.

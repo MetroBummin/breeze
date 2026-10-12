@@ -141,7 +141,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 
 #v-memory-set .study-sets-sheet{position:relative;}
 .study-sets-edit-slot{width:44px;height:44px;flex:none;}
-.study-sets-edit-surface,#v-memory-set #study-sets-back{width:44px;height:44px;border:1px solid var(--study-set-control-line);border-radius:22px;background:var(--study-set-control-surface);box-shadow:var(--study-set-control-shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:var(--study-set-control-ink);}
+.study-sets-edit-surface,#v-memory-set #study-sets-back,#study-sets-dialog #study-sets-back{width:44px;height:44px;border:1px solid var(--study-set-control-line);border-radius:22px;background:var(--study-set-control-surface);box-shadow:var(--study-set-control-shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:var(--study-set-control-ink);}
 .study-sets-edit-surface{position:absolute;z-index:7;top:16px;right:16px;overflow:hidden;}
 #v-memory-set #study-sets-edit{position:absolute;z-index:2;top:-1px;right:-1px;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:inherit;box-shadow:none;transition:opacity .1s ease;}
 #v-memory-set #study-sets-edit:active{background:transparent;}
@@ -150,7 +150,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set .study-sets-edit-menu>.study-sets-button+.study-sets-button{border-top:1px solid var(--study-set-control-divider);}
 #v-memory-set .study-sets-edit-menu>.study-sets-danger-link{color:var(--danger);}
 @media(max-height:500px){.study-sets-edit-surface{top:4px;}}
-@media(prefers-reduced-transparency:reduce){.study-sets-edit-surface,#v-memory-set #study-sets-back{background:var(--study-set-control-solid);backdrop-filter:none;-webkit-backdrop-filter:none;}}
+@media(prefers-reduced-transparency:reduce){.study-sets-edit-surface,#v-memory-set #study-sets-back,#study-sets-dialog #study-sets-back{background:var(--study-set-control-solid);backdrop-filter:none;-webkit-backdrop-filter:none;}}
 @media(prefers-reduced-motion:reduce){#v-memory-set #study-sets-edit,.study-sets-edit-menu{transition:none;}}
 
 #v-memory-set :is(#study-sets-back,#study-sets-edit)>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
