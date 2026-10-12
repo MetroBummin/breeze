@@ -99,6 +99,9 @@
      앱 전체가 같은 하늘을 봅니다. `--brand` 는 넓은 면·강조, `--brand-strong` 은
      작은 글자·로고·누를 수 있는 곳처럼 대비가 필요한 자리입니다. 예전 이름은
      호환용 별칭일 뿐이고 새 UI는 이 두 이름을 기준으로 만듭니다. */
+  /* Approved flow-logo mint endpoint; separate from existing sky selections. */
+  --brand-signature:#AAC4C4;
+  --study-remember-wash:35%;
   --brand:#4DAED6;                 /* rgb(77, 174, 214) */
   --brand-strong:#267FA8;          /* rgb(38, 127, 168) */
   --blue:var(--brand);
@@ -369,6 +372,8 @@ body.dark{
   --sentence-glass-shadow-pill:0 6px 18px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.10);
   --sentence-glass-shadow:0 18px 46px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.10);
   --sentence-glass-scrim:rgba(0,0,0,.18);
+  --brand-signature:#D7ECE8;
+  --study-remember-wash:20%;
   --brand:#4DAED6;
   --brand-strong:#78C9EA;
   --blue:var(--brand);

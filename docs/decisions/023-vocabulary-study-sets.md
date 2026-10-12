@@ -231,3 +231,10 @@ The separately authorized list optimization was cherry-picked without changing
 study gesture owners or storage validation. Its validated-session index is now
 v2's distinct passed count. QA scene helpers distinguish the visible tap card
 from clipped assistive controls and retain strict hidden/duplicate checks.
+
+The final signature-color adjustment reuses the approved flow wordmark's mint
+endpoint: `--brand-signature` is#AAC4C4 in light and#D7ECE8 in dark. Existing sky
+brand/selection tokens stay unchanged. Only remembered/right-drag feedback uses
+it, in set and all-word study. The theme-specific wash35%/20% keeps the neutral
+card readable; direction text must retain4.5:1 contrast. Left/repeat, progress,
+geometry, gestures, palette assets and lookup colors are unchanged.

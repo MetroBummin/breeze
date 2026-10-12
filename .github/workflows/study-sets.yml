@@ -70,6 +70,17 @@ jobs:
         if: matrix.engine == 'chromium'
       - run: node tests/verify-study-session-swipe-browser.mjs
         if: matrix.engine == 'chromium'
+      - run: node tests/capture-study-store-sources.mjs
+        if: matrix.engine == 'chromium'
+        env:
+          BREEZE_STORE_CHECK_SIGNATURE: '1'
+          BREEZE_STORE_SOURCE_OUTPUT: /tmp/breeze-signature-set
+      - run: node tests/capture-study-store-sources.mjs
+        if: matrix.engine == 'chromium'
+        env:
+          BREEZE_STORE_CHECK_SIGNATURE: '1'
+          BREEZE_STORE_DOMAIN: all
+          BREEZE_STORE_SOURCE_OUTPUT: /tmp/breeze-signature-all
       - run: node tests/verify-simple-word-cards-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
@@ -91,5 +102,7 @@ jobs:
             /tmp/breeze-study-touch-preview/
             /tmp/breeze-study-session-proof/
             /tmp/breeze-app-icon-family-${{ matrix.engine }}/
+            /tmp/breeze-signature-set/
+            /tmp/breeze-signature-all/
           if-no-files-found: ignore
           retention-days: 14

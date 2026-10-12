@@ -169,7 +169,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 .study-session-stack .study-sets-card-meaning{margin:0!important;font-size:clamp(22px,3vw,30px)!important;}
 .study-session-hint{text-align:center;flex:none;font-size:13px;color:var(--sentence-glass-secondary);margin:0;}
 .study-session-body .study-session-undo{align-self:center;flex:none;min-width:100px;}
-.study-session-stack [data-direction=remembered]{background:color-mix(in srgb,var(--selection-ink) calc(var(--study-drag,1)*5%),var(--settings-sheet-surface));}
+.study-session-stack [data-direction=remembered]{background:color-mix(in srgb,var(--brand-signature) calc(var(--study-drag,1)*var(--study-remember-wash)),var(--settings-sheet-surface));}
 .study-session-stack [data-direction=repeat]{background:color-mix(in srgb,var(--settings-muted) calc(var(--study-drag,1)*8%),var(--settings-sheet-surface));}
 .study-session-stack .study-sets-flashcard::after{position:absolute;top:24px;left:24px;right:24px;color:var(--sentence-glass-secondary);font:600 14px var(--ui);opacity:var(--study-drag,0);pointer-events:none;}
 .study-session-stack [data-direction=remembered]::after{content:'기억나요 →';text-align:left;}
