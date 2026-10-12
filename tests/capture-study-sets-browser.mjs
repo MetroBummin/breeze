@@ -62,8 +62,12 @@ try{
  assert.ok(Math.abs(setGeometry['.vword'].height-originalGeometry['.vword'].height)<=1,'word wrapping differs from original');
  const row=page.locator('#study-sets-word-list > li').first();
  const point=await row.locator('.vko').evaluate(n=>{const r=n.getBoundingClientRect();return{x:r.right-4,y:r.y+r.height/2};});
- await page.mouse.move(point.x,point.y);await page.mouse.down();await page.mouse.move(point.x-68,point.y,{steps:10});await page.mouse.up();
+ await page.mouse.move(point.x,point.y);await page.mouse.down();await page.mouse.move(point.x-68,point.y,{steps:10});
+ // This frame documents the parked action, not a velocity-triggered flick.
+ // Release at rest after the measured velocity window has expired.
+ await page.waitForTimeout(100);await page.mouse.up();
  await row.locator('.study-sets-word-surface').evaluate(async n=>{for(let i=0;i<60;i++){const t=getComputedStyle(n).transform;if(t!=='none'&&Math.abs(new DOMMatrixReadOnly(t).m41+72)<1)return;await new Promise(requestAnimationFrame);}throw Error('Reveal did not settle');});
+ assert.equal(await page.locator('#study-sets-word-list > li').count(),8,'parked preview must retain every row');
  await capture('swipe-circle');
  assert.deepEqual(errors,[]);
  console.log('Real application review captures saved; full interaction QA runs separately.');
