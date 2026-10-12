@@ -3,7 +3,7 @@
 Approved scope is quota-safe study persistence, stored source examples on both
 learning fronts, readonly All Words detail/Study Start/Back, passive study guide
 media, and app-wide control consistency including header shells and optical
-bounds. Source `b482ddb23102aaaca877d79ca205daea6a6af471` incorporates Astra origin
+bounds. Source `f0b43aa2496b19c3b55ac52e4d93e3c3892cc538` incorporates Astra origin
 b5ec2f3755917b978c5d344f9a07bf173851e7b7 through075922e. No new feature
 scope, RSS148/Worker activation or isolated sentence experiments are included.
 
@@ -18,6 +18,8 @@ The clarified header requirement shares44px circular geometry, palette/gradient,
 rim/shadow/blur, zero padding, optical alignment and press feedback. Back/X
 painted heights are18px; wide/dense/filled drawings keep contextual24px frames.
 Menu morphs, semantic selected fill, handlers and touch targets are preserved.
+Wordbook Home keeps its existing48px shared dock slot/material; its outline
+remains20px/2.4 units. The5-size light/dark cross-view equality test passes.
 Raw paired before/after screenshots and metrics cover phone/iPad/short in both
 themes; app-family coverage includes desktop/tablet landscape. Apple contextual
 optical guidance informs existing Breeze drawings, with no extracted Apple

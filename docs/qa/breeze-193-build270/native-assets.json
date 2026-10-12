@@ -1,5 +1,5 @@
 {
-  "reviewedSource": "b482ddb23102aaaca877d79ca205daea6a6af471",
+  "reviewedSource": "f0b43aa2496b19c3b55ac52e4d93e3c3892cc538",
   "checkedInVersion": "1.9.3(270)",
   "filesMatchSourceWwwAndIosPublic": true,
   "fileCount": 239,
@@ -782,7 +782,7 @@
     {
       "path": "index.html",
       "bytes": 53332,
-      "sha256": "6072c5bab5ec4575e181e7ae6aa8edcd4be9bf1fe8e2ba0d7f2079cfba57bbd7"
+      "sha256": "ba02fa215cb2494a74fb3c4273ea057889e9e826f874ed6ee7907161d789f90f"
     },
     {
       "path": "modules/lexical/core.js",
@@ -1136,8 +1136,8 @@
     },
     {
       "path": "styles/header-controls.css",
-      "bytes": 5777,
-      "sha256": "ede3df74ed0df4ce94240b5be9cf637f58714443f85b96f152c0616135647f4c"
+      "bytes": 5657,
+      "sha256": "43d397ccdb4bb001ed922cc5e50c312209c19c54554435b731e75addae720df0"
     },
     {
       "path": "styles/home-font.css",

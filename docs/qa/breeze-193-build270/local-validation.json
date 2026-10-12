@@ -1,5 +1,5 @@
 {
-  "reviewedSource": "b482ddb23102aaaca877d79ca205daea6a6af471",
+  "reviewedSource": "f0b43aa2496b19c3b55ac52e4d93e3c3892cc538",
   "sourceScope": [
     "Astra quota-safe IDB migration",
     "stored source examples before reveal",
@@ -18,14 +18,15 @@
     "client polish": "passed updated detail/start path, dormant schedule preservation and20layout captures",
     "passive onboarding": "passed Next/Skip/Back/Escape/replay/interrupt/reduced-motion/isolation10layouts",
     "onboarding full suite": "passed initialUI; shared media behavior unchanged",
-    "control family": "170 scenes,5viewports/both themes;46 paired target width/height comparisons unchanged",
+    "control family": "passed170scenes5viewports/both themes, plus explicit Wordbook Home role on phone/both themes after dock ownership correction",
     "Reader/guide/writing optics": "passed persistent-profile Chromium phone/iPad/short both themes and actual original byte lengths",
     "store All Words source captures": "passed12high-resolution front/reveal/drag captures and4.5 contrast",
     "native counter contracts": "passed App/Share1.9.3(270), existing269/lower rejected",
     "native sync": "passed239 source/www/iOSpublic byte-matched application files",
     "real Chromium2400 long-example quota": "passed native quota, exact sources/archives, new set, IDB abort/retry, relaunch, duplicate input and pending navigation",
     "header shells": "passed phone/iPad/short both themes,44px circles,18px Back/X painted height, exact paired/cross-screen material/press feedback",
-    "Home handoff": "passed browser and controlled deferred viewport-reset/duplicate-save100/50/19%, exact scalar/anchor/durable/Home/shelf equality"
+    "Home handoff": "passed browser and controlled deferred viewport-reset/duplicate-save100/50/19%, exact scalar/anchor/durable/Home/shelf equality",
+    "dock material": "passed unmodified Home/Wordbook/Reader exact geometry/material equality at5sizes/both themes; Wordbook Home remains48px dock"
   },
   "limitations": {
     "WebKit": "unavailable locally; final exact-head CI required",
