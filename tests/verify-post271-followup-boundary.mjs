@@ -89,4 +89,4 @@ try{
 }finally{
   if(registered)git('worktree','remove','--force',scratch);else rmSync(scratch,{recursive:true,force:true});
 }
-console.log('Post270 followup scope passed; shipped271 and historical release contracts remain exact. Product review guard: build271 counters remain unchanged until separate build272 packaging.');
+console.log('Post271 followup scope passed; shipped271 and historical release contracts remain exact. Product review guard: build271 counters remain unchanged until separate build272 packaging.');

@@ -38,7 +38,7 @@ try{
    return {samples,openMs,revealMs,againMs,retainedAllRows:document.querySelectorAll('#study-all-words-list .vgroup').length,queue:simpleStudySession.queue.length};
   });
   const tasks=await page.evaluate(()=>qaTasks);
-  cases.push({count,...sample,metrics,session,longTasks:tasks.filter(t=>t.start>=sample.start)});
+  cases.push({count,...sample,metrics,session,longTasks:tasks.filter(t=>t.start+t.duration>=sample.start)});
   console.log(JSON.stringify(cases.at(-1)));await context.close();
  }
  writeFileSync(out+'/'+engine.name()+'.json',JSON.stringify({engine:engine.name(),version:browser.version(),platform:'Linux browser; no CPU throttle; long examples and multiple meanings; heap is browser JS heap, not native RSS; native termination unverified',cases,errors},null,2)+'\n');

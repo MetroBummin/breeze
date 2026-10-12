@@ -8,11 +8,11 @@ The baseline synchronously creates/binds every All Words row and retains the who
 
 | Meanings / words | Before next paint | After next paint | Before mounted row descendants | After descendants |
 | --- | --- | --- | --- | --- |
-| 2399 / 2294 | 1236 ms | 73 ms | 20856 | 210 |
-| 6000 / 5400 | 2228 ms | 220 ms | 49800 | 210 |
-| 12000 / 10800 | 3780 ms | 333 ms | 99600 | 210 |
+| 2399 / 2294 | 850 ms | 83 ms | 20856 | 210 |
+| 6000 / 5400 | 1787 ms | 158 ms | 49800 | 210 |
+| 12000 / 10800 | 3881 ms | 466 ms | 99600 | 210 |
 
-At 12000 meanings, validation samples fell from approximately 106–108 ms to 2–4 ms; answer reveal from 114 ms to 6 ms. The complete 12000-card queue is retained. During study, the All Words DOM now contains zero rows (previously 10800). Timings are individual browser runs, not device benchmarks. JS heap readings vary with GC and do not establish a native-memory reduction. No JavaScript error or renderer crash reproduced; the user's physical termination may be a WebView/process kill, but no native termination log is available.
+At 12000 meanings, validation samples fell from approximately 104–135 ms to 2–4 ms; answer reveal from 134 ms to 6 ms. The complete 12000-card queue is retained. During study, the All Words DOM now contains zero rows (previously 10800). Timings are individual browser runs, not device benchmarks. JS heap readings vary with GC and do not establish a native-memory reduction. No JavaScript error or renderer crash reproduced; the user's physical termination may be a WebView/process kill, but no native termination log is available.
 
 The fix windows only the read-only All Words projection, reuses the approved row markup and expansion state, measures variable heights, preserves logical numbering and keyboard traversal, releases the window on departure, and uses Set membership without changing validation semantics or serialized sessions. Closing the modal now hides the background wordbook before dialog focus restoration, avoiding a full background layout on the transition.
 
@@ -25,3 +25,5 @@ Raw [before](before/chromium.json), [after](after/chromium.json), [picker baseli
 New browser checks cover all 2294 ordinals through the last word, 2399 meanings, multi-meaning long-example expansion/remount, 110 consecutive keyboard rows, arbitrary deep jumps, exact return scroll, Again/Remember/reload, unchanged vocabulary and legacy bytes, top/bottom overscroll, header/backdrop, nested book scrolling, Escape/back/full-page transitions, rapid reopen, another overlay's lock and a real imported long-book reader. Existing study-motion tests continue to exercise unchanged swipes, durable handoffs and PDF elasticity. Storage/quota/migration tests remain active.
 
 The new workflow measures before and after on Chromium and WebKit, then runs the functional regressions. Local Chromium results do not prove physical WKWebView interaction, a jetsam fix, or TestFlight availability. Release272 packaging and its exact-source receipt follow only after final source validation. The unrelated baseline WebKit offline Blob/FileReader OCR failure is not waived or modified.
+
+WebKit CI confirmed the before/after speedup and the new picker/window tests. It exposed stale height estimates when Tab follows expansion before ResizeObserver delivery; keyboard navigation now measures first and explicitly mounts its destination. A same-task regression checks this case. The existing motion test also found a Linux WebKit WAAPI flight still pending at time zero after a260ms wall-clock timer. The test now awaits the actual animation completion with a hard timeout while the durable save remains held; the same offscreen assertion and unchanged motion controller remain in force. Final-head CI is required after this test correction.

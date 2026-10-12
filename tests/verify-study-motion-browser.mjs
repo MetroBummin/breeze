@@ -52,6 +52,13 @@ try{
   await page.evaluate(mode=>{window.qaCommit=mode==='set'?commitStudySets:commitSimpleStudySession;window.qaCommitEntered=false;window.qaGate=new Promise(r=>window.qaRelease=r);const wrapped=async s=>{window.qaCommitEntered=true;await qaGate;return qaCommit(s);};if(mode==='set')commitStudySets=wrapped;else commitSimpleStudySession=wrapped;},mode);
   await gesture(card(),[[-50,0,12],[-100,0,12],[-145,0,12]]);await page.waitForTimeout(260);
   console.log(mode+' pending flight at260ms: '+JSON.stringify(await card().evaluate(n=>({visibility:document.visibilityState,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,animations:n.getAnimations().map(a=>({state:a.playState,pending:a.pending,time:a.currentTime,start:a.startTime,duration:a.effect.getTiming().duration})),transform:getComputedStyle(n).transform}))));
+  // Linux WebKit may leave a newly created WAAPI flight pending at time zero
+  // across this wall-clock delay. Assert its real completion while the durable
+  // commit is still held, rather than treating timer time as animation time.
+  await card().evaluate(async n=>{
+   const animations=n.getAnimations();if(!animations.length)throw Error('No departing-card animation');
+   await Promise.race([Promise.all(animations.map(a=>a.finished)),new Promise((_,reject)=>setTimeout(()=>reject(Error('Departing-card animation did not finish')),3000))]);
+  });
   const pending=await card().evaluate(n=>({x:n.getBoundingClientRect().x,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,layoutWidth:n.offsetWidth,layoutHeight:n.offsetHeight,transform:getComputedStyle(n).transform,commitEntered:qaCommitEntered,text:n.textContent,under:document.querySelector('.study-session-next,#simple-next-card')?.textContent}));writeFileSync(`${out}/${mode}-durable-handoff.json`,JSON.stringify(pending,null,2));await page.screenshot({path:`${out}/${mode}-durable-handoff.png`});assert.equal(pending.commitEntered,true,mode+' durable commit entered');assert.ok(pending.x+pending.width<0,mode+' outgoing remains outside center during save: '+JSON.stringify(pending));assert.equal(pending.under,'');
   await page.evaluate(mode=>{if(mode==='set')commitStudySets=qaCommit;else commitSimpleStudySession=qaCommit;qaRelease();},mode);await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);assert.equal((await summary()).passed,start.passed,'again moves tail without progress');assert.notEqual((await summary()).word,start.word);
   assert.equal(await card().evaluate(n=>getComputedStyle(n).transform),'none','new card has no inherited exit or return');await page.screenshot({path:`${out}/${mode}-next-front.png`});

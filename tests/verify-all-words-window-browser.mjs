@@ -23,7 +23,9 @@ try{
   layouts.push({size,dark,...layout});await page.screenshot({path:`${output}/all-words-${size}-${dark?'dark':'light'}.png`});
  }
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{studySetsUI.body.scrollTop=0;});await page.waitForTimeout(80);
- const first=rows().first();await first.locator('.vword').click();await page.waitForTimeout(80);
+ const first=rows().first();
+ const immediate=await first.locator('.vword').evaluate(word=>{word.focus({preventScroll:true});word.click();word.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));return document.activeElement.closest('.study-all-words-row')?.getAttribute('data-index');});
+ assert.equal(immediate,'1','same-task expansion then Tab works before ResizeObserver delivery');await page.waitForTimeout(80);
  assert.equal(await first.locator('.vsense').count(),2,'all meanings in a grouped word remain available');assert.equal(await first.locator('.vmore').count(),2);
  const firstKey=await first.locator('.vgroup').getAttribute('data-g');
  const originalHeight=await first.evaluate(n=>n.getBoundingClientRect().height);assert.ok(originalHeight>500,'long examples expand without clipping');
@@ -34,6 +36,7 @@ try{
   await page.keyboard.press('Tab');
   try{await page.waitForFunction(index=>Number(document.activeElement.closest('.study-all-words-row')?.dataset.index)===index,i,{timeout:2000});}
   catch(error){console.log('Keyboard ownership diagnostics:',JSON.stringify(await page.evaluate(()=>({trace:qaKeyTrace.slice(-2),active:document.activeElement.outerHTML,scroll:studySetsUI.body.scrollTop}))));throw error;}
+  assert.equal(await page.evaluate(()=>{const r=document.activeElement.getBoundingClientRect(),b=studySetsUI.body.getBoundingClientRect();return r.top>=b.top-1&&r.bottom<=b.bottom+1;}),true,'focused word is visible');
  }
  assert.ok(await rows().count()<100);
  // Arbitrary large jumps reach the entire list, including its final numbered row.
