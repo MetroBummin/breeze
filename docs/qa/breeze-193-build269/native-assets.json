@@ -1,0 +1,1168 @@
+{
+  "reviewedSource": "1163e00cfe20694d3ec32d0271199d27bc2be9d1",
+  "checkedInVersion": "1.9.3(269)",
+  "filesMatchSourceWwwAndIosPublic": true,
+  "fileCount": 232,
+  "files": [
+    {
+      "path": "assets/auth/README.md",
+      "bytes": 1819,
+      "sha256": "e5ca75e66cf486c6d4edaaad2ac03911de59acdbb89151e0d02611b3f76fa3c4"
+    },
+    {
+      "path": "assets/auth/google-g.png",
+      "bytes": 33661,
+      "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a"
+    },
+    {
+      "path": "assets/auth/manifest.json",
+      "bytes": 810,
+      "sha256": "ba536974b301b8d79182c5a2595e82925a8f5acaee4303e12f9f16b75d69c8cd"
+    },
+    {
+      "path": "assets/auth/signin-ko-black.png",
+      "bytes": 9345,
+      "sha256": "b62ad8549062ba84434273881a964b9be3298bf44b54cedd891a20dabf9dd9f6"
+    },
+    {
+      "path": "assets/auth/signin-ko-white.png",
+      "bytes": 9414,
+      "sha256": "30dac95a55719dcd791fd64653cd2e651825fbb805b567e24b12c3c128fc18f8"
+    },
+    {
+      "path": "assets/brand/monogram.svg",
+      "bytes": 2067,
+      "sha256": "db9d7978cf4d6f51ed37a7faf5ba9e32000595c4d8b5d48e55fc72ab331a712c"
+    },
+    {
+      "path": "assets/brand/thunderhead.png",
+      "bytes": 20100,
+      "sha256": "e975a7cdf80321b8ef1658f6c9f730e27a5d41e73beaf04f4af1ef9e1c65534a"
+    },
+    {
+      "path": "assets/brand/wordmark-dark.svg",
+      "bytes": 6378,
+      "sha256": "94f3820ff27f8f154872feb0b23d07b898c55c1e516a5d795e87010e9dece61c"
+    },
+    {
+      "path": "assets/brand/wordmark-light.svg",
+      "bytes": 6419,
+      "sha256": "a5c43424f528b5b3185cb29eb06f7e9fe0a31001bca197668cc2f630710b040a"
+    },
+    {
+      "path": "assets/brand/wordmark-mask.svg",
+      "bytes": 6252,
+      "sha256": "3a55b877098149928f508f09e588febe20bdd60c08f3f10abec57768ef705391"
+    },
+    {
+      "path": "assets/brand/wordmarks/breeze-flow-dark.svg",
+      "bytes": 12906,
+      "sha256": "8da6bbbcf5667547902b420514cf09ad87994c02274c34f40722bdcb59a72e2e"
+    },
+    {
+      "path": "assets/brand/wordmarks/breeze-flow-light.svg",
+      "bytes": 12906,
+      "sha256": "b6266420b58b6b2e02ef0f5c9e6485590d8f073c17288dd1b49c736b8f963297"
+    },
+    {
+      "path": "assets/brand/wordmarks/breeze-neutral-dark.svg",
+      "bytes": 12906,
+      "sha256": "1ad865b4825e526b220ae0142a16728c7f5543b523f3d22ead4c53f1cd6e971e"
+    },
+    {
+      "path": "assets/brand/wordmarks/breeze-neutral-light.svg",
+      "bytes": 12906,
+      "sha256": "f06bef7f6f343779ce09a42ee18f62acb92be62e2d9b4b91ce058da69ec72879"
+    },
+    {
+      "path": "assets/classics/README.md",
+      "bytes": 2471,
+      "sha256": "c7966ccd81f076e9b5770725f7b74a4be8ddd9ed5e0391582ca29f2bd516df71"
+    },
+    {
+      "path": "assets/classics/alice-in-wonderland.epub",
+      "bytes": 136761,
+      "sha256": "5c0706a6ad6ed931c1ad1892461490250ea8818a5429db708381d336a25815e9"
+    },
+    {
+      "path": "assets/classics/alice-in-wonderland.jpg",
+      "bytes": 53578,
+      "sha256": "efd8384ea5b1f430102ea4a9b7fcb75eaac5626a49c22b00b848f104cfb7a571"
+    },
+    {
+      "path": "assets/classics/odyssey.epub",
+      "bytes": 445840,
+      "sha256": "0ce843daddb7a04a2071ce5c90305fa5228deb228127a941f8ea8d9969b75a78"
+    },
+    {
+      "path": "assets/classics/odyssey.jpg",
+      "bytes": 124147,
+      "sha256": "be3607a8d2d3e97f0d49c27885dc94dd46aed200179cf2d72a8434c6608c56b2"
+    },
+    {
+      "path": "assets/classics/the-great-gatsby.epub",
+      "bytes": 181429,
+      "sha256": "bb322f6ea0bb896f03d63f23ec07c3eeb3ad9312d8ed038fff55423a4f8e510a"
+    },
+    {
+      "path": "assets/classics/the-great-gatsby.jpg",
+      "bytes": 53937,
+      "sha256": "6bc70bf9287a48e6cf28c5b0a6e36a4b19424cab1cd191c74a21cefb885fb02e"
+    },
+    {
+      "path": "assets/favicon/apple-touch-icon.png",
+      "bytes": 9055,
+      "sha256": "e9c9a0d6a6b0260ec513d6f903e0e01e9d20e1b55dca21401638ef5bffba829c"
+    },
+    {
+      "path": "assets/favicon/favicon.png",
+      "bytes": 2257,
+      "sha256": "dd2a6d46dbf4d3dce4756de50af0531b8c9a52f29adc3d45586b30e977511e18"
+    },
+    {
+      "path": "assets/favicon/icon-192.png",
+      "bytes": 9912,
+      "sha256": "a1e0cfc739e90fddf0e87eb39b317750978f1c40447522768ee67432673d26a9"
+    },
+    {
+      "path": "assets/favicon/icon-512.png",
+      "bytes": 46382,
+      "sha256": "c1711f7d76692d3c6d9b988a906b85ccf4da43bf84a34f999867f22bfd6e1630"
+    },
+    {
+      "path": "assets/favicon/icon-maskable-192.png",
+      "bytes": 9371,
+      "sha256": "16f174573ca4b48517843bb47391f0c48af7163ffd5dbb25008d9e68a533fbd3"
+    },
+    {
+      "path": "assets/favicon/icon-maskable-512.png",
+      "bytes": 43503,
+      "sha256": "e4a94acdc7c710460d789925d1d50853a47745bbf1a0a7024fdcb869f9c56cdc"
+    },
+    {
+      "path": "assets/fonts/OFL-Fraunces.txt",
+      "bytes": 4391,
+      "sha256": "bdf4c22802eaf804f998195871c6b8938aac2ac14b2d78a8bd66a6f1eced833b"
+    },
+    {
+      "path": "assets/fonts/OFL-GoogleSans.txt",
+      "bytes": 4488,
+      "sha256": "2b75ef20f13d83a7514aee452c4782c20cdc9ff2dee17600f44d37a06d4fb958"
+    },
+    {
+      "path": "assets/fonts/OFL-GowunBatang.txt",
+      "bytes": 4397,
+      "sha256": "49a57cc769fa9affd6eefb9070a61e3d3f6b757c97cafb15848bc6d1c81acc78"
+    },
+    {
+      "path": "assets/fonts/OFL-NotoSansKR.txt",
+      "bytes": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    {
+      "path": "assets/fonts/fraunces-latin.woff2",
+      "bytes": 67388,
+      "sha256": "48282a415ec22e31beaf0a0666e6fae0c8cbddcd0b1f6e729f27c3ade8a64e43"
+    },
+    {
+      "path": "assets/fonts/google-sans-signin-500.ttf",
+      "bytes": 2996,
+      "sha256": "27215d850656e3ef656341432f1a449add48a14a2e30bf4d58030e87b8878ae4"
+    },
+    {
+      "path": "assets/fonts/gowun-batang-ui-400.woff2",
+      "bytes": 10864,
+      "sha256": "f8980cee41aa3127f6c9caaec9306922bffda4920a05c5c019944e75df7e97f5"
+    },
+    {
+      "path": "assets/fonts/gowun-batang-ui-700.woff2",
+      "bytes": 10404,
+      "sha256": "ccbe0a1b309106dfcf7505f5065324acfea7c0654907ffde05c4d9c85e986140"
+    },
+    {
+      "path": "assets/fonts/noto-sans-kr-home-700.woff2",
+      "bytes": 7000,
+      "sha256": "0036820b89174913f889be8ba7b015a7e43e8302bc9798da30f529dd61008ea6"
+    },
+    {
+      "path": "assets/lib/LICENSE-jszip.txt",
+      "bytes": 33753,
+      "sha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4"
+    },
+    {
+      "path": "assets/lib/LICENSE-pdfjs.txt",
+      "bytes": 10174,
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+    },
+    {
+      "path": "assets/lib/LICENSE-qrcode-generator.txt",
+      "bytes": 1071,
+      "sha256": "3a850fa5f08101db6f40676c2786e10bd2cd5fff7b12ffdf1e0c434d4e49d90c"
+    },
+    {
+      "path": "assets/lib/LICENSE-readability.txt",
+      "bytes": 553,
+      "sha256": "a5b1e8181751ce05b85b7bfaa832b785e87086250a5148e679d17ca9bdcfa958"
+    },
+    {
+      "path": "assets/lib/LICENSE-supabase-js.txt",
+      "bytes": 1065,
+      "sha256": "334dd6820e2eaeab2064e7c59001b810566728a28a41a7c1dbf69bbee17d0936"
+    },
+    {
+      "path": "assets/lib/jszip-3.10.1.min.js",
+      "bytes": 97630,
+      "sha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e"
+    },
+    {
+      "path": "assets/lib/pdf-3.11.174.min.js",
+      "bytes": 320004,
+      "sha256": "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946"
+    },
+    {
+      "path": "assets/lib/pdf-3.11.174.worker.min.js",
+      "bytes": 1087212,
+      "sha256": "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b"
+    },
+    {
+      "path": "assets/lib/qrcode-1.4.4.min.js",
+      "bytes": 20387,
+      "sha256": "164fc2c1c9eaf0a03aa8dfdb855e82e41a5c6922fbad8bb3238116207e26bef7"
+    },
+    {
+      "path": "assets/lib/readability-0.6.0.js",
+      "bytes": 89980,
+      "sha256": "34dcab3d0832d0019f02990eed6b6124e029e8c32b9f0c6f2550544ff8dff174"
+    },
+    {
+      "path": "assets/lib/supabase-2.112.3.min.js",
+      "bytes": 211907,
+      "sha256": "ec004176d101aec77aeef266aa1c94411287fe2039c65ea5f6c72f5e14b3847d"
+    },
+    {
+      "path": "assets/longreads/README.md",
+      "bytes": 2968,
+      "sha256": "aa8ab99aadda596f194667dc677322f6a3a21327ad94f560d5c118ea9b8e2005"
+    },
+    {
+      "path": "assets/longreads/covers/README.md",
+      "bytes": 1252,
+      "sha256": "0e93a5aae93ff4df790edf7df1cce0dc118c9c55ee08b4596b4f43515bfcc5c6"
+    },
+    {
+      "path": "assets/longreads/covers/backroom-homeward-bound.png",
+      "bytes": 599033,
+      "sha256": "dcd4c293e3c0714ad18ad66cb185275b183629b5c9120c8a18f4330f36cfad65"
+    },
+    {
+      "path": "assets/longreads/covers/final-problem.webp",
+      "bytes": 176008,
+      "sha256": "34967c5597d931452a204650d3c5b9b43d5a75011888edbdab8eeeb4741ef9d1"
+    },
+    {
+      "path": "assets/longreads/covers/hound-of-the-baskervilles.webp",
+      "bytes": 99430,
+      "sha256": "b601c8f31102ca960b8b56355a198a2b808d2f86a134ca12edcf42f57b6d39c7"
+    },
+    {
+      "path": "assets/longreads/covers/red-headed-league.webp",
+      "bytes": 120184,
+      "sha256": "2a13e8b1ba5177e552a61e323dc875ee9231c47409e8be2415ec6a246f50ad51"
+    },
+    {
+      "path": "assets/longreads/covers/scandal-in-bohemia.webp",
+      "bytes": 122122,
+      "sha256": "4c831325c91b33fc5083709857377dac78f1bfab00098432d25b6d6359ce7269"
+    },
+    {
+      "path": "assets/longreads/covers/speckled-band.webp",
+      "bytes": 160112,
+      "sha256": "89d581d3ac30d7e43591d7a4b0af786f9dc013ed37925a1cfe3077ab6d8fdd70"
+    },
+    {
+      "path": "assets/longreads/final-problem.txt",
+      "bytes": 39124,
+      "sha256": "9d1f3c4140d80894937695add3b1ca60e6054ac03bbd081d4dedc55733556b90"
+    },
+    {
+      "path": "assets/longreads/homeward-lookup-data.js",
+      "bytes": 100533,
+      "sha256": "98cff2b867b456b5c71fb5240bbc7543e770e19c6438d326c8e72cd7d661dd2f"
+    },
+    {
+      "path": "assets/longreads/homewardbound.txt",
+      "bytes": 22638,
+      "sha256": "f59669722ea53355943625768ec9e2b7aa0c01b94b826db8022471cb72c55b65"
+    },
+    {
+      "path": "assets/longreads/hound-of-the-baskervilles.txt",
+      "bytes": 324921,
+      "sha256": "19906dcd8bd6e3127bfd6676361901199dd10ba6bf3077963e6de2768d08b2c4"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-01.webp",
+      "bytes": 58378,
+      "sha256": "b2a9c885c06a43f7d77bb2d3dcf0ee25131d62b5a89c02a48efda73a8c66ad63"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-02.webp",
+      "bytes": 84404,
+      "sha256": "14f82e7658ccfad296454a1cfa4815af8d96d9ae91b83e3ec3975cfa186ee291"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-03.webp",
+      "bytes": 156972,
+      "sha256": "06032e50f23370bb3e71cd81179e55dc31677d10e08549a313e2eb81309d5a92"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-04.webp",
+      "bytes": 127678,
+      "sha256": "3e72e58f7963c36a21a4be418306c1f4bd58910aa31cbfa626d7ee419571e39b"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-05.webp",
+      "bytes": 94828,
+      "sha256": "c3f33c0e48d720bafb5ba91f6e695b656b5b551da2f6c503c79ab32b7e1ca4da"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-06.webp",
+      "bytes": 160016,
+      "sha256": "33104bbe455dfdd00b5773df64c50d13f6afafba438db7918d2d9fa1f6e0f44f"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-07.webp",
+      "bytes": 224196,
+      "sha256": "1e749940356778aacbdbcb29a749a5a2a7e27c6dc7926b171b9c4d03c655bc04"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-08.webp",
+      "bytes": 207510,
+      "sha256": "14d9cacafbe16c1820e3b2c9ef2c7db387f1e2032aa4ed63374c7305224000d3"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-09.webp",
+      "bytes": 159938,
+      "sha256": "bdfe46d38547a27d147c39d6c4fb45ed861a4436f56d0345e5b81f2e1067a1fc"
+    },
+    {
+      "path": "assets/longreads/illustrations/final-problem-10.webp",
+      "bytes": 132644,
+      "sha256": "cdc4331453c10bd5b19ba69cf0f8594fe510ca7ab125b569c2a1f581ea60648a"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-01-police-search.jpg",
+      "bytes": 216651,
+      "sha256": "7602b095d0d6d3b7f98559919a51a01ceecf632c5226434ea105046351846dbe"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-02-studio.jpg",
+      "bytes": 381270,
+      "sha256": "6160f81c215d77b65c723c1f6994031d54c1da944adc7cd97611bf6374f3f2c5"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-03-laptop.jpg",
+      "bytes": 205234,
+      "sha256": "c9ce48ebca4181c2c0a70fac39ff17d360294b68281ff2438af30d2ffac598dc"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-04-mill.jpg",
+      "bytes": 459571,
+      "sha256": "e934d3c9c76421b5f0b157a99791d1f3320f981d82ab00576863d5960a4d8d62"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-05-backrooms.jpg",
+      "bytes": 323375,
+      "sha256": "93a0f5821d2438b94a134e7051e50adf5f1de74a31afab87a66d92fbe2ccc53b"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-06-rooftop.jpg",
+      "bytes": 271245,
+      "sha256": "4a0b0dd2429ef3b479245d0a7f0668f26feaca74720d32ad75e21c653cfa8ae3"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-07-canteen.jpg",
+      "bytes": 394522,
+      "sha256": "e42d09a15bf887a5948aec525164608c98155965988e1b4b7815b20fd48f0ac7"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-08-room.jpg",
+      "bytes": 339985,
+      "sha256": "cf1e490dce988e4216cabe1ebb562ef80050bcfed11acc3a85b79e2ebe96d15f"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-09-hotel.jpg",
+      "bytes": 247916,
+      "sha256": "0ed7ba47a9429a67e4e452136121c0551d6c746e9db18ee5bae28b60fb8a4509"
+    },
+    {
+      "path": "assets/longreads/illustrations/homeward-10-wall.jpg",
+      "bytes": 278869,
+      "sha256": "882c86e4c58ade8143b5838b443ef14e91e9f2a21097c1690d5f05fdbcc31f5b"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-01.webp",
+      "bytes": 101782,
+      "sha256": "ea14b26d184c2c2fd2f7e37b78ac4664ea9c10e6d71ad11ea561cb44bb9e57a5"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-02.webp",
+      "bytes": 96942,
+      "sha256": "0ca43eacdee22a44b12be98bc647119865f9bd0625920bd149013204d612383f"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-03.webp",
+      "bytes": 89524,
+      "sha256": "11c68007dad0ea161ffd3870d0172de3dde78149dca84a1cd9c75a3b22543951"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-04.webp",
+      "bytes": 142946,
+      "sha256": "d0032dba1f99e70fe7fea632ccf5fe40200be532e0927b4316d3c7c4c0b4e469"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-05.webp",
+      "bytes": 167278,
+      "sha256": "bee7a3a87a52796b4f583b4655d2820d414d737714bda3e69cb1b8dc18fe4c34"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-06.webp",
+      "bytes": 163936,
+      "sha256": "1dd0ab85db9ac31ecb6cb5fea0608d7bd2bf70250ae4f840564f35478489def6"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-07.webp",
+      "bytes": 88932,
+      "sha256": "aca78fd14b00b49c0c0d341682926ff35bea63e8025c37423b59f9c370aa36fa"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-08.webp",
+      "bytes": 114164,
+      "sha256": "8596833d5a9b14b38777135912238ada29b9060b3d4b00f9afccd92e8b52629c"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-09.webp",
+      "bytes": 105518,
+      "sha256": "44318a7edd9f141e3663c64c696fc07a06738ba50da7eef55719b8e8f8e4a4b5"
+    },
+    {
+      "path": "assets/longreads/illustrations/hound-of-the-baskervilles-10.webp",
+      "bytes": 123892,
+      "sha256": "71ee4f568a2d4e94fea1c81233cf2b731efd3928bdf077df2d391b77f0ac43a4"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-01.webp",
+      "bytes": 106348,
+      "sha256": "4e1a1015715f017f96842ce8f8a5aa20ea13c081386248c1b29bab76db2070ef"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-02.webp",
+      "bytes": 135228,
+      "sha256": "b00a934cf995576161cf97d518c933a45b0d02d2469bc5a64f48b23f23555e05"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-03.webp",
+      "bytes": 138624,
+      "sha256": "c7f3cd2c5637bd7f96dc0f4227bebb4bfcf3ece99216fada4043d8ac94ac1bda"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-04.webp",
+      "bytes": 131798,
+      "sha256": "c2877947dfe81a3ec3b0726e67e37cdcd47cfc86515b912f0941915fa3081503"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-05.webp",
+      "bytes": 107838,
+      "sha256": "49afe72be591ee51ced1381d80a1b092014671cbb9a6c1a1eab14d5de99a47c4"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-06.webp",
+      "bytes": 119460,
+      "sha256": "68c1da5abad1125eaddd670fee1ae941c2f5e01f14ffe2726b982bb8ce457592"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-07.webp",
+      "bytes": 87320,
+      "sha256": "ef332136d517dc5dbf692b85103209cd28fc07ece63f7de2899e4b8f13525443"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-08.webp",
+      "bytes": 99056,
+      "sha256": "452efc9846803ebc6dfaffc55b94a46e84181c09cbe75869216b8505d9b81855"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-09.webp",
+      "bytes": 80142,
+      "sha256": "9b53988fb24759ef1e03b7db803a775c1d1d5949329192aceacca622a3ffe4d8"
+    },
+    {
+      "path": "assets/longreads/illustrations/red-headed-league-10.webp",
+      "bytes": 125086,
+      "sha256": "f09c40bedd3f489a5f1abac1ef3030b259a809049686862b487ad24e76326c53"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-01.webp",
+      "bytes": 124822,
+      "sha256": "9c1f5cf0ae06b666e1b3ccd2740265b554bcfbe147c2f71048a8aaaf372294c8"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-02.webp",
+      "bytes": 82828,
+      "sha256": "5d975cd3598ae0047b6f240e6dc8eb0e205caaba2b30c254a6e5da28573101d3"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-03.webp",
+      "bytes": 108522,
+      "sha256": "081d06678ec0c727c61c84dd5254ce0e3970ddeb0ea82b173a2d4d4151ce8661"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-04.webp",
+      "bytes": 138786,
+      "sha256": "99cd0ee179c1f587b9be7b7cef1dc2e9d61ec8700477e28728e623ff43892cd4"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-05.webp",
+      "bytes": 109260,
+      "sha256": "86499ec1018770bbb403ca830609aabb798451c2651a14524aae399e60574f36"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-06.webp",
+      "bytes": 87384,
+      "sha256": "93d1d5152bdc60a0e8a9cd055d0cd239d9a0c231b469cdca7dd109948e52b817"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-07.webp",
+      "bytes": 138846,
+      "sha256": "c3e6ef34b8bc25adc496e24035bee269edb50a8c77ea32c9d54d13ac6a4a065c"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-08.webp",
+      "bytes": 111268,
+      "sha256": "69e58e79f825df357c1e4bf4b695149f01374f6f859afaf09a6965e5bc02bff1"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-09.webp",
+      "bytes": 97798,
+      "sha256": "f59102be8e36d0b26f6d089917ed218b9ffac271e3255a36e17f5659e40d741b"
+    },
+    {
+      "path": "assets/longreads/illustrations/scandal-in-bohemia-10.webp",
+      "bytes": 154118,
+      "sha256": "8e441979feacf5a6e5f28c73c71ee5a4ef185523b3046a97bcc1a75fe3ec309e"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-01.webp",
+      "bytes": 76572,
+      "sha256": "d7b9050a149e07dfa1401e8570d246594cb6bd941ea87b3950551aa1f12eb134"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-02.webp",
+      "bytes": 76010,
+      "sha256": "112d3da81fe9214b011d3802e004a3f3a08e287aa9122e93a61aa8cf45207b9f"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-03.webp",
+      "bytes": 139768,
+      "sha256": "4d6c025edf63f8e1014833c39d8b47a6d7a28ab7cf2927fd47c9bcc8ae6238ce"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-04.webp",
+      "bytes": 201530,
+      "sha256": "3ba87a7ba0298979484ed6893297977388dfe4aa5baaf09c9f92e31f4b76e5c3"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-05.webp",
+      "bytes": 136472,
+      "sha256": "e21d596af9d89cbed7a51af8bf6f4d9fb77f975399dd6ffc0cea535beffe008e"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-06.webp",
+      "bytes": 89836,
+      "sha256": "f1de4323bd5ce799a493ee8eb021f8ae5e0599618daacc27d93c0ab5e6bd6262"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-07.webp",
+      "bytes": 92270,
+      "sha256": "874b62db84e19f05c0ed4df9c2cb6b44d70a51f7f2d39b732a5987c3dcbe8c4f"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-08.webp",
+      "bytes": 83824,
+      "sha256": "4becdfb940e7b2e086240cb97ae6b0d24c009e9934ac05a95954a96c28e5569e"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-09.webp",
+      "bytes": 47652,
+      "sha256": "d2dd48a900a20bf1cfec1e249cddbbb36d6055b2944f0e52db544ecdf1bfcf27"
+    },
+    {
+      "path": "assets/longreads/illustrations/speckled-band-10.webp",
+      "bytes": 73798,
+      "sha256": "fba1cf2dff53d7b7e7311a07c9951662028e708402e8e6449787e7f728292a0d"
+    },
+    {
+      "path": "assets/longreads/red-headed-league.txt",
+      "bytes": 50509,
+      "sha256": "0fbd9ec3d94403182d7b441c1d7456ac967b487fc1878218cb0322ffd736278c"
+    },
+    {
+      "path": "assets/longreads/scandal-in-bohemia.txt",
+      "bytes": 47686,
+      "sha256": "ec92ace7eccf6e9b93cadbba6be46ef6d19bb27c0d183a44b094219c62e3b50e"
+    },
+    {
+      "path": "assets/longreads/speckled-band.txt",
+      "bytes": 52929,
+      "sha256": "9b9b230612dc39e67f18e86d1c71d4146adce8a677a15444938d619396ff50e2"
+    },
+    {
+      "path": "assets/onboarding/details-dark.jpg",
+      "bytes": 70017,
+      "sha256": "3dd1489cb2ed19a68fd6a49808a71fe70d5162c0b1a38e999e29832a728c7436"
+    },
+    {
+      "path": "assets/onboarding/details-dark.mp4",
+      "bytes": 214021,
+      "sha256": "0f6b3d35587f28b51ea485d73bd9acc0248ee94b46d9d732181c020e92be262c"
+    },
+    {
+      "path": "assets/onboarding/details-light.jpg",
+      "bytes": 71187,
+      "sha256": "afab59ec11e0d7372b68e8c0b9ac5deba2bf5fbfe7997bdd2bb4ca0443cf0c9e"
+    },
+    {
+      "path": "assets/onboarding/details-light.mp4",
+      "bytes": 234666,
+      "sha256": "ca24c0788c787609ebc2deac84322c0c92ad0ad8bdd9541683c8360b98003aa1"
+    },
+    {
+      "path": "assets/onboarding/easy-dark.jpg",
+      "bytes": 72891,
+      "sha256": "41a96d9e41cc8f667115872e7ab2b66468c185e265edac7d521886d32943f7d7"
+    },
+    {
+      "path": "assets/onboarding/easy-dark.mp4",
+      "bytes": 294674,
+      "sha256": "68c6c91a959215436ef9486fbad37702dac2fbbce534b163f78d20bf6cf038b1"
+    },
+    {
+      "path": "assets/onboarding/easy-light.jpg",
+      "bytes": 77390,
+      "sha256": "ef35f401b73f464c0268db67c997d56bf8b829a6129572c5ffe2b84200f64a22"
+    },
+    {
+      "path": "assets/onboarding/easy-light.mp4",
+      "bytes": 367989,
+      "sha256": "33585b61dada0234faa4f4f2fe4d95710b5bb74fb22b62142033942b8f5c6390"
+    },
+    {
+      "path": "assets/onboarding/memory-dark.jpg",
+      "bytes": 68647,
+      "sha256": "bf1825d6d79cf456fe345d605a545678ed894c21f08cd5c656540efc18c21cb4"
+    },
+    {
+      "path": "assets/onboarding/memory-dark.mp4",
+      "bytes": 276317,
+      "sha256": "70c3ccfeb57c06245882495de284f9f47e5578a05097654b4048dd8554427796"
+    },
+    {
+      "path": "assets/onboarding/memory-light.jpg",
+      "bytes": 68705,
+      "sha256": "6c86a2a41162920966dc5576f3eb1655f32effdd885fa28623453de2a7406d01"
+    },
+    {
+      "path": "assets/onboarding/memory-light.mp4",
+      "bytes": 274335,
+      "sha256": "cb5ce81de6cc505417fff58044936058e5b984f76ad6412b4eb6a996556a50e2"
+    },
+    {
+      "path": "assets/onboarding/pdf-dark.jpg",
+      "bytes": 245631,
+      "sha256": "d8dd55778401c4a65cb4fe404a7a410af8092d4d14cd906a6f5dc4f416af57b7"
+    },
+    {
+      "path": "assets/onboarding/pdf-dark.mp4",
+      "bytes": 906762,
+      "sha256": "8c2c0bf71bb32fd3e18fe2f5345ce4e2f3fe0fbc66a77af047eb7e7a512a9003"
+    },
+    {
+      "path": "assets/onboarding/pdf-light.jpg",
+      "bytes": 245112,
+      "sha256": "88f96f36e31b38fe530290ebd203ca41a79e13b0f0204948c1ab8ca6f4069628"
+    },
+    {
+      "path": "assets/onboarding/pdf-light.mp4",
+      "bytes": 905369,
+      "sha256": "b2e3dbb0e02d9907ca17fe26eb62a756ba33eda50a66889d302686dfacf806b8"
+    },
+    {
+      "path": "assets/onboarding/sentence-dark.jpg",
+      "bytes": 56276,
+      "sha256": "0f58866fba6a3b83a5cde7cf0b2c21666d8e04483c8363941623d2a0c6163f1e"
+    },
+    {
+      "path": "assets/onboarding/sentence-dark.mp4",
+      "bytes": 267204,
+      "sha256": "01194196ab1ffc1cf043335f394bd27d56e8b13c338197b134af4b60813a7f6d"
+    },
+    {
+      "path": "assets/onboarding/sentence-light.jpg",
+      "bytes": 60438,
+      "sha256": "fc8523de24d1bdc0a72e08516e874fbb581b171b6464f890c6d6d2bdbb3906f7"
+    },
+    {
+      "path": "assets/onboarding/sentence-light.mp4",
+      "bytes": 344183,
+      "sha256": "9379d4fc7c81950057b48b470ac7d99f94192b5d3dc5b0633efaaaf280c0e6fc"
+    },
+    {
+      "path": "assets/onboarding/settings-dark.jpg",
+      "bytes": 107217,
+      "sha256": "f6c6c9ac988dcd950e21d6b91fe4383e2d2e22d5421952d98ba701f1a9d71830"
+    },
+    {
+      "path": "assets/onboarding/settings-dark.mp4",
+      "bytes": 260901,
+      "sha256": "0f1fda5e910040d47c974edd37533ca27b66f9ff35e7cb60286459c66ddaa479"
+    },
+    {
+      "path": "assets/onboarding/settings-light.jpg",
+      "bytes": 112586,
+      "sha256": "48bc0279829a910e788f3ac6fd76185aea96e0d42eb9ea9dd1f31ef64532a654"
+    },
+    {
+      "path": "assets/onboarding/settings-light.mp4",
+      "bytes": 337022,
+      "sha256": "89e2be011c5e11e50e9a670b35c3e9c7ce37794cfe6688cbb09b799f887278f0"
+    },
+    {
+      "path": "assets/onboarding/word-dark.jpg",
+      "bytes": 37932,
+      "sha256": "2e3c4f7742a0862eb2eb726530b1b5c6bb52e39b2edd4e3b60feaaba7ae477dd"
+    },
+    {
+      "path": "assets/onboarding/word-dark.mp4",
+      "bytes": 239166,
+      "sha256": "915c4ae47455afb0ffdca03862eba44e27c609d127168e97931bf5c8c663d933"
+    },
+    {
+      "path": "assets/onboarding/word-light.jpg",
+      "bytes": 39184,
+      "sha256": "b4815706c4d1b138d542604098a25d8093fc0eb3bf51237fac9bfdba57b738d9"
+    },
+    {
+      "path": "assets/onboarding/word-light.mp4",
+      "bytes": 269136,
+      "sha256": "e97b17b2830bde7e9d5b4096663c6041fdbb315ba0d4b167290b81d2073dc01d"
+    },
+    {
+      "path": "config.js",
+      "bytes": 836,
+      "sha256": "1ca8e0a56a31e5e4a1881591d34008c8d04a58d1babc9f1c485cda686cb4c0d9"
+    },
+    {
+      "path": "index.html",
+      "bytes": 53115,
+      "sha256": "67bab0a29bea1f461c2a25e31231600fd43a765c9634d99c9eaaa96a7037fde7"
+    },
+    {
+      "path": "modules/lexical/core.js",
+      "bytes": 6164,
+      "sha256": "85234ab5ac3af794c2151981dbb6c1280d181fa3fca89787d6f6cc8ea53cae26"
+    },
+    {
+      "path": "scripts/core/book-identity.js",
+      "bytes": 1485,
+      "sha256": "d6223950c474648c910f18bd719b85d7b6a2d5dd0d734df5c07212c488746e8d"
+    },
+    {
+      "path": "scripts/core/boot-safety.js",
+      "bytes": 874,
+      "sha256": "017383802885f20b5dd1986ed5e6c8a78ee638cd220ad3de030bcbd320c770b7"
+    },
+    {
+      "path": "scripts/core/lazy-lib.js",
+      "bytes": 6062,
+      "sha256": "152792fc7c1b93d1d741ddb8b15425ef648a1dcd6393386d055d6815fe0a4be6"
+    },
+    {
+      "path": "scripts/core/state.js",
+      "bytes": 19486,
+      "sha256": "0b2f0c246bc2743c378b5458accf5afce40e65e3240d4c9c009ccd726775bc48"
+    },
+    {
+      "path": "scripts/core/storage.js",
+      "bytes": 17076,
+      "sha256": "abd59462e7a8a275289254a1976e96e07ae4375e6b022df2555b48c2a744ff30"
+    },
+    {
+      "path": "scripts/core/study-sets-storage.js",
+      "bytes": 1167,
+      "sha256": "1913e275db84bf345ba6c098f26d5b544cd0f3b11c80e6c1058d1d5ba0bcc632"
+    },
+    {
+      "path": "scripts/core/study-sets.js",
+      "bytes": 14801,
+      "sha256": "e4ba4a2267267698d51eac1485ba7e205ad31e247fe5cc065f1a56f0a6b1c262"
+    },
+    {
+      "path": "scripts/core/word-integrity.js",
+      "bytes": 3554,
+      "sha256": "114c4fca59d13e75f824635ad72159b676c9715e612a130ea9fd50e1a118b6cf"
+    },
+    {
+      "path": "scripts/dictionary/dictionary.js",
+      "bytes": 119048,
+      "sha256": "8f07d0f21af3e7b1866b8361e78ef5d3b94edc2419077250b0001bc194890f76"
+    },
+    {
+      "path": "scripts/dictionary/easy-explanation.js",
+      "bytes": 14213,
+      "sha256": "82629eed7ec70985a6d474e85892723c37fc9fd69bd04ad48222c309fff93eb9"
+    },
+    {
+      "path": "scripts/dictionary/lookup-feedback.js",
+      "bytes": 10581,
+      "sha256": "849992d67e9939008c595bb5ac2c5f1a1a63d4f5feea130e535d5de624735335"
+    },
+    {
+      "path": "scripts/dictionary/sentence-easy-explanation.js",
+      "bytes": 4282,
+      "sha256": "c0f3fdd2a97432f22a802ad479fcb7edb0d633e2511124dac08858c43b255651"
+    },
+    {
+      "path": "scripts/dictionary/sentence.js",
+      "bytes": 24394,
+      "sha256": "3f5e51ca1751fad85caa9393932816ca444ca5674e3f90147cc468a01dcef648"
+    },
+    {
+      "path": "scripts/importers/article.js",
+      "bytes": 28460,
+      "sha256": "e33592ae689333487a062171856e6e47f3c632026c867fdd33cca85f6a372f22"
+    },
+    {
+      "path": "scripts/importers/importers.js",
+      "bytes": 52458,
+      "sha256": "38179a18166de71c2834bc462c37d08837906d8ed4d46d0f893c5b907b7d88ec"
+    },
+    {
+      "path": "scripts/importers/ligatures.js",
+      "bytes": 5350,
+      "sha256": "c51d6d55f6b6a4e41f92f1c2c24e772220a627c7677898c80232e176b2ddd706"
+    },
+    {
+      "path": "scripts/importers/rss.js",
+      "bytes": 81220,
+      "sha256": "156b73091fc72126ea1e186a665b5a95571e985fbc196ac4ab4758433d2b23f6"
+    },
+    {
+      "path": "scripts/importers/social.js",
+      "bytes": 21723,
+      "sha256": "888fa510f45311b03b7bae1674105d098ee7022946daf39a1ddd3391f2e652ba"
+    },
+    {
+      "path": "scripts/library/article-preview.js",
+      "bytes": 22473,
+      "sha256": "f431f4b9d87a36431bb8dc1e2560e12e4ff12407b507a0f722ba1c0f37223c9f"
+    },
+    {
+      "path": "scripts/library/book-edit.js",
+      "bytes": 5684,
+      "sha256": "14fe2693c54ccd216b6f177062473ee323305a0aac4196111607d365bac9b349"
+    },
+    {
+      "path": "scripts/library/folders.js",
+      "bytes": 11290,
+      "sha256": "0122ac7f3d09b08088aa22f57d8d97215dd215b18a91c0abe2bbb991c220127e"
+    },
+    {
+      "path": "scripts/library/holmes-layout.js",
+      "bytes": 24761,
+      "sha256": "16ae497ae4c0e2a1aa0e4fcb5e98a3b9d0759c71524e597f5bbdc1dd05643979"
+    },
+    {
+      "path": "scripts/library/homeward-lookup.js",
+      "bytes": 3343,
+      "sha256": "24ab4083f1f07994d118d548b8a789bf878491aafcf0d737fb86939cc42bd24f"
+    },
+    {
+      "path": "scripts/library/library.js",
+      "bytes": 52490,
+      "sha256": "b33b0d4a230baf682f6950512c52c37972b3af055714f53581ce261eabab695a"
+    },
+    {
+      "path": "scripts/library/longreads.js",
+      "bytes": 51582,
+      "sha256": "902909efc40473f048d19045457092be27aa0686ead6c8539b5b1da31508d18f"
+    },
+    {
+      "path": "scripts/library/shared-files.js",
+      "bytes": 3610,
+      "sha256": "b42ab8b4feabad08b4738b18cf18818fab466ac8ae84a25ed631a9a3267f8372"
+    },
+    {
+      "path": "scripts/library/shared-links.js",
+      "bytes": 5142,
+      "sha256": "264756e6c98dee6d761854dd4dd514dc52c04f1dc068dcc7cccfad9fb156def8"
+    },
+    {
+      "path": "scripts/main.js",
+      "bytes": 1852,
+      "sha256": "0c6804782115d73a41b58ad5606d4f1964a50196cb07efb67798d69eee378ead"
+    },
+    {
+      "path": "scripts/reader/epub-original.js",
+      "bytes": 54716,
+      "sha256": "c534758922cd8b8435ab9133307a37b3770b385341b169945c8d5a9ae33c1e63"
+    },
+    {
+      "path": "scripts/reader/formatting.js",
+      "bytes": 7346,
+      "sha256": "0c0d268a1eeef64df34798c79fda01859ea74ea270d5f11c2a522ce4bd4678eb"
+    },
+    {
+      "path": "scripts/reader/frame-trace.js",
+      "bytes": 26038,
+      "sha256": "14df169647e6397baf37b6436be4d57207e32df794b635de6695269b6eb943ba"
+    },
+    {
+      "path": "scripts/reader/gesture.js",
+      "bytes": 38810,
+      "sha256": "f0e416671606f71fcecbb4d46ba7a554cb9f7313f453f75e9aef804ef8a0cca9"
+    },
+    {
+      "path": "scripts/reader/mode-bridge.js",
+      "bytes": 6449,
+      "sha256": "9cddbed0ea8a80aee5f4bf8f4ba96e5ae8480761a998efe6713bb24b597e9905"
+    },
+    {
+      "path": "scripts/reader/original-formats.js",
+      "bytes": 1859,
+      "sha256": "8536af42594d1c54aa8fe96a1e18001e428c8bff7137637f7059d5efb3ec74c5"
+    },
+    {
+      "path": "scripts/reader/original-session.js",
+      "bytes": 13244,
+      "sha256": "fc16eb5f791770f4f9a49b4c275209f814046e56391a81600f6b44b760edd8af"
+    },
+    {
+      "path": "scripts/reader/pdf-ink-geometry.js",
+      "bytes": 5205,
+      "sha256": "ae44ddd88429cb4e7e4eeb0e7fe027ccc4ab204b958c93464bdcf6cd989a67b0"
+    },
+    {
+      "path": "scripts/reader/pdf-ink.js",
+      "bytes": 50840,
+      "sha256": "fef8471444089edc3000f9b83b862acb68df019be7415647c8e30cb4e9ddfa04"
+    },
+    {
+      "path": "scripts/reader/pdf-navigation.js",
+      "bytes": 45535,
+      "sha256": "6b72e0775f146bdd0e10d3713edd55d34d945af2258bcd94dc0242f7d167520c"
+    },
+    {
+      "path": "scripts/reader/pdf-ocr-library.js",
+      "bytes": 5908,
+      "sha256": "21030a1b757f66af9f0361bb0da0cac679b2a0ac26e95bb808c7b99587e1b216"
+    },
+    {
+      "path": "scripts/reader/pdf-ocr.js",
+      "bytes": 15392,
+      "sha256": "c0e978a98a05440d0aa011b3ea92bc3ac2d98bb60aa307be38c4af48bad14f90"
+    },
+    {
+      "path": "scripts/reader/pdf-original.js",
+      "bytes": 47689,
+      "sha256": "96ea0898eb44d255f3420577097a611d7b82c5748d868408135f852ca8b42742"
+    },
+    {
+      "path": "scripts/reader/pdf-pinch.js",
+      "bytes": 20910,
+      "sha256": "7e46e232acd250d59a03ba716dd4b1eebee415751b215296c46607938391c93b"
+    },
+    {
+      "path": "scripts/reader/pdf-word-geometry.js",
+      "bytes": 11990,
+      "sha256": "06bb6d0d9e2cc16010546babc1d038f414cbc2ae2cd727864eeefc7de280796e"
+    },
+    {
+      "path": "scripts/reader/reader-modes.js",
+      "bytes": 34941,
+      "sha256": "7d621203fd9ea954855b717d09e9871c00c57d53200466fc78ecfa5ca464d415"
+    },
+    {
+      "path": "scripts/reader/reader-scroll.js",
+      "bytes": 19396,
+      "sha256": "903649aa6b4c45997082fa8b0239c5e9550f2bb24b195f6e64a473d71bdfef0f"
+    },
+    {
+      "path": "scripts/reader/reader.js",
+      "bytes": 43328,
+      "sha256": "60f08292b45dbc83e244a5052bd3f2c38d5ed8d7414365f14f71404b96ab3857"
+    },
+    {
+      "path": "scripts/reader/study-preferences.js",
+      "bytes": 3928,
+      "sha256": "814b25b0cdff2ad900e36308c4fbd5d4757c75e9a802c34b600bd740d03a15dc"
+    },
+    {
+      "path": "scripts/sync/progress-merge.js",
+      "bytes": 1401,
+      "sha256": "0add3214c6eab50d3b88e704a717d9fb2716f08838bba0084db065f551826d1f"
+    },
+    {
+      "path": "scripts/sync/sync.js",
+      "bytes": 79867,
+      "sha256": "0485e5de8fbe262ac1033530fe1efef1e8963953b2b4e9efc9818a647ac198c3"
+    },
+    {
+      "path": "scripts/sync/vault-crypto.js",
+      "bytes": 6943,
+      "sha256": "2a0a61cceeba5c743f341aed5b151634dc8fda114eee8430cc69daacb7449418"
+    },
+    {
+      "path": "scripts/ui/i18n.js",
+      "bytes": 6063,
+      "sha256": "a6a4ae0d2b46a57f5e54c7c43b8a0eb04a1b47257a39b5979feb9b08345c3df3"
+    },
+    {
+      "path": "scripts/ui/interactions.js",
+      "bytes": 2200,
+      "sha256": "363f440d06371d9ae92b5ab482ca5241e6b3ffdeb3e05849066a1549ee73a9f2"
+    },
+    {
+      "path": "scripts/ui/library-refresh.js",
+      "bytes": 6563,
+      "sha256": "0c262796ff099f8c66ec5cfcbf9b2ff634902497c2e04e590425a34e308096ef"
+    },
+    {
+      "path": "scripts/ui/onboarding.js",
+      "bytes": 15703,
+      "sha256": "f847746e8d9cb7d3e30d1742d53a8a8a48fdb318fe444ccf220a8d694a1620fe"
+    },
+    {
+      "path": "scripts/ui/preferences.js",
+      "bytes": 20142,
+      "sha256": "f1e9ebd6ebeaac36c2d2fd509cae86fca887abf716c40edf84ae443aa0a9f614"
+    },
+    {
+      "path": "scripts/ui/reader-notifications.js",
+      "bytes": 5605,
+      "sha256": "12776654fe8ea630126e905b70b991f55847f5c4b111f07a5aa16771c8a0925f"
+    },
+    {
+      "path": "scripts/ui/smart-crop.js",
+      "bytes": 6020,
+      "sha256": "b12f166e5565598f706f91489e32cc68316f250c4dff1eb7bd044fd20fa35a2f"
+    },
+    {
+      "path": "scripts/ui/study-sets.js",
+      "bytes": 55380,
+      "sha256": "101d1728914973c704c75ca21543fe04c16fefec68beba4f5b288c4b506dbc73"
+    },
+    {
+      "path": "scripts/ui/task-dialog.js",
+      "bytes": 2589,
+      "sha256": "573fca035778ac93426d00113862dc9ce933159ef8c7a673edf9cc3afab97050"
+    },
+    {
+      "path": "scripts/ui/vocabulary-review.js",
+      "bytes": 34147,
+      "sha256": "25cada2b33470e2cf999847e12fb764e71c57013ab299f985e8af3076abed7cc"
+    },
+    {
+      "path": "scripts/ui/wordbook.js",
+      "bytes": 5689,
+      "sha256": "55ebd6090a48b2392b1cabfa4418f6bf1701f098c3e93c70d901fb3b60b7bcbf"
+    },
+    {
+      "path": "scripts/vendor/ts-fsrs-LICENSE.txt",
+      "bytes": 1079,
+      "sha256": "8b83a73dd2894ff553d6de6113064b3ad9dfad3f839837b61f3b183881131d01"
+    },
+    {
+      "path": "styles/article-preview.css",
+      "bytes": 6839,
+      "sha256": "86bd18922afd681c5e57bfcc761e892f848d9c5c98074459dd360924efa7e13f"
+    },
+    {
+      "path": "styles/base.css",
+      "bytes": 3105,
+      "sha256": "bdb50d62f69dc9ba38adaa5f41c0423cfbbcfddd99446cd6c9a52755acb49455"
+    },
+    {
+      "path": "styles/components.css",
+      "bytes": 19126,
+      "sha256": "d347f19973e40dd7db4be2b07c1dc0744877b7ab23026e3d3bbf2121a473a9d3"
+    },
+    {
+      "path": "styles/dictionary.css",
+      "bytes": 38645,
+      "sha256": "a07bcc13a38c283baba7a5b03c88ef3e17dd11ea5aa3a66b4e4d3ca3fd92383e"
+    },
+    {
+      "path": "styles/fonts.css",
+      "bytes": 1065,
+      "sha256": "211a3f4615d05281180cf1d8baaaa86b3f92cf4454b98625a1969f25653e536c"
+    },
+    {
+      "path": "styles/home-font.css",
+      "bytes": 220,
+      "sha256": "d817d87e8e01bf293021086f3d3ddf144e2891faf2af50a292879288bdb1ba52"
+    },
+    {
+      "path": "styles/home-shell.css",
+      "bytes": 17991,
+      "sha256": "a1609be4cbe26071f8f4700fae8163bb6867ec63d3660218518aca61f9c880de"
+    },
+    {
+      "path": "styles/home.css",
+      "bytes": 35921,
+      "sha256": "badc0a70de1a97233442be14a2b3f4d2f934dada629701410a922a07d19cb4a2"
+    },
+    {
+      "path": "styles/onboarding.css",
+      "bytes": 7192,
+      "sha256": "8f315304ce0eca54b0e85225855100c3efe506adfc9e357de3a7938baaa94b63"
+    },
+    {
+      "path": "styles/pdf-ink.css",
+      "bytes": 9413,
+      "sha256": "7d06a34e1ee591ac40735b2ff1ba55b3bf7cd1949ba3612589783be5850c2aa9"
+    },
+    {
+      "path": "styles/reader.css",
+      "bytes": 44869,
+      "sha256": "617c547c103b9746c7ed2a3e851581d74ef296e9b47c538c9f4c3d9201041c08"
+    },
+    {
+      "path": "styles/responsive.css",
+      "bytes": 2000,
+      "sha256": "8feb05091e0cfb4b0ff32ff5f137a81b3278bf779cdea81a28153c3f1e2ed4cd"
+    },
+    {
+      "path": "styles/study-sets.css",
+      "bytes": 23593,
+      "sha256": "c34b6ba195a4f48b090b16cb2e3b2a27ab9a9a9f1014ca6b7eb89cead0f22181"
+    },
+    {
+      "path": "styles/study.css",
+      "bytes": 17647,
+      "sha256": "c549883a0f41211025beabd6f9a959e0e901260d3d59738144a3e9ec535e4e3c"
+    },
+    {
+      "path": "styles/surfaces.css",
+      "bytes": 12721,
+      "sha256": "8d141d41c88afeffa758d1447ea605b86f0d356945808d5c433d91a7a29b3ea0"
+    },
+    {
+      "path": "styles/tokens.css",
+      "bytes": 28937,
+      "sha256": "51eab25e1bef0756414b69e4c74efc8d70515aa13b97142d2a8ae4c12391a065"
+    },
+    {
+      "path": "styles/wordbook.css",
+      "bytes": 23982,
+      "sha256": "684067fdf6326dfb4e6e0e4b158f874aab5a30b2c1bd252b9a6f03e3a788cacd"
+    }
+  ]
+}
