@@ -15,6 +15,10 @@ function commitStudySets(next){
   if(studySetsReadValue===undefined||current!==studySetsReadValue)
     throw new Error('Study sets changed. Reopen and retry.');
   const serialized=JSON.stringify(BreezeStudySets.normalize(next));
+  if(current!==null&&JSON.parse(current).version===1){
+    const key=STUDY_SETS_STORAGE+'.backup-v1';
+    if(localStorage.getItem(key)===null)localStorage.setItem(key,current);
+  }
   localStorage.setItem(STUDY_SETS_STORAGE,serialized);
   studySetsReadValue=serialized;
   if(typeof requestDurableLocalStorage==='function')void requestDurableLocalStorage();

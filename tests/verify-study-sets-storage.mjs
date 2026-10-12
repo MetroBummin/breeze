@@ -25,6 +25,13 @@ test('failed write does not advance persisted state and same action is retryable
  w.setFail(true);assert.throws(()=>w.context.commitStudySets(next),/Quota/);assert.equal(w.data.has(key),false);
  w.setFail(false);w.context.commitStudySets(next);assert.equal(w.context.readStudySets().sets.length,1);
 });
+test('v1 migration backs up exact bytes; backup failure blocks replacing the collection',()=>{
+ const initial=world(),state=initial.context.engine.create(null,{name:'Legacy',bookTitles:['A']},words,100).state;
+ state.version=1;const raw=JSON.stringify(state),w=world(raw),next=w.context.readStudySets();
+ w.setFail(true);assert.throws(()=>w.context.commitStudySets(next),/Quota/);assert.equal(w.data.get(key),raw);
+ w.setFail(false);w.context.commitStudySets(next);assert.equal(w.data.get(key+'.backup-v1'),raw);
+ assert.equal(JSON.parse(w.data.get(key)).version,2);
+});
 test('unread or changed storage is not overwritten by stale action',()=>{
  const w=world();assert.throws(()=>w.context.commitStudySets(w.context.engine.normalize(null)),/changed/);
  const next=w.context.engine.create(w.context.readStudySets(),{name:'Old',bookTitles:['A']},words,100).state;

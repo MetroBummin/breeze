@@ -30,7 +30,7 @@ test('creates a fixed snapshot from only selected books and real saved Meanings'
     emptyWord:saved('  '),invalidWord:saved(42),invalidMeaning:saved('x',{ko:22}),deleted:null};
   const result=create(inventory);
   assert.equal(result.accepted,true);
-  assert.equal(result.state.version,1);
+  assert.equal(result.state.version,2);
   assert.equal(result.set.name,'My snapshot');
   assert.equal(result.set.cards.length,3);
   assert.deepEqual(plain(result.set.bookTitles),['Book A','Book B']);
@@ -73,7 +73,7 @@ test('supports set create, rename and delete independently from the vocabulary',
   const inventory=freeze(plain(words)),initial=freeze(sets.normalize(null));
   const first=sets.create(initial,{name:'  First  ',bookTitles:['Book A','Book A','Book B']},inventory,NOW);
   assert.equal(first.set.name,'First');
-  assert.deepEqual(plain(initial),{version:1,sequence:0,sets:[]});
+  assert.deepEqual(plain(initial),{version:2,sequence:0,sets:[]});
   const second=sets.create(freeze(first.state),{name:'Second',bookTitles:['Book A']},inventory,NOW+1);
   assert.notEqual(second.set.id,first.set.id);
   assert.equal(second.state.sets.length,2);
@@ -170,29 +170,27 @@ test('requires reveal before either assessment and advances a fixed denominator 
     assert.equal(sets.grade(revealed.state,id,token,outcome,NOW).accepted,false);
   }
   const next=sets.grade(freeze(revealed.state),id,current.token,'repeat',NOW+1);
-  assert.equal(next.accepted,true);assert.equal(next.total,3);assert.equal(next.completed,1);
+  assert.equal(next.accepted,true);assert.equal(next.total,3);assert.equal(next.completed,0);
   assert.equal(next.repeat,1);assert.equal(next.remembered,0);assert.equal(next.revealed,false);
   const duplicate=sets.grade(next.state,id,current.token,'remembered',NOW+2);
   assert.equal(duplicate.accepted,false);assert.deepEqual(plain(duplicate.state),plain(next.state));
   assert.equal(sets.reveal(next.state,id,current.token).accepted,false);
 });
 
-test('the next round includes only repeat answers in their original order',()=>{
+test('repeat stays at the back until remembered and completion counts unique passed cards',()=>{
   let current=start();const id=current.set.id,original=plain(current.set.session.queue);
-  current=answer(current,'repeat');current=answer(current);current=answer(current,'repeat');
-  assert.equal(current.status,'complete');assert.equal(current.completed,3);assert.equal(current.total,3);
-  assert.equal(current.remembered,1);assert.equal(current.repeat,2);assert.equal(current.card,null);
-  assert.equal(current.token,'');assert.equal(current.revealed,false);
-  const resumed=sets.start(current.state,id,NOW+1);
-  assert.equal(resumed.status,'complete');assert.equal(resumed.round,1);
-  let next=sets.nextRound(freeze(current.state),id,NOW+2);
-  assert.equal(next.accepted,true);assert.equal(next.total,2);assert.equal(next.completed,0);assert.equal(next.round,2);
-  assert.deepEqual(plain(next.set.session.queue),[original[0],original[2]]);
-  next=answer(next);next=answer(next);
-  assert.equal(next.status,'complete');assert.equal(next.repeat,0);assert.equal(next.remembered,2);
-  assert.equal(sets.nextRound(next.state,id,NOW+3).accepted,false);
-  const restarted=sets.start(next.state,id,NOW+4,{restart:true});
-  assert.equal(restarted.total,3);assert.equal(restarted.round,1);assert.equal(restarted.completed,0);
+  current=answer(current,'repeat');assert.equal(current.completed,0);assert.equal(current.card.id,original[1].id);
+  current=answer(current);current=answer(current,'repeat');
+  assert.equal(current.status,'active');assert.equal(current.completed,1);assert.equal(current.total,3);
+  assert.equal(current.card.id,original[0].id);assert.equal(current.repeat,2);
+  assert.equal(sets.nextRound(current.state,id,NOW+3).accepted,false);
+  current=answer(current);assert.equal(current.completed,2);assert.equal(current.card.id,original[2].id);
+  const token=current.token;current=answer(current,'repeat');
+  assert.equal(current.status,'active');assert.equal(current.completed,2);assert.equal(current.card.id,original[2].id);
+  assert.equal(sets.grade(current.state,id,token,'remembered',NOW+4).accepted,false);
+  current=answer(current);assert.equal(current.status,'complete');assert.equal(current.completed,3);
+  const undone=sets.undo(current.state,id,NOW+5);assert.equal(undone.status,'active');assert.equal(undone.completed,2);assert.equal(undone.revealed,false);
+  const restarted=sets.start(current.state,id,NOW+6,{restart:true});assert.equal(restarted.total,3);assert.equal(restarted.completed,0);
 });
 
 test('reload and exit/resume preserve current queue, index and responses while concealing the answer',()=>{
@@ -202,13 +200,13 @@ test('reload and exit/resume preserve current queue, index and responses while c
   assert.equal(sets.view(decoded,id).revealed,true);
   const resumed=sets.start(freeze(decoded),id,NOW+10);
   assert.equal(resumed.revealed,false);assert.equal(resumed.card.id,current.card.id);
-  assert.equal(resumed.token,current.token);assert.equal(resumed.total,3);assert.equal(resumed.completed,1);
+  assert.equal(resumed.token,current.token);assert.equal(resumed.total,3);assert.equal(resumed.completed,0);
   assert.equal(resumed.repeat,1);assert.equal(resumed.remembered,0);
   assert.deepEqual(plain(resumed.set.session.queue),plain(current.set.session.queue));
   assert.deepEqual(plain(resumed.set.session.answers),plain(current.set.session.answers));
   assert.equal(sets.grade(resumed.state,id,current.token,'remembered',NOW+11).accepted,false);
   const next=answer(resumed);
-  assert.equal(next.completed,2);assert.equal(next.repeat,1);assert.equal(next.remembered,1);
+  assert.equal(next.completed,1);assert.equal(next.repeat,1);assert.equal(next.remembered,1);
 });
 
 test('import during a round applies only to the next fresh session, including across repeat rounds',()=>{
@@ -218,12 +216,12 @@ test('import during a round applies only to the next fresh session, including ac
   const imported=sets.importNew(freeze(current.state),id,inventory,NOW+1);
   current=sets.view(imported.state,id);
   assert.equal(imported.added,1);assert.equal(current.set.cards.length,4);
-  assert.equal(current.total,3);assert.equal(current.completed,1);
+  assert.equal(current.total,3);assert.equal(current.completed,0);
   assert.deepEqual(plain(current.set.session.queue),queue);
   current=sets.start(sets.decode(JSON.stringify(current.state)),id,NOW+2);
   assert.equal(current.total,3);current=answer(current);current=answer(current);
   let repeat=sets.nextRound(current.state,id,NOW+3);
-  assert.equal(repeat.total,1);assert.equal(repeat.card.id,queue[0].id);
+  assert.equal(repeat.total,3);assert.equal(repeat.completed,2);assert.equal(repeat.card.id,queue[0].id);
   repeat=answer(repeat);
   const fresh=sets.start(repeat.state,id,NOW+4,{restart:true});
   assert.equal(fresh.total,4);assert.equal(fresh.round,1);
@@ -236,9 +234,9 @@ test('exclusion during an active round preserves its denominator and requires an
   current=sets.view(excluded.state,id);
   assert.equal(current.total,3);assert.equal(current.completed,0);assert.equal(current.card.id,card.id);
   current=answer(current,'repeat');current=answer(current);current=answer(current);
-  assert.equal(current.total,3);assert.equal(current.completed,3);assert.equal(current.repeat,1);
+  assert.equal(current.total,3);assert.equal(current.completed,2);assert.equal(current.repeat,1);
   const repeat=sets.nextRound(current.state,id,NOW+2);
-  assert.equal(repeat.total,1);assert.equal(repeat.card.id,card.id);
+  assert.equal(repeat.total,3);assert.equal(repeat.completed,2);assert.equal(repeat.card.id,card.id);
   const fresh=sets.start(repeat.state,id,NOW+3,{restart:true});
   assert.equal(fresh.total,2);assert.equal(fresh.set.session.queue.some(item=>item.id===card.id),false);
 });
@@ -270,7 +268,7 @@ test('all-excluded sets are empty and an explicit restart clears old work durabl
 });
 
 test('only missing storage initializes empty; malformed and future schemas are refused',()=>{
-  const empty={version:1,sequence:0,sets:[]};
+  const empty={version:2,sequence:0,sets:[]};
   assert.deepEqual(plain(sets.normalize(null)),empty);
   assert.deepEqual(plain(sets.decode(null)),empty);
   assert.deepEqual(plain(sets.decode(undefined)),empty);
@@ -278,8 +276,8 @@ test('only missing storage initializes empty; malformed and future schemas are r
   for(const raw of ['', '{','null','[]','true','"text"','42','{}','{"version":0}','{"version":1,"sets":[]}']){
     assert.throws(()=>sets.decode(raw),/Invalid study sets data/);
   }
-  assert.throws(()=>sets.decode('{"version":2,"sets":[]}'),/newer than this app/);
-  assert.throws(()=>sets.normalize({version:2,sequence:0,sets:[]}),/newer than this app/);
+  assert.throws(()=>sets.decode('{"version":3,"sets":[]}'),/newer than this app/);
+  assert.throws(()=>sets.normalize({version:3,sequence:0,sets:[]}),/newer than this app/);
   assert.throws(()=>sets.create({version:99,sequence:0,sets:[]},{name:'Do not overwrite',bookTitles:['Book A']},words,NOW),/newer than this app/);
 });
 
@@ -399,4 +397,16 @@ test('adding books preserves exclusions, frozen rounds and source vocabulary wit
  assert.equal(sets.addBooks(result.state,id,['Book C'],inventory,NOW+4).accepted,false);
  assert.deepEqual(plain(inventory),original);
  assert.deepEqual(plain(sets.decode(JSON.stringify(result.state)).sets[0]),plain(result.set));
+});
+
+
+test('v1 sessions migrate without losing inventory or responses, returning legacy repeats to pending',()=>{
+  const current=start(),id=current.set.id,legacy=plain(current.state),session=legacy.sets[0].session;
+  legacy.version=1;delete session.format;delete session.serial;
+  session.index=3;session.answers=session.queue.map((card,i)=>({id:card.id,outcome:i===1?'remembered':'repeat',at:NOW+i}));
+  const original=JSON.stringify(legacy),migrated=sets.decode(original),view=sets.view(migrated,id);
+  assert.equal(migrated.version,2);assert.equal(view.total,3);assert.equal(view.completed,1);assert.equal(view.status,'active');
+  assert.equal(view.card.id,session.queue[0].id);assert.deepEqual(plain(view.set.session.answers),session.answers);
+  assert.equal(JSON.stringify(legacy),original);assert.equal(sets.view(sets.decode(JSON.stringify(migrated)),id).token,view.token);
+  const undone=sets.undo(migrated,id,NOW+8);assert.equal(undone.completed,1);assert.equal(undone.card.id,session.queue[2].id);
 });

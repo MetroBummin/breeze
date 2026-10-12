@@ -1,10 +1,10 @@
 /* Local-only snapshot study sets. All state, vocabulary and time are explicit
    inputs. No storage, vocabulary writes, scheduling, network or AI calls. */
 const BreezeStudySets = (() => {
-  const VERSION=1;
+  const VERSION=2;
   /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number,status:number}} Card */
   /** @typedef {{id:string,outcome:string,at:number}} Answer */
-  /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean}} Session */
+  /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean,format:number,serial:number}} Session */
   /** @typedef {{id:string,name:string,bookTitles:string[],createdAt:number,updatedAt:number,cards:Card[],excludedIds:string[],session:Session|null}} StudySet */
   /** @typedef {{version:number,sequence:number,sets:StudySet[]}} State */
   const record=value=>!!value && typeof value==='object' && !Array.isArray(value);
@@ -43,13 +43,22 @@ const BreezeStudySets = (() => {
     if(!record(raw)||!nonblank(raw.id)||!count(raw.startedAt)||!count(raw.round)||raw.round<1
       ||!count(raw.index)||!Array.isArray(raw.answers)||typeof raw.revealed!=='boolean')fail();
     const queue=copyCards(raw.queue);
-    if(!queue.length||raw.index>queue.length||raw.answers.length!==raw.index
-      ||(raw.revealed&&raw.index===queue.length))fail();
+    if(!queue.length||raw.index>queue.length)fail();
+    if(raw.format!==undefined&&raw.format!==2)fail();
+    const legacy=raw.format!==2;
+    if(legacy&&raw.answers.length!==raw.index)fail();
+    const pending=queue.map(card=>card.id),passed=[];
     const answers=raw.answers.map((answer,index)=>{
-      if(!record(answer)||answer.id!==queue[index].id||!['remembered','repeat'].includes(answer.outcome)||!count(answer.at))fail();
+      if(!record(answer)||!['remembered','repeat'].includes(answer.outcome)||!count(answer.at)
+        ||answer.id!==(legacy?queue[index]?.id:pending[0]))fail();
+      // Replay responses against a unique frozen inventory; repeat never duplicates cards.
+      const at=pending.indexOf(answer.id);if(at<0)fail();pending.splice(at,1);
+      if(answer.outcome==='repeat')pending.push(answer.id);else passed.push(answer.id);
       return {id:answer.id,outcome:answer.outcome,at:answer.at};
     });
-    return {id:raw.id,startedAt:raw.startedAt,round:raw.round,queue,index:raw.index,answers,revealed:raw.revealed};
+    if(!legacy&&(!count(raw.serial)||raw.serial<answers.length||raw.index!==passed.length))fail();
+    if(raw.revealed&&!pending.length)fail();
+    return {id:raw.id,startedAt:raw.startedAt,round:raw.round,queue,index:passed.length,answers,revealed:raw.revealed,format:2,serial:legacy?answers.length:raw.serial};
   }
   /** Strictly decode one known schema. Corruption and future versions must stop
       writes instead of being silently replaced with an empty collection.
@@ -58,7 +67,7 @@ const BreezeStudySets = (() => {
     if(raw===null||raw===undefined)return empty();
     if(record(raw)&&typeof raw.version==='number'&&raw.version>VERSION)
       throw new RangeError('This study sets version is newer than this app. The saved value was not changed.');
-    if(!record(raw)||raw.version!==VERSION||!count(raw.sequence)||!Array.isArray(raw.sets))fail();
+    if(!record(raw)||![1,VERSION].includes(raw.version)||!count(raw.sequence)||!Array.isArray(raw.sets))fail();
     const sets=raw.sets.map(item=>{
       if(!record(item)||!nonblank(item.id)||!nonblank(item.name)||!count(item.createdAt)
         ||!count(item.updatedAt)||item.updatedAt<item.createdAt)fail();
@@ -176,17 +185,19 @@ const BreezeStudySets = (() => {
   function snapshot(state,id){
     const set=get(state,id),session=set?.session||null;
     const total=session?session.queue.length:0,completed=session?session.index:0;
-    const card=session&&completed<total?session.queue[completed]:null;
-    const repeatIds=session?session.answers.filter(answer=>answer.outcome==='repeat').map(answer=>answer.id):[];
+    const pending=session?session.queue.map(card=>card.id):[];
+    for(const answer of session?.answers||[]){pending.shift();if(answer.outcome==='repeat')pending.push(answer.id);}
+    const card=session&&pending.length?session.queue.find(card=>card.id===pending[0]):null;
+    const repeatIds=[...new Set((session?.answers||[]).filter(answer=>answer.outcome==='repeat'&&pending.includes(answer.id)).map(answer=>answer.id))];
     return {state,set,status:!set?'missing':session?(card?'active':'complete'):activeCards(set).length?'idle':'empty',
-      card,token:card?JSON.stringify([set.id,session.id,session.round,session.index,card.id]):'',
+      card,token:card?JSON.stringify([set.id,session.id,session.round,session.serial,card.id]):'',
       revealed:!!card&&session.revealed,total,completed,
-      remembered:completed-repeatIds.length,repeat:repeatIds.length,repeatIds,round:session?session.round:0};
+      remembered:completed,repeat:repeatIds.length,repeatIds,round:session?session.round:0,pendingIds:pending};
   }
   function view(raw,id){return snapshot(normalize(raw),id);}
   function session(state,set,queue,now,round=1){
     set.session={id:allocate(state,'session'),startedAt:now,round,
-      queue:queue.map(copyCard),index:0,answers:[],revealed:false};
+      queue:queue.map(copyCard),index:0,answers:[],revealed:false,format:2,serial:0};
     set.updatedAt=Math.max(set.updatedAt,now);
   }
   function start(raw,id,now,options={restart:false}){
@@ -218,17 +229,19 @@ const BreezeStudySets = (() => {
     if(current.status!=='active'||!current.revealed||!text(token)||token!==current.token
       ||!['remembered','repeat'].includes(outcome))return {...current,accepted:false};
     const set=current.set,round=set.session;
-    round.answers.push({id:current.card.id,outcome,at});round.index++;round.revealed=false;
+    round.answers.push({id:current.card.id,outcome,at});if(outcome==='remembered')round.index++;round.serial++;round.revealed=false;
     set.updatedAt=Math.max(set.updatedAt,at);
     return {...snapshot(current.state,id),accepted:true};
   }
-  function nextRound(raw,id,now){
-    const current=view(raw,id),at=time(now);
-    if(current.status!=='complete'||!current.repeat)return {...current,accepted:false};
-    const repeat=new Set(current.repeatIds),set=current.set,previous=set.session;
-    session(current.state,set,previous.queue.filter(card=>repeat.has(card.id)),at,previous.round+1);
+  function undo(raw,id,now){
+    const current=view(raw,id),at=time(now),session=current.set?.session;
+    if(!session?.answers.length)return {...current,accepted:false};
+    const answer=session.answers.pop();if(answer.outcome==='remembered')session.index--;
+    session.serial++;session.revealed=false;current.set.updatedAt=Math.max(current.set.updatedAt,at);
     return {...snapshot(current.state,id),accepted:true};
   }
+  // Compatibility entry: repeats stay in the current session, not a completed round.
+  function nextRound(raw,id,now){time(now);return {...view(raw,id),accepted:false};}
   return Object.freeze({VERSION,normalize,decode,cards,create,rename,remove,exclude,restore,setStatus,
-    importPreview,importNew,addBooks,view,start,reveal,grade,nextRound});
+    importPreview,importNew,addBooks,view,start,reveal,grade,nextRound,undo});
 })();

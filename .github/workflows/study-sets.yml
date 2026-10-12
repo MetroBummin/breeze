@@ -12,6 +12,8 @@ on:
       - 'scripts/core/state.js'
       - 'scripts/dictionary/dictionary.js'
       - 'tests/verify-study-sets*.mjs'
+      - 'tests/verify-simple-study-session.mjs'
+      - 'tests/verify-study-session-swipe-browser.mjs'
       - 'tests/capture-study-sets-browser.mjs'
       - '.github/workflows/study-sets.yml'
   workflow_dispatch:
@@ -30,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs
+      - run: node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs tests/verify-simple-study-session.mjs
       - run: npm test
       - run: npm run www
       - run: git diff --exit-code -- index.html sw.js
@@ -63,6 +65,8 @@ jobs:
           BROWSER: ${{ matrix.engine }}
       - run: node tests/verify-study-sets-touch-browser.mjs
         if: matrix.engine == 'chromium'
+      - run: node tests/verify-study-session-swipe-browser.mjs
+        if: matrix.engine == 'chromium'
       - run: node tests/verify-simple-word-cards-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
@@ -78,5 +82,6 @@ jobs:
           path: |
             /tmp/breeze-study-sets-proof/
             /tmp/breeze-study-touch-preview/
+            /tmp/breeze-study-session-proof/
           if-no-files-found: ignore
           retention-days: 14

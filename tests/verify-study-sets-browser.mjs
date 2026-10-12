@@ -118,7 +118,7 @@ try{
  assert.equal(await page.locator('#vocabulary-review-page').isVisible(),true,'default all card opens the original all-word study directly');
  assert.equal(await page.locator('#v-vocab').isVisible(),false,'all-card entry does not loop to vocabulary');
  assert.equal(await page.locator('dialog[open]').count(),0);
- await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
+ await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
  await page.goBack();await assertDirectory();
  await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');
  await page.locator('#review-close').click();await assertDirectory();
@@ -270,28 +270,28 @@ try{
  await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
  await page.evaluate(()=>{words={};saveWords();renderVocab();});
  assert.equal(await page.locator('#study-sets-word-list li').count(),5,'source deletion preserves captured content');
- await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'1 / 5');
+ console.log(`${engine.name()}: snapshot study starts`);await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);
- await page.locator('#study-sets-reveal').click();assert.equal(await page.locator('#study-sets-answer').innerText(),'바람');
- assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-answer');
+ await page.locator('#study-sets-flashcard').click();assert.equal(await page.locator('#study-sets-answer').innerText(),'바람');
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-flashcard');
  // Failure must leave the revealed answer and the exact durable value retryable.
  const rawBefore=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
  await page.evaluate(()=>{window.qaSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===STUDY_SETS_STORAGE)throw Error('Synthetic quota');return window.qaSetItem.call(this,key,value);};});
- await page.locator('#study-sets-grade-repeat').click();assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);
+ await page.locator('#study-sets-flashcard').press('ArrowLeft');await page.waitForSelector('#study-sets-error:not([hidden])');assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);
  assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),rawBefore);
  await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();
- assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 5');
+ assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
  await closeSheet();
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('.study-sets-home-card[data-set-id]').click();
  await page.evaluate(()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();studySetsReadAndRender();});
  assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
- await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 5');
+ await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
  await context.setOffline(true);
- for(let i=0;i<4;i++){await page.locator('#study-sets-reveal').click();await page.locator('#study-sets-grade-remembered').click();}
- assert.match(await page.locator('.study-sets-result').innerText(),/5개 중 기억나요 4개/);
- await page.locator('#study-sets-repeat-round').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'1 / 1');
- await page.locator('#study-sets-reveal').click();await page.locator('#study-sets-grade-remembered').click();
- await page.getByRole('button',{name:'전체 새로 학습',exact:true}).click();assert.equal(await page.locator('#study-sets-progress').innerText(),'1 / 6');
+ for(let i=0;i<4;i++){await page.locator('#study-sets-flashcard').click();await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForFunction(()=>!document.getElementById('study-sets-answer')?.hidden===false);}
+ assert.equal(await page.locator('#study-sets-progress').innerText(),'4 / 5');
+ assert.equal(await page.locator('#study-sets-answer').isVisible(),false);
+ await page.locator('#study-sets-flashcard').click();await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForSelector('.study-sets-result');assert.equal(await page.locator('.study-sets-result').innerText(),'5 / 5');
+ await page.getByRole('button',{name:'전체 새로 학습',exact:true}).click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 6');
  await context.setOffline(false);
  await page.evaluate(()=>{const state=readStudySets(),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3).slice(0,100),Date.now());commitStudySets(result.state);studySetsReadAndRender();});
  const layouts=[];
@@ -301,7 +301,7 @@ try{
   const bounds=await page.locator('#v-memory-set').evaluate(node=>({left:node.getBoundingClientRect().left,right:node.getBoundingClientRect().right,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.getBoundingClientRect().height}));
   assert.ok(bounds.left>=-1&&bounds.right<=width+1&&bounds.scrollWidth<=bounds.width+1&&bounds.height<=height+1,JSON.stringify({width,height,dark,bounds}));
   for(const selector of ['.study-sets-sheet','#study-sets-content'])assert.equal(await page.locator(selector).evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`${selector} overflows at ${width}x${height}`);
-  for(const selector of ['#study-sets-back','#study-sets-reveal']){
+  for(const selector of ['#study-sets-back','#study-sets-flashcard']){
    await page.locator(selector).scrollIntoViewIfNeeded();const control=await page.locator(selector).boundingBox();
    assert.ok(control.x>=0&&control.y>=0&&control.x+control.width<=width+1&&control.y+control.height<=height+1,JSON.stringify({selector,width,height,control}));
    assert.ok(control.width>=44&&control.height>=44,`${selector} touch target`);
@@ -441,6 +441,7 @@ try{
  assert.deepEqual(errors,[]);
  // Chromium supports automated service-worker cold launches. Native bundles
  // independently include these same files; WebKit above verifies offline study.
+ console.log(`${engine.name()}: lifecycle layouts passed, checking cold offline`);
  if(engine===chromium){
   const offline=await browser.newContext({serviceWorkers:'allow'});
   try{
@@ -450,14 +451,14 @@ try{
    await warm.evaluate(async()=>{
     const result=BreezeStudySets.create(readStudySets(),{name:'오프라인 세트',bookTitles:['Offline']},{cached:{word:'resilient',ko:'회복력이 있는',book:'Offline',example:'A resilient reader.'}},100);
     commitStudySets(result.state);words={};saveWords();
-    await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});await navigator.serviceWorker.ready;
+    const registration=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker did not become ready: '+JSON.stringify({installing:registration.installing?.state,waiting:registration.waiting?.state,active:registration.active?.state}))),30000))]);
    });
    await warm.close();await offline.setOffline(true);
    const cold=await offline.newPage();await cold.goto(url);await cold.evaluate(()=>homeReady);
-   await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();await cold.locator('#study-sets-reveal').click();
-   assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await cold.locator('#study-sets-grade-remembered').click();
+   await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();await cold.locator('#study-sets-flashcard').click();
+   assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await cold.locator('#study-sets-flashcard').press('ArrowRight');await cold.waitForSelector('.study-sets-result');
    await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();
-   assert.match(await cold.locator('.study-sets-result').innerText(),/기억나요 1개/);
+   assert.equal(await cold.locator('.study-sets-result').innerText(),'1 / 1');
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}
  }

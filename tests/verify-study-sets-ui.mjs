@@ -15,7 +15,7 @@ function harness(){
   const history={state:entries[0],pushState(value){entries[historyIndex]=this.state;entries.splice(++historyIndex);entries.push(value);this.state=value;},replaceState(value){this.state=value;entries[historyIndex]=value;},go(delta){
     historyIndex=Math.max(0,Math.min(entries.length-1,historyIndex+delta));this.state=entries[historyIndex];const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
   },back(){this.go(-1);},forward(){this.go(1);}};
-  const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,
+  const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,matchMedia:()=>({matches:true}),
     activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},openVocabularyReview:()=>{context.currentView='study';history.pushState({breeze:true,view:'study'});},history,words:{
       a:{word:'quiet',ko:'조용한',book:'One',example:'Stay quiet.',addedAt:1},
       b:{word:'quiet',ko:'조용한',book:'Two',addedAt:2},
@@ -74,15 +74,15 @@ test('study set UI creates safe deduplicated snapshots, excludes with undo, impo
   const source=JSON.stringify(context.words);
   click('.study-sets-row-action');assert.equal(document.querySelectorAll('#study-sets-word-list li').length,1);
   click('.study-sets-undo button');assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);
-  click('#study-sets-start');assert.equal(query('#study-sets-progress').textContent,'1 / 2');assert.equal(query('#study-sets-answer').hidden,true);
+  click('#study-sets-start');assert.equal(query('#study-sets-progress').textContent,'0 / 2');assert.equal(query('#study-sets-answer').hidden,true);
   click('#study-sets-reveal');assert.equal(query('#study-sets-answer').hidden,false);
-  assert.equal(document.activeElement.id,'study-sets-answer');click('#study-sets-grade-repeat');
+  assert.equal(document.activeElement.id,'study-sets-flashcard');click('#study-sets-grade-repeat');
   click('#study-sets-back');context.words.new={word:'new',ko:'새로운',book:'One',addedAt:8};run('studySetsReadAndRender()');
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);assert.match(query('#study-sets-import').textContent,/1개/);
   click('#study-sets-import');run("studySetsGo('detail')");assert.equal(document.querySelectorAll('#study-sets-word-list li').length,3);
-  click('#study-sets-start');assert.equal(query('#study-sets-progress').textContent,'2 / 2');
-  click('#study-sets-reveal');click('#study-sets-grade-remembered');click('#study-sets-repeat-round');
-  assert.equal(query('#study-sets-progress').textContent,'1 / 1');click('#study-sets-reveal');click('#study-sets-grade-remembered');
+  click('#study-sets-start');assert.equal(query('#study-sets-progress').textContent,'0 / 2');
+  click('#study-sets-reveal');click('#study-sets-grade-remembered');
+  assert.equal(query('#study-sets-progress').textContent,'1 / 2');click('#study-sets-reveal');click('#study-sets-grade-remembered');
   assert.equal(document.querySelector('#study-sets-repeat-round'),null);
   assert.equal(JSON.stringify(Object.fromEntries(Object.entries(context.words).filter(([key])=>key!=='new'))),source);
   click('#study-sets-back');click('#study-sets-back');assert.equal(query('#study-sets-dialog').open,false);
@@ -94,10 +94,10 @@ test('failed storage keeps answer and form retryable; stale grade events cannot 
   const before=storage.get('breeze.study-sets.v1'),staleGrade=query('#study-sets-grade-repeat');
   const nativeSet=context.localStorage.setItem;
   context.localStorage.setItem=()=>{throw new Error('Synthetic quota');};click('#study-sets-grade-repeat');
-  assert.equal(query('#study-sets-answer').hidden,false);assert.equal(query('#study-sets-progress').textContent,'1 / 2');
+  assert.equal(query('#study-sets-answer').hidden,false);assert.equal(query('#study-sets-progress').textContent,'0 / 2');
   assert.equal(query('#study-sets-error').hidden,false);assert.equal(storage.get('breeze.study-sets.v1'),before);
-  context.localStorage.setItem=nativeSet;click('#study-sets-error button');assert.equal(query('#study-sets-progress').textContent,'2 / 2');
-  staleGrade.click();assert.equal(query('#study-sets-progress').textContent,'2 / 2');assert.equal(query('#study-sets-answer').hidden,true);
+  context.localStorage.setItem=nativeSet;click('#study-sets-error button');assert.equal(query('#study-sets-progress').textContent,'0 / 2');
+  staleGrade.click();assert.equal(query('#study-sets-progress').textContent,'0 / 2');assert.equal(query('#study-sets-answer').hidden,true);
   click('#study-sets-back');run("studySetsGo('rename')");query('#study-sets-rename-input').value='Keep my input';
   context.localStorage.setItem=()=>{throw new Error('Synthetic quota');};
   query('form').dispatchEvent(new context.window.Event('submit',{cancelable:true}));
@@ -153,8 +153,8 @@ test('history jumps restore the destination page and forward restores modal back
 test('a repeated pointer click after answer reveal is not an assessment',()=>{
   const {window,query,click,createSet}=harness();createSet();click('#study-sets-start');click('#study-sets-reveal');
   const secondClick=new window.Event('click');secondClick.detail=2;query('#study-sets-grade-repeat').dispatchEvent(secondClick);
-  assert.equal(query('#study-sets-progress').textContent,'1 / 2');assert.equal(query('#study-sets-answer').hidden,false);
-  click('#study-sets-grade-repeat');assert.equal(query('#study-sets-progress').textContent,'2 / 2');
+  assert.equal(query('#study-sets-progress').textContent,'0 / 2');assert.equal(query('#study-sets-answer').hidden,false);
+  click('#study-sets-grade-repeat');assert.equal(query('#study-sets-progress').textContent,'0 / 2');
 });
 
 test('Memory directory keeps all words first, appends sets and add, and enters the unchanged all-word card study',()=>{

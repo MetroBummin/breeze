@@ -49,8 +49,8 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=a07bcc13">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=eaeb3a4d">
-  <link rel="stylesheet" href="styles/study-sets.css?v=646879d8">
+  <link rel="stylesheet" href="styles/wordbook.css?v=eb44dfd5">
+  <link rel="stylesheet" href="styles/study-sets.css?v=3424fc86">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=96746b53">
   <link rel="stylesheet" href="styles/onboarding.css?v=8f315304">
@@ -104,11 +104,11 @@
   <script defer src="scripts/dictionary/dictionary.js?v=8f07d0f2"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=6d6fb314"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=a9c6fddc"></script>
   <script defer src="scripts/ui/wordbook.js?v=55ebd609"></script>
-  <script defer src="scripts/core/study-sets.js?v=f9b98d22"></script>
-  <script defer src="scripts/core/study-sets-storage.js?v=5f1f03f4"></script>
-  <script defer src="scripts/ui/study-sets.js?v=27b97dce"></script>
+  <script defer src="scripts/core/study-sets.js?v=e4ba4a22"></script>
+  <script defer src="scripts/core/study-sets-storage.js?v=1913e275"></script>
+  <script defer src="scripts/ui/study-sets.js?v=83cecf84"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=fc16eb5f"></script>
@@ -472,6 +472,7 @@
   <p id="review-mode" class="review-recall-hint"></p>
   <div id="review-card">
     <p id="review-progress" aria-live="polite"></p>
+    <div id="simple-next-card" aria-hidden="true" hidden></div>
     <div id="review-flip" role="button" tabindex="0" aria-label="카드를 뒤집어 뜻 보기">
       <div id="review-front" class="review-face">
         <p id="review-source"></p>
@@ -492,7 +493,8 @@
       <button id="review-easy" type="button" title="거의 즉시, 확실하게 떠올림"><span>쉬움</span><small id="review-easy-interval"></small></button>
     </div>
   </div>
-  <nav id="simple-word-navigation" aria-label="단어 카드 이동" hidden><button id="simple-word-previous" type="button">이전</button><button id="simple-word-next" type="button">다음</button></nav>
+  <p id="simple-study-hint" aria-live="polite" hidden></p>
+  <nav id="simple-word-navigation" aria-label="이번 세션 학습" hidden><button id="simple-word-previous" type="button" aria-label="마지막 카드 응답 되돌리기">되돌리기</button><button id="simple-word-again" type="button">다시 볼게요</button><button id="simple-word-next" type="button">기억나요</button></nav>
   <section id="review-result" hidden>
     <div id="review-celebration" hidden>
       <div id="review-mascot-scene" hidden><img id="review-stage-mascot" alt="" width="260" height="260" hidden></div>

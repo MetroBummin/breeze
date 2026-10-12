@@ -1,6 +1,44 @@
 // 1.7 ships simple cards; scheduled review remains dormant for 1.8.
 const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;
+// Simple session engine: no schedules or permanent learned-card flags.
+const SimpleStudySession=(()=>{
+  const start=keys=>({version:1,initial:[...new Set(keys)],queue:[...new Set(keys)],passed:[],history:[],serial:0});
+  const token=s=>JSON.stringify([s.serial,s.queue[0]]);
+  const grade=(s,expected,outcome)=>{
+    if(!s.queue.length||token(s)!==expected||!['remember','again'].includes(outcome))return s;
+    const next=JSON.parse(JSON.stringify(s)),key=next.queue.shift();
+    next.history.push({key,outcome});
+    if(outcome==='again')next.queue.push(key);else next.passed.push(key);
+    next.serial++;return next;
+  };
+  const undo=s=>{
+    if(!s.history.length)return s;
+    const next=JSON.parse(JSON.stringify(s)),last=next.history.pop();
+    if(last.outcome==='again')next.queue.splice(next.queue.lastIndexOf(last.key),1);
+    else next.passed.splice(next.passed.indexOf(last.key),1);
+    next.queue.unshift(last.key);next.serial++;return next;
+  };
+  const restore=raw=>{
+    try{const s=JSON.parse(raw);if(s?.version!==1||!Array.isArray(s.initial)||!s.initial.every(k=>typeof k==='string')||new Set(s.initial).size!==s.initial.length||!Array.isArray(s.queue)||!Array.isArray(s.passed)||!Array.isArray(s.history)||!Number.isSafeInteger(s.serial)||s.serial<0)return null;
+      const all=[...s.queue,...s.passed];if(all.length!==s.initial.length||new Set(all).size!==all.length||all.some(k=>!s.initial.includes(k))||s.history.some(h=>!s.initial.includes(h.key)||!['again','remember'].includes(h.outcome)))return null;return s;
+    }catch{return null;}
+  };
+  return {start,token,grade,undo,restore};
+})();
+const SIMPLE_STUDY_STORAGE='breeze.simple-study-session.v1';
+let simpleStudySession=null,simpleStudyBusy=false,simpleStudyTimer=0,simpleStudySuppressClickUntil=0;
 let simpleWordCards={keys:[],index:0,flipped:false};
+function ensureSimpleStudySession(){
+  const keys=Object.keys(words).filter(key=>validWordMeaning(words[key])&&typeof words[key].word==='string'&&words[key].word.trim());
+  if(!simpleStudySession){try{simpleStudySession=SimpleStudySession.restore(localStorage.getItem(SIMPLE_STUDY_STORAGE));}catch{}}
+  // Removed records invalidate the old scope; added vocabulary waits for the next session.
+  if(!simpleStudySession||simpleStudySession.initial.some(k=>!keys.includes(k))||!simpleStudySession.initial.length&&keys.length)simpleStudySession=SimpleStudySession.start(keys);
+  return simpleStudySession;
+}
+function commitSimpleStudySession(next){
+  try{const saved=localStorage.getItem(SIMPLE_STUDY_STORAGE);if(saved!==null&&!SimpleStudySession.restore(saved))throw new Error('Invalid saved session');localStorage.setItem(SIMPLE_STUDY_STORAGE,JSON.stringify(next));simpleStudySession=next;return true;}
+  catch{vocabularyReviewError();return false;}
+}
 /* Review progress is device-local and never touches vocabulary/sync records. */
 const VOCABULARY_STAGE_ASSETS=Object.freeze(Object.fromEntries(
   [1,2,3,4,5].map(stage=>[stage,`assets/brand/review/thunderhead-stage-${stage}.png`])
@@ -138,55 +176,84 @@ function renderReviewIntervals(view){
     }
 }
 function renderSimpleWordCards(){
-  const previousKey=simpleWordCards.keys[simpleWordCards.index];
-  const keys=Object.keys(words).filter(key=>validWordMeaning(words[key])&&typeof words[key].word==='string'&&words[key].word.trim());
-  const retained=keys.indexOf(previousKey);
-  simpleWordCards.keys=keys;
-  simpleWordCards.index=retained>=0?retained:Math.min(simpleWordCards.index,Math.max(0,keys.length-1));
-  const key=keys[simpleWordCards.index],record=key?words[key]:null;
+  clearTimeout(simpleStudyTimer);simpleStudyBusy=false;
+  const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
+  simpleWordCards.keys=session.queue;simpleWordCards.index=0;
   document.body.classList.add('simple-word-cards');
-  vocabularyReviewPage.classList.remove('complete','milestone');
+  vocabularyReviewPage.classList.toggle('complete',!record&&session.initial.length>0);
+  vocabularyReviewPage.classList.remove('milestone');
   for(const id of ['review-journey','review-grade','review-celebration','review-recovery','review-pending','review-more','review-extra','review-error','review-mode'])document.getElementById(id).hidden=true;
   document.getElementById('review-card').hidden=!record;
+  const nextCard=document.getElementById('simple-next-card');nextCard.hidden=!record;nextCard.textContent=words[session.queue[1]||session.queue[0]]?.word||'';
   document.getElementById('review-result').hidden=!!record;
-  document.getElementById('review-status').textContent=record?'':'저장된 단어가 없어요. 읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 보세요.';
+  document.getElementById('review-status').textContent=record?'':session.initial.length?`이번 세션 ${session.passed.length} / ${session.initial.length} 완료`:'저장된 단어가 없어요. 읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 보세요.';
   const progress=document.getElementById('review-progress');progress.hidden=false;
-  progress.textContent=record?`${simpleWordCards.index+1} / ${keys.length}`:'';
+  progress.textContent=`${session.passed.length} / ${session.initial.length}`;
+  progress.setAttribute('aria-label','이번 세션에서 기억한 카드');
+  progress.setAttribute('role','progressbar');progress.setAttribute('aria-valuemin','0');progress.setAttribute('aria-valuemax',String(session.initial.length));progress.setAttribute('aria-valuenow',String(session.passed.length));
   document.getElementById('simple-word-navigation').hidden=false;
-  /** @type {HTMLButtonElement} */(document.getElementById('simple-word-previous')).disabled=!record||simpleWordCards.index===0;
-  /** @type {HTMLButtonElement} */(document.getElementById('simple-word-next')).disabled=!record||simpleWordCards.index===keys.length-1;
+  const hint=document.getElementById('simple-study-hint');hint.hidden=!record;hint.textContent=simpleWordCards.flipped?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인';
+  /** @type {HTMLButtonElement} */(document.getElementById('simple-word-previous')).disabled=!session.history.length;
+  for(const id of ['simple-word-next','simple-word-again'])/** @type {HTMLButtonElement} */(document.getElementById(id)).disabled=!record||!simpleWordCards.flipped;
   if(record){
     document.getElementById('review-expression').textContent=record.word;
     document.getElementById('review-back-expression').textContent=record.word;
     document.getElementById('review-source').textContent=record.book||'';
     document.getElementById('review-source').hidden=!record.book;
     highlightReviewSentence({...record,key,example:record.example||''});
-    document.getElementById('review-meaning').textContent=record.ko;
-    document.getElementById('review-meaning').hidden=false;
+    document.getElementById('review-meaning').textContent=simpleWordCards.flipped?record.ko:'';
+    document.getElementById('review-meaning').hidden=!simpleWordCards.flipped;
   }
-  document.getElementById('review-front').hidden=simpleWordCards.flipped;
+  document.getElementById('review-front').hidden=false;
   document.getElementById('review-back').hidden=!simpleWordCards.flipped;
-  document.getElementById('review-reveal').hidden=false;
-  document.getElementById('review-reveal').textContent=simpleWordCards.flipped?'단어 보기':'뜻 보기';
-  document.getElementById('review-flip').setAttribute('aria-label',simpleWordCards.flipped?'카드를 뒤집어 단어 보기':'카드를 뒤집어 뜻 보기');
+  document.getElementById('review-sentence').hidden=!simpleWordCards.flipped;
+  document.getElementById('review-source').hidden=true;
+  document.getElementById('review-reveal').hidden=!record||simpleWordCards.flipped;
+  document.getElementById('review-reveal').textContent='정답 확인';
+  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${simpleWordCards.flipped?record?.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
-  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length)return;
-  simpleWordCards.flipped=!simpleWordCards.flipped;renderSimpleWordCards();
+  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;
+  simpleWordCards.flipped=true;renderSimpleWordCards();
 }
-function moveSimpleWordCard(delta){
-  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study')return;
-  const next=Math.max(0,Math.min(simpleWordCards.keys.length-1,simpleWordCards.index+delta));
-  if(next===simpleWordCards.index)return;
-  simpleWordCards.index=next;simpleWordCards.flipped=false;renderSimpleWordCards();
+function gradeSimpleWordCard(outcome){
+  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy||!simpleWordCards.flipped)return;
+  const current=ensureSimpleStudySession(),next=SimpleStudySession.grade(current,SimpleStudySession.token(current),outcome);
+  if(next===current||!commitSimpleStudySession(next))return;
+  simpleStudyBusy=true;
+  for(const id of ['simple-word-next','simple-word-again','simple-word-previous'])/** @type {HTMLButtonElement} */(document.getElementById(id)).disabled=true;
+  const card=document.getElementById('review-flip');card.dataset.direction=outcome;
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  card.style.transform=reduced?'none':`translateX(${outcome==='remember'?1:-1}00%) rotate(${outcome==='remember'?8:-8}deg)`;
+  simpleStudyTimer=setTimeout(()=>{simpleWordCards.flipped=false;if(activeAppView()==='study'){renderSimpleWordCards();document.getElementById(next.queue.length?'review-flip':'simple-word-previous').focus();}},reduced?0:180);
 }
-document.getElementById('simple-word-previous').addEventListener('click',()=>moveSimpleWordCard(-1));
-document.getElementById('simple-word-next').addEventListener('click',()=>moveSimpleWordCard(1));
+function undoSimpleWordCard(){
+  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;
+  const current=ensureSimpleStudySession(),next=SimpleStudySession.undo(current);
+  if(next!==current&&commitSimpleStudySession(next)){simpleWordCards.flipped=false;renderSimpleWordCards();document.getElementById('review-flip').focus();}
+}
+document.getElementById('simple-word-previous').addEventListener('click',undoSimpleWordCard);
+document.getElementById('simple-word-next').addEventListener('click',()=>gradeSimpleWordCard('remember'));
+document.getElementById('simple-word-again').addEventListener('click',()=>gradeSimpleWordCard('again'));
 window.addEventListener('keydown',event=>{
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED&&activeAppView()==='study'&&!event.altKey&&!event.ctrlKey&&!event.metaKey&&['ArrowLeft','ArrowRight'].includes(event.key)){
-    event.preventDefault();moveSimpleWordCard(event.key==='ArrowLeft'?-1:1);
+    event.preventDefault();gradeSimpleWordCard(event.key==='ArrowLeft'?'again':'remember');
   }
 });
+(()=>{
+ const card=document.getElementById('review-flip');let drag=null;
+ card.addEventListener('pointerdown',event=>{if(ADVANCED_VOCABULARY_REVIEW_ENABLED||simpleStudyBusy||event.button!==0||event.isPrimary===false)return;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,locked:false,token:SimpleStudySession.token(ensureSimpleStudySession())};});
+ card.addEventListener('pointermove',event=>{
+  if(!drag||event.pointerId!==drag.id)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+  if(!drag.locked){if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>10){drag=null;return;}if(Math.abs(dx)<10)return;drag.locked=true;card.setAttribute('data-dragging','');card.setPointerCapture(event.pointerId);}
+  drag.dx=dx;if(!simpleWordCards.flipped)return;card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(dx)/120)));card.dataset.direction=dx>0?'remember':'again';card.style.transform=`translateX(${dx}px) rotate(${dx/35}deg)`;event.preventDefault();
+ });
+ const finish=(event,canceled)=>{if(!drag||event.pointerId!==drag.id)return;const current=drag;drag=null;if(current.locked)simpleStudySuppressClickUntil=Date.now()+350;
+  card.removeAttribute('data-dragging');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');
+  if(!canceled&&current.locked&&Math.abs(current.dx)>=Math.min(90,card.clientWidth*.24)&&current.token===SimpleStudySession.token(ensureSimpleStudySession()))gradeSimpleWordCard(current.dx>0?'remember':'again');
+ };
+ card.addEventListener('pointerup',event=>finish(event,false));card.addEventListener('pointercancel',event=>finish(event,true));
+})();
 function renderVocabularyReview(view,focus=true){
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){renderSimpleWordCards();return;}
   vocabularyReviewView=view;vocabularyReviewRevealed=false;
@@ -300,6 +367,7 @@ function reviewSettingsError(){
 function openVocabularyReview(daily=false,extra=false){
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){
     if(daily||extra)return;
+    if(ensureSimpleStudySession().initial.length&&!simpleStudySession.queue.length)commitSimpleStudySession(SimpleStudySession.start(Object.keys(words).filter(k=>validWordMeaning(words[k]))));
     simpleWordCards.flipped=false;show('study');return;
   }
   try{
@@ -336,7 +404,7 @@ document.getElementById('review-more').addEventListener('click',()=>{
   openVocabularyReview(!vocabularyReviewView?.state?.session?.practice,!!journey?.milestone&&journey.done>=journey.target);
 });
 function resetVocabularyReviewSurface(){
-  simpleWordCards.flipped=false;
+  clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleWordCards.flipped=false;
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
 }
 function closeVocabularyReview(){

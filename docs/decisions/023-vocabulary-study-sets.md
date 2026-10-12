@@ -176,3 +176,31 @@ back roles use the reviewed 32px/2.3 chevron; filled edit/menu dots use the shar
 above only in this review branch. Preserve button boxes, semantics, sheet/page
 navigation, gesture owners and vocabulary data. User review is required before
 a new native build; no historical release boundary is updated by this draft.
+
+## Session recall revision (PR155, pending final review)
+
+Tap reveals the saved answer. After reveal, a right swipe means 기억나요 and
+left means 다시 볼게요. Only a distinct remembered card increments progress:
+passed cards / frozen initial cards. Repeat moves to the pending tail without
+incrementing; a final repeated card stays active. This is session recall, never
+permanent mastery or exclusion from a later session. Fresh study includes every
+active captured card again; no long-term scheduler is enabled.
+
+The v2 collection retains a unique frozen queue and replays answer history to
+derive pending order. A monotonic serial rejects obsolete/duplicate callbacks,
+including after Undo. Undo reverses the last response/order/progress and conceals
+the answer. v1 inventory and answers migrate deterministically; legacy repeats
+become pending. The first write preserves exact v1 bytes at
+`breeze.study-sets.v1.backup-v1`. Backup or collection write failure leaves the
+original intact and the revealed answer retryable. Corruption/future formats
+remain blocked. Added/excluded inventory does not change an active denominator.
+
+The study page uses a large central card and available safe-area height with a
+680px reading-width cap. Answer/example are concealed before tap. Horizontal
+drag follows the finger, rotates slightly, returns below threshold, and exits
+on an accepted swipe to expose the next card. Vertical scroll, cancellation,
+movement before reveal and repeated input cannot grade. Normal layouts show
+direction text and Undo, with no visible rating buttons; keyboard/assistive
+controls remain, and focus reveals their alternatives. Reduced motion preserves
+the contracts without exit animation. Tests/videos are browser evidence;
+physical iOS interaction still needs native QA.

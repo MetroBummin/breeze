@@ -382,7 +382,7 @@ function renderStudySets(focus=true){
   }
   studySetsAttachSurface();
   ui.sheet.dataset.screen=ui.screen;ui.editButton.hidden=ui.screen!=='detail'||!ui.pageOpen||!set;ui.editSurface.hidden=ui.editButton.hidden;ui.editSlot.hidden=ui.editButton.hidden;
-  ui.swipeClose?.();ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
+  ui.swipeClose?.();ui.body.classList.remove('study-session-body');ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
   const titles={directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제'};
   ui.title.textContent=titles[ui.screen]||set?.name||'학습 세트';
   if(ui.notice){const notice=studySetsNode('p','study-sets-notice',ui.notice);notice.setAttribute('role','status');ui.body.append(notice);}
@@ -650,44 +650,54 @@ function studySetsStart(id,restart=false){
 }
 function renderStudySetsStudy(set){
   const body=studySetsUI.body,view=BreezeStudySets.view(studySetsUI.state,set.id);
+  body.classList.add('study-session-body');
+  const undo=()=>studySetsMutate(state=>BreezeStudySets.undo(state,set.id,Date.now()),()=>{studySetsUI.notice='';});
+  const undoButton=studySetsButton('되돌리기',undo,'study-session-undo');undoButton.id='study-sets-study-undo';undoButton.disabled=!set.session?.answers.length;
   if(view.status==='complete'){
     const complete=studySetsNode('div','study-sets-complete');
-    complete.append(studySetsNode('p','study-sets-eyebrow',`${view.round}번째 학습`),studySetsNode('h3','','한 바퀴 완료했어요'),studySetsNode('p','study-sets-result',`${view.total}개 중 기억나요 ${view.remembered}개 · 다시 볼게요 ${view.repeat}개`));
-    if(view.repeat){const repeat=studySetsButton(`다시 볼 단어 ${view.repeat}개 학습`,()=>studySetsMutate(state=>BreezeStudySets.nextRound(state,set.id,Date.now()),()=>{studySetsUI.notice='';}),'study-sets-primary');repeat.id='study-sets-repeat-round';complete.append(repeat);}
-
-    complete.append(studySetsButton('세트로 돌아가기',()=>studySetsGo('detail')),studySetsButton('전체 새로 학습',()=>studySetsStart(set.id,true)));body.append(complete);return;
+    complete.append(studySetsNode('h3','','이번 세션 완료'),studySetsNode('p','study-sets-result',`${view.completed} / ${view.total}`),undoButton,studySetsButton('세트로 돌아가기',()=>studySetsGo('detail')),studySetsButton('전체 새로 학습',()=>studySetsStart(set.id,true)));body.append(complete);return;
   }
-  if(view.status!=='active'||!view.card){
-    body.append(studySetsEmpty('학습할 단어가 없어요','세트로 돌아가 단어를 확인해 주세요.'),studySetsButton('세트로 돌아가기',()=>studySetsGo('detail')));return;
-  }
+  if(view.status!=='active'||!view.card){body.append(studySetsEmpty('학습할 단어가 없어요',''),studySetsButton('세트로 돌아가기',()=>studySetsGo('detail')));return;}
   const progress=studySetsNode('div','study-sets-progress');
-  const text=studySetsNode('span','',`${view.completed+1} / ${view.total}`);text.id='study-sets-progress';
-  progress.append(studySetsNode('span','study-sets-caption',`${view.round}번째 학습`),text);
-  const meter=document.createElement('progress');meter.max=view.total;meter.value=view.completed;meter.setAttribute('aria-label',`학습한 단어 ${view.completed}개, 전체 ${view.total}개`);
-  body.append(progress,meter);
-  const card=studySetsNode('div','study-sets-flashcard');
+  const text=studySetsNode('span','',`${view.completed} / ${view.total}`);text.id='study-sets-progress';progress.append(text);
+  const meter=document.createElement('progress');meter.max=view.total;meter.value=view.completed;meter.setAttribute('aria-label','이번 세션에서 기억한 카드');body.append(progress,meter);
+  const stack=studySetsNode('div','study-session-stack');
+  const next=view.set.session.queue.find(c=>c.id===(view.pendingIds[1]||view.pendingIds[0]));
+  const underneath=studySetsNode('div','study-session-next',next?.word||'');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
+  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.revealed?view.card.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
-  if(view.card.example)card.append(studySetsNode('p','study-sets-card-example',view.card.example));
-  if(view.card.book)card.append(studySetsNode('p','study-sets-caption',view.card.book));
-  const meaning=studySetsNode('p','study-sets-card-meaning',view.card.ko);meaning.id='study-sets-answer';meaning.hidden=!view.revealed;
-  if(view.revealed){meaning.tabIndex=-1;meaning.setAttribute('data-study-sets-focus','');}
-  card.append(meaning);body.append(card);
-  if(!view.revealed){
-
-    const reveal=studySetsButton('뜻 보기',()=>studySetsMutate(state=>BreezeStudySets.reveal(state,set.id,view.token),()=>{studySetsUI.notice='';}),'study-sets-primary');reveal.id='study-sets-reveal';reveal.setAttribute('data-study-sets-focus','');body.append(reveal);
-  }else{
-    const actions=studySetsNode('div','study-sets-actions study-sets-grades');
-    for(const [outcome,label] of [['repeat','다시 볼게요'],['remembered','기억나요']]){
-      const grade=studySetsButton(label,event=>{
-        // A second click from revealing the answer must not become an assessment
-        // when controls move under the pointer. Keyboard activation has detail 0.
-        if(event.detail>1)return;
-        studySetsMutate(state=>BreezeStudySets.grade(state,set.id,view.token,outcome,Date.now()),()=>{studySetsUI.notice='';});
-      });grade.id='study-sets-grade-'+outcome;actions.append(grade);
-    }
-    body.append(actions);
-  }
-
+  const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?view.card.ko:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
+  if(view.revealed&&view.card.example)card.append(studySetsNode('p','study-sets-card-example',view.card.example));
+  stack.append(card);body.append(stack);
+  const hint=studySetsNode('p','study-session-hint',view.revealed?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인');hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
+  let busy=false,drag=null,suppress=false;
+  const reveal=()=>{if(busy||suppress||view.revealed)return;studySetsMutate(state=>BreezeStudySets.reveal(state,set.id,view.token),()=>{studySetsUI.notice='';});};
+  const paintReset=()=>{card.removeAttribute('data-dragging');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');};
+  const grade=outcome=>{
+    if(busy||!view.revealed||!card.isConnected)return;busy=true;undoButton.disabled=true;card.dataset.direction=outcome;
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    card.style.transform=reduced?'none':`translateX(${outcome==='remembered'?1:-1}00%) rotate(${outcome==='remembered'?8:-8}deg)`;
+    const commit=()=>{if(!card.isConnected||studySetsUI.screen!=='study')return;
+      paintReset();studySetsMutate(state=>BreezeStudySets.grade(state,set.id,view.token,outcome,Date.now()),()=>{studySetsUI.notice='';});busy=false;undoButton.disabled=!set.session?.answers.length;
+    };if(reduced)commit();else setTimeout(commit,180);
+  };
+  card.addEventListener('click',reveal);
+  card.addEventListener('keydown',event=>{
+    if(['Enter',' '].includes(event.key)){event.preventDefault();reveal();}
+    if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();grade(event.key==='ArrowLeft'?'repeat':'remembered');}
+  });
+  const actions=studySetsNode('div','study-session-accessible-actions');
+  const revealAction=studySetsButton('정답 확인',reveal);revealAction.id='study-sets-reveal';revealAction.hidden=view.revealed;actions.append(revealAction);
+  for(const [outcome,label] of [['repeat','다시 볼게요'],['remembered','기억나요']]){const button=studySetsButton(label,event=>{if(event.detail>1)return;grade(outcome);});button.id='study-sets-grade-'+outcome;button.disabled=!view.revealed;actions.append(button);}body.append(actions);
+  card.addEventListener('pointerdown',event=>{if(busy||event.button!==0||event.isPrimary===false)return;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,axis:''};suppress=false;});
+  card.addEventListener('pointermove',event=>{
+    if(!drag||event.pointerId!==drag.id)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+    if(!drag.axis){if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;drag.axis=Math.abs(dx)>Math.abs(dy)*1.2?'x':'y';suppress=true;}
+    if(drag.axis!=='x'||!view.revealed)return;drag.dx=dx;card.setAttribute('data-dragging','');try{card.setPointerCapture(event.pointerId);}catch{}
+    card.dataset.direction=dx>0?'remembered':'repeat';card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(dx)/120)));card.style.transform=`translateX(${dx}px) rotate(${dx/35}deg)`;event.preventDefault();
+  });
+  const finish=(event,cancel)=>{if(!drag||event.pointerId!==drag.id)return;const saved=drag;drag=null;paintReset();if(!cancel&&saved.axis==='x'&&Math.abs(saved.dx)>=Math.min(90,card.clientWidth*.24))grade(saved.dx>0?'remembered':'repeat');};
+  card.addEventListener('pointerup',event=>finish(event,false));card.addEventListener('pointercancel',event=>finish(event,true));
 }
 window.addEventListener('storage',event=>{
   if(event.key!==null&&event.key!==STUDY_SETS_STORAGE)return;
