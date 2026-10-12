@@ -3,7 +3,7 @@
 Approved scope is quota-safe study persistence, stored source examples on both
 learning fronts, readonly All Words detail/Study Start/Back, passive study guide
 media, and app-wide control consistency including header shells and optical
-bounds. Source `f0b43aa2496b19c3b55ac52e4d93e3c3892cc538` incorporates Astra origin
+bounds. Source `b825009a3c97ca593d12bfb9ced7a77372941b3e` incorporates Astra origin
 b5ec2f3755917b978c5d344f9a07bf173851e7b7 through075922e. No new feature
 scope, RSS148/Worker activation or isolated sentence experiments are included.
 
@@ -56,3 +56,18 @@ iPhone inventory, airplane mode,56-page native restart, physical retry tap,
 iPad Pencil/palm and native media playback remain unverified. Library saving
 and one supported retry failed before preparation; no new Library IDs exist.
 Direct GitHub evidence is retained.
+
+
+The final7301f43 CI passed actual Home-progress regressions in both engines,
+including browser and controlled deferred-reset100/50/19% durable-anchor checks,
+plus unsigned iOS compile, aggregate contracts/native sync and both quota cases.
+Its CSV material check assumed a solid background-color, although the approved
+shell actually paints a visible gradient on the element, confirmed by raw crops.
+The corrected check requires visible paint in every gradient stop (alpha>.85),
+while retaining44px circle/1px rim, wordmark pixels/layout and dock assertions.
+The SVG capture keeps exact computed CSS width/height assertions and separately
+bounds real DOM readback to<0.0001px after actual WebKit32px bounds were
+31.999998092651367px. This bounds numeric readback, not layout/optical drift;
+stroke/center/dot/visibility/completion/focus checks remain unchanged. Neither
+correction changes product code, timeouts or native interaction claims.
+Fresh both-engine CI remains required for the newly pinned test source.

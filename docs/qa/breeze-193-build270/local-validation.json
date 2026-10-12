@@ -1,5 +1,5 @@
 {
-  "reviewedSource": "f0b43aa2496b19c3b55ac52e4d93e3c3892cc538",
+  "reviewedSource": "b825009a3c97ca593d12bfb9ced7a77372941b3e",
   "sourceScope": [
     "Astra quota-safe IDB migration",
     "stored source examples before reveal",
@@ -26,7 +26,8 @@
     "real Chromium2400 long-example quota": "passed native quota, exact sources/archives, new set, IDB abort/retry, relaunch, duplicate input and pending navigation",
     "header shells": "passed phone/iPad/short both themes,44px circles,18px Back/X painted height, exact paired/cross-screen material/press feedback",
     "Home handoff": "passed browser and controlled deferred viewport-reset/duplicate-save100/50/19%, exact scalar/anchor/durable/Home/shelf equality",
-    "dock material": "passed unmodified Home/Wordbook/Reader exact geometry/material equality at5sizes/both themes; Wordbook Home remains48px dock"
+    "dock material": "passed unmodified Home/Wordbook/Reader exact geometry/material equality at5sizes/both themes; Wordbook Home remains48px dock",
+    "CSV intended paint": "local Chromium12 layouts passed real gradient-stop paint validation; product material unchanged"
   },
   "limitations": {
     "WebKit": "unavailable locally; final exact-head CI required",
@@ -147,5 +148,16 @@
     "WebKit app-family": "passed",
     "Home PDF100%-to-0%": "real deferred resampling reproduced; source capture/owner correction awaits final CI",
     "optics import timeout": "retained import/error diagnostics, persistent-profile setup; final WebKit result and original cause pending"
+  },
+  "CI7301f43": {
+    "native unsigned compile": "passed",
+    "Home reading-card both engines": "passed, including controlled deferred reset and duplicate saves100/50/19% exact anchors",
+    "aggregate contracts/native sync": "passed",
+    "WebKit5000/2400 quota and2400 session": "passed",
+    "Chromium optics/header": "passed",
+    "WebKit capture": "32px real DOM bounds31.999998092651367; exact CSS assertions added with0.0001px readback bound",
+    "CSV design": "element gradient visible; test now checks each painted stop alpha>.85, all geometry/brand/dock checks retained",
+    "offline OCR gate": "same269 NotReadableError original/fresh whileoffline; online works, unwaived",
+    "new final head": "fresh both-engine CI pending"
   }
 }

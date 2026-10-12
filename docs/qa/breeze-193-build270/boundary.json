@@ -7,8 +7,8 @@
   "historical268": "044f9ffdf610815c8d88b5ca8c816169e2815d01",
   "historical267": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
   "historical266": "e9dc1f6986e1d73f1fd5df1aea9c50ad3723cae4",
-  "reviewedSource": "f0b43aa2496b19c3b55ac52e4d93e3c3892cc538",
-  "reviewedTree": "50c479df6192801ab1dc02d9ae3c94c0cc56821e",
+  "reviewedSource": "b825009a3c97ca593d12bfb9ced7a77372941b3e",
+  "reviewedTree": "1fbc8c6723a5ee13d8d261d6bf2ce5b06356e362",
   "reviewedPR": 156,
   "storageOrigin": "b5ec2f3755917b978c5d344f9a07bf173851e7b7",
   "storageIntegration": "075922e",
@@ -25,10 +25,10 @@
     "docs/decisions/003-shared-control-glass.md": "0390031ae10c27b5705bdbb39204c07b53d214a46fdeb1778181a3c6122920b4",
     "docs/decisions/006-reader-onboarding.md": "b2014576e2079e39d4727b0208bfa8a91e31dd994a7610359c5ef6982df74ae9",
     "docs/decisions/023-vocabulary-study-sets.md": "76df1d9c7b6b14a1c054ad5c335da6c99f724c7d2ba28594a8d394441a027aea",
-    "docs/decisions/028-breeze-193-build270.md": "deff09c7e4f94abb68de56dd7b94462e8e0d2809bb37e0fd6d6bbe8449c1210c",
-    "docs/qa/breeze-193-build270/boundary.json": "72210d5d29a627fe3bcf2a89ceee06704255e370fa5a52e415115d9f53b615ba",
-    "docs/qa/breeze-193-build270/local-validation.json": "9f59e4f214e1f0d659cb0395207b1c41bc49db7ddb22e91bf25ce920fbee1f8b",
-    "docs/qa/breeze-193-build270/native-assets.json": "20f789d738868dcf65738d80eb7ee89615d1e7107132e916dac8efc85948bddb",
+    "docs/decisions/028-breeze-193-build270.md": "d0da2bea2103b6386f64311402863f735e90eaa4af4cd1498c3b31c801c83ab6",
+    "docs/qa/breeze-193-build270/boundary.json": "668e87281a4f09c616af16565abc0dcd6f192e24d12405fad4592e4f98c66fc0",
+    "docs/qa/breeze-193-build270/local-validation.json": "8f3089da270cea77c6d6132d837643f6dc6b58dfaba3cea8240c5ed1906670e5",
+    "docs/qa/breeze-193-build270/native-assets.json": "147b199ba0699e35c661b3c4e99f745d47c368a88a7957e32ef3967181b9c901",
     "docs/qa/breeze-193-followup-ui/local-validation.json": "820d92b027cc237687eba9b998aa387106ddd4247b3becdd5cc921e2b863e064",
     "docs/qa/study-quota-20261012/README.md": "dc35b22d992b478013e490b8bbfed29dc2773f3546fcac8b15e21c001d5a36b7",
     "docs/qa/study-quota-20261012/fixed-chromium.json": "b57a366df4446f419243406b4ff832e95705c389edb1a1293d01516a58d0fc55",
@@ -107,7 +107,7 @@
     "styles/wordbook.css": "d7958c58cb440530ede161df990feab3d49f8c2b005b713dc02881842406e3ec",
     "support/index.html": "17b8262a5d86841c082c30a64730cac24a0ba515ec7c5ae73dc50ea0521d0f4c",
     "sw.js": "179430a92ec34cf243fc51a35c2abdae0acf3da88536ef1ae9d3b483d93d42c6",
-    "tests/capture-app-icon-family.mjs": "9446bdd57e3c75bcf2ebe29923b74a78079cd35c6dd503ffbb92da169a6cfd69",
+    "tests/capture-app-icon-family.mjs": "fb3c055ae6edc7c7aba944bcb2c9ad1da9cfe41776281d5b81d7ad2277e3be63",
     "tests/capture-study-sets-browser.mjs": "8f7eb86de82f8052c1ee58d0b2cdde64ecbd184ae4156966d1a24eac81eeeba9",
     "tests/capture-study-store-sources.mjs": "666433d3a84d4a9cf7753a56dfda57f4df52f0d4b7f2e0e21e2dfeb27a0bdc97",
     "tests/helpers/app-icon-family-scenes.mjs": "e4da3f6f1f14fff4064dccfc9f761677005f0b2e98750b2ccde5238a36fd5ade",
@@ -119,6 +119,7 @@
     "tests/verify-client-polish-browser.mjs": "11e1fe2b8910e8e78f54f4141eac5f7bbb1201ad2c8f03f2e431adedc33e6ddc",
     "tests/verify-control-optics-browser.mjs": "d201a364ae66d0223447b176dad7444a027ef6e0fe208a379ca323e0adcd0c22",
     "tests/verify-design-home-browser.mjs": "72ac4fe5b314c6b8ad79761dd632be5e2ac62f30336ccfbad5ffdbfcb2571c00",
+    "tests/verify-design-memory-browser.mjs": "ec87a3d063a3862d73b50d17981d657fe734790ceb497fbceebed06dfe0aa4bb",
     "tests/verify-header-controls-browser.mjs": "78141592a352c7a494beb5c3eb8375951b15c0a4385dd9d8060268fd4fdacd30",
     "tests/verify-home-reading-cards-browser.mjs": "0c13537d67b4f0f40effc7485104d8d6d8ddb684048d5c89eff555c60bba4d09",
     "tests/verify-ios-cloud-build.mjs": "4ee63a8915d59f89ea939e06ada0ec5cbb83fb9fa862e596b9f02160d5b67a60",
@@ -136,7 +137,7 @@
     "tests/verify-study-sets-ui.mjs": "877bc509aedf537f0aa1223c2c188bb90fbc17f67b205029c0375996d7177aa5",
     "tools/capture-study-onboarding.mjs": "b2630c60ffc839349c112b8927774e2140009ab5736c76316837a8d16415f1a4",
     "tools/ios-testflight.sh": "1b1f20e30978740eb0de853889929b47950c8fad043bb975b946c2ba81174f1b",
-    "tools/record-193-build270-boundary.mjs": "3e2bea889c5e6f79780663dd58f4d369efe7755ce4edc19afc6daff41ce3cf56",
+    "tools/record-193-build270-boundary.mjs": "cb8bed3fef67e069f6a5a30ef2f38255f854d33628545e58ff2777e3a49844db",
     "tools/verify-ios-release.mjs": "e7efc81990e751b8704af92e067ef338a5c8d7826b8efb34dcc9003977a99b10"
   },
   "files": {
@@ -195,10 +196,10 @@
     "docs/qa/breeze-193-build270/local-validation.json"
   ],
   "integrationSha256": {
-    "tools/record-193-build270-boundary.mjs": "cb8bed3fef67e069f6a5a30ef2f38255f854d33628545e58ff2777e3a49844db",
+    "tools/record-193-build270-boundary.mjs": "4192ef93370f1631b1dd3993c333ddbab1e813141b31fea4169dbe825df69639",
     "tests/verify-193-build270-boundary.mjs": "b8f06d1fd1eaa3f5ac8b47bf353812fa3561a21c7e11d7c1ec23f7dca4576e36",
-    "docs/decisions/028-breeze-193-build270.md": "d0da2bea2103b6386f64311402863f735e90eaa4af4cd1498c3b31c801c83ab6",
-    "docs/qa/breeze-193-build270/native-assets.json": "147b199ba0699e35c661b3c4e99f745d47c368a88a7957e32ef3967181b9c901",
-    "docs/qa/breeze-193-build270/local-validation.json": "8f3089da270cea77c6d6132d837643f6dc6b58dfaba3cea8240c5ed1906670e5"
+    "docs/decisions/028-breeze-193-build270.md": "c5f874ffd2dcb0e02c5fdbc26f40ea8126b3ef81c3d3e8ebc5675e0d1b3e24cf",
+    "docs/qa/breeze-193-build270/native-assets.json": "1a1d3a8d5a59942901296ad9af3252890c5fb3bcd97241559a85dab15841bf3f",
+    "docs/qa/breeze-193-build270/local-validation.json": "f95f3be06f3a163d48b828f6fd6d8e5ad99dc4a9092eb57dc5b94b49833e5332"
   }
 }
