@@ -29,7 +29,12 @@ try{
  const originalHeight=await first.evaluate(n=>n.getBoundingClientRect().height);assert.ok(originalHeight>500,'long examples expand without clipping');
  // Keyboard traversal crosses several mounted windows, preserving logical order.
  await first.locator('.vword').focus();
- for(let i=1;i<=110;i++){await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>Number(document.activeElement.closest('.study-all-words-row')?.dataset.index)),i);}
+ await page.evaluate(()=>{window.qaKeyTrace=[];document.getElementById('study-all-words-list').addEventListener('keydown',event=>{const trace={key:event.key,target:event.target.outerHTML,prevented:event.defaultPrevented};qaKeyTrace.push(trace);queueMicrotask(()=>{trace.after=document.activeElement.outerHTML;trace.index=document.activeElement.closest('.study-all-words-row')?.dataset.index;trace.mounted=[...document.querySelectorAll('.study-all-words-row')].map(n=>n.dataset.index);});});});
+ for(let i=1;i<=110;i++){
+  await page.keyboard.press('Tab');
+  try{await page.waitForFunction(index=>Number(document.activeElement.closest('.study-all-words-row')?.dataset.index)===index,i,{timeout:2000});}
+  catch(error){console.log('Keyboard ownership diagnostics:',JSON.stringify(await page.evaluate(()=>({trace:qaKeyTrace.slice(-2),active:document.activeElement.outerHTML,scroll:studySetsUI.body.scrollTop}))));throw error;}
+ }
  assert.ok(await rows().count()<100);
  // Arbitrary large jumps reach the entire list, including its final numbered row.
  for(const portion of [.25,.5,.75,1]){
