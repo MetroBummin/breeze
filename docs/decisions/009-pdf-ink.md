@@ -880,3 +880,13 @@ References:
 - https://www.w3.org/TR/pointerevents/ (pointer cancellation and default actions)
 - https://www.w3.org/TR/touch-events/ (cancelable touch default actions)
 - https://developer.chrome.com/blog/scrollend-a-new-javascript-event
+
+
+Release integration verifies the worker as the same cache-stamped asset before
+the ink engine in source,www and iOS public. A real asynchronous worker script
+load failure also exercises read failover into the unchanged durable IndexedDB
+writer, alongside constructor rejection and mid-save worker failure. Both real
+browser engines run the transport tests in CI. Long-task measurements explicitly
+report support and are not native CPU/latency evidence. Actualbreeze:// native
+worker admission, suspension and physical iPad input remain unverified; startup
+fallback preserves storage availability without promising worker performance.

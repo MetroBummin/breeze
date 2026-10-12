@@ -14,13 +14,14 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
 const browser=await engine.launch({headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 try{
- for(const fallback of [false,true]){
+ for(const fallback of [false,true,'startup-error']){
   const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true});
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(fallback=>{
    window.qaTransfers=[];window.qaDone=[];window.qaLongTasks=[];
    try{new PerformanceObserver(list=>{for(const e of list.getEntries())qaLongTasks.push(e.duration);}).observe({type:'longtask'});}catch{}
-   if(fallback){window.Worker=class{constructor(){throw new Error('QA unavailable worker');}};}
+   if(fallback===true){window.Worker=class{constructor(){throw new Error('QA unavailable worker');}};}
+   else if(fallback==='startup-error'){const NativeWorker=Worker;window.Worker=class extends NativeWorker{constructor(){super('/scripts/reader/qa-missing-ink-worker.js');}};}
    else{
     const send=Worker.prototype.postMessage;
     Worker.prototype.postMessage=function(message,...args){
@@ -34,6 +35,7 @@ try{
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.evaluate(async()=>{
    window.qaKey='["synthetic-worker-test",1]';
+   await BreezePdfInkStore.read(qaKey);
    window.qaStroke=n=>({color:'#111111',width:1.5,points:[[n,1],[n,2]]});
    await BreezePdfInkStore.write(qaKey,{version:1,strokes:[qaStroke(1)]});
    window.qaBase=(await BreezePdfInkStore.read(qaKey)).strokes;
@@ -86,14 +88,14 @@ try{
   }
   await page.reload();assert.equal(await page.evaluate(async()=>(await BreezePdfInkStore.read('["synthetic-worker-test",1]')).strokes[0].points[0][0]),fallback?5:7,'reload reads committed legacy-format data');
   assert.deepEqual(errors.filter(x=>!x.includes('synthetic worker failure')),[]);
-  console.log(`PASS ${fallback?'fallback':'worker'}: delta transfer, undo/redo, abort/retry latest, delayed ack, release/reopen, crash recovery and reload`);
+  console.log(`PASS ${fallback?'fallback-'+String(fallback):'worker'}: delta transfer, undo/redo, abort/retry latest, delayed ack, release/reopen, crash recovery and reload`);
   await context.close();
  }
  // Separate fresh worker benchmark: same accumulated loads as investigation.
  const page=await browser.newPage();
  await page.addInitScript(()=>{
-  window.qaTransfers=[];window.qaLongTasks=[];
-  new PerformanceObserver(l=>{for(const e of l.getEntries())qaLongTasks.push(e.duration);}).observe({type:'longtask'});
+  window.qaTransfers=[];window.qaLongTasks=[];window.qaLongTaskSupported=PerformanceObserver.supportedEntryTypes?.includes('longtask')||false;
+  try{new PerformanceObserver(l=>{for(const e of l.getEntries())qaLongTasks.push(e.duration);}).observe({type:'longtask'});}catch{}
   const send=Worker.prototype.postMessage;
   Worker.prototype.postMessage=function(m,...a){const t=performance.now();const r=send.call(this,m,...a);if(m.op==='write')qaTransfers.push({ms:performance.now()-t,points:m.payload.additions.reduce((n,[,s])=>n+s.points.length,0)});return r;};
  });
@@ -108,7 +110,7 @@ try{
   },count);
   await page.waitForTimeout(100);await page.evaluate(()=>{qaTransfers.length=qaLongTasks.length=0;});
   for(let i=0;i<3;i++)await page.evaluate(async i=>{qaStrokes.push({color:'#111111',width:1.5,points:[[i,0],[i,1]]});await BreezePdfInkStore.write(qaKey,{version:1,strokes:qaStrokes});},i);
-  await page.waitForTimeout(50);const result=await page.evaluate(()=>({transfers:qaTransfers,longTasks:qaLongTasks}));
+  await page.waitForTimeout(50);const result=await page.evaluate(()=>({transfers:qaTransfers,longTasks:qaLongTasks,longTaskSupported:qaLongTaskSupported}));
   assert.ok(result.transfers.every(t=>t.points===2),'existing coordinates never transferred');results.push({count,...result});
  }
  if(process.env.BREEZE_QA_OUTPUT){mkdirSync(process.env.BREEZE_QA_OUTPUT,{recursive:true});writeFileSync(resolve(process.env.BREEZE_QA_OUTPUT,'writer-benchmark.json'),JSON.stringify(results,null,2));}
