@@ -51,7 +51,7 @@ try{
   await gesture(card(),[[25,0]],{cancel:true});await page.waitForTimeout(25);const cb=await card().boundingBox();await input('down',195,Math.min(690,cb.y+80));const pos=await card().evaluate(n=>new DOMMatrix(getComputedStyle(n).transform).m41);await page.waitForTimeout(80);assert.ok(Math.abs(await card().evaluate(n=>new DOMMatrix(getComputedStyle(n).transform).m41)-pos)<.1);await input('cancel',0,0);await page.waitForTimeout(350);
   await page.evaluate(mode=>{window.qaCommit=mode==='set'?commitStudySets:commitSimpleStudySession;window.qaCommitEntered=false;window.qaGate=new Promise(r=>window.qaRelease=r);const wrapped=async s=>{window.qaCommitEntered=true;await qaGate;return qaCommit(s);};if(mode==='set')commitStudySets=wrapped;else commitSimpleStudySession=wrapped;},mode);
   await gesture(card(),[[-50,0,12],[-100,0,12],[-145,0,12]]);await page.waitForTimeout(260);
-  const pending=await card().evaluate(n=>({x:n.getBoundingClientRect().x,width:n.getBoundingClientRect().width,text:n.textContent,under:document.querySelector('.study-session-next,#simple-next-card')?.textContent}));assert.ok(pending.x+pending.width<0,'outgoing remains outside center during save');assert.equal(pending.under,'');await page.screenshot({path:`${out}/${mode}-durable-handoff.png`});
+  const pending=await card().evaluate(n=>({x:n.getBoundingClientRect().x,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,layoutWidth:n.offsetWidth,layoutHeight:n.offsetHeight,transform:getComputedStyle(n).transform,commitEntered:qaCommitEntered,text:n.textContent,under:document.querySelector('.study-session-next,#simple-next-card')?.textContent}));writeFileSync(`${out}/${mode}-durable-handoff.json`,JSON.stringify(pending,null,2));await page.screenshot({path:`${out}/${mode}-durable-handoff.png`});assert.equal(pending.commitEntered,true,mode+' durable commit entered');assert.ok(pending.x+pending.width<0,mode+' outgoing remains outside center during save: '+JSON.stringify(pending));assert.equal(pending.under,'');
   await page.evaluate(mode=>{if(mode==='set')commitStudySets=qaCommit;else commitSimpleStudySession=qaCommit;qaRelease();},mode);await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);assert.equal((await summary()).passed,start.passed,'again moves tail without progress');assert.notEqual((await summary()).word,start.word);
   assert.equal(await card().evaluate(n=>getComputedStyle(n).transform),'none','new card has no inherited exit or return');await page.screenshot({path:`${out}/${mode}-next-front.png`});
   await card().tap();await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);await gesture(card(),[[45,0,10],[85,0,10]]);await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);assert.equal((await summary()).passed,start.passed+1,'intentional short fast flick accepted');
@@ -79,6 +79,18 @@ try{
   await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);
   assert.equal((await summary()).passed,leaveBefore.passed+1,mode+' reopened durable grade');assert.equal((await summary()).revealed,false);assert.equal(await card().evaluate(n=>getComputedStyle(n).transform),'none');
  }
+ // A long card can extend beyond the viewport vertically. At the final 12deg
+ // angle its height contributes horizontal width; both exits must clear it.
+ const tallExits=await page.evaluate(async()=>{
+  const results=[];
+  for(const direction of [-1,1]){
+   const node=document.createElement('div');node.style.cssText='position:fixed;left:20px;top:90px;width:350px;height:1600px';document.body.append(node);
+   const motion=studyCardMotion(node,{ready:()=>true,reveal(){},grade(){}});await motion.exit(direction);
+   const r=node.getBoundingClientRect();results.push({direction,left:r.left,right:r.right,viewport:innerWidth});motion.reset();node.remove();
+  }
+  return results;
+ });
+ for(const r of tallExits)assert.ok(r.direction<0?r.right<0:r.left>r.viewport,'entire rotated long card exits: '+JSON.stringify(r));evidence.push({tallExits});
  assert.deepEqual(errors,[]);assert.deepEqual(await page.evaluate(()=>words),records);
  const videoPath=await page.video().path();await context.close();copyFileSync(videoPath,`${out}/study-${engine.name()}.webm`);
  writeFileSync(`${out}/study-motion.json`,JSON.stringify({engine:engine.name(),input:cdp?'trusted CDP touch':'synthetic PointerEvents',native:false,cases:evidence,checks:'readonly 2294/2399 layout; release reversal; spring re-grab; queued row commits; delayed durable handoff; no underlay text; repeat/progress; flick; vertical ownership; reduced motion'},null,2));

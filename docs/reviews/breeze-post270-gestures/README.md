@@ -144,3 +144,16 @@ that can now be a legitimate flick. It explicitly holds100ms before release to
 capture the stationary72px parked action, retains the exact geometry assertion
 and additionally requires all eight rows to remain. This changes capture intent,
 not gesture thresholds or behavior. Actual WebKit rerun is required.
+
+A separate deterministic long-card probe found a geometry defect: a350×1600px
+card exiting left on a390px viewport retained84px of its rotated rectangle on
+screen. Exit travel now includes the final12-degree rotated height and width,
+with24px clearance. Both directions have an actual browser bounds assertion.
+The WebKit delayed-save failure now captures its commit ownership, transform,
+layout bounds and screenshot before asserting; its exact mechanism still needs
+the next CI result. Existing parked-action CRUD cases also hold100ms explicitly.
+
+Committed media documents the initial implementation before the velocity and
+long-card corrections. CI workflow artifacts are generated from their associated
+exact commit and provide the current runtime captures; they are not physical
+WKWebView acceptance evidence.

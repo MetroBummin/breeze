@@ -70,7 +70,7 @@ try{
   await row.scrollIntoViewIfNeeded();
   return row.evaluate(node=>{const r=node.getBoundingClientRect(),meaning=node.querySelector('.vko').getBoundingClientRect(),x=meaning.right-4,y=meaning.y+meaning.height/2,target=document.elementFromPoint(x,y);if(!target||!node.contains(target)||target.closest('.chip,.study-sets-row-action'))throw Error('swipe anchor must hit vocabulary content: '+target?.outerHTML.slice(0,200));return {x,y,width:r.width};});
  };
- const dragRow=async(row,dx,dy=0,{cancel=false,inspect=false,inspectAction=false,capture=''}={})=>{
+ const dragRow=async(row,dx,dy=0,{cancel=false,inspect=false,inspectAction=false,capture='',hold=0}={})=>{
   const {x,y}=await gesturePoint(row);
   await row.evaluate(node=>{node.dataset.qaPointerTrace='[]';if(!node.dataset.qaPointerInstrumented){node.dataset.qaPointerInstrumented='true';for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])node.addEventListener(type,event=>{const trace=JSON.parse(node.dataset.qaPointerTrace);trace.push({type,id:event.pointerId,x:event.clientX,y:event.clientY,target:event.target.className});node.dataset.qaPointerTrace=JSON.stringify(trace.slice(-24));});}node.addEventListener('pointerdown',event=>{node.dataset.testPointerId=String(event.pointerId);},{once:true});});
   await page.mouse.move(x,y);await page.mouse.down();
@@ -83,6 +83,7 @@ try{
   if(inspectAction){const actionEnd=await row.locator('.study-sets-row-action').boundingBox();assert.ok(actionEnd.width>actionMiddle.width+8&&Math.abs(actionEnd.height-actionMiddle.height)<1,'single action expands horizontally into capsule');const radius=await row.locator('.study-sets-word-surface').evaluate(node=>parseFloat(getComputedStyle(node).borderTopRightRadius));assert.ok(radius>=12,'translated row keeps rounded trailing edge');}
   if(capture)await page.screenshot({path:capture,fullPage:true});
   if(cancel)await row.evaluate(node=>node.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:Number(node.dataset.testPointerId),pointerType:'mouse'})));
+  if(hold)await page.waitForTimeout(hold);
   await page.mouse.up();
  };
 
@@ -223,7 +224,7 @@ try{
  await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);assert.equal(await rows().count(),3);
  await dragRow(quiet(),70);assert.equal(await rows().count(),3,'right swipe does not exclude');
  // Partial swipe parks a single circular action; the user can tap or dismiss it.
- await dragRow(quiet(),-68,0,{inspect:true});await waitTranslation(quiet(),-72);
+ await dragRow(quiet(),-68,0,{inspect:true,hold:100});await waitTranslation(quiet(),-72);
  assert.equal(await rows().count(),3,'partial reveal does not mutate membership');
  assert.equal(await quiet().locator('.study-sets-row-action').count(),1,'exactly one swipe action');
  const parkedAction=await quiet().locator('.study-sets-row-action').boundingBox();
@@ -232,10 +233,10 @@ try{
 
  await studyAction(quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true}).click(),page);await waitRows(2);
  await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(3);
- await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
+ await dragRow(quiet(),-68,0,{hold:100});await waitTranslation(quiet(),-72);
  await studyAction(rows().first().locator('.vword').click(),page);await waitTranslation(quiet(),0);
  await studyAction(rows().first().locator('.vword').click(),page);
- await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
+ await dragRow(quiet(),-68,0,{hold:100});await waitTranslation(quiet(),-72);
  await studyAction(page.locator('#study-sets-title').click(),page);await waitTranslation(quiet(),0);
  assert.equal(await rows().count(),3,'outside touch dismisses action without excluding');
  // A failed durable write never starts the exit/collapse or loses the row.
@@ -380,7 +381,7 @@ try{
  // The original renderer owns wrapping; the ordinal is its only added gutter.
  await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-phone-light.png`,fullPage:true});
  // Gesture references use trusted pointer input; cancel preserves fixture data.
- await dragRow(rows().first(),-68);await waitTranslation(rows().first(),-72);
+ await dragRow(rows().first(),-68,0,{hold:100});await waitTranslation(rows().first(),-72);
  await page.screenshot({path:`${proof}/ui-set-swipe-circle-${engine.name()}-phone-light.png`,fullPage:true});
  await studyAction(page.locator('#study-sets-title').click(),page);await waitTranslation(rows().first(),0);
  await fullSwipe(rows().first(),{cancel:true,inspect:true,inspectAction:true,capture:`${proof}/ui-set-swipe-capsule-${engine.name()}-phone-light.png`});

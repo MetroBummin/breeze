@@ -39,7 +39,11 @@ function studyCardMotion(card,{ready,reveal,grade,enabled=()=>true}){
   const exit=direction=>{
     cancel();drag=null;card.setAttribute('data-dragging','');
     if(matchMedia('(prefers-reduced-motion: reduce)').matches)return Promise.resolve();
-    const distance=Math.max(innerWidth,card.clientWidth)*1.15;
+    // Rotation widens the horizontal bounds of long example cards. Clear the
+    // whole final rectangle, including its height, before the durable handoff.
+    const bounds=card.getBoundingClientRect(),center=bounds.x+bounds.width/2-x;
+    const angle=Math.PI/15,halfWidth=(Math.cos(angle)*card.offsetWidth+Math.sin(angle)*card.offsetHeight)/2;
+    const distance=Math.max(Math.max(innerWidth,card.clientWidth)*1.15,(direction>0?innerWidth-center:center)+halfWidth+24);
     const target=direction*distance,velocity=Number(card.dataset.releaseVelocity)||0;
     const duration=Math.max(120,Math.min(220,Math.abs(target-x)/Math.max(2.8,Math.abs(velocity))));
     flight=card.animate([{transform:card.style.transform||'none'},{transform:`translateX(${target}px) rotate(${direction*12}deg)`}],{duration,easing:'cubic-bezier(.18,.65,.35,1)',fill:'forwards'});
