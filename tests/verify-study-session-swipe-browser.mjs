@@ -27,23 +27,23 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1
  await drag(150,{cancel:true});assert.equal((await state()).token,token);
  await drag(-150,{frame:'drag-again'});assert.equal((await state()).completed,0);assert.equal((await state()).card.word,'evidence');assert.equal((await state()).total,3);
  await card().tap();await drag(150,{frame:'drag-remember'});assert.equal((await state()).completed,1);
- await page.locator('#study-sets-study-undo').tap();assert.equal((await state()).completed,0);assert.equal((await state()).card.word,'evidence');assert.equal((await state()).revealed,false);
- await page.locator('#study-sets-back').tap();await page.locator('#study-sets-start').tap();assert.equal((await state()).card.word,'evidence');assert.equal((await state()).completed,0);
- await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('.study-sets-home-card[data-set-id]').tap();await page.locator('#study-sets-start').tap();assert.equal((await state()).card.word,'evidence');assert.equal((await state()).revealed,false);
+ assert.equal(await page.locator('#study-sets-study-undo').isVisible(),false,'Undo removed from visible study');
+ await page.locator('#study-sets-back').tap();await page.locator('#study-sets-start').tap();assert.equal((await state()).card.word,'remarkable');assert.equal((await state()).completed,1);
+ await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('.study-sets-home-card[data-set-id]').tap();await page.locator('#study-sets-start').tap();assert.equal((await state()).card.word,'remarkable');assert.equal((await state()).revealed,false);
  // Keyboard alternatives and rapid duplicate responses use the same token owner.
- await card().press('Enter');await card().press('ArrowRight');await card().press('ArrowRight').catch(()=>{});await page.waitForTimeout(260);assert.equal((await state()).completed,1);
- await card().press('Enter');await card().press('ArrowRight');await page.waitForTimeout(260);assert.equal((await state()).completed,2);
+ await card().press('Enter');await card().press('ArrowRight');await card().press('ArrowRight').catch(()=>{});await page.waitForTimeout(260);assert.equal((await state()).completed,2);
  await card().tap();await drag(-150);assert.equal((await state()).completed,2);assert.equal((await state()).status,'active');assert.equal((await state()).card.word,'observe');
  await card().press('Enter');await card().press('ArrowRight');await page.waitForTimeout(260);assert.equal((await state()).status,'complete');await screenshot('complete');
- await page.locator('#study-sets-study-undo').tap();assert.equal((await state()).completed,2);assert.equal((await state()).status,'active');
- await page.emulateMedia({reducedMotion:'reduce'});await card().press('Enter');await card().press('ArrowRight');assert.equal((await state()).status,'complete');
+ await page.emulateMedia({reducedMotion:'reduce'});
  await page.getByRole('button',{name:'전체 새로 학습',exact:true}).tap();assert.equal((await state()).total,3);assert.equal((await state()).completed,0,'passed cards belong to later fresh sessions');
+ await card().press('Enter');await card().press('ArrowRight');assert.equal((await state()).completed,1,'reduced motion uses the same grade contract');
+ await page.evaluate(()=>studySetsStart(studySetsUI.setId,true));
  await page.evaluate(()=>{const s=readStudySets(),set=s.sets[0];set.session.queue[0].example='A long saved sentence with evidence. '.repeat(30);commitStudySets(s);studySetsReadAndRender();document.getElementById('v-memory-set').style.fontSize='22px';});await page.addStyleTag({content:'.study-session-stack #study-sets-expression{font-size:60px!important}.study-session-stack .study-sets-card-example{font-size:26px!important}'});await card().tap();await screenshot('long-content');
  const verticalToken=(await state()).token,b=await card().boundingBox(),vx=b.x+b.width/2,vy=Math.min(height-80,Math.max(160,b.y+160));
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:vx,y:vy,id:1}]});for(let i=1;i<=10;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:vx+2,y:vy-i*10,id:1}]});await page.waitForTimeout(20);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(220);assert.equal((await state()).token,verticalToken,'vertical reading never grades');assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop>0),'long example uses native vertical scrolling');
  assert.equal(await page.locator('#v-memory-set').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);assert.deepEqual(await page.evaluate(()=>words),JSON.parse(before));assert.deepEqual(errors,[]);assert.equal(requests.some(u=>/dict|completions/.test(u)),false);
- evidence.push({device,theme,viewport:{width,height,dpr:2},checks:'front/reveal, pre-reveal drag, short return, canceled drag, repeat tail/no progress, remember, undo, exit/reload resume, duplicate input, last-card repeat, complete/undo, fresh session, reduced motion, long content'});
+ evidence.push({device,theme,viewport:{width,height,dpr:2},checks:'front/reveal, pre-reveal drag, short return, canceled drag, repeat tail/no progress, remember, no visible Undo, exit/reload resume, duplicate input, last-card repeat, complete, fresh session, reduced motion, long content'});
  const recorded=page.video();await context.close();if(video)await recorded.saveAs(`${out}/${device}-${theme}-swipe.webm`);
  }
- writeFileSync(`${out}/evidence.json`,JSON.stringify({platform:'Chromium trusted CDP touch, not native iOS',cases:evidence},null,2)+'\n');console.log('Trusted study swipes, queue/undo/resume and10 layouts passed');
+ writeFileSync(`${out}/evidence.json`,JSON.stringify({platform:'Chromium trusted CDP touch, not native iOS',cases:evidence},null,2)+'\n');console.log('Trusted study swipes, queue/resume and10 layouts passed');
 }finally{await browser.close();server.close();}

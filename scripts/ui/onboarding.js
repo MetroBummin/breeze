@@ -82,7 +82,12 @@ function startOnboardingResolved(replay,pdfAvailable){
       root.style.setProperty('--welcome-write',write+'ms');
       root.style.setProperty('--welcome-copy-delay',(write+hold)+'ms');
       root.style.setProperty('--welcome-fade',fade+'ms');
-      root.dataset.welcome='drawing';session.welcomeTimer=setTimeout(finishOnboardingWelcome,write+hold+fade);
+      root.dataset.welcome='drawing';
+      // CSS owns writing, hold and caption fade. A wall timer can overtake a
+      // delayed WebKit animation timeline and remove the pen before completion.
+      root.addEventListener('animationend',event=>{
+        if(onboardingSession===session&&root.dataset.welcome==='drawing'&&event.animationName==='onboard-welcome-copy'&&event.target===document.getElementById('onboard-next'))finishOnboardingWelcome();
+      },{signal:session.controller.signal});
     }
   }
   root.addEventListener('click',event=>{

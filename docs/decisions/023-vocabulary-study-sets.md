@@ -140,6 +140,19 @@ The captured content supports offline study without the original book or
 vocabulary record. Storage lifecycle remains the same as other local app data:
 clearing the app/browser's data removes these sets; cloud backup is not implied.
 
+## List refresh cost (PR155 follow-up)
+
+Hidden Memory directories defer mutation and storage-event refreshes until the
+view is shown or the directory is entered. Visible lists summarize card counts
+and frozen-session index/queue length from the state already decoded or
+successfully committed by their owner. They do not call the full-collection
+`view()` once per set. Opening/reloading still reads durable storage, and all
+mutation, schema, concurrent-change and commit validation remains unchanged.
+The hidden host also defers its startup render; visible background Memory behind
+a short creation task still refreshes without discarding typed input. Synthetic
+1/10/50-set browser measurements and scope are recorded in
+`docs/qa/study-sets-list-20261012/`.
+
 ## Verification
 
 Domain tests cover immutable CRUD, duplicate meanings, exclusions/restoration,
@@ -209,3 +222,12 @@ The separately approved create-sheet back circle reuses the set-detail back's
 theme material and reduced-transparency fallback. Preserve44px touch geometry,
 32px/2.3 SVG and the existing same-dialog Back/history/close ownership. Paired
 sheet captures assert material equality and actual Back returns to directory.
+
+User follow-up removes the visible study Undo control before the next internal
+build. Its engine inverse/history contract remains for data validation/tests,
+but there is no visible Undo button. Repeat/remember keyboard and assistive
+alternatives remain; initial progress and fresh-session semantics are unchanged.
+The separately authorized list optimization was cherry-picked without changing
+study gesture owners or storage validation. Its validated-session index is now
+v2's distinct passed count. QA scene helpers distinguish the visible tap card
+from clipped assistive controls and retain strict hidden/duplicate checks.

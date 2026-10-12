@@ -68,6 +68,8 @@
     "test:android": "node --test tests/verify-android-build.mjs",
     "test:brand-icons": "python3 tools/verify-brand-icon-assets.py",
     "test:social-login": "node --test tests/verify-apple-login.mjs && node tests/verify-social-login-browser.mjs",
+    "test:app-icon-family": "node --test tests/verify-app-icon-family-scenes.mjs && BREEZE_FAMILY_OUTPUT=/tmp/breeze-app-icon-family-chromium node tests/capture-app-icon-family.mjs && BROWSER=webkit BREEZE_FAMILY_OUTPUT=/tmp/breeze-app-icon-family-webkit node tests/capture-app-icon-family.mjs",
+    "test:study-set-list": "node tests/measure-study-sets-list-browser.mjs",
     "test:study-sets": "node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs && node tests/verify-study-sets-browser.mjs"
   },
   "devDependencies": {

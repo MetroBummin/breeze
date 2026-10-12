@@ -194,6 +194,7 @@ function renderSimpleWordCards(){
   document.getElementById('simple-word-navigation').hidden=false;
   const hint=document.getElementById('simple-study-hint');hint.hidden=!record;hint.textContent=simpleWordCards.flipped?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인';
   /** @type {HTMLButtonElement} */(document.getElementById('simple-word-previous')).disabled=!session.history.length;
+  document.getElementById('simple-word-previous').hidden=true;
   for(const id of ['simple-word-next','simple-word-again'])/** @type {HTMLButtonElement} */(document.getElementById(id)).disabled=!record||!simpleWordCards.flipped;
   if(record){
     document.getElementById('review-expression').textContent=record.word;
@@ -225,7 +226,7 @@ function gradeSimpleWordCard(outcome){
   const card=document.getElementById('review-flip');card.dataset.direction=outcome;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   card.style.transform=reduced?'none':`translateX(${outcome==='remember'?1:-1}00%) rotate(${outcome==='remember'?8:-8}deg)`;
-  simpleStudyTimer=setTimeout(()=>{simpleWordCards.flipped=false;if(activeAppView()==='study'){renderSimpleWordCards();document.getElementById(next.queue.length?'review-flip':'simple-word-previous').focus();}},reduced?0:180);
+  simpleStudyTimer=setTimeout(()=>{simpleWordCards.flipped=false;if(activeAppView()==='study'){renderSimpleWordCards();document.getElementById(next.queue.length?'review-flip':'review-status').focus();}},reduced?0:180);
 }
 function undoSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;

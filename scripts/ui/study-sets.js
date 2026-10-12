@@ -84,7 +84,7 @@ function ensureStudySetsDialog(){
 function studySetsReturnHomeFocus(){
     const directory=studySetsUI.directoryList;if(directory&&!directory.isConnected)document.getElementById('v-memory')?.append(directory);
     studySetsUI.retry=null;studySetsUI.undo=null;
-    renderStudySetsHome();
+    refreshStudySetsEntry();
     const previous=studySetsUI.returnFocus;
     const target=previous?.isConnected?previous:previous?.dataset.setId?
       [...document.querySelectorAll('.study-sets-home-card[data-set-id]')].find(item=>item.getAttribute('data-set-id')===previous.dataset.setId):
@@ -93,10 +93,20 @@ function studySetsReturnHomeFocus(){
     else if(studySetsUI.homeEntry)document.getElementById('study-sets-home-create')?.focus({preventScroll:true});
 }
 function studySetsIsOpen(){return studySetsUI.pageOpen||!!studySetsUI.dialog?.open;}
-function refreshStudySetsEntry(){
-  renderStudySetsHome();
+function refreshStudySetsEntry(state=null){
+  // Detail/study owns the visible surface. Rebuild its directory only when
+  // Memory becomes visible again; entering the directory reads durable state.
+  if(document.querySelector('#v-memory.view:not(.on)'))return;
+  renderStudySetsHome(state);
 }
-function renderStudySetsHome(){
+// Both list renderers receive decoded or successfully committed state. Counts
+// need no card copies, answer scan, or collection-wide view normalization.
+function studySetsListSummary(set){
+  const active=set.cards.length-set.excludedIds.length,session=set.session;
+  const total=session?.queue.length||0,completed=session?.index||0;
+  return {active,total,completed,status:session?(completed<total?'active':'complete'):active?'idle':'empty'};
+}
+function renderStudySetsHome(state=null){
   const container=studySetsUI.directoryList||document.getElementById('study-sets-home-list');if(!container)return;studySetsUI.directoryList=container;
   const focused=document.activeElement instanceof HTMLElement&&container.contains(document.activeElement)?document.activeElement:null;
   const list=studySetsNode('ul','study-sets-home-cards');list.setAttribute('aria-label','Memory 단어장과 학습 세트');
@@ -110,14 +120,13 @@ function renderStudySetsHome(){
   // with renderVocab and is neither copied nor reset by the directory.
   const count=new Set(Object.entries(words).filter(([,item])=>validWordMeaning(item)).map(([key,item])=>item.root||key)).size;
   const all=card('전체 단어',`${count}개`,openStudySetsAllWords);all.id='study-sets-all';all.classList.add('study-sets-home-default');
-  let state=null;
-  try{state=readStudySets();}catch(error){
+  try{state=state||readStudySets();}catch(error){
     const notice=studySetsNode('div','study-sets-home-error');notice.setAttribute('role','alert');
-    notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',renderStudySetsHome));
+    notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',()=>renderStudySetsHome()));
     const item=studySetsNode('li');item.append(notice);list.append(item);
   }
   for(const set of state?.sets||[]){
-    const view=BreezeStudySets.view(state,set.id),active=set.cards.length-set.excludedIds.length;
+    const view=studySetsListSummary(set),active=view.active;
     const progress=view.status==='active'?` · ${view.completed}/${view.total}`:'';
     const button=card(set.name,`${active}개${progress}`,()=>openStudySet(set.id));
     button.dataset.setId=set.id;
@@ -294,7 +303,7 @@ function studySetsMutate(change,success,exitRow=null){
     const result=change(readStudySets());
     if(!result.accepted){
       studySetsUI.state=result.state;studySetsClearError();
-      studySetsUI.notice='다른 곳에서 변경된 최신 상태를 불러왔어요.';renderStudySets();refreshStudySetsEntry();return;
+      studySetsUI.notice='다른 곳에서 변경된 최신 상태를 불러왔어요.';renderStudySets();refreshStudySetsEntry(result.state);return;
     }
     // Do not advance the DOM, hide the answer, or drop form input before this succeeds.
     commitStudySets(result.state);studySetsUI.state=result.state;studySetsClearError();
@@ -302,7 +311,7 @@ function studySetsMutate(change,success,exitRow=null){
     if(success)success(result);
     if(studySetsUI.pendingClose)return;
     const focus=!(['detail','excluded'].includes(previousScreen)&&previousScreen===studySetsUI.screen);
-    refreshStudySetsEntry();
+    refreshStudySetsEntry(result.state);
     if(exitRow&&studySetsAnimateExit(exitRow))return;
     renderStudySets(focus);
   }catch(error){if(exitRow)studySetsUI.swipeClose?.();studySetsShowError(error,retry);}
@@ -386,7 +395,7 @@ function renderStudySets(focus=true){
   const titles={directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제'};
   ui.title.textContent=titles[ui.screen]||set?.name||'학습 세트';
   if(ui.notice){const notice=studySetsNode('p','study-sets-notice',ui.notice);notice.setAttribute('role','status');ui.body.append(notice);}
-  if(ui.screen==='directory'){renderStudySetsHome();ui.body.append(ui.directoryList);}
+  if(ui.screen==='directory'){renderStudySetsHome(ui.state);ui.body.append(ui.directoryList);}
   else if(ui.screen==='list')renderStudySetsList();
   else if(ui.screen==='create')renderStudySetsCreate();
   else if(ui.screen==='books')renderStudySetsBooks(set);
@@ -429,8 +438,7 @@ function renderStudySetsList(){
     const item=studySetsNode('li');
     const button=studySetsButton('',()=>studySetsGo('detail',set.id),'study-sets-list-item');button.dataset.setId=set.id;
     const copy=studySetsNode('span','study-sets-list-copy');
-    const active=set.cards.length-set.excludedIds.length;
-    const view=BreezeStudySets.view(studySetsUI.state,set.id);
+    const view=studySetsListSummary(set),active=view.active;
     let progress='';if(view.status==='active')progress=` · 학습 중 ${view.completed}/${view.total}`;else if(view.status==='complete')progress=' · 한 바퀴 완료';
     copy.append(studySetsNode('strong','',set.name),studySetsNode('span','study-sets-caption',`${set.bookTitles.length}권 · ${active}개${progress}`));
     button.append(copy,studySetsIcon('chevron'));item.append(button);list.append(item);
@@ -652,7 +660,7 @@ function renderStudySetsStudy(set){
   const body=studySetsUI.body,view=BreezeStudySets.view(studySetsUI.state,set.id);
   body.classList.add('study-session-body');
   const undo=()=>studySetsMutate(state=>BreezeStudySets.undo(state,set.id,Date.now()),()=>{studySetsUI.notice='';});
-  const undoButton=studySetsButton('되돌리기',undo,'study-session-undo');undoButton.id='study-sets-study-undo';undoButton.disabled=!set.session?.answers.length;
+  const undoButton=studySetsButton('되돌리기',undo,'study-session-undo');undoButton.id='study-sets-study-undo';undoButton.hidden=true;undoButton.disabled=!set.session?.answers.length;
   if(view.status==='complete'){
     const complete=studySetsNode('div','study-sets-complete');
     complete.append(studySetsNode('h3','','이번 세션 완료'),studySetsNode('p','study-sets-result',`${view.completed} / ${view.total}`),undoButton,studySetsButton('세트로 돌아가기',()=>studySetsGo('detail')),studySetsButton('전체 새로 학습',()=>studySetsStart(set.id,true)));body.append(complete);return;
@@ -688,7 +696,7 @@ function renderStudySetsStudy(set){
   });
   const actions=studySetsNode('div','study-session-accessible-actions');
   const revealAction=studySetsButton('정답 확인',reveal);revealAction.id='study-sets-reveal';revealAction.hidden=view.revealed;actions.append(revealAction);
-  for(const [outcome,label] of [['repeat','다시 볼게요'],['remembered','기억나요']]){const button=studySetsButton(label,event=>{if(event.detail>1)return;grade(outcome);});button.id='study-sets-grade-'+outcome;button.disabled=!view.revealed;actions.append(button);}body.append(actions);
+  for(const [outcome,label] of [['repeat','다시 볼게요'],['remembered','기억나요']]){const button=studySetsButton(label,event=>{if(event.detail>1)return;grade(outcome);});button.id='study-sets-grade-'+outcome;button.disabled=!view.revealed;button.hidden=!view.revealed;actions.append(button);}body.append(actions);
   card.addEventListener('pointerdown',event=>{if(busy||event.button!==0||event.isPrimary===false)return;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,axis:''};suppress=false;});
   card.addEventListener('pointermove',event=>{
     if(!drag||event.pointerId!==drag.id)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;

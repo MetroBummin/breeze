@@ -36,7 +36,7 @@ try{
  await page.locator('#review-flip').press('Enter');assert.equal(await page.locator('#review-meaning').isVisible(),true,'tap is one-way reveal');
  await page.keyboard.press('ArrowLeft');await page.waitForTimeout(220);assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');assert.equal(await page.locator('#review-front').isVisible(),true);
  await page.locator('#review-flip').press('Enter');await page.keyboard.press('ArrowRight');await page.waitForTimeout(220);assert.equal(await page.locator('#review-status').innerText(),'이번 세션 1 / 1 완료');
- await page.locator('#simple-word-previous').click();assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');
+ assert.equal(await page.locator('#simple-word-previous').isVisible(),false);
  await page.evaluate(()=>{closeVocabularyReview();simpleStudySession=null;localStorage.removeItem(SIMPLE_STUDY_STORAGE);words=Object.fromEntries(Array.from({length:2100},(_,i)=>['k'+i,{word:'word'+i,ko:'뜻 '+i,example:'A saved example with word'+i+'.',book:'Saved',status:i%3+1,addedAt:i}]));saveWords();renderVocab();document.getElementById('vsearch').value='word99';renderVocab();openVocabularyReview();});
  assert.equal(await page.locator('#review-progress').innerText(),'0 / 2100');const wordsBefore=await page.evaluate(()=>JSON.stringify(words));
  await page.locator('#review-flip').click();await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');await page.waitForTimeout(220);assert.equal(await page.locator('#review-expression').innerText(),'word1');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');
