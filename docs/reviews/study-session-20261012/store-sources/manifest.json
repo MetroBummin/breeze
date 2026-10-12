@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "f6d98aa4cf9feb6b859f87a0bfa627c8c0725327",
+  "sourceCommit": "378fba34171ad870821c8127812c3fcd0d36fe90",
   "platform": "Actual Chromium151 source renders, trusted touch. Not a native iOS build; no status-bar fabrication.",
   "captureFiles": [
     {
@@ -15,7 +15,7 @@
         "height": 2868
       },
       "scene": "front",
-      "sha256": "9ae932ea9ba531911941ce261fb5c7eceabf6e025dbf05774fac84fd8f668ba6"
+      "sha256": "b2955a44adb0fbc6927f490a79f2e1d909564376abca97156a21d5cac28c7fc2"
     },
     {
       "name": "iphone-69-light-revealed.png",
@@ -30,7 +30,7 @@
         "height": 2868
       },
       "scene": "revealed",
-      "sha256": "718390ff396d324b309b1ad503c95b8681374a120b81cafaeb6842a11196ff07"
+      "sha256": "2b4885e98ac314302a78d2fc6ed9e1c3e3a751ae461ad28ec67c54ef1e3f1bbe"
     },
     {
       "name": "iphone-69-light-drag-remember.png",
@@ -45,7 +45,7 @@
         "height": 2868
       },
       "scene": "drag-remember",
-      "sha256": "9e30c4675fb21bf9501522c7efe643e2b86f7b2674d7052bb51e527ad359f200"
+      "sha256": "06a2a6f43ce85b8235b79c8634d742d848f8c1ec539f734480deb526e79730b1"
     },
     {
       "name": "iphone-69-dark-front.png",
@@ -60,7 +60,7 @@
         "height": 2868
       },
       "scene": "front",
-      "sha256": "9aafd58f2733b2ccf4de735563ee793751a1c57a7fe05b111698cd22c6c7a3f3"
+      "sha256": "6a73190c3091eb1d472631f3931d809679acdb27ed823f64448d1cf8c844dbab"
     },
     {
       "name": "iphone-69-dark-revealed.png",
@@ -75,7 +75,7 @@
         "height": 2868
       },
       "scene": "revealed",
-      "sha256": "76ec772d6495b865973837d3aa649649023aba2aeb73d7161048fa4f8c67a94e"
+      "sha256": "91a0835a7bcac1cc55d2b933d1b86fa92688e89f8d922dc01e23b0b90b57afb7"
     },
     {
       "name": "iphone-69-dark-drag-remember.png",
@@ -90,7 +90,7 @@
         "height": 2868
       },
       "scene": "drag-remember",
-      "sha256": "7045d1b1053f193c4223b2b0b2ab914d9321df8d63b018af7a3517ed04475110"
+      "sha256": "0e1a7055d13403765f9db7f4cfeb6210b2e003fde1c436e16bbf6d26f5a1a974"
     },
     {
       "name": "ipad-13-light-front.png",
@@ -105,7 +105,7 @@
         "height": 2752
       },
       "scene": "front",
-      "sha256": "5029219272d8129b7c509a85965ad9cb4e94a75917ffbb053aeb811922b90b11"
+      "sha256": "a7b3f4ac6a9fef5f819bd40cf0ffa09e41cbc071dcaa5fac746564fc0c74f366"
     },
     {
       "name": "ipad-13-light-revealed.png",
@@ -120,7 +120,7 @@
         "height": 2752
       },
       "scene": "revealed",
-      "sha256": "fcbd063160322b4917d096af9bc5b23b0ff920d17e6797b91562e2468fb4e06f"
+      "sha256": "b7a5e12b32afaea159554e43dfb4fe749bbd37642efa711d21f7fae0e395d52b"
     },
     {
       "name": "ipad-13-light-drag-remember.png",
@@ -135,7 +135,7 @@
         "height": 2752
       },
       "scene": "drag-remember",
-      "sha256": "f7d8e4678141539a93676305215293224c85582b537a8a4e185e0e85f6c4272d"
+      "sha256": "f7810ef38ba775c594e413e94c6c166ccd7cdc42184ea98e9279faecf42c5130"
     },
     {
       "name": "ipad-13-dark-front.png",
@@ -150,7 +150,7 @@
         "height": 2752
       },
       "scene": "front",
-      "sha256": "872dd7bfec146be403ead7094902439603904f7f268dff56da2a5d3111539d8b"
+      "sha256": "7f5c26c14942ec9686082270abd60838e0672a690ee11097578a914fd3e6a5c9"
     },
     {
       "name": "ipad-13-dark-revealed.png",
@@ -165,7 +165,7 @@
         "height": 2752
       },
       "scene": "revealed",
-      "sha256": "33d5bc4d0adb3ef6269dbb1c0f789083ac4b38c3993c97b7bb7e07261b95a616"
+      "sha256": "61cf9845ba087fdce9d546e6906fd7e4b193be0690c8310cf747db1977866cdd"
     },
     {
       "name": "ipad-13-dark-drag-remember.png",
@@ -180,7 +180,7 @@
         "height": 2752
       },
       "scene": "drag-remember",
-      "sha256": "1ddcedb49b006239272129e2f68f3b6ef5773862450063eb46d75897c995075e"
+      "sha256": "ea048fd2b13f6f87b7f287a37acb140cd55733518cf5179787293c50342663cd"
     }
   ],
   "appleSpecification": "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/"
