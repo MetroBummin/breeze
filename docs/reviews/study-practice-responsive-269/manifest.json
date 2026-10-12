@@ -1,0 +1,148 @@
+{
+  "sourceCommit": "4feec2387e75f88f69ba2dee870c32320c64ac31",
+  "engine": "system Chromium151",
+  "screenshotDPR": 2,
+  "videoLogicalViewport": {
+    "phone": [
+      390,
+      844
+    ],
+    "ipad": [
+      820,
+      1180
+    ]
+  },
+  "capture": "actual browser UI/input; not physical iOS or Simulator",
+  "files": [
+    {
+      "path": "ipad-dark-complete.png",
+      "bytes": 79493,
+      "sha256": "36df01c9249f0d570cedd51bd7e2003905e58e6cc663806c5ef97f0268d90d97"
+    },
+    {
+      "path": "ipad-dark-left.png",
+      "bytes": 76534,
+      "sha256": "27c241ca32f12c3b4b11b250e0ca9f21e90f79c8ccbb11ad26ee03e10df3a0fe"
+    },
+    {
+      "path": "ipad-dark-right.png",
+      "bytes": 85050,
+      "sha256": "e4829ad9be34b8dbe7706610ede21af32662cd1ced57c01b0294afa713d1bf7c"
+    },
+    {
+      "path": "ipad-dark-tap.png",
+      "bytes": 71578,
+      "sha256": "4358eeedd7b35700dfae7e0eb14a451763d46168d3d613bd12c2dc1580601344"
+    },
+    {
+      "path": "ipad-interactive-study.webm",
+      "bytes": 559715,
+      "sha256": "08b0f47b629b4c70d5e2904bdaac5b10676071fe8dd19c76745b55c0fced16ec"
+    },
+    {
+      "path": "ipad-light-complete.png",
+      "bytes": 75638,
+      "sha256": "bd35a0eab8fac7d390f8fbff08f227cea597058159355fd2372bfc195ef82acc"
+    },
+    {
+      "path": "ipad-light-left.png",
+      "bytes": 68245,
+      "sha256": "b0b02723f2c808186e6da5999600f5488616b0d2f11ded0ca8aa43314db61e24"
+    },
+    {
+      "path": "ipad-light-right.png",
+      "bytes": 74418,
+      "sha256": "838b1ea1735738ad626a427b64719d6a8116377f8085803db02d8eeb359afd76"
+    },
+    {
+      "path": "ipad-light-tap.png",
+      "bytes": 63401,
+      "sha256": "2b72fd06914484cc8d0d24abe068a983ba40e2e36700fb933056bbe07fdab35b"
+    },
+    {
+      "path": "phone-dark-complete.png",
+      "bytes": 65857,
+      "sha256": "4fe211cf986919a32c32ff9b2408f7b90f6303ff558ee787b56eebd1646371e2"
+    },
+    {
+      "path": "phone-dark-left.png",
+      "bytes": 65641,
+      "sha256": "c5d8f978b98f372e4d2f0c7a6e34dfb394bf8b5d45bcf4df5da356684fb065bd"
+    },
+    {
+      "path": "phone-dark-right.png",
+      "bytes": 71691,
+      "sha256": "496ac2abc036f7ff40f7a43adfaa70ae9f44a998fb824fcc66573a7e947b8d50"
+    },
+    {
+      "path": "phone-dark-tap.png",
+      "bytes": 61291,
+      "sha256": "a71c181e77164844688ef2aeb332297e44d50a345c4c321c9f0890c08a739e07"
+    },
+    {
+      "path": "phone-interactive-study.webm",
+      "bytes": 480298,
+      "sha256": "dc4739e1d7c6ec34e37b9b30b508cdc8aa1dd21e19860fe0fea18c0f50a9b21b"
+    },
+    {
+      "path": "phone-light-complete.png",
+      "bytes": 61389,
+      "sha256": "e7918b4b1029abccc5cc4c10eb61f2fa2f7e584bee1a6d6904ac9b8ec85531cb"
+    },
+    {
+      "path": "phone-light-left.png",
+      "bytes": 56474,
+      "sha256": "8104693f6692aafde5d4423c549ddfcb5807985119dab803cb52a26ce6b18739"
+    },
+    {
+      "path": "phone-light-right.png",
+      "bytes": 63053,
+      "sha256": "13dcfaad25d45d4613d7c65b43310ec7b8b84ff0ed1e9d27ba8b45017bc534d4"
+    },
+    {
+      "path": "phone-light-tap.png",
+      "bytes": 52426,
+      "sha256": "22216e690c494e9be687e9f68e1c4cc5e9ca3f6ba5807bab2852e6b938d9f2ee"
+    },
+    {
+      "path": "short-dark-complete.png",
+      "bytes": 61575,
+      "sha256": "0ed62c254c51dcf0642d5fa2f7554296c1c0f4d188dfaf70a2cddd1b91f9951c"
+    },
+    {
+      "path": "short-dark-left.png",
+      "bytes": 62199,
+      "sha256": "8aa0eaff43f4ec46017fe79527b3517d8a52ce717bec0b886f054ca0a51e264c"
+    },
+    {
+      "path": "short-dark-right.png",
+      "bytes": 65485,
+      "sha256": "07894dc5df2a1011910a32df44dc77d32f19f7eb6c265afdb44d5208762c9f6f"
+    },
+    {
+      "path": "short-dark-tap.png",
+      "bytes": 58275,
+      "sha256": "ddbff208de5755cb36196dcea083f80f24cbcaa05ef28c30e21b68cb1a78c421"
+    },
+    {
+      "path": "short-light-complete.png",
+      "bytes": 57061,
+      "sha256": "088ae61cfe9634c954fcceaad5622cd909df6764edf361d3178031122b5cb223"
+    },
+    {
+      "path": "short-light-left.png",
+      "bytes": 54374,
+      "sha256": "98cb4b0a5667c73a91198e5379d2c68f0a34d929b17e9f6c52777e234dba14f5"
+    },
+    {
+      "path": "short-light-right.png",
+      "bytes": 58452,
+      "sha256": "3ba15ee0e016e05ec9c1a68dfc067bf0ca4196ded7888f4092718585d73c285a"
+    },
+    {
+      "path": "short-light-tap.png",
+      "bytes": 50488,
+      "sha256": "7561336c1b32da58b3121e68c8c1fbc1d77b5953c4347ec3610ade291ef3b1ec"
+    }
+  ]
+}
