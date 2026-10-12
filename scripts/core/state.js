@@ -208,6 +208,10 @@ function keepPlace(fn){
 }
 
 function saveReadingState(){
+  // A Home transition already committed this exact book/entry before snapshot
+  // rendering. Do not replace it with temporary transition viewport geometry.
+  if(typeof homeReturnTransition!=='undefined'&&homeReturnTransition
+      &&homeReturnReadingOwner?.book===curBook&&homeReturnReadingOwner.entry===history.state)return;
   if(!curBook || curBook.transient) return;
   if(typeof readerPositionPending==='function' && readerPositionPending())return;
   if(currentReaderMode === 'original'){

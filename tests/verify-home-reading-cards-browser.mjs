@@ -138,7 +138,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>books.some(book=>book.kind==='pdf'));
   const pdfId=await page.evaluate(()=>books.find(book=>book.kind==='pdf').id);
   assert.equal(await page.evaluate(async id=>(await originalGetForBook(books.find(book=>book.id===id)))?.blob?.size,pdfId),pdfBytes.length,'real imported PDF original is stored');
-  for(const percent of [100,50,19]){
+  for(const transitionMode of ['browser','viewport-reset'])for(const percent of [100,50,19]){
    await page.locator(`#shelf [data-local-book="${pdfId}"]`).click();await readerReady(page);
    assert.equal(await page.evaluate(()=>curBook.id),pdfId);
    // Exercise original-PDF progress regardless of the existing mode preference.
@@ -168,12 +168,24 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    // Same immediate snapshot and strict expected progress: retain state evidence
    // if an asynchronous original-surface owner changes after the readiness wait.
    assert.equal(Math.floor(actual.p*100),percent,JSON.stringify({percent,actual}));
+   // A controlled browser snapshot changes the retained surface before its
+   // deferred callback and a queued save. Preserve the navigation-time scalar
+   // and anchor, including deliberate backward reading, without clamping.
+   if(transitionMode==='viewport-reset')await page.evaluate(()=>{
+    window.qaNativeTransition=document.startViewTransition;
+    document.startViewTransition=callback=>{
+     readerScrollTo(0);invalidateReaderMeasurements();
+     const job=Promise.resolve().then(()=>{saveReadingState();return callback();});
+     return {ready:job,finished:job};
+    };
+   });
    await page.evaluate(()=>returnHomeFromReader());const home=await homeState(page,pdfId);
-   await page.screenshot({animations:'disabled',path:`${proof}/${engine.name()}-pdf-${percent}.png`});
+   if(transitionMode==='viewport-reset')await page.evaluate(()=>{document.startViewTransition=window.qaNativeTransition;delete window.qaNativeTransition;});
+   await page.screenshot({animations:'disabled',path:`${proof}/${engine.name()}-pdf-${transitionMode}-${percent}.png`});
    await page.evaluate(()=>show('longform'));
    const shelfLabel=await page.locator(`#longform-grid [data-local-book="${pdfId}"] .prog`).textContent();
    await page.evaluate(()=>show('home'));
-   console.log(`${engine.name()}: same PDF ${percent}% ${JSON.stringify({actual,home,shelfLabel})}`);
+   console.log(`${engine.name()}: same PDF ${transitionMode} ${percent}% ${JSON.stringify({actual,home,shelfLabel})}`);
    assert.equal(home.saved.p,actual.p);assert.deepEqual(home.saved.original,actual.anchor);assert.deepEqual(home.durable,home.saved);
    assert.equal(home.capsule,percent+'%');assert.equal(home.label,percent+'% 읽음');
    assert.equal(await page.locator('#home-resume .completion-badge').isVisible(),percent===100);

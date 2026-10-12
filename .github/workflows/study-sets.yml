@@ -5,6 +5,7 @@ on:
       - 'scripts/core/study-sets*.js'
       - 'scripts/ui/study-sets.js'
       - 'scripts/ui/study-example.js'
+      - 'styles/header-controls.css'
       - 'styles/study-sets.css'
       - 'styles/wordbook.css'
       - 'styles/surfaces.css'
@@ -14,6 +15,7 @@ on:
       - 'scripts/dictionary/dictionary.js'
       - 'tests/verify-study-sets*.mjs'
       - 'tests/verify-study-example.mjs'
+      - 'tests/verify-header-controls-browser.mjs'
       - 'tests/verify-control-optics-browser.mjs'
       - 'tests/verify-study-create-browser.mjs'
       - 'tests/verify-simple-study-session.mjs'
@@ -76,6 +78,10 @@ jobs:
       - run: node tests/verify-study-quota-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-study-quota-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+          BREEZE_QUOTA_LONG_EXAMPLES: '1'
       - run: node tests/verify-study-sets-touch-browser.mjs
         if: matrix.engine == 'chromium'
       - run: node tests/verify-study-session-swipe-browser.mjs
@@ -98,6 +104,9 @@ jobs:
         env:
           BROWSER: ${{ matrix.engine }}
           BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}
+      - run: node tests/verify-header-controls-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
       - run: node tests/verify-control-optics-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
@@ -115,6 +124,8 @@ jobs:
             /tmp/breeze-study-touch-preview/
             /tmp/breeze-study-session-proof/
             /tmp/breeze-app-icon-family-${{ matrix.engine }}/
+            /tmp/breeze-header-controls/
+            /tmp/breeze-control-optics/
             /tmp/breeze-signature-set/
             /tmp/breeze-signature-all/
           if-no-files-found: ignore

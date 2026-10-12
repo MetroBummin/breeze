@@ -5,6 +5,8 @@ import {vocabulary} from './helpers/study-quota-fixture.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const server=await serveStudyFixture(),engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+const count=process.env.BREEZE_QUOTA_LONG_EXAMPLES==='1'?2400:5000;
+const data=vocabulary(count);if(count===2400)for(const word of Object.values(data))word.example=(word.example+' ').repeat(4).trim();
 const output='/tmp/breeze-study-quota-proof';mkdirSync(output,{recursive:true});const results=[];
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block',reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
@@ -20,7 +22,7 @@ try{
   add(100,true);for(let i=0;i<20&&add(1000,true);i++);for(let i=0;i<20&&add(100,false);i++);
   window.qaOriginal=localStorage.getItem(STUDY_SETS_STORAGE);window.qaFirstId=state.sets[0].id;
   return {words:Object.keys(words).length,overlays,sets:state.sets.length,cards:state.sets.reduce((n,s)=>n+s.cards.length,0),queueCopies:state.sets.reduce((n,s)=>n+(s.session?.queue.length||0),0),characters:qaOriginal.length,totalCharacters:Object.keys(localStorage).reduce((n,k)=>n+k.length+localStorage.getItem(k).length,0),failures};
- },vocabulary());
+ },data);
  assert.ok(fixture.failures.includes('QuotaExceededError'));results.push({test:'native quota fixture',...fixture});
  const migration=await page.evaluate(async()=>{
   await loadStudySets();const db=await studyStorageDb(),record=await localTransaction(db,'records','readonly',(tx,done)=>{const r=tx.objectStore('records').get(STUDY_SETS_STORAGE);r.onsuccess=()=>done(r.result);});
@@ -29,7 +31,7 @@ try{
  await page.evaluate(()=>openStudySet(qaFirstId));await page.locator('#study-sets-start').click();await page.locator('#study-sets-flashcard').click();await page.waitForFunction(()=>!studySetsUI.mutating&&!!document.querySelector('#study-sets-answer')&&!document.querySelector('#study-sets-answer').hidden);await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForFunction(()=>document.getElementById('study-sets-progress')?.textContent==='1 / 100');
  await page.evaluate(()=>{closeStudySets(true);show('vocab');openStudySets(false,'create');});await page.locator('#study-sets-name').fill('After quota migration');await page.locator('.study-sets-books input').first().check();await page.locator('#study-sets-save').click();await page.waitForFunction(()=>!studySetsUI.mutating&&studySetsUI.state?.sets.some(s=>s.name==='After quota migration'));
  assert.equal(await page.locator('#study-sets-error').isVisible(),false);results.push({test:'existing answers and new set',sets:await page.evaluate(()=>readStudySets().sets.length)});
- await page.evaluate(()=>{closeStudySets(true);show('vocab');return openVocabularyReview();});await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy&&document.getElementById('review-progress').textContent==='0 / 5000');
+ await page.evaluate(()=>{closeStudySets(true);show('vocab');return openVocabularyReview();});await page.waitForFunction(count=>activeAppView()==='study'&&!simpleStudyBusy&&document.getElementById('review-progress').textContent==='0 / '+count,count);
  await page.locator('#review-flip').click();await page.evaluate(()=>gradeSimpleWordCard('again'));await page.waitForFunction(()=>!simpleStudyBusy&&!simpleWordCards.flipped);
  await page.locator('#review-flip').click();await page.evaluate(()=>gradeSimpleWordCard('remember'));await page.waitForFunction(()=>!simpleStudyBusy&&ensureSimpleStudySession().passed.length===1);
  const before=await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession()));assert.equal(JSON.parse(before).history.length,2);
@@ -37,7 +39,7 @@ try{
  await page.locator('#review-flip').click();await page.evaluate(()=>{window.qaPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){const r=qaPut.apply(this,args);if(this.name==='records')r.addEventListener('success',()=>this.transaction.abort());return r;};});
  await page.evaluate(()=>gradeSimpleWordCard('remember'));assert.equal(await page.locator('#review-error').isVisible(),true);assert.equal(await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession())),before);assert.equal(await page.evaluate(()=>simpleWordCards.flipped),true);
  await page.evaluate(()=>IDBObjectStore.prototype.put=qaPut);await page.evaluate(()=>gradeSimpleWordCard('remember'));await page.waitForFunction(()=>!simpleStudyBusy&&ensureSimpleStudySession().passed.length===2);
- const saved=await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession()));await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');return openVocabularyReview();});await page.waitForFunction(()=>!simpleStudyBusy&&document.getElementById('review-progress').textContent==='2 / 5000');
+ const saved=await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession()));await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');return openVocabularyReview();});await page.waitForFunction(count=>!simpleStudyBusy&&document.getElementById('review-progress').textContent==='2 / '+count,count);
  assert.equal(await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession())),saved);assert.equal(await page.locator('#review-meaning').isVisible(),false);results.push({test:'All Words history, IDB abort/retry, reload',passed:2,history:JSON.parse(saved).history.length});
  // A pending write must finish durably without pulling the user back from Home.
  await page.locator('#review-flip').click();await page.evaluate(()=>{
@@ -46,10 +48,10 @@ try{
   localTransaction=function(...args){const before=qaPuts;return qaTransaction(...args).then(async value=>{if(args[1]==='records'&&args[2]==='readwrite'&&qaPuts>before){window.qaCommittedPending=true;await qaGate;}return value;});};
   void gradeSimpleWordCard('remember');void gradeSimpleWordCard('remember');
  });await page.waitForFunction(()=>window.qaCommittedPending);await page.evaluate(()=>show('home'));await page.evaluate(()=>qaRelease());await page.waitForFunction(()=>!simpleStudyBusy);assert.equal(await page.evaluate(()=>activeAppView()),'home');
- await page.evaluate(()=>{localTransaction=qaTransaction;IDBObjectStore.prototype.put=qaPut;show('vocab');return openVocabularyReview();});await page.waitForFunction(()=>!simpleStudyBusy&&ensureSimpleStudySession().passed.length===3);assert.equal(await page.locator('#review-progress').innerText(),'3 / 5000');results.push({test:'late commit and duplicate input',passed:3,returnedHome:true});
+ await page.evaluate(()=>{localTransaction=qaTransaction;IDBObjectStore.prototype.put=qaPut;show('vocab');return openVocabularyReview();});await page.waitForFunction(()=>!simpleStudyBusy&&ensureSimpleStudySession().passed.length===3);assert.equal(await page.locator('#review-progress').innerText(),'3 / '+count);results.push({test:'late commit and duplicate input',passed:3,returnedHome:true});
  // Post-commit render failure must retry display, never duplicate creation.
  await page.evaluate(()=>{show('vocab');openStudySets(false,'create');});await page.locator('#study-sets-name').fill('Committed once');await page.locator('.study-sets-books input').first().check();await page.evaluate(()=>{window.qaRender=renderStudySets;renderStudySets=()=>{throw Error('Injected display failure');};});await page.locator('#study-sets-save').click();await page.waitForFunction(()=>!studySetsUI.mutating&&studySetsUI.diagnostic?.committed);
- const count=await page.evaluate(()=>readStudySets().sets.length);await page.evaluate(()=>renderStudySets=qaRender);await page.locator('#study-sets-error button').click();await page.waitForFunction(()=>document.getElementById('study-sets-error').hidden);assert.equal(await page.evaluate(()=>readStudySets().sets.length),count);results.push({test:'post-commit display retry',sets:count,duplicated:false});
+ const setCount=await page.evaluate(()=>readStudySets().sets.length);await page.evaluate(()=>renderStudySets=qaRender);await page.locator('#study-sets-error button').click();await page.waitForFunction(()=>document.getElementById('study-sets-error').hidden);assert.equal(await page.evaluate(()=>readStudySets().sets.length),setCount);results.push({test:'post-commit display retry',sets:setCount,duplicated:false});
  assert.deepEqual(errors,[]);await page.screenshot({path:output+'/'+engine.name()+'-after-migration.png'});await context.close();
- console.log(JSON.stringify({engine:engine.name(),version:browser.version(),results},null,2));writeFileSync(output+'/'+engine.name()+'.json',JSON.stringify({engine:engine.name(),version:browser.version(),results},null,2));
+ console.log(JSON.stringify({engine:engine.name(),count,longExamples:count===2400,version:browser.version(),results},null,2));writeFileSync(output+'/'+engine.name()+'-'+count+'.json',JSON.stringify({engine:engine.name(),count,longExamples:count===2400,version:browser.version(),results},null,2));
 }finally{await browser.close();await server.close();}

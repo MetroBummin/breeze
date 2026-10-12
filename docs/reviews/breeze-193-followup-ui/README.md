@@ -40,3 +40,13 @@ proof establishes native playback, actual airplane mode, physical retry tap,
 
 Library saving was attempted with the current supported batch flow but failed
 before preparation due to its network connection; no new Library IDs were returned.
+
+
+The later header-shell correction is recorded in header-shell-before/after.json
+and raw *header* PNGs. The before phase blocks only the new CSS layer against
+the earlier candidate UI, preserving its actual Back/X material asymmetry. After
+uses the shared44px circular material, rim/shadow/blur, zero padding, optical
+center and press feedback. Back and X have matched18px painted heights; More
+has a24px frame and2px filled dots. No screenshots are scaled/composited. The
+learning media is recaptured after this correction. browser proof remains
+distinct from Safari private-reference/native rendering review.

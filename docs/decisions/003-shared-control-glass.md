@@ -554,3 +554,29 @@ system variants. This is a measured Breeze SVG alignment inspired by those
 principles, not an SF asset import or a published Safari pixel specification.
 Existing reference evidence describes private Safari proportions; the originals
 were not materialized in this cloud environment. Parent retains direct comparison.
+
+
+## Header shells and Home exit ownership (270 follow-up)
+
+The user clarified that control consistency includes circular diameter, material,
+rim, shadow, alignment, optical bounds, padding and press feedback. Matching44px
+header controls now share styles/header-controls.css: circular50% radius, existing
+study control palette/gradient,1px rim, shared shadow/18px blur, centered zero
+padding and shared hover/press filters. The editable detail surface owns this
+material; its inner button/menu remain clear and its existing inline morph wins.
+Dock slots retain their established geometry. Back/X use32px SVG/1.5 units with
+matched18px painted heights; dense/wide/filled header shapes use24px/2 units.
+Selected fills, accessible names, handlers and touch rectangles remain intact.
+Raw before/after pair captures and actual computed metrics cover phone/iPad/short
+in both themes. This applies Apple contextual optical-scale guidance to Breeze
+drawings; private Safari reference pixels were not retrieved in this workspace.
+
+Home exit commits the current reading scalar and anchor before the browser
+starts its view-transition snapshot. That exact book/history entry owns the
+already committed navigation position until the transition finishes. Subsequent
+saves from that departing surface cannot resample temporary snapshot geometry;
+saves for other books/entries remain valid. No maximum/clamp, timing extension,
+schema change or delayed Home repaint is added. Controlled deferred viewport
+reset reproduces100%→0% before the fix; regression checks preserve100/50/19%
+and exact durable original anchors, including backward reading. The real browser
+transition assertions remain, with actual WebKit CI required.

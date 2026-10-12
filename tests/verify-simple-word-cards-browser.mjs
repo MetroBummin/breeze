@@ -38,12 +38,12 @@ try{
  await studyAction(page.keyboard.press('ArrowLeft'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');assert.equal(await page.locator('#review-front').isVisible(),true);
  await studyAction(page.locator('#review-flip').press('Enter'),page);await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-status').innerText(),'이번 세션 1 / 1 완료');
  assert.equal(await page.locator('#simple-word-previous').isVisible(),false);
- await page.evaluate(async ()=>{closeVocabularyReview();simpleStudySession=null;localStorage.removeItem(SIMPLE_STUDY_STORAGE);words=Object.fromEntries(Array.from({length:2100},(_,i)=>['k'+i,{word:'word'+i,ko:'뜻 '+i,example:'A saved example with word'+i+'.',book:'Saved',status:i%3+1,addedAt:i}]));saveWords();renderVocab();document.getElementById('vsearch').value='word99';renderVocab();await openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'0 / 2100');const wordsBefore=await page.evaluate(()=>JSON.stringify(words));
- await studyAction(page.locator('#review-flip').click(),page);await studyAction(page.keyboard.press('ArrowRight'),page);await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-expression').innerText(),'word1');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');
- await studyAction(page.locator('#review-close').click(),page);await studyAction(page.locator('#wordbook-review').click(),page);await studyAction(page.locator('#study-sets-all').click(),page);await studyAction(page.locator('#study-all-words-start').click(),page);assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');
+ await page.evaluate(async ()=>{closeVocabularyReview();simpleStudySession=null;localStorage.removeItem(SIMPLE_STUDY_STORAGE);words=Object.fromEntries(Array.from({length:2400},(_,i)=>['k'+i,{word:'word'+i,ko:'뜻 '+i,example:('The reader observes the evidence, takes notes, and considers the surrounding context. ').repeat(4)+'A saved example with word'+i+'.',book:'Saved',status:i%3+1,addedAt:i}]));saveWords();renderVocab();document.getElementById('vsearch').value='word99';renderVocab();await openVocabularyReview();});
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 2400');const wordsBefore=await page.evaluate(()=>JSON.stringify(words));
+ await studyAction(page.locator('#review-flip').click(),page);await studyAction(page.keyboard.press('ArrowRight'),page);await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-expression').innerText(),'word1');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
+ await studyAction(page.locator('#review-close').click(),page);await studyAction(page.locator('#wordbook-review').click(),page);await studyAction(page.locator('#study-sets-all').click(),page);await studyAction(page.locator('#study-all-words-start').click(),page);assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
  await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
- await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');
+ await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);await studyAction(page.locator('#review-flip').click(),page);
   assert.equal(await page.locator('#v-study').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
@@ -52,7 +52,7 @@ try{
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),wordsBefore);
  assert.deepEqual(await page.evaluate(()=>qaReviewAccess),[]);assert.equal(await page.evaluate(()=>qaNativeGet.call(localStorage,'breeze.vocabulary-review.v1')),rawReview);
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(async ()=>{show('vocab');await openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');assert.equal(await page.locator('#review-meaning').isVisible(),false);
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');assert.equal(await page.locator('#review-meaning').isVisible(),false);
  assert.deepEqual(await page.evaluate(()=>qaReviewAccess),[]);assert.deepEqual(errors,[]);
- console.log(`${engine.name()}: empty/one/2100, filters, reveal/grade/undo/reopen/history, dormant review/settings, session persistence and10 layouts passed`);
+ console.log(`${engine.name()}: empty/one/2400, filters, reveal/grade/undo/reopen/history, dormant review/settings, session persistence and10 layouts passed`);
 }finally{await browser.close();await new Promise(r=>server.close(r));}

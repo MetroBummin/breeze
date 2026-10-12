@@ -1,0 +1,3835 @@
+{
+  "engine": "chromium",
+  "native": false,
+  "before": true,
+  "rows": [
+    {
+      "device": "phone",
+      "dark": false,
+      "scene": "create",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 21,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(255, 255, 255) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 325,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 21,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(255, 255, 255) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 325,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "scene": "detail",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 330,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.986821303034958e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 330,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.986821303034958e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "scene": "settings",
+      "rest": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 334,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 334,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "scene": "word-add",
+      "rest": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 290,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.12) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 290,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "scene": "task",
+      "rest": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 330,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.12) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 330,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "scene": "all-study",
+      "rest": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(28, 28, 30)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(28, 28, 30)",
+          "filter": "none",
+          "rect": {
+            "x": 6,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(28, 28, 30)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(28, 28, 30)",
+          "filter": "none",
+          "rect": {
+            "x": 6,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "scene": "create",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 21,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(58, 58, 60) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 325,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 21,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(58, 58, 60) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 325,
+            "y": 137,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "scene": "detail",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 330,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.986821303034958e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 330,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.986821303034958e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "scene": "settings",
+      "rest": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 334,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 334,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "scene": "word-add",
+      "rest": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 290,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.11) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 290,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "scene": "task",
+      "rest": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 330,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.11) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 314,
+            "y": 330,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "scene": "all-study",
+      "rest": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(242, 242, 247)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(242, 242, 247)",
+          "filter": "none",
+          "rect": {
+            "x": 6,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(242, 242, 247)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(242, 242, 247)",
+          "filter": "none",
+          "rect": {
+            "x": 6,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "scene": "create",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 91,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(255, 255, 255) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 685,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 91,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(255, 255, 255) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 685,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "scene": "detail",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 760,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 760,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "scene": "settings",
+      "rest": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 764,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 764,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "scene": "word-add",
+      "rest": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 458,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.12) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 458,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "scene": "task",
+      "rest": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 498,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.12) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 498,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "scene": "all-study",
+      "rest": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(28, 28, 30)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(28, 28, 30)",
+          "filter": "none",
+          "rect": {
+            "x": 22,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(28, 28, 30)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(28, 28, 30)",
+          "filter": "none",
+          "rect": {
+            "x": 22,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "scene": "create",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 91,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(58, 58, 60) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 685,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 91,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(58, 58, 60) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 685,
+            "y": 247,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "scene": "detail",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 760,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 760,
+            "y": 16,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736430323955574e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "scene": "settings",
+      "rest": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 764,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 764,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "scene": "word-add",
+      "rest": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 458,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.11) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 458,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "scene": "task",
+      "rest": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 498,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.11) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 543,
+            "y": 498,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "scene": "all-study",
+      "rest": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(242, 242, 247)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(242, 242, 247)",
+          "filter": "none",
+          "rect": {
+            "x": 22,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(242, 242, 247)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(242, 242, 247)",
+          "filter": "none",
+          "rect": {
+            "x": 22,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "scene": "create",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 103,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(255, 255, 255) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 697,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 103,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(255, 255, 255) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 697,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "scene": "detail",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 784,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736429968684206e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.66)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 238, 241, 0.88)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 784,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736429968684206e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "scene": "settings",
+      "rest": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 788,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 788,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "scene": "word-add",
+      "rest": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 63,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(50, 55, 58, 0.11)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.12) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 63,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "scene": "task",
+      "rest": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 103,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(41, 48, 52)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(50, 55, 58, 0.12) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(41, 48, 52)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 103,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "scene": "all-study",
+      "rest": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(28, 28, 30)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(28, 28, 30)",
+          "filter": "none",
+          "rect": {
+            "x": 34,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(28, 28, 30)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(28, 28, 30)",
+          "filter": "none",
+          "rect": {
+            "x": 34,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "scene": "create",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 103,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(58, 58, 60) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 697,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 103,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-close",
+          "surface": "#study-sets-close",
+          "label": "학습 세트 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgb(58, 58, 60) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 697,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "scene": "detail",
+      "rest": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 784,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736429968684206e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#study-sets-back",
+          "surface": "#study-sets-back",
+          "label": "뒤로",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 16,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        },
+        {
+          "target": "#study-sets-edit",
+          "surface": ".study-sets-edit-surface",
+          "label": "세트 편집",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "radiusRaw": "22px",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) linear-gradient(145deg, rgba(80, 82, 85, 0.96), rgba(36, 38, 41, 0.96)) repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+          "backdrop": "blur(18px)",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 784,
+            "y": 4,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 15.666666348775228,
+            "inkHeight": 4.000000476837158,
+            "centerX": -1.9868218714691466e-7,
+            "centerY": 3.9736429968684206e-7,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": [
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "scene": "settings",
+      "rest": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 788,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#set-close",
+          "surface": "#set-close",
+          "label": "설정 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 788,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "scene": "word-add",
+      "rest": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.06) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 63,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#wordbook-add-form .task-close",
+          "surface": "#wordbook-add-form .task-close",
+          "label": "단어 추가 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "1px",
+          "borderStyle": "solid",
+          "borderColor": "rgba(255, 255, 255, 0.08)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.11) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 63,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "scene": "task",
+      "rest": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 103,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#task-form .task-close",
+          "surface": "#task-form .task-close",
+          "label": "창 닫기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(241, 241, 238)",
+          "radiusRaw": "50%",
+          "radius": 22,
+          "background": "rgba(255, 255, 255, 0.11) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(241, 241, 238)",
+          "filter": "none",
+          "rect": {
+            "x": 555,
+            "y": 103,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "inkWidth": 12,
+            "inkHeight": 12,
+            "centerX": 0,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "scene": "all-study",
+      "rest": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(242, 242, 247)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(242, 242, 247)",
+          "filter": "none",
+          "rect": {
+            "x": 34,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ],
+      "pressed": [
+        {
+          "target": "#review-close",
+          "surface": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "width": 44,
+          "height": 44,
+          "padding": "0px",
+          "borderWidth": "0px",
+          "borderStyle": "none",
+          "borderColor": "rgb(242, 242, 247)",
+          "radiusRaw": "0px",
+          "radius": 0,
+          "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box",
+          "shadow": "none",
+          "backdrop": "none",
+          "color": "rgb(242, 242, 247)",
+          "filter": "none",
+          "rect": {
+            "x": 34,
+            "y": 12,
+            "width": 44,
+            "height": 44
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "inkWidth": 10,
+            "inkHeight": 18,
+            "centerX": -0.3333333333333357,
+            "centerY": 0,
+            "stroke": 2,
+            "cap": "round",
+            "join": "round",
+            "dots": []
+          }
+        }
+      ]
+    }
+  ]
+}

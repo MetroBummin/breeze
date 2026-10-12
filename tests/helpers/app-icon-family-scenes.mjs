@@ -50,7 +50,7 @@ export async function captureAppFamilyStudy(page,capture){
  await page.locator('#wordbook-review').tap();await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('.study-sets-home-card[data-set-id]').first().tap();
  await page.waitForFunction(()=>studySetsUI.screen==='detail'&&studySetsUI.pageOpen);
- await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:32,stroke:'1.5px'},'#study-sets-edit':{size:20,stroke:'2.4px',dots:'1.2px'}});
+ await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:32,stroke:'1.5px'},'#study-sets-edit':{size:24,stroke:'2px',dots:'1px'}});
  await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');
  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
  assert.equal(await page.evaluate(()=>document.activeElement===studySetsUI.editMenu.querySelector('button')),true,'keyboard opens menu on its first action');
