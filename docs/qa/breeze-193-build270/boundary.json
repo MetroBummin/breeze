@@ -141,6 +141,11 @@
       "mode": "100644",
       "method": "exact engine env ownership correction for both matrix steps",
       "sha256": "57f5346e337f71806e68609a7000d12fa7075fe12e72167a21204aeafe90a8af"
+    },
+    "tests/helpers/app-icon-family-scenes.mjs": {
+      "mode": "100644",
+      "method": "exact capture-only await of existing durable study actions; preserve completion assertions and deadline",
+      "sha256": "d65ee0910e03813c2321ca6be949ae31b56b771a92644a6aac43d7fea871b73d"
     }
   },
   "integrationFiles": [
@@ -152,10 +157,10 @@
     "docs/qa/breeze-193-build270/local-validation.json"
   ],
   "integrationSha256": {
-    "tools/record-193-build270-boundary.mjs": "01c245da87cb98984fa32e0e17060c79cdfa03bf687818a839d4e6dd270fa17e",
-    "tests/verify-193-build270-boundary.mjs": "90ddec59403bf7b8617b65c4bb808911e4f1bd5968a2df0e83f1a169e295a32e",
-    "docs/decisions/028-breeze-193-build270.md": "497e4413c4c829abb88302f2857b7b226844bcec7eae932933612874afb97c3e",
+    "tools/record-193-build270-boundary.mjs": "5fc5f307a967eed30dacfcaa6f69598d6cd6a996315cb2b16d8a8d4e45229357",
+    "tests/verify-193-build270-boundary.mjs": "b8f06d1fd1eaa3f5ac8b47bf353812fa3561a21c7e11d7c1ec23f7dca4576e36",
+    "docs/decisions/028-breeze-193-build270.md": "c98e63962de55b7af0f9cfd0541f1c3149c327ad3dacd384c63582b41343ee7f",
     "docs/qa/breeze-193-build270/native-assets.json": "002adaacb1f0eacfd9bddcf56188334534f08ce82d454b170f83f236a76f2025",
-    "docs/qa/breeze-193-build270/local-validation.json": "5bb6682cb0efab8be94c2f418f36492a0d8b5fa9c7b39a6e5aff9dfbad7cc37c"
+    "docs/qa/breeze-193-build270/local-validation.json": "792d19f0156a66c275522beb6b5e13f68e5dd3946fba7ae44ccf6e113ad479dd"
   }
 }

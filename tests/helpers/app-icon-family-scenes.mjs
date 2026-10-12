@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {studyAction} from './study-actions.mjs';
 
 // These contracts describe the base reveal/grade flow only. Progress text and
 // swipe mechanics belong to their own tests and can evolve independently.
@@ -70,15 +71,15 @@ export async function captureAppFamilyStudy(page,capture){
  await page.evaluate(()=>studySetsStart(studySetsUI.setId,true));
  await capture('study-front',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'front focuses the tap/reveal card');
- await page.keyboard.press('Enter');
+ await studyAction(page.keyboard.press('Enter'),page);
  await capture('study-revealed',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'revealed card keeps keyboard action ownership');
  assert.equal(await page.locator('.study-session-accessible-actions').evaluate(n=>getComputedStyle(n).clipPath),'inset(50%)','normal revealed screen keeps rating alternatives clipped');
  await page.keyboard.press('Tab');assert.equal(await page.locator('#study-sets-grade-repeat').evaluate(n=>n===document.activeElement),true,'Tab reaches repeat');
  await page.keyboard.press('Tab');assert.equal(await page.locator('#study-sets-grade-remembered').evaluate(n=>n===document.activeElement),true,'Tab reaches remembered');
- await page.keyboard.press('Enter');await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));
+ await studyAction(page.keyboard.press('Enter'),page);await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));
  for(let i=0;i<10&&!await page.locator('.study-sets-complete').isVisible();i++){
-  await page.locator('#study-sets-flashcard').press('Enter');await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));
+  await studyAction(page.locator('#study-sets-flashcard').press('Enter'),page);assert.equal(await page.locator('#study-sets-answer').isVisible(),true,'grade follows a durably revealed answer');await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));
  }
  assert.equal(await page.locator('.study-sets-complete').isVisible(),true,'real actions complete this four-card fixture');
  await capture('study-completion',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});

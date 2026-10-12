@@ -12,7 +12,7 @@ const {default:assert}=await import('node:assert/strict');
 const {spawnSync}=await import('node:child_process');
 const changed=structuredClone(receipt);changed.reviewedSource='0'.repeat(40);
 assert.throws(()=>verify270Boundary(changed),/Immutable build270 contract differs/);
-for(const file of ['scripts/core/study-sets.js','docs/qa/breeze-192-integration/boundary.json','docs/qa/breeze-193-integration/boundary.json','tools/record-193-integration-boundary.mjs','tools/record-193-build270-boundary.mjs','tools/record-193-build269-boundary.mjs','tests/verify-193-build269-boundary.mjs','docs/qa/breeze-193-build269/boundary.json','tools/record-193-candidate-boundary.mjs','tests/verify-193-candidate-boundary.mjs','docs/qa/breeze-193-build267/boundary.json']){
+for(const file of ['tests/helpers/app-icon-family-scenes.mjs','.github/workflows/study-sets.yml','scripts/core/study-sets.js','docs/qa/breeze-192-integration/boundary.json','docs/qa/breeze-193-integration/boundary.json','tools/record-193-integration-boundary.mjs','tools/record-193-build270-boundary.mjs','tools/record-193-build269-boundary.mjs','tests/verify-193-build269-boundary.mjs','docs/qa/breeze-193-build269/boundary.json','tools/record-193-candidate-boundary.mjs','tests/verify-193-candidate-boundary.mjs','docs/qa/breeze-193-build267/boundary.json']){
  const path=new URL('../'+file,import.meta.url),original=readFileSync(path);
  try{writeFileSync(path,Buffer.concat([original,Buffer.from('\n// deliberate boundary regression\n')]));assert.throws(()=>verify270Boundary(receipt),/changed|drift|Unapproved build270 path/);}
  finally{writeFileSync(path,original);}

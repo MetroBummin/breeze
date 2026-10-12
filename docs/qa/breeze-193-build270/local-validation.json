@@ -37,5 +37,106 @@
     "WebKit app-family runner": "wrong engine because env moved to following step; exact CI-only repair",
     "Reader header equality/diagnostics": "both engines passed",
     "OCR offline exception": "same269 NotReadableError both original/fresh local blobs at line209; unwaived"
+  },
+  "CI01a4dd1": {
+    "WebKit durable study creation/quota/session": "passed again",
+    "WebKit capture helper": "keyboard grade raced pending reveal; now awaits existing transaction/exit owner, asserts revealed meaning before grade",
+    "capture after await repair": "Chromium5viewports/both themes passed; final WebKit CI required",
+    "product changes": "none; helper/assertion and exact270 boundary metadata only"
+  },
+  "captureAcknowledgementDiagnostic": {
+    "testOnlyAcknowledgementDelayMs": 70,
+    "unchangedProductCode": true,
+    "oldHelper": {
+      "progress": "1 / 4",
+      "mutating": true,
+      "gradePhases": [
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        }
+      ]
+    },
+    "fixedHelper": {
+      "bothThemesPassed": true,
+      "gradePhases": [
+        {
+          "key": "ArrowRight",
+          "mutating": false,
+          "revealed": true,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": false,
+          "revealed": true,
+          "completed": 2
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": false,
+          "revealed": true,
+          "completed": 3
+        }
+      ],
+      "allGradesFollowVisibleAnswerAndFinishedMutation": true
+    },
+    "nativeEvidence": false
   }
 }

@@ -53,3 +53,22 @@ The270 boundary permits only this exact workflow correction; product source,
 The same CI's OCR offline Blob/FileReader failure matches269 exactly at line209
 (NotReadableError for original and fresh blobs while offline, online reads work).
 It remains unwaived. Final corrected-head CI is required before promotion.
+
+
+The corrected matrix reached actual WebKit capture and exposed a capture-helper
+race: its completion loop pressed grade while the prior reveal's IndexedDB write
+was pending, then accepted the initially hidden answer as if grading completed.
+Use the existing studyAction transaction/exit owner before checking reveal and
+issuing grade. Preserve the four-card completion assertion, all keyboard/focus
+and visibility checks and30-second deadlines; additionally require a visible
+durably revealed answer before each grade. No product gesture/persistence code
+or delays change.270 permits this exact helper-only correction, with actual
+final-head WebKit verification still required.
+
+
+A controlled capture-only70ms acknowledgement delay reproduces the old loop:
+ArrowRight arrives with mutating:true/revealed:false, repeated input is ignored
+and progress remains1/4. With the repaired helper, the same delay passes both
+themes and every ArrowRight trace has mutating:false/revealed:true. This is
+diagnostic evidence for input ordering, not native performance or WebKit timing
+measurement. No product timing, timeout or completion assertion was relaxed.
