@@ -556,6 +556,78 @@ test('native ink: resize also retires a delayed UIKit admission before it can wr
  assert.equal(f.qa.active(),null);assert.equal(f.state.strokes.length,0);assert.equal(f.writes.length,0);
 });
 
+test('native ink: a new Touch list without the old owner recovers after a missing end',async()=>{
+ const f=fixture();f.pointerEvent('pointerdown',10,20,7);
+ f.qa.touchStart(f.event('touchstart',[f.contact(10,20,1)]));
+ f.qa.touchMove(f.event('touchmove',[f.contact(30,40,1)]));
+ f.pointerEvent('pointerup',30,40,7); // Intentionally omit touchend/cancel.
+ assert.equal(f.engine.busy(),true);
+ f.pointerEvent('pointerdown',50,60,8);
+ f.qa.touchStart(f.event('touchstart',[f.contact(50,60,2)]));
+ assert.equal(f.qa.active().id,2,'new live contact can own ink without a tool toggle');
+ f.qa.touchEnd(f.event('touchend',[],[f.contact(70,80,2)]));await tick();
+ assert.equal(f.engine.busy(),false);assert.equal(f.state.strokes.length,1);
+ assert.deepEqual(plain(f.state.strokes[0].points),[[50,60],[70,80]],'orphaned preview is discarded, never joined or auto-saved');
+});
+test('native ink: live long strokes and palms never expire or steal ownership',async()=>{
+ const f=fixture(),pen=f.contact(20,30,1),palm=f.contact(90,90,2,'direct'),late=f.contact(100,100,3);
+ f.qa.touchStart(f.event('touchstart',[pen]));f.advance(600000);
+ f.qa.touchStart(f.event('touchstart',[pen,palm],[palm]));
+ f.qa.touchStart(f.event('touchstart',[pen,palm,late],[late]));
+ assert.equal(f.qa.active().id,1);
+ f.qa.touchEnd(f.event('touchend',[pen,palm],[late]));
+ f.qa.touchMove(f.event('touchmove',[f.contact(40,50,1),palm],[f.contact(40,50,1)]));
+ assert.equal(f.qa.active().id,1);
+ f.qa.touchEnd(f.event('touchend',[palm],[f.contact(40,50,1)]));await tick();
+ assert.equal(f.state.strokes.length,1);assert.equal(f.engine.busy(),true,'live suppressed palm stays owned through pen lift');
+ f.qa.touchEnd(f.event('touchend',[],[palm]));assert.equal(f.engine.busy(),false);
+});
+test('native ink: a fresh finger after an orphan remains navigation, never becomes ink',()=>{
+ const f=fixture();f.qa.touchStart(f.event('touchstart',[f.contact(20,30)]));
+ const finger=f.contact(80,80,5,'direct');
+ f.qa.touchStart(f.event('touchstart',[finger]));
+ assert.equal(f.qa.active(),null);assert.equal(f.engine.finger(finger),true);assert.equal(f.state.strokes.length,0);
+ // Palm/finger FIRST still vetoes a later pen, despite reconciliation.
+ f.qa.touchStart(f.event('touchstart',[finger,f.contact(20,30,6)],[f.contact(20,30,6)]));
+ assert.equal(f.qa.active(),null);
+});
+test('native ink: unrelated move/end can retire a proven orphan but cannot finish its geometry',()=>{
+ for(const type of ['touchmove','touchend']){
+  const f=fixture();f.qa.touchStart(f.event('touchstart',[f.contact(20,30)]));
+  const other=f.contact(50,60,8,'direct'),e=f.event(type,type==='touchend'?[]:[other],[other]);
+  if(type==='touchend')f.qa.touchEnd(e);else f.qa.touchMove(e);
+  assert.equal(f.qa.active(),null);assert.equal(f.state.strokes.length,0);assert.equal(f.engine.busy(),false);
+ }
+});
+test('native ink: orphaned eraser keeps completed cuts as one durable undoable edit',async()=>{
+ const f=fixture();await f.stroke([[10,20],[90,20]]);f.qa.setMode('erase');
+ f.qa.touchStart(f.event('touchstart',[f.contact(50,20,10)]));
+ assert.equal(f.state.strokes.length,2);
+ f.qa.touchStart(f.event('touchstart',[f.contact(200,200,11)]));
+ f.qa.touchEnd(f.event('touchend',[],[f.contact(200,200,11)]));await tick();
+ assert.equal(f.state.dirty,false);assert.equal(f.qa.undo().length,2,'original pen plus one interrupted erasure');
+ f.qa.history(true);await tick();assert.equal(f.state.strokes.length,1);
+ assert.deepEqual(plain(f.state.strokes[0].points),[[10,20],[90,20]]);
+});
+test('native ink: absent live admission loses ownership, late replies cannot resurrect it',async()=>{
+ const f=fixture(),replies=[];f.admission({postMessage:()=>new Promise(r=>replies.push(r))});
+ f.qa.touchStart(f.event('touchstart',[f.contact(10,20,1)]));await tick();
+ f.qa.touchStart(f.event('touchstart',[f.contact(40,50,2)]));await tick();
+ replies[0]('ink');await tick();assert.equal(f.qa.active(),null);
+ f.qa.touchEnd(f.event('touchend',[],[f.contact(60,70,2)]));
+ replies[1]('ink');await tick();assert.equal(f.state.strokes.length,1,'legitimately ended contact still commits after delayed reply');
+ assert.deepEqual(plain(f.state.strokes[0].points),[[40,50],[60,70]]);
+});
+test('pointer ink: Touch absence never guesses that a different-namespace pen Pointer ended',()=>{
+ const f=fixture({pointer:true});f.pointerEvent('pointerdown',100,100,7);
+ f.qa.touchStart(f.event('touchstart',[f.contact(100,100,107,'direct')]));
+ f.qa.touchMove(f.event('touchmove',[f.contact(120,120,107,'direct')]));
+ assert.equal(f.qa.active().pointerId,7);
+ f.advance(600000);f.qa.touchEnd(f.event('touchend',[],[f.contact(120,120,107,'direct')]));
+ assert.equal(f.qa.active().pointerId,7);
+ f.pointerEvent('pointerup',150,150,7);assert.equal(f.qa.active(),null);assert.equal(f.state.strokes.length,1);
+});
+
 test('availability: injected Android proxy works without npm registerPlugin',async()=>{
  const f=fixture({pointer:true,pending:true,nativeProxy:true});
  f.resolveCapabilities({tablet:true});

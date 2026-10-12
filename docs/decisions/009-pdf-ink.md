@@ -1,5 +1,31 @@
 # iPad PDF Pencil annotation
 
+## Recover an absent Touch owner without an expiry timer (2026-10-12)
+
+The investigation reproduced a conditional iPad-route input lock by deliberately
+omitting a stylus `touchend`/`touchcancel` in Chromium tablet emulation. One saved
+stroke suffices: later contacts cannot replace the stale `active` Touch owner.
+This fault injection is not evidence that the student's actual iPad lost events,
+and the toolbar stayed responsive; the whole-screen incident remains unexplained.
+
+On the native Touch route, each new start/move reconciles the previous active
+and non-ended pending Touch owner against `event.touches`. Absence is evidence
+that the prior contact ended. Its unfinished pen preview is cancelled, completed
+eraser cuts keep the existing durable undo transaction, and obsolete native
+admission replies cannot resurrect it. End/cancel first performs its normal
+matching-owner handling, then reconciles any other orphan. Suppressed contacts
+that remain live stay suppressed. An ended contact awaiting admission remains
+eligible for its legitimate delayed reply. A live long stroke/press never expires.
+
+No timeout, motion heuristic, synthetic event forwarding or Touch-to-Pointer ID
+matching is introduced. The Pointer geometry route and its `scrollend` admission
+gate are unchanged: the separate missing-scrollend experiment does not prove
+navigation stopped, so it cannot safely authorize a new pen contact. No native
+inertia policy changes. Tests include missing terminals, old/fresh palms and
+finger navigation, late second pen, delayed admission, interrupted eraser undo,
+live ten-minute contacts, and disjoint Pointer/Touch namespaces. Browser and
+unit checks remain separate from physical Pencil/palm acceptance.
+
 ## Save serialization off the input thread (2026-10-12)
 
 Synthetic Chromium diagnosis at `8512e8f` and `97f0cde` measured full-page

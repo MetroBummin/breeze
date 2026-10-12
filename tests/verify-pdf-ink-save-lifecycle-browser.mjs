@@ -57,6 +57,18 @@ try{
  });
  await page.evaluate(()=>expandReaderChrome());await page.locator('[data-ink-toggle]').click();await stroke();await saved();
  assert.equal(await count(),5,'new owner can edit after obsolete asynchronous mount');
+ // Fault injection only: omit a native-route Touch terminal event, then prove
+ // the old contact is absent with the next event's live Touch list.
+ await page.evaluate(()=>{
+  const target=originalSession.pages[0].querySelector('canvas'),r=target.getBoundingClientRect();
+  const touch=(id,x)=>({identifier:id,touchType:'stylus',target,clientX:r.left+x,clientY:r.top+100});
+  const send=(type,live,changed)=>{const e=new Event(type,{bubbles:true,cancelable:true});Object.defineProperties(e,{touches:{value:live},changedTouches:{value:changed}});target.dispatchEvent(e);};
+  const a=touch(901,50),b=touch(902,150);
+  send('touchstart',[a],[a]);a.clientX+=40;send('touchmove',[a],[a]);
+  send('touchstart',[b],[b]);b.clientX+=40;send('touchend',[],[b]);
+ });
+ await saved();assert.equal(await count(),6,'next live contact recovers without switching tools or timing out the old stroke');
+ assert.equal(await page.evaluate(()=>BreezePdfInk.busy()),false);
  assert.deepEqual(errors,[]);
- console.log('PASS pending-write close/reopen/background, failed-write close/retry/reload, overlapping old/new mount ownership');
+ console.log('PASS pending-write close/reopen/background, failed-write close/retry/reload, overlapping old/new mount ownership, fault-injected missing Touch end recovery');
 }finally{await browser.close();server.close();}
