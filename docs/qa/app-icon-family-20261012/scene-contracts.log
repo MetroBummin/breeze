@@ -1,0 +1,12 @@
+✔ folder scene rejects the previously silently omitted management summary (2.584031ms)
+✔ a closed-menu capture cannot substitute for the required open-menu scene (0.434843ms)
+✔ directory back is explicitly hidden and unexpected controls fail (1.402647ms)
+✔ front rejects a prematurely visible answer and duplicate reveal targets (0.460732ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 133.151705

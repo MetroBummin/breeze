@@ -1,0 +1,8 @@
+Combined 1.9.1 boundary passed: exact PR139/140/141 bytes and stamps, unchanged historical owners, independent auth/onboarding, native/config/release protection.
+1.9.2 boundary passed: exact PR143/144 sources, all other baseline bytes protected, historical 1.9.1 assertions unchanged.
+1.9.3 boundary passed: exact reviewed owners, conflict-free source merges, restricted version/runner changes, unchanged historical 1.9.2 and 1.9.1 verification.
+1.9.3 negative checks passed: changed owner, source, historical receipt, integration evidence and unapproved path all rejected.
+Build267 boundary passed: approved PR153 source, exact version/counter/runner delta, unchanged historical266/192/191 contracts.
+Build267 negative checks passed: changed approved source, historical receipts/checker, candidate evidence and unapproved path all rejected.
+Build268 boundary passed: approved polished PR154 source, exact version/counter/runner delta, unchanged historical267/266/192/191 contracts.
+Build268 negative checks passed: changed approved source, historical receipts/checker, candidate evidence and unapproved path all rejected.
