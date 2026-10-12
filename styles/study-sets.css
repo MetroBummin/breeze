@@ -86,7 +86,7 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-word-row{position:relative;border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
 #study-sets-word-list .study-sets-word-surface,#study-sets-word-list .study-sets-word-surface *{-webkit-user-select:none;user-select:none;-webkit-user-drag:none;}
 .study-sets-word-clip{position:relative;overflow:hidden;margin-left:-20px;width:calc(100% + 20px);}
-.study-sets-word-surface{position:relative;padding-left:20px;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:transform .2s ease,border-radius .2s ease;}
+.study-sets-word-surface{position:relative;padding-left:20px;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:border-radius .2s ease;}
 .study-sets-revealed .study-sets-word-surface{border-radius:0 24px 24px 0;background:var(--wordbook-field);}
 .study-sets-dragging .study-sets-word-surface{transition:none;}
 .study-sets-exiting{overflow:hidden;pointer-events:none;}
@@ -161,7 +161,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 .study-session-body progress{flex:none;margin:0;}
 .study-session-stack{position:relative;flex:1;min-height:280px;width:100%;max-width:680px;align-self:center;display:flex;}
 .study-session-stack .study-sets-flashcard,.study-session-next{box-sizing:border-box;border:1px solid var(--sentence-glass-line-soft);border-radius:28px;background:var(--settings-sheet-surface);padding:clamp(24px,5vh,56px) clamp(20px,5vw,64px);width:100%;text-align:center;overflow-wrap:anywhere;}
-.study-session-stack .study-sets-flashcard{position:relative;z-index:1;flex:1;min-height:100%;justify-content:center;gap:20px;touch-action:pan-y;user-select:none;cursor:pointer;transition:transform .18s ease-out,background .18s;}
+.study-session-stack .study-sets-flashcard{position:relative;z-index:1;flex:1;min-height:100%;justify-content:center;gap:20px;touch-action:pan-y;user-select:none;cursor:pointer;transition:background .18s;}
 .study-session-stack .study-sets-flashcard[data-dragging]{transition:none;}
 .study-session-next{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--settings-sheet-surface);font:600 clamp(30px,5vw,46px) var(--ui);}
 .study-session-stack #study-sets-expression{font-size:clamp(30px,5vw,46px)!important;margin:0;}

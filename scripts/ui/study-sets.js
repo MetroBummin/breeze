@@ -1,6 +1,8 @@
 /* Study sets are local snapshots. This surface never writes saved Meanings or
    enters the general word-card deck. Every action starts from durable state. */
 const studySetsOpened=new Map();
+const studySetsQueuedRows=new WeakSet();
+let studySetsMutationDone=Promise.resolve();
 const studySetsDirectoryPositions=new Map();
 const studySetsDirectoryFocus=new Map();
 let studySetsReadEpoch=0,studySetsHomeEpoch=0;
@@ -328,9 +330,17 @@ async function studySetsReadAndRender(focus=true,context={phase:'read',committed
   catch(error){if(epoch===studySetsReadEpoch&&owns())studySetsShowError(error,()=>studySetsReadAndRender(focus,context),context);}
   finally{if(epoch===studySetsReadEpoch)studySetsUI.body?.removeAttribute('aria-busy');}
 }
-async function studySetsMutate(change,success,exitRow=null){
-  if(studySetsUI.pendingClose||studySetsUI.mutating)return;
-  studySetsUI.mutating=true;
+async function studySetsMutate(change,success,exitRow=null,handoff=null){
+  if(studySetsUI.pendingClose)return;
+  if(studySetsUI.mutating){
+    if(!exitRow||studySetsQueuedRows.has(exitRow))return;
+    const ownsQueued=studySetsOwner();studySetsQueuedRows.add(exitRow);
+    await studySetsMutationDone;studySetsQueuedRows.delete(exitRow);
+    if(ownsQueued()&&exitRow.isConnected)return studySetsMutate(change,success,exitRow,handoff);
+    return;
+  }
+  let releaseMutation=()=>{};studySetsMutationDone=new Promise(resolve=>{releaseMutation=()=>resolve(undefined);});
+  studySetsUI.mutating=true;if(exitRow)studySetsQueuedRows.add(exitRow);
   ++studySetsReadEpoch;const owns=studySetsOwner();
   studySetsUI.body?.removeAttribute('aria-busy');
   const operation=studySetsUI.screen;
@@ -345,6 +355,7 @@ async function studySetsMutate(change,success,exitRow=null){
     }
     phase='commit';serializedCharacters=JSON.stringify(result.state).length;
     await commitStudySets(result.state);committed=true;
+    if(handoff)await handoff;
     if(!owns())return;
     studySetsUI.state=result.state;studySetsClearError();
     const previousScreen=studySetsUI.screen;
@@ -360,7 +371,7 @@ async function studySetsMutate(change,success,exitRow=null){
     // A durable operation must never be repeated because its display failed.
     if(committed){studySetsUI.pendingClose=false;studySetsUI.transitioning=false;}
     studySetsShowError(error,committed?()=>studySetsReadAndRender(true,{phase:'display',committed,serializedCharacters,operation}):retry,{phase,committed,serializedCharacters,operation});
-  }finally{studySetsUI.mutating=false;}
+  }finally{if(exitRow)studySetsQueuedRows.delete(exitRow);studySetsUI.mutating=false;releaseMutation();}
 }
 function studySetsAnimateExit(row){
   if(!row.isConnected||typeof row.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return false;
@@ -376,7 +387,7 @@ function studySetsAnimateExit(row){
   if(committed)renderStudySetsDetailFooter(committed);
   // Membership is already durable. Animate only the committed visual removal.
   let exit;
-  try{exit=surface.animate([{transform:surface.style.transform||'translateX(0)'},{transform:`translateX(${-width}px)`}],{duration:140,easing:'ease-in',fill:'forwards'});}catch(_){row.classList.remove('study-sets-exiting');return false;}
+  try{exit=surface.animate([{transform:surface.style.transform||'translateX(0)'},{transform:`translateX(${-width}px)`}],{duration:Math.max(100,Math.min(180,(width-Math.abs(Number((surface.style.transform||'').match(/translateX\(([-\d.]+)px\)/)?.[1])||0))/Math.max(2,Number(row.dataset.releaseVelocity)||0))),easing:'cubic-bezier(.18,.65,.35,1)',fill:'forwards'});}catch(_){row.classList.remove('study-sets-exiting');return false;}
   const finish=()=>{
     if(!row.isConnected||!studySetsIsOpen()||studySetsUI.screen!==screen||studySetsUI.setId!==setId)return;
     const set=studySetsUI.state?.sets.find(item=>item.id===setId);if(!set)return;
@@ -498,7 +509,7 @@ function renderStudySetsAllWords(){
   ui.body.append(studySetsNode('p','study-sets-caption',`${groups.size}단어 · ${entries.length}개 뜻 카드`));
   ui.footer.hidden=false;const start=studySetsButton('학습 시작',startStudySetsAllWords,'study-sets-primary');start.id='study-all-words-start';start.disabled=!entries.length;ui.footer.append(start);
   if(!entries.length){ui.body.append(studySetsEmpty('저장된 단어가 없어요','읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));return;}
-  const list=studySetsNode('ul','study-sets-word-list');list.id='study-all-words-list';
+  const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id='study-all-words-list';
   if(!studySetsOpened.has('@all'))studySetsOpened.set('@all',new Set());
   let ordinal=0;for(const entries of groups.values()){
     const row=studySetsNode('li','study-all-words-row'),copy=createVocabularyGroup(entries,{ordinal:++ordinal,opened:studySetsOpened.get('@all')});
@@ -658,7 +669,7 @@ function studySetsSwipe(row,surface,action){
   // Cancel only selection/drag defaults here, not pointerdown or vertical scroll.
   row.addEventListener('selectstart',event=>event.preventDefault(),true);
   row.addEventListener('dragstart',event=>{event.preventDefault();event.stopPropagation();},true);
-  let start=null,suppressClick=false,offset=0;
+  let start=null,suppressClick=false,offset=0,stop=null;
   const width=()=>row.getBoundingClientRect().width||320;
   const fullThreshold=()=>Math.max(144,width()*.62);
   const paint=amount=>{
@@ -668,17 +679,19 @@ function studySetsSwipe(row,surface,action){
     row.classList.toggle('study-sets-revealed',offset>0);
     row.classList.toggle('study-sets-swiped',offset>=fullThreshold());
   };
-  const close=()=>{start=null;row.classList.remove('study-sets-dragging');paint(0);if(studySetsUI.swipeClose===close)studySetsUI.swipeClose=null;};
-  const park=()=>{row.classList.remove('study-sets-dragging');paint(72);studySetsUI.swipeClose=close;};
+  const settle=(target,velocity=0)=>{stop?.();row.classList.add('study-sets-dragging');stop=studySpring(offset,target,velocity,paint,()=>{stop=null;row.classList.remove('study-sets-dragging');});};
+  const close=()=>{start=null;settle(0);if(studySetsUI.swipeClose===close)studySetsUI.swipeClose=null;};
+  const park=(velocity=0)=>{settle(72,velocity);studySetsUI.swipeClose=close;};
   action.addEventListener('focus',()=>{if(!start&&!row.classList.contains('study-sets-exiting')){if(studySetsUI.swipeClose!==close)studySetsUI.swipeClose?.();park();}});
   row.addEventListener('pointerdown',event=>{
-    if(row.classList.contains('study-sets-exiting')||event.button!==0||event.isPrimary===false||event.target instanceof Element&&event.target.closest('.study-sets-row-action'))return;
+    if(studySetsQueuedRows.has(row)||row.classList.contains('study-sets-exiting')||event.button!==0||event.isPrimary===false||event.target instanceof Element&&event.target.closest('.study-sets-row-action'))return;
     if(studySetsUI.swipeClose!==close)studySetsUI.swipeClose?.();
-    suppressClick=false;start={x:event.clientX,y:event.clientY,id:event.pointerId,axis:'',base:offset,control:event.target instanceof Element&&!!event.target.closest('.chip')};
+    stop?.();stop=null;suppressClick=false;start={x:event.clientX,y:event.clientY,id:event.pointerId,axis:'',base:offset,samples:[{x:event.clientX,t:event.timeStamp}],control:event.target instanceof Element&&!!event.target.closest('.chip')};
   });
   row.addEventListener('pointermove',event=>{
     if(!start||start.id!==event.pointerId)return;
     const dx=event.clientX-start.x,dy=event.clientY-start.y;
+    start.samples.push({x:event.clientX,t:event.timeStamp});start.samples=start.samples.filter(p=>event.timeStamp-p.t<=120);
     if(start.control){if(Math.max(Math.abs(dx),Math.abs(dy))>=8)suppressClick=true;return;}
     if(!start.axis){
       if(Math.max(Math.abs(dx),Math.abs(dy))<8)return;
@@ -690,10 +703,10 @@ function studySetsSwipe(row,surface,action){
   row.addEventListener('pointerup',event=>{
     if(!start||start.id!==event.pointerId)return;
     if(start.control){start=null;return;}
-    const moved=start.axis==='x',wasOpen=!!start.base,amount=start.base-(event.clientX-start.x);start=null;
+    const moved=start.axis==='x',wasOpen=!!start.base,travel=start.x-event.clientX,amount=start.base+travel,velocity=-studyReleaseVelocity(start.samples,event.timeStamp);start=null;
     row.classList.remove('study-sets-dragging');
-    if(moved&&amount>=fullThreshold()){paint(amount);action.click();}
-    else if(moved&&amount>=36)park();
+    if(moved&&velocity>=-.2&&travel>=36&&amount+Math.max(0,velocity)*140>=fullThreshold()){paint(amount);row.dataset.releaseVelocity=String(velocity);action.click();}
+    else if(moved&&velocity>=-.2&&amount>=36)park(velocity);
     else{if(wasOpen)suppressClick=true;close();}
   });
   row.addEventListener('pointercancel',()=>{if(start)suppressClick=true;close();});
@@ -734,26 +747,22 @@ function renderStudySetsStudy(set){
   const text=studySetsNode('span','',`${view.completed} / ${view.total}`);text.id='study-sets-progress';progress.append(text);
   const meter=document.createElement('progress');meter.max=view.total;meter.value=view.completed;meter.setAttribute('aria-label','이번 세션에서 기억한 카드');body.append(progress,meter);
   const stack=studySetsNode('div','study-session-stack');
-  const next=view.set.session.queue.find(c=>c.id===(view.pendingIds[1]||view.pendingIds[0]));
-  const underneath=studySetsNode('div','study-session-next',next?.word||'');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
+  const underneath=studySetsNode('div','study-session-next');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
   const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.card.example||''} ${view.revealed?view.card.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
   if(view.card.example){const example=studySetsNode('p','study-sets-card-example');renderStoredStudyExample(example,view.card);card.append(example);}
   const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?view.card.ko:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
   stack.append(card);body.append(stack);
   const hint=studySetsNode('p','study-session-hint',view.revealed?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인');hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
-  let busy=false,drag=null,suppress=false;
-  const reveal=()=>{if(busy||suppress||view.revealed)return;studySetsMutate(state=>BreezeStudySets.reveal(state,set.id,view.token),()=>{studySetsUI.notice='';});};
-  const paintReset=()=>{card.removeAttribute('data-dragging');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');};
-  const grade=outcome=>{
-    if(busy||!view.revealed||!card.isConnected)return;busy=true;undoButton.disabled=true;card.dataset.direction=outcome;
-    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    card.style.transform=reduced?'none':`translateX(${outcome==='remembered'?1:-1}00%) rotate(${outcome==='remembered'?8:-8}deg)`;
-    const commit=()=>{if(!card.isConnected||studySetsUI.screen!=='study')return;
-      paintReset();studySetsMutate(state=>BreezeStudySets.grade(state,set.id,view.token,outcome,Date.now()),()=>{studySetsUI.notice='';});busy=false;undoButton.disabled=!set.session?.answers.length;
-    };if(reduced)commit();else setTimeout(commit,180);
+  let busy=false;
+  const reveal=()=>{if(busy||view.revealed)return;studySetsMutate(state=>BreezeStudySets.reveal(state,set.id,view.token),()=>{studySetsUI.notice='';});};
+  const grade=async outcome=>{
+    if(busy||studySetsUI.mutating||!view.revealed||!card.isConnected)return;
+    busy=true;undoButton.disabled=true;card.dataset.direction=outcome;
+    await studySetsMutate(state=>BreezeStudySets.grade(state,set.id,view.token,outcome,Date.now()),()=>{studySetsUI.notice='';},null,motion.exit(outcome==='remembered'?1:-1));
+    if(card.isConnected){motion.reset();busy=false;undoButton.disabled=!set.session?.answers.length;}
   };
-  card.addEventListener('click',reveal);
+  const motion=studyCardMotion(card,{ready:()=>view.revealed,enabled:()=>!busy&&!studySetsUI.mutating,reveal,grade});
   card.addEventListener('keydown',event=>{
     if(['Enter',' '].includes(event.key)){event.preventDefault();reveal();}
     if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();grade(event.key==='ArrowLeft'?'repeat':'remembered');}
@@ -761,15 +770,7 @@ function renderStudySetsStudy(set){
   const actions=studySetsNode('div','study-session-accessible-actions');
   const revealAction=studySetsButton('정답 확인',reveal);revealAction.id='study-sets-reveal';revealAction.hidden=view.revealed;actions.append(revealAction);
   for(const [outcome,label] of [['repeat','다시 볼게요'],['remembered','기억나요']]){const button=studySetsButton(label,event=>{if(event.detail>1)return;grade(outcome);});button.id='study-sets-grade-'+outcome;button.disabled=!view.revealed;button.hidden=!view.revealed;actions.append(button);}body.append(actions);
-  card.addEventListener('pointerdown',event=>{if(busy||event.button!==0||event.isPrimary===false)return;drag={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,axis:''};suppress=false;});
-  card.addEventListener('pointermove',event=>{
-    if(!drag||event.pointerId!==drag.id)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
-    if(!drag.axis){if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;drag.axis=Math.abs(dx)>Math.abs(dy)*1.2?'x':'y';suppress=true;}
-    if(drag.axis!=='x'||!view.revealed)return;drag.dx=dx;card.setAttribute('data-dragging','');try{card.setPointerCapture(event.pointerId);}catch{}
-    card.dataset.direction=dx>0?'remembered':'repeat';card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(dx)/120)));card.style.transform=`translateX(${dx}px) rotate(${dx/35}deg)`;event.preventDefault();
-  });
-  const finish=(event,cancel)=>{if(!drag||event.pointerId!==drag.id)return;const saved=drag;drag=null;paintReset();if(!cancel&&saved.axis==='x'&&Math.abs(saved.dx)>=Math.min(90,card.clientWidth*.24))grade(saved.dx>0?'remembered':'repeat');};
-  card.addEventListener('pointerup',event=>finish(event,false));card.addEventListener('pointercancel',event=>finish(event,true));
+
 }
 function studySetsStorageChanged(key){
   if(key!==null&&key!==STUDY_SETS_STORAGE)return;

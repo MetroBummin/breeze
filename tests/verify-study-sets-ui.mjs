@@ -6,6 +6,8 @@ import {parseHTML} from 'linkedom';
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 async function afterAction(result){const value=await result;await settle();return value;}
 
+// Displacement-only pointer fixtures use a stationary clock; velocity/trajectory
+// belongs to the trusted/synthetic browser motion suite, not Node scheduling.
 // Event-level UI checks only. Native focus trapping, browser history timing,
 // pointer capture, layout and paint are covered by verify-study-sets-browser.mjs.
 function harness(){
@@ -17,7 +19,7 @@ function harness(){
   const history={state:entries[0],pushState(value){entries[historyIndex]=this.state;entries.splice(++historyIndex);entries.push(value);this.state=value;},replaceState(value){this.state=value;entries[historyIndex]=value;},go(delta){
     historyIndex=Math.max(0,Math.min(entries.length-1,historyIndex+delta));this.state=entries[historyIndex];const event=new window.Event('popstate');event.state=this.state;window.dispatchEvent(event);
   },back(){this.go(-1);},forward(){this.go(1);}};
-  const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,matchMedia:()=>({matches:true}),
+  const context={window,document,HTMLElement:window.HTMLElement,Element:window.Element,Node:window.Node,console,setTimeout,clearTimeout,performance,requestAnimationFrame:callback=>setTimeout(()=>callback(performance.now()),16),cancelAnimationFrame:clearTimeout,matchMedia:()=>({matches:true}),
     activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},openVocabularyReview:()=>{context.currentView='study';history.pushState({breeze:true,view:'study'});},history,words:{
       a:{word:'quiet',ko:'조용한',book:'One',example:'Stay quiet.',addedAt:1},
       b:{word:'quiet',ko:'조용한',book:'Two',addedAt:2},
@@ -48,7 +50,7 @@ function harness(){
     function readStudySets(){const raw=localStorage.getItem(STUDY_SETS_STORAGE);const value=BreezeStudySets.decode(raw);fixtureRead=raw;return value;}
     async function loadStudySets(){return readStudySets();}
     function commitStudySets(next){const raw=localStorage.getItem(STUDY_SETS_STORAGE);BreezeStudySets.decode(raw);if(raw!==fixtureRead)throw Error('changed');localStorage.setItem(STUDY_SETS_STORAGE,JSON.stringify(BreezeStudySets.normalize(next)));fixtureRead=localStorage.getItem(STUDY_SETS_STORAGE);}`,context);
-  for(const path of ['scripts/core/study-sets.js','scripts/ui/study-sets.js'])
+  for(const path of ['scripts/core/study-sets.js','scripts/ui/study-motion.js','scripts/ui/study-sets.js'])
     vm.runInContext(readFileSync(new URL('../'+path,import.meta.url),'utf8'),context,{filename:path});
   const run=source=>vm.runInContext(source,context);
   const query=selector=>{const node=document.querySelector(selector);assert.ok(node,'Missing '+selector);return node;};
@@ -126,7 +128,7 @@ test('directly-added words, exclusion restore, set deletion confirmation and sou
 
 test('horizontal swipe excludes; vertical movement and cancellation keep membership',async ()=>{
   const {document,query,window,createSet}=harness();await afterAction(createSet());
-  const pointer=(row,type,x,y)=>{const event=new window.Event(type);Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
+  const pointer=(row,type,x,y)=>{const event=new window.Event(type);Object.assign(event,{timeStamp:0,button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
   let row=query('#study-sets-word-list li');
   await afterAction(pointer(row,'pointerdown',240,20));await afterAction(pointer(row,'pointermove',230,90));await afterAction(pointer(row,'pointerup',140,100));
   assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);
@@ -263,7 +265,7 @@ test('directory cards have no competing long-press, context or keyboard edit men
 
 test('swipe follows the finger, only commits leftward, and clears transform on cancellation',async ()=>{
   const {query,document,window,createFromHome}=harness();await afterAction(createFromHome());
-  const pointer=(row,type,x,y)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
+  const pointer=(row,type,x,y)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{timeStamp:0,button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
   const row=query('.study-sets-word-row'),surface=query('.study-sets-word-surface');
   await afterAction(pointer(row,'pointerdown',240,20));await afterAction(pointer(row,'pointermove',210,20));assert.match(surface.style.transform,/-30px/);
   await afterAction(pointer(row,'pointerup',210,20));assert.equal(surface.style.transform,'');assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
@@ -274,7 +276,7 @@ test('swipe follows the finger, only commits leftward, and clears transform on c
 
 test('reference swipe parks its circular action, grows a capsule, and closes on another row or outside tap',async ()=>{
   const {document,query,window,createFromHome}=harness();await afterAction(createFromHome());
-  const pointer=(row,type,x,y=20)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
+  const pointer=(row,type,x,y=20)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{timeStamp:0,button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
   const rows=[...document.querySelectorAll('.study-sets-word-row')],row=rows[0],surface=row.querySelector('.study-sets-word-surface'),action=row.querySelector('.study-sets-row-action');
   await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',220));await afterAction(pointer(row,'pointerup',220));
   assert.equal(surface.style.transform,'translateX(-72px)');assert.equal(action.style.width,'44px');assert.equal(rows.length,2);
@@ -290,7 +292,7 @@ test('reference swipe parks its circular action, grows a capsule, and closes on 
 test('failed full swipe resets visual state and retry excludes exactly once',async ()=>{
   const {context,document,query,window,storage,createFromHome}=harness();await afterAction(createFromHome());
   const row=query('.study-sets-word-row'),surface=query('.study-sets-word-surface'),before=storage.get('breeze.study-sets.v1'),nativeSet=context.localStorage.setItem;
-  const pointer=(type,x)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{button:0,pointerId:1,clientX:x,clientY:20});row.dispatchEvent(event);};
+  const pointer=(type,x)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{timeStamp:0,button:0,pointerId:1,clientX:x,clientY:20});row.dispatchEvent(event);};
   context.localStorage.setItem=()=>{throw new Error('Synthetic quota');};
   await afterAction(pointer('pointerdown',280));await afterAction(pointer('pointermove',20));await afterAction(pointer('pointerup',20));
   assert.equal(surface.style.transform,'');assert.equal(storage.get('breeze.study-sets.v1'),before);assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
@@ -319,7 +321,7 @@ test('a second row keeps pointer ownership while the first committed row collaps
   let finishExit,finishCollapse;const exit=new Promise(resolve=>{finishExit=resolve;}),collapse=new Promise(resolve=>{finishCollapse=resolve;});
   first.getBoundingClientRect=()=>({width:320,height:62});first.animate=()=>({finished:collapse});first.querySelector('.study-sets-word-surface').animate=()=>({finished:exit});
   await afterAction(first.querySelector('.study-sets-row-action').click());
-  const pointer=(type,x)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{button:0,pointerId:2,clientX:x,clientY:20});second.dispatchEvent(event);};
+  const pointer=(type,x)=>{const event=new window.Event(type,{cancelable:true});Object.assign(event,{timeStamp:0,button:0,pointerId:2,clientX:x,clientY:20});second.dispatchEvent(event);};
   await afterAction(pointer('pointerdown',280));await afterAction(pointer('pointermove',190));
   finishExit();await new Promise(resolve=>setImmediate(resolve));finishCollapse();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(second.isConnected,true);assert.equal(second.classList.contains('study-sets-dragging'),true);
@@ -382,7 +384,7 @@ test('bottom study entry keeps its directory sheet over vocabulary and all-word 
 test('a drag beginning on the status chip neither rates nor owns the row swipe',async ()=>{
   const {document,query,window,createFromHome}=harness();await afterAction(createFromHome());
   const row=query('.study-sets-word-row'),chip=query('.chip');
-  const pointer=(target,type,x)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{button:0,pointerId:3,clientX:x,clientY:20});target.dispatchEvent(event);};
+  const pointer=(target,type,x)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{timeStamp:0,button:0,pointerId:3,clientX:x,clientY:20});target.dispatchEvent(event);};
   await afterAction(pointer(chip,'pointerdown',280));await afterAction(pointer(row,'pointermove',80));await afterAction(pointer(row,'pointerup',80));
   assert.equal(query('.study-sets-word-surface').style.transform,undefined);assert.equal(chip.textContent,'★');assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
 });

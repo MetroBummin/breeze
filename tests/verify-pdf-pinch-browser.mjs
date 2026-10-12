@@ -176,10 +176,12 @@ try{
    });
    assert.ok(rebound.start<rebound.middle&&rebound.middle<1,'return smoothly approaches minimum');
    assert.equal(rebound.stable,true,'return must not change logical page/anchor coordinates');
-   await touch('touchStart',points(100));await touch('touchMove',points(130));
+   await touch('touchStart',points(100));
+   const regrabLevel=await page.evaluate(()=>originalPinch.level);
+   await touch('touchMove',points(130));
    await page.evaluate(()=>qaOldReturn.onfinish()); // stale completion cannot clear new input
    assert.equal((await snapshot()).busy,true);
-   await touch('touchEnd',[]);assert.ok(Math.abs((await snapshot()).zoom-1.3)<.002);
+   await touch('touchEnd',[]);assert.ok(Math.abs((await snapshot()).zoom-Math.max(1,regrabLevel*1.3))<.002);
    await page.evaluate(()=>resetOriginalZoom());
    await touch('touchStart',points(160));await touch('touchMove',points(60));
    await touch('touchCancel',[]);await page.waitForFunction(()=>!originalPinchBusy());

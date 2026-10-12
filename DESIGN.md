@@ -343,3 +343,11 @@ extraction or claim of pixel-identical Safari glyphs is made. Existing private
 Safari reference measurements ground capsule/target proportions only; parent
 owns original-pixel comparison. See the measured before/after evidence in
 `docs/reviews/breeze-193-followup-ui/`.
+
+## Post-270 set-detail optical correction
+
+Only the set-detail ellipsis uses 2.3px filled dots beside the approved Back
+chevron. Its24px SVG frame,44px shell, paired materials and all other icon optics
+remain unchanged. All Words adopts the existing shared vocabulary row scope;
+there is no new word-list design. Study and PDF gesture presentation evidence
+is in `docs/reviews/breeze-post270-gestures/`.

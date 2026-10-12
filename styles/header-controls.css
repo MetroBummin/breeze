@@ -23,3 +23,6 @@ html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-clos
 @media(prefers-reduced-motion:reduce){
   html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#v-memory-set .study-sets-edit-surface,#review-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary){transition:none;}
 }
+
+/* Filled set-menu dots need a small optical lift beside the open Back glyph. */
+#v-memory-set #study-sets-edit{--header-more-dot-radius:1.15px;}

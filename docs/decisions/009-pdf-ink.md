@@ -890,3 +890,16 @@ browser engines run the transport tests in CI. Long-task measurements explicitly
 report support and are not native CPU/latency evidence. Actualbreeze:// native
 worker admission, suspension and physical iPad input remain unverified; startup
 fallback preserves storage availability without promising worker performance.
+
+## Post-270 under-minimum pinch presentation
+
+The existing pinch owner retains the 100% committed minimum and native scroll,
+page and ink contracts. Under-minimum visual resistance uses a bounded supple
+curve and a damped compositor return with one restrained overshoot. A new pair
+acquires the current presentation matrix, including its translation at a changed
+midpoint; held re-grabs do not drift. Any carried overshoot remains visual and
+cannot leave the committed scale above the minimum without new zoom input.
+Single-finger scrolling, ink/lookup input and navigation settle presentation
+before querying geometry; stale animation completion cannot cancel new input.
+Reduced motion settles immediately. Browser matrix/anchor/rotation evidence and
+physical-device limitations are recorded in `docs/reviews/breeze-post270-gestures/`.

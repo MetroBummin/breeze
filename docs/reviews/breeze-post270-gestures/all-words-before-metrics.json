@@ -1,0 +1,41 @@
+[
+  {
+    "size": "phone",
+    "dark": false,
+    "metrics": {
+      "count": 2294,
+      "row": {
+        "x": 20,
+        "y": 111.1875,
+        "width": 350,
+        "height": 91.78125
+      },
+      "word": {
+        "x": 125,
+        "y": 120.1875,
+        "width": 141.546875,
+        "height": 24.796875
+      },
+      "meaning": {
+        "x": 277.546875,
+        "y": 120.1875,
+        "width": 90.453125,
+        "height": 47.78125
+      },
+      "chip": {
+        "x": 22,
+        "y": 167.96875,
+        "width": 92,
+        "height": 26
+      },
+      "ordinal": {
+        "x": 22,
+        "y": 120.1875,
+        "width": 92,
+        "height": 22.390625
+      },
+      "editable": false,
+      "grid": "grid"
+    }
+  }
+]

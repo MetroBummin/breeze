@@ -353,3 +353,22 @@ uses real browser quota, verifies exact archive/source preservation, successful
 new sets and All Words after migration, restart, abort/retry, pending-save
 navigation, duplicate input and post-commit retry. Existing browser tests await
 storage completion. Chromium results are not physical WKWebView verification.
+
+## Post-270 gesture presentation follow-up
+
+All Words must opt into the same `.vocabulary-rows` list scope as custom sets;
+its readonly handlers and source records remain unchanged. Only set-detail
+ellipsis receives a 2.3px filled-dot optical correction within its existing
+24px frame and 44px shell.
+
+Both study flows share one direct-drag/spring/exit presentation owner. Recent
+release velocity projects intent only after 36px horizontal travel; opposite
+release trajectories cancel. Re-grabbing a spring retains its live position.
+An accepted card remains offscreen until its exit and durable write finish;
+next content has no inherited return transform or second underlay text layer.
+The original queue, token, failure/retry and Again/no-progress rules still own
+state. Different row exclusions released during a pending write wait in order,
+retain their view owner and read fresh state; duplicate pending-row input cannot
+commit twice. Existing Undo/neighbor pointer ownership survives collapse.
+See `docs/reviews/breeze-post270-gestures/` for shipped-source reproduction,
+actual timed motion frames, browser regressions and native limitations.

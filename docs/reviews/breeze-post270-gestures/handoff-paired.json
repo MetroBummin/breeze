@@ -1,0 +1,1047 @@
+{
+  "input": "trusted Chromium CDP touch; held durable commit; browser evidence, not native",
+  "cases": [
+    {
+      "phase": "before",
+      "baseline": "f34cef95f4cec5835e60dfc7ca831d7020e75c7f",
+      "pending": {
+        "x": 20,
+        "width": 350,
+        "under": "return"
+      },
+      "captures": [
+        {
+          "file": "handoff-before-0.png",
+          "t": 290.40000000596046
+        },
+        {
+          "file": "handoff-before-1.png",
+          "t": 393.5
+        },
+        {
+          "file": "handoff-before-2.png",
+          "t": 537.1000000089407
+        },
+        {
+          "file": "handoff-before-3.png",
+          "t": 667
+        }
+      ],
+      "frames": [
+        {
+          "t": 13.600000008940697,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 29.600000008940697,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 52.400000005960464,
+          "x": 45.214576721191406,
+          "width": 359.57086181640625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 64.20000000298023,
+          "x": 45.214576721191406,
+          "width": 359.57086181640625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 79.80000001192093,
+          "x": 45.214576721191406,
+          "width": 359.57086181640625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 97.1000000089407,
+          "x": 74.68251037597656,
+          "width": 370.635009765625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 117.70000000298023,
+          "x": 74.68251037597656,
+          "width": 370.635009765625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 134.40000000596046,
+          "x": 104.2068862915039,
+          "width": 381.58624267578125,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 146.40000000596046,
+          "x": 104.2068862915039,
+          "width": 381.58624267578125,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 163,
+          "x": 104.2068862915039,
+          "width": 381.58624267578125,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 181.1000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 198.6000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 216.1000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 230.30000001192093,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 247.80000001192093,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 268.6000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 279.80000001192093,
+          "x": 166.07435607910156,
+          "width": 400.34100341796875,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 296.80000001192093,
+          "x": 192.16998291015625,
+          "width": 406.23388671875,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 314.5,
+          "x": 216.49241638183594,
+          "width": 411.6884765625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 331.6000000089407,
+          "x": 238.9095001220703,
+          "width": 416.68310546875,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 346.40000000596046,
+          "x": 259.58831787109375,
+          "width": 421.26226806640625,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 363.30000001192093,
+          "x": 278.21063232421875,
+          "width": 425.3626708984375,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 380.1000000089407,
+          "x": 294.4296875,
+          "width": 428.915771484375,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 397.20000000298023,
+          "x": 308.08673095703125,
+          "width": 431.8944091796875,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 413.30000001192093,
+          "x": 318.58062744140625,
+          "width": 434.1749267578125,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 429.80000001192093,
+          "x": 325.17266845703125,
+          "width": 435.6038818359375,
+          "word": "observe",
+          "under": "return",
+          "pending": false
+        },
+        {
+          "t": 449,
+          "x": 327.000244140625,
+          "width": 435.99951171875,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 463,
+          "x": 280.87823486328125,
+          "width": 423.64971923828125,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 481,
+          "x": 238.28550720214844,
+          "width": 412.05853271484375,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 497.90000000596046,
+          "x": 198.91253662109375,
+          "width": 401.18798828125,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 512.8000000119209,
+          "x": 162.26783752441406,
+          "width": 390.939208984375,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 529.8000000119209,
+          "x": 128.93634033203125,
+          "width": 381.50927734375,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 546.5,
+          "x": 98.78437042236328,
+          "width": 372.89227294921875,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 563.6000000089407,
+          "x": 72.56416320800781,
+          "width": 365.333251953125,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 579.7000000029802,
+          "x": 50.51356887817383,
+          "width": 358.9297790527344,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 596.3000000119209,
+          "x": 33.58546829223633,
+          "width": 353.98553466796875,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 613.8000000119209,
+          "x": 22.954280853271484,
+          "width": 350.8680114746094,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 630.1000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 646.4000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 662.8000000119209,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 679.8000000119209,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 697.7000000029802,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 712.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 731.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 746.4000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 762.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 780.5,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 796.2000000029802,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 813.1000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 831.8000000119209,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 847,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 865.1000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 879.6000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 897.8000000119209,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 912.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 929.8000000119209,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 947.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 965,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 980.1000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "return",
+          "pending": true
+        },
+        {
+          "t": 999.6000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "evidence",
+          "pending": false
+        },
+        {
+          "t": 1015.8000000119209,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "evidence",
+          "pending": false
+        },
+        {
+          "t": 1030.1000000089407,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "evidence",
+          "pending": false
+        },
+        {
+          "t": 1047.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "evidence",
+          "pending": false
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "baseline": null,
+      "pending": {
+        "x": 405.54229736328125,
+        "width": 475.9154052734375,
+        "under": ""
+      },
+      "captures": [
+        {
+          "file": "handoff-after-0.png",
+          "t": 281.90000000596046
+        },
+        {
+          "file": "handoff-after-1.png",
+          "t": 366.90000000596046
+        },
+        {
+          "file": "handoff-after-2.png",
+          "t": 507.5
+        },
+        {
+          "file": "handoff-after-3.png",
+          "t": 640.1000000089407
+        }
+      ],
+      "frames": [
+        {
+          "t": 0.20000000298023224,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 5.9000000059604645,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 23.200000002980232,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 38.5,
+          "x": 20,
+          "width": 350,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 61.900000005960464,
+          "x": 45.214576721191406,
+          "width": 359.57086181640625,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 80,
+          "x": 45.214576721191406,
+          "width": 359.57086181640625,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 88.79999999701977,
+          "x": 45.214576721191406,
+          "width": 359.57086181640625,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 106,
+          "x": 74.68251037597656,
+          "width": 370.635009765625,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 123.5,
+          "x": 74.68251037597656,
+          "width": 370.635009765625,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 139.29999999701977,
+          "x": 104.2068862915039,
+          "width": 381.58624267578125,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 155,
+          "x": 104.2068862915039,
+          "width": 381.58624267578125,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 173.1000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 188.6000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 207.20000000298023,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 222.40000000596046,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 238.6000000089407,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 255.20000000298023,
+          "x": 138.02029418945312,
+          "width": 393.9594421386719,
+          "word": "observe",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 272.40000000596046,
+          "x": 251.4210205078125,
+          "width": 429.8922119140625,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 288.90000000596046,
+          "x": 320.71527099609375,
+          "width": 450.9984130859375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 307.5,
+          "x": 360.5853271484375,
+          "width": 462.838134765625,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 322.29999999701977,
+          "x": 383.5760498046875,
+          "width": 469.562255859375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 339.6000000089407,
+          "x": 396.57666015625,
+          "width": 473.330810546875,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 355.5,
+          "x": 403.175048828125,
+          "width": 475.234130859375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 372.1000000089407,
+          "x": 405.4835205078125,
+          "width": 475.8985595703125,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 389.29999999701977,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 407.29999999701977,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 421.79999999701977,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 438.29999999701977,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 455.40000000596046,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 472.5,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 491.70000000298023,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 505,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 521.9000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 539.7999999970198,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 559.1000000089407,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 571.9000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 589.7000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 606.7000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 621.7000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 639.7999999970198,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 656.9000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 672.9000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 688.4000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 705.4000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 722.1000000089407,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 738.7000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 754.9000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 771.6000000089407,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 788.2000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 805.4000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 821.7000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 838.5,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 855.1000000089407,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 872,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 888.2999999970198,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 905.2000000029802,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 921.9000000059605,
+          "x": 405.54229736328125,
+          "width": 475.9154052734375,
+          "word": "observe",
+          "under": "",
+          "pending": true
+        },
+        {
+          "t": 938.2000000029802,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 954.9000000059605,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "",
+          "pending": false
+        },
+        {
+          "t": 972.2000000029802,
+          "x": 20,
+          "width": 350,
+          "word": "return",
+          "under": "",
+          "pending": false
+        }
+      ]
+    }
+  ]
+}

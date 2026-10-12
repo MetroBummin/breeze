@@ -141,6 +141,9 @@ function originalPinchDistance(points){
                     points[0].clientY-points[1].clientY);
 }
 function beginOriginalPinch(center, distance, ids){
+  // Re-grab the live presentation before releasing its animation owner.
+  const returning=originalPinchReturn?new DOMMatrix(getComputedStyle(originalZoomLayer()).transform):null;
+  const returningRect=returning?originalZoomLayer().getBoundingClientRect():null;
   cancelOriginalPinchReturn();
   if(typeof closePdfNavigation==='function')closePdfNavigation();
   if(typeof sentenceSurfaceAnchored==='function' && sentenceSurfaceAnchored()
@@ -161,11 +164,26 @@ function beginOriginalPinch(center, distance, ids){
   originalPinch = {
     box, layer, stage, outer, origin, distance, ids, level, next:level, elastic:1,
     width:box.clientWidth, viewportHeight:box.clientHeight, height:originalZoomBaseHeight,
+    carry:null,carryScale:0,rawLevel:level,
     trailing:Math.max(0,box.scrollHeight-origin.y-originalZoomBaseHeight*level),
     paper:{x:(box.scrollLeft+center.x-outer.left-origin.x)/level,
            y:(box.scrollTop+center.y-outer.top-origin.y)/level},
     center, position:{x:box.scrollLeft,y:box.scrollTop},
   };
+  if(returning&&returningRect){
+    const amount=Math.max(0,1-returning.a/level);
+    originalPinch.level=amount>0?level*(1-.5*amount/Math.max(.001,.18-amount)):level;
+    originalPinch.carryScale=Math.max(0,returning.a/level-1);
+    originalPinch.rawLevel=originalPinch.level;
+    originalPinch.elastic=returning.a/level;
+    originalPinch.paper={x:(center.x-returningRect.left)/returning.a,y:(center.y-returningRect.top)/returning.a};
+    // Carry the remaining presentation translation into the new gesture. It
+    // decays with scale travel, not time, so a held re-grab cannot drift.
+    previewOriginalPinch();
+    const initial=new DOMMatrix(originalPinch.layer.style.transform);
+    originalPinch.carry={x:returning.e-initial.e,y:returning.f-initial.f,level:originalPinch.level};
+    previewOriginalPinch();
+  }
   originalPinchTail = true;
   cancelGesture('paper manipulation');
   stage.classList.add('pinching');
@@ -188,8 +206,9 @@ function previewOriginalPinch(){
   // under the fingers without writing scrollLeft/Top during the gesture.
   // Elasticity is visual only, about the live midpoint. Logical limits, paper
   // coordinates and scroll extents continue to use the clamped scale above.
-  const x=(center.x-outer.left+pinch.position.x-origin.x)*(1-pinch.elastic);
-  const y=(center.y-outer.top+pinch.position.y-origin.y)*(1-pinch.elastic);
+  const carry=pinch.carry,weight=carry?Math.max(0,1-Math.abs((pinch.rawLevel??pinch.level)-carry.level)/.35):0;
+  const x=(center.x-outer.left+pinch.position.x-origin.x)*(1-pinch.elastic)+(carry?.x||0)*weight;
+  const y=(center.y-outer.top+pinch.position.y-origin.y)*(1-pinch.elastic)+(carry?.y||0)*weight;
   pinch.rebound=`translate(${x}px,${y}px) scale(${next*pinch.elastic})`;
   pinch.layer.style.transform = `translate(${box.scrollLeft-pinch.position.x+x}px,${box.scrollTop-pinch.position.y+y}px) scale(${next*pinch.elastic})`;
 }
@@ -198,7 +217,8 @@ function moveOriginalPinch(level, center){
   originalPinch.manipulated=true;
   originalPinch.next = Math.max(ORIGINAL_ZOOM_MIN,Math.min(ORIGINAL_ZOOM_MAX,level));
   const under=Math.max(0,1-level/ORIGINAL_ZOOM_MIN);
-  originalPinch.elastic=1-.12*under/(.25+under);
+  originalPinch.elastic=1-.18*under/(.5+under)+originalPinch.carryScale*Math.max(0,1-Math.abs(level-originalPinch.level)/.15);
+  originalPinch.rawLevel=level;
   originalPinch.center = center;
   if(!originalPinchFrame) originalPinchFrame = requestAnimationFrame(previewOriginalPinch);
 }
@@ -218,13 +238,21 @@ function finishOriginalPinch(){
   originalPinch = null;
   pinch.stage.classList.remove('pinching');
   setOriginalZoom(pinch.next,null,pinch.position);
-  if(pinch.elastic<1)invalidatePdfPageLayout();
+  if(pinch.elastic!==1||pinch.carry)invalidatePdfPageLayout();
   resharpenOriginalPages();
   saveReadingState();
-  if(pinch.elastic<1&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  if((pinch.elastic!==1||pinch.carry)&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     const layout=pdfPageLayout(); // Keep page queries in committed coordinates during return.
-    const animation=pinch.layer.animate([{transform:pinch.rebound},{transform:pinch.layer.style.transform||'none'}],
-      {duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});
+    const from=new DOMMatrix(pinch.rebound),to=new DOMMatrix(pinch.layer.style.transform||'none');
+    // Analytic damped spring, sampled for the compositor. One tiny overshoot;
+    // committed zoom, scroll extents and page queries stay exactly at 100%.
+    const frames=Array.from({length:31},(_,i)=>{
+      const t=i/30*.46,decay=Math.exp(-14*t),w=12;
+      const remaining=i===30?0:decay*(Math.cos(w*t)+14/w*Math.sin(w*t));
+      const a=to.a+(from.a-to.a)*remaining,e=to.e+(from.e-to.e)*remaining,f=to.f+(from.f-to.f)*remaining;
+      return {transform:`translate(${e}px,${f}px) scale(${a})`,offset:i/30};
+    });
+    const animation=pinch.layer.animate(frames,{duration:460,easing:'linear'});
     originalPinchReturn=Object.assign(animation,{layout});
     animation.onfinish=()=>{
       if(originalPinchReturn===animation)cancelOriginalPinchReturn();
@@ -324,8 +352,13 @@ function originalPinchEnd(event){
 }
 (function(){
   // Fresh input settles presentation before lookup/ink sample paper bounds.
-  for(const type of ['pointerdown','touchstart','wheel','keydown'])
-    window.addEventListener(type,cancelOriginalPinchReturn,{capture:true,passive:true});
+  for(const type of ['pointerdown','touchstart','click','wheel','keydown'])
+    window.addEventListener(type,event=>{
+      const paper=event.target instanceof Element&&event.target.closest('#original-stage');
+      const touch=event.type==='touchstart'||event.type==='pointerdown'&&event instanceof PointerEvent&&event.pointerType==='touch';
+      if(touch&&paper&&!(typeof BreezePdfInk!=='undefined'&&BreezePdfInk.writing()))return;
+      cancelOriginalPinchReturn();
+    },{capture:true,passive:true});
   const start = ()=>{
     const box = readerScroller();
     if(!box) return;
@@ -340,6 +373,7 @@ function originalPinchEnd(event){
     for(const type of ['touchstart','touchmove','wheel','keydown'])
       box.addEventListener(type,guardOpening,{capture:true,passive:false});
     box.addEventListener('scroll',()=>{
+      if(originalPinchReturn&&originalPdfContacts===1&&!originalPinch)cancelOriginalPinchReturn();
       if((originalUndoContact&&!originalUndoSame(originalUndoContact.snapshot))
           ||(originalUndoFirst&&!originalUndoSame(originalUndoFirst.snapshot)))cancelOriginalUndoTap();
       if(originalPinch && !originalPinchFrame)
