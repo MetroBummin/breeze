@@ -27,7 +27,7 @@ try{
   words.same={...words.observe,book:'이번 주 읽은 기사'};
   words.newArticle={word:'insight',ko:'통찰',book:'이번 주 읽은 기사',example:'A fresh insight.',status:2,addedAt:30};
   words.unrelated={word:'unrelated',ko:'관련 없는',book:'별도 책',status:3,addedAt:40};saveWords();
-  const state=BreezeStudySets.create(null,{name:'이번 주 읽은 글',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
+  const state=BreezeStudySets.create(readStudySets(),{name:'이번 주 읽은 글',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
   words.pending={word:'method',ko:'방법',book:'The Adventures of Sherlock Holmes',example:'His method was simple.',status:1,addedAt:50};saveWords();
   commitStudySets(state);show('vocab');renderVocab();openStudySetsDirectory();
   window.undoTouchTrace=[];for(const type of ['pointerdown','pointerup','click'])window.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-undo button'))undoTouchTrace.push({type,trusted:e.isTrusted,pointerType:e.pointerType,exiting:!!document.querySelector('.study-sets-exiting')});},true);window.touchTrace=[];for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-word-row'))touchTrace.push({type,target:e.target.className,pointerType:e.pointerType,trusted:e.isTrusted});},true);
