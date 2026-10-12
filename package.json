@@ -78,7 +78,8 @@
     "@mozilla/readability": "0.6.0",
     "linkedom": "0.18.12",
     "playwright": "^1.63.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "fake-indexeddb": "6.2.5"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",

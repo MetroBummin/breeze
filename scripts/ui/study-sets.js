@@ -3,6 +3,7 @@
 const studySetsOpened=new Map();
 const studySetsDirectoryPositions=new Map();
 const studySetsDirectoryFocus=new Map();
+let studySetsReadEpoch=0,studySetsHomeEpoch=0;
 const studySetsUI={
   dialog:/** @type {HTMLDialogElement|null} */(null),
   sheet:/** @type {HTMLElement|null} */(null),
@@ -82,10 +83,11 @@ function ensureStudySetsDialog(){
     studySetsReturnHomeFocus();
   });
 }
-function studySetsReturnHomeFocus(){
+async function studySetsReturnHomeFocus(){
     const directory=studySetsUI.directoryList;if(directory&&!directory.isConnected)document.getElementById('v-memory')?.append(directory);
     studySetsUI.retry=null;studySetsUI.undo=null;
-    refreshStudySetsEntry();
+    await refreshStudySetsEntry();
+    if(studySetsIsOpen())return;
     const previous=studySetsUI.returnFocus;
     const target=previous?.isConnected?previous:previous?.dataset.setId?
       [...document.querySelectorAll('.study-sets-home-card[data-set-id]')].find(item=>item.getAttribute('data-set-id')===previous.dataset.setId):
@@ -98,7 +100,7 @@ function refreshStudySetsEntry(state=null){
   // Detail/study owns the visible surface. Rebuild its directory only when
   // Memory becomes visible again; entering the directory reads durable state.
   if(document.querySelector('#v-memory.view:not(.on)'))return;
-  renderStudySetsHome(state);
+  return renderStudySetsHome(state);
 }
 // Both list renderers receive decoded or successfully committed state. Counts
 // need no card copies, answer scan, or collection-wide view normalization.
@@ -107,7 +109,10 @@ function studySetsListSummary(set){
   const total=session?.queue.length||0,completed=session?.index||0;
   return {active,total,completed,status:session?(completed<total?'active':'complete'):active?'idle':'empty'};
 }
-function renderStudySetsHome(state=null){
+async function renderStudySetsHome(state=null){
+  const epoch=++studySetsHomeEpoch;let readError;
+  if(!state){try{state=await loadStudySets();}catch(error){readError=error;}}
+  if(epoch!==studySetsHomeEpoch)return;
   const container=studySetsUI.directoryList||document.getElementById('study-sets-home-list');if(!container)return;studySetsUI.directoryList=container;
   const focused=document.activeElement instanceof HTMLElement&&container.contains(document.activeElement)?document.activeElement:null;
   const list=studySetsNode('ul','study-sets-home-cards');list.setAttribute('aria-label','Memory 단어장과 학습 세트');
@@ -121,7 +126,7 @@ function renderStudySetsHome(state=null){
   // with renderVocab and is neither copied nor reset by the directory.
   const count=new Set(Object.entries(words).filter(([,item])=>validWordMeaning(item)).map(([key,item])=>item.root||key)).size;
   const all=card('전체 단어',`${count}개`,openStudySetsAllWords);all.id='study-sets-all';all.classList.add('study-sets-home-default');
-  try{state=state||readStudySets();}catch(error){
+  if(readError){
     const notice=studySetsNode('div','study-sets-home-error');notice.setAttribute('role','alert');
     notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',()=>renderStudySetsHome()));
     const item=studySetsNode('li');item.append(notice);list.append(item);
@@ -192,11 +197,11 @@ function rememberStudySetsDirectory(){
   studySetsDirectoryPositions.set(studySetsUI.historyToken,studySetsUI.directoryScroll);
   replaceStudySetsHistory({studySetsDirectoryScroll:studySetsUI.directoryScroll});
 }
-function openStudySetsAllWords(){
+async function openStudySetsAllWords(){
   if(studySetsUI.directoryOrigin)studySetsDirectoryFocus.set(studySetsUI.historyToken,'@all');
   rememberStudySetsDirectory();
   if(!studySetsUI.directoryOrigin)replaceStudySetsHistory({studySetsDirectoryScroll:window.scrollY||0});
-  openVocabularyReview();
+  await openVocabularyReview();
   if(typeof activeAppView==='function'&&activeAppView()==='study')replaceStudySetsHistory({studySetsAllWords:true});
 }
 function openStudySetsCreate(){
@@ -266,7 +271,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
     studySetsUI.historyToken=String(Date.now())+'-'+String(Math.random()).slice(2);
     history.pushState({breeze:true,view:['detail','study'].includes(studySetsUI.screen)?'memory-set':typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll,studySetsDirectoryOrigin:studySetsUI.directoryOrigin,studySetsDirectoryDepth:0,studySetsDirectoryScroll:studySetsUI.directoryScroll,studySetsVocabScroll:studySetsUI.vocabScroll},'');
   }else studySetsUI.historyToken=history.state?.studySets||'';
-  studySetsAttachSurface();studySetsReadAndRender();
+  studySetsAttachSurface();return studySetsReadAndRender();
 }
 function closeStudySets(fromHistory=false){
   if(!studySetsIsOpen())return;
@@ -307,24 +312,36 @@ function studySetsShowError(error,retry,context={phase:'read',committed:false}){
   studySetsUI.error.append(studySetsButton('다시 시도',()=>studySetsUI.retry?.()));
 }
 function studySetsClearError(){studySetsUI.retry=null;studySetsUI.error.hidden=true;studySetsUI.error.replaceChildren();}
-function studySetsReadAndRender(focus=true,context={phase:'read',committed:false}){
-  try{studySetsUI.state=readStudySets();studySetsClearError();renderStudySets(focus);}
-  catch(error){studySetsShowError(error,()=>studySetsReadAndRender(focus,context),context);}
+function studySetsOwner(){
+  const {historyToken,screen,setId}=studySetsUI;
+  return ()=>studySetsIsOpen()&&studySetsUI.historyToken===historyToken&&studySetsUI.screen===screen&&studySetsUI.setId===setId;
 }
-function studySetsMutate(change,success,exitRow=null){
+async function studySetsReadAndRender(focus=true,context={phase:'read',committed:false}){
+  const epoch=++studySetsReadEpoch,owns=studySetsOwner();
+  studySetsUI.body?.setAttribute('aria-busy','true');
+  try{const state=await loadStudySets();if(epoch!==studySetsReadEpoch||!owns())return;studySetsUI.state=state;studySetsClearError();renderStudySets(focus);}
+  catch(error){if(epoch===studySetsReadEpoch&&owns())studySetsShowError(error,()=>studySetsReadAndRender(focus,context),context);}
+  finally{if(epoch===studySetsReadEpoch)studySetsUI.body?.removeAttribute('aria-busy');}
+}
+async function studySetsMutate(change,success,exitRow=null){
   if(studySetsUI.pendingClose||studySetsUI.mutating)return;
   studySetsUI.mutating=true;
+  ++studySetsReadEpoch;const owns=studySetsOwner();
+  studySetsUI.body?.removeAttribute('aria-busy');
   const operation=studySetsUI.screen;
   let result,phase='read',committed=false,serializedCharacters=0;
   const retry=()=>studySetsMutate(change,success,exitRow);
   try{
-    result=change(readStudySets());
+    const state=await loadStudySets();if(!owns())return;
+    result=change(state);
     if(!result.accepted){
       studySetsUI.state=result.state;studySetsClearError();
       studySetsUI.notice='다른 곳에서 변경된 최신 상태를 불러왔어요.';phase='display';renderStudySets();refreshStudySetsEntry(result.state);return;
     }
     phase='commit';serializedCharacters=JSON.stringify(result.state).length;
-    commitStudySets(result.state);committed=true;studySetsUI.state=result.state;studySetsClearError();
+    await commitStudySets(result.state);committed=true;
+    if(!owns())return;
+    studySetsUI.state=result.state;studySetsClearError();
     const previousScreen=studySetsUI.screen;
     phase='navigation';if(success)success(result);
     if(studySetsUI.pendingClose)return;
@@ -333,6 +350,7 @@ function studySetsMutate(change,success,exitRow=null){
     if(exitRow&&studySetsAnimateExit(exitRow))return;
     renderStudySets(focus);
   }catch(error){
+    if(!owns()&&!committed){toast('학습 변경을 저장하지 못했어요. 다시 열어 시도해 주세요.');return;}
     if(exitRow)studySetsUI.swipeClose?.();
     // A durable operation must never be repeated because its display failed.
     if(committed){studySetsUI.pendingClose=false;studySetsUI.transitioning=false;}
@@ -382,7 +400,7 @@ function studySetsGo(screen,setId=studySetsUI.setId){
   }
   studySetsUI.screen=screen;studySetsUI.setId=setId;studySetsUI.notice='';
   if(screen!=='detail')studySetsUI.undo=null;
-  studySetsReadAndRender();
+  return studySetsReadAndRender();
 }
 function studySetsBack(){
   if(studySetsUI.editOpen){studySetsCloseEditMenu(true);return;}
@@ -675,7 +693,7 @@ document.addEventListener('pointerdown',event=>{
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
 function studySetsStart(id,restart=false){
-  studySetsMutate(state=>BreezeStudySets.start(state,id,Date.now(),{restart}),()=>{
+  return studySetsMutate(state=>BreezeStudySets.start(state,id,Date.now(),{restart}),()=>{
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
     if(entering){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
 }
@@ -730,12 +748,14 @@ function renderStudySetsStudy(set){
   const finish=(event,cancel)=>{if(!drag||event.pointerId!==drag.id)return;const saved=drag;drag=null;paintReset();if(!cancel&&saved.axis==='x'&&Math.abs(saved.dx)>=Math.min(90,card.clientWidth*.24))grade(saved.dx>0?'remembered':'repeat');};
   card.addEventListener('pointerup',event=>finish(event,false));card.addEventListener('pointercancel',event=>finish(event,true));
 }
-window.addEventListener('storage',event=>{
-  if(event.key!==null&&event.key!==STUDY_SETS_STORAGE)return;
+function studySetsStorageChanged(key){
+  if(key!==null&&key!==STUDY_SETS_STORAGE)return;
   refreshStudySetsEntry();
   // Never discard typed input or replace a retryable answer after a failed write.
-  if(studySetsIsOpen()&&!studySetsUI.retry&&!['create','rename','books','delete'].includes(studySetsUI.screen))studySetsReadAndRender(false);
-});
+  if(studySetsIsOpen()&&!studySetsUI.retry&&!studySetsUI.mutating&&!['create','rename','books','delete'].includes(studySetsUI.screen))studySetsReadAndRender(false);
+}
+window.addEventListener('storage',event=>studySetsStorageChanged(event.key));
+window.addEventListener('breeze-study-storage',event=>studySetsStorageChanged(/** @type {CustomEvent} */(event).detail));
 refreshStudySetsEntry();
 
 document.addEventListener('keydown',event=>{if(!studySetsUI.editOpen)return;const items=[...(studySetsUI.editMenu?.querySelectorAll('button')||[])];if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();studySetsCloseEditMenu(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const at=items.findIndex(item=>item===document.activeElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(at+(event.key==='ArrowUp'?-1:1)+items.length)%items.length;items[next]?.focus({preventScroll:true});}else if(event.key==='Tab'){studySetsCloseEditMenu(false,true);}},true);

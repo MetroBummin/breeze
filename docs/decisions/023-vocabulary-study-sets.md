@@ -284,3 +284,49 @@ compatibilityclick from also revealing the next example. Mouse/assistive click
 and keyboard remain; cancelled/vertical releases cannot grade and outside taps cannot reveal.
 The browser regression deliberately drops one compatibilityclick while retaining
 actual touch input; waiting alone is not treated as the gesture fix.
+
+## Study quota repair (2026-10-12)
+
+The shipped 1.9.3(269) collection, frozen queues and All Words session shared
+localStorage's small quota with saved vocabulary and legacy copies. A real
+Chromium quota reproduction with 5,000 meanings and overlapping sets permits an
+existing session's small answer delta but rejects a new set and All Words' first
+session write. This does not establish physical disk shortage or the exact
+contents of the reporting iPhone.
+
+Store each study engine's unchanged serialized schema in the `records` store of
+IndexedDB `breeze-study`, version 1. Each record contains its working value and
+an immutable `legacy` map holding the exact original localStorage working bytes
+and every matching `.backup*` key. Migration validates the working schema,
+commits the complete archive, reads it back and compares the still-present
+legacy bytes before removing those matching keys from localStorage. Interrupted
+cleanup retries against the same archive. Invalid, future or changed data fails
+closed. Vocabulary, word-item overrides, pending journals, dormant FSRS history
+and its backups remain unchanged. Nothing is uploaded or silently trimmed.
+
+The authoritative write is one read/write IDB transaction: check the expected
+serialized value and replace the working value while retaining the archive.
+Resolve only on transaction completion, including abort after request success.
+An older app recreating legacy keys blocks writes rather than overwriting newer
+IDB state; downgrading to a localStorage-only build is not supported. Cross-tab
+notifications use BroadcastChannel where available; fresh action reads and
+transactional comparison enforce correctness independently of notifications.
+
+The UI awaits reads and commits, retains retryable answers/forms on failure,
+and ignores obsolete navigation completions. A post-commit display failure only
+retries display. All Words validates its separate session and reports damaged
+records separately from quota failures. Leaving a pending failed save still
+reports the failure. The original card/snapshot/session algorithms are unchanged.
+
+This is a study-storage repair, not a vocabulary-store redesign. A wordbook or
+unrelated legacy history alone can still exhaust localStorage. Removing its
+records or rewriting its persistence contract is outside this change. Exact
+migration archives stay in IDB; no automatic archive pruning is introduced.
+
+Validation: `verify-study-sets-storage.mjs` exercises migration, corruption,
+interrupted copy/readback/cleanup, IDB quota/abort, stale writers, large overlapping
+sets, frozen queues, exclusions and answer history. `verify-study-quota-browser.mjs`
+uses real browser quota, verifies exact archive/source preservation, successful
+new sets and All Words after migration, restart, abort/retry, pending-save
+navigation, duplicate input and post-commit retry. Existing browser tests await
+storage completion. Chromium results are not physical WKWebView verification.
