@@ -40,11 +40,14 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.engine }}
+        id: browser
       - run: node tests/verify-study-motion-browser.mjs
       - run: node tests/capture-study-handoff-browser.mjs
-        if: matrix.engine == 'chromium'
+        if: ${{ !cancelled() && steps.browser.conclusion == 'success' && matrix.engine == 'chromium' }}
       - run: node tests/verify-pdf-elastic-motion-browser.mjs
+        if: ${{ !cancelled() && steps.browser.conclusion == 'success' }}
       - run: npm run test:pdf-pinch
+        if: ${{ !cancelled() && steps.browser.conclusion == 'success' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
