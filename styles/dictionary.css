@@ -43,7 +43,7 @@ body.dark :is(#word-peek,#sentence-peek)::before{
 :is(#word-peek,#sentence-peek) .word-peek-action:focus-visible{outline:2px solid var(--blue); outline-offset:-3px; border-radius:50%;}
 :is(#word-peek,#sentence-peek) .word-peek-action:disabled{cursor:default; opacity:.52;}
 :is(#word-peek,#sentence-peek) .word-peek-action:disabled{background:transparent; transform:none;}
-:is(#word-peek,#sentence-peek) .word-peek-action svg{display:block; width:17px; height:17px;}
+:is(#word-peek,#sentence-peek) .word-peek-action svg{display:block; width:17px; height:17px;stroke-width:calc(var(--control-inline-icon-stroke) * 24 / 17);}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   :is(#word-peek,#sentence-peek){background:var(--sentence-glass-pill); backdrop-filter:blur(19px) saturate(122%);
     -webkit-backdrop-filter:blur(19px) saturate(122%);}
@@ -190,7 +190,7 @@ body.dark :is(#word-peek,#sentence-peek)::before{
   #p-aibtn:hover{background:var(--sentence-glass-action-hover);}
   #p-aibtn:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:2px;}
   #p-aibtn:disabled{opacity:.6; cursor:default;}
-  #p-aibtn .p-ai-retry-icon{flex-shrink:0;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  #p-aibtn .p-ai-retry-icon{flex-shrink:0;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:calc(var(--control-inline-icon-stroke) * 24 / 17);stroke-linecap:round;stroke-linejoin:round;}
   /* 기본은 보통 흐름의 위 여백입니다 — 바로 위 형제가 아무것도 안 그려질 때
      (quota·offline: 단추가 숨습니다) 이 여백이 그 위의 낱말 칸과 부딪히지
      않게. 단추가 실제로 있을 때만(.tight, scripts/dictionary/dictionary.js)

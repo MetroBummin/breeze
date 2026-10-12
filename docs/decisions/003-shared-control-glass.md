@@ -532,3 +532,25 @@ and mode SVGs use 2 units, each rendering a 2px stroke. Standalone and grouped
 Reader back now share that weight. General controls, study back icons and
 bookmark drawings retain their existing tokens. This addresses the Reader's
 previous 3.07px back/page stroke without a global icon or layout change.
+
+
+## Expanded all-control scope for the next build
+
+The subsequent user request extends the Reader-only adjustment to every app
+control family. A shared regular outline now renders2px at existing20/24/32px
+frames, rather than mixing1.5/1.67/3.07px strokes. General20px frames use2.4
+viewBox units, backs32px use1.5, page/mode24px use2. Filled ellipses use1.2-unit
+radii in20px frames, giving2px dot diameters. Inline actions/search render1.4px
+and compact disclosure glyphs1.2px; large onboarding artwork is illustrative,
+not a toolbar control. Existing filled selection states and star ratings keep
+their semantic roles. All button boxes, fonts, labels, materials and handlers
+are retained. Both PDF sidebar header drawings use the same24px/2 rule, preserving
+the existing strict geometry/material/weight equality contract.
+
+The Apple [SF Symbols guidance](https://developer.apple.com/design/human-interface-guidelines/sf-symbols)
+uses weights and contextual scales and recommends optical consistency for
+custom drawings; [SF Symbols](https://developer.apple.com/sf-symbols/) supplies
+system variants. This is a measured Breeze SVG alignment inspired by those
+principles, not an SF asset import or a published Safari pixel specification.
+Existing reference evidence describes private Safari proportions; the originals
+were not materialized in this cloud environment. Parent retains direct comparison.

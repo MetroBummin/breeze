@@ -14,6 +14,7 @@ on:
       - 'scripts/dictionary/dictionary.js'
       - 'tests/verify-study-sets*.mjs'
       - 'tests/verify-study-example.mjs'
+      - 'tests/verify-control-optics-browser.mjs'
       - 'tests/verify-study-create-browser.mjs'
       - 'tests/verify-simple-study-session.mjs'
       - 'tests/verify-study-session-swipe-browser.mjs'
@@ -94,6 +95,7 @@ jobs:
         env:
           BROWSER: ${{ matrix.engine }}
       - run: node tests/capture-app-icon-family.mjs
+      - run: node tests/verify-control-optics-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
           BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}

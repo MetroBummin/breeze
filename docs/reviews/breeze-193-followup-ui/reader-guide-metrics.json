@@ -1,0 +1,2953 @@
+{
+  "engine": "chromium",
+  "browser": "151.0.7922.173",
+  "native": false,
+  "rows": [
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "text",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 48,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "pdf",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-page-button",
+          "label": "1페이지, 페이지 탐색",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px 8px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#modefab",
+          "label": "글자로 보기",
+          "button": {
+            "width": 34,
+            "height": 38,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "pdf-sidebar",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "pdf-sidebar-selected",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(190, 69, 64)",
+              "fill": "rgb(190, 69, 64)",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "pdf-writing",
+      "controls": [
+        {
+          "selector": "[data-ink-mode=pen]",
+          "label": "펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(38, 127, 168)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=highlighter]",
+          "label": "형광펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(80, 88, 92)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=erase]",
+          "label": "지우개",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(80, 88, 92)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "all-detail",
+      "controls": [
+        {
+          "selector": "#study-sets-back",
+          "label": "뒤로",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "all-front",
+      "controls": [
+        {
+          "selector": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(28, 28, 30)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": false,
+      "stage": "onboarding-finish",
+      "decorative": {
+        "size": 72,
+        "stroke": "1.3px"
+      },
+      "controls": "existing text controls; brand untouched"
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "text",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 48,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "pdf",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-page-button",
+          "label": "1페이지, 페이지 탐색",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px 8px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#modefab",
+          "label": "글자로 보기",
+          "button": {
+            "width": 34,
+            "height": 38,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "pdf-sidebar",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "pdf-sidebar-selected",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(255, 137, 130)",
+              "fill": "rgb(255, 137, 130)",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "pdf-writing",
+      "controls": [
+        {
+          "selector": "[data-ink-mode=pen]",
+          "label": "펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(120, 201, 234)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=highlighter]",
+          "label": "형광펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(208, 209, 207)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=erase]",
+          "label": "지우개",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(208, 209, 207)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "all-detail",
+      "controls": [
+        {
+          "selector": "#study-sets-back",
+          "label": "뒤로",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "all-front",
+      "controls": [
+        {
+          "selector": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(242, 242, 247)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "stage": "onboarding-finish",
+      "decorative": {
+        "size": 72,
+        "stroke": "1.3px"
+      },
+      "controls": "existing text controls; brand untouched"
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "text",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 48,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "pdf",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-page-button",
+          "label": "1페이지, 페이지 탐색",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px 8px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#modefab",
+          "label": "글자로 보기",
+          "button": {
+            "width": 34,
+            "height": 38,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "pdf-sidebar",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "pdf-sidebar-selected",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(190, 69, 64)",
+              "fill": "rgb(190, 69, 64)",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "pdf-writing",
+      "controls": [
+        {
+          "selector": "[data-ink-mode=pen]",
+          "label": "펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(38, 127, 168)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=highlighter]",
+          "label": "형광펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(80, 88, 92)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=erase]",
+          "label": "지우개",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(80, 88, 92)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "all-detail",
+      "controls": [
+        {
+          "selector": "#study-sets-back",
+          "label": "뒤로",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "all-front",
+      "controls": [
+        {
+          "selector": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(28, 28, 30)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": false,
+      "stage": "onboarding-finish",
+      "decorative": {
+        "size": 72,
+        "stroke": "1.3px"
+      },
+      "controls": "existing text controls; brand untouched"
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "text",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 48,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "pdf",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-page-button",
+          "label": "1페이지, 페이지 탐색",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px 8px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#modefab",
+          "label": "글자로 보기",
+          "button": {
+            "width": 34,
+            "height": 38,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "pdf-sidebar",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "pdf-sidebar-selected",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(255, 137, 130)",
+              "fill": "rgb(255, 137, 130)",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "pdf-writing",
+      "controls": [
+        {
+          "selector": "[data-ink-mode=pen]",
+          "label": "펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(120, 201, 234)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=highlighter]",
+          "label": "형광펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(208, 209, 207)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=erase]",
+          "label": "지우개",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(208, 209, 207)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "all-detail",
+      "controls": [
+        {
+          "selector": "#study-sets-back",
+          "label": "뒤로",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "all-front",
+      "controls": [
+        {
+          "selector": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(242, 242, 247)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "ipad",
+      "dark": true,
+      "stage": "onboarding-finish",
+      "decorative": {
+        "size": 72,
+        "stroke": "1.3px"
+      },
+      "controls": "existing text controls; brand untouched"
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "text",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 48,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "pdf",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-page-button",
+          "label": "1페이지, 페이지 탐색",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px 8px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#modefab",
+          "label": "글자로 보기",
+          "button": {
+            "width": 34,
+            "height": 38,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "pdf-sidebar",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "pdf-sidebar-selected",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(190, 69, 64)",
+              "fill": "rgb(190, 69, 64)",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(41, 48, 52)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "pdf-writing",
+      "controls": [
+        {
+          "selector": "[data-ink-mode=pen]",
+          "label": "펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(38, 127, 168)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=highlighter]",
+          "label": "형광펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(80, 88, 92)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=erase]",
+          "label": "지우개",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(80, 88, 92)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "all-detail",
+      "controls": [
+        {
+          "selector": "#study-sets-back",
+          "label": "뒤로",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(41, 48, 52)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "all-front",
+      "controls": [
+        {
+          "selector": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(28, 28, 30)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "stage": "onboarding-finish",
+      "decorative": {
+        "size": 48,
+        "stroke": "1.3px"
+      },
+      "controls": "existing text controls; brand untouched"
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "text",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 48,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "pdf",
+      "controls": [
+        {
+          "selector": "#readback",
+          "label": "서재로",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-page-button",
+          "label": "1페이지, 페이지 탐색",
+          "button": {
+            "width": 44,
+            "height": 48,
+            "padding": "0px 8px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#modefab",
+          "label": "글자로 보기",
+          "button": {
+            "width": 34,
+            "height": 38,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 0,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 1.600000023841858,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "pdf-sidebar",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "pdf-sidebar-selected",
+      "controls": [
+        {
+          "selector": "#pdf-bookmarks-only",
+          "label": "북마크한 페이지만 보기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(255, 137, 130)",
+              "fill": "rgb(255, 137, 130)",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "#pdf-navigation-toggle",
+          "label": "페이지 탐색 접기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            },
+            {
+              "paintOpacity": 1,
+              "stroke": "none",
+              "fill": "rgb(241, 241, 238)",
+              "effective": 0,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "pdf-writing",
+      "controls": [
+        {
+          "selector": "[data-ink-mode=pen]",
+          "label": "펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(120, 201, 234)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=highlighter]",
+          "label": "형광펜",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(208, 209, 207)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        },
+        {
+          "selector": "[data-ink-mode=erase]",
+          "label": "지우개",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 26,
+            "height": 26,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(208, 209, 207)",
+              "fill": "none",
+              "effective": 1.9999958333333332,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "all-detail",
+      "controls": [
+        {
+          "selector": "#study-sets-back",
+          "label": "뒤로",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(241, 241, 238)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "all-front",
+      "controls": [
+        {
+          "selector": "#review-close",
+          "label": "단어장으로 돌아가기",
+          "button": {
+            "width": 44,
+            "height": 44,
+            "padding": "0px"
+          },
+          "svg": {
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 24 24"
+          },
+          "shapes": [
+            {
+              "paintOpacity": 1,
+              "stroke": "rgb(242, 242, 247)",
+              "fill": "none",
+              "effective": 2,
+              "cap": "round",
+              "join": "round"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "stage": "onboarding-finish",
+      "decorative": {
+        "size": 48,
+        "stroke": "1.3px"
+      },
+      "controls": "existing text controls; brand untouched"
+    }
+  ]
+}

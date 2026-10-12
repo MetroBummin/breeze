@@ -66,7 +66,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 @media(max-width:359px){.wordbook-sort{grid-template-columns:auto minmax(0,1fr) auto;gap:7px;}.wordbook-filters{padding:12px;}}
 @media(prefers-reduced-motion:reduce){:is(#v-vocab,.vocabulary-rows) .vgroup{transition:none;}}
 
-.wordbook-search svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+.wordbook-search svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:calc(var(--control-inline-icon-stroke) * 24 / 18);stroke-linecap:round;}
 
 #vsort-menu{position:relative;}
 #vsort-menu{min-width:0;}

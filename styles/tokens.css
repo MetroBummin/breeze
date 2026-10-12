@@ -538,10 +538,13 @@ html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;-
 :root{
   --control-light-surface:rgba(247,252,253,.78);
   --control-icon-size:20px;
-  --control-icon-stroke:2;
+  --control-icon-stroke:2.4;
   --control-back-icon-size:32px;
-  --control-back-icon-stroke:2.3;
-  --control-more-dot-radius:1.6px;
+  --control-back-icon-stroke:1.5;
+  --control-page-icon-stroke:2;
+  --control-inline-icon-stroke:1.4;
+  --control-disclosure-icon-stroke:1.2;
+  --control-more-dot-radius:1.2px;
   --control-line:var(--control-light-line);
   --control-shadow:var(--control-light-shadow);
   --control-light-line:rgba(255,255,255,.66);

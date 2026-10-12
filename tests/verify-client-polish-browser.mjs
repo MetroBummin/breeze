@@ -98,7 +98,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>show('home'));await page.screenshot({path:resolve(out,`${engine.name()}-cover-${width}-${theme}.png`)});
  }
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'presentation does not change saved schedule');
- await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await page.locator('#study-sets-dialog').evaluate(node=>node.open),true);await page.locator('#study-sets-all').click();assert.equal(await page.evaluate(()=>activeAppView()),'study');
+ await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await page.locator('#study-sets-dialog').evaluate(node=>node.open),true);await page.locator('#study-sets-all').click();assert.equal(await page.evaluate(()=>activeAppView()),'memory-set');await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);assert.equal(await page.evaluate(()=>activeAppView()),'study');
  const inventory=await page.evaluate(()=>({initial:[...ensureSimpleStudySession().initial],queue:[...simpleStudySession.queue],passed:[...simpleStudySession.passed]}));
  assert.deepEqual([...inventory.initial].sort(),Object.keys(savedWords).sort(),'all four saved meanings belong to the frozen session regardless of schedule');
  assert.deepEqual([...inventory.queue].sort(),[...inventory.initial].sort());assert.deepEqual(inventory.passed,[]);

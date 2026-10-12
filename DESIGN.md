@@ -324,3 +324,22 @@ its text has a -3.25px optical correction to align visible ink centers with the
 neutral Home wordmark. Manual add uses the existing `.control-glass` material
 in a visible 44px circle with keyboard focus. Dock geometry, review mascots and
 onboarding stay unchanged. See docs/qa/memory-header-20261008.md.
+
+
+## 2026-10-12 next-build app control optics
+
+The approved all-control follow-up supersedes the earlier 2.3-unit back weight.
+Toolbar controls share an actual 2 CSS px outline: 20px/2.4 SVG units,
+32px/1.5 back units and24px/2 page/mode units. Filled ellipsis dots render2px
+in diameter. Small inline controls retain1.4px, disclosures1.2px; these are
+contextual scales, not changes to text fonts or button rectangles. Existing
+selected fill states, diagrams/illustrations, native ink strokes and brand
+artwork keep their meaning and ownership. Drawing-tool control icons use the
+same2px outline independently of the user's drawn ink.
+
+Apple's SF Symbols guidance motivates matching optical weight, scale and
+context; these SVGs remain Breeze's existing drawings. No proprietary icon
+extraction or claim of pixel-identical Safari glyphs is made. Existing private
+Safari reference measurements ground capsule/target proportions only; parent
+owns original-pixel comparison. See the measured before/after evidence in
+`docs/reviews/breeze-193-followup-ui/`.

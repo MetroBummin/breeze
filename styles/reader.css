@@ -239,7 +239,7 @@
 
   /* 원본 ↔ 글자 — 글자 하나 없이 지금 모드의 반대쪽을 그립니다.
      종이(모서리 접힌 문서)면 원본으로, 글줄이면 글자 화면으로 갑니다. */
-  #modefab svg{width:24px; height:24px;stroke-width:var(--control-back-icon-stroke);}
+  #modefab svg{width:24px; height:24px;stroke-width:var(--control-page-icon-stroke);}
   #modefab svg g{transform-origin:12px 12px; transition:opacity .22s ease, transform .22s ease;}
   #modefab .mf-text{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
@@ -578,7 +578,3 @@ body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
   body:not(.chrome-hidden).reader-notice-visible #readpill #modefab{position:absolute;left:12px;bottom:4px;}
   body:not(.chrome-hidden).reader-notice-visible #readpill.ink-pill-ready #modefab{left:9px;}
 }
-
-/* Reader-only optical weight. Keep all touch targets and other back icons. */
-#readback svg{stroke-width:1.5;}
-#modefab svg{stroke-width:2;}

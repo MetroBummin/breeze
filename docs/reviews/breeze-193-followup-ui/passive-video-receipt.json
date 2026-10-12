@@ -1,0 +1,38 @@
+[
+  {
+    "theme": "light",
+    "engine": "Chromium",
+    "viewport": {
+      "width": 390,
+      "height": 640
+    },
+    "native": false,
+    "source": "fresh production UI with isolated authored words and saved examples",
+    "steps": [
+      "front",
+      "tap reveal",
+      "left repeat 0/2",
+      "tap reveal",
+      "right remember 1/2"
+    ],
+    "externalLookupRequests": 0
+  },
+  {
+    "theme": "dark",
+    "engine": "Chromium",
+    "viewport": {
+      "width": 390,
+      "height": 640
+    },
+    "native": false,
+    "source": "fresh production UI with isolated authored words and saved examples",
+    "steps": [
+      "front",
+      "tap reveal",
+      "left repeat 0/2",
+      "tap reveal",
+      "right remember 1/2"
+    ],
+    "externalLookupRequests": 0
+  }
+]

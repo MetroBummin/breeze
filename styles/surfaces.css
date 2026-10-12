@@ -105,7 +105,7 @@ body.dark :is(#am-card,#ed-card,#wordbook-add-dialog,#task-dialog,#article-previ
 #primary-nav #nav-vocab img,#home-controls #nav-vocab img{display:block;width:28px;height:28px;object-fit:contain;border-radius:7px;flex:none;}
 #vstars{flex:1;max-width:476px;min-width:0;}
 #vstars .stbtn{flex:1;min-width:44px;}
-.memory-chevron{display:block;width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease;}
+.memory-chevron{display:block;width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:calc(var(--control-disclosure-icon-stroke) * 24 / 14);stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease;}
 #vsort-menu summary,#vbooks summary{align-items:center;}
 #vsort-menu[open] .memory-chevron,#vbooks[open] .memory-chevron{transform:rotate(180deg);}
 @media(prefers-reduced-motion:reduce){.memory-chevron{transition:none;}}

@@ -49,12 +49,12 @@ export async function captureAppFamilyStudy(page,capture){
  await page.locator('#wordbook-review').tap();await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('.study-sets-home-card[data-set-id]').first().tap();
  await page.waitForFunction(()=>studySetsUI.screen==='detail'&&studySetsUI.pageOpen);
- await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:32,stroke:'2.3px'},'#study-sets-edit':{size:20,stroke:'2px',dots:'1.6px'}});
+ await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:32,stroke:'1.5px'},'#study-sets-edit':{size:20,stroke:'2.4px',dots:'1.2px'}});
  await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');
  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
  assert.equal(await page.evaluate(()=>document.activeElement===studySetsUI.editMenu.querySelector('button')),true,'keyboard opens menu on its first action');
  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0');
- await capture('study-more',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'2.3px'}});
+ await capture('study-more',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  await page.keyboard.press('End');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'세트 삭제');
  await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
  await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'책 추가');
@@ -68,10 +68,10 @@ export async function captureAppFamilyStudy(page,capture){
  // Restart via the domain action: captures never depend on the progress label
  // contract, future drag thresholds, or the other worker's learning-card UI.
  await page.evaluate(()=>studySetsStart(studySetsUI.setId,true));
- await capture('study-front',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'2.3px'}});
+ await capture('study-front',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'front focuses the tap/reveal card');
  await page.keyboard.press('Enter');
- await capture('study-revealed',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'2.3px'}});
+ await capture('study-revealed',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'revealed card keeps keyboard action ownership');
  assert.equal(await page.locator('.study-session-accessible-actions').evaluate(n=>getComputedStyle(n).clipPath),'inset(50%)','normal revealed screen keeps rating alternatives clipped');
  await page.keyboard.press('Tab');assert.equal(await page.locator('#study-sets-grade-repeat').evaluate(n=>n===document.activeElement),true,'Tab reaches repeat');
@@ -81,7 +81,7 @@ export async function captureAppFamilyStudy(page,capture){
   await page.locator('#study-sets-flashcard').press('Enter');await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));
  }
  assert.equal(await page.locator('.study-sets-complete').isVisible(),true,'real actions complete this four-card fixture');
- await capture('study-completion',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'2.3px'}});
+ await capture('study-completion',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='detail');
  await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsIsOpen()&&!studySetsUI.pendingClose);
