@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "checkedDate": "2026-10-12",
+  "base": "main",
+  "baseCommit": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+  "environment": "Linux x86_64; Node 24.19.0; no nvidia-smi or xcrun executable",
+  "realModelBenchmark": "not-run",
+  "currentNativeBenchmark": "not-run",
+  "comparativeAccuracy": null,
+  "comparativeLatency": null,
+  "measuredServerVramBytes": null,
+  "measuredCostUSD": null,
+  "modelWeightsDownloaded": false,
+  "upstreamCustomCodeExecuted": false,
+  "privateDocumentsUploaded": false,
+  "paidInfrastructureProvisioned": false,
+  "reason": "No GPU inference server or Apple/Android native runtime available. Contract tests use authored mock responses and are not OCR measurements.",
+  "coordinateConclusion": "Official output documents grounding blocks. Exact word-level boxes, units, confidence and tap suitability remain unverified. No block-to-word interpolation implemented."
+}

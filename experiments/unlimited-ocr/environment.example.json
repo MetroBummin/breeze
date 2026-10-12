@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+  "hardware": "REPLACE: device/CPU/RAM; server GPU model/count/VRAM for Unlimited-OCR",
+  "runtime": "REPLACE: OS, engine/container digest, driver/CUDA, cold or warm state, image mode",
+  "modelRevision": null,
+  "inputProvenance": "REPLACE after verifying: same-committed-fixtures",
+  "costUSD": null,
+  "serverPeakVramBytes": null,
+  "resourceMethod": "REPLACE: sampling tool/interval, idle and peak VRAM, server RSS; null means unmeasured",
+  "timingScope": "REPLACE: native bridge or sequential HTTP wall clock; record warmup separately"
+}
