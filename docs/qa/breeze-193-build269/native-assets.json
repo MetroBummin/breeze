@@ -1,8 +1,8 @@
 {
-  "reviewedSource": "1163e00cfe20694d3ec32d0271199d27bc2be9d1",
+  "reviewedSource": "cd38ac50fef78478d21991d39874221037ff445f",
   "checkedInVersion": "1.9.3(269)",
   "filesMatchSourceWwwAndIosPublic": true,
-  "fileCount": 232,
+  "fileCount": 233,
   "files": [
     {
       "path": "assets/auth/README.md",
@@ -761,8 +761,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 53115,
-      "sha256": "67bab0a29bea1f461c2a25e31231600fd43a765c9634d99c9eaaa96a7037fde7"
+      "bytes": 53190,
+      "sha256": "7de7ae4f2985b80b13645e40f49426968fba699fe53791b47332caf5d7c72cef"
     },
     {
       "path": "modules/lexical/core.js",
@@ -950,9 +950,14 @@
       "sha256": "ae44ddd88429cb4e7e4eeb0e7fe027ccc4ab204b958c93464bdcf6cd989a67b0"
     },
     {
+      "path": "scripts/reader/pdf-ink-store.js",
+      "bytes": 7010,
+      "sha256": "5159b552ec7cf6c85d546ca252315d904403901f51a37f87661e288b2796c2a8"
+    },
+    {
       "path": "scripts/reader/pdf-ink.js",
-      "bytes": 50840,
-      "sha256": "fef8471444089edc3000f9b83b862acb68df019be7415647c8e30cb4e9ddfa04"
+      "bytes": 52065,
+      "sha256": "73b7f3d738ef700c5c0762437f34bd123c2c9db1a8e15d493089ca21716b510c"
     },
     {
       "path": "scripts/reader/pdf-navigation.js",
@@ -1036,8 +1041,8 @@
     },
     {
       "path": "scripts/ui/onboarding.js",
-      "bytes": 15703,
-      "sha256": "f847746e8d9cb7d3e30d1742d53a8a8a48fdb318fe444ccf220a8d694a1620fe"
+      "bytes": 25006,
+      "sha256": "702f06e349670c5cecd720a053473e28f83ec0f1e7f162a458a184834d3c5a3a"
     },
     {
       "path": "scripts/ui/preferences.js",
@@ -1056,8 +1061,8 @@
     },
     {
       "path": "scripts/ui/study-sets.js",
-      "bytes": 55380,
-      "sha256": "101d1728914973c704c75ca21543fe04c16fefec68beba4f5b288c4b506dbc73"
+      "bytes": 58029,
+      "sha256": "88ec8bdf4b822d857aae43e531f43bb31c21254b73685a5a57630a1040f6b145"
     },
     {
       "path": "scripts/ui/task-dialog.js",
@@ -1121,8 +1126,8 @@
     },
     {
       "path": "styles/onboarding.css",
-      "bytes": 7192,
-      "sha256": "8f315304ce0eca54b0e85225855100c3efe506adfc9e357de3a7938baaa94b63"
+      "bytes": 10504,
+      "sha256": "f2e85cfad224f3855b58331cdfd4d15514edfde896ff12068cb10717eda1f902"
     },
     {
       "path": "styles/pdf-ink.css",
@@ -1141,8 +1146,8 @@
     },
     {
       "path": "styles/study-sets.css",
-      "bytes": 23593,
-      "sha256": "c34b6ba195a4f48b090b16cb2e3b2a27ab9a9a9f1014ca6b7eb89cead0f22181"
+      "bytes": 24090,
+      "sha256": "50e78d534feb0e715549a58fed6f02371c5fa635cfe8d774838d6a842f2a698c"
     },
     {
       "path": "styles/study.css",
