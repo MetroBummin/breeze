@@ -7,7 +7,7 @@ const mark=p.locator('#logo .mark');if(!await mark.evaluate(n=>getComputedStyle(
 const pill=await p.locator('#home-resume').boundingBox(),add=await p.locator('#home-add').boundingBox();if(Math.abs(pill.x-box.x-box.width-8)>1||Math.abs(add.x-pill.x-pill.width-8)>1||add.x+add.width-box.x>512.1)throw Error('Approved balanced bounded dock changed');
 if(await button.getAttribute('aria-label')!=='Breeze Memory'||await button.getAttribute('title')!=='Breeze Memory')throw Error('Accessible name/tooltip changed');
 if(await button.locator('svg path').getAttribute('d')!=='M7 4.5h10v15l-5-3.5-5 3.5z')throw Error('Selected bookmark differs');
-const ink=await button.locator('svg').evaluate(n=>({stroke:getComputedStyle(n).stroke,ink:getComputedStyle(document.body).getPropertyValue('--settings-ink').trim(),width:n.getBoundingClientRect().width,strokeWidth:getComputedStyle(n).strokeWidth}));if(ink.width!==20||ink.strokeWidth!=='1.8px')throw Error('Icon size changed');
+const ink=await button.locator('svg').evaluate(n=>({stroke:getComputedStyle(n).stroke,ink:getComputedStyle(document.body).getPropertyValue('--settings-ink').trim(),width:n.getBoundingClientRect().width,strokeWidth:getComputedStyle(n).strokeWidth}));if(ink.width!==20||ink.strokeWidth!=='2px')throw Error('Approved icon size/weight changed');
 const label=await button.locator('span').boundingBox();if(label.width>1||label.height>1)throw Error('Visible Home text label');
 if(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Viewport overflow');
 await p.screenshot({path:`${out}/${name}-${theme}-home.png`});await button.screenshot({path:`${out}/${name}-${theme}-button.png`});

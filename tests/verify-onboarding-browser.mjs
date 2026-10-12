@@ -12,7 +12,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const errors=[];const receipts=[];
+const errors=[];const receipts=[];let welcomeDiagnosticPage,welcomeDiagnosticAction;
 async function setup(options={}){
  const {annotation=false,...browserOptions}=options;
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block',...browserOptions});
@@ -26,6 +26,11 @@ try{
  // The first welcome has one cancellable continuous pen owner, independent of guide media.
  for(const action of ['finish','tap','close','restart','motion','background']){
   const {context,page}=await setup();await page.goto(url);await page.evaluate(()=>homeReady);
+  welcomeDiagnosticPage=page;welcomeDiagnosticAction=action;
+  if(action==='finish')await page.evaluate(()=>{
+   window.qaWelcomeTrace=[];let last=-Infinity;
+   const frame=now=>{const root=document.getElementById('onboarding'),svg=document.querySelector('#onboard-welcome svg');if(now-last>=200&&root&&svg){last=now;qaWelcomeTrace.push({at:now,state:root.dataset.welcome,pen:getComputedStyle(svg).getPropertyValue('--onboard-pen'),caption:getComputedStyle(document.getElementById('onboard-next')).opacity,animations:svg.getAnimations().map(a=>({name:a.animationName,time:a.currentTime,state:a.playState,timing:a.effect?.getComputedTiming()}))});}if(root?.dataset.welcome==='drawing'&&qaWelcomeTrace.length<160)requestAnimationFrame(frame);};requestAnimationFrame(frame);
+  });
   assert.equal(await page.locator('#onboarding').getAttribute('data-welcome'),'drawing');
   assert.equal(await page.locator('#onboard-next').evaluate(n=>getComputedStyle(n).opacity),'0');
   assert.equal(await page.evaluate(()=>load(ONBOARD_WELCOME_KEY,false)),true);
@@ -346,4 +351,11 @@ try{
  const r=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',resolve(out,'Breeze-onboarding-full-flow.mp4')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
  }
  console.log('Passive onboarding verified: welcome, swipe/tap/cancel/back, rapid navigation, completion, interruption/resume, replay, Reader isolation, responsive themes, reduced motion and autoplay fallback.');
+}catch(error){
+ let state=null;
+ if(welcomeDiagnosticPage&&!welcomeDiagnosticPage.isClosed()){
+  try{state=await Promise.race([welcomeDiagnosticPage.evaluate(()=>{const root=document.getElementById('onboarding'),svg=document.querySelector('#onboard-welcome svg'),path=document.getElementById('onboard-pen-path');return {welcome:root?.dataset.welcome,pen:svg?getComputedStyle(svg).getPropertyValue('--onboard-pen'):null,dashoffset:path?getComputedStyle(path).strokeDashoffset:null,caption:getComputedStyle(document.getElementById('onboard-next')).opacity,trace:window.qaWelcomeTrace||[],animations:svg?.getAnimations().map(a=>({name:a.animationName,time:a.currentTime,state:a.playState,timing:a.effect?.getComputedTiming()}))};}),new Promise((_,reject)=>setTimeout(()=>reject(Error('welcome failure state unavailable after2s')),2000))]);}catch(captureError){state={captureError:String(captureError)};}
+  try{await welcomeDiagnosticPage.screenshot({path:resolve(out,'welcome-failure.png'),timeout:2000});}catch{}
+ }
+ writeFileSync(resolve(out,'welcome-failure.json'),JSON.stringify({action:welcomeDiagnosticAction,error:String(error),stack:error.stack,state},null,2));throw error;
 }finally{await browser.close();server.close();}

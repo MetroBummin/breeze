@@ -533,9 +533,9 @@ html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;-
 :root{
   --control-light-surface:rgba(247,252,253,.78);
   --control-icon-size:20px;
-  --control-icon-stroke:1.8;
+  --control-icon-stroke:2;
   --control-back-icon-size:32px;
-  --control-back-icon-stroke:2.1;
+  --control-back-icon-stroke:2.3;
   --control-line:var(--control-light-line);
   --control-shadow:var(--control-light-shadow);
   --control-light-line:rgba(255,255,255,.66);

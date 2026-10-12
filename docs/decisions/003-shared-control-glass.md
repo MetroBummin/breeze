@@ -470,3 +470,22 @@ rounded to an integer; actual trusted taps now use the first unambiguous whole
 pixel inside each region. Assertions are retained; no delay/gesture workaround
 is added to product code. Both native reference comparison and native-device
 touch/rendering remain outside this browser evidence.
+
+### PR155 follow-up: slightly bolder, balanced paired glyphs
+
+User review asked for slightly bolder outlines and a page-finder glyph matching
+the chevron's optical size/weight. Shared20px outlines now use2.0 instead of1.8;
+back32px and mode24px frames use2.3 instead of2.1. The page-finder and its drawer
+toggle use24px frames with stroke2.3×4/3 to match the chevron's actual32/24 SVG
+scale. Nominal painted heights are20.07px (page) and19.60px (back), and both
+effective strokes are3.07px. Different glyph aspect ratios keep different widths;
+their bounding boxes are deliberately not forced equal.
+
+The88×48px pair, independent44×48px targets, gaps, padding, material and all
+functions remain. Full-view screenshots use the established PR155 PDF fixture
+and measured22px scroll; bottom crops are actual DPR2 browser screenshot clips,
+not resized/retouched artwork. The earlier126 comparison images remain intact.
+Onboarding's separate WebKit timeout is unproven: its pen property resets once
+the ready state removes the drawing animation. Add failure state/timeline/caption
+diagnostics only; retain exact pen===1, hold/ready assertions and30s deadlines.
+No product animation, deployment, merge or release boundary is changed.

@@ -93,7 +93,7 @@ try{
    const button=document.getElementById(id),svg=button.querySelector('svg'),b=button.getBoundingClientRect(),r=svg.getBoundingClientRect(),s=getComputedStyle(svg);
    return {id,width:r.width,height:r.height,stroke:s.strokeWidth,cap:s.strokeLinecap,join:s.strokeLinejoin,centerX:r.x+r.width/2-b.x-b.width/2,centerY:r.y+r.height/2-b.y-b.height/2,ink:s.color};
   }));
-  assert.equal(icons[0].width,32);assert.equal(icons[0].height,32);assert.equal(icons[0].stroke,'2.1px','back roles share optical chevron weight');assert.equal(icons[1].width,20);assert.equal(icons[1].height,20);assert.equal(icons[1].stroke,'1.8px','ellipsis retains its own silhouette');assert.equal(icons[0].cap,'round');assert.equal(icons[0].join,'round');assert.equal(icons[0].ink,icons[1].ink);for(const icon of icons){assert.ok(Math.abs(icon.centerX)<.1&&Math.abs(icon.centerY)<.1,'header icons centered inside circle');}
+  assert.equal(icons[0].width,32);assert.equal(icons[0].height,32);assert.equal(icons[0].stroke,'2.3px','back roles share optical chevron weight');assert.equal(icons[1].width,20);assert.equal(icons[1].height,20);assert.equal(icons[1].stroke,'2px','ellipsis retains its own silhouette');assert.equal(icons[0].cap,'round');assert.equal(icons[0].join,'round');assert.equal(icons[0].ink,icons[1].ink);for(const icon of icons){assert.ok(Math.abs(icon.centerX)<.1&&Math.abs(icon.centerY)<.1,'header icons centered inside circle');}
   return icons;
  };
  const headerIcons=[];

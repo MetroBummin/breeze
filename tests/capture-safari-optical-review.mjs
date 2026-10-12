@@ -9,6 +9,8 @@ import {chromium} from 'playwright';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=(process.env.BREEZE_OPTICAL_SOURCE_ROOT||fileURLToPath(new URL('../',import.meta.url))).replace(/\/$/,'')+'/';
 const before=process.env.BREEZE_OPTICAL_PHASE==='before';
+const revisionBaseline=process.env.BREEZE_OPTICAL_REVISION_BASELINE==='1';
+const legacy=before&&!revisionBaseline;
 const output=process.env.BREEZE_OPTICAL_OUTPUT||'/tmp/breeze-safari-optical-pdf-'+(before?'before':'after');mkdirSync(output,{recursive:true});
 const server=createServer((req,res)=>{try{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
 await new Promise(done=>server.listen(0,'127.0.0.1',done));const url=`http://127.0.0.1:${server.address().port}/`;
@@ -22,23 +24,24 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1
  await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#fileinput').setInputFiles({name:'Optical review.pdf',mimeType:'application/pdf',buffer:fixturePdf(4)});await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
  await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');readerNotices.reset();expandReaderChrome();});await page.waitForFunction(()=>originalSession?.kind==='pdf'&&!readerPositionPending());await page.waitForTimeout(450);
  const cdp=await context.newCDPSession(page);
- const shot=async(theme,state)=>page.screenshot({path:`${output}/${device}-${theme}-${state}.png`});
+ const shot=async(theme,state)=>{await page.screenshot({path:`${output}/${device}-${theme}-${state}.png`});if(state==='pdf-reading')await page.screenshot({path:`${output}/${device}-${theme}-dock-crop.png`,clip:{x:0,y:height-110,width,height:110},scale:'device'});};
  const measure=()=>page.evaluate(()=>{
   const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
-  const icon=id=>{const n=document.querySelector(id),s=getComputedStyle(n),r=n.getBoundingClientRect();return {width:r.width,height:r.height,stroke:s.strokeWidth,cap:s.strokeLinecap};};
+  const icon=id=>{const n=document.querySelector(id),s=getComputedStyle(n),r=n.getBoundingClientRect(),b=n.getBBox(),scale=r.height/n.viewBox.baseVal.height;const used=s.strokeWidth.match(/^(?:calc\()?([-+\d.]+)px\)?$/);if(!used)throw Error('Unresolved icon stroke: '+s.strokeWidth);const stroke=Number(used[1]);return {width:r.width,height:r.height,stroke:s.strokeWidth,cap:s.strokeLinecap,paintedHeight:(b.height+stroke)*scale,effectiveStroke:stroke*scale};};
   const n=document.getElementById('pdf-page-control'),s=getComputedStyle(n);
   const nav=rect('reader-navigation'),pill=rect('readpill'),settings=rect('aafab'),back=rect('readback'),pages=rect('pdf-page-button');
   return {viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},nav,pill,settings,back,pages,gaps:[pill.x-nav.right,settings.x-pill.right],bottom:innerHeight-nav.bottom,
-   backIcon:icon('#readback svg'),modeIcon:icon('#modefab svg'),textPath:document.querySelector('#modefab .mf-text path').getAttribute('d'),
+   backIcon:icon('#readback svg'),pageIcon:icon('#pdf-page-button svg'),modeIcon:icon('#modefab svg'),textPath:document.querySelector('#modefab .mf-text path').getAttribute('d'),scroll:readerScrollTop(),
    material:{background:s.backgroundColor,image:s.backgroundImage,line:s.borderTopColor,shadow:s.boxShadow,filter:s.backdropFilter,radius:s.borderRadius},
    seamOverlap:Math.max(0,back.right-pages.x),hitOwners:[back,pages].map(r=>[r.x+.25,r.x+r.width/2,r.right-.25].map(x=>document.elementFromPoint(x,r.y+r.height/2)?.closest('button')?.id))};
  });
  for(const dark of [false,true]){
-  const theme=dark?'dark':'light';await page.evaluate(d=>{darkMode=d;applyDark();readerNotices.reset();expandReaderChrome();},dark);await page.waitForTimeout(400);
-  const m=await measure();assert.equal(m.nav.width,before?96:88);assert.equal(m.nav.height,48);assert.equal(m.pill.height,48);assert.equal(m.settings.width,48);assert.equal(m.settings.height,48);
+  const theme=dark?'dark':'light';await page.evaluate(d=>{darkMode=d;applyDark();readerNotices.reset();expandReaderChrome();readerScrollTo(22);},dark);await page.waitForTimeout(400);
+  const m=await measure();diagnosticLast={device,theme,phase:'optical geometry',current:m};assert.equal(m.scroll,22,'paired screenshots keep the established PR155 scroll');assert.equal(m.nav.width,legacy?96:88);assert.equal(m.nav.height,48);assert.equal(m.pill.height,48);assert.equal(m.settings.width,48);assert.equal(m.settings.height,48);
   assert.ok(m.gaps.every(g=>Math.abs(g-8)<1));assert.ok(Math.abs(m.pill.x+m.pill.width/2-(m.nav.right+m.settings.x)/2)<1);assert.ok(m.settings.right-m.nav.x<=512.1);
-  assert.equal(m.back.width,before?48:44);assert.equal(m.pages.width,before?48:44);assert.ok(m.back.height>=44&&m.pages.height>=44);assert.equal(m.backIcon.width,before?20:32);assert.equal(m.backIcon.stroke,before?'1.8px':'2.1px');assert.equal(m.backIcon.cap,'round');assert.equal(m.modeIcon.width,before?21:24);assert.equal((m.textPath.match(/M/g)||[]).length,before?4:3);
-  if(!before){assert.equal(m.seamOverlap,0,'independent44px hit rectangles');assert.deepEqual(m.hitOwners,[['readback','readback','readback'],['pdf-page-button','pdf-page-button','pdf-page-button']],'both target edges and centers hit the intended owner');}
+  assert.equal(m.back.width,legacy?48:44);assert.equal(m.pages.width,legacy?48:44);assert.ok(m.back.height>=44&&m.pages.height>=44);assert.equal(m.backIcon.width,legacy?20:32);assert.equal(m.backIcon.stroke,legacy?'1.8px':before?'2.1px':'2.3px');assert.equal(m.backIcon.cap,'round');assert.equal(m.modeIcon.width,legacy?21:24);assert.equal((m.textPath.match(/M/g)||[]).length,legacy?4:3);
+  assert.equal(m.pageIcon.width,before?20:24);if(!before){assert.ok(Math.abs(m.pageIcon.paintedHeight-m.backIcon.paintedHeight)<1,'paired glyph ink height matches optically');assert.ok(Math.abs(m.pageIcon.effectiveStroke-m.backIcon.effectiveStroke)<.01,'paired glyph painted stroke matches despite different frames');}
+  if(!legacy){assert.equal(m.seamOverlap,0,'independent44px hit rectangles');assert.deepEqual(m.hitOwners,[['readback','readback','readback'],['pdf-page-button','pdf-page-button','pdf-page-button']],'both target edges and centers hit the intended owner');}
   await shot(theme,'pdf-reading');cases.push({device,theme,state:'reading',...m});
   const point={x:m.pages.x+m.pages.width/2,y:m.pages.y+m.pages.height/2};await page.mouse.move(point.x,point.y);await page.mouse.down();assert.equal(await page.locator('#pdf-page-button').evaluate(n=>n.matches(':active')),true,'trusted pointer renders pressed state');await shot(theme,'pdf-pressed');await page.mouse.up();await page.waitForFunction(()=>document.getElementById('pdf-page-button').getAttribute('aria-expanded')==='true');
   await page.locator('#pdf-navigation-toggle').tap();await page.waitForFunction(()=>!document.getElementById('pdf-page-control').classList.contains('pdf-navigation-closing'));await page.waitForTimeout(100);
@@ -59,7 +62,7 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1
   if(safeAreaMethod){await page.waitForTimeout(200);const m=await measure();assert.ok(Math.abs(m.bottom-34)<1,'actual emulated env safe-area footer');await shot('dark','safe-area-34');cases.push({device,state:'safe-area-34',method:safeAreaMethod,...m});await cdp.send(safeAreaMethod,{insets:{bottom:0}});}
   else cases.push({device,state:'safe-area',supported:false,note:'Protocol unavailable; no native safe-area claim'});
  }
- if(tablet){for(const size of [{width:820,height:1180},{width:1180,height:820},{width:820,height:1180}]){await page.setViewportSize(size);await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(350);const m=await measure();assert.equal(m.nav.width,before?96:88);assert.equal(m.nav.height,48);assert.ok(m.gaps.every(g=>Math.abs(g-8)<1));cases.push({device,state:'repeated-rotation',...m});}}
+ if(tablet){for(const size of [{width:820,height:1180},{width:1180,height:820},{width:820,height:1180}]){await page.setViewportSize(size);await page.waitForFunction(()=>!readerPositionPending());await page.waitForTimeout(350);const m=await measure();assert.equal(m.nav.width,legacy?96:88);assert.equal(m.nav.height,48);assert.ok(m.gaps.every(g=>Math.abs(g-8)<1));cases.push({device,state:'repeated-rotation',...m});}}
  await context.close();
 }
 assert.deepEqual(errors,[]);rmSync(`${output}/failure.json`,{force:true});rmSync(`${output}/failure.png`,{force:true});writeFileSync(`${output}/optical-geometry.json`,JSON.stringify({phase:before?'before':'after',sourceRoot:root,platform:'Actual Chromium touch browser renders, DPR2 CSS pixels; mocked tablet capability; not native iOS or Safari',privateReferencePixelsSeen:false,cases,errors},null,2)+'\n');console.log(`${before?'before':'after'}: six viewports/both themes, real pressed/touch, PDF reading/collapse/writing, safe-area and repeated rotation passed`);

@@ -305,6 +305,12 @@ iPad 등 넓은 화면은 17px를 유지하고 굵기·줄간격 비율·재질�
 backdrop-filter를 네이티브 Liquid Glass와 완전히 동일하다고 판정하지 않는다.
 268 integration/main, 버전·업로드·이전 frozen contract는 보존한다.
 
+PR155 후속 피드백: 공통 outline stroke는2.0, back/mode stroke는2.3으로 조금
+굵게 한다. PDF 페이지 glyph는24px frame으로 키우고32px chevron과 SVG 배율이
+다른 점을 보정하여 실제 선 두께와 세로 잉크 크기를 맞춘다. 두 glyph의 aspect
+ratio와 기능 의미는 유지한다.88×48 그룹·독립44×48 타깃·물성은 그대로이며,
+전체 캡처는 기존 PDF fixture와22px scroll을 고정한다.
+
 2026-10-07 design-only release: approved neutral light/dark Breeze wordmark on
 Home/shelves, selected teal lowercase b app icon and single thin neutral
 bookmark for Memory without a visible Home label. Existing dock geometry,

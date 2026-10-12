@@ -77,3 +77,23 @@ Files under `before/` and `after/` are generated own-source screenshots only.
 The manifest records source/capture hashes and measured geometry. Historical268
 and earlier release receipts/checkers stay intact; this is an optical review,
 not a replacement268 TestFlight candidate.
+
+## Bolder icon refinement requested in PR155
+
+`weight-refinement/` compares the first PR155 source1da51f48 with the user-requested
+follow-up, using the same PDF fixture, CSS viewport, DPR2, theme and established
+22px scroll. Whole renders and unretouched bottom screenshot clips are provided.
+Shared outline stroke increases1.8→2.0 and back/mode2.1→2.3. Page navigation's
+frame increases20→24px; its stroke compensates for the chevron's32px SVG scale.
+The nominal painted heights are20.07/19.60px and both effective strokes3.07px.
+Aspect ratios differ; identical SVG bounding boxes are not the visual goal.
+All control/hit rectangles,88×48 group,44×48 targets and material remain unchanged.
+Source scroll22px is recorded and asserted so the whole screenshots remain
+comparable to the previously published PR155 images.
+
+The reported old-head Onboarding WebKit timeout has no failure-time state data.
+Its ready transition removes the pen animation and resets the registered CSS
+property, so the transient exact1 window needs diagnosis. The strict test now
+records pen/dataset/caption/animation times and failure screenshots; pen===1,
+hold/ready assertions and existing deadlines remain. Product onboarding code is
+unchanged. No flake cause or unrelated product regression is claimed as confirmed.

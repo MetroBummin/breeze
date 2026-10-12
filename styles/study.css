@@ -21,7 +21,7 @@ body #readchrome:has(#pdf-page-control:not([hidden])) #readpill{--reader-pill-ma
 /* Anchor the independent hit region to the outer edge, avoiding the border's
    former1px overlap with the back button. Drawer overflow stays contained. */
 #pdf-page-button{position:absolute;right:-1px;bottom:-1px;width:var(--reader-navigation-target);height:var(--control-row-height);display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
-#pdf-page-button svg{width:var(--control-icon-size);height:var(--control-icon-size);flex:none;fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+#pdf-page-button svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:calc(var(--control-back-icon-stroke) * 4 / 3);stroke-linecap:round;stroke-linejoin:round;}
 #pdf-page-button circle,#pdf-navigation-toggle circle{fill:currentColor;stroke:none;}
 #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-1 * var(--control-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow-pill);}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){background:var(--control-glass-surface);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}}
@@ -43,6 +43,7 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
 .pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;background:var(--sentence-glass-action);}
 .pdf-navigation-head>button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#pdf-navigation-toggle>svg{width:24px;height:24px;stroke-width:calc(var(--control-back-icon-stroke) * 4 / 3);}
 #pdf-navigation-toggle{margin-left:auto;}
 #pdf-bookmarks-only[aria-pressed=true]{color:var(--bookmark-ink);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
