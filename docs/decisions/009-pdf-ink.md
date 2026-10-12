@@ -1,5 +1,47 @@
 # iPad PDF Pencil annotation
 
+## Save serialization off the input thread (2026-10-12)
+
+Synthetic Chromium diagnosis at `8512e8f` and `97f0cde` measured full-page
+IndexedDB `put` copying on every commit: up to 170 ms for 5,000 strokes and
+772 ms for 15,000 strokes (100 points each). This is a reproduced stall, not
+proof of the student's unexplained whole-screen freeze or device behavior.
+
+`pdf-ink-store.js` now owns storage transport and runs the same cache-stamped
+asset in a dedicated worker. The worker reads the existing v1 record; transient
+numeric stroke IDs refer to its immutable copies. On commit the page sends the
+ordered ID list and only new/reintroduced strokes. The worker constructs and
+stores the unchanged `{version:1,strokes}` record. IDs never enter disk data.
+Unrelated SVG paths, geometry, eraser history and original PDFs are unchanged.
+
+The ink engine retains its one writer per page and newest-revision loop. An
+acknowledgement still requires transaction completion, not message acceptance.
+Abort/error retains the current dirty page and retry uses its latest revision.
+Release is queued behind in-flight storage work; dirty/failed pages survive
+document closure. Worker mirrors retain only current page strokes, and are
+released with clean unmounted pages. Removed strokes needed by undo are resent
+from the existing bounded main-thread history rather than cached forever twice.
+
+Worker startup failure falls back to the original local IndexedDB route for
+read availability. Worker failure during saving rejects the pending operation;
+retry sends a complete definition set to the fallback. This keeps durability
+available when workers are blocked, but the fallback has the old serialization
+cost. A worker startup deadline never expires a stroke or a live transaction.
+Large changed-stroke sets and undo on an evicted page can still require a large
+transfer; this change specifically removes repeated copying of unchanged ink.
+
+Tests cover real worker/fallback IndexedDB, legacy-format reads, delta transfer,
+undo/redo, abort/retry, delayed acknowledgement, release/reopen and worker crash.
+An overlapping close/reopen regression also guards mount ownership: when two
+callers await the same read, only the newest may attach or evict the page. An
+obsolete continuation must not delete the current document's loaded ink state
+or release its worker mirror. Pending and failed saves across document closure
+and simulated backgrounding are tested with delayed real transactions.
+The existing app-level failure test injects its quota failure in the worker that
+now owns `put`. Native WKWebView/Android worker admission, suspension and memory
+remain physical-device acceptance gates. Browser tablet emulation cannot prove
+those or identify the student's actual freeze.
+
 ## Current platform policy (2026-10-08)
 
 The original native-iPad-only gate and Touch-only statements below document the

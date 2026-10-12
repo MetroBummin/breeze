@@ -10,6 +10,7 @@ const root=process.env.BREEZE_INK_REGRESSION_BASE||fileURLToPath(new URL('../',i
 const source=readFileSync(resolve(root,'scripts/reader/pdf-ink.js'),'utf8');
 const pdfSource=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
 const geometrySource=readFileSync(resolve(root,'scripts/reader/pdf-ink-geometry.js'),'utf8');
+const storeSource=readFileSync(resolve(root,'scripts/reader/pdf-ink-store.js'),'utf8');
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
@@ -81,7 +82,7 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
       valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,supported,pointerInk,
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     available:supported,`);
-  vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
+  vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+storeSource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
   const qa=context.engine.qa;qa.configure(session,state);
   const contact=(x,y,id=1,type='stylus')=>({identifier:id,touchType:type,target:canvas,clientX:x,clientY:y});
   const event=(type,touches,changedTouches=touches)=>({type,touches,changedTouches,cancelable:true,preventDefault(){this.defaultPrevented=true;},stopImmediatePropagation(){}});

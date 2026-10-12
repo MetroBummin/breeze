@@ -25,7 +25,6 @@ const BreezePdfInk = (()=>{
     try{localStorage.setItem(preferenceKey,JSON.stringify({tool:lastTool,color,width,eraserRadius,highlightColor,highlightWidth,highlightOpacity}));}catch{}
   }
   const ns='http://www.w3.org/2000/svg';
-  const database=openDb('breeze-pdf-ink',1,db=>db.createObjectStore('pages'));
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
   let session=null, mode='read', active=null, pendingAdmission=null, toolbar=null, status=null;
   let inkTools=null,inkEntry=null,inkMini=null,inkReadSeparator=null;
@@ -328,20 +327,10 @@ const BreezePdfInk = (()=>{
     publishNativeScope();
   }
   async function read(key){
-    const db=await database();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction('pages');const request=tx.objectStore('pages').get(key);
-      tx.oncomplete=()=>resolve(request.result);
-      tx.onerror=tx.onabort=()=>reject(tx.error||new Error('Ink read failed'));
-    });
+    return BreezePdfInkStore.read(key);
   }
   async function write(key,value){
-    const db=await database();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction('pages','readwrite');tx.objectStore('pages').put(value,key);
-      tx.oncomplete=()=>resolve(undefined);
-      tx.onerror=tx.onabort=()=>reject(tx.error||new Error('Ink write failed'));
-    });
+    return BreezePdfInkStore.write(key,value);
   }
   function valid(data){
     return data?.version===1 && Array.isArray(data.strokes) && data.strokes.every(s=>
@@ -366,7 +355,8 @@ const BreezePdfInk = (()=>{
         while(state.dirty){
           const revision=state.revision;
           // Completed strokes are immutable; isolate only the mutable page array.
-          // IndexedDB copies the coordinates when put() accepts the snapshot.
+          // Only changed strokes cross to the writer's worker; full v1 page
+          // serialization runs there. The acknowledgement means tx complete.
           const snapshot={version:1,strokes:state.strokes.slice()};
           await write(state.key,snapshot);
           if(revision===state.revision)state.dirty=false;
@@ -376,7 +366,7 @@ const BreezePdfInk = (()=>{
     })();
     return state.saving;
   }
-  function evict(state){if(!state.svg && !state.dirty && !state.saving && !state.loading)pages.delete(state.key);}
+  function evict(state){if(!state.svg && !state.dirty && !state.saving && !state.loading){pages.delete(state.key);BreezePdfInkStore.release(state.key);}}
   function record(state,before){
     if(before.length===state.strokes.length && before.every((stroke,i)=>stroke===state.strokes[i]))return;
     // Immutable completed strokes are shared; history stores only page arrays,
@@ -801,9 +791,14 @@ const BreezePdfInk = (()=>{
         state.strokes=data?.strokes||[];state.loaded=true;
       }).finally(()=>{state.loading=null;});
     }
+    // Close/reopen can put two mount callers behind the same read. Only the
+    // latest caller may attach OR evict this state and its storage mirror.
+    const mountOwner={};state.mountOwner=mountOwner;
     try{if(state.loading)await state.loading;}catch(error){
-      pages.delete(key);message('필기를 불러오지 못했어요. 문서를 다시 열어 주세요');return;
+      if(state.mountOwner!==mountOwner)return;
+      pages.delete(key);BreezePdfInkStore.release(key);message('필기를 불러오지 못했어요. 문서를 다시 열어 주세요');return;
     }
+    if(state.mountOwner!==mountOwner)return;
     if(s!==session || !element.querySelector('canvas')?.width || state.svg){evict(state);return;}
     state.element=element;state.width=base.width;state.height=base.height;
     state.svg=element.querySelector('.pdf-ink-layer')||document.createElementNS(ns,'svg');state.svg.classList.add('pdf-ink-layer');
