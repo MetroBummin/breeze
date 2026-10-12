@@ -66,13 +66,15 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-actions{position:absolute;left:50%;top:calc(50% - 6px);transform:translate(-50%,-50%);width:calc(2 * var(--control-side-size));height:var(--control-row-height);display:flex;isolation:isolate;animation:pdf-navigation-reveal 140ms ease;}
 .pdf-thumbnail-actions::before{content:"";position:absolute;inset:6px 0;z-index:-1;background:var(--sentence-glass-solid);border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,.10);}
 .pdf-thumbnail-actions[hidden]{display:none;}
-.pdf-thumbnail-actions button{width:44px;height:44px;padding:13px;border:0;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
+.pdf-thumbnail-actions button{width:44px;height:44px;padding:0;display:grid;place-items:center;border:0;background:transparent;color:var(--sentence-glass-muted);cursor:pointer;}
 .pdf-thumbnail-actions [data-pdf-delete-confirm]{color:var(--bookmark-ink);}
 .pdf-thumbnail-actions button:disabled{opacity:.4;cursor:default;}
-.pdf-thumbnail-actions svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.pdf-thumbnail-actions svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 .pdf-thumbnail-more[hidden]{display:none;}
 .pdf-thumbnail-more::before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--sentence-glass-solid);box-shadow:0 1px 4px rgba(0,0,0,.10);}
-.pdf-thumbnail-more svg{position:relative;width:16px;height:16px;fill:currentColor;}
+.pdf-thumbnail-more svg{position:relative;width:var(--control-icon-size);height:var(--control-icon-size);fill:currentColor;}
+.pdf-thumbnail-more{padding:0;}
+.pdf-thumbnail-more svg circle{r:var(--control-more-dot-radius);}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
 .pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
@@ -134,8 +136,9 @@ body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readp
 .library-folder-controls>.breeze-folder-picker>summary{border:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-radius:14px;background-clip:padding-box;padding:0 10px;font-size:12px;}
 .library-folder-controls .breeze-folder-name{font-size:12px;}
 .library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary{border:0;background:transparent;}
-.library-folder-controls :is(.library-folder-add,.library-folder-menu>summary) svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+.library-folder-controls :is(.library-folder-add,.library-folder-menu>summary) svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 .library-folder-controls .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
+.library-folder-controls .library-folder-menu>summary svg circle{r:var(--control-more-dot-radius);}
 .library-folder-controls .library-folder-actions button{font-size:12px;border:0;background:transparent;}
 .library-folder-controls .library-folder-actions button:hover{background:var(--sentence-glass-action-hover);}
 

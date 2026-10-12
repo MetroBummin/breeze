@@ -168,3 +168,11 @@ without seeking or replacing animation frames. The private reference image
 could not be downloaded through Library, so its pixels were not inspected;
 material choices use the parent’s charcoal/rim/white-icon description. The
 private reference image is not committed or published.
+
+PR155 icon-family follow-up shares the reviewed general 20px/2-unit outline
+tokens for sheet close/add and compound vocabulary return controls. Icon-only
+back roles use the reviewed 32px/2.3 chevron; filled edit/menu dots use the shared
+1.6-unit radius. These optics supersede the older 20px back-grid description
+above only in this review branch. Preserve button boxes, semantics, sheet/page
+navigation, gesture owners and vocabulary data. User review is required before
+a new native build; no historical release boundary is updated by this draft.

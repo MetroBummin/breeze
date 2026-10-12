@@ -24,7 +24,7 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #am-card .am-back,#ed-card .am-back{min-height:44px;padding:8px 0;}
 #am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;float:none;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--sentence-glass-line-soft);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);cursor:pointer;}
 #pdf-page-navigation .task-close{position:static;}
-.task-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+.task-close svg{display:block;width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 .task-close:hover{background:var(--sentence-glass-action-hover);}
 .task-surface button:focus-visible,#set-close:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
 #wordbook-add-form>.task-close,#task-form>.task-close{margin:0;}

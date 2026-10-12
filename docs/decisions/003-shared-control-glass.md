@@ -499,3 +499,16 @@ stroke scale); remove the one-button override. Preserve44×44 circles,50% radius
 background, fill/pressed semantics and all existing deep-equality assertions.
 Before/after own-browser sidebar renders ground the change. This does not force
 the differently shaped bookmark/page glyphs to equal painted widths.
+
+### App icon family review (PR155)
+
+Extend the reviewed general outline family (20px SVG frame, rounded 2-unit
+stroke) to Home settings/add, Wordbook export, folder add, PDF thumbnail actions
+and task/settings/article close buttons. Filled ellipses use a 20px frame and
+1.6-unit dot radius. Keep existing button rectangles, materials, accessible
+names and handlers; use centered SVG instead of the article preview's text X.
+Back roles retain the reviewed 32px/2.3 chevron, while the sidebar header retains
+its matched 24px/stroke-scale pair. Lookup, stars, disclosure indicators and
+writing tools keep their distinct functional treatment. This is a draft visual
+review; user sign-off precedes any new build or deployment. Frozen release
+receipts and checkers remain unchanged.

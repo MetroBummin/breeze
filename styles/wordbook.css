@@ -113,7 +113,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 /* Actions use existing dock slots; selection is optional, per Meaning. */
 .wordbook-brand #btn-export{margin-left:auto;flex:none;width:44px;height:44px;position:relative;display:grid;place-items:center;border-radius:50%;cursor:pointer;}
 .wordbook-brand #btn-export:focus-visible{outline:2px solid var(--selection-ink);outline-offset:4px;}
-.wordbook-brand #btn-export svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+.wordbook-brand #btn-export svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 .wordbook-review-entry button{min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--settings-ink);font:500 12px/1.5 var(--ui);cursor:pointer;}
 .wordbook-review-entry [hidden]{display:none!important;}
 .review-recall-hint{font:400 12px/1.6 var(--ui);color:var(--sentence-glass-secondary);margin:0 0 16px;}

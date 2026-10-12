@@ -536,6 +536,7 @@ html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;-
   --control-icon-stroke:2;
   --control-back-icon-size:32px;
   --control-back-icon-stroke:2.3;
+  --control-more-dot-radius:1.6px;
   --control-line:var(--control-light-line);
   --control-shadow:var(--control-light-shadow);
   --control-light-line:rgba(255,255,255,.66);

@@ -11,11 +11,11 @@ body.dark:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark{background-ima
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark::before{content:"";position:absolute;inset:0;display:none;background:var(--settings-ink);mask:url("../assets/brand/wordmark-mask.svg") center/contain no-repeat;-webkit-mask:url("../assets/brand/wordmark-mask.svg") center/contain no-repeat;}
 @media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more){body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark{background-image:none!important;}body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark::before{display:block;}}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings{margin-left:auto;flex:none;width:44px;height:44px;}
-body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #v-home{padding-top:20px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #toast,body:has(:is(#v-home,#v-casuals,#v-longform).on) #minitoast{bottom:calc(env(safe-area-inset-bottom) + 78px);transition-property:opacity;}
-#home-add svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
+#home-add svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 
 body.settings-open{overflow:hidden;}
 #settings-modal{display:flex;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 0 0;overflow:hidden;background:var(--settings-scrim);visibility:hidden;opacity:0;pointer-events:none;transition:opacity .36s ease,visibility 0s .36s;}
