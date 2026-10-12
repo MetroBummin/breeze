@@ -540,3 +540,34 @@ test('detail imports pending words once without restoring exclusions or changing
   assert.equal(document.querySelector('.study-sets-menu #study-sets-import'),null);
   assert.deepEqual([...document.querySelectorAll('.study-sets-edit-menu button')].map(n=>n.textContent),['이름 변경','책 추가','세트 삭제']);
 });
+
+test('create quota failure preserves prior bytes and retries once; selection order is stable by card count',()=>{
+  const h=harness(),{context,storage,run,query,click,document,submit}=h;
+  h.createSet('Existing');run("studySetsGo('create')");
+  assert.deepEqual([...document.querySelectorAll('.study-sets-book input')].map(node=>node.value),['Two','One','']);
+  assert.equal(query('#study-sets-save').disabled,true);
+  const checkbox=query('.study-sets-book input');checkbox.checked=true;checkbox.dispatchEvent(new context.window.Event('change'));
+  assert.equal(query('#study-sets-save').disabled,false);checkbox.checked=false;checkbox.dispatchEvent(new context.window.Event('change'));assert.equal(query('#study-sets-save').disabled,true);
+  checkbox.checked=true;checkbox.dispatchEvent(new context.window.Event('change'));query('#study-sets-name').value='New';
+  const before=storage.get('breeze.study-sets.v1'),write=context.localStorage.setItem;
+  const error=new Error('Synthetic quota');error.name='QuotaExceededError';context.localStorage.setItem=()=>{throw error;};submit('#study-sets-create-form');
+  assert.equal(storage.get('breeze.study-sets.v1'),before);assert.equal(run('studySetsUI.lastError'),error);assert.equal(run('studySetsUI.diagnostic.phase'),'commit');assert.equal(run('studySetsUI.diagnostic.committed'),false);
+  context.localStorage.setItem=write;click('#study-sets-error button');assert.equal(JSON.parse(storage.get('breeze.study-sets.v1')).sets.length,2);
+});
+
+test('post-commit create render failure retries display without creating another set',()=>{
+  const h=harness();const render=h.context.renderStudySets;const error=new Error('Synthetic display');
+  h.run('openStudySets()');h.click('#study-sets-create');h.query('#study-sets-name').value='Three';
+  h.context.words.e={word:'third',ko:'셋째',book:'Two',addedAt:5};
+  for(const checkbox of h.document.querySelectorAll('.study-sets-book input'))if(['One','Two'].includes(checkbox.value)){checkbox.checked=true;checkbox.dispatchEvent(new h.window.Event('change'));}
+  const staleForm=h.query('#study-sets-create-form');h.context.renderStudySets=()=>{throw error;};h.submit('#study-sets-create-form');staleForm.dispatchEvent(new h.window.Event('submit',{cancelable:true}));
+  const before=h.storage.get('breeze.study-sets.v1');assert.equal(JSON.parse(before).sets.length,1);assert.equal(h.run('studySetsUI.lastError'),error);assert.equal(h.run('studySetsUI.diagnostic.committed'),true);
+  h.context.renderStudySets=render;h.click('#study-sets-error button');assert.equal(h.storage.get('breeze.study-sets.v1'),before);h.click('#study-sets-start');assert.equal(h.query('#study-sets-progress').textContent,'0 / 3');
+  h.click('#study-sets-back');h.run('studySetsReadAndRender()');h.click('#study-sets-start');assert.equal(h.query('#study-sets-progress').textContent,'0 / 3');
+});
+
+test('post-commit start history failure retries the committed session without another start',()=>{
+  const h=harness();h.createSet();const push=h.context.history.pushState,error=new Error('Synthetic history');h.context.history.pushState=()=>{throw error;};
+  h.click('#study-sets-start');const before=h.storage.get('breeze.study-sets.v1');assert.ok(JSON.parse(before).sets[0].session);assert.equal(h.run('studySetsUI.diagnostic.phase'),'navigation');assert.equal(h.run('studySetsUI.lastError.stack'),error.stack);
+  h.context.history.pushState=push;h.click('#study-sets-error button');assert.equal(h.storage.get('breeze.study-sets.v1'),before);assert.equal(h.query('#study-sets-progress').textContent,'0 / 2');
+});

@@ -13,6 +13,7 @@ const studySetsUI={
   back:/** @type {HTMLButtonElement|null} */(null),
   returnFocus:/** @type {HTMLElement|null} */(null),
   retry:/** @type {null|(()=>void)} */(null),
+  lastError:null,diagnostic:null,mutating:false,
   screen:'list',setId:'',notice:'',undo:null,historyToken:'',pendingClose:false,homeEntry:false,managementEntry:false,
   swipeClose:/** @type {null|(()=>void)} */(null),
   releaseClickId:/** @type {number|null} */(null),
@@ -225,8 +226,19 @@ function studySetsAttachSurface(){
   if(typeof show==='function'&&typeof activeAppView==='function'&&activeAppView()!==view)show(view,{fromHistory:true,studySetsTransition:true});
   if(!page&&!ui.dialog.open)ui.dialog.showModal();
   ui.transitioning=false;
-  syncStudySetsHistoryView(view);
+  syncStudySetsHistoryView(view);studySetsCreateViewport();
 }
+// iOS keeps the layout viewport behind its software keyboard. Size this
+// creation sheet to the visible viewport without changing Reader overlays.
+function studySetsCreateViewport(){
+  const dialog=studySetsUI.dialog;if(!dialog)return;
+  const viewport=window.visualViewport;
+  if(studySetsUI.screen==='create'&&dialog.open&&viewport&&viewport.scale===1){
+    dialog.style.height=viewport.height+'px';dialog.style.top=viewport.offsetTop+'px';
+  }else{dialog.style.removeProperty('height');dialog.style.removeProperty('top');}
+}
+window.visualViewport?.addEventListener('resize',studySetsCreateViewport,{passive:true});
+window.visualViewport?.addEventListener('scroll',studySetsCreateViewport,{passive:true});
 function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false){
   if(studySetsUI.pendingClose)return;
   ensureStudySetsDialog();
@@ -281,40 +293,51 @@ window.addEventListener('popstate',event=>{
     event.stopImmediatePropagation();
   }
 },true);
-function studySetsShowError(error,retry){
+function studySetsShowError(error,retry,context={phase:'read',committed:false}){
+  // Keep the original exception in memory for diagnosis; never persist word text.
+  studySetsUI.lastError=error;
+  studySetsUI.diagnostic={operation:context.operation||studySetsUI.screen,phase:context.phase,committed:context.committed,name:String(error?.name||'Error'),message:String(error?.message||''),serializedCharacters:context.serializedCharacters||0,sets:studySetsUI.state?.sets.length||0,cards:studySetsUI.state?.sets.reduce((n,set)=>n+set.cards.length,0)||0,sessions:studySetsUI.state?.sets.filter(set=>set.session).length||0};
   studySetsUI.retry=retry;studySetsUI.error.replaceChildren();studySetsUI.error.hidden=false;
   const message=String(error?.message||'');
   const detail=/newer|version/i.test(message)?'이 앱보다 새로운 형식의 데이터예요. 앱을 업데이트해 주세요. 저장된 데이터는 바꾸지 않았어요.':
     /Invalid study sets data/i.test(message)?'저장된 데이터를 읽을 수 없어요. 원본 데이터는 그대로 보관하고 있어요.':
     /changed/i.test(message)?'다른 창에서 변경되었어요. 다시 시도하면 최신 상태에 반영해요.':
-    '기기 저장 공간과 저장소 접근을 확인한 뒤 다시 시도해 주세요.';
-  studySetsUI.error.append(studySetsNode('p','','학습 세트를 저장하거나 불러오지 못했어요. 현재 단계는 그대로예요.'),studySetsNode('p','study-sets-caption',detail));
+    context.committed?'저장은 완료됐지만 화면을 표시하지 못했어요. 다시 시도하면 저장된 세트를 다시 표시해요.':error?.name==='QuotaExceededError'?'앱 저장소의 한도에 도달했어요. 저장된 데이터는 바꾸지 않았어요.':'저장소 또는 화면 처리 중 오류가 발생했어요. 다시 시도해 주세요.';
+  studySetsUI.error.append(studySetsNode('p','',context.committed?'세트는 저장됐지만 화면을 표시하지 못했어요.':'학습 세트를 저장하거나 불러오지 못했어요.'),studySetsNode('p','study-sets-caption',detail));
   studySetsUI.error.append(studySetsButton('다시 시도',()=>studySetsUI.retry?.()));
 }
 function studySetsClearError(){studySetsUI.retry=null;studySetsUI.error.hidden=true;studySetsUI.error.replaceChildren();}
-function studySetsReadAndRender(focus=true){
+function studySetsReadAndRender(focus=true,context={phase:'read',committed:false}){
   try{studySetsUI.state=readStudySets();studySetsClearError();renderStudySets(focus);}
-  catch(error){studySetsShowError(error,()=>studySetsReadAndRender(focus));}
+  catch(error){studySetsShowError(error,()=>studySetsReadAndRender(focus,context),context);}
 }
 function studySetsMutate(change,success,exitRow=null){
-  if(studySetsUI.pendingClose)return;
+  if(studySetsUI.pendingClose||studySetsUI.mutating)return;
+  studySetsUI.mutating=true;
+  const operation=studySetsUI.screen;
+  let result,phase='read',committed=false,serializedCharacters=0;
   const retry=()=>studySetsMutate(change,success,exitRow);
   try{
-    const result=change(readStudySets());
+    result=change(readStudySets());
     if(!result.accepted){
       studySetsUI.state=result.state;studySetsClearError();
-      studySetsUI.notice='다른 곳에서 변경된 최신 상태를 불러왔어요.';renderStudySets();refreshStudySetsEntry(result.state);return;
+      studySetsUI.notice='다른 곳에서 변경된 최신 상태를 불러왔어요.';phase='display';renderStudySets();refreshStudySetsEntry(result.state);return;
     }
-    // Do not advance the DOM, hide the answer, or drop form input before this succeeds.
-    commitStudySets(result.state);studySetsUI.state=result.state;studySetsClearError();
+    phase='commit';serializedCharacters=JSON.stringify(result.state).length;
+    commitStudySets(result.state);committed=true;studySetsUI.state=result.state;studySetsClearError();
     const previousScreen=studySetsUI.screen;
-    if(success)success(result);
+    phase='navigation';if(success)success(result);
     if(studySetsUI.pendingClose)return;
     const focus=!(['detail','excluded'].includes(previousScreen)&&previousScreen===studySetsUI.screen);
-    refreshStudySetsEntry(result.state);
+    phase='display';refreshStudySetsEntry(result.state);
     if(exitRow&&studySetsAnimateExit(exitRow))return;
     renderStudySets(focus);
-  }catch(error){if(exitRow)studySetsUI.swipeClose?.();studySetsShowError(error,retry);}
+  }catch(error){
+    if(exitRow)studySetsUI.swipeClose?.();
+    // A durable operation must never be repeated because its display failed.
+    if(committed){studySetsUI.pendingClose=false;studySetsUI.transitioning=false;}
+    studySetsShowError(error,committed?()=>studySetsReadAndRender(true,{phase:'display',committed,serializedCharacters,operation}):retry,{phase,committed,serializedCharacters,operation});
+  }finally{studySetsUI.mutating=false;}
 }
 function studySetsAnimateExit(row){
   if(!row.isConnected||typeof row.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return false;
@@ -450,7 +473,7 @@ function renderStudySetsCreate(){
   const label=studySetsNode('label','study-sets-field','세트 이름');
   const input=document.createElement('input');input.id='study-sets-name';input.name='name';input.type='text';input.required=true;input.maxLength=100;input.placeholder='예: 이번 주 읽은 책';input.autocomplete='off';label.append(input);
   const booksField=studySetsNode('fieldset','study-sets-books');booksField.append(studySetsNode('legend','','책 선택'));
-  const names=[...new Set(Object.values(words).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))].sort((a,b)=>a.localeCompare(b));
+  const names=[...new Set(Object.values(words).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))].sort((a,b)=>BreezeStudySets.cards(words,[b]).length-BreezeStudySets.cards(words,[a]).length);
   const selection=new Set(),count=studySetsNode('p','study-sets-selection-count','책을 선택해 주세요.');count.id='study-sets-selection-count';count.setAttribute('aria-live','polite');
   const create=studySetsButton('세트 만들기',()=>{},'study-sets-primary');create.type='submit';create.id='study-sets-save';create.disabled=true;
   for(const title of names){
@@ -464,13 +487,13 @@ function renderStudySetsCreate(){
     });row.append(checkbox,text,number);booksField.append(row);
   }
   if(!names.length)booksField.append(studySetsEmpty('저장된 단어가 없어요','책을 읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));
-  form.append(label,booksField,count,create);
+  form.append(label,booksField);create.setAttribute('form',form.id);studySetsUI.footer.hidden=false;studySetsUI.footer.append(count,create);
   form.addEventListener('submit',event=>{
     event.preventDefault();
     if(!input.value.trim()){input.setCustomValidity('세트 이름을 입력해 주세요.');input.reportValidity();return;}
     const options={name:input.value.trim(),bookTitles:[...selection]};
-    if(!selection.size)return;
-    studySetsMutate(state=>BreezeStudySets.create(state,options,words,Date.now()),result=>{if(studySetsUI.directoryOrigin){studySetsUI.createdSetId=result.set.id;studySetsDirectoryFocus.set(studySetsUI.historyToken,result.set.id);studySetsReturnDirectory();return;}studySetsUI.setId=result.set.id;studySetsUI.screen='detail';studySetsUI.notice='';});
+    if(studySetsUI.screen!=='create'||studySetsUI.retry||!selection.size||!BreezeStudySets.cards(words,[...selection]).length)return;
+    studySetsMutate(state=>BreezeStudySets.create(state,options,words,Date.now()),result=>{studySetsUI.setId=result.set.id;studySetsUI.screen='detail';if(studySetsUI.directoryOrigin){studySetsUI.createdSetId=result.set.id;studySetsDirectoryFocus.set(studySetsUI.historyToken,result.set.id);studySetsReturnDirectory();return;}studySetsUI.setId=result.set.id;studySetsUI.screen='detail';studySetsUI.notice='';});
   });input.addEventListener('input',()=>input.setCustomValidity(''));body.append(form);
 }
 function renderStudySetsEdit(set){
@@ -653,8 +676,8 @@ document.addEventListener('pointerdown',event=>{
 },true);
 function studySetsStart(id,restart=false){
   studySetsMutate(state=>BreezeStudySets.start(state,id,Date.now(),{restart}),()=>{
-    if(studySetsUI.screen!=='study'){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}
-    studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;});
+    const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
+    if(entering){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
 }
 function renderStudySetsStudy(set){
   const body=studySetsUI.body,view=BreezeStudySets.view(studySetsUI.state,set.id);

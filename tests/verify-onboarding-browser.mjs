@@ -148,10 +148,10 @@ try{
   await page.evaluate(()=>startOnboarding(true));
   assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),capability===true);
   assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
-  const count=capability===true?7:6;
+  const count=capability===true?8:7;
   assert.equal(await page.locator('#onboard-pages i').count(),count);
   await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length));
-  assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+  assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'study');
   assert.equal(await page.locator('#onboard-step').textContent(),`${count} / ${count}`);
   assert.equal(await page.locator('#onboard-next').textContent(),'다음');
   await page.evaluate(()=>{endOnboarding(false);startOnboarding(true);endOnboarding(false);});
@@ -170,7 +170,7 @@ try{
  const before=await dataSnapshot(page);assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
  await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
  assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),native,'PDF guide does not follow native capability');
- const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?96:83);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,738);
+ const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?109:96);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,738);
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
  assert.ok(requests.filter(u=>u.endsWith('.mp4')).every(u=>u.includes('word-light')),'offscreen media downloaded');
  const media=page.locator('#onboard-carousel');const b=await media.boundingBox();
@@ -185,8 +185,8 @@ try{
  await page.locator('#onboard-back').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#onboard-next').textContent(),'시작하기','Back skipped welcome');
  await page.evaluate(()=>{for(let i=0;i<50;i++)document.getElementById('onboard-next').click();});
  assert.equal(await page.locator('#onboarding').isVisible(),true);
- assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');
- await page.locator('#onboard-skip').tap();
+ assert.equal(await page.locator('#onboard-next').isDisabled(),true,'rapid Next cannot bypass the appended practice');
+ await page.locator('#onboard-skip').tap();assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');await page.locator('#onboard-skip').tap();
  assert.equal(await page.locator('#onboarding').isVisible(),false);assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
  await page.reload();await page.evaluate(()=>homeReady);assert.equal(await page.locator('#onboarding').isVisible(),false);
  await page.evaluate(()=>startOnboarding(true));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0','replay skipped welcome');
@@ -243,10 +243,10 @@ try{
  await page.evaluate(()=>goOnboardingPage(-100));assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
  await page.locator('#onboard-next').tap();await page.evaluate(()=>goOnboardingPage(100));
  assert.equal(await page.locator('#onboard-next').textContent(),'책 넣기');
- await swipe(-1);assert.equal(await page.evaluate(()=>onboardingSession.page),7,'final swipe escaped boundary');
- await swipe(1);assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
- await page.locator('#onboard-next').tap();await page.locator('#onboard-back').tap();
- assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+ await swipe(-1);assert.equal(await page.evaluate(()=>onboardingSession.page),8,'final swipe escaped boundary');
+ await swipe(1);assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'study');
+ assert.equal(await page.locator('#onboard-next').isDisabled(),true);await page.locator('#onboard-skip').tap();await page.locator('#onboard-back').tap();
+ assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'study');
  await context.close();
  }
  // Final file choice shares the production importer. Cancel/failure stay retryable;
@@ -296,7 +296,7 @@ try{
  await page.evaluate(()=>Reflect.get(window,'qaImportRelease')());await wait(150);
  assert.equal(await page.evaluate(()=>books.length),0,'stale import committed after '+action);
  assert.equal(await page.evaluate(()=>load(ONBOARD_KEY,'')==='done'),action==='skip','stale result changed completion after '+action);
- if(action==='back')assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'memory');
+ if(action==='back')assert.equal(await page.locator('.onboard-slide:not([hidden])').getAttribute('data-feature'),'study');
  if(action==='replay')assert.equal(await page.locator('#onboarding').getAttribute('data-stage'),'0');
  if(['escape','navigation','skip'].includes(action))assert.equal(await page.locator('#onboarding').isVisible(),false);
  await context.close();
@@ -309,7 +309,7 @@ try{
  await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) img').complete);
  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#onboard-carousel video')].some(v=>v.hasAttribute('src'))),false,'reduced motion downloaded loops');
  assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
- for(let i=1;i<=8;i++){
+ for(let i=1;i<=7;i++){
    await page.evaluate(i=>goOnboardingPage(i),i);
    for(const id of ['onboard-back','onboard-next',...(i===8?['onboard-skip']:[])]){
      const box=await page.locator('#'+id).boundingBox();assert.ok(box.width>=44&&box.height>=44,id+' touch target');
@@ -346,7 +346,7 @@ try{
  const recording=(async()=>{let i=0;while(running){const p=resolve(frames,String(i++).padStart(5,'0')+'.png');await page.screenshot({path:p});rows.push({p,t:Date.now()});await wait(100);}})();
  await wait(1800);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  for(let i=1;i<=7;i++){await wait(3600);await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();}
- await page.locator('#onboard-skip').tap();await wait(1600);running=false;await recording;await context.close();
+ await page.locator('#onboard-study-card').press('Enter');await page.locator('#onboard-study-card').press('ArrowLeft');await page.waitForFunction(()=>onboardingSession.studyStep===2);await wait(250);await page.locator('#onboard-study-card').press('Enter');await page.locator('#onboard-study-card').press('ArrowRight');await page.waitForFunction(()=>onboardingSession.studyStep===3);await wait(250);await page.locator('#onboard-next').tap();await page.locator('#onboard-skip').tap();await wait(1600);running=false;await recording;await context.close();
  writeFileSync(resolve(frames,'frames.txt'),rows.map((r,i)=>`file '${r.p}'\nduration ${i<rows.length-1?(rows[i+1].t-r.t)/1000:.1}`).join('\n'));
  const r=spawnSync('ffmpeg',['-y','-loglevel','error','-f','concat','-safe','0','-i',resolve(frames,'frames.txt'),'-vf','fps=24','-c:v','libx264','-profile:v','baseline','-pix_fmt','yuv420p','-crf','24','-an','-movflags','+faststart',resolve(out,'Breeze-onboarding-full-flow.mp4')],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
  }

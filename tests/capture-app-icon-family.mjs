@@ -30,7 +30,7 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1
  for(const dark of [false,true]){
   theme=dark?'dark':'light';await page.evaluate(d=>{darkMode=d;applyDark();show('home');},dark);
   await capture('home',['#nav-settings','#home-add'],{'#nav-settings':{size:20,stroke:'2px'},'#home-add':{size:20,stroke:'2px'}});
-  await page.locator('#nav-settings').tap();await capture('settings',['#set-close'],{'#set-close':{size:20,stroke:'2px'}});await page.locator('#set-close').tap();await page.waitForFunction(()=>!document.getElementById('settings-modal').classList.contains('on'));
+  await page.locator('#nav-settings').tap();await capture('settings',['#set-close'],{'#set-close':{size:20,stroke:'2px'}});await page.locator('#set-close').tap();await page.waitForFunction(()=>!document.getElementById('settings-modal').classList.contains('on'));await page.locator('#set-close').waitFor({state:'hidden'});
   await page.locator('#home-add').tap();await capture('add-sheet',['#am-close'],{'#am-close':{size:20,stroke:'2px'}});await page.locator('#am-close').tap();assert.equal(await page.locator('#add-modal').evaluate(n=>n.open),false);
   await page.evaluate(()=>show('vocab'));await capture('wordbook',['#btn-export','#wordbook-add'],{'#btn-export':{size:20,stroke:'2px'},'#wordbook-add':{size:20,stroke:'2px'}});
   await page.locator('#wordbook-add').tap();await capture('word-add',['#wordbook-add-form .task-close'],{'#wordbook-add-form .task-close':{size:20,stroke:'2px'}});await page.locator('#wordbook-add-form .task-close').tap();assert.equal(await page.locator('#wordbook-add-dialog').evaluate(n=>n.open),false);

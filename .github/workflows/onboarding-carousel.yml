@@ -8,6 +8,7 @@ on:
       - 'assets/onboarding/**'
       - 'index.html'
       - 'tests/verify-onboarding-browser.mjs'
+      - 'tests/verify-onboarding-study-browser.mjs'
       - '.github/workflows/onboarding-carousel.yml'
   workflow_dispatch:
 permissions:
@@ -37,11 +38,17 @@ jobs:
           BROWSER: ${{ matrix.engine }}
           BREEZE_ONBOARD_PROOF: /tmp/breeze-onboarding-carousel
         run: npm run test:onboarding
+      - name: Isolated hands-on word study lesson
+        env:
+          BROWSER: ${{ matrix.engine }}
+        run: node tests/verify-onboarding-study-browser.mjs
       - name: Responsive light/dark review evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: onboarding-carousel-${{ matrix.engine }}
-          path: /tmp/breeze-onboarding-carousel/
+          path: |
+            /tmp/breeze-onboarding-carousel/
+            /tmp/breeze-study-guide-proof/
           if-no-files-found: warn
           retention-days: 7

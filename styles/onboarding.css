@@ -64,3 +64,23 @@ body.dark #onboard-pages i[aria-current="true"]{background:#bacbc2;}
 @media(max-width:360px){#onboard-coach{padding-inline:16px;}#onboarding[data-stage="0"] #onboard-coach{padding-inline:28px;}}
 
 #onboarding[data-stage="0"] #onboard-navigation{margin-top:0;}
+
+/* One appended hands-on lesson; prior media/layout remains unchanged. */
+.onboard-slide[data-feature=study]{height:calc(100dvh - 356px);max-height:calc(100dvh - 356px);display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;min-height:180px;}
+.onboard-study-example.study-session-stack{width:100%;min-height:160px;flex:1;max-height:100%;overflow:hidden;border-radius:28px;}
+#onboard-study-card{padding:24px;min-height:160px;gap:20px;}
+#onboard-study-expression{font:600 32px/1.4 var(--ui);margin:0;}
+#onboard-study-answer{margin:0;font-size:24px;}
+.onboard-study-motion{position:absolute;bottom:24px;left:calc(50% - 12px);width:24px;height:24px;color:var(--onboard-muted);font:600 24px/1 var(--ui);pointer-events:none;animation:onboard-study-hint 1.6s ease-in-out infinite;}
+[data-hint=tap] .onboard-study-motion{font-size:0;width:20px;height:20px;border:2px solid currentColor;border-radius:50%;animation-name:onboard-study-tap;}
+[data-hint=left] .onboard-study-motion{--onboard-hint-direction:-1;}
+[data-hint=right] .onboard-study-motion{--onboard-hint-direction:1;}
+[data-hint=done] .onboard-study-motion{display:none;}
+[data-paused=true] .onboard-study-motion{animation-play-state:paused;}
+.onboard-study-play{min-height:44px;padding:6px 12px;border:0;background:transparent;color:var(--onboard-muted);font:400 12px var(--ui);cursor:pointer;}
+.onboard-study-actions{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+.onboard-study-actions:focus-within{position:static;width:auto;height:auto;clip-path:none;display:flex;gap:8px;}
+.onboard-study-actions button{min-height:44px;padding:8px 12px;border:1px solid var(--sentence-glass-line-soft);border-radius:12px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);}
+@keyframes onboard-study-hint{0%,100%{transform:translateX(0);opacity:.45;}50%{transform:translateX(calc(var(--onboard-hint-direction,1)*36px));opacity:1;}}
+@keyframes onboard-study-tap{0%,100%{transform:scale(1);opacity:.45;}50%{transform:scale(1.3);opacity:1;}}
+@media(prefers-reduced-motion:reduce){.onboard-study-motion{animation:none!important;}}

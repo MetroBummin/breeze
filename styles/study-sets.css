@@ -180,3 +180,10 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 @media(prefers-reduced-motion:reduce){.study-session-stack .study-sets-flashcard{transition:none;}}
 #v-memory-set .study-session-body{padding-bottom:max(16px,env(safe-area-inset-bottom));}
 
+
+/* Creation keeps actions above the safe area; only the book choices scroll. */
+.study-sets-sheet[data-screen=create]{height:min(720px,100%);}
+.study-sets-sheet[data-screen=create] .study-sets-body{display:flex;flex:1;overflow:hidden;padding-bottom:8px;}
+#study-sets-create-form{display:flex;flex:1;flex-direction:column;min-height:0;}
+#study-sets-create-form>.study-sets-field{flex:none;}
+#study-sets-create-form>.study-sets-books{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;}

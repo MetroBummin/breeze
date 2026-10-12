@@ -55,3 +55,10 @@ test('static app ships set model, storage and UI in dependency order without ena
  assert.match(readFileSync(new URL('../scripts/ui/vocabulary-review.js',import.meta.url),'utf8'),/const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;/);
  const model=readFileSync(new URL('../scripts/core/study-sets.js',import.meta.url),'utf8');assert.doesNotMatch(model,/\b(?:fetch|XMLHttpRequest|saveWords|queueWordSync)\s*\(/);
 });
+
+test('v1 backup succeeds but collection quota failure retains exact original and retries without another backup',()=>{
+ const seed=world(),state=seed.context.engine.create(null,{name:'Legacy',bookTitles:['A']},words,100).state;state.version=1;const raw=JSON.stringify(state),w=world(raw),next=w.context.readStudySets();
+ const write=w.context.localStorage.setItem,error=new Error('Synthetic primary quota');error.name='QuotaExceededError';
+ w.context.localStorage.setItem=(k,v)=>{if(k===key)throw error;write(k,v);};assert.throws(()=>w.context.commitStudySets(next),e=>e===error);assert.equal(w.data.get(key),raw);assert.equal(w.data.get(key+'.backup-v1'),raw);
+ w.context.localStorage.setItem=write;w.context.commitStudySets(next);assert.equal(w.data.get(key+'.backup-v1'),raw);assert.equal(w.writes.filter(([k])=>k===key+'.backup-v1').length,1);assert.equal(JSON.parse(w.data.get(key)).sets.length,1);
+});

@@ -238,3 +238,30 @@ brand/selection tokens stay unchanged. Only remembered/right-drag feedback uses
 it, in set and all-word study. The theme-specific wash35%/20% keeps the neutral
 card readable; direction text must retain4.5:1 contrast. Left/repeat, progress,
 geometry, gestures, palette assets and lookup colors are unchanged.
+
+
+The next internal269 build adds one isolated hands-on word-study page after
+Memory inside the existing onboarding carousel. Existing pages and the Settings
+replay entry remain; practice never touches saved words, set snapshots or live
+study progress. Tap/left-repeat/second-tap/right-remember are required for Next;
+the existing Skip and Back remain. Replay resets the examples; interrupted
+first-run practice resumes through the existing progress key. Reduced motion,
+keyboard and assistive alternatives preserve the exercise.
+
+Creation now fixes the count and submit control above the safe area while only
+the book field scrolls. Books sort by descending snapshot word/meaning count;
+equal counts retain source order. Name remains required, zero selected/zero
+snapshot cards cannot create a set, and successful or pending operations reject
+stale duplicate form submissions. The visible viewport sizes only this creation
+sheet when the iOS keyboard changes available height.
+
+Mutation errors distinguish durable commit from navigation/display. Retry after
+a committed mutation rereads and renders rather than reapplying creation/start;
+quota failure preserves the old collection bytes and permits the original
+mutation retry. Original error (including stack) stays in memory for diagnosis,
+with phase/operation/count metadata and no persisted diagnostic vocabulary.
+The exact v1 backup remains mandatory before migration; quota failure on either
+backup or collection write preserves the original collection. Extra backup
+space is a documented constraint, not waived or hidden by destructive cleanup.
+Fault-injected268 reproduces the generic warning and duplicate retry risk; this
+does not prove the physical phone's original exception.
