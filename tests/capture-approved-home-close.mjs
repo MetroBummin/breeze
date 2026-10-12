@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {resolve,extname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {chromium} from 'playwright';
+const root=process.env.BREEZE_CLOSE_ROOT||fileURLToPath(new URL('../',import.meta.url)),phase=process.env.BREEZE_CLOSE_PHASE||'after',out=`/tmp/breeze-approved-home-close-${phase}`;mkdirSync(out,{recursive:true});
+const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`,browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE}),cases=[];
+try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1180],['ipad-landscape',1180,820],['desktop',1440,1000],['short',844,390]])for(const dark of [false,true]){
+ const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:2,hasTouch:true,isMobile:true,serviceWorkers:'block'}),page=await context.newPage();await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','"done"'));await page.goto(url);await page.evaluate(()=>homeReady);await page.evaluate(d=>{darkMode=d;applyDark();show('home');},dark);
+ const measure=selector=>page.locator(selector).evaluate(n=>{const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {x:r.x,y:r.y,width:r.width,height:r.height,background:s.backgroundColor,border:s.borderTopWidth,radius:s.borderRadius,text:n.textContent};});
+ const home={settings:await measure('#nav-settings'),logo:await measure('#logo .mark')};assert.equal(home.settings.width,44);assert.equal(home.settings.height,44);
+ await page.screenshot({path:`${out}/${device}-${dark?'dark':'light'}-home.png`});await page.screenshot({path:`${out}/${device}-${dark?'dark':'light'}-header-crop.png`,clip:{x:0,y:0,width,height:130}});
+ await page.evaluate(()=>{show('vocab');openWordbookAdd();});const close=await measure('#wordbook-add-form .task-close'),actions=await page.locator('#wordbook-add-form>div button').evaluateAll(ns=>ns.map(n=>{const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {text:n.textContent,width:r.width,height:r.height,background:s.backgroundColor,border:s.borderTopWidth,radius:s.borderRadius};}));assert.equal(close.width,44);assert.equal(close.height,44);assert.equal(close.radius,'50%');if(phase==='after'){assert.notEqual(close.background,'rgba(0, 0, 0, 0)');assert.equal(close.border,'1px');}
+ await page.screenshot({path:`${out}/${device}-${dark?'dark':'light'}-word-add.png`});const b=await page.locator('#wordbook-add-form .task-close').boundingBox();await page.screenshot({path:`${out}/${device}-${dark?'dark':'light'}-close-crop.png`,clip:{x:b.x-4,y:b.y-4,width:52,height:52}});await page.locator('#wordbook-add-form .task-close').tap();assert.equal(await page.locator('#wordbook-add-dialog').evaluate(n=>n.open),false);
+ cases.push({device,dark,viewport:{width,height,dpr:2},home,close,actions});await context.close();
+}writeFileSync(`${out}/geometry.json`,JSON.stringify({phase,cases},null,2)+'\n');console.log('Approved Home/word-add close captures and44px targets passed');}finally{await browser.close();server.close();}

@@ -512,3 +512,13 @@ its matched 24px/stroke-scale pair. Lookup, stars, disclosure indicators and
 writing tools keep their distinct functional treatment. This is a draft visual
 review; user sign-off precedes any new build or deployment. Frozen release
 receipts and checkers remain unchanged.
+
+### Separately approved Home/word-add corrections
+
+The user approved restoring the word-add popup X's shared circular neutral
+background/rim after the compact-task rule made it transparent. Its44×44 box,
+SVG, close handler and50% radius remain. Cancel/save text buttons are untouched;
+the generic task popup keeps its existing separate compact style. Home settings
+alone moves4 CSSpx downward for optical alignment with the wordmark's ink;
+header/logo boxes and the44px touch target remain. Paired phone/tablet/desktop/
+short light/dark captures record the exact4px shift and unchanged logo/actions.
