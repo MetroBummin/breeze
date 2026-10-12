@@ -22,6 +22,8 @@ const allowed=new Set([
   "sw.js",
   ".github/workflows/all-words-picker.yml",
   "tests/verify-study-motion-browser.mjs",
+  "tests/verify-pdf-elastic-motion-browser.mjs",
+  "tests/verify-pdf-pinch-browser.mjs",
   "tests/verify-simple-study-session.mjs",
   "tests/verify-simple-word-cards-browser.mjs",
   "tests/helpers/all-words-fixture.mjs",

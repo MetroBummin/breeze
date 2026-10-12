@@ -23,7 +23,10 @@ try{
  };
  await page.evaluate(()=>{setOriginalZoom(1);readerScroller().scrollTop=120;});
  await page.screenshot({path:`${out}/pinch-before.png`});await touch('touchStart',280);for(const d of [240,200,160,120,80]){await touch('touchMove',d);await page.waitForTimeout(20);}await page.screenshot({path:`${out}/pinch-under-min.png`});
- const under=await page.evaluate(()=>({committed:originalZoom(),visual:new DOMMatrix(getComputedStyle(originalZoomLayer()).transform).a,scroll:readerScroller().scrollTop,paper:originalPinch.paper,center:originalPinch.center}));assert.equal(under.committed,1);assert.ok(under.visual<.94&&under.visual>.85);
+ // Touchmove schedules presentation on rAF. A screenshot or 20ms timer does
+ // not prove that WebKit has delivered that frame; never sample stale scale.
+ await page.waitForFunction(()=>originalPinch&&originalPinchFrame===0,null,{timeout:3000});
+ const under=await page.evaluate(()=>({committed:originalZoom(),visual:new DOMMatrix(getComputedStyle(originalZoomLayer()).transform).a,scroll:readerScroller().scrollTop,paper:originalPinch.paper,center:originalPinch.center}));console.log('Under-minimum presentation: '+JSON.stringify(under));assert.equal(under.committed,1);assert.ok(under.visual<.94&&under.visual>.85,JSON.stringify(under));
  await page.evaluate(()=>{window.qaFrames=[];const sample=()=>{const m=new DOMMatrix(getComputedStyle(originalZoomLayer()).transform);qaFrames.push({t:performance.now(),a:m.a,e:m.e,f:m.f,zoom:originalZoom(),scroll:readerScroller().scrollTop,busy:originalPinchBusy()});if(qaFrames.length<45)requestAnimationFrame(sample);};requestAnimationFrame(sample);});
  await touch('touchEnd');await page.waitForTimeout(100);await page.screenshot({path:`${out}/pinch-return.png`});await page.waitForFunction(()=>!originalPinchBusy());await page.screenshot({path:`${out}/pinch-settled.png`});const frames=await page.evaluate(()=>qaFrames);assert.equal(await page.evaluate(()=>originalZoom()),1);assert.ok(frames.some(f=>f.a>1&&f.a<1.01),'restrained overshoot');assert.ok(frames.every(f=>f.zoom===1),'return never changes logical zoom');assert.ok(Math.max(...frames.map(f=>f.scroll))-Math.min(...frames.map(f=>f.scroll))<=1,'return never scrolls');
  // Direct owner probes isolate matrix continuity with a different re-grab

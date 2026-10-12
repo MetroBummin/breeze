@@ -45,7 +45,7 @@ const reports=[];
 try{
  for(const [engine,width,height] of [[chromium,390,844],[chromium,768,1024],[chromium,1180,900],[webkit,390,844]].filter(([engine])=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
   const profile=mkdtempSync(resolve(tmpdir(),'breeze-pinch-'));
-  const browser=await engine.launchPersistentContext(profile,{headless:true,viewport:{width,height},hasTouch:true,isMobile:true,deviceScaleFactor:2,serviceWorkers:'block'});
+  const browser=await engine.launchPersistentContext(profile,{executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,headless:true,viewport:{width,height},hasTouch:true,isMobile:true,deviceScaleFactor:2,serviceWorkers:'block'});
   try{
    const page=await browser.newPage();
    const errors=[]; page.on('pageerror',error=>errors.push(error.message));
@@ -303,7 +303,23 @@ try{
    await touch('touchStart',points(90));await touch('touchMove',points(160));
    await page.setViewportSize({width:width+50,height});await page.waitForTimeout(100);
    await touch('touchEnd',[]);assert.equal((await snapshot()).busy,false);
-   await page.setViewportSize({width,height});await page.waitForTimeout(150);
+   await page.setViewportSize({width,height});
+   // This next pinch tests input AFTER resize. Wait for the real viewport,
+   // ResizeObserver geometry and asynchronous anchor rendering to settle; a
+   // 150ms timer can leave WebKit at the preceding width and scroll landing.
+   // The active-pinch resize/cancellation assertion above remains unchanged.
+   await page.waitForFunction(({width,height})=>{
+     const box=readerScroller(),layer=originalZoomLayer();
+     return innerWidth===width&&innerHeight===height
+       &&originalZoomObservedWidth===box.clientWidth&&originalZoomObservedHeight===box.clientHeight
+       &&parseFloat(layer.style.width)===box.clientWidth&&!originalRotationAnchor
+       &&!originalPinchBusy();
+   },{width,height},{timeout:5000}).catch(async error=>{console.log('POST_RESIZE_GEOMETRY',await page.evaluate(()=>({viewport:[innerWidth,innerHeight],observed:[originalZoomObservedWidth,originalZoomObservedHeight],box:[readerScroller().clientWidth,readerScroller().clientHeight],layer:originalZoomLayer().style.width,rotation:!!originalRotationAnchor,rendering:[...originalSession.rendering.keys()],busy:originalPinchBusy()})));throw error;});
+   await page.evaluate(async()=>{
+     // rendering retains fulfilled promises as a cache, so await their values.
+     await Promise.race([Promise.all([...originalSession.rendering.values()]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Post-resize page rendering did not finish')),5000))]);
+     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   });
    await pinch(90,180);await pinch(180,90);
    assert.deepEqual(errors,[]);
    const report={engine:engine.name(),width,height,cycles:12,pages:await page.evaluate(()=>originalSession.pages.length),touch:cdp?'trusted CDP':'synthetic DOM touch events',result:'passed'};

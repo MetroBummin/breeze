@@ -40,7 +40,10 @@ try{
  // Two independent releases while first IDB commit is held must both persist.
  await page.evaluate(()=>{window.qaCommit=commitStudySets;window.qaGate=new Promise(r=>window.qaRelease=r);commitStudySets=async s=>{await qaGate;return qaCommit(s);};});
  await gesture(row(),[[-65,0,12],[-130,0,12],[-225,0,12]]);await gesture(page.locator('#study-sets-word-list .study-sets-word-row').nth(1),[[-65,0,12],[-130,0,12],[-225,0,12]]);
- await page.evaluate(()=>{commitStudySets=qaCommit;qaRelease();});await page.waitForFunction(()=>!studySetsUI.mutating&&studySetsUI.state.sets[0].excludedIds.length===2);await page.waitForTimeout(450);assert.equal(await page.locator('#study-sets-word-list .study-sets-word-row').count(),6);
+ await page.evaluate(()=>{commitStudySets=qaCommit;qaRelease();});await page.waitForFunction(()=>!studySetsUI.mutating&&studySetsUI.state.sets[0].excludedIds.length===2);
+ // Durable exclusion precedes two sequential WAAPI presentations. WebKit can
+ // keep either animation pending beyond a wall-clock delay; require completion.
+ await page.waitForFunction(()=>document.querySelectorAll('#study-sets-word-list .study-sets-word-row').length===6,null,{timeout:3000});assert.equal(await page.locator('#study-sets-word-list .study-sets-word-row').count(),6);
  await page.evaluate(()=>studySetsStart(studySetsUI.setId));
  for(const mode of ['set','all']){
   if(mode==='all')await page.evaluate(async()=>{closeStudySets(true);show('vocab');await openVocabularyReview();});
