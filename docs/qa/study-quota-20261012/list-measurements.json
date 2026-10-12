@@ -1,0 +1,843 @@
+{
+  "phase": "after",
+  "engine": "chromium",
+  "browserVersion": "151.0.7922.173",
+  "platform": "Linux local browser, 390x844 viewport; synthetic 100-card sets; 5 warmups + 20 samples; no CPU throttle; no device-speed or heap-allocation claim",
+  "cases": [
+    {
+      "sets": 1,
+      "cardsPerSet": 100,
+      "storedCards": 100,
+      "storedQueueCards": 100,
+      "reveal": {
+        "samples": 20,
+        "medianMs": 17.600000000093132,
+        "p95Ms": 26.5,
+        "normalizes": [
+          8
+        ],
+        "listRebuilds": [
+          0
+        ],
+        "hiddenListRebuilds": [
+          0
+        ],
+        "raw": [
+          {
+            "durationMs": 14.700000000186265,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 17.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 19.899999999906868,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 20.100000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 11.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 26.5,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 12.700000000186265,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 15.400000000372529,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 13.199999999720603,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 13.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 10.700000000186265,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 15.199999999720603,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 19.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 28.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 12.399999999906868,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 18.200000000186265,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 17.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 24.600000000093132,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 16.5,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 23.899999999906868,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          }
+        ]
+      },
+      "directory": {
+        "samples": 20,
+        "medianMs": 23.199999999720603,
+        "p95Ms": 43.5,
+        "normalizes": [
+          6
+        ],
+        "listRebuilds": [
+          1
+        ],
+        "hiddenListRebuilds": [
+          0
+        ],
+        "raw": [
+          {
+            "durationMs": 14.799999999813735,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 20.59999999962747,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 23.199999999720603,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 16.600000000093132,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 52,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 30,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 25,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 37.60000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 22.299999999813735,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 17.799999999813735,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 25.800000000279397,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 36.60000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 21.100000000093132,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 18.59999999962747,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 23.5,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 10.5,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 10.799999999813735,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 34.5,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 43.5,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 17.5,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          }
+        ]
+      }
+    },
+    {
+      "sets": 10,
+      "cardsPerSet": 100,
+      "storedCards": 1000,
+      "storedQueueCards": 1000,
+      "reveal": {
+        "samples": 20,
+        "medianMs": 37,
+        "p95Ms": 60.39999999990687,
+        "normalizes": [
+          8
+        ],
+        "listRebuilds": [
+          0
+        ],
+        "hiddenListRebuilds": [
+          0
+        ],
+        "raw": [
+          {
+            "durationMs": 34.10000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 38.60000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 60.39999999990687,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 34,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 37,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 30.5,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 45.60000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 32.200000000186265,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 28.299999999813735,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 39.1999999997206,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 33.59999999962747,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 42,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 37.60000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 40.60000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 49,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 73.5,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 36,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 36.60000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 28.699999999720603,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 35,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          }
+        ]
+      },
+      "directory": {
+        "samples": 20,
+        "medianMs": 35,
+        "p95Ms": 49.40000000037253,
+        "normalizes": [
+          6
+        ],
+        "listRebuilds": [
+          1
+        ],
+        "hiddenListRebuilds": [
+          0
+        ],
+        "raw": [
+          {
+            "durationMs": 29.600000000093132,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 33.6999999997206,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 49.40000000037253,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 33.89999999990687,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 33.5,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 42.3000000002794,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 31.200000000186265,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 35,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 43.59999999962747,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 40.6999999997206,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 33.3000000002794,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 29.199999999720603,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 40.10000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 35.60000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 34.09999999962747,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 34.59999999962747,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 39,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 32.10000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 51.3000000002794,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 37.60000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          }
+        ]
+      }
+    },
+    {
+      "sets": 50,
+      "cardsPerSet": 100,
+      "storedCards": 5000,
+      "storedQueueCards": 5000,
+      "reveal": {
+        "samples": 20,
+        "medianMs": 121,
+        "p95Ms": 164.10000000009313,
+        "normalizes": [
+          8
+        ],
+        "listRebuilds": [
+          0
+        ],
+        "hiddenListRebuilds": [
+          0
+        ],
+        "raw": [
+          {
+            "durationMs": 164.10000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 106.29999999981374,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 106,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 121,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 118.8000000002794,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 113.3000000002794,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 116.5,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 130.20000000018626,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 147.89999999990687,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 109.39999999990687,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 145.5,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 123.09999999962747,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 123.70000000018626,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 101,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 109.60000000009313,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 110,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 150.6999999997206,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 141.6999999997206,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 247.89999999990687,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 110.29999999981374,
+            "normalizes": 8,
+            "dom": 0,
+            "hiddenDom": 0
+          }
+        ]
+      },
+      "directory": {
+        "samples": 20,
+        "medianMs": 113.1999999997206,
+        "p95Ms": 146.1999999997206,
+        "normalizes": [
+          6
+        ],
+        "listRebuilds": [
+          1
+        ],
+        "hiddenListRebuilds": [
+          0
+        ],
+        "raw": [
+          {
+            "durationMs": 133.70000000018626,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 99.89999999990687,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 113.1999999997206,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 119,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 109,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 109.10000000009313,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 102.79999999981374,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 120.6999999997206,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 170.3000000002794,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 115.29999999981374,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 117.29999999981374,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 114.39999999990687,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 104.39999999990687,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 110.70000000018626,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 109.79999999981374,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 105.59999999962747,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 146.1999999997206,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 110,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 131.39999999990687,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          },
+          {
+            "durationMs": 108.70000000018626,
+            "normalizes": 6,
+            "dom": 1,
+            "hiddenDom": 0
+          }
+        ]
+      }
+    }
+  ],
+  "errors": []
+}

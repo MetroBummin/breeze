@@ -12,7 +12,7 @@ const receipts=[];
 try{for(const dark of [false,true]){
  const theme=dark?'dark':'light',context=await browser.newContext({viewport:{width:390,height:640},deviceScaleFactor:1,hasTouch:true,serviceWorkers:'block',recordVideo:{dir:out,size:{width:390,height:640}}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await prepareStudyPage(page,server.url);
- await page.evaluate(d=>{darkMode=d;applyDark();words={observe:{word:'observe',ko:'관찰하다',example:'Take a moment to observe the breeze.',clickedIndex:4,book:'예제',addedAt:1,status:1},breeze:{word:'breeze',ko:'산들바람',example:'A gentle breeze moves the leaves.',clickedIndex:2,book:'예제',addedAt:2,status:1}};saveWords();show('vocab');openVocabularyReview();},dark);
+ await page.evaluate(async d=>{darkMode=d;applyDark();words={observe:{word:'observe',ko:'관찰하다',example:'Take a moment to observe the breeze.',clickedIndex:4,book:'예제',addedAt:1,status:1},breeze:{word:'breeze',ko:'산들바람',example:'A gentle breeze moves the leaves.',clickedIndex:2,book:'예제',addedAt:2,status:1}};saveWords();show('vocab');await openVocabularyReview();},dark);
  await page.evaluate(()=>document.fonts.ready);await page.mouse.click(380,80);await page.waitForTimeout(250);
  await page.addStyleTag({content:'#qa-demo-touch{position:fixed;z-index:999;pointer-events:none;width:28px;height:28px;border:2px solid rgba(85,135,175,.8);border-radius:50%;background:rgba(105,155,185,.15);transform:translate(-50%,-50%);opacity:0}'});
  await page.evaluate(()=>{const n=document.createElement('div');n.id='qa-demo-touch';document.body.append(n);});

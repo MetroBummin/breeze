@@ -1,0 +1,148 @@
+{
+  "sha": "2c82442b082ae148bcf41c0377d0f7ec108e9c23",
+  "engine": "Chromium 151.0.7922.173",
+  "scope": "Isolated cloud browser contexts, synthetic data, external requests blocked. Native browser quota unless explicitly marked model.",
+  "scenarios": [
+    {
+      "name": "native-quota-seed",
+      "words": 5000,
+      "overrides": 2500,
+      "sets": 18,
+      "cards": 7200,
+      "queueCopies": 6100,
+      "setCharacters": 3364274,
+      "totalCharacters": 5240797,
+      "firstId": "set-1",
+      "fillFailures": [
+        {
+          "count": 1000,
+          "active": true,
+          "error": "QuotaExceededError"
+        },
+        {
+          "count": 100,
+          "active": false,
+          "error": "QuotaExceededError"
+        }
+      ]
+    },
+    {
+      "name": "existing-set-resume-and-answer",
+      "progress": "1 / 100",
+      "writes": [
+        {
+          "key": "breeze.study-sets.v1",
+          "characters": 3364274,
+          "ok": true
+        },
+        {
+          "key": "breeze.study-sets.v1",
+          "characters": 3364273,
+          "ok": true
+        },
+        {
+          "key": "breeze.study-sets.v1",
+          "characters": 3364349,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "all-words-first-answer-real-quota",
+      "writes": [
+        {
+          "key": "breeze.simple-study-session.v1",
+          "characters": 158650,
+          "ok": false,
+          "error": "QuotaExceededError"
+        }
+      ],
+      "progress": "0 / 5000",
+      "error": "복습 기록을 저장하지 못했어요. 저장 공간을 확인한 뒤 다시 시도해 주세요.",
+      "errorVisible": true,
+      "durable": null,
+      "memoryHistory": 0
+    },
+    {
+      "name": "new-set-real-quota",
+      "diagnostic": {
+        "operation": "create",
+        "phase": "commit",
+        "committed": false,
+        "name": "QuotaExceededError",
+        "message": "Failed to execute 'setItem' on 'Storage': Setting the value of 'breeze.study-sets.v1' exceeded the quota.",
+        "serializedCharacters": 3389299,
+        "sets": 18,
+        "cards": 7200,
+        "sessions": 7
+      },
+      "error": "학습 세트를 저장하거나 불러오지 못했어요.앱 저장소의 한도에 도달했어요. 저장된 데이터는 바꾸지 않았어요.다시 시도",
+      "unchanged": true,
+      "writes": [
+        {
+          "key": "breeze.study-sets.v1",
+          "characters": 3389299,
+          "ok": false,
+          "error": "QuotaExceededError"
+        }
+      ],
+      "sourceIntact": true
+    },
+    {
+      "name": "idb-write-at-localstorage-quota",
+      "storedCharacters": 1048576,
+      "estimate": {
+        "quota": 4295019958,
+        "usage": 52662,
+        "usageDetails": {
+          "indexedDB": 52662
+        }
+      }
+    },
+    {
+      "name": "page-errors",
+      "errors": []
+    },
+    {
+      "name": "corrupt-session-not-quota",
+      "errorVisible": true,
+      "error": "복습 기록을 저장하지 못했어요. 저장 공간을 확인한 뒤 다시 시도해 주세요.",
+      "raw": "{bad-json",
+      "writeAttempts": 0,
+      "totalCharacters": 65
+    },
+    {
+      "name": "post-commit-display-injection",
+      "diagnostic": {
+        "operation": "create",
+        "phase": "display",
+        "committed": true,
+        "name": "Error",
+        "message": "Injected display failure",
+        "serializedCharacters": 24996,
+        "sets": 1,
+        "cards": 100,
+        "sessions": 0
+      },
+      "sets": 1,
+      "error": "세트는 저장됐지만 화면을 표시하지 못했어요.저장은 완료됐지만 화면을 표시하지 못했어요. 다시 시도하면 저장된 세트를 다시 표시해요.다시 시도",
+      "writes": [
+        {
+          "key": "breeze.study-sets.v1",
+          "characters": 24996,
+          "ok": true
+        },
+        {
+          "key": "breeze.storage-persist-asked",
+          "characters": 4,
+          "ok": true
+        }
+      ],
+      "retry": {
+        "unchanged": true,
+        "sets": 1,
+        "writes": []
+      }
+    }
+  ]
+}

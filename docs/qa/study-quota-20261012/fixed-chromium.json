@@ -1,0 +1,47 @@
+{
+  "engine": "chromium",
+  "version": "151.0.7922.173",
+  "results": [
+    {
+      "test": "native quota fixture",
+      "words": 5000,
+      "overlays": 2500,
+      "sets": 18,
+      "cards": 7200,
+      "queueCopies": 6100,
+      "characters": 3364274,
+      "totalCharacters": 5240765,
+      "failures": [
+        "QuotaExceededError",
+        "QuotaExceededError"
+      ]
+    },
+    {
+      "test": "verified migration",
+      "exactArchive": true,
+      "exactWorking": true,
+      "sourceIntact": true,
+      "legacyReleased": true,
+      "remainingCharacters": 1876471
+    },
+    {
+      "test": "existing answers and new set",
+      "sets": 19
+    },
+    {
+      "test": "All Words history, IDB abort/retry, reload",
+      "passed": 2,
+      "history": 3
+    },
+    {
+      "test": "late commit and duplicate input",
+      "passed": 3,
+      "returnedHome": true
+    },
+    {
+      "test": "post-commit display retry",
+      "sets": 20,
+      "duplicated": false
+    }
+  ]
+}

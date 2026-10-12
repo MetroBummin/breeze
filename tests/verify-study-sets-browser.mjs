@@ -1,3 +1,4 @@
+import {studyAction} from './helpers/study-actions.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
@@ -28,7 +29,7 @@ try{
   const group=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
   const style=await vocabularyStyle(group),geometry=await vocabularyGeometry(group);
   if(captureEntry){await page.evaluate(()=>window.scrollTo(0,0));await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-entry-${engine.name()}-phone-light.png`,fullPage:false});}
-  await page.locator('#wordbook-review').click();return {style,geometry};
+  await studyAction(page.locator('#wordbook-review').click(),page);return {style,geometry};
  };
  const assertNumbers=async()=>{const count=await rows().count();assert.deepEqual(await page.locator('#study-sets-word-list .vordinal').allTextContents(),Array.from({length:count},(_,i)=>String(i+1)),'row numbers follow current active order');};
  const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
@@ -42,7 +43,7 @@ try{
  };
  const dismissDirectory=async()=>{
   await page.evaluate(()=>{window.qaStudyClosed=false;document.getElementById('study-sets-dialog').addEventListener('close',()=>{window.qaStudyClosed=true;},{once:true});});
-  await page.locator('#study-sets-close').click();
+  await studyAction(page.locator('#study-sets-close').click(),page);
   await page.waitForFunction(()=>window.qaStudyClosed&&!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose&&activeAppView()==='vocab');
  };
  const assertSetPage=async()=>{
@@ -55,14 +56,14 @@ try{
  const closeSheet=async()=>{
   for(let i=0;i<5&&await page.evaluate(()=>studySetsUI.screen!=='directory');i++){
    const before=await page.evaluate(()=>({screen:studySetsUI.screen,depth:studySetsUI.directoryDepth,edit:studySetsUI.editOpen}));
-   await page.locator('#study-sets-back').click();await page.waitForFunction(old=>studySetsUI.screen!==old.screen||studySetsUI.directoryDepth!==old.depth||studySetsUI.editOpen!==old.edit,before);
+   await studyAction(page.locator('#study-sets-back').click(),page);await page.waitForFunction(old=>studySetsUI.screen!==old.screen||studySetsUI.directoryDepth!==old.depth||studySetsUI.editOpen!==old.edit,before);
   }
   await assertDirectory();
  };
  const openHomeMenu=async(method='touch')=>{
-  if(await page.evaluate(()=>studySetsUI.screen!=='detail')){await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();}
-  if(method==='keyboard'){await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');}
-  else await page.locator('#study-sets-edit').click();
+  if(await page.evaluate(()=>studySetsUI.screen!=='detail')){await closeSheet();await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);await assertSetPage();}
+  if(method==='keyboard'){await page.locator('#study-sets-edit').focus();await studyAction(page.keyboard.press('Enter'),page);}
+  else await studyAction(page.locator('#study-sets-edit').click(),page);
   await page.getByRole('menuitem',{name:'이름 변경',exact:true}).waitFor();await page.waitForFunction(()=>!studySetsUI.editAnimation);
  };
  const gesturePoint=async row=>{
@@ -85,11 +86,11 @@ try{
   await page.mouse.up();
  };
 
- const fullSwipe=async(row,options={})=>{const r=await row.boundingBox();await dragRow(row,-Math.max(144,r.width*.62)-20,0,options);};
+ const fullSwipe=async(row,options={})=>{const r=await row.boundingBox();await studyAction(dragRow(row,-Math.max(144,r.width*.62)-20,0,options),page);};
 
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
- await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#nav-vocab').click();
+ await page.goto(url);await page.evaluate(()=>homeReady);await studyAction(page.locator('#nav-vocab').click(),page);
  assert.equal(await page.evaluate(()=>activeAppView()),'vocab','Memory dock preserves the original vocabulary entry');
  await page.evaluate(()=>{
   words={a:{word:'wind',ko:'바람',book:'A',example:'A cold wind blew.',addedAt:1,status:1},
@@ -101,19 +102,19 @@ try{
  });
  // The shared renderer must preserve original Memory editing and star writes.
  const originalQuiet=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:/^quiet$/})});
- await originalQuiet.locator('.vword').click();
+ await studyAction(originalQuiet.locator('.vword').click(),page);
  assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'true');
  assert.equal(await originalQuiet.locator('.vko').getAttribute('contenteditable'),'true');
  assert.equal(await originalQuiet.locator('.vex').isVisible(),true);
- await originalQuiet.locator('.vko').fill('조용하고 차분한');await page.locator('#vcnt').click();
+ await originalQuiet.locator('.vko').fill('조용하고 차분한');await studyAction(page.locator('#vcnt').click(),page);
  assert.equal(await page.evaluate(()=>words.q.ko),'조용하고 차분한','original wordbook meaning blur persists editing');
- await originalQuiet.locator('.vko').fill('조용한');await page.locator('#vcnt').click();
+ await originalQuiet.locator('.vko').fill('조용한');await studyAction(page.locator('#vcnt').click(),page);
  assert.equal(await page.evaluate(()=>words.q.ko),'조용한','restore original fixture meaning');
- for(const expected of [2,3,1]){await originalQuiet.locator('.chip').click();assert.equal(await page.evaluate(()=>words.q.status),expected,'original star control updates source status');assert.equal(await originalQuiet.locator('.chip').innerText(),'★'.repeat(expected));}
- await originalQuiet.locator('.vword').click();assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'false');
+ for(const expected of [2,3,1]){await studyAction(originalQuiet.locator('.chip').click(),page);assert.equal(await page.evaluate(()=>words.q.status),expected,'original star control updates source status');assert.equal(await originalQuiet.locator('.chip').innerText(),'★'.repeat(expected));}
+ await studyAction(originalQuiet.locator('.vword').click(),page);assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'false');
  const entry=page.locator('#wordbook-review');assert.equal(await entry.innerText(),'학습하기');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'default vocabulary adds no top row or breadcrumb');
- await entry.click();await assertDirectory();
+ await studyAction(entry.click(),page);await assertDirectory();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
  assert.equal(await page.locator('#study-all-words-list > li').count(),5);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action,#study-all-words-list .rowdel,#study-all-words-list [contenteditable]').count(),0);
@@ -127,7 +128,7 @@ try{
  }
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),allWordsBytes);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
 
- await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study');
+ await studyAction(page.locator('#study-all-words-start').click(),page);await page.waitForFunction(()=>activeAppView()==='study');
  await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
  await page.goBack();await page.waitForFunction(()=>studySetsUI.screen==='all'&&activeAppView()==='memory-set');
  await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');
@@ -135,33 +136,33 @@ try{
  await page.locator('#study-sets-back').click();await assertDirectory();
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word detail returns focus to the directory card');
  await dismissDirectory();
- await entry.focus();await page.keyboard.press('Enter');await assertDirectory();
+ await entry.focus();await studyAction(page.keyboard.press('Enter'),page);await assertDirectory();
  await page.evaluate(()=>{window.qaDirectoryDialog=document.getElementById('study-sets-dialog');window.qaDirectorySheet=studySetsUI.sheet;window.qaDirectoryVocabScroll=window.scrollY;window.qaDirectoryCloseEvents=0;window.qaDirectoryDialog.addEventListener('close',()=>{window.qaDirectoryCloseEvents++;});});
- await page.locator('#study-sets-home-create').click();assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
+ await studyAction(page.locator('#study-sets-home-create').click(),page);assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
  assert.equal(await page.locator('dialog[open]').count(),1);
  assert.equal(await page.evaluate(()=>activeAppView()==='vocab'&&window.qaDirectoryDialog===document.getElementById('study-sets-dialog')&&window.qaDirectorySheet===studySetsUI.sheet&&window.scrollY===window.qaDirectoryVocabScroll),true,'create replaces content in the same sheet');
- await page.locator('#study-sets-back').click();await assertDirectory();
- await page.locator('#study-sets-home-create').click();await page.goBack();await assertDirectory();
+ await studyAction(page.locator('#study-sets-back').click(),page);await assertDirectory();
+ await studyAction(page.locator('#study-sets-home-create').click(),page);await page.goBack();await assertDirectory();
  await page.goForward();await page.waitForFunction(()=>studySetsUI.screen==='create'&&document.getElementById('study-sets-dialog').open);
- assert.equal(await page.locator('dialog[open]').count(),1);await page.locator('#study-sets-back').click();await assertDirectory();
+ assert.equal(await page.locator('dialog[open]').count(),1);await studyAction(page.locator('#study-sets-back').click(),page);await assertDirectory();
  const sourceBefore=await page.evaluate(()=>JSON.stringify(words));
- await page.locator('#study-sets-home-create').click();
+ await studyAction(page.locator('#study-sets-home-create').click(),page);
  await page.locator('#study-sets-name').fill('이번 시험 <safe>');
  await page.locator('.study-sets-book input[value="A"]').check();await page.locator('.study-sets-book input[value="B"]').check();
  assert.match(await page.locator('#study-sets-selection-count').innerText(),/3개/);
- await page.locator('#study-sets-save').click();await assertDirectory();
+ await studyAction(page.locator('#study-sets-save').click(),page);await assertDirectory();
  assert.equal(await page.evaluate(()=>window.qaDirectoryDialog===document.getElementById('study-sets-dialog')),true);assert.equal(await page.locator('.study-sets-home-card[data-set-id]').count(),1,'saving returns to the list containing the new set');
  assert.equal(await page.evaluate(()=>window.qaDirectoryCloseEvents),0,'internal create/back/forward/save never closes or reopens the sheet');
  assert.equal(await page.evaluate(()=>document.activeElement?.dataset.setId),await page.locator('.study-sets-home-card[data-set-id]').first().getAttribute('data-set-id'),'newly created set is focused in the directory');
- await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();assert.equal(await page.locator('#study-sets-word-list li').count(),3);await assertNumbers();
+ await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);await assertSetPage();assert.equal(await page.locator('#study-sets-word-list li').count(),3);await assertNumbers();
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore);
  assert.equal(await page.locator('#study-sets-title').innerText(),'이번 시험 <safe>');
  // Rendering unchanged navigation must not consume WebKit's history quota.
  // Count real calls; never suppress exceptions or stub the browser's writer.
- const renderHistoryWrites=await page.evaluate(()=>{
+ const renderHistoryWrites=await page.evaluate(async ()=>{
   const native=history.replaceState;let writes=0;
   history.replaceState=function(...args){writes++;return native.apply(this,args);};
-  try{for(let i=0;i<120;i++)studySetsReadAndRender(false);return writes;}
+  try{for(let i=0;i<120;i++)await studySetsReadAndRender(false);return writes;}
   finally{history.replaceState=native;}
  });
  assert.equal(renderHistoryWrites,0,'unchanged render cannot rewrite browser history');await assertSetPage();
@@ -171,7 +172,7 @@ try{
  assert.equal(await quiet().locator('.study-sets-row-action').evaluate(node=>getComputedStyle(node).opacity),'0','per-row exclusion control is hidden until keyboard focus');
  assert.equal(await page.locator('#study-sets-import').count(),0,'management actions stay out of detail list');
  const starBefore=await page.evaluate(()=>JSON.stringify(words));
- for(const expected of [2,3,1]){await quiet().locator('.chip').click();assert.equal(await quiet().locator('.chip').innerText(),'★'.repeat(expected));assert.equal(await page.evaluate(()=>JSON.stringify(words)),starBefore,'set star cycle cannot mutate source vocabulary');assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star click does not expand example');}
+ for(const expected of [2,3,1]){await studyAction(quiet().locator('.chip').click(),page);assert.equal(await quiet().locator('.chip').innerText(),'★'.repeat(expected));assert.equal(await page.evaluate(()=>JSON.stringify(words)),starBefore,'set star cycle cannot mutate source vocabulary');assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star click does not expand example');}
  await assertNumbers();
  const chipBefore=await quiet().locator('.chip').innerText(),chipBounds=await quiet().locator('.chip').boundingBox();
  await page.mouse.move(chipBounds.x+chipBounds.width/2,chipBounds.y+chipBounds.height/2);await page.mouse.down();
@@ -179,8 +180,8 @@ try{
  assert.equal(await quiet().locator('.chip').innerText(),chipBefore,'drag beginning on star cannot change its rating');
  assert.equal(await rows().count(),3,'drag beginning on star cannot exclude the row');await waitTranslation(quiet(),0);
  assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star drag does not expand the word');
- await quiet().locator('.vword').click();assert.equal(await quiet().locator('.vex').isVisible(),true);
- await quiet().locator('.vword').click();assert.equal(await quiet().locator('.vex').isVisible(),false);
+ await studyAction(quiet().locator('.vword').click(),page);assert.equal(await quiet().locator('.vex').isVisible(),true);
+ await studyAction(quiet().locator('.vword').click(),page);assert.equal(await quiet().locator('.vex').isVisible(),false);
  // A pre-existing selected meaning must remain a row gesture, never initiate
  // the unrelated library's native drag/drop overlay (trusted mouse events).
  await quiet().locator('.vko').evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
@@ -214,12 +215,12 @@ try{
  const motion=await quiet().locator('.study-sets-word-surface').evaluate(node=>({transition:getComputedStyle(node).transitionDuration,animation:getComputedStyle(node).animationDuration}));
  for(const duration of [motion.transition,motion.animation])assert.ok(duration.split(',').every(value=>parseFloat(value)<=0.01),`reduced motion duration ${duration}`);
  await page.emulateMedia({reducedMotion:'no-preference'});
- await quiet().locator('.vword').focus();await page.keyboard.press('Enter');
+ await quiet().locator('.vword').focus();await studyAction(page.keyboard.press('Enter'),page);
  assert.equal(await quiet().locator('.vex').isVisible(),true,'keyboard opens example');
- await page.keyboard.press('Space');assert.equal(await quiet().locator('.vex').isVisible(),false,'keyboard closes example');
+ await studyAction(page.keyboard.press('Space'),page);assert.equal(await quiet().locator('.vex').isVisible(),false,'keyboard closes example');
  const hiddenAction=quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true});await hiddenAction.focus();
- await page.keyboard.press('Enter');await waitRows(2);assert.equal(await rows().count(),2,'keyboard fallback excludes without swipe');
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),3);
+ await studyAction(page.keyboard.press('Enter'),page);await waitRows(2);assert.equal(await rows().count(),2,'keyboard fallback excludes without swipe');
+ await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);assert.equal(await rows().count(),3);
  await dragRow(quiet(),70);assert.equal(await rows().count(),3,'right swipe does not exclude');
  // Partial swipe parks a single circular action; the user can tap or dismiss it.
  await dragRow(quiet(),-68,0,{inspect:true});await waitTranslation(quiet(),-72);
@@ -229,26 +230,26 @@ try{
  assert.ok(parkedAction.width>=44&&Math.abs(parkedAction.width-parkedAction.height)<2,'parked action is a touch-sized circle');
  assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','partial swipe is not a tap');
 
- await quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true}).click();await waitRows(2);
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
+ await studyAction(quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true}).click(),page);await waitRows(2);
+ await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(3);
  await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
- await rows().first().locator('.vword').click();await waitTranslation(quiet(),0);
- await rows().first().locator('.vword').click();
+ await studyAction(rows().first().locator('.vword').click(),page);await waitTranslation(quiet(),0);
+ await studyAction(rows().first().locator('.vword').click(),page);
  await dragRow(quiet(),-68);await waitTranslation(quiet(),-72);
- await page.locator('#study-sets-title').click();await waitTranslation(quiet(),0);
+ await studyAction(page.locator('#study-sets-title').click(),page);await waitTranslation(quiet(),0);
  assert.equal(await rows().count(),3,'outside touch dismisses action without excluding');
  // A failed durable write never starts the exit/collapse or loses the row.
- const beforeSwipeFailure=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
- await page.evaluate(()=>{window.qaSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===STUDY_SETS_STORAGE)throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,key,value);};});
+ const beforeSwipeFailure=await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)));
+ await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===STUDY_SETS_STORAGE)throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,value,key);};});
  await fullSwipe(quiet(),{inspect:true,inspectAction:true});
  assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await quiet().isVisible(),true);
- assert.equal(await rows().count(),3);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),beforeSwipeFailure);
- await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});
- await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();await waitRows(2);
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
+ assert.equal(await rows().count(),3);assert.equal(await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode))),beforeSwipeFailure);
+ await page.evaluate(()=>{IDBObjectStore.prototype.put=window.qaSetItem;});
+ await studyAction(page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click(),page);await waitRows(2);
+ await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(3);
  await fullSwipe(quiet(),{inspect:true,inspectAction:true});await waitRows(2);
  assert.equal(await page.locator('#study-sets-word-list .vex:visible').count(),0,'completed swipe does not tap another row');
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(3);
+ await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(3);
  // Start B during A's exit, then hold past A's collapse. Finalizing A must
  // preserve B's original DOM node and real pointer capture throughout the drag.
  const continuousRow=rows().first();
@@ -266,45 +267,45 @@ try{
  const held=await page.evaluate(()=>({connected:window.qaContinuousRow.isConnected,captured:window.qaContinuousRow.hasPointerCapture(window.qaSecondPointerId),rows:document.querySelectorAll('#study-sets-word-list > li').length}));
  assert.deepEqual(held,{connected:true,captured:true,rows:2},'first exit must not replace or cancel the second held gesture');
  await page.mouse.up();await waitRows(1);
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();await waitRows(2);
+ await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(2);
  assert.equal(await quiet().count(),0,'undo of second swipe does not silently restore first');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore,'all gesture and undo paths preserve source vocabulary');
- await page.evaluate(()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};studySetsReadAndRender();});
- assert.match(await page.locator('#study-sets-import').innerText(),/2개/);await page.locator('#study-sets-import').click();
+ await page.evaluate(async ()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};await studySetsReadAndRender();});
+ assert.match(await page.locator('#study-sets-import').innerText(),/2개/);await studyAction(page.locator('#study-sets-import').click(),page);
  assert.equal(await page.locator('#study-sets-word-list li').count(),4);
  await openHomeMenu('keyboard');
- await page.evaluate(()=>{studySetsCloseEditMenu(false,true);studySetsGo('excluded');});assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
- await page.getByRole('button',{name:'quiet 다시 담기',exact:true}).click();await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();
+ await studyAction(page.evaluate(()=>{studySetsCloseEditMenu(false,true);studySetsGo('excluded');}),page);assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
+ await studyAction(page.getByRole('button',{name:'quiet 다시 담기',exact:true}).click(),page);await closeSheet();await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);
  assert.equal(await page.locator('#study-sets-word-list li').count(),5);
- await openHomeMenu();await page.getByRole('menuitem',{name:'이름 변경',exact:true}).click();await page.locator('#study-sets-rename-input').fill('중간고사 단어');await page.getByRole('button',{name:'이름 저장',exact:true}).click();
- await openHomeMenu('keyboard');await page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'취소',exact:true}).click();
- await closeSheet();await page.locator('.study-sets-home-card[data-set-id]').first().click();assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
+ await openHomeMenu();await studyAction(page.getByRole('menuitem',{name:'이름 변경',exact:true}).click(),page);await page.locator('#study-sets-rename-input').fill('중간고사 단어');await studyAction(page.getByRole('button',{name:'이름 저장',exact:true}).click(),page);
+ await openHomeMenu('keyboard');await studyAction(page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click(),page);await studyAction(page.getByRole('button',{name:'취소',exact:true}).click(),page);
+ await closeSheet();await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
  await page.evaluate(()=>{words={};saveWords();renderVocab();});
  assert.equal(await page.locator('#study-sets-word-list li').count(),5,'source deletion preserves captured content');
- console.log(`${engine.name()}: snapshot study starts`);await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
+ console.log(`${engine.name()}: snapshot study starts`);await studyAction(page.locator('#study-sets-start').click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);assert.equal(await page.locator('.study-sets-card-example').isVisible(),true);assert.equal(await page.locator('.study-sets-card-example').innerText(),'A cold wind blew.');assert.equal(await page.locator('.study-sets-card-example strong').innerText(),'wind');
- await page.locator('#study-sets-flashcard').click();assert.equal(await page.locator('#study-sets-answer').innerText(),'바람');
+ await studyAction(page.locator('#study-sets-flashcard').click(),page);assert.equal(await page.locator('#study-sets-answer').innerText(),'바람');
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-flashcard');
  // Failure must leave the revealed answer and the exact durable value retryable.
- const rawBefore=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
- await page.evaluate(()=>{window.qaSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===STUDY_SETS_STORAGE)throw Error('Synthetic quota');return window.qaSetItem.call(this,key,value);};});
- await page.locator('#study-sets-flashcard').press('ArrowLeft');await page.waitForSelector('#study-sets-error:not([hidden])');assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);
- assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),rawBefore);
- await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});await page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click();
+ const rawBefore=await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)));
+ await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===STUDY_SETS_STORAGE)throw Error('Synthetic quota');return window.qaSetItem.call(this,value,key);};});
+ await studyAction(page.locator('#study-sets-flashcard').press('ArrowLeft'),page);await page.waitForSelector('#study-sets-error:not([hidden])');assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);
+ assert.equal(await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode))),rawBefore);
+ await page.evaluate(()=>{IDBObjectStore.prototype.put=window.qaSetItem;});await studyAction(page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click(),page);
  assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
  await closeSheet();
- await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('.study-sets-home-card[data-set-id]').click();
- await page.evaluate(()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();studySetsReadAndRender();});
- assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
- await page.locator('#study-sets-start').click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
+ await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(page.locator('.study-sets-home-card[data-set-id]').click(),page);
+ await page.evaluate(async ()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();await studySetsReadAndRender();});
+ assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await studyAction(page.locator('#study-sets-import').click(),page);
+ await studyAction(page.locator('#study-sets-start').click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 5');
  await context.setOffline(true);
- for(let i=0;i<4;i++){await page.locator('#study-sets-flashcard').click();await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForFunction(()=>!document.getElementById('study-sets-answer')?.hidden===false);}
+ for(let i=0;i<4;i++){await studyAction(page.locator('#study-sets-flashcard').click(),page);await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForFunction(()=>!document.getElementById('study-sets-answer')?.hidden===false);}
  assert.equal(await page.locator('#study-sets-progress').innerText(),'4 / 5');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);
- await page.locator('#study-sets-flashcard').click();await page.locator('#study-sets-flashcard').press('ArrowRight');await page.waitForSelector('.study-sets-result');assert.equal(await page.locator('.study-sets-result').innerText(),'5 / 5');
- await page.getByRole('button',{name:'전체 새로 학습',exact:true}).click();assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 6');
+ await studyAction(page.locator('#study-sets-flashcard').click(),page);await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForSelector('.study-sets-result');assert.equal(await page.locator('.study-sets-result').innerText(),'5 / 5');
+ await studyAction(page.getByRole('button',{name:'전체 새로 학습',exact:true}).click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 6');
  await context.setOffline(false);
- await page.evaluate(()=>{const state=readStudySets(),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3).slice(0,100),Date.now());commitStudySets(result.state);studySetsReadAndRender();});
+ await page.evaluate(async ()=>{const state=(await loadStudySets()),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3).slice(0,100),Date.now());await commitStudySets(result.state);await studySetsReadAndRender();});
  const layouts=[];
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
@@ -319,52 +320,52 @@ try{
   }
   await page.screenshot({path:`${proof}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}-study.png`,fullPage:true});layouts.push({width,height,dark,bounds});
  }
- await page.locator('#study-sets-back').click();await page.screenshot({path:`${proof}/${engine.name()}-detail.png`,fullPage:true});
+ await studyAction(page.locator('#study-sets-back').click(),page);await page.screenshot({path:`${proof}/${engine.name()}-detail.png`,fullPage:true});
  await page.goBack();await assertDirectory();
  await page.goForward();await assertSetPage();
  await closeSheet();
- await dismissDirectory();await page.evaluate(()=>{show('home');show('vocab');openStudySetsDirectory();openStudySet(readStudySets().sets[0].id);});
+ await dismissDirectory();await page.evaluate(async ()=>{show('home');show('vocab');openStudySetsDirectory();openStudySet((await loadStudySets()).sets[0].id);});
  await page.evaluate(()=>history.go(-3));await page.waitForFunction(()=>activeAppView()==='home'&&!document.querySelector('dialog[open]'));
- await page.evaluate(()=>history.go(3));await page.waitForFunction(()=>activeAppView()==='memory-set'&&!document.querySelector('dialog[open]'));
+ await page.evaluate(()=>history.go(3));await page.waitForFunction(()=>activeAppView()==='memory-set'&&!document.querySelector('dialog[open]')&&studySetsUI.body?.getAttribute('aria-busy')!=='true');
  assert.equal(await page.locator('#study-sets-word-list').isVisible(),true);
  // Very long captured expressions must not grow Undo over the short-screen CTA.
  const longExpression='a deliberately long captured expression '.repeat(80).trim();
- await page.evaluate(expression=>{words.longPhrase={word:expression,ko:'긴 표현',book:'A',addedAt:30};saveWords();studySetsReadAndRender();},longExpression);
- assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await page.locator('#study-sets-import').click();
+ await page.evaluate(async expression=>{words.longPhrase={word:expression,ko:'긴 표현',book:'A',addedAt:30};saveWords();await studySetsReadAndRender();},longExpression);
+ assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await studyAction(page.locator('#study-sets-import').click(),page);
  const countWithPhrase=await rows().count();
  await page.setViewportSize({width:844,height:390});
- await page.getByRole('button',{name:longExpression+' 세트에서 제외',exact:true}).focus();await page.keyboard.press('Enter');await waitRows(countWithPhrase-1);
+ await page.getByRole('button',{name:longExpression+' 세트에서 제외',exact:true}).focus();await studyAction(page.keyboard.press('Enter'),page);await waitRows(countWithPhrase-1);
  assert.equal(await rows().count(),countWithPhrase-1);
  const undoLayout=await page.locator('.study-sets-undo > span').evaluate(node=>{const r=node.getBoundingClientRect(),style=getComputedStyle(node);return {height:r.height,width:r.width,scrollWidth:node.scrollWidth,lineHeight:parseFloat(style.lineHeight),overflow:style.overflow,textOverflow:style.textOverflow};});
  assert.ok(undoLayout.height<=undoLayout.lineHeight+1&&undoLayout.scrollWidth>undoLayout.width,JSON.stringify(undoLayout));
  assert.equal(undoLayout.textOverflow,'ellipsis');
  const shortCTA=await page.locator('#study-sets-start').boundingBox();
  assert.ok(shortCTA.x>=0&&shortCTA.y>=0&&shortCTA.x+shortCTA.width<=845&&shortCTA.y+shortCTA.height<=391,JSON.stringify(shortCTA));
- await page.getByRole('button',{name:'실행 취소',exact:true}).click();assert.equal(await rows().count(),countWithPhrase,'long expression Undo restores membership');
- await openHomeMenu();await page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click();await page.getByRole('button',{name:'세트 삭제',exact:true}).click();
+ await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);assert.equal(await rows().count(),countWithPhrase,'long expression Undo restores membership');
+ await openHomeMenu();await studyAction(page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click(),page);await studyAction(page.getByRole('button',{name:'세트 삭제',exact:true}).click(),page);
  assert.equal(await page.locator('.study-sets-home-card[data-set-id]').count(),0);
  assert.equal(await page.evaluate(()=>words.late.ko),'나중에','set deletion preserves source word');
- await assertDirectory();await page.locator('#study-sets-home-create').click();await page.locator('#study-sets-name').fill('취소할 입력');await page.locator('#study-sets-back').click();await assertDirectory();
- await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
+ await assertDirectory();await studyAction(page.locator('#study-sets-home-create').click(),page);await page.locator('#study-sets-name').fill('취소할 입력');await studyAction(page.locator('#study-sets-back').click(),page);await assertDirectory();
+ await studyAction(page.keyboard.press('Escape'),page);await page.waitForFunction(()=>!document.getElementById('study-sets-dialog').open&&!studySetsUI.pendingClose);
  assert.equal(await page.evaluate(()=>document.activeElement.id),'wordbook-review','closing the one sheet restores its vocabulary opener');
  // Review images use synthetic sample vocabulary in the actual shipped app.
  // They are screenshots of this source, never image-generated mockups.
- await page.evaluate(()=>{
+ await page.evaluate(async ()=>{
   const fixtures=[['observe','관찰하다','She stopped to observe the room.'],['evidence','증거','There was no evidence of a struggle.'],['remarkable','놀라운','It was a remarkable discovery.'],['peculiar','특이한','He had a peculiar habit.'],['hesitate','망설이다','Do not hesitate to ask.'],['sufficient','충분한','We have sufficient time.'],['sensible','분별 있는','That seems a sensible choice.'],['deduce','추론하다','What can you deduce from this?'],['reliable','신뢰할 수 있는','We need a reliable source.'],['emerge','나타나다','A new idea began to emerge.'],['maintain','유지하다','They maintain a close relationship.'],['perspective','관점','Consider a different perspective.']];
   words=Object.fromEntries(fixtures.map(([word,ko,example],i)=>[word,{word,ko,example,book:i<8?'The Adventures of Sherlock Holmes':'이번 주 읽은 기사',status:1,addedAt:i+1}]));saveWords();
-  let state=readStudySets();state=BreezeStudySets.create(state,{name:'중간고사 · 1–3과',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
-  state=BreezeStudySets.create(state,{name:'이번 주 읽은 글',bookTitles:['이번 주 읽은 기사']},words,101).state;commitStudySets(state);show('vocab');openStudySetsDirectory();darkMode=false;applyDark();
+  let state=(await loadStudySets());state=BreezeStudySets.create(state,{name:'중간고사 · 1–3과',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
+  state=BreezeStudySets.create(state,{name:'이번 주 읽은 글',bookTitles:['이번 주 읽은 기사']},words,101).state;await commitStudySets(state);show('vocab');openStudySetsDirectory();darkMode=false;applyDark();
  });
  // Populate an actual scrollable directory to verify page Back restores its
  // prior position. Remove only this synthetic fixture before review captures.
  await page.setViewportSize({width:390,height:844});
- await page.evaluate(()=>{window.qaBeforeScrollSets=readStudySets();let state=window.qaBeforeScrollSets;for(let i=0;i<18;i++)state=BreezeStudySets.create(state,{name:'스크롤 확인 '+(i+1),bookTitles:['The Adventures of Sherlock Holmes']},words,200+i).state;commitStudySets(state);renderStudySetsHome();});
+ await page.evaluate(async ()=>{window.qaBeforeScrollSets=(await loadStudySets());let state=window.qaBeforeScrollSets;for(let i=0;i<18;i++)state=BreezeStudySets.create(state,{name:'스크롤 확인 '+(i+1),bookTitles:['The Adventures of Sherlock Holmes']},words,200+i).state;await commitStudySets(state);await renderStudySetsHome();});
  await page.locator('.study-sets-home-card[data-set-id]').last().scrollIntoViewIfNeeded();
  const vocabularyScroll=await page.evaluate(()=>window.scrollY);
  const homeScroll=await page.locator('#study-sets-content').evaluate(node=>node.scrollTop);assert.ok(homeScroll>100,'directory fixture must really scroll');
- await page.locator('.study-sets-home-card[data-set-id]').last().click();await assertSetPage();
+ await studyAction(page.locator('.study-sets-home-card[data-set-id]').last().click(),page);await assertSetPage();
  await closeSheet();await page.waitForFunction(expected=>Math.abs(document.getElementById('study-sets-content').scrollTop-expected)<2,homeScroll);assert.ok(Math.abs(await page.evaluate(()=>window.scrollY)-vocabularyScroll)<2,'sheet return preserves underlying vocabulary scroll');
- await page.evaluate(()=>{readStudySets();commitStudySets(window.qaBeforeScrollSets);delete window.qaBeforeScrollSets;renderStudySetsHome();studySetsUI.body.scrollTop=0;});
+ await page.evaluate(async ()=>{(await loadStudySets());await commitStudySets(window.qaBeforeScrollSets);delete window.qaBeforeScrollSets;await renderStudySetsHome();studySetsUI.body.scrollTop=0;});
  await page.evaluate(()=>document.fonts.ready);await page.mouse.move(0,0);
  assert.match(await page.locator('#study-sets-home-create').innerText(),/세트 추가/);
  assert.equal(await page.locator('#study-sets-home-create').evaluate(node=>getComputedStyle(node).borderTopStyle),'dashed');
@@ -372,7 +373,7 @@ try{
  assert.ok(Math.abs(addCardBounds.height-setCardBounds.height)<2,'add card matches set card size');
  const defaultStyle=await originalVocabularyStyle({captureEntry:true});await page.mouse.move(0,0);
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-phone-light.png`,fullPage:false});
- await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();
+ await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);await assertSetPage();
  const setGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
  assert.deepEqual(await vocabularyStyle(setGroup),defaultStyle.style,'set words, meanings and stars reuse actual default vocabulary styles');
  const setGeometry=await vocabularyGeometry(setGroup);recordRowMetrics({viewport:page.viewportSize(),dark:false,original:defaultStyle.geometry,set:setGeometry});assertGeometry(setGeometry,defaultStyle.geometry,'phone capture');
@@ -381,15 +382,15 @@ try{
  // Gesture references use trusted pointer input; cancel preserves fixture data.
  await dragRow(rows().first(),-68);await waitTranslation(rows().first(),-72);
  await page.screenshot({path:`${proof}/ui-set-swipe-circle-${engine.name()}-phone-light.png`,fullPage:true});
- await page.locator('#study-sets-title').click();await waitTranslation(rows().first(),0);
+ await studyAction(page.locator('#study-sets-title').click(),page);await waitTranslation(rows().first(),0);
  await fullSwipe(rows().first(),{cancel:true,inspect:true,inspectAction:true,capture:`${proof}/ui-set-swipe-capsule-${engine.name()}-phone-light.png`});
  await waitTranslation(rows().first(),0);assert.equal(await rows().count(),8,'capture cancellation preserves sample set');
- await page.locator('#study-sets-word-list .vword').first().click();
+ await studyAction(page.locator('#study-sets-word-list .vword').first().click(),page);
  await page.screenshot({path:`${proof}/ui-set-example-${engine.name()}-phone-light.png`,fullPage:true});
  await closeSheet();
  await page.setViewportSize({width:820,height:1180});
  await page.screenshot({path:`${proof}/ui-set-home-${engine.name()}-tablet-light.png`,fullPage:false});
- await page.locator('.study-sets-home-card[data-set-id]').first().click();
+ await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);
  await page.screenshot({path:`${proof}/ui-set-detail-${engine.name()}-tablet-light.png`,fullPage:true});
  await closeSheet();
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
@@ -407,7 +408,7 @@ try{
   assert.ok(add.y>=scrollArea.y-1&&add.y+add.height<=scrollArea.y+scrollArea.height+1,'last directory action scrolls fully inside same sheet');
   await page.locator('#study-sets-content').evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:`${proof}/home-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:false});
-  await page.locator('.study-sets-home-card[data-set-id]').first().click();await assertSetPage();await assertNumbers();
+  await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);await assertSetPage();await assertNumbers();
   const matrixSetGroup=page.locator('#study-sets-word-list .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});assert.deepEqual(await vocabularyStyle(matrixSetGroup),matrixDefaultStyle.style,`actual vocabulary style parity ${width}x${height} ${dark}`);
   const matrixGeometry=await vocabularyGeometry(matrixSetGroup);recordRowMetrics({width,height,dark,original:matrixDefaultStyle.geometry,set:matrixGeometry});assertGeometry(matrixGeometry,matrixDefaultStyle.geometry,`${width}x${height} dark=${dark}`);
   for(const selector of ['.study-sets-sheet','#study-sets-content'])assert.equal(await page.locator(selector).evaluate(node=>node.scrollWidth<=node.clientWidth+1),true,`Detail overflow ${selector} ${width}x${height}`);
@@ -428,17 +429,17 @@ try{
  }
  // Real snapshot rows, not modified ordinal text: check 999 and 1000 in the
  // original row gutter while preserving the default long-word wrapping geometry.
- const largeSetId=await page.evaluate(()=>{
+ const largeSetId=await page.evaluate(async ()=>{
   const word='pneumonoultramicroscopicsilicovolcanoconiosis';
   words={layoutReference:{word,ko:'뜻 1000',book:'Layout',status:1}};saveWords();
   const source=Object.fromEntries(Array.from({length:1001},(_,i)=>['layout'+i,{word,ko:'뜻 '+(i+1),book:'Layout',status:1,addedAt:i}]));
-  const result=BreezeStudySets.create(readStudySets(),{name:'숫자 너비 확인',bookTitles:['Layout']},source,500);commitStudySets(result.state);show('vocab');return result.set.id;
+  const result=BreezeStudySets.create((await loadStudySets()),{name:'숫자 너비 확인',bookTitles:['Layout']},source,500);await commitStudySets(result.state);show('vocab');return result.set.id;
  });
  for(const width of [390,320,820]){
   await page.setViewportSize({width,height:844});await page.evaluate(()=>{show('vocab');window.scrollTo(0,0);});
   const original=await vocabularyGeometry(page.locator('#v-vocab .vgroup').first());
-  await page.locator('#wordbook-review').click();
-  await page.locator('.study-sets-home-card[data-set-id]').filter({hasText:'숫자 너비 확인'}).click();await assertSetPage();
+  await studyAction(page.locator('#wordbook-review').click(),page);
+  await studyAction(page.locator('.study-sets-home-card[data-set-id]').filter({hasText:'숫자 너비 확인'}).click(),page);await assertSetPage();
   assert.equal(await page.evaluate(()=>studySetsUI.setId),largeSetId);assert.equal(await rows().count(),1001);await assertNumbers();
   for(const ordinal of [999,1000]){
    const row=rows().nth(ordinal-1);await row.scrollIntoViewIfNeeded();
@@ -460,15 +461,15 @@ try{
    await offline.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
    const warm=await offline.newPage();await warm.goto(url);await warm.evaluate(()=>homeReady);
    await warm.evaluate(async()=>{
-    const result=BreezeStudySets.create(readStudySets(),{name:'오프라인 세트',bookTitles:['Offline']},{cached:{word:'resilient',ko:'회복력이 있는',book:'Offline',example:'A resilient reader.'}},100);
-    commitStudySets(result.state);words={};saveWords();
+    const result=BreezeStudySets.create((await loadStudySets()),{name:'오프라인 세트',bookTitles:['Offline']},{cached:{word:'resilient',ko:'회복력이 있는',book:'Offline',example:'A resilient reader.'}},100);
+    await commitStudySets(result.state);words={};saveWords();
     const registration=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker did not become ready: '+JSON.stringify({installing:registration.installing?.state,waiting:registration.waiting?.state,active:registration.active?.state}))),30000))]);
    });
    await warm.close();await offline.setOffline(true);
    const cold=await offline.newPage();await cold.goto(url);await cold.evaluate(()=>homeReady);
-   await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();await cold.locator('#study-sets-flashcard').click();
-   assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await cold.locator('#study-sets-flashcard').press('ArrowRight');await cold.waitForSelector('.study-sets-result');
-   await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await cold.locator('.study-sets-home-card[data-set-id]').click();await cold.locator('#study-sets-start').click();
+   await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(cold.locator('.study-sets-home-card[data-set-id]').click(),cold);await studyAction(cold.locator('#study-sets-start').click(),cold);await studyAction(cold.locator('#study-sets-flashcard').click(),cold);
+   assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await studyAction(cold.locator('#study-sets-flashcard').press('ArrowRight'),cold);await cold.waitForSelector('.study-sets-result');
+   await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(cold.locator('.study-sets-home-card[data-set-id]').click(),cold);await studyAction(cold.locator('#study-sets-start').click(),cold);
    assert.equal(await cold.locator('.study-sets-result').innerText(),'1 / 1');
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}

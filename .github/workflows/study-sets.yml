@@ -72,6 +72,9 @@ jobs:
       - run: node tests/verify-study-create-browser.mjs
         env:
           BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-study-quota-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
       - run: node tests/verify-study-sets-touch-browser.mjs
         if: matrix.engine == 'chromium'
       - run: node tests/verify-study-session-swipe-browser.mjs

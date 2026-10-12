@@ -27,17 +27,29 @@ const SimpleStudySession=(()=>{
 })();
 const SIMPLE_STUDY_STORAGE='breeze.simple-study-session.v1';
 let simpleStudySession=null,simpleStudyBusy=false,simpleStudyTimer=0,simpleStudySuppressClickUntil=0;
+let simpleStudyReadValue,simpleStudyEpoch=0,simpleStudyResumeJob=Promise.resolve();
 let simpleWordCards={keys:[],index:0,flipped:false};
+function decodeSimpleStudySession(raw){
+  if(raw===null)return null;
+  const session=SimpleStudySession.restore(raw);
+  if(!session)throw new Error('Invalid saved study session. The saved value was not changed.');
+  return session;
+}
+async function loadSimpleStudySession(){
+  const raw=await readStudyStorage(SIMPLE_STUDY_STORAGE,decodeSimpleStudySession);
+  if(raw!==simpleStudyReadValue){simpleStudySession=decodeSimpleStudySession(raw);simpleStudyReadValue=raw;}
+  return ensureSimpleStudySession();
+}
 function ensureSimpleStudySession(){
   const keys=Object.keys(words).filter(key=>validWordMeaning(words[key])&&typeof words[key].word==='string'&&words[key].word.trim());
-  if(!simpleStudySession){try{simpleStudySession=SimpleStudySession.restore(localStorage.getItem(SIMPLE_STUDY_STORAGE));}catch{}}
   // Removed records invalidate the old scope; added vocabulary waits for the next session.
   if(!simpleStudySession||simpleStudySession.initial.some(k=>!keys.includes(k))||!simpleStudySession.initial.length&&keys.length)simpleStudySession=SimpleStudySession.start(keys);
   return simpleStudySession;
 }
-function commitSimpleStudySession(next){
-  try{const saved=localStorage.getItem(SIMPLE_STUDY_STORAGE);if(saved!==null&&!SimpleStudySession.restore(saved))throw new Error('Invalid saved session');localStorage.setItem(SIMPLE_STUDY_STORAGE,JSON.stringify(next));simpleStudySession=next;return true;}
-  catch{vocabularyReviewError();return false;}
+async function commitSimpleStudySession(next){
+  const serialized=JSON.stringify(next),expected=simpleStudyReadValue;
+  await commitStudyStorage(SIMPLE_STUDY_STORAGE,serialized,expected,decodeSimpleStudySession);
+  simpleStudyReadValue=serialized;simpleStudySession=next;
 }
 /* Review progress is device-local and never touches vocabulary/sync records. */
 const VOCABULARY_STAGE_ASSETS=Object.freeze(Object.fromEntries(
@@ -47,6 +59,7 @@ const VOCABULARY_REVIEW_STORAGE='breeze.vocabulary-review.v1';
 const vocabularyReviewPage=document.getElementById('vocabulary-review-page');
 let vocabularyReviewView=null;
 let vocabularyReviewRevealed=false;
+let vocabularyReviewLastError=null;
 function decodeVocabularyReview(raw){
   let parsed=null;
   try{parsed=JSON.parse(raw);}catch{/* Commit backs up the exact damaged bytes. */}
@@ -77,9 +90,11 @@ function commitVocabularyReview(state){
   }
   localStorage.setItem(VOCABULARY_REVIEW_STORAGE,JSON.stringify(state));
 }
-function vocabularyReviewError(){
+function vocabularyReviewError(cause=null){
+  vocabularyReviewLastError=cause;
   const error=document.getElementById('review-error');
-  error.textContent='복습 기록을 저장하지 못했어요. 저장 공간을 확인한 뒤 다시 시도해 주세요.';
+  error.textContent=/Invalid|newer|version/i.test(String(cause?.message||''))?'저장된 학습 기록을 읽을 수 없어요. 원본은 그대로 보관하고 있어요.':
+    cause?.name==='QuotaExceededError'?'앱 저장소의 한도에 도달해 학습 기록을 저장하지 못했어요. 이전 기록은 그대로예요.':'학습 기록을 저장하지 못했어요. 다시 시도해 주세요.';
   error.hidden=false;
 }
 function visibleVocabularyReviewKeys(){
@@ -217,10 +232,20 @@ function flipSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;
   simpleWordCards.flipped=true;renderSimpleWordCards();
 }
-function gradeSimpleWordCard(outcome){
+async function gradeSimpleWordCard(outcome){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy||!simpleWordCards.flipped)return;
-  const current=ensureSimpleStudySession(),next=SimpleStudySession.grade(current,SimpleStudySession.token(current),outcome);
-  if(next===current||!commitSimpleStudySession(next))return;
+  simpleStudyBusy=true;
+  const token=SimpleStudySession.token(ensureSimpleStudySession()),epoch=simpleStudyEpoch;
+  let next;
+  try{
+    const current=await loadSimpleStudySession();
+    if(epoch!==simpleStudyEpoch||activeAppView()!=='study')return;
+    next=SimpleStudySession.grade(current,token,outcome);
+    if(next===current){simpleWordCards.flipped=false;renderSimpleWordCards();return;}
+    await commitSimpleStudySession(next);
+  }catch(error){vocabularyReviewLastError=error;if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);else toast('학습 기록을 저장하지 못했어요. 다시 열어 시도해 주세요.');return;}
+  finally{if(epoch===simpleStudyEpoch)simpleStudyBusy=false;}
+  if(epoch!==simpleStudyEpoch||activeAppView()!=='study')return;
   simpleStudyBusy=true;
   for(const id of ['simple-word-next','simple-word-again','simple-word-previous'])/** @type {HTMLButtonElement} */(document.getElementById(id)).disabled=true;
   const card=document.getElementById('review-flip');card.dataset.direction=outcome;
@@ -228,10 +253,15 @@ function gradeSimpleWordCard(outcome){
   card.style.transform=reduced?'none':`translateX(${outcome==='remember'?1:-1}00%) rotate(${outcome==='remember'?8:-8}deg)`;
   simpleStudyTimer=setTimeout(()=>{simpleWordCards.flipped=false;if(activeAppView()==='study'){renderSimpleWordCards();document.getElementById(next.queue.length?'review-flip':'review-status').focus();}},reduced?0:180);
 }
-function undoSimpleWordCard(){
+async function undoSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;
-  const current=ensureSimpleStudySession(),next=SimpleStudySession.undo(current);
-  if(next!==current&&commitSimpleStudySession(next)){simpleWordCards.flipped=false;renderSimpleWordCards();document.getElementById('review-flip').focus();}
+  simpleStudyBusy=true;const epoch=simpleStudyEpoch;
+  try{const current=await loadSimpleStudySession(),next=SimpleStudySession.undo(current);
+    if(epoch!==simpleStudyEpoch||activeAppView()!=='study'||next===current)return;
+    await commitSimpleStudySession(next);
+    if(epoch===simpleStudyEpoch&&activeAppView()==='study'){simpleWordCards.flipped=false;renderSimpleWordCards();document.getElementById('review-flip').focus();}
+  }catch(error){vocabularyReviewLastError=error;if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);else toast('학습 기록을 저장하지 못했어요. 다시 열어 시도해 주세요.');}
+  finally{if(epoch===simpleStudyEpoch)simpleStudyBusy=false;}
 }
 document.getElementById('simple-word-previous').addEventListener('click',undoSimpleWordCard);
 document.getElementById('simple-word-next').addEventListener('click',()=>gradeSimpleWordCard('remember'));
@@ -315,7 +345,17 @@ function renderVocabularyReview(view,focus=true){
   refreshVocabularyReviewEntry();
 }
 function resumeVocabularyReview(){
-  if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){renderSimpleWordCards();document.getElementById(simpleWordCards.keys.length?'review-flip':'review-status').focus();return;}
+  simpleStudyResumeJob=resumeVocabularyReviewNow();
+  return simpleStudyResumeJob;
+}
+async function resumeVocabularyReviewNow(){
+  if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){
+    const epoch=++simpleStudyEpoch;simpleStudyBusy=true;
+    try{await loadSimpleStudySession();if(epoch!==simpleStudyEpoch||activeAppView()!=='study')return;renderSimpleWordCards();document.getElementById(simpleWordCards.keys.length?'review-flip':'review-status').focus();}
+    catch(error){if(epoch===simpleStudyEpoch&&activeAppView()==='study'){document.getElementById('review-card').hidden=true;vocabularyReviewError(error);}}
+    finally{if(epoch===simpleStudyEpoch)simpleStudyBusy=false;}
+    return;
+  }
   try{
     const view=BreezeReview.view(readVocabularyReview(),words,Date.now());
     renderVocabularyReview(view);
@@ -365,11 +405,17 @@ function reviewSettingsError(){
   document.getElementById('review-setup-error').textContent='저장하지 못했어요. 학습 시작을 눌러 재시도해 주세요.';
   document.getElementById('review-setup-error').hidden=false;
 }
-function openVocabularyReview(daily=false,extra=false){
+async function openVocabularyReview(daily=false,extra=false){
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){
     if(daily||extra)return;
-    if(ensureSimpleStudySession().initial.length&&!simpleStudySession.queue.length)commitSimpleStudySession(SimpleStudySession.start(Object.keys(words).filter(k=>validWordMeaning(words[k]))));
-    simpleWordCards.flipped=false;show('study');return;
+    const origin=activeAppView(),entry=history.state;
+    try{
+      await loadSimpleStudySession();if(activeAppView()!==origin||history.state!==entry)return;
+      if(ensureSimpleStudySession().initial.length&&!simpleStudySession.queue.length)await commitSimpleStudySession(SimpleStudySession.start(Object.keys(words).filter(k=>validWordMeaning(words[k]))));
+      if(activeAppView()!==origin||history.state!==entry)return;
+      simpleWordCards.flipped=false;show('study');await simpleStudyResumeJob;
+    }catch(error){if(activeAppView()===origin){show('study');vocabularyReviewError(error);}}
+    return;
   }
   try{
     if(!reviewControlsReady)restoreReviewControls();
@@ -405,6 +451,7 @@ document.getElementById('review-more').addEventListener('click',()=>{
   openVocabularyReview(!vocabularyReviewView?.state?.session?.practice,!!journey?.milestone&&journey.done>=journey.target);
 });
 function resetVocabularyReviewSurface(){
+  ++simpleStudyEpoch;
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleWordCards.flipped=false;
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
 }
