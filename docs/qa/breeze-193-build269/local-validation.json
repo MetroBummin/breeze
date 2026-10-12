@@ -1,0 +1,24 @@
+{
+  "reviewedSource": "1163e00cfe20694d3ec32d0271199d27bc2be9d1",
+  "buildNumber": "269",
+  "localPassed": [
+    "269 boundary/historical/negative checks",
+    "25 Cloud counter and target-drift cases",
+    "npm/type contracts",
+    "ios sync",
+    "native package",
+    "native service-worker guard",
+    "App/Share Debug/Release269",
+    "signature touch/contrast on set and all-word decks"
+  ],
+  "exactCandidateGitHubCI": "pending; prior-head passes are not candidate coverage",
+  "nativeSigningArchiveUpload": "not executed; parent owns one manual Default workflow start",
+  "remainingNativeQA": [
+    "physical airplane mode",
+    "56-page native restart",
+    "physical retry tap"
+  ],
+  "preservedFailedGate": "baseline WebKit offline Blob/FileReader; not waived",
+  "mainMerged": false,
+  "cloudDispatched": false
+}
