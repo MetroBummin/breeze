@@ -1,5 +1,5 @@
 {
-  "reviewedSource": "d86bf3d9fa0183aa25416979743dd2be17e24846",
+  "reviewedSource": "b482ddb23102aaaca877d79ca205daea6a6af471",
   "sourceScope": [
     "Astra quota-safe IDB migration",
     "stored source examples before reveal",
@@ -8,21 +8,24 @@
     "all-app control optical consistency"
   ],
   "checks": {
-    "full npm test": "passed on integrated full UI/storage/icon source before exact270 counter increment",
+    "full npm test": "passed on refreshed270 product source",
     "typecheck": "passed; unchanged32 baseline",
     "storage/UI/source examples": "55 passed",
     "real Chromium quota": "passed5000meanings, exact archives/vocabulary, create/All Words, aborted transaction/retry, relaunch history, pending navigation, duplicate-input and postcommit display retry",
     "set lifecycle/cold offline": "passed with All Words readonly swipe/10layouts and both-front example assertions",
-    "All Words": "passed empty/one/2100, grading/history/relaunch/10layouts",
+    "All Words": "passed empty/one/2400 long-example, grading/history/relaunch/10layouts",
     "trusted touchscreen": "passed storage/gesture/menu/immediate Undo contracts",
     "client polish": "passed updated detail/start path, dormant schedule preservation and20layout captures",
     "passive onboarding": "passed Next/Skip/Back/Escape/replay/interrupt/reduced-motion/isolation10layouts",
     "onboarding full suite": "passed initialUI; shared media behavior unchanged",
     "control family": "170 scenes,5viewports/both themes;46 paired target width/height comparisons unchanged",
-    "Reader/guide/writing optics": "passed phone/iPad/short boththemes actual2px and selected fill",
+    "Reader/guide/writing optics": "passed persistent-profile Chromium phone/iPad/short both themes and actual original byte lengths",
     "store All Words source captures": "passed12high-resolution front/reveal/drag captures and4.5 contrast",
     "native counter contracts": "passed App/Share1.9.3(270), existing269/lower rejected",
-    "native sync": "passed 238 source/www/iOSpublic byte-matched application files"
+    "native sync": "passed239 source/www/iOSpublic byte-matched application files",
+    "real Chromium2400 long-example quota": "passed native quota, exact sources/archives, new set, IDB abort/retry, relaunch, duplicate input and pending navigation",
+    "header shells": "passed phone/iPad/short both themes,44px circles,18px Back/X painted height, exact paired/cross-screen material/press feedback",
+    "Home handoff": "passed browser and controlled deferred viewport-reset/duplicate-save100/50/19%, exact scalar/anchor/durable/Home/shelf equality"
   },
   "limitations": {
     "WebKit": "unavailable locally; final exact-head CI required",
@@ -138,5 +141,10 @@
       "allGradesFollowVisibleAnswerAndFinishedMutation": true
     },
     "nativeEvidence": false
+  },
+  "CIe4d3385": {
+    "WebKit app-family": "passed",
+    "Home PDF100%-to-0%": "real deferred resampling reproduced; source capture/owner correction awaits final CI",
+    "optics import timeout": "retained import/error diagnostics, persistent-profile setup; final WebKit result and original cause pending"
   }
 }

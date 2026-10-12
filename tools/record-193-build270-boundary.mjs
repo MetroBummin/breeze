@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
-export const reviewedSource='d86bf3d9fa0183aa25416979743dd2be17e24846';
+export const reviewedSource='b482ddb23102aaaca877d79ca205daea6a6af471';
 export const historical269='2c82442b082ae148bcf41c0377d0f7ec108e9c23';
 export const historical268='044f9ffdf610815c8d88b5ca8c816169e2815d01';
 export const historical267='e2c02c7e00ba4d99fc045427e0fb541438e0c3fd';
@@ -26,23 +26,11 @@ export function expectedContract(){
  git('merge-base','--is-ancestor',historical269,reviewedSource);
  git('merge-base','--is-ancestor',reviewedSource,'HEAD');
  const files={};
- for(const file of versionFiles){
-  let expected=bytes(reviewedSource,file).toString().replaceAll('269','270');
-  if(file==='tools/verify-ios-release.mjs')expected=expected.replace('> 268n','> 269n').replace('existing TestFlight build 268','existing TestFlight build 269');
-  if(file==='tests/verify-ios-cloud-build.mjs')expected=expected.replace("['270', '270',","['270', '271',").replace("'267', '268', '0'","'267', '268', '269', '0'");
-  files[file]={mode:tree(reviewedSource)[file].mode,method:'exact270 increment; reject existing269 or lower; preserve counter/drift tests',sha256:hash(expected)};
- }
- for(const file of runnerFiles){
-  let expected=bytes(reviewedSource,file).toString().replaceAll('tests/verify-193-build269-boundary.mjs','tests/verify-193-build270-boundary.mjs');
-  if(file==='.github/workflows/study-sets.yml')expected=expected.replace(
-   '      - run: node tests/capture-app-icon-family.mjs\n      - run: node tests/verify-control-optics-browser.mjs\n        env:\n          BROWSER: ${{ matrix.engine }}\n          BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}',
-   '      - run: node tests/capture-app-icon-family.mjs\n        env:\n          BROWSER: ${{ matrix.engine }}\n          BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}\n      - run: node tests/verify-control-optics-browser.mjs\n        env:\n          BROWSER: ${{ matrix.engine }}');
-  if(file==='tests/helpers/app-icon-family-scenes.mjs')expected=expected
-   .replace("import assert from 'node:assert/strict';", "import assert from 'node:assert/strict';\nimport {studyAction} from './study-actions.mjs';")
-   .replace(" await page.keyboard.press('Enter');\n await capture('study-revealed'", " await studyAction(page.keyboard.press('Enter'),page);\n await capture('study-revealed'")
-   .replace(" await page.keyboard.press('Enter');await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden", " await studyAction(page.keyboard.press('Enter'),page);await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden")
-   .replace("  await page.locator('#study-sets-flashcard').press('Enter');await page.locator('#study-sets-flashcard').press('ArrowRight');", "  await studyAction(page.locator('#study-sets-flashcard').press('Enter'),page);assert.equal(await page.locator('#study-sets-answer').isVisible(),true,'grade follows a durably revealed answer');await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);");
-  files[file]={mode:'100644',method:file==='tests/helpers/app-icon-family-scenes.mjs'?'exact capture-only await of existing durable study actions; preserve completion assertions and deadline':file==='.github/workflows/study-sets.yml'?'exact engine env ownership correction for both matrix steps':'select270 verifier; preserve historical269/268/267/266 checkers',sha256:hash(expected)};
+ // This refreshed reviewed source already contains270 counters, exact engine
+ // ownership and durable capture ordering. Pin their bytes with the whole tree;
+ // no further product or runner normalization is permitted in release metadata.
+ for(const file of [...versionFiles,...runnerFiles]){
+  files[file]={mode:tree(reviewedSource)[file].mode,method:'exact reviewed270 source; existing269/lower rejected by native release contracts',sha256:hash(bytes(reviewedSource,file))};
  }
  const followup=git('diff','--name-only',historical269,reviewedSource).toString().trim().split('\n');
  return {schemaVersion:1,version:'1.9.3',buildNumber:'270',previousTestFlightBuild:'269',historical269,historical268,historical267,historical266,reviewedSource,reviewedTree:git('rev-parse',reviewedSource+'^{tree}').toString().trim(),reviewedPR:156,storageOrigin:'b5ec2f3755917b978c5d344f9a07bf173851e7b7',storageIntegration:'075922e',followupSha256:Object.fromEntries(followup.map(file=>[file,hash(bytes(reviewedSource,file))])),files,integrationFiles};
@@ -80,6 +68,6 @@ function record(){
  const contract=expectedContract();verifyCurrent(contract);
  const receipt={...contract,integrationSha256:Object.fromEntries(integrationFiles.filter(file=>file!==receiptFile).map(file=>[file,hash(read(file))]))};
  mkdirSync(join(root,'docs/qa/breeze-193-build270'),{recursive:true});writeFileSync(join(root,receiptFile),JSON.stringify(receipt,null,2)+'\n');verify270Boundary(receipt);
- console.log('Recorded build270: approved PR156 learning/storage/icon tree plus exact version/counter/runner deltas only.');
+ console.log('Recorded build270: approved PR156 learning/storage/header/handoff tree and exact270 counters; metadata only.');
 }
 if(process.argv[1]===fileURLToPath(import.meta.url))record();

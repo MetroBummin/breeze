@@ -1,8 +1,8 @@
 {
-  "reviewedSource": "d86bf3d9fa0183aa25416979743dd2be17e24846",
+  "reviewedSource": "b482ddb23102aaaca877d79ca205daea6a6af471",
   "checkedInVersion": "1.9.3(270)",
   "filesMatchSourceWwwAndIosPublic": true,
-  "fileCount": 238,
+  "fileCount": 239,
   "files": [
     {
       "path": "assets/auth/README.md",
@@ -736,23 +736,23 @@
     },
     {
       "path": "assets/onboarding/study-dark.jpg",
-      "bytes": 12542,
-      "sha256": "00cfb1b4247a1649a731f16faa72d2d1bf1644c474f0b717f66651db2bd0f350"
+      "bytes": 12946,
+      "sha256": "15f77752ddfbb3312eb97abd5693b02bf6ab51c6a78b3e6e4ddc23a643e7c743"
     },
     {
       "path": "assets/onboarding/study-dark.mp4",
-      "bytes": 107319,
-      "sha256": "7c3d9ea6328e0e916f073c42de4865cd4e8916c295d54744ef72c31c964da60d"
+      "bytes": 114250,
+      "sha256": "a0cba7b48f670f199e635d51fc898f800fdd1aaee0ec8b9fa7959fa45c196c3c"
     },
     {
       "path": "assets/onboarding/study-light.jpg",
-      "bytes": 13163,
-      "sha256": "69596333fe559d0b41cc0165547c5619cc2dac5d2d9483a3465b907ba2e625cc"
+      "bytes": 13464,
+      "sha256": "422229896f01f294cddf36c0a42fdd3d1bbd30df359f02fe9d7b8f005acc9466"
     },
     {
       "path": "assets/onboarding/study-light.mp4",
-      "bytes": 121171,
-      "sha256": "89cd9eb1b6415533e8636cf89dc49aca34370e43b783e250223feaee03b5dac9"
+      "bytes": 123550,
+      "sha256": "21ab26dbdc9d1b2c8883496b3c5cdf49244c7c2ae909dc24c18b7cf5b4040b09"
     },
     {
       "path": "assets/onboarding/word-dark.jpg",
@@ -781,8 +781,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 53261,
-      "sha256": "de2a548a35df3038192582230852a921d323cc44f74076cc48792c1b81ba689b"
+      "bytes": 53332,
+      "sha256": "6072c5bab5ec4575e181e7ae6aa8edcd4be9bf1fe8e2ba0d7f2079cfba57bbd7"
     },
     {
       "path": "modules/lexical/core.js",
@@ -806,8 +806,8 @@
     },
     {
       "path": "scripts/core/state.js",
-      "bytes": 19486,
-      "sha256": "0b2f0c246bc2743c378b5458accf5afce40e65e3240d4c9c009ccd726775bc48"
+      "bytes": 19814,
+      "sha256": "578c2e5c66157bc8880140e30769af3db8daa65046d7e56b9ac292f3d6ad2538"
     },
     {
       "path": "scripts/core/storage.js",
@@ -1066,8 +1066,8 @@
     },
     {
       "path": "scripts/ui/preferences.js",
-      "bytes": 20142,
-      "sha256": "f1e9ebd6ebeaac36c2d2fd509cae86fca887abf716c40edf84ae443aa0a9f614"
+      "bytes": 20446,
+      "sha256": "605490b38f4d8b51b0f2799456efccade49a5635717f4f61fc7bf03d4b6da27f"
     },
     {
       "path": "scripts/ui/reader-notifications.js",
@@ -1133,6 +1133,11 @@
       "path": "styles/fonts.css",
       "bytes": 1065,
       "sha256": "211a3f4615d05281180cf1d8baaaa86b3f92cf4454b98625a1969f25653e536c"
+    },
+    {
+      "path": "styles/header-controls.css",
+      "bytes": 5777,
+      "sha256": "ede3df74ed0df4ce94240b5be9cf637f58714443f85b96f152c0616135647f4c"
     },
     {
       "path": "styles/home-font.css",
