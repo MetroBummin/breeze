@@ -61,6 +61,7 @@ const allowed=new Set([
   'tests/verify-pdf-pinch-browser.mjs',
   'tests/verify-study-sets-ui.mjs',
   'tests/capture-study-handoff-browser.mjs',
+  'tests/capture-study-sets-browser.mjs',
 ]);
 const runners=['.github/workflows/integrity.yml','.github/workflows/design-brand.yml','.github/workflows/social-auth.yml'];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});
