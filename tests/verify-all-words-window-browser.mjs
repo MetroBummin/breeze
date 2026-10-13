@@ -52,10 +52,18 @@ try{
  await page.evaluate(()=>studySetsUI.body.scrollTop=28000);await page.waitForTimeout(120);
  const anchor=await page.evaluate(()=>{const b=studySetsUI.body.getBoundingClientRect();const row=[...document.querySelectorAll('.study-all-words-row')].find(r=>r.getBoundingClientRect().bottom>b.top);return {index:row.dataset.index,y:row.getBoundingClientRect().top-b.top,scroll:studySetsUI.body.scrollTop};});
  await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);
- assert.equal(await rows().count(),0,'large list is released during study');assert.equal(await page.evaluate(()=>ensureSimpleStudySession().initial.length),2399);
- await page.locator('#review-flip').click();await page.evaluate(()=>gradeSimpleWordCard('again'));
+ assert.equal(await rows().count(),0,'large list is released during study');
+ const initial=await page.evaluate(()=>[...ensureSimpleStudySession().initial]);
+ assert.deepEqual(initial,Array.from({length:total},(_,i)=>'w'+i),'new sessions contain exactly one representative per word, not every saved meaning');
+ assert.equal(await page.evaluate(()=>Object.keys(words).length),2399,'representative projection preserves every saved meaning');
+ assert.equal(await page.locator('#review-progress').innerText(),`0 / ${total}`);
+ assert.equal(await page.locator('#review-meaning').textContent(),'');assert.equal(await page.locator('#review-sentence').isVisible(),false,'multi-meaning front omits context rather than suggesting one accepted sense');
+ await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').innerText(),'1. 저장된 뜻 0\n2. 저장된 뜻 2294');
+ await page.evaluate(()=>gradeSimpleWordCard('again'));
+ assert.equal(await page.evaluate(()=>ensureSimpleStudySession().queue.length),total,'Again requeues the same representative without duplicating a sense');
+ assert.equal(await page.locator('#review-progress').innerText(),`0 / ${total}`);
  await page.locator('#review-flip').click();await page.evaluate(()=>gradeSimpleWordCard('remember'));
- const saved=await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession()));assert.equal(JSON.parse(saved).passed.length,1);
+ const saved=await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession()));assert.equal(JSON.parse(saved).passed.length,1);assert.equal(JSON.parse(saved).queue.length,total-1);assert.equal(await page.locator('#review-progress').innerText(),`1 / ${total}`);
  await page.evaluate(()=>closeVocabularyReview());await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');await page.waitForTimeout(120);
  const restored=await page.evaluate(index=>{const row=document.querySelector('.study-all-words-row[data-index="'+index+'"]');return {y:row?.getBoundingClientRect().top-studySetsUI.body.getBoundingClientRect().top,scroll:studySetsUI.body.scrollTop};},anchor.index);
  assert.ok(Math.abs(restored.y-anchor.y)<2,'deep scroll restored '+JSON.stringify({anchor,restored}));
@@ -63,6 +71,6 @@ try{
  assert.equal(await page.evaluate(()=>Object.entries(qaStorage).every(([k,v])=>localStorage.getItem(k)===v)),true,'original vocabulary and legacy storage stay byte-identical');
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>openVocabularyReview());await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);
  assert.equal(await page.evaluate(()=>JSON.stringify(ensureSimpleStudySession())),saved,'durable queue/history survive reload');
- assert.deepEqual(errors,[]);writeFileSync(output+'/window-'+engine.name()+'.json',JSON.stringify({engine:engine.name(),native:false,totalWords:2294,totalMeanings:2399,layouts,anchor,restored,checks:'bounded DOM; all ordinals through final row; multi-meaning expansion/remount; 110 keyboard rows; deep-scroll return; complete queue/again/remember/reload; immutable vocabulary and legacy storage',errors},null,2));
+ assert.deepEqual(errors,[]);writeFileSync(output+'/window-'+engine.name()+'.json',JSON.stringify({engine:engine.name(),native:false,totalWords:2294,totalMeanings:2399,layouts,anchor,restored,checks:'bounded DOM; all ordinals through final row; multi-meaning expansion/remount; 110 keyboard rows; deep-scroll return; complete representative queue/all saved senses/again/remember/reload; immutable vocabulary and legacy storage',errors},null,2));
  await context.close();
 }finally{await browser.close();await server.close();}

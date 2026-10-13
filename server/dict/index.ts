@@ -1,4 +1,5 @@
 // Breeze — dictionary Edge Function (OpenRouter/DeepSeek primary, Gemini fallback)
+import { runVocabularyTestGrading, VOCABULARY_TEST_GRADING_ENABLED } from "./vocabulary-test.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { runEasyExplanation, easyPrompt, type EasyInput } from "./easy-explanation.ts";
 import { runSentenceEasyExplanation, sentenceEasyPrompt, type SentenceEasyInput } from "./sentence-easy-explanation.ts";
@@ -130,6 +131,20 @@ async function opEasyExplanation(body:any,userId:string|null,signal?:AbortSignal
   return response;
 }
 
+async function opVocabularyTest(body:unknown,userId:string|null,signal?:AbortSignal){
+  const receipt=async(name:string,args:Record<string,unknown>)=>{
+    const {data,error}=await SR.rpc(name,args);
+    if(error||!data||typeof data.status!=="string")throw Error("receipt_unavailable");
+    return data;
+  };
+  const result=await runVocabularyTestGrading(body,{
+    enabled:VOCABULARY_TEST_GRADING_ENABLED,userId,signal,key:Deno.env.get("OPENROUTER_API_KEY"),
+    claim:(batch,fingerprint)=>receipt("vocabulary_test_claim",{p_user:userId,p_batch:batch,p_fingerprint:fingerprint}),
+    finish:(batch,fingerprint,answer)=>receipt("vocabulary_test_finish",{p_user:userId,p_batch:batch,p_fingerprint:fingerprint,p_answer:answer})
+  });
+  const response=json(result.body,result.status);response.headers.set("Cache-Control","no-store");return response;
+}
+
 const LOG_ACTIONS=new Set(["edit","pick","star","known"]);
 async function opLog(body:any,userId:string|null){if(!userId)return json({ok:false,reason:"anonymous"});const action=clean(body.action,20);if(!LOG_ACTIONS.has(action))return json({error:"bad_action"},400);return json({ok:true})
 }
@@ -145,4 +160,4 @@ type AnonVerdict={status:string;calls?:number};
 async function takeAnonQuota(device:string):Promise<AnonVerdict>{if(!device)return{status:"bad_device"};const{data,error}=await SR.rpc("take_anon_quota",{p_device:device,p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP});if(error){console.warn("anon quota failed, refusing:",error.message);return{status:"closed"}}return(data??{status:"closed"})as AnonVerdict}
 async function opDeleteAccount(userId:string|null){if(!userId)return json({error:"login_required"},401);const listed=await SR.storage.from("books").list(userId,{limit:1000});const files=(listed.data??[]).map(file=>`${userId}/${file.name}`);if(files.length){const removed=await SR.storage.from("books").remove(files);if(removed.error)return json({error:"delete_failed",message:removed.error.message},500)}for(const table of["words","positions","books","dict_events","ai_usage"]){const{error}=await SR.from(table).delete().eq("user_id",userId);if(error)return json({error:"delete_failed",message:error.message},500)}const{error}=await SR.auth.admin.deleteUser(userId);if(error)return json({error:"delete_failed",message:error.message},500);return json({ok:true})}
 
-Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true,sentenceEasyExplanation:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId,req.signal);if(op==="easy_explanation"||op==="sentence_easy_explanation")return await opEasyExplanation(body,userId,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||op==="look_v2"||isSeed)return await opLook(body,userId,isSeed,req.signal);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("quota_unavailable"))return json({error:"quota_unavailable"},503);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({error:"POST only"},405);try{const body=await req.json().catch(()=>({}));const op=String(body.op??"look").trim();if(op==="warm")return json({ok:true,sentenceEasyExplanation:true});const seedToken=Deno.env.get("SEED_TOKEN")??"";const isSeed=op==="seed"&&!!seedToken&&req.headers.get("x-seed-token")===seedToken;if(op==="seed"&&!isSeed)return json({error:"seed_forbidden"},403);let userId:string|null=null;const token=(req.headers.get("Authorization")??"").replace(/^Bearer\s+/i,"");if(token){const{data}=await SR.auth.getUser(token);userId=data?.user?.id??null}if(op==="vocabulary_test_grade")return await opVocabularyTest(body,userId,req.signal);if(op==="log")return await opLog(body,userId);if(op==="purge_private_logs")return await opPurgePrivateLogs(userId);if(op==="delete_account")return await opDeleteAccount(userId);if(op==="explain")return await opExplain(body,userId,req.signal);if(op==="easy_explanation"||op==="sentence_easy_explanation")return await opEasyExplanation(body,userId,req.signal);const word=String(body.word??"").slice(0,60).trim();if(!/^[A-Za-z][A-Za-z'’\- ]*$/.test(word))return json({error:"bad_word"},400);if(op==="look"||op==="look_v2"||isSeed)return await opLook(body,userId,isSeed,req.signal);return json({error:"bad_op"},400)}catch(e){const message=String(e);console.error("dict_request_failed",e instanceof Error?e.name:"Error");if(message.includes("AbortError")||message.includes("TimeoutError"))return json({error:"request_timeout"},504);if(message.includes("quota_unavailable"))return json({error:"quota_unavailable"},503);if(message.includes("server_not_configured"))return json({error:"server_not_configured"},500);return json({error:"internal"},500)}});
