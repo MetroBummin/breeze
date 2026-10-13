@@ -1,6 +1,8 @@
 /* Recall tests are local snapshots, separate from vocabulary, card study and FSRS.
    No string comparison here claims that a Korean response is semantically correct. */
 const BreezeVocabularyTest=(()=>{
+  // Retain the prototype and saved answers, but exclude its UI from 1.9.3.
+  const ENABLED=false;
   const VERSION=1,MAX_ANSWER=1000;
   const text=v=>typeof v==='string',nonblank=v=>text(v)&&!!v.trim();
   const object=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -88,5 +90,5 @@ const BreezeVocabularyTest=(()=>{
     for(let start=0;start<meta.index;start+=10)if(Math.min(start+10,manifest.cards.length)<=meta.index&&!batchStarts.has(start))fail();
     return {manifest,meta,answers:new Map(answers.map(answer=>[answer.index,answer])),batches:new Map(batches.map(batch=>[batch.start,batch]))};
   }
-  return {VERSION,MAX_ANSWER,cards,groups,prompt,start,validateManifest,validateMeta,validateAnswer,restore};
+  return {ENABLED,VERSION,MAX_ANSWER,cards,groups,prompt,start,validateManifest,validateMeta,validateAnswer,restore};
 })();

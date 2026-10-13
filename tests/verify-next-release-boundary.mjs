@@ -1,4 +1,4 @@
-// Approved PR160/161/162 integration plus reproduced PDF rotation and release readiness corrections.
+// Approved release integration plus the owner's typed-test hold and three-state study completion revision.
 // Historical export/release guards run unchanged on their exact source commits.
 import assert from 'node:assert/strict';
 import {readFileSync,lstatSync,mkdtempSync,rmSync} from 'node:fs';
@@ -15,15 +15,15 @@ const expected={
   "tests/verify-offline-blob-engine.mjs": "84ca30d23049408a4b2742a8e105d54d727cfb7d376c0ae18781e78631f353a2",
   ".github/workflows/pdf-ocr.yml": "6164af42ab60c61ea2de8744c9753668753e3289e3a2bb71761137f2754afa09",
   ".github/workflows/apple-release.yml": "483b649df36c39ab1d5f3c2c394c79bef9fb9190af83bd34d275f425ba5db89d",
-  ".github/workflows/vocabulary-test.yml": "10d3dd7e82e7fc72299e6614947ac5d1467c5272c66cfa9e0be04c916bb3ca1e",
+  ".github/workflows/vocabulary-test.yml": "8269cb81c087e68e01796c13c267bce6707f20b6fbe0a29eaa980f2a98433e19",
   "android/app/build.gradle": "669c6cf62ae4af864b914452a752c0b196db84feda2df6a32470d1fc29c874c3",
   "docs/apple-release-automation.md": "43012018b831ed2d8eaf548374e7ddf8eb6062ea855ac4302d1d254168763649",
   "docs/decisions/003-pdf-highlight-geometry.md": "1883bdb7d86ee35f4bb2d060a107050d37e8bc561d651e33e7313aeff8dc15ad",
-  "docs/decisions/013-vocabulary-review.md": "76a0acb07f79bf854a31ceeb846a716107222973719048332f09a24fcacd2188",
-  "docs/decisions/023-vocabulary-study-sets.md": "0047a9423775101d3953cb391828aa67d0e55aedd505900d50aea0ed6ba08993",
+  "docs/decisions/013-vocabulary-review.md": "3d4aba9f8aa5d3cebbb211bb2c9f4b3c0386e84ac5f5b9a14aaacc0ebe20863b",
+  "docs/decisions/023-vocabulary-study-sets.md": "9d471e6ebd60e1c6162b6f81e8812ac49f43dcb7d8e6d98d67d4dfc95ce5ee83",
   "docs/decisions/031-apple-272-screenshot-preflight.md": "cebf316dc9f8761597ecebc58f4e84a59808a3b99502aa67cb035a51e9c6ad65",
-  "docs/decisions/031-vocabulary-test.md": "d545f97a1388b988f3d285605d1ad03558988e434f79b55a007cf9ab0b1daff1",
-  "docs/decisions/032-next-ios-android-release.md": "185ccbf8bae22ababd727fa3c4a51230d5aca45055b978a42a1fe83d493b2b0c",
+  "docs/decisions/031-vocabulary-test.md": "cf2602d262971d86f8476b4002831dd86f66794f190981f9de47f723c88c367d",
+  "docs/decisions/032-next-ios-android-release.md": "77ee548db98de82e7f413a4dd4ab12065255b86d1336818838c29e95b5497e5a",
   "docs/qa/vocabulary-test/README.md": "573e4e532614d7bf145953786088c3a82128f74fc47243178bf22d799509497f",
   "docs/qa/vocabulary-test/breeze-study-directions.mp4": "ad729d4658f9059b652dece7483afbcf42782d3f27a2ac46ebf7713344140c85",
   "docs/qa/vocabulary-test/breeze-study-meanings-iphone.png": "2e7d83b276b326deb3d356f7071e4538dc6192aa39e8967a2e9f31cbb3710b78",
@@ -32,26 +32,26 @@ const expected={
   "docs/qa/vocabulary-test/breeze-test-setup-ipad-dark.png": "f02c37c2b8f047e2b01daba7573838803265c1086c11e785136bf9238ac8f352",
   "docs/qa/vocabulary-test/browser-metrics.json": "075a7abeee9aba2846a54fb5e4c00c12ecab8fabe9f8669a86fdea4078447c8f",
   "docs/qa/vocabulary-test/direction-events.json": "87fd8a215b5c8dca7acff841ac9a0d90557dc8b83c7b906a28171d69e84089ba",
-  "index.html": "22fcaf21d32ad8ab402fcb60402bf9e124944f7c0f1965664a24696a56cea5d0",
+  "index.html": "d597c54061825421635185a94f3b1ea7e81100f1efbe333ac99dd28117eb6ffa",
   "package.json": "452f0b4a3c36ada20b4fc5176ce9dba943923e76b8a4bf76ebdb5275b86366ff",
   "releases/apple/assets/breeze-193-build272.json": "5eb6bf34ed6789472365f2b8c9da3eccfee9d0bd056c1f656b43292bccd6e913",
-  "scripts/core/state.js": "b29f6bf99cfd55ebce8d20a79be74b0f8749cb08f6d0f65647b1bfa86431484f",
+  "scripts/core/state.js": "1dd9cc2841f7f43dddecbceb31a147c3ace617e357320d752eb4f8651f9cd0c4",
   "scripts/core/study-sets.js": "9136b150a44aa5f5774ec616262f52d23d6d0c89ed36536607c2ef6396535ae5",
   "scripts/core/vocabulary-test-storage.js": "7e78cae9dd01272da00b708fd2f5bd58ad538319c624bc77d453948639fc1af5",
-  "scripts/core/vocabulary-test.js": "816154d03bf2dbbb3ce46e3a5e03a9621a87046badc318986af7346cd9f8a864",
+  "scripts/core/vocabulary-test.js": "3677f9b4a7db3652d2a90dbb20ca8a018be1ef5f40da04d67465f04fa69b8296",
   "scripts/dictionary/vocabulary-test-grading.js": "83c32b98fe59255d9c1af6d3915a232faedd0e4a57d9acff4b7993d96c8cc084",
   "scripts/reader/pdf-original.js": "76c4ac7598b559ef79c18e0b810f09097374accfa0efbacb84c21711c1abbe3b",
-  "scripts/ui/study-sets.js": "a2c41d7305fc42fae7b835adf868c1efa981929f8971e8b9f26bd2dc066a47de",
-  "scripts/ui/vocabulary-review.js": "ce3a19611ab66f7ea30917260f80198d7cd6a313202305a74704374c9d2845a1",
-  "scripts/ui/vocabulary-test.js": "aea5d8b458110a1bc34855956bb853c8ab75d2433f2cea2a173e7f64133616b3",
+  "scripts/ui/study-sets.js": "392966b1120414f8195305c2939397be046ecb7a39281580d754d924b9f4c801",
+  "scripts/ui/vocabulary-review.js": "84d334eb5a85200a9d3d040866fcc8f93c5136d32e3a155afb1fbfbf3db7e1ab",
+  "scripts/ui/vocabulary-test.js": "a90c4cfa9fea90d844e88ff260e4212df0e80a3515f1b3a2003bb57bbff04d9e",
   "server/dict/index.ts": "3bdff9b52c91da218b4220b5ec0b96ed8a73d66faf2dd67a52e913eded4cea2e",
   "server/dict/vocabulary-test-receipts.sql": "b60dd70296d8d69da12aeb406b1e2990fea7bee8c507137719163ce227f6d345",
   "server/dict/vocabulary-test.ts": "3a81aca79a87f280223a432c060a60d10875cc89198f94d7db9266f4c74d03b0",
   "styles/header-controls.css": "509167f024e097d5037a9d6d31effbcbfca5cfaef90bf70328aea25372319917",
-  "styles/study-sets.css": "4a4e7f565ccef67a7d0290d9a33c0e85e7f87d3d21b06fe532fb611f2b6ed5ff",
+  "styles/study-sets.css": "f7b68315dd3492e1c9e8410d0d125a83f602fbb64f2f6bc0ead848181d21608b",
   "styles/vocabulary-test.css": "2c75722a6f21d8a8ef319765bc5a563b0a092f29330edfa8794796f5ebf0e4b1",
   "styles/wordbook.css": "fd5f7e3797b90eb31dadbb148d403529e1b758c9b51438ae17d981290c032c85",
-  "sw.js": "794d414524dfd0435363ee6e7c8c53b02aade392a36ce93908676a7b8f930c8b",
+  "sw.js": "7230d6cd30a34d2610b6a538b1389f012ca9a375c05d1310cf975177b9d7ff98",
   "tests/helpers/app-icon-family-scenes.mjs": "7c95d6a549db3e9ec1071466f5d9ee01d25ee00aba4c167f7fa31fb78d786d55",
   "tests/verify-all-words-window-browser.mjs": "0cdad010a2c074568521b676aa3a8c883b43dc6e94423f9e6057f82211b3a9d5",
   "tests/verify-android-build.mjs": "d48ee9d93fa8db6e795ef84f200b6b90f9ac96082b34050d9860cfea1e95dad8",
@@ -66,10 +66,10 @@ const expected={
   "tests/verify-study-direction-browser.mjs": "9cca0ddab6e5ca4aaca65a231364bc3ac68e195411a92a1a74c302a8ac20fa3c",
   "tests/verify-study-motion-browser.mjs": "f2324bb5a107d583c3e4175a36a2921bf67743ca8be12730f81d432faf92197a",
   "tests/verify-study-session-swipe-browser.mjs": "9faf71f5c7fe12b17b4e6a6123023bf2c3876cc999cd0250e4a9ba632e5cb989",
-  "tests/verify-study-sets-browser.mjs": "c29913328fdcf4a8f52c9d523dbed3667a2d571d6855a01277af4883148aa3b0",
-  "tests/verify-study-sets-ui.mjs": "4e1ea003fd25f5ac451bf302062bc90c07fe14301a788af5a6f3599711ab512b",
+  "tests/verify-study-sets-browser.mjs": "8e26c1959545ae1618d7c8231be499d900d7227f864affb12ffdf5757d6a4b3f",
+  "tests/verify-study-sets-ui.mjs": "8f90145c872bfec64bcd60c95d41046ff4a5d454c939d3bc3acd1b26bf47a4ae",
   "tests/verify-study-sets.mjs": "b2ffa0751387d854e7ce3660f55b4fd984156d83d3f80575e9b4197744f2fc0f",
-  "tests/verify-vocabulary-test-browser.mjs": "0bc442b93b49b64bddff5cb628c65a0252094d0bfd55c58556fdb4496c9ab4a9",
+  "tests/verify-vocabulary-test-browser.mjs": "8660554dd52299520eba36a13f7c0a71e1980c33016bc584f6d03efee8bfd236",
   "tests/verify-vocabulary-test-grading.mjs": "8dc9bc40fb94a64630d7c90b4bf026c677c83d3052b9b9d4f5530ee495f72980",
   "tests/verify-vocabulary-test-storage.mjs": "5ebaff005f7cf38e3b9a7132578730153579d7770a2dbf6fabf89a440777c93e",
   "tests/verify-vocabulary-test.mjs": "06bc259b9f01d3d6c33c748e15dd45a58afafb46d1faec9a2778a1816a245c9d",
@@ -77,7 +77,9 @@ const expected={
   "tools/apple-release.mjs": "d2f56d69efeef17cc43e6b859a4dc2a753dd78d307243cf23a46b2c00d6d64c6",
   "tools/apple-screenshots.mjs": "3e35b9ec4915d0b913b5a56f9c1e23398cf31c20703c07cfd920b3ab721fb35a",
   "tools/verify-apple-release-boundary.mjs": "1d607169b82ceec028fddadd09cb2745f909935ad06f775b2acb6a2294e7c43c",
-  "tools/verify-apple-screenshot-assets.mjs": "35224e1dcebfd44400cef0f5a00a544263aa189b9c82858c6b6b5a404fa389b4"
+  "tools/verify-apple-screenshot-assets.mjs": "35224e1dcebfd44400cef0f5a00a544263aa189b9c82858c6b6b5a404fa389b4",
+  "tests/helpers/study-sets-browser-fixture.mjs": "af86dc71ba7e8abe53e23398ed16464d4d8678b25cba8a2fbc3b957d90488087",
+  "tests/verify-study-completion-browser.mjs": "e35d8e511e798f4d68bf5fb90196edbac1bcf78c576dca3fcce06918cb41aa8f"
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});
@@ -102,6 +104,7 @@ function verify(entries){
  for(const file of [...baseline.keys(),...Object.keys(expected),guard])assert.ok(entries.has(file),'Missing source: '+file);
 }
 git('merge-base','--is-ancestor',base,'HEAD');verify(current);
+assert.match(readFileSync(join(root,'scripts/core/vocabulary-test.js'),'utf8'),/const ENABLED=false;/);
 assert.match(readFileSync(join(root,'scripts/dictionary/vocabulary-test-grading.js'),'utf8'),/const VOCABULARY_TEST_REMOTE_ENABLED=false;/);
 assert.match(readFileSync(join(root,'server/dict/vocabulary-test.ts'),'utf8'),/const VOCABULARY_TEST_GRADING_ENABLED = false;/);
 for(const file of ['scripts/reader/pdf-original.js','ios/App/App.xcodeproj/project.pbxproj','package.json','tests/verify-vocabulary-export-boundary.mjs',...runners]){

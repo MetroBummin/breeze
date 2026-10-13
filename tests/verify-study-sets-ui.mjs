@@ -101,6 +101,36 @@ test('study set UI creates safe deduplicated snapshots, excludes with undo, impo
   await afterAction(run('openStudySets()'));assert.equal(document.querySelectorAll('.study-sets-list li').length,1);
 });
 
+test('incomplete study resumes, completion has one terminal pair, and leaving preserves completed history',async ()=>{
+  const h=harness();await afterAction(h.createSet());
+  assert.equal(h.query('#study-sets-start').textContent,'학습 시작하기');
+  assert.equal(h.document.querySelector('#study-sets-test'),null);
+  const words=JSON.stringify(h.context.words);
+  await afterAction(h.click('#study-sets-start'));
+  await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));
+  const partial=h.storage.get('breeze.study-sets.v1');
+  await afterAction(h.click('#study-sets-back'));
+  assert.equal(h.query('#study-sets-start').textContent,'이어서 학습 · 1/2');
+  assert.equal(h.storage.get('breeze.study-sets.v1'),partial);
+  await afterAction(h.click('#study-sets-start'));assert.equal(h.query('#study-sets-progress').textContent,'1 / 2');
+  await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));
+  assert.deepEqual([...h.query('.study-sets-complete').querySelectorAll('button')].filter(b=>!b.hidden).map(b=>b.textContent),['세트로 돌아가기','다시 시작하기']);
+  const complete=h.storage.get('breeze.study-sets.v1'),completed=JSON.parse(complete).sets[0].session;
+  assert.equal(completed.answers.length,2);
+  await afterAction(h.click('#study-sets-complete-back'));
+  assert.equal(h.query('#study-sets-start').textContent,'학습 시작하기');
+  await afterAction(h.run('studySetsReadAndRender()'));
+  assert.equal(h.storage.get('breeze.study-sets.v1'),complete,'leaving and rereading do not clear completion history');
+  await afterAction(h.click('#study-sets-start'));
+  assert.equal(h.query('#study-sets-progress').textContent,'0 / 2');
+  assert.notEqual(JSON.parse(h.storage.get('breeze.study-sets.v1')).sets[0].session.id,completed.id);
+  for(let i=0;i<2;i++){await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));}
+  const stale=h.query('#study-sets-restart');stale.click();stale.click();await afterAction();
+  const restarted=h.storage.get('breeze.study-sets.v1');await afterAction(stale.click());
+  assert.equal(h.storage.get('breeze.study-sets.v1'),restarted,'a detached completion action cannot restart again');
+  assert.equal(JSON.stringify(h.context.words),words);
+});
+
 test('failed storage keeps answer and form retryable; stale grade events cannot advance twice',async ()=>{
   const {context,query,click,run,storage,createSet}=harness();await afterAction(createSet());await afterAction(click('#study-sets-start'));await afterAction(click('#study-sets-reveal'));
   const before=storage.get('breeze.study-sets.v1'),staleGrade=query('#study-sets-grade-repeat');

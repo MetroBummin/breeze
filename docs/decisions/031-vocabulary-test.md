@@ -1,5 +1,21 @@
 # Local typed vocabulary tests
 
+## 1.9.3 release hold (2026-10-13)
+
+The owner deferred typed vocabulary testing before submitting the next1.9.3
+build. `BreezeVocabularyTest.ENABLED` is false: Memory, All Words and saved sets
+expose no test entry, direct/resume calls return without opening it, and old
+test history falls back to Memory. No onboarding or public introduction advertises
+typed tests. Existing swipe-study onboarding remains separate and available.
+The source, answer database, disabled remote-grading gates and development
+history remain intact. Shared multi-meaning/example helpers still serve cards.
+
+The prototype browser suite explicitly enables its fixture and continues to
+exercise retained source. A separate shipping-page browser suite uses the real
+disabled configuration and verifies missing entries, blocked history/direct
+navigation and byte-preserved saved test answers. Prototype evidence does not
+claim that the feature ships in1.9.3.
+
 The test is a separate full page reached from Memory's current filters, All
 Words, or a saved set. Korean meaning recall is the only input mode. It asks for
 retrieval before showing an answer, without claiming that spelling equality can

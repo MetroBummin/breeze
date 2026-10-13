@@ -304,7 +304,7 @@ try{
  assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 3');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);
  await studyAction(page.locator('#study-sets-flashcard').click(),page);await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForSelector('.study-sets-result');assert.equal(await page.locator('.study-sets-result').innerText(),'3 / 3');
- await studyAction(page.getByRole('button',{name:'전체 새로 학습',exact:true}).click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 4');
+ await studyAction(page.getByRole('button',{name:'다시 시작하기',exact:true}).click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 4');
  await context.setOffline(false);
  await page.evaluate(async ()=>{const state=(await loadStudySets()),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3).slice(0,100),Date.now());await commitStudySets(result.state);await studySetsReadAndRender();});
  const layouts=[];

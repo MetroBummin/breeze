@@ -209,6 +209,7 @@ function renderSimpleWordCards(){
   document.getElementById('review-card').hidden=!record;
   const nextCard=document.getElementById('simple-next-card');nextCard.hidden=!record;nextCard.textContent='';
   document.getElementById('review-result').hidden=!!record;
+  document.getElementById('simple-study-completion').hidden=!!record||!session.initial.length;
   document.getElementById('review-status').textContent=record?'':session.initial.length?`이번 세션 ${session.passed.length} / ${session.initial.length} 완료`:'저장된 단어가 없어요. 읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 보세요.';
   const progress=document.getElementById('review-progress');progress.hidden=false;
   progress.textContent=`${session.passed.length} / ${session.initial.length}`;
@@ -240,6 +241,19 @@ function flipSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;
   simpleWordCards.flipped=true;renderSimpleWordCards();
 }
+async function restartSimpleWordStudy(){
+  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;
+  simpleStudyBusy=true;const epoch=simpleStudyEpoch;
+  try{
+    const current=await loadSimpleStudySession();
+    if(epoch!==simpleStudyEpoch||activeAppView()!=='study'||current.queue.length||!current.initial.length)return;
+    await commitSimpleStudySession(SimpleStudySession.start(simpleStudyKeys));
+    if(epoch===simpleStudyEpoch&&activeAppView()==='study'){simpleWordCards.flipped=false;renderSimpleWordCards();document.getElementById('review-flip').focus();}
+  }catch(error){if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);}
+  finally{if(epoch===simpleStudyEpoch)simpleStudyBusy=false;}
+}
+document.getElementById('simple-study-complete-back').addEventListener('click',closeVocabularyReview);
+document.getElementById('simple-study-restart').addEventListener('click',restartSimpleWordStudy);
 async function gradeSimpleWordCard(outcome){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy||!simpleWordCards.flipped)return;
   simpleStudyBusy=true;

@@ -4,7 +4,9 @@ import {chromium,webkit} from 'playwright';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const proof=process.env.BREEZE_TEST_PROOF||'/tmp/breeze-vocabulary-test-proof';mkdirSync(proof,{recursive:true});
-const server=await serveStudyFixture(),browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
+// The prototype remains tested explicitly; it is disabled in the shipping page.
+// verify-study-completion-browser.mjs separately asserts ordinary release exclusion.
+const server=await serveStudyFixture({vocabularyTestPrototype:true}),browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
 const metrics=[];
 const words={
  bank:{word:'bank',ko:'은행',example:'The bank opens at nine.',book:'Reading',addedAt:1,status:1},

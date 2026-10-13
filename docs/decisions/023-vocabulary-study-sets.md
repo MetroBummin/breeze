@@ -1,5 +1,29 @@
 # Snapshot-backed vocabulary study sets (1.9.3)
 
+## Completion entry revision before the next1.9.3 build (2026-10-13)
+
+An interrupted session keeps its frozen queue, answers and current point and
+offers `이어서 학습`. The final remembered answer goes directly to one terminal
+screen with `세트로 돌아가기` and `다시 시작하기`. Returning to the set or leaving
+and reentering shows `학습 시작하기`, never an intermediate results-entry action.
+Navigation/rereading/reload do not clear the completed session or its answers.
+Only an explicit Start after completion or terminal Restart begins a new full
+session, using the existing restart/storage contract; no storage migration or
+new history retention policy is introduced. Previously remembered cards join
+that new session again. Incomplete sessions are never reset by entry.
+
+All Words follows the same terminal pair and entry-label distinction through
+its existing separate session owner. Rapid or detached terminal actions cannot
+restart twice. Source vocabulary, multi-meaning groups, CSV export, exclusions,
+swipe behavior and the existing design materials are unchanged. The separately
+deferred typed-test entries are hidden under its release gate.
+
+`verify-study-completion-browser.mjs` checks both scopes in the real shipping
+configuration: interruption/resume, completion/exit/reentry/reload, retained
+completed answers and typed-test data, explicit full restart, repeated actions,
+and phone/tablet/desktop/short layouts in both themes. Native device acceptance
+is separate. Unit UI regressions exercise the same three states and stale actions.
+
 Memory keeps its existing full wordbook (`v-vocab`) as the default entry. The
 existing bottom-center pill is labeled `학습하기` and opens the single-column
 set directory in one bottom sheet over `v-vocab`; no row is added between search and filters. The

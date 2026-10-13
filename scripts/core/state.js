@@ -259,6 +259,8 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
+  // Old history entries cannot reopen the deferred typed-test feature.
+  if(v==='vocabulary-test'&&(typeof BreezeVocabularyTest==='undefined'||!BreezeVocabularyTest.ENABLED))v='vocab';
   if(v!=='vocabulary-test'&&typeof vocabularyTestLeaving==='function')vocabularyTestLeaving();
   if(!options?.studySetsTransition&&typeof closeStudySets==='function')closeStudySets(true);
   if(typeof closeWordbookMenus==='function')closeWordbookMenus();
