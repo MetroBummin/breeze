@@ -273,3 +273,26 @@ text-layer word lookup remains unchanged, and OCR does not expose sentence looku
 An explicitly checked live box supports direct repeat lookup. The WeakSet check
 does not transfer to an identical spelling/position reconstructed from cache or
 another session, and does not persist a user correction.
+
+### Canonical rotation anchor after progress sampling (2026-10-13)
+
+`captureOriginalAnchor` intentionally probes ten pixels below `topInset()` for
+progress and saved reading state. `capturePdfAnchor` previously copied that
+requested point into `session.readingAnchor`, while rotation restored it at
+`topInset()`. Whether a progress callback ran between the last explicit sample
+and ResizeObserver therefore changed the restored source point. PR162's unchanged
+PDF suite exposed approximately 11.9px outbound and 9px return drift; the same
+failure also occurred on main. Controlled production-function regressions now
+reproduce the ten-pixel error and a probe crossing into the following page.
+
+The caller still receives its requested source point. The settled viewport's
+rotation cache always records the point at `topInset()`, calculated against the
+same page map. A query after viewport reflow still cannot replace that cache.
+Browser rotation checks explicitly interleave progress queries and retain both
+pending-preview and rendered-preview cases with the original 1.5px bound.
+
+The WebKit runner also sometimes samples a 460ms return only two or three times.
+Free-running frames remain recorded, with logical zoom and scroll assertions.
+A separate direct-owner probe pauses and seeks the actual browser animation,
+checks computed transforms throughout its duration, and retains the restrained
+overshoot requirement; it does not infer native frame rate or physical input.

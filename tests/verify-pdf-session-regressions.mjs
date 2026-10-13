@@ -198,3 +198,21 @@ test('recognized OCR words dispatch once per tap without a confirmation gate',()
  c.openPdfWord(page,{...box});assert.equal(opened.length,2,'foreign occurrence cannot dispatch');
  c.originalLoadToken++;c.openPdfWord(page,box);assert.equal(opened.length,2,'stale session cannot dispatch');
 });
+
+// Progress queries use topInset()+10, while rotation restores at topInset().
+// Cache a canonical reading point even if the caller's probe crosses a page edge.
+for(const scrollTop of [1200,1965])test(`progress sampling cannot shift the next PDF rotation anchor at scroll ${scrollTop}`,()=>{
+ const {context:c}=fixture();
+ const box={scrollTop,scrollLeft:0,clientWidth:820,clientHeight:1180};
+ const rects=[0,1,2].map(i=>[0,i*1000,820,1000]);
+ Object.assign(c,{originalSession:{kind:'pdf'},originalZoomObservedWidth:820,originalZoomObservedHeight:1180,
+  topInset:()=>32,pdfPageLayout:()=>({rects,outer:{top:0},scroller:box})});
+ const before=c.capturePdfAnchor(32);
+ const progress=c.capturePdfAnchor(42);
+ assert.notDeepEqual(progress,before,'The caller still receives its requested progress probe');
+ assert.deepEqual(c.originalSession.readingAnchor,before,'Progress must not replace the rotation reference with its +10px probe');
+ // A callback arriving after viewport reflow cannot overwrite the old reference.
+ box.clientWidth=1180;box.clientHeight=820;box.scrollTop=500;
+ c.capturePdfAnchor(42);
+ assert.deepEqual(c.originalSession.readingAnchor,before);
+});
