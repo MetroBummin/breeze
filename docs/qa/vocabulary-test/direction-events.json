@@ -1,0 +1,15 @@
+{
+  "kind": "Actual Playwright browser interaction; synthetic local words; no generated frames",
+  "events": [
+    "all: below-threshold canceled",
+    "all: left repeated without progress",
+    "all: right known, repeated bank returns",
+    "all: visible repeat label tapped",
+    "all: keyboard label and reduced motion completed",
+    "set: below-threshold canceled",
+    "set: left repeated without progress",
+    "set: right known, repeated bank returns",
+    "set: visible repeat label tapped",
+    "set: keyboard label and reduced motion completed"
+  ]
+}
