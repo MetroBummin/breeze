@@ -285,10 +285,12 @@ try{
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.equal(await count(),0);
    // Failure retains latest ink, makes failure visible, and explicit retry persists it.
-   await page.evaluate(()=>{window.qaPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='pages')throw new DOMException('test quota','QuotaExceededError');return window.qaPut.apply(this,args);};});
+   const inkWorker=page.workers().find(worker=>worker.url().includes('pdf-ink-store.js'));
+   assert.ok(inkWorker,'annotation writes use the dedicated worker');
+   await inkWorker.evaluate(()=>{self.qaPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='pages')throw new DOMException('test quota','QuotaExceededError');return self.qaPut.apply(this,args);};});
    await mode('pen');await stroke([[.2,.2],[.3,.22]]);await stroke([[.4,.4],[.5,.5]]);
    await page.waitForSelector('.ink-save-failed');assert.equal(await count(),2);
-   await page.evaluate(()=>{IDBObjectStore.prototype.put=window.qaPut;});
+   await inkWorker.evaluate(()=>{IDBObjectStore.prototype.put=self.qaPut;});
    await page.locator('.pdf-ink-retry').click();
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    await page.reload();await open();assert.equal(await count(),2);

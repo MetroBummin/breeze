@@ -1,5 +1,73 @@
 # iPad PDF Pencil annotation
 
+## Recover an absent Touch owner without an expiry timer (2026-10-12)
+
+The investigation reproduced a conditional iPad-route input lock by deliberately
+omitting a stylus `touchend`/`touchcancel` in Chromium tablet emulation. One saved
+stroke suffices: later contacts cannot replace the stale `active` Touch owner.
+This fault injection is not evidence that the student's actual iPad lost events,
+and the toolbar stayed responsive; the whole-screen incident remains unexplained.
+
+On the native Touch route, each new start/move reconciles the previous active
+and non-ended pending Touch owner against `event.touches`. Absence is evidence
+that the prior contact ended. Its unfinished pen preview is cancelled, completed
+eraser cuts keep the existing durable undo transaction, and obsolete native
+admission replies cannot resurrect it. End/cancel first performs its normal
+matching-owner handling, then reconciles any other orphan. Suppressed contacts
+that remain live stay suppressed. An ended contact awaiting admission remains
+eligible for its legitimate delayed reply. A live long stroke/press never expires.
+
+No timeout, motion heuristic, synthetic event forwarding or Touch-to-Pointer ID
+matching is introduced. The Pointer geometry route and its `scrollend` admission
+gate are unchanged: the separate missing-scrollend experiment does not prove
+navigation stopped, so it cannot safely authorize a new pen contact. No native
+inertia policy changes. Tests include missing terminals, old/fresh palms and
+finger navigation, late second pen, delayed admission, interrupted eraser undo,
+live ten-minute contacts, and disjoint Pointer/Touch namespaces. Browser and
+unit checks remain separate from physical Pencil/palm acceptance.
+
+## Save serialization off the input thread (2026-10-12)
+
+Synthetic Chromium diagnosis at `8512e8f` and `97f0cde` measured full-page
+IndexedDB `put` copying on every commit: up to 170 ms for 5,000 strokes and
+772 ms for 15,000 strokes (100 points each). This is a reproduced stall, not
+proof of the student's unexplained whole-screen freeze or device behavior.
+
+`pdf-ink-store.js` now owns storage transport and runs the same cache-stamped
+asset in a dedicated worker. The worker reads the existing v1 record; transient
+numeric stroke IDs refer to its immutable copies. On commit the page sends the
+ordered ID list and only new/reintroduced strokes. The worker constructs and
+stores the unchanged `{version:1,strokes}` record. IDs never enter disk data.
+Unrelated SVG paths, geometry, eraser history and original PDFs are unchanged.
+
+The ink engine retains its one writer per page and newest-revision loop. An
+acknowledgement still requires transaction completion, not message acceptance.
+Abort/error retains the current dirty page and retry uses its latest revision.
+Release is queued behind in-flight storage work; dirty/failed pages survive
+document closure. Worker mirrors retain only current page strokes, and are
+released with clean unmounted pages. Removed strokes needed by undo are resent
+from the existing bounded main-thread history rather than cached forever twice.
+
+Worker startup failure falls back to the original local IndexedDB route for
+read availability. Worker failure during saving rejects the pending operation;
+retry sends a complete definition set to the fallback. This keeps durability
+available when workers are blocked, but the fallback has the old serialization
+cost. A worker startup deadline never expires a stroke or a live transaction.
+Large changed-stroke sets and undo on an evicted page can still require a large
+transfer; this change specifically removes repeated copying of unchanged ink.
+
+Tests cover real worker/fallback IndexedDB, legacy-format reads, delta transfer,
+undo/redo, abort/retry, delayed acknowledgement, release/reopen and worker crash.
+An overlapping close/reopen regression also guards mount ownership: when two
+callers await the same read, only the newest may attach or evict the page. An
+obsolete continuation must not delete the current document's loaded ink state
+or release its worker mirror. Pending and failed saves across document closure
+and simulated backgrounding are tested with delayed real transactions.
+The existing app-level failure test injects its quota failure in the worker that
+now owns `put`. Native WKWebView/Android worker admission, suspension and memory
+remain physical-device acceptance gates. Browser tablet emulation cannot prove
+those or identify the student's actual freeze.
+
 ## Current platform policy (2026-10-08)
 
 The original native-iPad-only gate and Touch-only statements below document the
@@ -812,3 +880,26 @@ References:
 - https://www.w3.org/TR/pointerevents/ (pointer cancellation and default actions)
 - https://www.w3.org/TR/touch-events/ (cancelable touch default actions)
 - https://developer.chrome.com/blog/scrollend-a-new-javascript-event
+
+
+Release integration verifies the worker as the same cache-stamped asset before
+the ink engine in source,www and iOS public. A real asynchronous worker script
+load failure also exercises read failover into the unchanged durable IndexedDB
+writer, alongside constructor rejection and mid-save worker failure. Both real
+browser engines run the transport tests in CI. Long-task measurements explicitly
+report support and are not native CPU/latency evidence. Actualbreeze:// native
+worker admission, suspension and physical iPad input remain unverified; startup
+fallback preserves storage availability without promising worker performance.
+
+## Post-270 under-minimum pinch presentation
+
+The existing pinch owner retains the 100% committed minimum and native scroll,
+page and ink contracts. Under-minimum visual resistance uses a bounded supple
+curve and a damped compositor return with one restrained overshoot. A new pair
+acquires the current presentation matrix, including its translation at a changed
+midpoint; held re-grabs do not drift. Any carried overshoot remains visual and
+cannot leave the committed scale above the minimum without new zoom input.
+Single-finger scrolling, ink/lookup input and navigation settle presentation
+before querying geometry; stale animation completion cannot cancel new input.
+Reduced motion settles immediately. Browser matrix/anchor/rotation evidence and
+physical-device limitations are recorded in `docs/reviews/breeze-post270-gestures/`.

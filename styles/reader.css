@@ -134,16 +134,17 @@
 
      위치와 크기는 Reader 조작에 맞춘 채, 재질은 낱말·문장 Lookup과 같은 Breeze
      Glass를 씁니다. 서로 다른 기능이라도 한 화면에서 같은 표면처럼 읽혀야 합니다. */
-  .control-dock{position:fixed;inset:auto 0 0;height:calc(env(safe-area-inset-bottom) + 59px);z-index:70;pointer-events:none;}
-  #readchrome, .control-bar{position:absolute; bottom:calc(env(safe-area-inset-bottom) + 15px); left:0; right:0; z-index:70;
+  .control-dock,#readchrome{--control-side-size:48px;--control-row-height:48px;--control-slot-gap:8px;--control-row-width:min(83vw,512px,calc(100% - 28px));--control-bottom:max(8px,env(safe-area-inset-bottom));}
+  .control-dock{position:fixed;inset:auto 0 0;height:calc(var(--control-bottom) + var(--control-row-height));z-index:70;pointer-events:none;}
+  #readchrome, .control-bar{position:absolute; bottom:var(--control-bottom);left:0;right:0;margin-inline:auto;width:var(--control-row-width);height:var(--control-row-height);z-index:70;
     display:flex; align-items:center; justify-content:space-between;
-    padding:0 14px;
+    padding:0;
     /* 조각 사이의 빈 자리는 본문의 것입니다 — 손짓이 여기서 막히면 안 됩니다. */
     pointer-events:none;}
   #readchrome > *, .control-bar > *{pointer-events:auto;}
   .control-glass{isolation:isolate; overflow:hidden;
-    border:1px solid var(--sentence-glass-line); background:var(--sentence-glass-solid);
-    box-shadow:var(--sentence-glass-shadow-pill),inset 0 -1px 0 rgba(0,0,0,.05);
+    border:1px solid var(--control-line); background:var(--sentence-glass-solid);
+    box-shadow:var(--control-shadow);
     color:var(--sentence-glass-ink);}
   .control-glass::before{content:""; position:absolute; z-index:-1;
     inset:0; pointer-events:none; border-radius:inherit;
@@ -156,29 +157,27 @@
     .control-glass{background:var(--control-glass-surface);
       backdrop-filter:blur(19px) saturate(122%); -webkit-backdrop-filter:blur(19px) saturate(122%);}
   }
-  /* 왼쪽 원과 오른쪽 조각은 **같은 높이·같은 윗변**입니다(36px · 안전 영역 + 10px).
-     둘이 한 줄에 나란히 서는 물건이라, 한쪽만 1px 달라도 줄이 어긋나 보입니다.
-     아래 `#readfabs` 의 높이도 같은 36px 이어야 합니다. */
-  #readback,#aafab, .control-circle{position:relative; width:42px; height:42px; border-radius:50%; padding:0;
+  /* Shared expanded circles and capsule use one aligned 48px row. */
+  #readback,#aafab, .control-circle{position:relative; width:var(--control-side-size);height:var(--control-side-size);flex:none;border-radius:50%;padding:0;
     display:flex; align-items:center; justify-content:center; cursor:pointer;}
   /* 그림은 상자 한가운데 놓여 있지만, 화살표의 **잉크**는 그렇지 않습니다.
      `<` 는 24칸 중 8~14.2 만 차지해서 잉크의 한가운데가 11.1 — 상자 한가운데(12)
      보다 0.9칸(19px 로 그리면 0.71px) 왼쪽입니다. 뾰족한 끝이 열린 쪽보다 가볍게
      보이는 것까지 더해 1px 만 오른쪽으로 밉니다. 상자는 그대로입니다 — 옮기는
      것은 그림 하나입니다. */
-  #readback svg{width:19px; height:19px; transform:translateX(1px);}
+  #readback svg{width:var(--control-back-icon-size);height:var(--control-back-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-back-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
   /* 보이는 것은 작게, 누르는 자리는 넉넉하게. 그림을 키우면 종이 위에서 무거워
      지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
   #readback::after{content:''; position:absolute; inset:-6px;}
   #aafab{font:600 15px var(--ui);}
   #readpill, .control-pill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:min(56vw,400px); height:44px; border-radius:24px;
+    width:calc(100% - 2 * var(--control-side-size) - 2 * var(--control-slot-gap));height:var(--control-row-height);border-radius:24px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
   #readpill{--reader-chrome-duration:.26s;--reader-chrome-ease:cubic-bezier(.2,.75,.25,1);
     /* Center resizing geometry in layout. Percentage X transforms can lag the
        animated width in WKWebView's compositor during a scrolling frame. */
     left:0;right:0;margin-inline:auto;transform:translateY(-50%);
-    width:min(56vw,400px,var(--reader-pill-max-width,calc(100% - 124px)));
+    width:var(--reader-pill-max-width);
     transition:left var(--reader-chrome-duration) var(--reader-chrome-ease),width var(--reader-chrome-duration) var(--reader-chrome-ease),height var(--reader-chrome-duration) var(--reader-chrome-ease),
       padding var(--reader-chrome-duration) var(--reader-chrome-ease),border-radius var(--reader-chrome-duration) var(--reader-chrome-ease),
       box-shadow .34s ease;}
@@ -219,9 +218,7 @@
   /* 들린 자국은 넓은 화면에서도 남깁니다. 어두운 화면에서 조각의 종이색은 바탕과
      같은 색(`--paper`)을 옅게 깐 것이라, 자국까지 지우면 조각이 통째로 사라집니다 —
      글자가 없는 왼쪽 여백 위의 back 이 특히 그렇습니다. */
-  @media (min-width:761px){
-    #readchrome, .control-bar{padding:0 22px;}
-  }
+
   @media (prefers-reduced-motion:reduce){
     #readpill{--reader-chrome-duration:0s;}
     #readpill,#readback,#aafab,#readpill #modefab{transition-duration:var(--sentence-transition);
@@ -242,7 +239,7 @@
 
   /* 원본 ↔ 글자 — 글자 하나 없이 지금 모드의 반대쪽을 그립니다.
      종이(모서리 접힌 문서)면 원본으로, 글줄이면 글자 화면으로 갑니다. */
-  #modefab svg{width:21px; height:21px;}
+  #modefab svg{width:24px; height:24px;stroke-width:var(--control-page-icon-stroke);}
   #modefab svg g{transform-origin:12px 12px; transition:opacity .22s ease, transform .22s ease;}
   #modefab .mf-text{opacity:0; transform:scale(.8);}
   body.reader-original #modefab .mf-original{opacity:0; transform:scale(.8);}
@@ -533,7 +530,7 @@
 
 /* One light material for Reader and Home. Dark mode intentionally uses the existing rules. */
 body:not(.dark) .control-glass{
-  border-color:var(--control-light-line);box-shadow:var(--control-light-shadow);
+  border-color:var(--control-line);box-shadow:var(--control-shadow);
 }
 body:not(.dark) .control-glass::before{
   background:var(--control-light-reflection);box-shadow:var(--control-light-edge);
@@ -570,3 +567,14 @@ body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
 #rtext .article-table-row{font-family:monospace;overflow-wrap:anywhere}
 #rtext .article-links{display:flex;flex-wrap:wrap;gap:.5em 1em;font-size:.7em;margin:-.5em 0 1.4em}
 #rtext .article-links a{color:inherit;text-decoration:underline;overflow-wrap:anywhere}
+/* A narrow PDF title slot cannot carry recovery guidance beside the mode
+   button. Let status text use the capsule width above the unchanged mode hit
+   target. Ordinary and wide controls retain their existing geometry. */
+@container(max-width:360px){
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])){top:auto;bottom:0;transform:none;height:auto;min-height:var(--control-row-height);padding:8px 12px 48px;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-pill-copy{display:block;flex:1 1 100%;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{position:static;inset:auto;transform:none;display:block;-webkit-line-clamp:unset;max-height:none;overflow:visible;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #readpill-title{position:absolute;inset:0;height:100%;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill #modefab{position:absolute;left:12px;bottom:4px;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill.ink-pill-ready #modefab{left:9px;}
+}

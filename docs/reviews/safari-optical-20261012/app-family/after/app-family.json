@@ -1,0 +1,5408 @@
+{
+  "phase": "after",
+  "privateReferencePixelsSeen": false,
+  "platform": "Actual Chromium touch browser; DPR2; not native iOS",
+  "cases": [
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 326,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 308.84375,
+            "y": 788,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "settings",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 334,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 317,
+            "y": 234.828125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 326,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 308.84375,
+            "y": 788,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "word-add",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 314,
+            "y": 290,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 325,
+            "y": 552,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "study-create",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 21,
+            "y": 477.21875,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 325,
+            "y": 477.21875,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "book-info",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 317,
+            "y": 178,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 314,
+            "y": 330,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 319,
+            "y": 73,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(246, 246, 243)",
+            "border": "rgba(255, 255, 255, 0.78)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "scene": "folders",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 262,
+            "y": 134.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 326,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 308.84375,
+            "y": 788,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "settings",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 334,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 317,
+            "y": 234.828125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 326,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 308.84375,
+            "y": 788,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "word-add",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 314,
+            "y": 290,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 325,
+            "y": 552,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "study-create",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 21,
+            "y": 477.21875,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 325,
+            "y": 477.21875,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "book-info",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 317,
+            "y": 178,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 314,
+            "y": 330,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 319,
+            "y": 73,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(41, 42, 43)",
+            "border": "rgba(255, 255, 255, 0.13)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "scene": "folders",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 262,
+            "y": 134.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "home",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 756,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 618,
+            "y": 1124,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "settings",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 764,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 583,
+            "y": 421.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 756,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 618,
+            "y": 1124,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "word-add",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 543,
+            "y": 458,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 685,
+            "y": 446,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "study-create",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 91,
+            "y": 408.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 685,
+            "y": 408.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "book-info",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 583,
+            "y": 344.59375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 543,
+            "y": 498,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 665,
+            "y": 241,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(246, 246, 243)",
+            "border": "rgba(255, 255, 255, 0.78)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "scene": "folders",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 270,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "home",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 756,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 618,
+            "y": 1124,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "settings",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 764,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 583,
+            "y": 421.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 756,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 618,
+            "y": 1124,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "word-add",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 543,
+            "y": 458,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 685,
+            "y": 446,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "study-create",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 91,
+            "y": 408.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 685,
+            "y": 408.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "book-info",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 583,
+            "y": 344.59375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 543,
+            "y": 498,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 665,
+            "y": 241,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(41, 42, 43)",
+            "border": "rgba(255, 255, 255, 0.13)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "scene": "folders",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 270,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "home",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 1116,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 798,
+            "y": 764,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "settings",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 1124,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 763,
+            "y": 241.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 1106,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 798,
+            "y": 764,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "word-add",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 723,
+            "y": 278,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 865,
+            "y": 266,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "study-create",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 271,
+            "y": 228.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 865,
+            "y": 228.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "book-info",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 763,
+            "y": 164.59375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 723,
+            "y": 318,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 845,
+            "y": 61,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(246, 246, 243)",
+            "border": "rgba(255, 255, 255, 0.78)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "scene": "folders",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 380,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "home",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 1116,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 798,
+            "y": 764,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "settings",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 1124,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 763,
+            "y": 241.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 1106,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 798,
+            "y": 764,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "word-add",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 723,
+            "y": 278,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 865,
+            "y": 266,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "study-create",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 271,
+            "y": 228.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 865,
+            "y": 228.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "book-info",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 763,
+            "y": 164.59375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 723,
+            "y": 318,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 845,
+            "y": 61,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(41, 42, 43)",
+            "border": "rgba(255, 255, 255, 0.13)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "scene": "folders",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 380,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "home",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 1376,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 928,
+            "y": 944,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "settings",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 1384,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 893,
+            "y": 331.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 1236,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 928,
+            "y": 944,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "word-add",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 853,
+            "y": 368,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 995,
+            "y": 356,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "study-create",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 401,
+            "y": 318.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 995,
+            "y": 318.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "book-info",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 893,
+            "y": 254.59375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 853,
+            "y": 408,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 975,
+            "y": 151,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(246, 246, 243)",
+            "border": "rgba(255, 255, 255, 0.78)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "scene": "folders",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 510,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "home",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 1376,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 928,
+            "y": 944,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "settings",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 1384,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 893,
+            "y": 331.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 1236,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 928,
+            "y": 944,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "word-add",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 853,
+            "y": 368,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 995,
+            "y": 356,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "study-create",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 401,
+            "y": 318.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 995,
+            "y": 318.609375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "book-info",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 893,
+            "y": 254.59375,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 853,
+            "y": 408,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 975,
+            "y": 151,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(41, 42, 43)",
+            "border": "rgba(255, 255, 255, 0.13)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "scene": "folders",
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 510,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "home",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 780,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 630,
+            "y": 334,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "settings",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 788,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 595,
+            "y": 45.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 780,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 630,
+            "y": 334,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(247, 252, 253, 0.78)",
+            "border": "rgba(255, 255, 255, 0.66)",
+            "radius": "50%",
+            "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "word-add",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 555,
+            "y": 63,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 697,
+            "y": 47,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "study-create",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 103,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 697,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(255, 255, 255)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "book-info",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 595,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(50, 55, 58, 0.06)",
+            "border": "rgba(50, 55, 58, 0.11)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 555,
+            "y": 103,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 677,
+            "y": 27,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(246, 246, 243)",
+            "border": "rgba(255, 255, 255, 0.78)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "light",
+      "scene": "folders",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 270,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(41, 48, 52)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "home",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "nav-settings",
+          "tag": "BUTTON",
+          "label": "설정",
+          "rect": {
+            "x": 780,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": [
+              "3px"
+            ]
+          },
+          "selector": "#nav-settings"
+        },
+        {
+          "id": "home-add",
+          "tag": "BUTTON",
+          "label": "글 또는 책 추가",
+          "rect": {
+            "x": 630,
+            "y": 334,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#home-add"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "settings",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "set-close",
+          "tag": "BUTTON",
+          "label": "설정 닫기",
+          "rect": {
+            "x": 788,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#set-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "add-sheet",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "am-close",
+          "tag": "BUTTON",
+          "label": "추가 창 닫기",
+          "rect": {
+            "x": 595,
+            "y": 45.578125,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#am-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "wordbook",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "btn-export",
+          "tag": "BUTTON",
+          "label": "저장한 단어를 CSV로 내보내기",
+          "rect": {
+            "x": 780,
+            "y": 24,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#btn-export"
+        },
+        {
+          "id": "wordbook-add",
+          "tag": "BUTTON",
+          "label": "단어 추가",
+          "rect": {
+            "x": 630,
+            "y": 334,
+            "width": 48,
+            "height": 48
+          },
+          "material": {
+            "background": "rgba(39, 40, 41, 0.76)",
+            "border": "rgba(255, 255, 255, 0.12)",
+            "radius": "50%",
+            "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "word-add",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "단어 추가 닫기",
+          "rect": {
+            "x": 555,
+            "y": 63,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#wordbook-add-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "study-directory",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 697,
+            "y": 47,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "study-create",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "study-sets-back",
+          "tag": "BUTTON",
+          "label": "뒤로",
+          "rect": {
+            "x": 103,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 32,
+            "height": 32,
+            "stroke": "2.3px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-back"
+        },
+        {
+          "id": "study-sets-close",
+          "tag": "BUTTON",
+          "label": "학습 세트 닫기",
+          "rect": {
+            "x": 697,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(58, 58, 60)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#study-sets-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "book-info",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "ed-close",
+          "tag": "BUTTON",
+          "label": "책 정보 닫기",
+          "rect": {
+            "x": 595,
+            "y": 29,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(255, 255, 255, 0.06)",
+            "border": "rgba(255, 255, 255, 0.08)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#ed-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "task-sheet",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "창 닫기",
+          "rect": {
+            "x": 555,
+            "y": 103,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": "#task-form .task-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "article-preview",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "미리보기 닫기",
+          "rect": {
+            "x": 677,
+            "y": 27,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgb(41, 42, 43)",
+            "border": "rgba(255, 255, 255, 0.13)",
+            "radius": "50%",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".ap-close"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "theme": "dark",
+      "scene": "folders",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "icons": [
+        {
+          "id": "",
+          "tag": "BUTTON",
+          "label": "카테고리 추가",
+          "rect": {
+            "x": 270,
+            "y": 142.390625,
+            "width": 44,
+            "height": 44
+          },
+          "material": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "rgb(241, 241, 238)",
+            "radius": "12px",
+            "shadow": "none"
+          },
+          "icon": {
+            "width": 20,
+            "height": 20,
+            "stroke": "2px",
+            "cap": "round",
+            "join": "round",
+            "cx": 0,
+            "cy": 0,
+            "fill": "none",
+            "dots": []
+          },
+          "selector": ".library-folder-add"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

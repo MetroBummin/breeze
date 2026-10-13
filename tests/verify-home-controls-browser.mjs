@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await chromium.launch();
+const browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 const props=['backgroundColor','backgroundImage','opacity','backdropFilter','webkitBackdropFilter','borderTop','borderRadius','boxShadow','color','padding','display','alignItems','justifyContent'];
 async function capture(page,ids){return page.evaluate(({ids,props})=>ids.map(id=>{const e=document.getElementById(id),s=getComputedStyle(e),p=getComputedStyle(e,'::before'),r=e.getBoundingClientRect();return {rect:{x:r.x,y:r.y,w:r.width,h:r.height},style:Object.fromEntries(props.map(k=>[k,s[k]])),highlight:{background:p.backgroundImage,shadow:p.boxShadow}}}),{ids,props});}
 try{
@@ -62,9 +62,13 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   await page.locator('#am-card .am-step.on h2').click();assert.equal(await page.locator('#add-modal').isVisible(),true,'Tapping the sheet content closed it');
   await page.locator('#add-modal').click({position:{x:4,y:4}});await page.locator('#add-modal').waitFor({state:'hidden'});
   await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-vocab').isVisible(),true);
+  assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'학습하기');
+  assert.equal(await page.locator('.wordbook-brand #btn-export').count(),1);
+  assert.equal(await page.locator('#wordbook-controls #wordbook-add').getAttribute('aria-label'),'단어 추가');
+  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'no additional Memory entry row');
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.mouse.move(0,0);
-  assert.deepEqual(await capture(page,['wordbook-home','wordbook-review','btn-export']),home,`Wordbook/Home mismatch ${width} dark=${dark}`);
+  assert.deepEqual(await capture(page,['wordbook-home','wordbook-review','wordbook-add']),home,`Wordbook/Home mismatch ${width} dark=${dark}`);
   await page.locator('#wordbook-home').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
   await page.mouse.move(0,0);
   assert.equal(await page.locator('#set-lang,#set-dark,[data-panel=general]').count(),0);

@@ -290,6 +290,27 @@ Reader 문장 번역은 단어 확장 필과 같은 중립 유리 재질의 별�
 휴대폰 폭(640px 미만)의 성공 번역 본문은 검토 후 17px에서 16px로 줄였다.
 iPad 등 넓은 화면은 17px를 유지하고 굵기·줄간격 비율·재질·등장 동작은 그대로다.
 
+## 2026-10-12 Safari 광학 비교용 Draft
+
+268 이후의 별도 검토안이다. 48px 행 높이·safe-area 바닥·8px 외부 간격·물성은
+유지한다. PDF/EPUB 두 버튼 그룹은88px이며 두 버튼은 각각44×48px다. 줄어든8px는
+중앙 필에 돌려준다. 뒤로가기 계열은32px SVG frame/2.1 stroke의 둥근 chevron을
+공유하고, 실제 glyph와 터치 영역을 구분한다. 다른 기능의 아이콘을 일괄32px로
+키우지 않는다. 텍스트 모드 전환은24px frame/2.1 stroke의 세 줄 paragraph이며
+기존 원본/텍스트 전환 이름과 동작을 유지한다.
+
+이는 부모가 확인한 비공개 사진의 측정 요구사항이며 Apple의 공개 Safari 규격이
+아니다. 소비자 환경의 Library 전송은 실패하여 원본 픽셀을 직접 보지 못했다.
+자체 전후 렌더링만 확인하며 원본 대조와 최종 시각 검수는 부모가 맡는다. CSS
+backdrop-filter를 네이티브 Liquid Glass와 완전히 동일하다고 판정하지 않는다.
+268 integration/main, 버전·업로드·이전 frozen contract는 보존한다.
+
+PR155 후속 피드백: 공통 outline stroke는2.0, back/mode stroke는2.3으로 조금
+굵게 한다. PDF 페이지 glyph는24px frame으로 키우고32px chevron과 SVG 배율이
+다른 점을 보정하여 실제 선 두께와 세로 잉크 크기를 맞춘다. 두 glyph의 aspect
+ratio와 기능 의미는 유지한다.88×48 그룹·독립44×48 타깃·물성은 그대로이며,
+전체 캡처는 기존 PDF fixture와22px scroll을 고정한다.
+
 2026-10-07 design-only release: approved neutral light/dark Breeze wordmark on
 Home/shelves, selected teal lowercase b app icon and single thin neutral
 bookmark for Memory without a visible Home label. Existing dock geometry,
@@ -303,3 +324,30 @@ its text has a -3.25px optical correction to align visible ink centers with the
 neutral Home wordmark. Manual add uses the existing `.control-glass` material
 in a visible 44px circle with keyboard focus. Dock geometry, review mascots and
 onboarding stay unchanged. See docs/qa/memory-header-20261008.md.
+
+
+## 2026-10-12 next-build app control optics
+
+The approved all-control follow-up supersedes the earlier 2.3-unit back weight.
+Toolbar controls share an actual 2 CSS px outline: 20px/2.4 SVG units,
+32px/1.5 back units and24px/2 page/mode units. Filled ellipsis dots render2px
+in diameter. Small inline controls retain1.4px, disclosures1.2px; these are
+contextual scales, not changes to text fonts or button rectangles. Existing
+selected fill states, diagrams/illustrations, native ink strokes and brand
+artwork keep their meaning and ownership. Drawing-tool control icons use the
+same2px outline independently of the user's drawn ink.
+
+Apple's SF Symbols guidance motivates matching optical weight, scale and
+context; these SVGs remain Breeze's existing drawings. No proprietary icon
+extraction or claim of pixel-identical Safari glyphs is made. Existing private
+Safari reference measurements ground capsule/target proportions only; parent
+owns original-pixel comparison. See the measured before/after evidence in
+`docs/reviews/breeze-193-followup-ui/`.
+
+## Post-270 set-detail optical correction
+
+Only the set-detail ellipsis uses 2.3px filled dots beside the approved Back
+chevron. Its24px SVG frame,44px shell, paired materials and all other icon optics
+remain unchanged. All Words adopts the existing shared vocabulary row scope;
+there is no new word-list design. Study and PDF gesture presentation evidence
+is in `docs/reviews/breeze-post270-gestures/`.

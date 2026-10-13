@@ -40,19 +40,21 @@
   <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=4b7ee83e">
+  <link rel="stylesheet" href="styles/tokens.css?v=7b532ed7">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
-  <link rel="stylesheet" href="styles/home.css?v=020a3e27">
-  <link rel="stylesheet" href="styles/article-preview.css?v=fac52977">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=f4dac3fb">
-  <link rel="stylesheet" href="styles/reader.css?v=f1f2c167">
-  <link rel="stylesheet" href="styles/dictionary.css?v=a07bcc13">
+  <link rel="stylesheet" href="styles/home.css?v=26f7c2fb">
+  <link rel="stylesheet" href="styles/article-preview.css?v=86bd1892">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=552ccfe3">
+  <link rel="stylesheet" href="styles/reader.css?v=5bacd539">
+  <link rel="stylesheet" href="styles/dictionary.css?v=af3e1997">
   <link rel="stylesheet" href="styles/components.css?v=d347f199">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=34962cec">
+  <link rel="stylesheet" href="styles/wordbook.css?v=93aa1460">
+  <link rel="stylesheet" href="styles/study-sets.css?v=95cf0f87">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=7bb723de">
-  <link rel="stylesheet" href="styles/onboarding.css?v=8f315304">
+  <link rel="stylesheet" href="styles/home-shell.css?v=b89eaf89">
+  <link rel="stylesheet" href="styles/onboarding.css?v=17f829a6">
+  <link rel="stylesheet" href="styles/header-controls.css?v=420a42bd">
 
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -72,7 +74,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=114c4fca"></script>
-  <script defer src="scripts/core/state.js?v=8922f8ab"></script>
+  <script defer src="scripts/core/state.js?v=578c2e5c"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
@@ -82,7 +84,7 @@
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=f0e41667"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=7e46e232"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=2e47e0f6"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
   <script defer src="scripts/library/library.js?v=b33b0d4a"></script>
@@ -100,38 +102,44 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=29a24ea8"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=8f07d0f2"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=bdeefbb7"></script>
+  <script defer src="scripts/ui/study-motion.js?v=9b1d7066"></script>
+  <script defer src="scripts/ui/study-example.js?v=c3f22f9a"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=29998569"></script>
   <script defer src="scripts/ui/wordbook.js?v=55ebd609"></script>
+  <script defer src="scripts/core/study-sets.js?v=e4ba4a22"></script>
+  <script defer src="scripts/core/study-sets-storage.js?v=e66657e2"></script>
+  <script defer src="scripts/ui/study-sets.js?v=f10a91d5"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=fc16eb5f"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=fef84714"></script>
+  <script defer src="scripts/reader/pdf-ink-store.js?v=5159b552"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=73b7f3d7"></script>
   <script defer src="scripts/reader/pdf-ocr.js?v=c0e978a9"></script>
   <script defer src="scripts/reader/pdf-ocr-library.js?v=21030a1b"></script>
   <script defer src="scripts/reader/pdf-original.js?v=96ea0898"></script>
   <script defer src="scripts/reader/epub-original.js?v=c5347589"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=7d621203"></script>
-  <script defer src="scripts/reader/reader.js?v=f34596cb"></script>
+  <script defer src="scripts/reader/reader.js?v=60f08292"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
-  <script defer src="scripts/ui/preferences.js?v=f1e9ebd6"></script>
+  <script defer src="scripts/ui/preferences.js?v=605490b3"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/sync.js?v=0485e5de"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=fd95ad2e"></script>
+  <script defer src="scripts/ui/onboarding.js?v=89f4b588"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=6b72e077"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=0c680478"></script>
-  <link rel="stylesheet" href="styles/study.css?v=5c493f55">
-  <link rel="stylesheet" href="styles/surfaces.css?v=8f3e85fe">
+  <link rel="stylesheet" href="styles/study.css?v=da9a7021">
+  <link rel="stylesheet" href="styles/surfaces.css?v=03a845f8">
 </head>
 <body>
 <div id="app">
@@ -239,7 +247,7 @@
             <!-- 지금 모드의 반대쪽을 그립니다: 글자 화면이면 종이, 원본이면 글줄 -->
             <g class="mf-original"><path d="M6.6 3.7h6.9L17.4 7.7v12.6H6.6z"/><path d="M13.5 3.7v4h3.9"/>
               <path d="M9.3 12.1h5.4M9.3 15.1h5.4M9.3 18h3.4"/></g>
-            <g class="mf-text"><path d="M5 6.6h14M5 10.9h14M5 15.1h9.4M5 19.4h11.6"/></g>
+            <g class="mf-text"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></g>
           </svg>
         </button>
         <div id="reader-pill-copy">
@@ -426,9 +434,19 @@
   </div>
 </div>
 
+<!-- ================= MEMORY SETS ================= -->
+<section class="view" id="v-memory" aria-label="Breeze Memory 학습 세트">
+  <header class="memory-home-header"><h1 class="memory-home-wordmark">Breeze Memory</h1></header>
+  <main id="study-sets-home-list" aria-label="학습 세트 목록"></main>
+  <div id="memory-home-controls" class="control-dock"><nav class="control-bar" aria-label="Memory 메뉴">
+    <button class="control-glass control-circle" type="button" id="study-sets-directory-back" aria-label="단어장으로 돌아가기" onclick="closeStudySetsDirectory()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg></button>
+  </nav></div>
+</section>
+
 <!-- ================= VOCAB ================= -->
+<section class="view" id="v-memory-set" aria-label="학습 세트"></section>
 <div class="view" id="v-vocab">
-  <header class="wordbook-brand"><h1 class="memory-wordmark">Breeze Memory</h1><button id="wordbook-add" class="control-glass" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></header>
+  <header class="wordbook-brand"><h1 class="memory-wordmark">Breeze Memory</h1><button id="btn-export" class="control-glass" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button></header>
   <div id="wordbook-review-entry" class="wordbook-review-entry" hidden><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">전체 범위 정규 학습</button></div>
   <label class="wordbook-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
   <div class="wordbook-filters">
@@ -448,8 +466,8 @@
   <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="wordbook-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg></button>
-    <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openVocabularyReview()">단어 카드</button>
-    <button id="btn-export" class="control-glass control-circle" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button>
+    <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openStudySetsDirectory()">학습하기</button>
+    <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
   </nav></div>
 </div>
 <section id="v-study" class="view"><main id="vocabulary-review-page" aria-label="단어 카드">
@@ -458,6 +476,7 @@
   <p id="review-mode" class="review-recall-hint"></p>
   <div id="review-card">
     <p id="review-progress" aria-live="polite"></p>
+    <div id="simple-next-card" aria-hidden="true" hidden></div>
     <div id="review-flip" role="button" tabindex="0" aria-label="카드를 뒤집어 뜻 보기">
       <div id="review-front" class="review-face">
         <p id="review-source"></p>
@@ -478,7 +497,8 @@
       <button id="review-easy" type="button" title="거의 즉시, 확실하게 떠올림"><span>쉬움</span><small id="review-easy-interval"></small></button>
     </div>
   </div>
-  <nav id="simple-word-navigation" aria-label="단어 카드 이동" hidden><button id="simple-word-previous" type="button">이전</button><button id="simple-word-next" type="button">다음</button></nav>
+  <p id="simple-study-hint" aria-live="polite" hidden></p>
+  <nav id="simple-word-navigation" aria-label="이번 세션 학습" hidden><button id="simple-word-previous" type="button" aria-label="마지막 카드 응답 되돌리기">되돌리기</button><button id="simple-word-again" type="button">다시 볼게요</button><button id="simple-word-next" type="button">기억나요</button></nav>
   <section id="review-result" hidden>
     <div id="review-celebration" hidden>
       <div id="review-mascot-scene" hidden><img id="review-stage-mascot" alt="" width="260" height="260" hidden></div>
@@ -684,7 +704,7 @@
 
 <dialog id="article-preview" aria-labelledby="ap-original-title">
   <div class="ap-sheet">
-    <button class="ap-close" type="button" aria-label="미리보기 닫기">✕</button>
+    <button class="ap-close" type="button" aria-label="미리보기 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     <div class="ap-scroll">
       <div class="ap-hero"><img alt="" hidden><div class="ap-art" aria-hidden="true"></div></div>
       <div class="ap-content">

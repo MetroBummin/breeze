@@ -51,7 +51,11 @@ try{
   assert.equal(await page.locator('.wordbook-brand img').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const exportBox=await page.locator('#btn-export').boundingBox();
-  assert.ok(exportBox.x>width*3/4,'Export must remain in the right control slot');
+  const header=await page.locator('.wordbook-brand').boundingBox(),brand=await page.locator('.wordbook-brand h1').boundingBox(),addBox=await page.locator('#wordbook-add').boundingBox();
+  assert.equal(await page.locator('.wordbook-brand #btn-export').count(),1);assert.equal(await page.locator('#wordbook-controls #wordbook-add').count(),1);
+  assert.equal(await page.locator('#btn-export').getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(await page.locator('#wordbook-add').getAttribute('aria-label'),'단어 추가');
+  assert.ok(exportBox.x>=brand.x+brand.width&&exportBox.x+exportBox.width<=header.x+header.width+1&&exportBox.y>=header.y&&exportBox.y+exportBox.height<=header.y+header.height+1,'share stays inside header without overlapping wordmark');
+  assert.ok(addBox.y>header.y+header.height,'add stays in bottom dock');
   for(const button of await page.locator('#wordbook-controls button').all()){
    const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width);
   }

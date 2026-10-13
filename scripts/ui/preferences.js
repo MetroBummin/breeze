@@ -194,10 +194,15 @@ function syncHomeNavigation(){
 let homeResumeTransition=null;
 let homeResumeOpening=false;
 let homeReturnTransition=null;
+let homeReturnReadingOwner=null;
 async function returnHomeFromReader(){
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()) return;
   if(homeReturnTransition) return;
   if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){show('home');return;}
+  // Capture the navigation-time location before the browser suppresses/layouts
+  // the old surface for its transition snapshot. Later saves share this owner.
+  saveReadingState();
+  homeReturnReadingOwner={book:curBook,entry:history.state};
   const root=document.documentElement;
   root.classList.add('home-returning');
   try{
@@ -206,7 +211,7 @@ async function returnHomeFromReader(){
     });
     void homeReturnTransition.ready.catch(()=>{});
     await homeReturnTransition.finished;
-  }finally{root.classList.remove('home-returning');homeReturnTransition=null;}
+  }finally{root.classList.remove('home-returning');homeReturnTransition=null;homeReturnReadingOwner=null;}
 }
 async function resumeHomeBook(button){
   const book=homeResumeBook(),view=activeAppView();

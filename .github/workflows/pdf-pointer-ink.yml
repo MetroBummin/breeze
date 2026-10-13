@@ -32,6 +32,13 @@ jobs:
       - run: node tests/verify-pdf-ink-browser.mjs
         env:
           BREEZE_QA_OUTPUT: /tmp/breeze-pdf-palette
+      - name: Worker and durable fallback in Chromium and WebKit
+        run: |
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine node tests/verify-pdf-ink-store-browser.mjs
+          done
+      - name: Pending and failed saves across close/reopen/background
+        run: node tests/verify-pdf-ink-save-lifecycle-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

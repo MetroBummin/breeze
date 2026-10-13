@@ -33,7 +33,7 @@ try{
       'The patient waited calmly for the doctor.\n\n').repeat(50))});
   await page.waitForFunction(()=>books.some(book=>book.kind==='txt'));
   await page.evaluate(()=>openBook(books.find(book=>book.kind==='txt')));
-  await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
+  await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20&&readerPositionRestoration===null);await page.evaluate(()=>document.fonts.ready);
 
 
 
@@ -70,7 +70,15 @@ try{
   // Under 750ms of continuous visibility remains unseen and can reveal again.
   // Protocol round trips above can exceed that interval on a slow WebKit runner.
   // Set the fixture's visibility age at the same turn that initiates the scroll.
-  await page.evaluate(()=>{wordPeekShownAt=performance.now();readerScroller().scrollTop+=8;});
+  const scrollStart=await page.evaluate(()=>{
+    window.qaArrivalScrollTrace=[];const nativeScroll=wordPeekUserScrolled,nativeClose=closePanel;
+    const state=()=>({key:selKey,life:wordLookupLife,active:wordPeekActive,hadPending:wordPeekHadPending,presentation:wordPeekPresentation,age:wordPeekShownAt===null?null:performance.now()-wordPeekShownAt,visible:!!activeSelectedWordNode&&wordPeekTargetVisible(activeSelectedWordNode),connected:!!activeSelectedWordNode?.isConnected,scroll:readerScroller().scrollTop});
+    wordPeekUserScrolled=function(...args){const before=state(),result=nativeScroll.apply(this,args);qaArrivalScrollTrace.push({kind:'scroll',args,before,after:state()});return result;};
+    closePanel=function(...args){qaArrivalScrollTrace.push({kind:'close',state:state(),stack:new Error().stack});return nativeClose.apply(this,args);};
+    const start=state();if(!start.active||!start.key||!start.visible||!start.connected||!start.hadPending)throw Error('Arrival scroll fixture lost its pending-to-ready precondition: '+JSON.stringify(start));
+    wordPeekShownAt=performance.now();readerScroller().scrollTop+=8;return start;
+  });
+  assert.equal(scrollStart.hadPending,true,'this case tests a genuinely pending answer, not an already saved meaning');
   await page.waitForFunction(()=>document.getElementById('word-peek').hidden);
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false,'reveal repeated arrival bloom');
@@ -210,7 +218,7 @@ try{
   console.log(`${process.env.BROWSER||'chromium'} word recovery + auth deadlines + neutral arrival browser: passed`);
 }catch(error){
   if(page)console.error('word recovery fixture state',await page.evaluate(()=>({
-    selected:selKey,active:wordPeekActive,hidden:document.getElementById('word-peek').hidden,
+    arrivalScrollTrace:window.qaArrivalScrollTrace||[],selected:selKey,active:wordPeekActive,hidden:document.getElementById('word-peek').hidden,
     presentation:wordPeekPresentation,ended:wordPeekPresentationEnded,hadPending:wordPeekHadPending,
     shownAge:wordPeekShownAt===null?null:performance.now()-wordPeekShownAt,
     contextError:currentContext(selKey)?.error||'',loading:!!words[selKey]?.aiLoading,

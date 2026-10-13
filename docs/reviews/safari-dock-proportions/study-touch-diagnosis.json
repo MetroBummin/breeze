@@ -1,0 +1,2182 @@
+{
+  "failed_ci": "https://github.com/MetroBummin/breeze/actions/runs/38154313730/job/114514029770",
+  "failed_head": "d1d8864101f5648d5c76f89d47bed922bbf2873b",
+  "finding": "Original CI timeout remains unexplained; no production fix or flake classification is asserted. Study UI, swipe script and touch test were unchanged from267.",
+  "local_engine": "Chromium151.0.7922.173",
+  "ci_engine": "Chrome Headless Shell153.0.8010.12 / Playwright1243",
+  "checks": [
+    {
+      "kind": "unmodified d1 original full trusted-touch suite",
+      "result": "passed"
+    },
+    {
+      "kind": "immutable267 archived root, original full trusted-touch suite",
+      "result": "passed"
+    },
+    {
+      "kind": "diagnostic run, CPU4x at parked action then remainder",
+      "result": "passed"
+    },
+    {
+      "kind": "final failure-preserving diagnostic suite",
+      "result": "passed"
+    },
+    {
+      "kind": "temporary deliberately impossible count to exercise catch",
+      "result": "expected exit1; touch-failure.json and PNG persisted; temporary probe removed"
+    }
+  ],
+  "actionDiagnostics": [
+    {
+      "stage": "before action",
+      "cardId": "[\"observe\",\"\uad00\ucc30\ud558\ub2e4\"]",
+      "action": {
+        "x": 313.296875,
+        "y": 90,
+        "width": 44.703125,
+        "height": 44,
+        "top": 90,
+        "right": 358,
+        "bottom": 134,
+        "left": 313.296875
+      },
+      "point": {
+        "x": 335.6484375,
+        "y": 112
+      },
+      "hit": "<path d=\"M6 12h12\"></path>",
+      "hitOwned": true,
+      "row": {
+        "x": 20,
+        "y": 80,
+        "width": 350,
+        "height": 65,
+        "top": 80,
+        "right": 370,
+        "bottom": 145,
+        "left": 20
+      },
+      "offset": "matrix(1, 0, 0, 1, -72.7144, 0)",
+      "excludedIds": [],
+      "count": 18,
+      "scroll": 0,
+      "releaseClickId": null,
+      "trace": [
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 15,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": 15,
+          "time": 7179.4000000003725
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 15,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": 15,
+          "time": 7227.4000000003725
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 15,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": 15,
+          "time": 7227.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vko",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 222.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8243.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vko",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 222.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8243.799999998882
+        },
+        {
+          "type": "pointercancel",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 132.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8475.400000000373
+        },
+        {
+          "type": "pointercancel",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 132.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8476.699999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8694.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8694.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9013.199999999255
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9014.299999998882
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9724.199999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9724.199999999255
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10012.799999998882
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10013.400000000373
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10020.799999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "hit": "UL.study-sets-word-list vocabulary-rows",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10021
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10596.699999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10596.799999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10900.199999999255
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10900.900000000373
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10908.299999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "hit": "UL.study-sets-word-list vocabulary-rows",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10908.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 11718.400000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 11718.5
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12017.299999998882
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12018
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12023.400000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "hit": "UL.study-sets-word-list vocabulary-rows",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12023.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13153.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13153.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13191.299999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13191.900000000373
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 80,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13193.400000000373
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 80,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13219.400000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13668.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13668.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13708.400000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13708.599999999627
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 80,
+          "y": 106,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13710
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 80,
+          "y": 106,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13714.299999998882
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14162.299999998882
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14162.299999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14492.400000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14493.199999999255
+        }
+      ],
+      "pointerTrace": [
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointercancel",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        }
+      ],
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36"
+    },
+    {
+      "stage": "after action",
+      "cardId": "[\"evidence\",\"\uc99d\uac70\"]",
+      "action": {
+        "x": 314,
+        "y": 90,
+        "width": 44,
+        "height": 44,
+        "top": 90,
+        "right": 358,
+        "bottom": 134,
+        "left": 314
+      },
+      "point": {
+        "x": 336,
+        "y": 112
+      },
+      "hit": "<button class=\"chip s1\" title=\"\ud074\ub9ad\ud574\uc11c \ubaa8\ub974\ub294 \uc815\ub3c4 \ubc14\uafb8\uae30\" aria-label=\"evidence \ubcc4\uc810 1\uac1c\">\u2605</button>",
+      "hitOwned": false,
+      "row": {
+        "x": 20,
+        "y": 80,
+        "width": 350,
+        "height": 65,
+        "top": 80,
+        "right": 370,
+        "bottom": 145,
+        "left": 20
+      },
+      "offset": "none",
+      "excludedIds": [
+        "[\"observe\",\"\uad00\ucc30\ud558\ub2e4\"]"
+      ],
+      "count": 17,
+      "scroll": 0,
+      "releaseClickId": null,
+      "trace": [
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 15,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": 15,
+          "time": 7179.4000000003725
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 15,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": 15,
+          "time": 7227.4000000003725
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 15,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": 15,
+          "time": 7227.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vko",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 222.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8243.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vko",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 222.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8243.799999998882
+        },
+        {
+          "type": "pointercancel",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 132.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8475.400000000373
+        },
+        {
+          "type": "pointercancel",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row",
+          "hit": "DIV.vko",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 16,
+          "x": 132.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8476.699999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8694.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 8694.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9013.199999999255
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 17,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9014.299999998882
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9724.199999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 9724.199999999255
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10012.799999998882
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10013.400000000373
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10020.799999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "hit": "UL.study-sets-word-list vocabulary-rows",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 19,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10021
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10596.699999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10596.799999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10900.199999999255
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10900.900000000373
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10908.299999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "hit": "UL.study-sets-word-list vocabulary-rows",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 21,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 10908.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 11718.400000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 11718.5
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12017.299999998882
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12018
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "BUTTON.study-sets-button study-sets-row-action",
+          "hit": "HEADER.study-sets-header",
+          "trusted": false,
+          "pointerType": "",
+          "pointerId": -1,
+          "x": 0,
+          "y": 0,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12023.400000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "hit": "UL.study-sets-word-list vocabulary-rows",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 23,
+          "x": 35,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 12023.5
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13153.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13153.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13191.299999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 79.5,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13191.900000000373
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 80,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13193.400000000373
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 27,
+          "x": 80,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13219.400000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13668.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13668.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13708.400000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 79.5,
+          "y": 105.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13708.599999999627
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 80,
+          "y": 106,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13710
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "DIV.vword",
+          "hit": "DIV.vword",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 28,
+          "x": 80,
+          "y": 106,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 13714.299999998882
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14162.299999998882
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "DIV.vrow vrow-numbered",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 305,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14162.299999998882
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "LI.study-sets-word-row study-sets-dragging study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14492.400000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "LI.study-sets-word-row study-sets-revealed",
+          "hit": "DIV.vrow vrow-numbered",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 29,
+          "x": 215,
+          "y": 112.5,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14493.199999999255
+        },
+        {
+          "type": "pointerdown",
+          "phase": "capture",
+          "target": "path.",
+          "hit": "path.",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 30,
+          "x": 335.859375,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14693.900000000373
+        },
+        {
+          "type": "pointerdown",
+          "phase": "bubble",
+          "target": "path.",
+          "hit": "path.",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 30,
+          "x": 335.859375,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14693.900000000373
+        },
+        {
+          "type": "pointerup",
+          "phase": "capture",
+          "target": "path.",
+          "hit": "path.",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 30,
+          "x": 335.859375,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14741.699999999255
+        },
+        {
+          "type": "pointerup",
+          "phase": "bubble",
+          "target": "path.",
+          "hit": "path.",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 30,
+          "x": 335.859375,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14741.799999998882
+        },
+        {
+          "type": "click",
+          "phase": "capture",
+          "target": "path.",
+          "hit": "path.",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 30,
+          "x": 336,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14743.799999998882
+        },
+        {
+          "type": "click",
+          "phase": "bubble",
+          "target": "path.",
+          "hit": "path.",
+          "trusted": true,
+          "pointerType": "touch",
+          "pointerId": 30,
+          "x": 336,
+          "y": 112,
+          "defaultPrevented": false,
+          "releaseClickId": null,
+          "time": 14748.900000000373
+        }
+      ],
+      "pointerTrace": [
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vword",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "vrow vrow-numbered",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointermove",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": "study-sets-word-row study-sets-revealed",
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerdown",
+          "target": {},
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "pointerup",
+          "target": {},
+          "pointerType": "touch",
+          "trusted": true
+        },
+        {
+          "type": "lostpointercapture",
+          "target": {},
+          "pointerType": "touch",
+          "trusted": true
+        }
+      ],
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36"
+    }
+  ],
+  "limits": [
+    "Exact CI browser download returned403 Domain forbidden; no bypass attempted",
+    "Passing locally does not explain original CI failure",
+    "All original assertions and 30-second waits are preserved; no retries added"
+  ]
+}

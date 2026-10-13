@@ -1,6 +1,6 @@
 /* PDF media: OpenStax Writing Guide (2021), p. 14; CC BY 4.0.
    Source and capture changes: docs/qa/onboarding-carousel/pdf-media-credits.md. */
-/* Passive onboarding owns only its overlay and media. The Reader keeps its own state. */
+/* The existing guide owns its overlay, media and passive study demonstration. The Reader keeps its own state. */
 const ONBOARD_KEY='breeze.onboarding.v1';
 const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
 const ONBOARD_WELCOME_KEY='breeze.onboarding.welcome-seen';
@@ -21,9 +21,11 @@ const ONBOARD_PAGES=[
   ['settings','오른쪽 보기 설정을 눌러보세요.','글자 크기와 읽기 화면을 맞춰요.'],
   ['pdf','PDF에서는 필기 모드를 켜보세요.','펜과 형광펜으로 읽으며 표시해요.'],
   ['memory','홈의 북마크 아이콘을 눌러보세요.','Breeze Memory에서 만난 단어를 다시 봐요.'],
+  ['study','한 장씩 가볍게 익혀보세요.','탭으로 뜻을 확인해요. 왼쪽은 다시 볼게요, 오른쪽은 기억나요.'],
 ];
 let onboardingSession=null;
 let onboardingRequest=0;
+function onboardingStudyActive(session=onboardingSession){return session?.pages[session.page-1]?.[0]==='study';}
 // Retained integration hooks: this guide never opens or owns a live Reader.
 function onboardingOwnsReader(){return false;}
 function onboardingAppearanceOpened(){}
@@ -31,7 +33,7 @@ function openOnboardingWord(node,retry=false){}
 function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
 function persistOnboarding(){
-  if(onboardingSession&&!onboardingSession.replay)save(ONBOARD_PROGRESS_KEY,{page:onboardingSession.page});
+  if(onboardingSession&&!onboardingSession.replay){const session=onboardingSession;save(ONBOARD_PROGRESS_KEY,{page:session.page,feature:session.page===0?'welcome':session.page===session.pages.length+1?'finish':session.pages[session.page-1][0]});}
 }
 function finishOnboardingWelcome(){
   const session=onboardingSession;if(!session)return;
@@ -53,6 +55,9 @@ function startOnboardingResolved(replay,pdfAvailable){
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],paused:false,mediaToken:0,pointer:null,
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,importMessage:''};
   session.pages=ONBOARD_PAGES.filter(item=>item[0]!=='pdf'||pdfAvailable);
+  if(!replay&&progress?.feature==='finish')session.page=session.pages.length+1;
+  else if(!replay&&typeof progress?.feature==='string'&&progress.feature!=='welcome'){const index=session.pages.findIndex(p=>p[0]===progress.feature);if(index>=0)session.page=index+1;}
+  else if(!replay&&!progress?.feature&&session.page>=session.pages.length)session.page=session.pages.length+1;
   session.page=Math.min(session.pages.length+1,session.page);
   onboardingSession=session;
   for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
@@ -82,7 +87,12 @@ function startOnboardingResolved(replay,pdfAvailable){
       root.style.setProperty('--welcome-write',write+'ms');
       root.style.setProperty('--welcome-copy-delay',(write+hold)+'ms');
       root.style.setProperty('--welcome-fade',fade+'ms');
-      root.dataset.welcome='drawing';session.welcomeTimer=setTimeout(finishOnboardingWelcome,write+hold+fade);
+      root.dataset.welcome='drawing';
+      // CSS owns writing, hold and caption fade. A wall timer can overtake a
+      // delayed WebKit animation timeline and remove the pen before completion.
+      root.addEventListener('animationend',event=>{
+        if(onboardingSession===session&&root.dataset.welcome==='drawing'&&event.animationName==='onboard-welcome-copy'&&event.target===document.getElementById('onboard-next'))finishOnboardingWelcome();
+      },{signal:session.controller.signal});
     }
   }
   root.addEventListener('click',event=>{
@@ -98,7 +108,7 @@ function startOnboardingResolved(replay,pdfAvailable){
     else goOnboardingPage(session.page+1);
   },{signal});
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
-  document.getElementById('onboard-skip').addEventListener('click',()=>endOnboarding(true),{signal});
+  document.getElementById('onboard-skip').addEventListener('click',()=>{if(onboardingStudyActive(session)){goOnboardingPage(session.page+1);}else endOnboarding(true);},{signal});
   input.addEventListener('change',async()=>{
     const file=input.files[0];input.value='';
     if(!file||session.page!==session.pages.length+1||session.importController)return;
@@ -169,12 +179,13 @@ function goOnboardingPage(page){
 }
 function drawOnboarding(){
   const session=onboardingSession;if(!session)return;
-  const page=session.page,finish=page===session.pages.length+1,root=document.getElementById('onboarding');root.dataset.stage=String(page);root.dataset.finish=String(finish);
+  const page=session.page,finish=page===session.pages.length+1,root=document.getElementById('onboarding');root.dataset.stage=String(page);root.dataset.finish=String(finish);root.dataset.feature=session.pages[page-1]?.[0]||'';
   document.getElementById('onboard-welcome').hidden=page!==0;
   document.getElementById('onboard-carousel').hidden=page===0||finish;
   document.getElementById('onboard-pages').hidden=page===0||finish;
   document.getElementById('onboard-finish').hidden=!finish;
-  document.getElementById('onboard-skip').hidden=!finish;
+  const study=onboardingStudyActive(session);
+  document.getElementById('onboard-skip').hidden=!finish&&!study;
   document.getElementById('onboard-back').hidden=page===0;
   document.getElementById('onboard-step').textContent=finish?'책 넣기':page?`${page} / ${session.pages.length}`:'';
   document.getElementById('onboard-prompt').textContent=finish?'읽고 싶은 책을 넣어보세요.':page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';

@@ -49,6 +49,18 @@ jobs:
             BROWSER=$engine timeout --verbose --kill-after=5s 120s node tests/verify-word-arrival-browser.mjs || status=1
           done
           exit "$status"
+      - name: Repeat-tap cancellation and existing presentation/scroll regressions
+        run: |
+          node tests/verify-word-scroll-idle.mjs
+          node tests/verify-reader-feedback.mjs
+          node tests/verify-sentence-lifecycle.mjs
+          status=0
+          for engine in chromium webkit; do
+            for test in verify-word-repeat-tap-browser verify-word-presentation-browser verify-word-scroll-idle-browser; do
+              BROWSER=$engine timeout --verbose --kill-after=5s 240s node tests/$test.mjs || status=1
+            done
+          done
+          exit "$status"
       - name: Verify the explicitly requested deployed dict runtime
         if: contains(github.event.pull_request.body, '[verify-dict-warm]')
         env:

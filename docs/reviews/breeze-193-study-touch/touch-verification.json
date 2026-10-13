@@ -1,0 +1,505 @@
+{
+  "platform": "Chromium web touchscreen emulation, not native iOS",
+  "checks": "finger-follow/implicit-capture/vertical-scroll/cancel/park/outside-dismiss/deep-swipe/action/immediate-undo/stable-undo-through-collapse/examples/longpress/cancel/menu-dismiss/rename/reload/add-books/direct-import/repeated-import/hidden-exclusion-count/circular-checks/menu-dividers/dedup/exclusions/global-vocabulary/all-words-immutable",
+  "layouts": [
+    {
+      "width": 390,
+      "height": 844,
+      "dark": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "dark": true
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "dark": false
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "dark": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "dark": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "dark": true
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "dark": false
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "dark": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "dark": false
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "dark": true
+    }
+  ],
+  "trace": [
+    {
+      "type": "pointerdown",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointercancel",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed study-sets-swiped",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed study-sets-swiped study-sets-exiting",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vword",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vrow vrow-numbered",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row study-sets-dragging study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row study-sets-revealed",
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerdown",
+      "target": {},
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "pointerup",
+      "target": {},
+      "pointerType": "touch",
+      "trusted": true
+    },
+    {
+      "type": "lostpointercapture",
+      "target": {},
+      "pointerType": "touch",
+      "trusted": true
+    }
+  ],
+  "undoTrace": [
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": true
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerdown",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    },
+    {
+      "type": "pointerup",
+      "trusted": true,
+      "pointerType": "touch",
+      "exiting": false
+    }
+  ],
+  "errors": []
+}

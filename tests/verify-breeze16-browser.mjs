@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -16,10 +16,22 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const qaDir=resolve(tmpdir(),'breeze16-qa');
 mkdirSync(qaDir,{recursive:true});
+// Optical review:88px navigation with independent44px targets,48px settings
+// and balanced8px gaps. Center the pill in the actual available interval.
+function assertPdfDock(nav,pill,settings,width,label){
+ assert.equal(nav.width,88,label+': two44px navigation targets');assert.equal(settings.width,48,label+': settings target');
+ for(const r of [nav,pill,settings])assert.equal(r.height,48,label+': common row height');
+ const gaps=[pill.x-nav.x-nav.width,settings.x-pill.x-pill.width];
+ assert.ok(gaps.every(g=>Math.abs(g-8)<1),label+': balanced8px gaps '+JSON.stringify({nav,pill,settings,gaps}));
+ assert.ok(Math.abs(pill.x+pill.width/2-(nav.x+nav.width+settings.x)/2)<1,label+': pill centers in the interval between navigation and settings');
+ assert.ok(settings.x+settings.width-nav.x<=512.1,label+': bounded centered group');
+ assert.ok(Math.abs((nav.x+settings.x+settings.width)/2-width/2)<1,label+': row is centered');
+}
+
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
- const browser=await engine.launchPersistentContext('',{viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
+ const browser=await engine.launchPersistentContext('',{viewport:{width:820,height:1180},hasTouch:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,serviceWorkers:'block'});
  try{
-  const page=await browser.newPage(),errors=[];
+  const page=await browser.newPage(),errors=[],dockEvidence=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('console',message=>{if(message.text().includes('Original file storage failed'))console.log(message.text());});
   await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
@@ -171,7 +183,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(350);
     const [nav,pill,settings]=await Promise.all(['#reader-navigation','#readpill','#aafab'].map(id=>page.locator(id).boundingBox()));
     assert.ok(nav.x+nav.width+4<=pill.x&&pill.x+pill.width+4<=settings.x,'Combined PDF navigation must not overlap title or settings');
-    assert.ok(Math.abs(pill.x+pill.width/2-width/2-22)<2,'Expanded narrow reading pill keeps the 22px PDF slot offset');
+    assertPdfDock(nav,pill,settings,width,'Expanded reading');
+    dockEvidence.push({mode:'reading',width,nav,pill,settings,centerOffset:pill.x+pill.width/2-width/2});
     await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-reading-dock.png`,clip:{x:0,y:684,width,height:160}});
     await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(350);
     const collapsed=await page.locator('#readpill').boundingBox();
@@ -192,10 +205,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    }).map(n=>({id:n.id||n.getAttribute('aria-label'),x:n.getBoundingClientRect().x,r:n.getBoundingClientRect().right,w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height,y:n.getBoundingClientRect().top,b:n.getBoundingClientRect().bottom})));
    for(const r of rects){assert.ok(r.x>=0&&r.r<=width+1&&r.y>=0&&r.b<=height,`${width}: ${JSON.stringify(r)}`);assert.ok(r.w>=34&&r.h>=34,JSON.stringify(r));}
    const position=await page.locator('#pdf-page-button').boundingBox();
-   assert.ok(position.x<100&&position.y>height-100,'Page button shares the bottom-left exit pill');
+   assert.ok(position.y>height-100,'Page button stays on the bottom row');
    const [inkPill,navPill,aaPill]=await Promise.all(['#readpill','#pdf-page-control','#aafab'].map(id=>page.locator(id).boundingBox()));
    assert.ok(Math.abs(inkPill.y+inkPill.height-navPill.y-navPill.height)<4&&Math.abs(inkPill.y+inkPill.height-aaPill.y-aaPill.height)<4,`${width}: writing pill stays on the bottom row`);
-   assert.ok(Math.abs(inkPill.x+inkPill.width/2-width/2-(width<=650?22:0))<2,`${width}: expanded writing pill follows the narrow PDF slot offset`);
+   assertPdfDock(navPill,inkPill,aaPill,width,'Expanded writing');
+   assert.equal(position.width,44,'Page button preserves its44px target');
+   assert.ok(position.x>=navPill.x&&Math.abs(position.x+position.width-(navPill.x+navPill.width))<.5,'Page button owns the independent right navigation slot');
+   dockEvidence.push({mode:'writing',width,height,dark,nav:navPill,pill:inkPill,settings:aaPill,centerOffset:inkPill.x+inkPill.width/2-width/2});
    assert.ok(navPill.x+navPill.width+4<=inkPill.x&&inkPill.x+inkPill.width+4<=aaPill.x,`${width}: writing pill stays between navigation and settings`);
    if(!dark)await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-writing.png`});
    if(!dark)await page.screenshot({path:`${qaDir}/${engine.name()}-${width}-${height}-dock.png`,clip:{x:0,y:height-160,width,height:160}});
@@ -281,6 +297,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(async()=>{const id=curBook.id;await returnHomeFromReader();positions[id]={...posOf(id),p:1};renderHome();});
   assert.ok(await page.locator('#v-home .library-completion').count()>0,'completed card badge');
   assert.deepEqual(errors,[]);
+  writeFileSync(`${qaDir}/${engine.name()}-dock-geometry.json`,JSON.stringify(dockEvidence,null,2)+'\n');
   console.log(engine.name()+': Breeze 1.6 page navigation/bookmarks/deletion/directions/responsive tools/settings/folders passed');
  }finally{await browser.close();}
 }}finally{server.close();}

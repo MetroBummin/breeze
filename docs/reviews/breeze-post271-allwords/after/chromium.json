@@ -1,0 +1,169 @@
+{
+  "engine": "chromium",
+  "version": "151.0.7922.173",
+  "platform": "Linux browser; no CPU throttle; long examples and multiple meanings; heap is browser JS heap, not native RSS; native termination unverified",
+  "cases": [
+    {
+      "count": 2399,
+      "start": 1609.7999999970198,
+      "renderMs": 72.90000000596046,
+      "layoutMs": 6.399999991059303,
+      "nextPaintMs": 82.70000000298023,
+      "nodes": 210,
+      "height": 147165,
+      "rows": 19,
+      "metrics": {
+        "Nodes": 49231,
+        "LayoutCount": 17,
+        "RecalcStyleCount": 39,
+        "JSHeapUsedSize": 11925560
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 0.8999999910593033,
+            "restoreMs": 1
+          },
+          {
+            "ensureMs": 0.5,
+            "restoreMs": 0.6000000089406967
+          },
+          {
+            "ensureMs": 0.3999999910593033,
+            "restoreMs": 0.6000000089406967
+          },
+          {
+            "ensureMs": 0.5,
+            "restoreMs": 0.5
+          },
+          {
+            "ensureMs": 0.3999999910593033,
+            "restoreMs": 0.5
+          }
+        ],
+        "openMs": 31.299999997019768,
+        "revealMs": 1.5,
+        "againMs": 13.100000008940697,
+        "retainedAllRows": 0,
+        "queue": 2399
+      },
+      "longTasks": [
+        {
+          "start": 1609.2999999970198,
+          "duration": 80
+        }
+      ]
+    },
+    {
+      "count": 6000,
+      "start": 3515.5,
+      "renderMs": 141.5,
+      "layoutMs": 12.400000005960464,
+      "nextPaintMs": 158.20000000298023,
+      "nodes": 210,
+      "height": 345949,
+      "rows": 19,
+      "metrics": {
+        "Nodes": 114344,
+        "LayoutCount": 17,
+        "RecalcStyleCount": 31,
+        "JSHeapUsedSize": 20513908
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 1.7000000029802322,
+            "restoreMs": 2.0999999940395355
+          },
+          {
+            "ensureMs": 1.2999999970197678,
+            "restoreMs": 2.9000000059604645
+          },
+          {
+            "ensureMs": 1.0999999940395355,
+            "restoreMs": 1.2000000029802322
+          },
+          {
+            "ensureMs": 1.0999999940395355,
+            "restoreMs": 1.2000000029802322
+          },
+          {
+            "ensureMs": 1.2000000029802322,
+            "restoreMs": 1.9000000059604645
+          }
+        ],
+        "openMs": 57.79999999701977,
+        "revealMs": 2.5,
+        "againMs": 24.799999997019768,
+        "retainedAllRows": 0,
+        "queue": 6000
+      },
+      "longTasks": [
+        {
+          "start": 3515,
+          "duration": 154
+        }
+      ]
+    },
+    {
+      "count": 12000,
+      "start": 5784.5,
+      "renderMs": 399.19999998807907,
+      "layoutMs": 55.80000001192093,
+      "nextPaintMs": 465.5,
+      "nodes": 210,
+      "height": 691549,
+      "rows": 19,
+      "metrics": {
+        "Nodes": 225919,
+        "LayoutCount": 16,
+        "RecalcStyleCount": 41,
+        "JSHeapUsedSize": 38016176
+      },
+      "session": {
+        "samples": [
+          {
+            "ensureMs": 3.0999999940395355,
+            "restoreMs": 4
+          },
+          {
+            "ensureMs": 2.800000011920929,
+            "restoreMs": 3
+          },
+          {
+            "ensureMs": 2.8999999910593033,
+            "restoreMs": 3.2000000029802322
+          },
+          {
+            "ensureMs": 2.5,
+            "restoreMs": 2.9000000059604645
+          },
+          {
+            "ensureMs": 2.2999999970197678,
+            "restoreMs": 2.8999999910593033
+          }
+        ],
+        "openMs": 148.90000000596046,
+        "revealMs": 6.200000002980232,
+        "againMs": 63.8999999910593,
+        "retainedAllRows": 0,
+        "queue": 12000
+      },
+      "longTasks": [
+        {
+          "start": 5784.0999999940395,
+          "duration": 455
+        },
+        {
+          "start": 6390.29999999702,
+          "duration": 69
+        },
+        {
+          "start": 6462.5,
+          "duration": 70
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,101 @@
+{
+  "reviewedSource": "bf31af5193f5a4332f40c84d2020dc7eccc9bc4f",
+  "reviewedPR": 159,
+  "reviewedCI": {
+    "status": "11 of11 triggered workflows passed",
+    "source": "bf31af5193f5a4332f40c84d2020dc7eccc9bc4f",
+    "checkedUTC": "2026-10-12 16:31:00 UTC",
+    "runs": [
+      {
+        "id": 38273720813,
+        "name": "Social auth draft",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720813"
+      },
+      {
+        "id": 38273720756,
+        "name": "Large All Words and picker scrolling",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720756"
+      },
+      {
+        "id": 38273720625,
+        "name": "Android build",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720625"
+      },
+      {
+        "id": 38273720645,
+        "name": "Onboarding carousel",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720645"
+      },
+      {
+        "id": 38273720661,
+        "name": "PDF pointer ink",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720661"
+      },
+      {
+        "id": 38273720665,
+        "name": "Post270 gesture followup",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720665"
+      },
+      {
+        "id": 38273720408,
+        "name": "Sentence inline feedback",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720408"
+      },
+      {
+        "id": 38273720520,
+        "name": "Sentence responsive success pill",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720520"
+      },
+      {
+        "id": 38273720475,
+        "name": "Design-only brand",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720475"
+      },
+      {
+        "id": 38273720405,
+        "name": "Vocabulary study sets",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720405"
+      },
+      {
+        "id": 38273720529,
+        "name": "Integrity",
+        "conclusion": "success",
+        "url": "https://github.com/MetroBummin/breeze/actions/runs/38273720529"
+      }
+    ],
+    "artifacts": {
+      "allWordsPicker": {
+        "chromium": 11758840008,
+        "webkit": 11758306182
+      },
+      "gesture": {
+        "chromium": 11758960374,
+        "webkit": 11757868235
+      },
+      "expires": "2026-10-26"
+    },
+    "limits": "Only triggered final-source workflows are reported green. The unchanged baseline offline WebKit Blob/FileReader OCR failure remains unwaived and is outside this PR's triggered paths. Physical-device limitations remain."
+  },
+  "packagingChecks": {
+    "releaseAndBootstrapTests": "172 passed",
+    "appAndShareDebugRelease": "1.9.3(272), all4;271/lower rejected",
+    "nativeSyncPackageServiceWorker": "passed",
+    "nativeAssetEquality": "240 files exact across reviewed commit/source/www/iOSpublic",
+    "fullNpmTest": "passed on272 packaging; final source followup changes only browser test/scope guard/review note",
+    "boundary": "passed positive/negative plus exact bf31af5 post271 and every unchanged historical contract",
+    "gestureFixtureLocal": "Chromium study motion, PDF elasticity and120-page pinch at390/768/1180px passed; final WebKit CI114893994495 also passed all gesture checks"
+  },
+  "appleCounterAvailability": "Parent confirmed272 unused at2026-10-12T14:52Z. Before promotion at16:30UTC, remote integration/main remain unchanged and their latest GitHub App | Default statuses are successful with no pending Apple build reported. No fresh direct Apple counter read is available in this executor.",
+  "scope": "Packaging only; exact PR159 product bytes",
+  "release": "User authorized TestFlight272. Single integration fast-forward triggers automatic Xcode Cloud/internal TestFlight; no manual dispatch, main merge or App Store submission."
+}

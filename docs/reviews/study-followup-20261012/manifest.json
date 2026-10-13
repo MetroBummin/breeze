@@ -1,0 +1,141 @@
+{
+  "sourceCommit": "ead088bedfa5c10e49450fc73108f4379ad4cc1a",
+  "engine": "system Chromium151",
+  "capture": "actual browser DOM, not native Simulator or original mockup frames",
+  "sourceDPR": {
+    "creation": 1,
+    "onboarding": 2
+  },
+  "files": [
+    {
+      "path": "creation/ipad-dark.png",
+      "bytes": 105778,
+      "sha256": "ab052ec3e2ec024521b69a8e3320ef01de7aee6a1be5092f26d78264797dc46c"
+    },
+    {
+      "path": "creation/ipad-light.png",
+      "bytes": 102622,
+      "sha256": "0c6f5ad7470906e9435856ed1f029d918a34934ed359742c1262c0822457ed5f"
+    },
+    {
+      "path": "creation/keyboard-dark.png",
+      "bytes": 17482,
+      "sha256": "d27d4d05f4ae412af1a074011aa8dbca4bf1ac4ba0357a0b28f4f59cffa61cc9"
+    },
+    {
+      "path": "creation/keyboard-light.png",
+      "bytes": 18129,
+      "sha256": "fbf807cc074b920bb513e3e819202c20f0fb9e3ffcd145292f6f6ba4d692a8f1"
+    },
+    {
+      "path": "creation/phone-dark.png",
+      "bytes": 37246,
+      "sha256": "3416b2fafeafb0d5f9f66a1517b5a45131af60eb6721b5f1659835eb0547f48b"
+    },
+    {
+      "path": "creation/phone-light.png",
+      "bytes": 37692,
+      "sha256": "05a7ffc20f7a8a7cfa8a6454c6ab08fd137620e3098f4ce584413232f22e8071"
+    },
+    {
+      "path": "creation/short-dark.png",
+      "bytes": 78399,
+      "sha256": "999fe6239b4d8b3904f752a93be59edbd22d154b32ec979351b2863358d6f7a6"
+    },
+    {
+      "path": "creation/short-light.png",
+      "bytes": 81110,
+      "sha256": "4511fa5f7ea98c37513a15ecbd23d428e869ba9a9e46006558132ef9bd6c6613"
+    },
+    {
+      "path": "onboarding/ipad-dark-complete.png",
+      "bytes": 74738,
+      "sha256": "49a8603d08bbb24579bca195f6308c95f14dee4c0610fc1125dd66646f7db404"
+    },
+    {
+      "path": "onboarding/ipad-dark-existing-memory.png",
+      "bytes": 270464,
+      "sha256": "6fdd221fa57ef51d3b872069a8c52e6e44efc272dc7481d082029a3ec047558f"
+    },
+    {
+      "path": "onboarding/ipad-dark-left.png",
+      "bytes": 76716,
+      "sha256": "62f75c801e0f97052e89c67d00a9fc87bd1f903f40c5530d22263f53282e920d"
+    },
+    {
+      "path": "onboarding/ipad-dark-right.png",
+      "bytes": 85117,
+      "sha256": "269f1ba673c619c2acc1c30acdcda18454724d83d2c4d4ecae59f90b23b2a5d9"
+    },
+    {
+      "path": "onboarding/ipad-interactive-study.webm",
+      "bytes": 596338,
+      "sha256": "d72675229689752bf421591ac7ad588d83e3d26d3381c1fb8b77c2b16ff64842"
+    },
+    {
+      "path": "onboarding/ipad-light-complete.png",
+      "bytes": 75978,
+      "sha256": "99af71f80ea6b11c367b558ad0f4ac4b25154e8c47bf435941cb92940801b088"
+    },
+    {
+      "path": "onboarding/ipad-light-existing-memory.png",
+      "bytes": 289013,
+      "sha256": "128f2804f097beb3293747961757eef95400aef13539dfeb7214b5aed3771cf6"
+    },
+    {
+      "path": "onboarding/ipad-light-left.png",
+      "bytes": 68074,
+      "sha256": "e206c4fed02066de8f63a375c4940120630ae512d2764b13358b19a142dcb3a4"
+    },
+    {
+      "path": "onboarding/ipad-light-right.png",
+      "bytes": 76901,
+      "sha256": "0ca3add32913d7a036a0f91a540c9ff1694802715c9671f7566c2eb00ee433dc"
+    },
+    {
+      "path": "onboarding/phone-dark-complete.png",
+      "bytes": 66763,
+      "sha256": "c722c27b362cc4efe7882217a9d94c1ef4f17c3bad30ac9d528367dcf9389bc5"
+    },
+    {
+      "path": "onboarding/phone-dark-existing-memory.png",
+      "bytes": 213170,
+      "sha256": "d633fe20319cad8476e5607bb0bc7552ddec311c291d8095d8f23486247533f3"
+    },
+    {
+      "path": "onboarding/phone-dark-left.png",
+      "bytes": 66729,
+      "sha256": "cccfce4b06898bb01f96ac56b688e50c7acf1e756725d742b2ec6b2ea895c8d5"
+    },
+    {
+      "path": "onboarding/phone-dark-right.png",
+      "bytes": 71666,
+      "sha256": "ec17501729ba644f1f0e6202870db6237d78701bdef07a881a04745777242af3"
+    },
+    {
+      "path": "onboarding/phone-interactive-study.webm",
+      "bytes": 476683,
+      "sha256": "6093c089948de6fc2761338de89d65135387fe2880983afdff6b5c0e4a2d2978"
+    },
+    {
+      "path": "onboarding/phone-light-complete.png",
+      "bytes": 61133,
+      "sha256": "f84d47d1f967d95e7c49b87cb20f9e35460e1ce9dd5a23a81faf4f68e24eb442"
+    },
+    {
+      "path": "onboarding/phone-light-existing-memory.png",
+      "bytes": 215592,
+      "sha256": "ea30e4184afdd5010f48105c60f88290efafbbde013e616b5631727f245b355f"
+    },
+    {
+      "path": "onboarding/phone-light-left.png",
+      "bytes": 56474,
+      "sha256": "a5f803543aa73545a65a8802906280aede74046a7168ca020b30f66b08d56881"
+    },
+    {
+      "path": "onboarding/phone-light-right.png",
+      "bytes": 62777,
+      "sha256": "2ca7cb0e28038f21ba96e885407a6ef1d732bed927fe5b2e6c3735ae932bb82c"
+    }
+  ]
+}

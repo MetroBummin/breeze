@@ -1,0 +1,163 @@
+{
+  "reviewedSource": "b825009a3c97ca593d12bfb9ced7a77372941b3e",
+  "sourceScope": [
+    "Astra quota-safe IDB migration",
+    "stored source examples before reveal",
+    "All Words readonly detail/start/back",
+    "passive light/dark study onboarding",
+    "all-app control optical consistency"
+  ],
+  "checks": {
+    "full npm test": "passed on refreshed270 product source",
+    "typecheck": "passed; unchanged32 baseline",
+    "storage/UI/source examples": "55 passed",
+    "real Chromium quota": "passed5000meanings, exact archives/vocabulary, create/All Words, aborted transaction/retry, relaunch history, pending navigation, duplicate-input and postcommit display retry",
+    "set lifecycle/cold offline": "passed with All Words readonly swipe/10layouts and both-front example assertions",
+    "All Words": "passed empty/one/2400 long-example, grading/history/relaunch/10layouts",
+    "trusted touchscreen": "passed storage/gesture/menu/immediate Undo contracts",
+    "client polish": "passed updated detail/start path, dormant schedule preservation and20layout captures",
+    "passive onboarding": "passed Next/Skip/Back/Escape/replay/interrupt/reduced-motion/isolation10layouts",
+    "onboarding full suite": "passed initialUI; shared media behavior unchanged",
+    "control family": "passed170scenes5viewports/both themes, plus explicit Wordbook Home role on phone/both themes after dock ownership correction",
+    "Reader/guide/writing optics": "passed persistent-profile Chromium phone/iPad/short both themes and actual original byte lengths",
+    "store All Words source captures": "passed12high-resolution front/reveal/drag captures and4.5 contrast",
+    "native counter contracts": "passed App/Share1.9.3(270), existing269/lower rejected",
+    "native sync": "passed239 source/www/iOSpublic byte-matched application files",
+    "real Chromium2400 long-example quota": "passed native quota, exact sources/archives, new set, IDB abort/retry, relaunch, duplicate input and pending navigation",
+    "header shells": "passed phone/iPad/short both themes,44px circles,18px Back/X painted height, exact paired/cross-screen material/press feedback",
+    "Home handoff": "passed browser and controlled deferred viewport-reset/duplicate-save100/50/19%, exact scalar/anchor/durable/Home/shelf equality",
+    "dock material": "passed unmodified Home/Wordbook/Reader exact geometry/material equality at5sizes/both themes; Wordbook Home remains48px dock",
+    "CSV intended paint": "local Chromium12 layouts passed real gradient-stop paint validation; product material unchanged"
+  },
+  "limitations": {
+    "WebKit": "unavailable locally; final exact-head CI required",
+    "reader-refinements unused legacy suite": "same placement assertion null!=below fails on candidate and unchanged269 baseline, retained unwaived; no product lookup fix",
+    "offline Blob/FileReader gate": "known baseline failure retained, not waived",
+    "native": "actual airplane mode,56-page native restart,physical retry and iPad Pencil/palm/playback unverified",
+    "Library": "current prepared batch helper failed before preparation/network; no new IDs",
+    "release": "no archive/upload/dispatch/main merge, parent sole dispatcher"
+  },
+  "CI877c60e": {
+    "WebKit study creation/quota/All Words": "passed",
+    "WebKit app-family runner": "wrong engine because env moved to following step; exact CI-only repair",
+    "Reader header equality/diagnostics": "both engines passed",
+    "OCR offline exception": "same269 NotReadableError both original/fresh local blobs at line209; unwaived"
+  },
+  "CI01a4dd1": {
+    "WebKit durable study creation/quota/session": "passed again",
+    "WebKit capture helper": "keyboard grade raced pending reveal; now awaits existing transaction/exit owner, asserts revealed meaning before grade",
+    "capture after await repair": "Chromium5viewports/both themes passed; final WebKit CI required",
+    "product changes": "none; helper/assertion and exact270 boundary metadata only"
+  },
+  "captureAcknowledgementDiagnostic": {
+    "testOnlyAcknowledgementDelayMs": 70,
+    "unchangedProductCode": true,
+    "oldHelper": {
+      "progress": "1 / 4",
+      "mutating": true,
+      "gradePhases": [
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": true,
+          "revealed": false,
+          "completed": 1
+        }
+      ]
+    },
+    "fixedHelper": {
+      "bothThemesPassed": true,
+      "gradePhases": [
+        {
+          "key": "ArrowRight",
+          "mutating": false,
+          "revealed": true,
+          "completed": 1
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": false,
+          "revealed": true,
+          "completed": 2
+        },
+        {
+          "key": "ArrowRight",
+          "mutating": false,
+          "revealed": true,
+          "completed": 3
+        }
+      ],
+      "allGradesFollowVisibleAnswerAndFinishedMutation": true
+    },
+    "nativeEvidence": false
+  },
+  "CIe4d3385": {
+    "WebKit app-family": "passed",
+    "Home PDF100%-to-0%": "real deferred resampling reproduced; source capture/owner correction awaits final CI",
+    "optics import timeout": "retained import/error diagnostics, persistent-profile setup; final WebKit result and original cause pending"
+  },
+  "CI7301f43": {
+    "native unsigned compile": "passed",
+    "Home reading-card both engines": "passed, including controlled deferred reset and duplicate saves100/50/19% exact anchors",
+    "aggregate contracts/native sync": "passed",
+    "WebKit5000/2400 quota and2400 session": "passed",
+    "Chromium optics/header": "passed",
+    "WebKit capture": "32px real DOM bounds31.999998092651367; exact CSS assertions added with0.0001px readback bound",
+    "CSV design": "element gradient visible; test now checks each painted stop alpha>.85, all geometry/brand/dock checks retained",
+    "offline OCR gate": "same269 NotReadableError original/fresh whileoffline; online works, unwaived",
+    "new final head": "fresh both-engine CI pending"
+  }
+}

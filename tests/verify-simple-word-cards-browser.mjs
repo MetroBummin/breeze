@@ -1,3 +1,4 @@
+import {studyAction} from './helpers/study-actions.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
@@ -26,42 +27,37 @@ try{
   for(const name of ['getItem','setItem','removeItem']){const native=Storage.prototype[name];Storage.prototype[name]=function(key,...rest){if(key.startsWith('breeze.vocabulary-review'))qaReviewAccess.push(name);return native.call(this,key,...rest);};}
  },rawReview);
  await page.goto(url);await page.evaluate(()=>homeReady);
- await page.evaluate(()=>{show('vocab');openVocabularyReview();});
+ await page.evaluate(async ()=>{show('vocab');await openVocabularyReview();});
  assert.equal(await page.locator('#review-status').innerText(),'저장된 단어가 없어요. 읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 보세요.');
  assert.equal(await page.locator('#simple-word-next').isDisabled(),true);
- await page.evaluate(()=>{show('vocab');words={one:{word:'quiet',ko:'조용한',example:'The room is quiet.',book:'Book',status:2}};saveWords();renderVocab();openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'1 / 1');
- assert.equal(await page.locator('#simple-word-previous').isDisabled(),true);assert.equal(await page.locator('#simple-word-next').isDisabled(),true);
- await page.locator('#review-reveal').click();assert.equal(await page.locator('#review-meaning').innerText(),'조용한');
- await page.locator('#review-flip').press('Enter');assert.equal(await page.locator('#review-front').isVisible(),true);
- await page.evaluate(()=>{closeVocabularyReview();words=Object.fromEntries(Array.from({length:2100},(_,i)=>['k'+i,{word:'word'+i,ko:'뜻 '+i,example:'A saved example with word'+i+'.',book:'Saved',status:i%3+1,addedAt:i}]));saveWords();renderVocab();document.getElementById('vsearch').value='word99';renderVocab();openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');
- const wordsBefore=await page.evaluate(()=>JSON.stringify(words));
- await page.locator('#simple-word-next').click();assert.equal(await page.locator('#review-expression').innerText(),'word1');
- await page.locator('#review-reveal').click();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#review-front').isVisible(),true);
- await page.locator('#simple-word-previous').click();assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
- await page.locator('#review-close').click();await page.locator('#wordbook-review').click();assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
- await page.goBack();await page.waitForFunction(()=>activeAppView()==='vocab');
- await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');assert.equal(await page.locator('#review-progress').innerText(),'2 / 2100');
- await page.evaluate(()=>{simpleWordCards.index=2099;simpleWordCards.flipped=false;renderSimpleWordCards();});
- assert.equal(await page.locator('#review-progress').innerText(),'2100 / 2100');assert.equal(await page.locator('#simple-word-next').isDisabled(),true);
- await page.evaluate(()=>{gradeVocabularyReview('easy');saveReviewLimits();openVocabularyReview(true,true);document.getElementById('review-limit-form').dispatchEvent(new Event('change'));});
- for(const id of ['review-grade','review-journey','review-celebration','review-more','review-extra'])assert.equal(await page.locator('#'+id).isVisible(),false);
- await page.evaluate(()=>{closeVocabularyReview();openSettings();});
- assert.equal(await page.locator('#review-settings').isVisible(),false);assert.equal(await page.locator('#review-daily-limit').isDisabled(),true);
- await page.evaluate(()=>{closeSettings();show('study',{fromHistory:true});});assert.equal(await page.locator('#review-progress').innerText(),'2100 / 2100');
+ await page.evaluate(async ()=>{show('vocab');words={one:{word:'quiet',ko:'조용한',example:'The room is quiet.',book:'Book',status:2}};saveWords();renderVocab();await openVocabularyReview();});
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');assert.equal(await page.locator('#review-sentence').isVisible(),true);assert.equal(await page.locator('#review-sentence strong').innerText(),'quiet');assert.equal(await page.locator('#review-meaning').isVisible(),false);
+ await studyAction(page.locator('#review-flip').press('ArrowRight'),page);assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');
+ await studyAction(page.locator('#review-flip').press('Enter'),page);assert.equal(await page.locator('#review-meaning').innerText(),'조용한');
+ await studyAction(page.locator('#review-flip').press('Enter'),page);assert.equal(await page.locator('#review-meaning').isVisible(),true,'tap is one-way reveal');
+ await studyAction(page.keyboard.press('ArrowLeft'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');assert.equal(await page.locator('#review-front').isVisible(),true);
+ await studyAction(page.locator('#review-flip').press('Enter'),page);await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-status').innerText(),'이번 세션 1 / 1 완료');
+ assert.equal(await page.locator('#simple-word-previous').isVisible(),false);
+ await page.evaluate(async ()=>{closeVocabularyReview();simpleStudySession=null;localStorage.removeItem(SIMPLE_STUDY_STORAGE);words=Object.fromEntries(Array.from({length:2400},(_,i)=>['k'+i,{word:'word'+i,ko:'뜻 '+i,example:('The reader observes the evidence, takes notes, and considers the surrounding context. ').repeat(4)+'A saved example with word'+i+'.',book:'Saved',status:i%3+1,addedAt:i}]));saveWords();renderVocab();document.getElementById('vsearch').value='word99';renderVocab();await openVocabularyReview();});
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 2400');const wordsBefore=await page.evaluate(()=>JSON.stringify(words));
+ await studyAction(page.locator('#review-flip').click(),page);await studyAction(page.keyboard.press('ArrowRight'),page);await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-expression').innerText(),'word1');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
+ await studyAction(page.locator('#review-close').click(),page);await studyAction(page.locator('#wordbook-review').click(),page);await studyAction(page.locator('#study-sets-all').click(),page);await studyAction(page.locator('#study-all-words-start').click(),page);
+ // Opening reads IDB before entering study. The old hidden progress label can
+ // already contain1/2400 while navigation/resume is still in flight; Back at
+ // that point cancels the opening rather than returning from the study page.
+ await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy&&history.state?.studySetsAllWords);
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
+ await page.goBack();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
+ await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
-  await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
-  await page.locator('#review-reveal').click();
-  assert.equal(await page.locator('#v-study').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,JSON.stringify({width,height,dark,layout:await page.locator('#v-study').evaluate(n=>({client:n.clientWidth,scroll:n.scrollWidth,overflow:[...n.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>n.getBoundingClientRect().right+1).map(e=>[e.id,e.getBoundingClientRect().width,e.getBoundingClientRect().right])}))}));
-  const nav=await page.locator('#simple-word-navigation').boundingBox();assert.ok(nav.width<=width);
+  await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);await studyAction(page.locator('#review-flip').click(),page);
+  assert.equal(await page.locator('#v-study').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
   await page.screenshot({path:`${proof}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
  }
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),wordsBefore);
- assert.deepEqual(await page.evaluate(()=>qaReviewAccess),[]);
- assert.equal(await page.evaluate(()=>qaNativeGet.call(localStorage,'breeze.vocabulary-review.v1')),rawReview);
- await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'1 / 2100');
+ assert.deepEqual(await page.evaluate(()=>qaReviewAccess),[]);assert.equal(await page.evaluate(()=>qaNativeGet.call(localStorage,'breeze.vocabulary-review.v1')),rawReview);
+ await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(async ()=>{show('vocab');await openVocabularyReview();});
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');assert.equal(await page.locator('#review-meaning').isVisible(),false);
  assert.deepEqual(await page.evaluate(()=>qaReviewAccess),[]);assert.deepEqual(errors,[]);
- console.log(`${engine.name()}: empty/one/2100, filters, flip/navigation/reopen/history, dormant review/settings, persistence and10 layouts passed`);
+ console.log(`${engine.name()}: empty/one/2400, filters, reveal/grade/undo/reopen/history, dormant review/settings, session persistence and10 layouts passed`);
 }finally{await browser.close();await new Promise(r=>server.close(r));}

@@ -1,0 +1,595 @@
+{
+  "phase": "before",
+  "cases": [
+    {
+      "device": "phone",
+      "dark": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 326,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 314,
+        "y": 290,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "dark": true,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 326,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 314,
+        "y": 290,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "dark": false,
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 756,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 543,
+        "y": 458,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "dark": true,
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 756,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 543,
+        "y": 458,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "dark": false,
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1116,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 723,
+        "y": 278,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "dark": true,
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1116,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 723,
+        "y": 278,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "dark": false,
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1376,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 853,
+        "y": 368,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "dark": true,
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 1376,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 853,
+        "y": 368,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": false,
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 780,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(247, 252, 253, 0.78)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 555,
+        "y": 63,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(50, 55, 58, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    },
+    {
+      "device": "short",
+      "dark": true,
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "home": {
+        "settings": {
+          "x": 780,
+          "y": 24,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(39, 40, 41, 0.76)",
+          "border": "1px",
+          "radius": "50%",
+          "text": "\n      \n      설정\n    "
+        },
+        "logo": {
+          "x": 20,
+          "y": 25.75,
+          "width": 132,
+          "height": 40.484375,
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "text": "Breeze"
+        }
+      },
+      "close": {
+        "x": 555,
+        "y": 63,
+        "width": 44,
+        "height": 44,
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px",
+        "radius": "50%",
+        "text": ""
+      },
+      "actions": [
+        {
+          "text": "취소",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        },
+        {
+          "text": "저장",
+          "width": 53.921875,
+          "height": 44,
+          "background": "rgba(255, 255, 255, 0.06)",
+          "border": "1px",
+          "radius": "12px"
+        }
+      ]
+    }
+  ]
+}

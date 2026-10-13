@@ -1,0 +1,57 @@
+name: Post270 gesture followup
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'scripts/ui/study-motion.js'
+      - 'scripts/ui/study-sets.js'
+      - 'scripts/ui/vocabulary-review.js'
+      - 'scripts/reader/pdf-pinch.js'
+      - 'styles/study-sets.css'
+      - 'styles/wordbook.css'
+      - 'tests/verify-study-motion-browser.mjs'
+      - 'tests/capture-study-handoff-browser.mjs'
+      - 'tests/verify-pdf-elastic-motion-browser.mjs'
+      - 'tests/verify-word-pinch-browser.mjs'
+      - 'tests/verify-pdf-pinch-browser.mjs'
+      - 'tests/verify-pdf-pinch-interruption-browser.mjs'
+      - '.github/workflows/gesture-followup.yml'
+permissions:
+  contents: read
+concurrency:
+  group: post270-gestures-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.engine }}
+      BREEZE_QA_ENGINE: ${{ matrix.engine }}
+      BREEZE_MOTION_OUTPUT: /tmp/breeze-motion-proof/${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+        id: browser
+      - run: node tests/verify-study-motion-browser.mjs
+      - run: node tests/capture-study-handoff-browser.mjs
+        if: ${{ !cancelled() && steps.browser.conclusion == 'success' && matrix.engine == 'chromium' }}
+      - run: node tests/verify-pdf-elastic-motion-browser.mjs
+        if: ${{ !cancelled() && steps.browser.conclusion == 'success' }}
+      - run: npm run test:pdf-pinch
+        if: ${{ !cancelled() && steps.browser.conclusion == 'success' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: post270-motion-${{ matrix.engine }}
+          path: /tmp/breeze-motion-proof/${{ matrix.engine }}/
+          if-no-files-found: warn
+          retention-days: 14

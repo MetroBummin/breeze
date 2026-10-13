@@ -1,0 +1,597 @@
+{
+  "status": "Editorial draft for pixel review; not uploaded or final-approved",
+  "uiSourceCommit": "f6d98aa4cf9feb6b859f87a0bfa627c8c0725327",
+  "uiLayers": "Actual source-browser captures uniformly scaled, rounded device-screen mask only; no UI redraw, invented status bar, logo or credentials. No native build was made.",
+  "templateBasis": "User-provided measured approved PNG layout, not an editable original. Font and plain black frame are approximations.",
+  "appleSpecification": "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/",
+  "files": [
+    {
+      "file": "store-ipad-13-dark-drag-remember.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mode": "RGB, no alpha",
+      "source": "ipad-13-dark-drag-remember.png",
+      "sourceSha256": "1ddcedb49b006239272129e2f68f3b6ef5773862450063eb46d75897c995075e",
+      "screenPlacement": [
+        242,
+        524,
+        1579,
+        2105
+      ],
+      "uniformScale": 0.7650193798449613,
+      "aspectRatioError": 0.00015835312747425334,
+      "frame": [
+        193,
+        471,
+        1876,
+        2681
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            223,
+            1321,
+            315
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            355,
+            1321,
+            447
+          ]
+        }
+      ],
+      "sha256": "7af790f272f31874531e3dd26a4d18e5d8e3689dc4e5e1e822071ce78d014d24"
+    },
+    {
+      "file": "store-ipad-13-dark-front.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mode": "RGB, no alpha",
+      "source": "ipad-13-dark-front.png",
+      "sourceSha256": "872dd7bfec146be403ead7094902439603904f7f268dff56da2a5d3111539d8b",
+      "screenPlacement": [
+        242,
+        524,
+        1579,
+        2105
+      ],
+      "uniformScale": 0.7650193798449613,
+      "aspectRatioError": 0.00015835312747425334,
+      "frame": [
+        193,
+        471,
+        1876,
+        2681
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            223,
+            1321,
+            315
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            355,
+            1321,
+            447
+          ]
+        }
+      ],
+      "sha256": "eb1043702783297dea70753cc95e5be96b2beec92d041539d3e4fdfeec35e5c5"
+    },
+    {
+      "file": "store-ipad-13-dark-revealed.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mode": "RGB, no alpha",
+      "source": "ipad-13-dark-revealed.png",
+      "sourceSha256": "33d5bc4d0adb3ef6269dbb1c0f789083ac4b38c3993c97b7bb7e07261b95a616",
+      "screenPlacement": [
+        242,
+        524,
+        1579,
+        2105
+      ],
+      "uniformScale": 0.7650193798449613,
+      "aspectRatioError": 0.00015835312747425334,
+      "frame": [
+        193,
+        471,
+        1876,
+        2681
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            223,
+            1321,
+            315
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            355,
+            1321,
+            447
+          ]
+        }
+      ],
+      "sha256": "d9d12c27b978fca3d4f5b315b5dbb05217cfca3ad9ba5f0a6487ce1d919332a9"
+    },
+    {
+      "file": "store-ipad-13-light-drag-remember.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mode": "RGB, no alpha",
+      "source": "ipad-13-light-drag-remember.png",
+      "sourceSha256": "f7d8e4678141539a93676305215293224c85582b537a8a4e185e0e85f6c4272d",
+      "screenPlacement": [
+        242,
+        524,
+        1579,
+        2105
+      ],
+      "uniformScale": 0.7650193798449613,
+      "aspectRatioError": 0.00015835312747425334,
+      "frame": [
+        193,
+        471,
+        1876,
+        2681
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            223,
+            1321,
+            315
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            355,
+            1321,
+            447
+          ]
+        }
+      ],
+      "sha256": "4f6f4a60d373fc23aca7784e6817c0ef7eff3b4b4024b9cf27895afb0813349c"
+    },
+    {
+      "file": "store-ipad-13-light-front.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mode": "RGB, no alpha",
+      "source": "ipad-13-light-front.png",
+      "sourceSha256": "5029219272d8129b7c509a85965ad9cb4e94a75917ffbb053aeb811922b90b11",
+      "screenPlacement": [
+        242,
+        524,
+        1579,
+        2105
+      ],
+      "uniformScale": 0.7650193798449613,
+      "aspectRatioError": 0.00015835312747425334,
+      "frame": [
+        193,
+        471,
+        1876,
+        2681
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            223,
+            1321,
+            315
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            355,
+            1321,
+            447
+          ]
+        }
+      ],
+      "sha256": "daa74593268021443f42e3a29a9bebbf675a8cb30a2323af1048bd82d0ba8ea2"
+    },
+    {
+      "file": "store-ipad-13-light-revealed.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mode": "RGB, no alpha",
+      "source": "ipad-13-light-revealed.png",
+      "sourceSha256": "fcbd063160322b4917d096af9bc5b23b0ff920d17e6797b91562e2468fb4e06f",
+      "screenPlacement": [
+        242,
+        524,
+        1579,
+        2105
+      ],
+      "uniformScale": 0.7650193798449613,
+      "aspectRatioError": 0.00015835312747425334,
+      "frame": [
+        193,
+        471,
+        1876,
+        2681
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            223,
+            1321,
+            315
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 97,
+          "inkBounds": [
+            742,
+            355,
+            1321,
+            447
+          ]
+        }
+      ],
+      "sha256": "2f91440f9ab296c39bf586688b78a8a3c082cbbeb52530dc14c3e744eef0cbe6"
+    },
+    {
+      "file": "store-iphone-69-dark-drag-remember.png",
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mode": "RGB, no alpha",
+      "source": "iphone-69-dark-drag-remember.png",
+      "sourceSha256": "7045d1b1053f193c4223b2b0b2ab914d9321df8d63b018af7a3517ed04475110",
+      "screenPlacement": [
+        172,
+        656,
+        976,
+        2121
+      ],
+      "uniformScale": 0.7393939393939394,
+      "aspectRatioError": 0.00019716257340018917,
+      "frame": [
+        144,
+        633,
+        1177,
+        2800
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            274,
+            971,
+            373
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            416,
+            971,
+            515
+          ]
+        }
+      ],
+      "sha256": "0035b5f8a9744c2a83e59b1688e72dca28f8cc702afda6df7cfa04c4721f5790"
+    },
+    {
+      "file": "store-iphone-69-dark-front.png",
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mode": "RGB, no alpha",
+      "source": "iphone-69-dark-front.png",
+      "sourceSha256": "9aafd58f2733b2ccf4de735563ee793751a1c57a7fe05b111698cd22c6c7a3f3",
+      "screenPlacement": [
+        172,
+        656,
+        976,
+        2121
+      ],
+      "uniformScale": 0.7393939393939394,
+      "aspectRatioError": 0.00019716257340018917,
+      "frame": [
+        144,
+        633,
+        1177,
+        2800
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            274,
+            971,
+            373
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            416,
+            971,
+            515
+          ]
+        }
+      ],
+      "sha256": "3e430fff8f1589e44ef74e314a442cdc20e574e1cf06650a3349b7fa30e9752f"
+    },
+    {
+      "file": "store-iphone-69-dark-revealed.png",
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mode": "RGB, no alpha",
+      "source": "iphone-69-dark-revealed.png",
+      "sourceSha256": "76ec772d6495b865973837d3aa649649023aba2aeb73d7161048fa4f8c67a94e",
+      "screenPlacement": [
+        172,
+        656,
+        976,
+        2121
+      ],
+      "uniformScale": 0.7393939393939394,
+      "aspectRatioError": 0.00019716257340018917,
+      "frame": [
+        144,
+        633,
+        1177,
+        2800
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            274,
+            971,
+            373
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            416,
+            971,
+            515
+          ]
+        }
+      ],
+      "sha256": "2f89a4759a28ea28d72604caa336c13c1ebd9c711a80f80e04d90746972189e9"
+    },
+    {
+      "file": "store-iphone-69-light-drag-remember.png",
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mode": "RGB, no alpha",
+      "source": "iphone-69-light-drag-remember.png",
+      "sourceSha256": "9e30c4675fb21bf9501522c7efe643e2b86f7b2674d7052bb51e527ad359f200",
+      "screenPlacement": [
+        172,
+        656,
+        976,
+        2121
+      ],
+      "uniformScale": 0.7393939393939394,
+      "aspectRatioError": 0.00019716257340018917,
+      "frame": [
+        144,
+        633,
+        1177,
+        2800
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            274,
+            971,
+            373
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            416,
+            971,
+            515
+          ]
+        }
+      ],
+      "sha256": "3854317889eed4b7c14a45b926f2104774955d6decd067dec8b5d2b6ec4a4360"
+    },
+    {
+      "file": "store-iphone-69-light-front.png",
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mode": "RGB, no alpha",
+      "source": "iphone-69-light-front.png",
+      "sourceSha256": "9ae932ea9ba531911941ce261fb5c7eceabf6e025dbf05774fac84fd8f668ba6",
+      "screenPlacement": [
+        172,
+        656,
+        976,
+        2121
+      ],
+      "uniformScale": 0.7393939393939394,
+      "aspectRatioError": 0.00019716257340018917,
+      "frame": [
+        144,
+        633,
+        1177,
+        2800
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            274,
+            971,
+            373
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            416,
+            971,
+            515
+          ]
+        }
+      ],
+      "sha256": "1ea3e9f9e94375e2633349270ec178e6cb6de43e50c19747e865d4afeac844db"
+    },
+    {
+      "file": "store-iphone-69-light-revealed.png",
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mode": "RGB, no alpha",
+      "source": "iphone-69-light-revealed.png",
+      "sourceSha256": "718390ff396d324b309b1ad503c95b8681374a120b81cafaeb6842a11196ff07",
+      "screenPlacement": [
+        172,
+        656,
+        976,
+        2121
+      ],
+      "uniformScale": 0.7393939393939394,
+      "aspectRatioError": 0.00019716257340018917,
+      "frame": [
+        144,
+        633,
+        1177,
+        2800
+      ],
+      "headline": [
+        {
+          "text": "모아 둔 단어를",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            274,
+            971,
+            373
+          ]
+        },
+        {
+          "text": "한 장씩 익혀요",
+          "font": "Noto Sans CJK KR Bold (editorial approximation)",
+          "fontSize": 104,
+          "inkBounds": [
+            350,
+            416,
+            971,
+            515
+          ]
+        }
+      ],
+      "sha256": "c8f2c7abd67d53efc8c763e3e1f19abe1deaf6b04a74828cfd7e876a80919782"
+    }
+  ]
+}

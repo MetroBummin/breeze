@@ -1,0 +1,140 @@
+name: Vocabulary study sets
+on:
+  pull_request:
+    paths:
+      - 'scripts/core/study-sets*.js'
+      - 'scripts/ui/study-sets.js'
+      - 'scripts/ui/study-example.js'
+      - 'styles/header-controls.css'
+      - 'styles/study-sets.css'
+      - 'styles/wordbook.css'
+      - 'styles/surfaces.css'
+      - 'scripts/ui/vocabulary-review.js'
+      - 'index.html'
+      - 'scripts/core/state.js'
+      - 'scripts/dictionary/dictionary.js'
+      - 'tests/verify-study-sets*.mjs'
+      - 'tests/verify-study-example.mjs'
+      - 'tests/verify-header-controls-browser.mjs'
+      - 'tests/verify-control-optics-browser.mjs'
+      - 'tests/verify-study-create-browser.mjs'
+      - 'tests/verify-simple-study-session.mjs'
+      - 'tests/verify-study-session-swipe-browser.mjs'
+      - 'tests/capture-app-icon-family.mjs'
+      - 'tests/helpers/app-icon-family-scenes.mjs'
+      - 'tests/verify-app-icon-family-scenes.mjs'
+      - 'tests/capture-study-sets-browser.mjs'
+      - '.github/workflows/study-sets.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: study-sets-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --test tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs tests/verify-study-example.mjs tests/verify-simple-study-session.mjs tests/verify-app-icon-family-scenes.mjs
+      - run: npm test
+      - run: npm run www
+      - run: git diff --exit-code -- index.html sw.js
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/capture-study-sets-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-sets-review-${{ matrix.engine }}
+          path: /tmp/breeze-study-sets-proof/ui-set-*.png
+          if-no-files-found: ignore
+          retention-days: 14
+      - run: node tests/verify-study-sets-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-study-create-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-study-quota-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-study-quota-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+          BREEZE_QUOTA_LONG_EXAMPLES: '1'
+      - run: node tests/verify-study-sets-touch-browser.mjs
+        if: matrix.engine == 'chromium'
+      - run: node tests/verify-study-session-swipe-browser.mjs
+        if: matrix.engine == 'chromium'
+      - run: node tests/capture-study-store-sources.mjs
+        if: matrix.engine == 'chromium'
+        env:
+          BREEZE_STORE_CHECK_SIGNATURE: '1'
+          BREEZE_STORE_SOURCE_OUTPUT: /tmp/breeze-signature-set
+      - run: node tests/capture-study-store-sources.mjs
+        if: matrix.engine == 'chromium'
+        env:
+          BREEZE_STORE_CHECK_SIGNATURE: '1'
+          BREEZE_STORE_DOMAIN: all
+          BREEZE_STORE_SOURCE_OUTPUT: /tmp/breeze-signature-all
+      - run: node tests/verify-simple-word-cards-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/capture-app-icon-family.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+          BREEZE_FAMILY_OUTPUT: /tmp/breeze-app-icon-family-${{ matrix.engine }}
+      - run: node tests/verify-header-controls-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-control-optics-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-design-memory-browser.mjs
+        env:
+          BROWSER: ${{ matrix.engine }}
+      - run: node tests/verify-wordbook-browser.mjs
+        if: matrix.engine == 'chromium'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-sets-${{ matrix.engine }}
+          path: |
+            /tmp/breeze-study-sets-proof/
+            /tmp/breeze-study-touch-preview/
+            /tmp/breeze-study-session-proof/
+            /tmp/breeze-app-icon-family-${{ matrix.engine }}/
+            /tmp/breeze-header-controls/
+            /tmp/breeze-control-optics/
+            /tmp/breeze-signature-set/
+            /tmp/breeze-signature-all/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-create-${{ matrix.engine }}
+          path: /tmp/breeze-study-create-proof/
+          if-no-files-found: warn
+          retention-days: 14

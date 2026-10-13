@@ -59,6 +59,18 @@ function checkTrajectory(result,offset){
   assert.ok(rows.some(row=>row.height>34.5&&row.height<43.5),'Capture an intermediate shape');
 }
 
+async function expandedPdfAnchor(page,viewportWidth){
+  const slots=await page.evaluate(()=>{
+    const nav=document.getElementById('reader-navigation').getBoundingClientRect();
+    const settings=document.getElementById('aafab').getBoundingClientRect();
+    return {nav:nav.toJSON(),settings:settings.toJSON()};
+  });
+  assert.equal(slots.nav.width,88,'PDF has two independent44px navigation slots');
+  assert.equal(slots.settings.width,48,'Reader settings keeps its 48px slot');
+  assert.ok(Math.abs((slots.nav.x+slots.settings.right)/2-viewportWidth/2)<.6,'PDF control row stays centered');
+  return (slots.nav.right+slots.settings.x)/2;
+}
+
 try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGINE||e.name()===process.env.BREEZE_QA_ENGINE)){
   const browser=await engine.launchPersistentContext('',{viewport:{width:820,height:1180},hasTouch:true,serviceWorkers:'block'});
   try{
@@ -77,7 +89,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       await page.setViewportSize({width,height});
       await page.evaluate(d=>{darkMode=d;applyDark();readerNotices.reset();pinReaderChrome(true,'motion-test');expandReaderChrome();},dark);
       await page.waitForTimeout(400);
-      const offset=width<=650?22:0;
+      const offset=(await expandedPdfAnchor(page,width))-width/2;
       await page.waitForFunction(center=>{const r=document.getElementById('readpill').getBoundingClientRect();return Math.abs(r.x+r.width/2-center)<.5;},width/2+offset);
       const collapse=await transition(page,true);
       assert.ok(Math.abs(collapse.start.center-width/2-offset)<.5,`Expanded PDF offset at ${width}: ${JSON.stringify(collapse.start)}`);
@@ -125,7 +137,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     assert.equal(await page.locator('.ink-pill-entry').evaluate(e=>getComputedStyle(e).visibility),'hidden');
     await page.evaluate(()=>expandReaderChrome());await page.waitForTimeout(40);
     const expanded=await page.locator('#readpill').boundingBox();
-    assert.ok(Math.abs(expanded.x+expanded.width/2-217)<.5,'Reduced motion reaches 22px immediately');
+    assert.ok(Math.abs(expanded.x+expanded.width/2-await expandedPdfAnchor(page,390))<.5,'Reduced motion reaches the actual free-space anchor immediately');
     assert.deepEqual(errors,[]);
     console.log(`${engine.name()}: synchronized collapse/expand, reversal, writing and reduced motion passed`);
   }finally{await browser.close();}

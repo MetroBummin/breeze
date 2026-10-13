@@ -948,8 +948,10 @@ assert.doesNotMatch(index, /id="ptrack"|id="pfill"/,
   'The title pill should replace the separate progress bar');
 assert.match(readerCss, /#readpill-progress,#home-resume-progress\{[^}]*transform:scaleX\(0\); transform-origin:left center/,
   'The progress fill no longer uses a composited transform inside the title pill');
-assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:calc\(env\(safe-area-inset-bottom\)/,
-  'Reader controls do not clear the bottom safe area');
+assert.match(readerCss, /#readchrome, \.control-bar\{[^}]*bottom:var\(--control-bottom\)/,
+  'Reader controls must use the shared safe-area bottom offset');
+assert.match(readerCss,/--control-bottom:max\(8px,env\(safe-area-inset-bottom\)\)/,
+  'Shared bottom offset must preserve safe-area clearance and desktop breathing room');
 assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
   'Rapid pronunciation taps can leak into browser double-tap zoom');
 assert.doesNotMatch(index,/id="aa-ink-undo(?:-row)?"/,'Writing-only undo preference remains in Reader Aa');
@@ -1043,7 +1045,7 @@ assert.match(readerCss, /#readchrome, \.control-bar\{[\s\S]{0,320}pointer-events
   'The gap between the floating controls swallows touches meant for the page');
 assert.match(readerCss, /#readchrome > \*, \.control-bar > \*\{pointer-events:auto;\}/,
   'The floating controls themselves stopped taking touches');
-assert.match(readerCssRules, /#readback,#aafab, \.control-circle\{[^}]*height:42px/,
+assert.match(readerCssRules, /#readback,#aafab, \.control-circle\{[^}]*height:var\(--control-side-size\)/,
   'The side controls no longer share a common height');
 assert.doesNotMatch(readerScroll, /classList\.add\('scrolling'\)/,
   'The old any-scroll fade is back alongside the direction signal');
@@ -1548,8 +1550,8 @@ assert.match(dictionarySource,
   /async function retryWordPeek\(\)[\s\S]{0,1200}fetchLook\(k,\{\.\.\.input,node:activeSelectedWordNode,[\s\S]{0,80}retry:true,hold:true,life\}\)/,
   'Word retry no longer sends the current sentence through the existing lookup request flow');
 assert.match(readerCss,
-  /\.control-glass\{[\s\S]{0,260}var\(--sentence-glass-line\)[\s\S]{0,260}var\(--sentence-glass-shadow-pill\)/,
-  'Bottom Reader controls no longer use the Lookup glass material tokens');
+  /\.control-glass\{[\s\S]{0,260}var\(--control-line\)[\s\S]{0,260}var\(--control-shadow\)/,
+  'Bottom Reader controls no longer use the approved shared control edge/shadow tokens');
 assert.match(readerCss,
   /\.control-glass\{background:var\(--control-glass-surface\);\s*\n\s*backdrop-filter:blur\(19px\) saturate\(122%\)/,
   'Floating controls no longer share the common glass surface and blur');
@@ -1793,7 +1795,7 @@ assert.match(dictionarySource, /class="vgroup/,
   '단어장의 표제어 묶음이 사라졌습니다');
 /* 접힌 줄에 있는 것은 [단어] [뜻] [★] 셋뿐입니다. 예문·출처·저장일·삭제가 다시
    기본 상태로 올라오면 한 줄이 108px 로 돌아갑니다. */
-assert.match(dictionarySource, /open\?vocabMoreHtml\(w\):''/,
+assert.match(dictionarySource, /open\?vocabMoreHtml\(w,editable\):''/,
   '예문·출처·저장일·삭제가 접힌 줄에도 나옵니다 — 훑는 화면이 다시 길어집니다');
 /* 폭은 clamp 하나로 잡습니다. 고정 px 를 다시 쓰면 좁은 화면이 옆으로 밀립니다. */
 assert.match(vocabCss, /\.vrow\{[^}]*grid-template-columns:minmax\(0,clamp\(/,

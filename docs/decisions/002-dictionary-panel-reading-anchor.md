@@ -11,7 +11,7 @@ Word lookup uses two fixed overlays outside the Reader and original-document zoo
 1. Tapping a word highlights that exact node. An unresolved lookup shows a pale blue glass sheen on the word, not a covering pill.
 2. A confirmed meaning (including a saved/cache hit) or terminal failure reveals the compact pill beside its screen rect without changing Reader geometry.
 3. Its chevron morphs the pill into a near-word detail surface for the same lookup lifetime without starting another AI request.
-4. The anchored surface leaves the Reader undimmed. Outside tap, Escape, and Back use shared cleanup; no redundant collapse button is shown. Unanchored vocabulary detail retains its modal fallback.
+4. The anchored surface leaves the Reader undimmed. Outside tap, selected-token retap, Escape, and Back use shared cleanup; no redundant collapse button is shown. Unanchored vocabulary detail retains its modal fallback.
 
 The pill reserves up to 420px (bounded by 70% of available height) for future detail expansion. It prefers below when that space fits, otherwise above when it fits, otherwise the larger side. It avoids the bottom controls and clamps to the visual viewport. The side is stable throughout asynchronous lookup and exposed as `data-expand-direction`; expanded detail stays on that side, up to 360px wide and 380px tall, with internal scrolling. For a word wrapping across lines, the anchor is the client rect containing the tap, not the union of all lines. EPUB coordinates are translated from the tapped chapter frame. PDF and EPUB scale layers never own the pill or popup.
 
@@ -77,8 +77,11 @@ slightly brighter blue wash (102,170,239 at 24%); light stays at 74,151,235 at 2
 The moving reflection, timing and geometry remain the same. It
 changes no word dimensions, hit boxes, paragraph structure or scroll position.
 Reduced motion has a static tint. A polite off-screen status announces loading
-and completion without exposing a blank/pending popup. Original-format repeat
-hits transfer the cue to their newly created marker without another request.
+and completion without exposing a blank/pending popup. Tapping the exact selected token again ends the lookup through shared cleanup,
+including pending, error and ready states. PDF/OCR and EPUB identify the source
+occurrence rather than their disposable marker; both old and newly created
+markers are removed on cancellation. Same spelling elsewhere is a new target.
+Storage-key changes after recognition do not change source-token identity.
 
 The normal lookup lifetime still owns cancellation. User scroll no longer ends
 a mini lookup: the word cue may move off-screen while the one request

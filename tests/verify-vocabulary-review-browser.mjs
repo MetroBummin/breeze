@@ -57,8 +57,15 @@ async function scenario(name,records,run){
     failures.push(error);console.error(`${engine.name()}: ${name} failed`,error);
   }finally{await context.close();}
 }
+// This suite owns the existing review algorithm and its direct entry contract.
+// The real bottom-pill -> directory -> all-words route and keyboard entry are
+// exercised separately by verify-study-sets-browser.mjs (plus simple cards).
+async function launchLegacyReview(page){
+  await page.locator('#wordbook-review').focus();
+  await page.evaluate(()=>openVocabularyReview());
+}
 async function openReview(page){
-  await page.locator('#wordbook-review').click();
+  await launchLegacyReview(page);
   assert.equal(await page.evaluate(()=>activeAppView()),'study');
   assert.equal(await page.locator('dialog:modal').count(),0,'Study is a page, not a modal');
   assert.equal(await page.locator('#vtablewrap').isVisible(),false,'Background Memory meanings cannot leak through the glass');
@@ -107,7 +114,7 @@ async function closeReview(page,keyboard=false){
 try{
   await scenario('stage flow, hidden answers, durable progress and no mutation',uniqueWords(7),async page=>{
     const before=await persistedWords(page);
-    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'학습 시작');
+    assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'학습하기');
     await openReview(page);await assertHiddenAnswer(page);
     assert.equal((await progress(page)).at(-1),7,'The daily journey retains the whole goal');
     const first=await page.locator('#review-expression').innerText();
@@ -295,7 +302,7 @@ try{
   });
 
   await scenario('keyboard, Escape, Back and Forward navigate study without losing progress',uniqueWords(3),async page=>{
-    await page.locator('#wordbook-review').focus();await page.keyboard.press('Enter');
+    await openReview(page);
     await assertHiddenAnswer(page);
     await page.keyboard.press('Tab');
     assert.equal(await page.locator('#v-vocab').isVisible(),false);
@@ -326,7 +333,7 @@ try{
     tree:fixture('tree',3,{book:'Book B',ko:'나무',status:1})
   },async page=>{
     const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(n=>n.id));
-    assert.deepEqual(dock,['wordbook-home','wordbook-review','btn-export']);
+    assert.deepEqual(dock,['wordbook-home','wordbook-review','wordbook-add']);
     await page.locator('#vbooks summary').click();
     await page.locator('#vbook-options label').filter({hasText:'Book B'}).locator('input').check();
     await page.locator('#vbooks summary').click();
@@ -407,7 +414,7 @@ try{
       await page.locator('#review-close').scrollIntoViewIfNeeded();
       await page.screenshot({path:`${out}/${engine.name()}-complete-${width}x${height}-${dark?'dark':'light'}.png`});
     }
-    await page.locator('#review-close').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
+    await closeReview(page);
   });
 
   await scenario('filters preserve practice and empty scopes never expand',uniqueWords(8),async page=>{
@@ -421,7 +428,7 @@ try{
     assert.deepEqual(saved.progress,{});assert.equal(saved.history[0].kind,'practice');
     await closeReview(page);
     await page.locator('#vsearch').fill('no such saved meaning');
-    assert.equal(await page.locator('#wordbook-review').isDisabled(),true);
+    assert.equal(await page.locator('#wordbook-review').isDisabled(),false,'directory entry remains available even when a vocabulary filter has no matches');
     await page.locator('#vsearch').fill('');
     assert.equal(await page.locator('#wordbook-review').isDisabled(),false);
   });
@@ -495,7 +502,7 @@ try{
       await page.setViewportSize({width,height});await page.evaluate(value=>{darkMode=value;applyDark();},dark);
       await page.evaluate(()=>scrollTo(0,0));
       await page.screenshot({path:`${out}/${engine.name()}-inline-${width}x${height}-${dark?'dark':'light'}.png`});
-      assert.match(await page.locator('#wordbook-review').innerText(),/학습 시작/);
+      assert.match(await page.locator('#wordbook-review').innerText(),/학습하기/);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       await page.evaluate(()=>openSettings());
       const input=page.locator('#review-daily-limit');await input.scrollIntoViewIfNeeded();const r=await input.boundingBox();
@@ -507,7 +514,7 @@ try{
     await page.evaluate(key=>{window.originalReviewSet=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===key)throw new Error('full');return window.originalReviewSet.call(this,k,v);};},REVIEW_KEY);
     await page.evaluate(()=>openSettings());await page.locator('#review-daily-limit').fill('10');await page.locator('#review-daily-limit').press('Tab');
     assert.equal(await page.locator('#review-limit-error').isVisible(),true);assert.equal(await reviewState(page),original);
-    await page.locator('#set-close').click();await page.locator('#wordbook-review').click();
+    await page.locator('#set-close').click();await launchLegacyReview(page);
     assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await reviewState(page),original);
     await page.evaluate(()=>{Storage.prototype.setItem=window.originalReviewSet;});
     await openReview(page);await assertHiddenAnswer(page);assert.equal((await progress(page)).at(-1),8);

@@ -1,0 +1,187 @@
+{
+  "sourceCommit": "f6d98aa4cf9feb6b859f87a0bfa627c8c0725327",
+  "platform": "Actual Chromium151 source renders, trusted touch. Not a native iOS build; no status-bar fabrication.",
+  "captureFiles": [
+    {
+      "name": "iphone-69-light-front.png",
+      "device": "iphone-69",
+      "viewport": {
+        "width": 440,
+        "height": 956,
+        "dpr": 3
+      },
+      "pixels": {
+        "width": 1320,
+        "height": 2868
+      },
+      "scene": "front",
+      "sha256": "9ae932ea9ba531911941ce261fb5c7eceabf6e025dbf05774fac84fd8f668ba6"
+    },
+    {
+      "name": "iphone-69-light-revealed.png",
+      "device": "iphone-69",
+      "viewport": {
+        "width": 440,
+        "height": 956,
+        "dpr": 3
+      },
+      "pixels": {
+        "width": 1320,
+        "height": 2868
+      },
+      "scene": "revealed",
+      "sha256": "718390ff396d324b309b1ad503c95b8681374a120b81cafaeb6842a11196ff07"
+    },
+    {
+      "name": "iphone-69-light-drag-remember.png",
+      "device": "iphone-69",
+      "viewport": {
+        "width": 440,
+        "height": 956,
+        "dpr": 3
+      },
+      "pixels": {
+        "width": 1320,
+        "height": 2868
+      },
+      "scene": "drag-remember",
+      "sha256": "9e30c4675fb21bf9501522c7efe643e2b86f7b2674d7052bb51e527ad359f200"
+    },
+    {
+      "name": "iphone-69-dark-front.png",
+      "device": "iphone-69",
+      "viewport": {
+        "width": 440,
+        "height": 956,
+        "dpr": 3
+      },
+      "pixels": {
+        "width": 1320,
+        "height": 2868
+      },
+      "scene": "front",
+      "sha256": "9aafd58f2733b2ccf4de735563ee793751a1c57a7fe05b111698cd22c6c7a3f3"
+    },
+    {
+      "name": "iphone-69-dark-revealed.png",
+      "device": "iphone-69",
+      "viewport": {
+        "width": 440,
+        "height": 956,
+        "dpr": 3
+      },
+      "pixels": {
+        "width": 1320,
+        "height": 2868
+      },
+      "scene": "revealed",
+      "sha256": "76ec772d6495b865973837d3aa649649023aba2aeb73d7161048fa4f8c67a94e"
+    },
+    {
+      "name": "iphone-69-dark-drag-remember.png",
+      "device": "iphone-69",
+      "viewport": {
+        "width": 440,
+        "height": 956,
+        "dpr": 3
+      },
+      "pixels": {
+        "width": 1320,
+        "height": 2868
+      },
+      "scene": "drag-remember",
+      "sha256": "7045d1b1053f193c4223b2b0b2ab914d9321df8d63b018af7a3517ed04475110"
+    },
+    {
+      "name": "ipad-13-light-front.png",
+      "device": "ipad-13",
+      "viewport": {
+        "width": 1032,
+        "height": 1376,
+        "dpr": 2
+      },
+      "pixels": {
+        "width": 2064,
+        "height": 2752
+      },
+      "scene": "front",
+      "sha256": "5029219272d8129b7c509a85965ad9cb4e94a75917ffbb053aeb811922b90b11"
+    },
+    {
+      "name": "ipad-13-light-revealed.png",
+      "device": "ipad-13",
+      "viewport": {
+        "width": 1032,
+        "height": 1376,
+        "dpr": 2
+      },
+      "pixels": {
+        "width": 2064,
+        "height": 2752
+      },
+      "scene": "revealed",
+      "sha256": "fcbd063160322b4917d096af9bc5b23b0ff920d17e6797b91562e2468fb4e06f"
+    },
+    {
+      "name": "ipad-13-light-drag-remember.png",
+      "device": "ipad-13",
+      "viewport": {
+        "width": 1032,
+        "height": 1376,
+        "dpr": 2
+      },
+      "pixels": {
+        "width": 2064,
+        "height": 2752
+      },
+      "scene": "drag-remember",
+      "sha256": "f7d8e4678141539a93676305215293224c85582b537a8a4e185e0e85f6c4272d"
+    },
+    {
+      "name": "ipad-13-dark-front.png",
+      "device": "ipad-13",
+      "viewport": {
+        "width": 1032,
+        "height": 1376,
+        "dpr": 2
+      },
+      "pixels": {
+        "width": 2064,
+        "height": 2752
+      },
+      "scene": "front",
+      "sha256": "872dd7bfec146be403ead7094902439603904f7f268dff56da2a5d3111539d8b"
+    },
+    {
+      "name": "ipad-13-dark-revealed.png",
+      "device": "ipad-13",
+      "viewport": {
+        "width": 1032,
+        "height": 1376,
+        "dpr": 2
+      },
+      "pixels": {
+        "width": 2064,
+        "height": 2752
+      },
+      "scene": "revealed",
+      "sha256": "33d5bc4d0adb3ef6269dbb1c0f789083ac4b38c3993c97b7bb7e07261b95a616"
+    },
+    {
+      "name": "ipad-13-dark-drag-remember.png",
+      "device": "ipad-13",
+      "viewport": {
+        "width": 1032,
+        "height": 1376,
+        "dpr": 2
+      },
+      "pixels": {
+        "width": 2064,
+        "height": 2752
+      },
+      "scene": "drag-remember",
+      "sha256": "1ddcedb49b006239272129e2f68f3b6ef5773862450063eb46d75897c995075e"
+    }
+  ],
+  "appleSpecification": "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/"
+}

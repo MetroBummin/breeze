@@ -1,0 +1,1973 @@
+{
+  "phase": "before",
+  "sourceRoot": "PR155 first source1da51f48",
+  "platform": "Actual Chromium touch browser renders, DPR2 CSS pixels; mocked tablet capability; not native iOS or Safari",
+  "privateReferencePixelsSeen": false,
+  "cases": [
+    {
+      "device": "phone",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 88,
+        "height": 48,
+        "right": 121.15625,
+        "bottom": 836
+      },
+      "pill": {
+        "x": 129.15625,
+        "y": 788,
+        "width": 171.6875,
+        "height": 48,
+        "right": 300.84375,
+        "bottom": 836
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48,
+        "right": 356.84375,
+        "bottom": 836
+      },
+      "back": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 44,
+        "height": 48,
+        "right": 77.15625,
+        "bottom": 836
+      },
+      "pages": {
+        "x": 77.15625,
+        "y": 788,
+        "width": 44,
+        "height": 48,
+        "right": 121.15625,
+        "bottom": 836
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 88,
+        "height": 48,
+        "right": 121.15625,
+        "bottom": 836
+      },
+      "pill": {
+        "x": 129.15625,
+        "y": 788,
+        "width": 171.6875,
+        "height": 48,
+        "right": 300.84375,
+        "bottom": 836
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 788,
+        "width": 48,
+        "height": 48,
+        "right": 356.84375,
+        "bottom": 836
+      },
+      "back": {
+        "x": 33.15625,
+        "y": 788,
+        "width": 44,
+        "height": 48,
+        "right": 77.15625,
+        "bottom": 836
+      },
+      "pages": {
+        "x": 77.15625,
+        "y": 788,
+        "width": 44,
+        "height": 48,
+        "right": 121.15625,
+        "bottom": 836
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone",
+      "state": "safe-area-34",
+      "method": "Emulation.setSafeAreaInsetsOverride",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 33.15625,
+        "y": 762,
+        "width": 88,
+        "height": 48,
+        "right": 121.15625,
+        "bottom": 810
+      },
+      "pill": {
+        "x": 129.15625,
+        "y": 762,
+        "width": 171.6875,
+        "height": 48,
+        "right": 300.84375,
+        "bottom": 810
+      },
+      "settings": {
+        "x": 308.84375,
+        "y": 762,
+        "width": 48,
+        "height": 48,
+        "right": 356.84375,
+        "bottom": 810
+      },
+      "back": {
+        "x": 33.15625,
+        "y": 762,
+        "width": 44,
+        "height": 48,
+        "right": 77.15625,
+        "bottom": 810
+      },
+      "pages": {
+        "x": 77.15625,
+        "y": 762,
+        "width": 44,
+        "height": 48,
+        "right": 121.15625,
+        "bottom": 810
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 34,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 88,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 250,
+        "y": 1124,
+        "width": 360,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 198,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 198,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "light",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 88,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 250,
+        "y": 1124,
+        "width": 360,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 198,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 198,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "theme": "dark",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-portrait",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 88,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 250,
+        "y": 1124,
+        "width": 360,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 198,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 198,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 88,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 430,
+        "y": 764,
+        "width": 360,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 378,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 378,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 32,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-portrait",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 88,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 250,
+        "y": 1124,
+        "width": 360,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 198,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 198,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 40,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 88,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 430,
+        "y": 764,
+        "width": 360,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 378,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 378,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "light",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 88,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 430,
+        "y": 764,
+        "width": 360,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 378,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 378,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "theme": "dark",
+      "state": "writing-disabled-undo",
+      "width": 44,
+      "height": 44,
+      "opacity": "0.64"
+    },
+    {
+      "device": "ipad-landscape",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 88,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 250,
+        "y": 1124,
+        "width": 360,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 198,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 198,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 32,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 1180,
+        "height": 820,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 334,
+        "y": 764,
+        "width": 88,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "pill": {
+        "x": 430,
+        "y": 764,
+        "width": 360,
+        "height": 48,
+        "right": 790,
+        "bottom": 812
+      },
+      "settings": {
+        "x": 798,
+        "y": 764,
+        "width": 48,
+        "height": 48,
+        "right": 846,
+        "bottom": 812
+      },
+      "back": {
+        "x": 334,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 378,
+        "bottom": 812
+      },
+      "pages": {
+        "x": 378,
+        "y": 764,
+        "width": 44,
+        "height": 48,
+        "right": 422,
+        "bottom": 812
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 44,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "ipad-landscape",
+      "state": "repeated-rotation",
+      "viewport": {
+        "width": 820,
+        "height": 1180,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 154,
+        "y": 1124,
+        "width": 88,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "pill": {
+        "x": 250,
+        "y": 1124,
+        "width": 360,
+        "height": 48,
+        "right": 610,
+        "bottom": 1172
+      },
+      "settings": {
+        "x": 618,
+        "y": 1124,
+        "width": 48,
+        "height": 48,
+        "right": 666,
+        "bottom": 1172
+      },
+      "back": {
+        "x": 154,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 198,
+        "bottom": 1172
+      },
+      "pages": {
+        "x": 198,
+        "y": 1124,
+        "width": 44,
+        "height": 48,
+        "right": 242,
+        "bottom": 1172
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 50,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "narrow",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 88,
+        "height": 48,
+        "right": 115.203125,
+        "bottom": 560
+      },
+      "pill": {
+        "x": 123.203125,
+        "y": 512,
+        "width": 113.59375,
+        "height": 48,
+        "right": 236.796875,
+        "bottom": 560
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 512,
+        "width": 48,
+        "height": 48,
+        "right": 292.796875,
+        "bottom": 560
+      },
+      "back": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 44,
+        "height": 48,
+        "right": 71.203125,
+        "bottom": 560
+      },
+      "pages": {
+        "x": 71.203125,
+        "y": 512,
+        "width": 44,
+        "height": 48,
+        "right": 115.203125,
+        "bottom": 560
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "narrow",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 88,
+        "height": 48,
+        "right": 115.203125,
+        "bottom": 560
+      },
+      "pill": {
+        "x": 123.203125,
+        "y": 512,
+        "width": 113.59375,
+        "height": 48,
+        "right": 236.796875,
+        "bottom": 560
+      },
+      "settings": {
+        "x": 244.796875,
+        "y": 512,
+        "width": 48,
+        "height": 48,
+        "right": 292.796875,
+        "bottom": 560
+      },
+      "back": {
+        "x": 27.203125,
+        "y": 512,
+        "width": 44,
+        "height": 48,
+        "right": 71.203125,
+        "bottom": 560
+      },
+      "pages": {
+        "x": 71.203125,
+        "y": 512,
+        "width": 44,
+        "height": 48,
+        "right": 115.203125,
+        "bottom": 560
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone-landscape",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 166,
+        "y": 334,
+        "width": 88,
+        "height": 48,
+        "right": 254,
+        "bottom": 382
+      },
+      "pill": {
+        "x": 262,
+        "y": 334,
+        "width": 360,
+        "height": 48,
+        "right": 622,
+        "bottom": 382
+      },
+      "settings": {
+        "x": 630,
+        "y": 334,
+        "width": 48,
+        "height": 48,
+        "right": 678,
+        "bottom": 382
+      },
+      "back": {
+        "x": 166,
+        "y": 334,
+        "width": 44,
+        "height": 48,
+        "right": 210,
+        "bottom": 382
+      },
+      "pages": {
+        "x": 210,
+        "y": 334,
+        "width": 44,
+        "height": 48,
+        "right": 254,
+        "bottom": 382
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "phone-landscape",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 166,
+        "y": 334,
+        "width": 88,
+        "height": 48,
+        "right": 254,
+        "bottom": 382
+      },
+      "pill": {
+        "x": 262,
+        "y": 334,
+        "width": 360,
+        "height": 48,
+        "right": 622,
+        "bottom": 382
+      },
+      "settings": {
+        "x": 630,
+        "y": 334,
+        "width": 48,
+        "height": 48,
+        "right": 678,
+        "bottom": 382
+      },
+      "back": {
+        "x": 166,
+        "y": 334,
+        "width": 44,
+        "height": 48,
+        "right": 210,
+        "bottom": 382
+      },
+      "pages": {
+        "x": 210,
+        "y": 334,
+        "width": 44,
+        "height": 48,
+        "right": 254,
+        "bottom": 382
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "state": "reading",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 464,
+        "y": 844,
+        "width": 88,
+        "height": 48,
+        "right": 552,
+        "bottom": 892
+      },
+      "pill": {
+        "x": 560,
+        "y": 844,
+        "width": 360,
+        "height": 48,
+        "right": 920,
+        "bottom": 892
+      },
+      "settings": {
+        "x": 928,
+        "y": 844,
+        "width": 48,
+        "height": 48,
+        "right": 976,
+        "bottom": 892
+      },
+      "back": {
+        "x": 464,
+        "y": 844,
+        "width": 44,
+        "height": 48,
+        "right": 508,
+        "bottom": 892
+      },
+      "pages": {
+        "x": 508,
+        "y": 844,
+        "width": 44,
+        "height": 48,
+        "right": 552,
+        "bottom": 892
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(247, 252, 253, 0.78)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.66)",
+        "shadow": "rgba(30, 64, 76, 0.09) 0px 3px 12px 0px, rgba(30, 64, 76, 0.06) 0px 1px 3px 0px, rgba(255, 255, 255, 0.66) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "state": "reading",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 2
+      },
+      "nav": {
+        "x": 464,
+        "y": 844,
+        "width": 88,
+        "height": 48,
+        "right": 552,
+        "bottom": 892
+      },
+      "pill": {
+        "x": 560,
+        "y": 844,
+        "width": 360,
+        "height": 48,
+        "right": 920,
+        "bottom": 892
+      },
+      "settings": {
+        "x": 928,
+        "y": 844,
+        "width": 48,
+        "height": 48,
+        "right": 976,
+        "bottom": 892
+      },
+      "back": {
+        "x": 464,
+        "y": 844,
+        "width": 44,
+        "height": 48,
+        "right": 508,
+        "bottom": 892
+      },
+      "pages": {
+        "x": 508,
+        "y": 844,
+        "width": 44,
+        "height": 48,
+        "right": 552,
+        "bottom": 892
+      },
+      "gaps": [
+        8,
+        8
+      ],
+      "bottom": 8,
+      "backIcon": {
+        "width": 32,
+        "height": 32,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 19.333334096272786,
+        "effectiveStroke": 2.8
+      },
+      "pageIcon": {
+        "width": 20,
+        "height": 20,
+        "stroke": "1.8px",
+        "cap": "round",
+        "paintedHeight": 15.666666666666668,
+        "effectiveStroke": 1.5
+      },
+      "modeIcon": {
+        "width": 24,
+        "height": 24,
+        "stroke": "2.1px",
+        "cap": "round",
+        "paintedHeight": 15.379999732971191,
+        "effectiveStroke": 2.1
+      },
+      "textPath": "M4 6.5h16M4 12h16M4 17.5h10",
+      "scroll": 22,
+      "material": {
+        "background": "rgba(39, 40, 41, 0.76)",
+        "image": "none",
+        "line": "rgba(255, 255, 255, 0.12)",
+        "shadow": "rgba(0, 0, 0, 0.18) 0px 3px 12px 0px, rgba(255, 255, 255, 0.08) 0px 1px 0px 0px inset",
+        "filter": "blur(19px) saturate(1.22)",
+        "radius": "24px"
+      },
+      "seamOverlap": 0,
+      "hitOwners": [
+        [
+          "readback",
+          "readback",
+          "readback"
+        ],
+        [
+          "pdf-page-button",
+          "pdf-page-button",
+          "pdf-page-button"
+        ]
+      ]
+    }
+  ],
+  "errors": []
+}

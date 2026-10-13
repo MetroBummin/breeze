@@ -265,3 +265,16 @@ explicitly inserts its engine scripts; OFF tests still exercise the real page.
 No saved Meaning, review history, branded alternative or experimental source is
 deleted. `verify-native-package.mjs` checks source retention, exclusion, and all
 entry dependencies after the actual package build.
+
+## Simple all-word session recall (PR155, pending final review)
+
+All-word cards now use the same tap/reveal, left repeat/right remember contract
+as set study. Their separate `breeze.simple-study-session.v1` stores a frozen
+initial inventory, pending queue, passed cards and reversible response history.
+Repeat earns no progress; only distinct remembered cards count toward this
+session. Duplicate tokens are rejected and the last card can repeat indefinitely.
+Exit/history/reload preserve progress and conceal the answer; a fresh completed
+session includes passed cards again. No Meaning, star, sync, dormant review
+record or FSRS schedule is changed. Corrupt session storage cannot be overwritten
+by grading. The large central card, direction hint, hidden assistive actions and
+visible Undo share the set-study interaction; browser evidence is not native QA.

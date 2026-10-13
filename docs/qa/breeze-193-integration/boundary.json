@@ -1,0 +1,595 @@
+{
+  "schemaVersion": 1,
+  "version": "1.9.3",
+  "base": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+  "owners": [
+    {
+      "pr": 149,
+      "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415",
+      "files": [
+        ".github/workflows/study-sets.yml",
+        "docs/decisions/023-vocabulary-study-sets.md",
+        "docs/qa/vocabulary-study-sets-20261011.md",
+        "index.html",
+        "package.json",
+        "scripts/core/state.js",
+        "scripts/core/study-sets-storage.js",
+        "scripts/core/study-sets.js",
+        "scripts/dictionary/dictionary.js",
+        "scripts/ui/study-sets.js",
+        "scripts/ui/vocabulary-review.js",
+        "styles/study-sets.css",
+        "styles/surfaces.css",
+        "styles/wordbook.css",
+        "sw.js",
+        "tests/capture-study-sets-browser.mjs",
+        "tests/verify-client-polish-browser.mjs",
+        "tests/verify-design-memory-browser.mjs",
+        "tests/verify-home-controls-browser.mjs",
+        "tests/verify-simple-word-cards-browser.mjs",
+        "tests/verify-structure.mjs",
+        "tests/verify-study-sets-browser.mjs",
+        "tests/verify-study-sets-storage.mjs",
+        "tests/verify-study-sets-ui.mjs",
+        "tests/verify-study-sets.mjs",
+        "tests/verify-vocabulary-review-browser.mjs",
+        "tests/verify-wordbook-browser.mjs"
+      ]
+    },
+    {
+      "pr": 150,
+      "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23",
+      "files": [
+        ".github/workflows/word-retry-recovery.yml",
+        "docs/decisions/002-dictionary-panel-reading-anchor.md",
+        "docs/decisions/011-word-lookup-recovery.md",
+        "index.html",
+        "scripts/dictionary/dictionary.js",
+        "sw.js",
+        "tests/verify-word-lifecycle.mjs",
+        "tests/verify-word-presentation-browser.mjs",
+        "tests/verify-word-repeat-tap-browser.mjs",
+        "tests/verify-word-scroll-idle-browser.mjs"
+      ]
+    },
+    {
+      "pr": 151,
+      "source": "990cb810452eb80f4e819411233ca439e1f8ddaa",
+      "files": [
+        ".github/workflows/text-rotation.yml",
+        "docs/decisions/023-text-rotation-source-anchor.md",
+        "index.html",
+        "package.json",
+        "scripts/core/state.js",
+        "scripts/reader/reader.js",
+        "sw.js",
+        "tests/helpers/text-rotation-source.mjs",
+        "tests/verify-text-rotation-browser.mjs",
+        "tests/verify-text-rotation.mjs"
+      ]
+    }
+  ],
+  "files": {
+    ".github/workflows/study-sets.yml": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "babc77447179ba2efd9e71c9572c668b48d4f6cd3b1bc197bdae09312a424f60"
+    },
+    "docs/decisions/023-vocabulary-study-sets.md": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "3fcb638ad36b1ee65a96012cff49705f77c595c5ee161da3d4dce2e3e15e1797"
+    },
+    "docs/qa/vocabulary-study-sets-20261011.md": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "cefd0e6873f392bded216301b7a88b62b3bb5533d8f01a117b5b1bfcf4e28e25"
+    },
+    "index.html": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        },
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        },
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "first semantic owner; later owners change stamps only",
+      "sha256": "a36ab7dc2c6a8abbdc494a03587b6e7e926e4e00849a64f8ee18109b9b7ef873"
+    },
+    "package.json": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        },
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "PR149 test prefix plus exact PR151 rotation-test insertion",
+      "sha256": "42f6b82159b9ba5d7a69dc6fb02fd74488d50780971e7c286a5a292c6024af0b"
+    },
+    "scripts/core/state.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        },
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "conflict-free git three-way merge against immutable base",
+      "sha256": "0b2f0c246bc2743c378b5458accf5afce40e65e3240d4c9c009ccd726775bc48"
+    },
+    "scripts/core/study-sets-storage.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "5f1f03f46de6e7d15f99831f4bfd1b0a91ddc6aee93882d4e0e6559ccd847e66"
+    },
+    "scripts/core/study-sets.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "90ae64bdf72f5cc8e9acae33619e0e7583f6eb212c782de9d67dff60f2e842ad"
+    },
+    "scripts/dictionary/dictionary.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        },
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "conflict-free git three-way merge against immutable base",
+      "sha256": "8f07d0f21af3e7b1866b8361e78ef5d3b94edc2419077250b0001bc194890f76"
+    },
+    "scripts/ui/study-sets.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "7f80bb34ec2d2f4b12e700d6afef96471b510ff2591c56510a8a3e9af581dd8d"
+    },
+    "scripts/ui/vocabulary-review.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "6d6fb3140a0ee63177a1c7f918c83baa5e5dafae84d3470b4549609a2fe14465"
+    },
+    "styles/study-sets.css": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "fb30af1e094830a8d6c19cd31fb8d6c24c548495eaaffb29668f19f10645107c"
+    },
+    "styles/surfaces.css": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "e08f3de644c14f9fe796821465b346905b4ba6b2e6fa31c10c45a5d51a72c5c8"
+    },
+    "styles/wordbook.css": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "066d4a58e9458908af79044b37e4a80e5b3a90beb37f412fc5fb9446194daa82"
+    },
+    "sw.js": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        },
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        },
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "f0dc7297d000c1433a13b70fe4039f1c822c65907a4532fec38840f5c0604b4b"
+    },
+    "tests/capture-study-sets-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "9d62764efdf18e7d46823f0d2bcf9e4816a2b61ec217dce4501f4b8f3ae718b8"
+    },
+    "tests/verify-client-polish-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "18f71816cd3f3fc68d9f1dd6180c09f45ff30f0d048507e2723b4d7bd7c54715"
+    },
+    "tests/verify-design-memory-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "00a17ad1bb3237228b7dda9e2ff780401b1762a183ea8eae0207d66b1d5696a6"
+    },
+    "tests/verify-home-controls-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "f8d40fae31b6be635cb2ab09a4617c2a3cda4109889640c5614d0ae2e152f693"
+    },
+    "tests/verify-simple-word-cards-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "2fefa8d5c6baad09f9f8ec348ae3b79e1a42fd655d6289e9fb8c911f9513c92c"
+    },
+    "tests/verify-structure.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "394e82df9da2650ff43e7d85c8b8eb7750b120f8bb49dc9cca748188c4276fa4"
+    },
+    "tests/verify-study-sets-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "4d8315504266f7e4d9ebee6f22c7b8343d4e989b5b521e052e257b0706584edc"
+    },
+    "tests/verify-study-sets-storage.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "fe0782eff89bc1dcb9005221abbda52755a95a3acd3eb46ad9be2d55000204e9"
+    },
+    "tests/verify-study-sets-ui.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "e84e1ad124269d62d1d7220bdea9476197d6164bbcef0737a1d57da1f0fc5736"
+    },
+    "tests/verify-study-sets.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "6b585bff723171f5a172b403fd49f5b3f5387609d5cdaa4c0b8518cc85c31dda"
+    },
+    "tests/verify-vocabulary-review-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "ff3d83d50bf81adf4a4dc02c3169b6dfee698b2127578bec441b0fb7948a6989"
+    },
+    "tests/verify-wordbook-browser.mjs": {
+      "sources": [
+        {
+          "pr": 149,
+          "source": "aebbad7446a5b85a794a632cfa8f5b39cd972415"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "3dab11aadff8c86439f77eb8347c2f03263c7bf55c30de7e4a6d4c7d1524961f"
+    },
+    ".github/workflows/word-retry-recovery.yml": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "327af58109e74def698a18651cf890f11ad5dfbbaba4f0a2fd7332cd0aea9eea"
+    },
+    "docs/decisions/002-dictionary-panel-reading-anchor.md": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "d35dc190381984181b9afab5f3ca6e38a6c22ff1210f240091d2bc3140a6adf1"
+    },
+    "docs/decisions/011-word-lookup-recovery.md": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "8c50e89ab6483e7127aa93e0d87e9512e3176c970d72a8ada52ca584d246faf1"
+    },
+    "tests/verify-word-lifecycle.mjs": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "16c4137c37dd3a08633252a8b1d038ca5a322769dc8e94510e2893bab514ed91"
+    },
+    "tests/verify-word-presentation-browser.mjs": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "46d052d3a61b38a49f48bded6ca8c85c61691ac7a5b62cb5ecb4106a11fddc4a"
+    },
+    "tests/verify-word-repeat-tap-browser.mjs": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "63b2029a5e42f033eadc8a19add8698b7d8cedf983ef0e9e410138558848335d"
+    },
+    "tests/verify-word-scroll-idle-browser.mjs": {
+      "sources": [
+        {
+          "pr": 150,
+          "source": "fc8a94d20f6f4009ed89998c2627aef91c72dc23"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "c80482940affc2ab944dc2dffbaaad1bb6ea1ab6e5908f6e4f651968c39333fb"
+    },
+    ".github/workflows/text-rotation.yml": {
+      "sources": [
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "841a210affc3a7cee2e0389c26fd36e77c7295be4573ab46d40584d125b1f75e"
+    },
+    "docs/decisions/023-text-rotation-source-anchor.md": {
+      "sources": [
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "6ec72145a45d7b1301abcab9ac060da34bbcbdae5bbdb031d96a511bba08241f"
+    },
+    "scripts/reader/reader.js": {
+      "sources": [
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "60f08292b45dbc83e244a5052bd3f2c38d5ed8d7414365f14f71404b96ab3857"
+    },
+    "tests/helpers/text-rotation-source.mjs": {
+      "sources": [
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "444bd819867e58db513e107ef2c9fea790e5890aaae28ed82d16495e494bef36"
+    },
+    "tests/verify-text-rotation-browser.mjs": {
+      "sources": [
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "bd235618ecdc731d690fd6cc70ec4311bc19093fa14f33b2a740090d25ded137"
+    },
+    "tests/verify-text-rotation.mjs": {
+      "sources": [
+        {
+          "pr": 151,
+          "source": "990cb810452eb80f4e819411233ca439e1f8ddaa"
+        }
+      ],
+      "mode": "100644",
+      "method": "exact owner bytes",
+      "sha256": "4d79b13298d09b737cf2f16c787a305565dae4d8fe6b0e636b49819b7370ff02"
+    },
+    "ios/App/App.xcodeproj/project.pbxproj": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "e762c1db8ae1b0170e7347f37edd2e118e454e804f6b6894ff4efb607466644d"
+    },
+    "tools/verify-ios-release.mjs": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "6688fcc8aca616ca0e421a8b974fba9f66b4faad52b97662ee1146fc6c80ea71"
+    },
+    "tests/verify-ios-cloud-build.mjs": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "580aedb97048cffb3c71c77a8f2d4e687be3d1a4f9dfe6597f011399c747617e"
+    },
+    "tools/ios-testflight.sh": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "exact 1.9.3/build266 release delta and released-build265 floor with counter/drift tests",
+      "sha256": "f7016fbe771ce4b30dd28093e0f56f435d369cfb75174ee7a880468130f8af73"
+    },
+    ".github/workflows/design-brand.yml": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "select new 1.9.3 verifier; historical 1.9.2 verifier remains unchanged",
+      "sha256": "64a71ef93fdd3ad8fa4a627fd8d9e0bcec9d42020aacbd1cca2234a8786387ef"
+    },
+    ".github/workflows/social-auth.yml": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "select new 1.9.3 verifier; historical 1.9.2 verifier remains unchanged",
+      "sha256": "f3df2377192a4355a827aa16938b227dbc55e821ebca0149edc8fdb54fc4b71d"
+    },
+    ".github/workflows/integrity.yml": {
+      "source": "8512e8fd25e51d6aa06cf926bad165d5c3994865",
+      "mode": "100644",
+      "method": "select new 1.9.3 verifier; historical 1.9.2 verifier remains unchanged",
+      "sha256": "ba68069568a544c896a94f3e0c18117f681c2b9c566bd0be5034582f65145079"
+    }
+  },
+  "integrationFiles": [
+    "docs/qa/breeze-193-integration/boundary.json",
+    "tools/record-193-integration-boundary.mjs",
+    "tests/verify-193-integration-boundary.mjs",
+    "docs/decisions/024-breeze-193-integration.md"
+  ],
+  "integrationSha256": {
+    "tools/record-193-integration-boundary.mjs": "00ea5cc61a7ad1c1517965c039a23753482222905e575ab89a216d359e06db9a",
+    "tests/verify-193-integration-boundary.mjs": "bed797a51f0fe8f23bfb5c716bca233211e7baaa46ef54581046274ef96dcf5f",
+    "docs/decisions/024-breeze-193-integration.md": "1945be5e7cbe38679184154b021aacc4711123d2922a2c1841a672771c6144ed"
+  }
+}

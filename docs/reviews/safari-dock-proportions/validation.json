@@ -1,0 +1,62 @@
+{
+  "baseline": "b508ca66c436ebf551ec01ef11037e8e3dfec262",
+  "base_267": "e2c02c7e00ba4d99fc045427e0fb541438e0c3fd",
+  "reproduced_failures": {
+    "ocr_320x568_light": {
+      "visible_height": 30,
+      "scroll_height": 76,
+      "left": 183.203125,
+      "right": 218.796875
+    },
+    "writing_outer_height": {
+      "actual": 44,
+      "expected": 48,
+      "width": 352,
+      "padding": "4px 9px",
+      "radius": "24px"
+    }
+  },
+  "checks": [
+    {
+      "name": "OCR browser",
+      "command": "BREEZE_QA_ENGINE=chromium BREEZE_BROWSER_EXECUTABLE=/usr/bin/chromium node tests/verify-pdf-ocr-browser.mjs",
+      "result": "passed",
+      "log_sha256": "77f57a480ea132e8d37cb0b348edcad6e6beed9e07f9311c3632631b6e54e6ff",
+      "terminal_evidence": "{\"engine\":\"chromium\",\"passed\":true,\"geometryCases\":30,\"stress\":{\"native\":\"controlled bridge responses, not accuracy\",\"completedCoreChecks\":true,\"pages\":60,\"rapidNavigationIntents\":6,\"cachePasses\":2,\"reopens\":9,\"nativeCalls\":61,\"maximumConcurrentNative\":1,\"liveInkExcluded\":true,\"highConfidenceMisreadDispatchesWithoutConfirmation\":true,\"memory\":[{\"phase\":\"pass-1-page-14\",\"cachePages\":16,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5317220,\"documents\":2,\"nodes\":2105,\"jsEventListeners\":386},{\"phase\":\"pass-1-page-28\",\"cachePages\":30,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5336244,\"documents\":2,\"nodes\":2130,\"jsEventListeners\":386},{\"phase\":\"pass-1-page-42\",\"cachePages\":44,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5360532,\"documents\":2,\"nodes\":2158,\"jsEventListeners\":386},{\"phase\":\"pass-1-page-56\",\"cachePages\":58,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5368792,\"documents\":2,\"nodes\":2186,\"jsEventListeners\":386},{\"phase\":\"pass-2-page-14\",\"cachePages\":58,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5369356,\"documents\":2,\"nodes\":2186,\"jsEventListeners\":386},{\"phase\":\"pass-2-page-28\",\"cachePages\":58,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5374080,\"documents\":2,\"nodes\":2186,\"jsEventListeners\":386},{\"phase\":\"pass-2-page-42\",\"cachePages\":58,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5380364,\"documents\":2,\"nodes\":2186,\"jsEventListeners\":386},{\"phase\":\"pass-2-page-56\",\"cachePages\":58,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5402668,\"documents\":2,\"nodes\":2186,\"jsEventListeners\":386},{\"phase\":\"after-eight-reopens\",\"cachePages\":58,\"liveWords\":2,\"canvasPixels\":267456,\"active\":0,\"usedJSHeapBytes\":5484508,\"documents\":2,\"nodes\":2074,\"jsEventListeners\":386}],\"offlineReopen\":{\"status\":\"passed\",\"offlineSource\":{\"online\":false,\"storedSize\":23875,\"original\":{\"bytes\":23875},\"fresh\":{\"bytes\":13}}},\"memoryLimit\":\"CDP JS heap/DOM only on Chromium, excludes GPU/native memory; bounded samples are not a leak proof\"},\"native\":\"mocked\",\"network\":\"external requests blocked\",\"unverified\":\"Vision/ML Kit accuracy and physical gestures\"}"
+    },
+    {
+      "name": "PDF writing browser",
+      "command": "BREEZE_QA_ENGINE=chromium BREEZE_BROWSER_EXECUTABLE=/usr/bin/chromium node tests/verify-pdf-ink-browser.mjs",
+      "result": "passed",
+      "log_sha256": "79dc06be7434191595cac16b7165d0af4157beeaf37860711bfc5964b2a75e20",
+      "terminal_evidence": "chromium: PASS 3 colors/3 widths, undo/redo including evicted pages and durable redo, black ink, stylus/finger separation (synthetic), no-mode-switch word/sentence Lookup, collision IDs, late Pencil during pinch, cancellations, zoom/resize/rotated page, release/reload, durable erase, failed save/retry, document isolation, platform gate"
+    },
+    {
+      "name": "Reader notice input",
+      "command": "BREEZE_QA_ENGINE=chromium BREEZE_BROWSER_EXECUTABLE=/usr/bin/chromium node tests/verify-reader-notice-controls-browser.mjs",
+      "result": "passed",
+      "log_sha256": "61245f7963496b293af50a59243501a6e9422bb5894c1a04873a11173e816e4a",
+      "terminal_evidence": "chromium: direction without stale guidance, immediate title replacement, stable hit targets and trusted Aa/mode/compact taps passed in five viewports and both themes"
+    },
+    {
+      "name": "UI captures",
+      "command": "BREEZE_BROWSER_EXECUTABLE=/usr/bin/chromium node tests/capture-safari-dock-review.mjs",
+      "result": "passed",
+      "log_sha256": "0aa6f6cc164445c63224487d1dbcccc5d4df42097e8ee4f1f489b0ab8b86fdb2",
+      "terminal_evidence": "Shared geometry, light/dark, compact controls, PDF sidebar and 44px writing policy passed at five viewports."
+    },
+    {
+      "name": "Repository tests",
+      "command": "npm test",
+      "result": "passed",
+      "log_sha256": "a5162913cee94177bf519333979d1b3eabccd547c0ea90e89c2309fdc4d9656a",
+      "terminal_evidence": "npm test exit 0; type checks and final vocabulary checks passed"
+    }
+  ],
+  "limits": [
+    "Chromium browser fixtures only; no native device interaction proof",
+    "Local WebKit runtime unavailable; exact-head CI remains necessary",
+    "Unchanged WebKit offline Blob/FileReader gate is not suppressed",
+    "No integration or main update, version change, archive, upload or merge"
+  ]
+}

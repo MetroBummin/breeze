@@ -576,6 +576,7 @@ function scheduleProgressUpdate(){
   progressFrame=requestAnimationFrame(()=>{
     progressFrame=0;
     if(!curBook || readerPositionPending()) return;
+    reconcileReaderWidth();
     /* 이 프레임의 자를 여기서 한 번 놓습니다. 아래 둘은 같은 답을 나눠 씁니다. */
     invalidateReaderMeasurements();
     updatePfill(readerScrollWasProgrammatic());
@@ -723,34 +724,34 @@ let chromeFrame=0;
   }, 800);
 }, {passive:true});
 
-/* 실제 viewport/창 크기 변경은 여전히 본문을 reflow할 수 있으므로 일반적인
-   위치 보존은 유지합니다. 단어 overlay 개폐는 이 observer의 폭을 바꾸지 않습니다. */
-if(window.ResizeObserver){
-  let readerWidth = 0;
-  new ResizeObserver(entries=>{
-    const width = Math.round(entries[0].contentRect.width);
-    if(!readerWidth || width===readerWidth){ readerWidth = width; return; }
-    readerWidth = width;
-    if(!curBook || !document.getElementById('v-read').classList.contains('on')) return;
-    // PDF viewport restoration belongs to reader-scroll.js. Restoring its old
-    // generic anchor here also moves paper during a new pinch.
-    if(currentReaderMode==='original'&&originalSession?.kind==='pdf')return;
-    invalidateReaderMeasurements();   // 폭이 바뀌면 글이 다시 흐릅니다
+/* A queued scroll rAF can force the new layout before ResizeObserver is
+   delivered. Reconcile width before either measuring progress or saving it:
+   post-reflow geometry must never replace the pre-reflow source anchor. The
+   observer and readers share this one owner, so their delivery order is inert. */
+let readerLayoutWidth = 0;
+function reconcileReaderWidth(){
+  const main=document.getElementById('readmain');
+  const width=Math.round(main.getBoundingClientRect().width);
+  if(!width) return;
+  const previous=readerLayoutWidth;
+  readerLayoutWidth=width;
+  if(!previous || previous===width || !curBook
+      || !document.getElementById('v-read').classList.contains('on')
+      || readerPositionPending()) return;
+  // PDF has its own settled source-anchor owner in reader-scroll.js.
+  if(currentReaderMode==='original'&&originalSession?.kind==='pdf') return;
+  invalidateReaderMeasurements();
+  if(currentReaderMode==='original'){
     suspendReaderScrollSave(600);
-    /* The panel animates its width, so this fires many times. Freeze the
-       remembered place for the whole animation and aim at it every frame. */
     holdReaderAnchor(600);
-    /* 되돌리는 일이 끝날 때까지 상단바를 붙잡습니다. 원본 쪽은 안에 PDF 한 쪽을
-       그리는 `await` 가 있어서, 600ms 유예가 먼저 끝나 버리는 일이 있었습니다.
-       지금 읽는 화면에는 붙잡을 상단바가 없지만, 배선은 그대로 둡니다. */
-    whileRestoringChrome(()=>{
-      if(currentReaderMode==='original'){
-        return lastOriginalAnchor ? restoreOriginalAnchor(lastOriginalAnchor) : null;
-      }
-      if(lastAnchor) restoreAnchor(lastAnchor);
-      return null;
-    });
-  }).observe(document.getElementById('readmain'));
+    return whileRestoringChrome(()=>lastOriginalAnchor ? restoreOriginalAnchor(lastOriginalAnchor) : null);
+  }
+  // Text restoration is synchronous. No time window is needed: the width is
+  // committed above, and every later sample sees the restored source position.
+  whileRestoringChrome(()=>{if(lastAnchor) restoreAnchor(lastAnchor);});
+}
+if(window.ResizeObserver){
+  new ResizeObserver(()=>reconcileReaderWidth()).observe(document.getElementById('readmain'));
 }
 
 /* ================= 글자판이라는 종이 =================

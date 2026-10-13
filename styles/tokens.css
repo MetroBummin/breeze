@@ -29,6 +29,12 @@
   /* 문장 lookup만 쓰는 중립 유리. 낱말 뜻의 AI 파랑과 분리해, 읽는 종이 위에
      잠깐 머무는 시스템 표면으로 보이게 합니다. 불투명 값은 blur 미지원 fallback,
      glass 값은 backdrop-filter가 가능한 환경에서만 사용합니다. */
+  --study-set-control-surface:linear-gradient(145deg,rgba(255,255,255,.94),rgba(236,238,241,.88));
+  --study-set-control-solid:#F4F5F7;
+  --study-set-control-ink:#293034;
+  --study-set-control-line:var(--control-line);
+  --study-set-control-divider:rgba(50,55,58,.13);
+  --study-set-control-shadow:var(--control-shadow);
   --sentence-glass-solid:#F6F6F3;
   --sentence-glass-pill:rgba(248,248,245,.76);
   --sentence-glass-surface:rgba(250,250,247,.88);
@@ -93,6 +99,9 @@
      앱 전체가 같은 하늘을 봅니다. `--brand` 는 넓은 면·강조, `--brand-strong` 은
      작은 글자·로고·누를 수 있는 곳처럼 대비가 필요한 자리입니다. 예전 이름은
      호환용 별칭일 뿐이고 새 UI는 이 두 이름을 기준으로 만듭니다. */
+  /* Approved flow-logo mint endpoint; separate from existing sky selections. */
+  --brand-signature:#AAC4C4;
+  --study-remember-wash:35%;
   --brand:#4DAED6;                 /* rgb(77, 174, 214) */
   --brand-strong:#267FA8;          /* rgb(38, 127, 168) */
   --blue:var(--brand);
@@ -331,6 +340,8 @@ body.lang-ko .navbtn{font-size:16px; line-height:1.1;}
 html.dark{--paper:#171816; color-scheme:dark;}
 
 body.dark{
+  --control-line:rgba(255,255,255,.12);
+  --control-shadow:0 3px 12px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.08);
   --pdf-desk:#202124;
   --control-glass-surface:var(--sentence-glass-pill);
   --pdf-paper-shadow:0 2px 8px rgba(0,0,0,.28);
@@ -339,6 +350,12 @@ body.dark{
   --bookmark-ink:#FF8982;
   --word-lookup-wash:rgba(102,170,239,.24);
   --word-lookup-sheen:linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%);
+  --study-set-control-surface:linear-gradient(145deg,rgba(80,82,85,.96),rgba(36,38,41,.96));
+  --study-set-control-solid:#292B2E;
+  --study-set-control-ink:#F1F1EE;
+  --study-set-control-line:var(--control-line);
+  --study-set-control-divider:rgba(255,255,255,.13);
+  --study-set-control-shadow:var(--control-shadow);
   --sentence-glass-solid:#292A2B;
   --sentence-glass-pill:rgba(39,40,41,.76);
   --sentence-glass-surface:rgba(38,39,40,.88);
@@ -355,6 +372,8 @@ body.dark{
   --sentence-glass-shadow-pill:0 6px 18px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.10);
   --sentence-glass-shadow:0 18px 46px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.10);
   --sentence-glass-scrim:rgba(0,0,0,.18);
+  --brand-signature:#D7ECE8;
+  --study-remember-wash:20%;
   --brand:#4DAED6;
   --brand-strong:#78C9EA;
   --blue:var(--brand);
@@ -518,10 +537,20 @@ html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;-
    Scoped by reader.css so lookup materials and dark mode keep their own treatment. */
 :root{
   --control-light-surface:rgba(247,252,253,.78);
-  --control-light-line:rgba(255,255,255,.90);
-  --control-light-shadow:0 5px 16px rgba(30,64,76,.15),0 1px 3px rgba(30,64,76,.10),inset 0 1px 0 rgba(255,255,255,.94),inset 0 -1px 0 rgba(44,95,110,.14);
+  --control-icon-size:20px;
+  --control-icon-stroke:2.4;
+  --control-back-icon-size:32px;
+  --control-back-icon-stroke:1.5;
+  --control-page-icon-stroke:2;
+  --control-inline-icon-stroke:1.4;
+  --control-disclosure-icon-stroke:1.2;
+  --control-more-dot-radius:1.2px;
+  --control-line:var(--control-light-line);
+  --control-shadow:var(--control-light-shadow);
+  --control-light-line:rgba(255,255,255,.66);
+  --control-light-shadow:0 3px 12px rgba(30,64,76,.09),0 1px 3px rgba(30,64,76,.06),inset 0 1px 0 rgba(255,255,255,.66);
   --control-light-reflection:linear-gradient(180deg,rgba(255,255,255,.58) 0%,rgba(255,255,255,.16) 16%,rgba(255,255,255,0) 42%,rgba(255,255,255,0) 72%,rgba(255,255,255,.18) 100%);
-  --control-light-edge:inset 1px 1px 0 rgba(255,255,255,.88),inset -1px -1px 0 rgba(255,255,255,.40);
+  --control-light-edge:inset 1px 1px 0 rgba(255,255,255,.50),inset -1px -1px 0 rgba(255,255,255,.22);
   --control-light-progress:linear-gradient(180deg,rgba(77,174,214,.20) 0%,rgba(77,174,214,.25) 48%,rgba(77,174,214,.29) 100%);
   --control-light-progress-edge:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(77,174,214,.12);
 }

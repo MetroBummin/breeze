@@ -122,3 +122,27 @@ or pen hardware acceptance. No merge, deployment or native upload is authorized.
 ## Independent Settings authentication
 
 Settings social login is documented in [016](016-social-auth.md). Its request/session owner remains independent of the passive guide. The integration boundary verifies both approved scopes.
+
+## Welcome timeline ownership correction
+
+The welcome's CSS animations own writing4200ms, hold750ms and caption fade900ms.
+The former JS wall timer could remove those animations before a delayed WebKit
+animation timeline reached pen===1. Complete on the actual next-caption
+`onboard-welcome-copy` animationend instead, guarded by the current session and
+welcome state. Existing abort/skip/hidden/reduced-motion paths still finish
+explicitly. CSS durations, continuous stroke, exact pen===1, hold and30s test
+limits remain unchanged. Chromium passed the strict full suite; exact-head
+WebKit CI is required, not substituted by local Chromium evidence.
+
+
+## Study media follow-up after 269
+
+The appended study page now uses the same passive video/poster path as existing
+features, superseding the 269 required interactive practice. Next is immediately
+available; its Skip reaches the existing final import page. Settings replay and
+first-run interruption/resume retain the same owner and progress key. Examples
+in the media are isolated authored data captured from the real production card
+UI, with no AI/network lookup or changes to live vocabulary/study data. Muted
+inline loop playback, tap pause, reduced-motion poster and playback-error poster
+are shared with prior slides. No physical iOS playback claim follows from browser
+verification.

@@ -1,0 +1,19 @@
+{
+  "reviewedSource": "78967ed9f61091f25fa42a9df0eebdb11e770e82",
+  "reviewedCI": {
+    "passed": 15,
+    "failed": 1,
+    "remainingFailure": "Baseline-identical WebKit setOffline Blob NotReadableError; unwaived"
+  },
+  "packagingChecks": {
+    "releaseAndBootstrapTests": "171 passed",
+    "appAndShareDebugRelease": "1.9.3(271), all4;270/lower rejected",
+    "nativeSyncPackageServiceWorker": "passed",
+    "nativeAssetEquality": "240 files exact across reviewed commit/source/www/iOSpublic",
+    "fullNpmTest": "passed on packaging source; typecheck32 unchanged",
+    "boundary": "passed positive/negative plus reviewed post270 and nested historical contracts"
+  },
+  "appleCounterAvailability": "Parent owns live Apple verification and dispatch; no Apple connector available in cloud",
+  "scope": "Packaging only; exact tested product bytes",
+  "release": "User authorized next TestFlight. Child has not dispatched, archived, uploaded, merged main or submitted App Store review. Parent sole Apple owner."
+}

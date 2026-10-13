@@ -98,8 +98,19 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.evaluate(()=>show('home'));await page.screenshot({path:resolve(out,`${engine.name()}-cover-${width}-${theme}.png`)});
  }
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'presentation does not change saved schedule');
- await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'study');
- assert.equal(await page.locator('#review-progress').innerText(),'1 / 4','simple cards include all saved meanings regardless of schedule');
+ await page.evaluate(()=>show('vocab'));await page.locator('#wordbook-review').click();assert.equal(await page.evaluate(()=>activeAppView()),'vocab');assert.equal(await page.locator('#study-sets-dialog').evaluate(node=>node.open),true);await page.locator('#study-sets-all').click();assert.equal(await page.evaluate(()=>activeAppView()),'memory-set');await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);assert.equal(await page.evaluate(()=>activeAppView()),'study');
+ const inventory=await page.evaluate(()=>({initial:[...ensureSimpleStudySession().initial],queue:[...simpleStudySession.queue],passed:[...simpleStudySession.passed]}));
+ assert.deepEqual([...inventory.initial].sort(),Object.keys(savedWords).sort(),'all four saved meanings belong to the frozen session regardless of schedule');
+ assert.deepEqual([...inventory.queue].sort(),[...inventory.initial].sort());assert.deepEqual(inventory.passed,[]);
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 4','initial completed count is zero, not the card position');
+ await page.locator('#review-flip').press('Enter');await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>!simpleStudyBusy&&!simpleWordCards.flipped);
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 4','repeat earns no session progress');
+ assert.equal(await page.evaluate(()=>simpleStudySession.queue.at(-1)),inventory.queue[0],'repeat goes to pending tail');
+ assert.deepEqual(await page.evaluate(()=>[...simpleStudySession.initial]),inventory.initial);
+ const remembered=await page.evaluate(()=>simpleStudySession.queue[0]);await page.locator('#review-flip').press('Enter');await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>!simpleStudyBusy&&!simpleWordCards.flipped);
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 4','one distinct remembered card advances progress');
+ assert.deepEqual(await page.evaluate(()=>simpleStudySession.passed),[remembered]);assert.equal(await page.evaluate(()=>simpleStudySession.queue.length),3);
+ assert.deepEqual(await page.evaluate(()=>[...simpleStudySession.initial]),inventory.initial);
  assert.equal(await page.locator('#review-grades').isVisible(),false,'simple cards do not grade scheduled review');
  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.vocabulary-review.v1')),before,'opening simple cards preserves the existing schedule');
  assert.deepEqual(errors,[]);console.log(engine.name()+': exact cover, old-book repair/custom preservation, Memory/simple-card entry with schedule retention and 20 theme/viewport captures passed');

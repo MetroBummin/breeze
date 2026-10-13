@@ -208,6 +208,10 @@ function keepPlace(fn){
 }
 
 function saveReadingState(){
+  // A Home transition already committed this exact book/entry before snapshot
+  // rendering. Do not replace it with temporary transition viewport geometry.
+  if(typeof homeReturnTransition!=='undefined'&&homeReturnTransition
+      &&homeReturnReadingOwner?.book===curBook&&homeReturnReadingOwner.entry===history.state)return;
   if(!curBook || curBook.transient) return;
   if(typeof readerPositionPending==='function' && readerPositionPending())return;
   if(currentReaderMode === 'original'){
@@ -225,6 +229,8 @@ function saveReadingState(){
     if(typeof queueReadingProgressSync==='function'&&changed) queueReadingProgressSync();
     return;
   }
+  // Saving on exit can run before the width observer or a queued scroll frame.
+  if(typeof reconcileReaderWidth==='function') reconcileReaderWidth();
   // A delayed illustration can reflow text without another scroll frame.
   // Persist one freshly measured location, rather than a cached paint sample.
   const a = captureAnchor();
@@ -253,6 +259,7 @@ function rememberAppView(view,replace){
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
 function show(v,options){
+  if(!options?.studySetsTransition&&typeof closeStudySets==='function')closeStudySets(true);
   if(typeof closeWordbookMenus==='function')closeWordbookMenus();
   // Leaving the preview's owning view must invalidate its async preparation.
   // Reader presentation closes its own preview through onPresented instead.
@@ -266,7 +273,7 @@ function show(v,options){
   document.getElementById('v-'+v).classList.add('on');
   document.getElementById('nav-home').classList.toggle('on',
     v==='home' || v==='casuals' || v==='longform');
-  document.getElementById('nav-vocab').classList.toggle('on', v==='vocab'||v==='study');
+  document.getElementById('nav-vocab').classList.toggle('on', v==='memory'||v==='memory-set'||v==='vocab'||v==='study');
   if(v!=='read'){
     if(typeof closeSentence==='function') closeSentence();
     const retained=v==='home'&&typeof retainReaderForHome==='function'&&retainReaderForHome();
@@ -287,9 +294,13 @@ function show(v,options){
   if(v==='home') renderHome();
   if(v==='casuals') renderCasualLibrary();
   if(v==='longform') renderLongformLibrary();
+  if(v==='memory'&&typeof renderStudySetsHome==='function')renderStudySetsHome();
   if(v==='vocab') renderVocab();
   if(v==='study'&&typeof resumeVocabularyReview==='function')resumeVocabularyReview();
-  window.scrollTo(0,0);
+  const restoredScroll=settings.fromHistory?(v==='vocab'?history.state?.studySetsVocabScroll:v==='memory'?history.state?.studySetsDirectoryScroll:0):0;
+  window.scrollTo(0,Number(restoredScroll)||0);
+  if(settings.fromHistory&&v==='vocab'&&history.state?.studySetsVocabScroll!==undefined)document.getElementById('wordbook-review')?.focus({preventScroll:true});
+  if(settings.fromHistory&&v==='memory'&&history.state?.studySetsDirectoryScroll!==undefined)document.getElementById('study-sets-all')?.focus({preventScroll:true});
   const box = readerScroller();
   if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }
   if(typeof syncHomeNavigation==='function') syncHomeNavigation();
@@ -311,7 +322,9 @@ window.addEventListener('popstate',event=>{
   const settingsModal=document.getElementById('settings-modal');
   if(settingsModal&&settingsModal.classList.contains('on')){ closeSettings(); return; }
   const target=event.state&&event.state.breeze ? event.state.view : 'home';
-  show(target,{fromHistory:true});
+  // A study-set history entry owns its open sheet/page transition. Do not
+  // close the same native dialog before the study-set popstate handler runs.
+  show(target,{fromHistory:true,studySetsTransition:!!event.state?.studySets});
 });
 /* 첫 기록을 Breeze의 홈으로 바꿔 둡니다. 이후 앱 안에서 이동할 때만 새 기록을
    쌓으므로, 홈에서 뒤로가기는 원래 방문한 사이트로 자연스럽게 나갑니다. */

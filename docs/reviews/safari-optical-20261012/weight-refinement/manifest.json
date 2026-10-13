@@ -1,0 +1,328 @@
+{
+  "baseline": "1da51f48d87071b0e6d6284c67d099f2869c82ff",
+  "sourceSha256": {
+    "DESIGN.md": "f99a443451163f16aa8a206cd06dde836a20af07a98c4b8930e94ad6d9c3e5f3",
+    "docs/decisions/003-shared-control-glass.md": "e1f32408b4905d72a6a0209a2df7d3ab2e7776b9e4944cd8013fda77bc1e08c7",
+    "docs/reviews/safari-optical-20261012/README.md": "1bd703cb71cf3ca38109bf07997b98e672fcbe999cea6ded908dfd7bf2576b8a",
+    "index.html": "641514e107a0bf8d3156bd8d697ff7f4e937cf3b6161a31f6af2aa8ec86bd583",
+    "landing/index.html": "0e1005f211d86b857d27591a45d977b909d32a22f638e50ca64429264aff438b",
+    "styles/study.css": "981f698d6e9e5c6841b76b7488b8a1883987a3dc704bd697bd52a401b7e41cf7",
+    "styles/tokens.css": "2a27e17afe167a4d899f1700b546d470578afe469fbf826698e6912fb78f8cf7",
+    "support/index.html": "7f422572e2eb016853d6e5da2033a9f12de25fe2560bac0f598ef43d1419cb6b",
+    "sw.js": "6ed5449ce1dcd0abf7754b0abe4974cdf11be8ee29fa75b23a3975b0a7fae218",
+    "tests/capture-safari-dock-review.mjs": "76f4e7ee191919e3917fcd45f46a83bfbc88af6cf91b74e1ce7443381ab34b06",
+    "tests/capture-safari-optical-review.mjs": "b3329b236be8b3117a28d50b07914a73f6de80e1a2353bbdace10b6061e0d26c",
+    "tests/verify-design-home-browser.mjs": "d4e5880c924818da55fe994bf4f25204ef8e40cd76bb542548b2bcc0c47b5222",
+    "tests/verify-onboarding-browser.mjs": "977a04f5c3141a81a8a666b1b7d26ce1c05c1509b51f57892a4a464f1abe9c58",
+    "tests/verify-study-sets-touch-browser.mjs": "52f1a12f963732bd3cf3d949528852d7da878444572e937bcde82bc3cd533f9b"
+  },
+  "viewportDpr": 2,
+  "fixedScrollCssPx": 22,
+  "materialAndGeometryUnchanged": true,
+  "privateReferencePixelsSeen": false,
+  "backNominalHeight": 19.6,
+  "pageNominalHeight": 20.06667,
+  "effectiveStrokeBoth": 3.06667,
+  "files": [
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-dark-dock-crop.png",
+      "sha256": "b0ee22118e41474ef1900339dfc45ac39c81a744f237bcbd7e2faa8001b73336",
+      "bytes": 96667
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-dark-pdf-collapsed.png",
+      "sha256": "b7e1067b6dac1211301d749ee85c19984b6b2c399ad36c4e9f8d49c2e816cdab",
+      "bytes": 453632
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-dark-pdf-pressed.png",
+      "sha256": "d5bf56a3a1276d4c82c5e7f8c73f57926ecee156626d05b60defe2ecef2dec72",
+      "bytes": 468688
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-dark-pdf-reading.png",
+      "sha256": "83de5d69222502ae49f6819b7195caed5f1c0401edde4c701120ffed056cbc5f",
+      "bytes": 469503
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-dark-pdf-writing.png",
+      "sha256": "f7e3f1ad10504c9ea9d81e806a3f9aa845f7cd02dea1f26297835af9096d4008",
+      "bytes": 471340
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-light-dock-crop.png",
+      "sha256": "ae5e019347fbadc1fded27c290747fb45af736ee6d11cd7a33a5c3da1fb4527b",
+      "bytes": 83121
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-light-pdf-collapsed.png",
+      "sha256": "be705a6b73ca9732df5fdfdab5558b464f397488219c8a933ab1338ac70b0f3c",
+      "bytes": 451006
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-light-pdf-pressed.png",
+      "sha256": "61a779ea01290bd2b14df5a66ceaa9403e9a510c7f245c15e64502d06a5fd4a1",
+      "bytes": 461070
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-light-pdf-reading.png",
+      "sha256": "163bad4f029c2af916f10ba9007022c4d030efabc36fbb7fa42cfcb88b7fd556",
+      "bytes": 456480
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-landscape-light-pdf-writing.png",
+      "sha256": "1f56f7ea776b2ffa048ae2f8e43145d976b8b89a14a22f8090f928e94d56f661",
+      "bytes": 458478
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-dark-dock-crop.png",
+      "sha256": "70d86f17e09921dec934fec13a60304fd13f290aba25fab4741c47ec251125d9",
+      "bytes": 76510
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-dark-pdf-collapsed.png",
+      "sha256": "232a6cab8f27f399694c6ac847d2086e7cd31133df2f4566f74e65823a8cc0e9",
+      "bytes": 470376
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-dark-pdf-pressed.png",
+      "sha256": "6a82774a094390f8e5d46fa141928350919799ab1f47a48c889056e0e481128a",
+      "bytes": 490808
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-dark-pdf-reading.png",
+      "sha256": "c2fe0f6b7b846561ccc6b96199c49981fc61f5ff5d81baf061b9e073f4bb4445",
+      "bytes": 492018
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-dark-pdf-writing.png",
+      "sha256": "29de68bda8dc7921960ea351da8174a90c6bfa5f477bf343e91986cc84854195",
+      "bytes": 493866
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-light-dock-crop.png",
+      "sha256": "3f20eeac257339da5670a6cb56ef6b1969b7ffce6eb2f40751514c3633896098",
+      "bytes": 59139
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-light-pdf-collapsed.png",
+      "sha256": "257fd0396f5f678e88e72cdebd63c7537aa6c2354c05a91d8a8ce0342ae90fcd",
+      "bytes": 466300
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-light-pdf-pressed.png",
+      "sha256": "fcfbd036111547a636ce1db0f3e0ccb15228fa2192f4c2c83765bf6c4c447b50",
+      "bytes": 479281
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-light-pdf-reading.png",
+      "sha256": "dbefdf0909ccdcf7dc6ddfd304d0de699d197f724099caa6564826b923816fbd",
+      "bytes": 475839
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/ipad-portrait-light-pdf-writing.png",
+      "sha256": "f509fb1bd71083460b7640f9d46fe5400f1ea6d790c6dccdc0b09926c2488bcb",
+      "bytes": 477668
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/optical-geometry.json",
+      "sha256": "a41c28d929c823475683c85d3f86510559c43d7b5587916e6551b7a6474815a1",
+      "bytes": 43985
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-dark-dock-crop.png",
+      "sha256": "e6b86212b871de19176144a89423f8f0cf500254c3f98d919c0c6bde6a9969b6",
+      "bytes": 65173
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-dark-pdf-collapsed.png",
+      "sha256": "ebc8377ed56ac2974f8bb79b07fe6cd4289fd034790d41b8fd38e75ad3b7b3c3",
+      "bytes": 269623
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-dark-pdf-pressed.png",
+      "sha256": "ca53e3b202c26bdfb44b673ec2e2a1f185a307edd062ecd4d83971296502af1d",
+      "bytes": 283005
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-dark-pdf-reading.png",
+      "sha256": "f84b41bd4bf5dd596861db7996edf8de24361682b8b08bdf9162a38545bed27b",
+      "bytes": 283452
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-dark-safe-area-34.png",
+      "sha256": "150e114b802588187642c05661cc7dd63189f0e1d46ae2af1ba79795fbe8215b",
+      "bytes": 283882
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-light-dock-crop.png",
+      "sha256": "75b1776ac32ce1cfa80b1d149d6b73c93d2964a71498dc54c56ef3808586e770",
+      "bytes": 56618
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-light-pdf-collapsed.png",
+      "sha256": "4bafb07e316aa4de2f3f26deb7efe15321efe8255d4312746c8967b839ac2e2f",
+      "bytes": 268202
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-light-pdf-pressed.png",
+      "sha256": "2d3f0672afe2eedc197fe8d7d6d69051747185ef78ebc3506caf1c1a035726eb",
+      "bytes": 279879
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/before/phone-light-pdf-reading.png",
+      "sha256": "f4adce69f3910ee2bf9e73e6bf46f9dc23f48b13d49010c672f6b906bc1c55b3",
+      "bytes": 275458
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-dark-dock-crop.png",
+      "sha256": "efb028d49feace74c5a846b17f8505622602156c16b13811d7d8371fbaa8d040",
+      "bytes": 96429
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-dark-pdf-collapsed.png",
+      "sha256": "db33b2adc7cf9e94d9c27d03c97716e566e991e103bbe1ac8e97e54d38e2d2ae",
+      "bytes": 453209
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-dark-pdf-pressed.png",
+      "sha256": "bda52ad11d75765aac21963be2942c23be0c039abe2c9e5e3d929c15e300a119",
+      "bytes": 468572
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-dark-pdf-reading.png",
+      "sha256": "6249003ed25439ad1dd5699eb8ef28ea41a03a80a51f3b3291da097d220fb25f",
+      "bytes": 469397
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-dark-pdf-writing.png",
+      "sha256": "0e3c399426c6c3a9835cdf38a25534ebbb5883ccb299ab347b13451578bd9317",
+      "bytes": 472307
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-light-dock-crop.png",
+      "sha256": "79f1a8a9c2fc1e4783631a3320966e2e8aefc8d9942def6fd3b56241176b40fe",
+      "bytes": 83324
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-light-pdf-collapsed.png",
+      "sha256": "19e6b1b54074db955687242bb359e65ca875a2d96c4559b42ca1bd0759b889b9",
+      "bytes": 449617
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-light-pdf-pressed.png",
+      "sha256": "c4bd718e060245d1592391a05266359df2419e8143e8a010dc001cadc958994d",
+      "bytes": 461195
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-light-pdf-reading.png",
+      "sha256": "d7d166e11bf71b2e2a9fc14792824817fcb91200e6ed94c76cf651700e0cfd30",
+      "bytes": 456687
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-landscape-light-pdf-writing.png",
+      "sha256": "55b8bdfeb21f1504fb36e78755e4ecd9540b25bb2905aa5d12d254487bbcc76f",
+      "bytes": 457110
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-dark-dock-crop.png",
+      "sha256": "279c003f07ae414f6164366da52276922f5bd16a01ba442c0ce5e34551a8b13e",
+      "bytes": 76297
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-dark-pdf-collapsed.png",
+      "sha256": "33b00abb238c1f9edbd95b329096d1d4b52825932793201d15905c8e329066ba",
+      "bytes": 474927
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-dark-pdf-pressed.png",
+      "sha256": "2e671d528c0f8d9c18a2125221fa4e7cdebc5191e452d444fe48161585f94924",
+      "bytes": 490443
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-dark-pdf-reading.png",
+      "sha256": "dd5e309436036f10098f4c2a8067d5ed7091058c1bf893aa09203a2980c845d0",
+      "bytes": 491832
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-dark-pdf-writing.png",
+      "sha256": "60ef44a19919d93960a5637a61332f56c7c2293b831c0e59f5fc691c586060f4",
+      "bytes": 493819
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-light-dock-crop.png",
+      "sha256": "89709c7b81baf146685353372d7e60c0b910981b5e8eb7f96652e3c2e0282607",
+      "bytes": 59251
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-light-pdf-collapsed.png",
+      "sha256": "faf14fcec4f5bdc3343955c61462a20731ef013dc41b3fdf459ef10334870776",
+      "bytes": 472595
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-light-pdf-pressed.png",
+      "sha256": "48921598588ce67d970bd6660a19b6f0d7f7fdf080602912679f72344a670ba6",
+      "bytes": 479201
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-light-pdf-reading.png",
+      "sha256": "5eda996c49e1630ed62e01c824c3b22ab32901dec787a95625c3400a69b87867",
+      "bytes": 475996
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/ipad-portrait-light-pdf-writing.png",
+      "sha256": "3faffc088612abb4a6653424417446a5792a0b4021a355b92168b12db473072f",
+      "bytes": 481073
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/optical-geometry.json",
+      "sha256": "f1137d88365cbae004288b7f6fc71c83b8a080b8ea8ca6dad19ac0c5ca86eef5",
+      "bytes": 44330
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-dark-dock-crop.png",
+      "sha256": "c1f9cc3c561eef0eea917d2a079199242205c05a1c630f9f1ae265d49141ab70",
+      "bytes": 64936
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-dark-pdf-collapsed.png",
+      "sha256": "3fd90adb3205dc557e1ecfdf6ebbd77a94b614e0ff78598ba510b888f27d3d1c",
+      "bytes": 273476
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-dark-pdf-pressed.png",
+      "sha256": "ec46418a24ae039fd65f21e100fc8b4ba59439ed515aeafcee2666c543071cb0",
+      "bytes": 282666
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-dark-pdf-reading.png",
+      "sha256": "beebe09f71c869451df058c20cd521678828a372a511b5c97cd0d54d7ba32373",
+      "bytes": 283261
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-dark-safe-area-34.png",
+      "sha256": "c1fa14da705db1ccbb55349be119cfcac28b87fcae21d03b4a253c84acafcc1a",
+      "bytes": 287693
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-light-dock-crop.png",
+      "sha256": "3b0f1dad1c95f680a6599099c68d6bfb5f38431eb98586e8990fdf25f6996b04",
+      "bytes": 56626
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-light-pdf-collapsed.png",
+      "sha256": "7b34a812857b0e36b55314752c4cabfe06d92101cf33b7b6e98b0d0dbea3aa72",
+      "bytes": 271790
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-light-pdf-pressed.png",
+      "sha256": "39f9bbc756d626139bd8f3c2b4d1cb57939d9f6c16644ffce59f05388390bfab",
+      "bytes": 279862
+    },
+    {
+      "file": "docs/reviews/safari-optical-20261012/weight-refinement/after/phone-light-pdf-reading.png",
+      "sha256": "63e909680960ba591184ba09ff83a8f8e90e7d2658b6c12daf6eed4c637d779a",
+      "bytes": 275435
+    }
+  ]
+}

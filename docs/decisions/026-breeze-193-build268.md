@@ -1,0 +1,83 @@
+# Approved lighter shared controls:1.9.3(268)
+
+The user approved polishing and unifying same-family floating controls and
+including PR154 in the next internal TestFlight candidate. Parent confirmed
+Apple Next Build Number268, no queued/running build and successful267. Integrate
+reviewed polished PR154 source22098b6057e5088b7fc262c9fb2844f771ed5bcb into
+integrate/breeze-193-cloud. Do not merge main or submit App Store review.
+Parent owns one Cloud start; this preparation does not start Cloud or upload.
+
+The268 boundary pins the entire reviewed tree, including44 actual browser
+images, two real scroll videos and source/capture hashes. Only four release files
+receive the exact267→268 delta and a counter floor rejecting267 or lower. App
+and Share Extension Debug/Release remain1.9.3(268). Three existing CI runners
+select the new268 verifier. Four new candidate evidence files are permitted.
+No unrelated source, RSS activation, credentials or security changes are allowed.
+
+The267 recorder, receipt, verifier and decision stay byte-identical. An isolated
+checkout of successful267 runs its unchanged negative tests and nested historical
+266/192/191 checks. New268 negative tests reject reviewed-source changes,
+historical267/266 evidence changes, checker drift, unknown paths, mode changes
+and symlink evidence. Expectations derive from immutable Git source, not current
+bytes. Checked-in validation runs before Apple's Cloud counter mutation; existing
+Cloud smoke still verifies its disposable900 counter and target drift protections.
+
+Browser coverage is not native-device proof. Preserve the WebKit offline Blob
+failure gate and report exact-head CI results truthfully. Physical airplane mode,
+a56-page native restart and physical retry tap remain unverified. Existing scroll
+collapse and PDF writing always-expanded policies are unchanged.
+
+Local preparation passed: full npm test/type checks on268,24 Cloud counter/drift
+cases, new268 boundary/negative tests, unchanged historical267/266/192/191
+boundaries and negative tests, iOS sync, native package and native service-worker
+checks. All232 packaged files match corresponding source and native public bytes.
+The reviewed UI source also passed shared material/geometry tests across five
+sizes/both themes, study lifecycle, trusted touch, Wordbook/Home functions, full
+PDF ink and60-page OCR/recovery tests in Chromium.44 screenshots and two real
+scroll videos were regenerated. Exact candidate GitHub CI is pending; no actual
+archive/signing/upload or Cloud start has run in this preparation.
+
+
+Before finalization, full Integrity contracts were corrected to the approved
+48px/96px/8px centered dock instead of old42/44px and22px numeric assumptions.
+The actual320px PDF layout had24px center offset and balanced8px gaps; geometry
+was preserved. The full morph/rotation/navigation/writing/settings/folders suite
+passed in Chromium after strict size/gap/free-space checks. Home's remaining
+bookmark override now shares20px/1.8 icons; shape/accessibility are unchanged.
+Word presentation verifies the approved lighter control edge/shadow and protects
+Lookup's unchanged material. Structural guard now selects the shared control
+edge/shadow tokens. Final UI npm test and all targeted runs were verified exit0;
+the earlier premature npm success report is corrected in the review evidence.
+This supersedes13b3495 as the268 candidate; Cloud has not been started.
+
+Exact candidate a0fcc33 exposed an asynchronous history race in the WebKit
+simple-word-card test: closing all-words calls history.back(), but the test
+opened Settings and re-entered study before traversal completed. The test now
+clicks the actual close button and waits for the vocabulary directory before
+opening Settings. Layout, click, persistence and dormant-feature assertions are
+preserved. Chromium passed the entire corrected ten-layout suite; WebKit must
+pass the new exact candidate CI before readiness is claimed. No app geometry or
+review images/videos changed in this test-only correction.
+
+Candidate c0dfc41 passed study cards in both standalone and Integrity Chromium/
+WebKit jobs, but Integrity's transition pixel positive control failed at dark
+768px close: both fixed and legacy corner deltas were zero. The same failure
+was reproduced locally, including matching animated/target capsule bounds. A
+uniform dark footer cannot show blur. The test now puts a deterministic contrast
+pattern behind the real controls, samples the paused group bounds, preserves
+fixed<legacy and every filter/shadow/settled check, and additionally requires a
+nonzero legacy signal. All20 Chromium direction/theme/viewport samples passed.
+Both engines remain mandatory by default in CI. This modifies only test setup
+and its documented coverage; product material, geometry,44 frames/two videos
+and native232-file package bytes stay unchanged. Final exact Integrity remains
+required; no Cloud start/archive/upload has been performed.
+
+Before waiting for another complete CI cycle, the previously unexecuted chrome
+motion suite reproduced its obsolete narrow22px/wide0px center wait. It now
+requires the96px navigation/48px settings slots and centered row, deriving the
+expanded anchor from their actual free interval. Every continuity, easing,
+overshoot, settling, reversal/interruption, writing and reduced-motion assertion
+remains. The entire Chromium motion suite passed, followed by Reader work,
+horizontal progress/painted EPUB and Home controls suites. CI must still run
+these on the exact final candidate; local151 is not CI153 or native iOS proof.
+No product bytes or browser review images/videos changed.

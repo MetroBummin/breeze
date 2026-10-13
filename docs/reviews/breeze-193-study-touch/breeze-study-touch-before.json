@@ -1,0 +1,69 @@
+{
+  "trace": [
+    {
+      "type": "pointerdown",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "gotpointercapture",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "pointermove",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": "translateX(-18px)"
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "vko",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "gotpointercapture",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "pointermove",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "pointerup",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    },
+    {
+      "type": "lostpointercapture",
+      "target": "study-sets-word-row",
+      "pointerType": "touch",
+      "trusted": true,
+      "transform": ""
+    }
+  ],
+  "transform": "",
+  "rows": 2
+}

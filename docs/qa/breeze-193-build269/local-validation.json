@@ -1,0 +1,44 @@
+{
+  "reviewedSource": "cd38ac50fef78478d21991d39874221037ff445f",
+  "buildNumber": "269",
+  "localPassed": [
+    "269 boundary/historical/negative checks",
+    "25 Cloud counter and target-drift cases",
+    "npm/type contracts",
+    "ios sync",
+    "native package",
+    "native service-worker guard",
+    "App/Share Debug/Release269",
+    "signature touch/contrast on set and all-word decks",
+    "71 study storage/UI/model contracts including quota, migration and post-commit retry",
+    "existing strict welcome/carousel browser suite",
+    "isolated onboarding10 light/dark layouts and real-data preservation",
+    "create45-book10 light/dark layouts, fixed actions, selection and quota retry",
+    "Chromium study lifecycle and cold offline launch",
+    "new exercise touch release with a deliberately missing compatibility click",
+    "all short-landscape controls within844x390 and hint/meaning nonoverlap",
+    "strict PDF progress phase diagnostics Chromium100/50/19 percent",
+    "91 ink/session focused contracts",
+    "Chromium real worker, constructor rejection and asynchronous script-load fallback",
+    "delayed transaction completion, crash and latest retry, close/reopen/background lifecycle",
+    "native stamped worker asset precedes ink engine and matches source"
+  ],
+  "exactCandidateGitHubCI": "pending; prior-head passes are not candidate coverage",
+  "nativeSigningArchiveUpload": "not executed; parent owns one manual Default workflow start",
+  "remainingNativeQA": [
+    "physical airplane mode",
+    "56-page native restart",
+    "physical retry tap",
+    "actual iOS software keyboard on creation sheet",
+    "physical iPhone initial exception not yet captured",
+    "actual native breeze-scheme worker admission and suspension",
+    "physical iPad Pencil/palm input; actual whole-screen freeze cause unconfirmed"
+  ],
+  "preservedFailedGate": "baseline WebKit offline Blob/FileReader; not waived",
+  "mainMerged": false,
+  "cloudDispatched": false,
+  "annotationOriginalCommits": [
+    "8a30dda3dacfea1dc8567c9300cb5637a25b89e2",
+    "17876ac394d536da2f19c9a42dc26f36faaa5511"
+  ]
+}

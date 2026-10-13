@@ -188,8 +188,9 @@ try{
    await page.evaluate(()=>qaOcrStatus.at(-1).resolve({finished:false}));
    await page.locator('#reader-notice').filter({hasText:'앱 완전 종료 후 다시 열기'}).waitFor({state:'visible'});
    const notice=await page.locator('#reader-notice').evaluate(n=>({height:n.clientHeight,scroll:n.scrollHeight,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
-   assert.ok(notice.scroll<=notice.height+1&&notice.left>=0&&notice.right<=notice.width,JSON.stringify({size,dark,notice}));
+   // Persist the actual failing frame too; the readable-layout gate stays strict.
    await page.screenshot({path:`/tmp/breeze-ocr-confirm/${engine.name()}-recovery-${size.width}x${size.height}-${dark?'dark':'light'}.png`});
+   assert.ok(notice.scroll<=notice.height+1&&notice.left>=0&&notice.right<=notice.width,JSON.stringify({size,dark,notice}));
   }
  }
  assert.equal(await page.evaluate(()=>qaOcrCalls.length),5,'uncertain native completion never releases admission');

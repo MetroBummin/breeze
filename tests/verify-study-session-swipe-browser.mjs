@@ -1,0 +1,50 @@
+import {studyAction} from './helpers/study-actions.mjs';
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {resolve,extname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {chromium} from 'playwright';
+const root=fileURLToPath(new URL('../',import.meta.url)),out=process.env.BREEZE_SESSION_PROOF||'/tmp/breeze-study-session-proof';mkdirSync(out,{recursive:true});
+const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`,browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE}),evidence=[];
+const records={a:{word:'observe',ko:'관찰하다',book:'Saved',example:'She stopped to observe the room.',status:1},b:{word:'evidence',ko:'증거',book:'Saved',example:'There was no evidence of a struggle.',status:2},c:{word:'remarkable',ko:'놀라운',book:'Saved',example:'It was a remarkable discovery.',status:3}};
+try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1180],['ipad-landscape',1180,820],['desktop',1440,1000],['short',844,390]])for(const dark of [false,true]){
+ const theme=dark?'dark':'light',video=device==='phone'||device==='ipad-portrait';
+ const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:2,hasTouch:true,isMobile:true,serviceWorkers:'block',...(video?{recordVideo:{dir:out,size:{width,height}}}:{})}),page=await context.newPage(),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',r=>{if(r.request().url().startsWith(url)||r.request().url().startsWith('blob:'))return r.continue();requests.push(r.request().url());return r.abort();});await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1','"done"'));
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.evaluate(async ({records,dark})=>{words=records;saveWords();darkMode=dark;applyDark();show('vocab');const made=BreezeStudySets.create((await loadStudySets()),{name:'Quiet morning',bookTitles:['Saved']},words,Date.now());await commitStudySets(made.state);openStudySetsDirectory();}, {records,dark});
+ await studyAction(page.locator('.study-sets-home-card[data-set-id]').click(),page);await studyAction(page.locator('#study-sets-start').click(),page);
+ const cdp=await context.newCDPSession(page),state=()=>page.evaluate(async ()=>BreezeStudySets.view((await loadStudySets()),studySetsUI.setId)),card=()=>page.locator('#study-sets-flashcard');
+ const screenshot=async name=>{await page.screenshot({path:`${out}/${device}-${theme}-${name}.png`});};
+ const drag=async(dx,{cancel=false,frame=null}={})=>{const b=await card().boundingBox(),x=b.x+b.width/2,y=Math.min(height-80,b.y+b.height*.55);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+  for(let i=1;i<=12;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+dx*i/12,y:y+2,id:1}]});await page.waitForTimeout(20);}if(frame)await screenshot(frame);
+  await cdp.send('Input.dispatchTouchEvent',{type:cancel?'touchCancel':'touchEnd',touchPoints:[]});await page.waitForTimeout(260);
+ };
+ const before=await page.evaluate(()=>JSON.stringify(words));assert.equal((await state()).completed,0);assert.equal(await page.locator('#study-sets-answer').isVisible(),false);assert.equal(await page.locator('#study-sets-answer').innerText(),'');await screenshot('front');
+ await drag(150);assert.equal((await state()).completed,0);assert.equal(await page.locator('#study-sets-answer').isVisible(),false,'unrevealed drag cannot reveal or grade');
+ await studyAction(card().tap(),page);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);await screenshot('revealed');
+ const token=(await state()).token;await drag(35,{frame:'short-drag'});assert.equal((await state()).token,token);await screenshot('returned');
+ await drag(150,{cancel:true});assert.equal((await state()).token,token);
+ await drag(-150,{frame:'drag-again'});assert.equal((await state()).completed,0);assert.equal((await state()).card.word,'evidence');assert.equal((await state()).total,3);
+ await studyAction(card().tap(),page);await drag(150,{frame:'drag-remember'});assert.equal((await state()).completed,1);
+ assert.equal(await page.locator('#study-sets-study-undo').isVisible(),false,'Undo removed from visible study');
+ await studyAction(page.locator('#study-sets-back').tap(),page);await studyAction(page.locator('#study-sets-start').tap(),page);assert.equal((await state()).card.word,'remarkable');assert.equal((await state()).completed,1);
+ await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(page.locator('.study-sets-home-card[data-set-id]').tap(),page);await studyAction(page.locator('#study-sets-start').tap(),page);assert.equal((await state()).card.word,'remarkable');assert.equal((await state()).revealed,false);
+ // Keyboard alternatives and rapid duplicate responses use the same token owner.
+ await studyAction(card().press('Enter'),page);await studyAction(card().press('ArrowRight'),page);await card().press('ArrowRight').catch(()=>{});await page.waitForTimeout(260);assert.equal((await state()).completed,2);
+ await studyAction(card().tap(),page);await drag(-150);assert.equal((await state()).completed,2);assert.equal((await state()).status,'active');assert.equal((await state()).card.word,'observe');
+ await studyAction(card().press('Enter'),page);await studyAction(card().press('ArrowRight'),page);await page.waitForTimeout(260);assert.equal((await state()).status,'complete');await screenshot('complete');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await studyAction(page.getByRole('button',{name:'전체 새로 학습',exact:true}).tap(),page);assert.equal((await state()).total,3);assert.equal((await state()).completed,0,'passed cards belong to later fresh sessions');
+ await studyAction(card().press('Enter'),page);await studyAction(card().press('ArrowRight'),page);assert.equal((await state()).completed,1,'reduced motion uses the same grade contract');
+ await studyAction(page.evaluate(()=>studySetsStart(studySetsUI.setId,true)),page);
+ await page.evaluate(async ()=>{const s=(await loadStudySets()),set=s.sets[0];set.session.queue[0].example='A long saved sentence with evidence. '.repeat(30);await commitStudySets(s);await studySetsReadAndRender();document.getElementById('v-memory-set').style.fontSize='22px';});await page.addStyleTag({content:'.study-session-stack #study-sets-expression{font-size:60px!important}.study-session-stack .study-sets-card-example{font-size:26px!important}'});await studyAction(card().tap(),page);await screenshot('long-content');
+ const verticalToken=(await state()).token,b=await card().boundingBox(),vx=b.x+b.width/2,vy=Math.min(height-80,Math.max(160,b.y+160));
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:vx,y:vy,id:1}]});for(let i=1;i<=10;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:vx+2,y:vy-i*10,id:1}]});await page.waitForTimeout(20);}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(220);assert.equal((await state()).token,verticalToken,'vertical reading never grades');assert.ok(await page.locator('#study-sets-content').evaluate(n=>n.scrollTop>0),'long example uses native vertical scrolling');
+ assert.equal(await page.locator('#v-memory-set').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);assert.deepEqual(await page.evaluate(()=>words),JSON.parse(before));assert.deepEqual(errors,[]);assert.equal(requests.some(u=>/dict|completions/.test(u)),false);
+ evidence.push({device,theme,viewport:{width,height,dpr:2},checks:'front/reveal, pre-reveal drag, short return, canceled drag, repeat tail/no progress, remember, no visible Undo, exit/reload resume, duplicate input, last-card repeat, complete, fresh session, reduced motion, long content'});
+ const recorded=page.video();await context.close();if(video)await recorded.saveAs(`${out}/${device}-${theme}-swipe.webm`);
+ }
+ writeFileSync(`${out}/evidence.json`,JSON.stringify({platform:'Chromium trusted CDP touch, not native iOS',cases:evidence},null,2)+'\n');console.log('Trusted study swipes, queue/resume and10 layouts passed');
+}finally{await browser.close();server.close();}

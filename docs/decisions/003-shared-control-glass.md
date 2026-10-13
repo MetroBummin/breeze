@@ -339,7 +339,12 @@ whole group: doing so also cuts off the approved shadow.
 
 Browser coverage samples both directions, themes and viewport sizes, checks the
 animated filter and settled controls, and compares painted capsule corners with
-the underlying scene. Linux WebKit cannot establish physical iPhone rendering;
+the underlying scene. The regression fixture places a high-contrast pattern
+behind the controls so a legacy rectangular blur has a measurable positive
+signal even over the otherwise uniform dark tablet footer. Samples use the
+paused transition group's animated bounds, and require both a nonzero legacy
+signal and smaller fixed corner deltas; filter, shadow and settled controls
+checks remain. Linux WebKit cannot establish physical iPhone rendering;
 real-device confirmation remains separate from these browser checks.
 
 ## Sidebar dismissal on body manipulation
@@ -366,3 +371,212 @@ reversal retains the current presentation, as described above. Browser checks
 cover PDF/EPUB body versus internal movement, programmatic restoration, trusted
 wheel/tap input, pinch cancellation, reopening and zoomed edge exclusions;
 these do not establish physical iOS/Pencil behavior.
+
+## Safari-proportion review candidate (separate from TestFlight267)
+
+The user requested a separate PR with iPhone/iPad screenshots after comparing
+Home, Wordbook and Reader with private Safari reference photos. Shared expanded
+controls now form a centered row: 83vw capped at512px, 48px circles/capsule and
+8px gaps. The narrower total row gives the phone more outer breathing room;
+iPad retains the cap instead of stretching the phone arrangement to screen edges.
+The row bottom is max(8px,safe-area-inset-bottom), retaining desktop clearance
+while removing the former extra15px above the device safe area.
+
+Reader controls remain inside readmain, so lookup-pane space is preserved. The
+PDF/EPUB two-button capsule grows to96px and the central pill uses the remaining
+width with balanced8px gaps. The sidebar expands to the readmain edge using the
+centered row's real gutter. Compact Reader behavior and44px horizontally
+scrollable writing targets remain. Materials, functions and gestures are unchanged.
+Private photos are not committed. This branch is a review candidate; build267
+source and its immutable contract remain on integrate/breeze-193-cloud. No merge,
+version change, archive or upload is authorized for this geometry PR.
+
+### Narrow recovery notices
+
+The first geometry review reproduced the OCR recovery notice regression at
+320×568 in Chromium: the two-line30px title slot had only35.6px width after
+mode controls, so its content required76px height and was clipped. In a readmain
+container360px or narrower, a visible Reader notice with a mode button now uses
+the full capsule width above the unchanged mode target. The capsule grows upward
+only for that status. Text wraps naturally without a line clamp; no font shrink,
+shortened guidance, hidden mode button or weakened OCR assertion is introduced.
+Compact controls retain their existing geometry and tap behavior. Ordinary controls
+return to their approved dimensions when the notice clears; wider notices retain
+the prior layout. The writing pill uses the shared48px outer height while its
+internal controls remain44px and horizontally scrollable.
+
+### Approved next internal candidate: lighter shared controls
+
+The user approved a further border/shadow polish, consistent same-family circular
+controls across Home, Wordbook, Reader and study sets, and inclusion in the next
+internal TestFlight build268. Integration is authorized; main merge and App Store
+submission remain outside scope. Parent confirmed Apple's next counter268 and
+owns the single Cloud start. Historical267/266 contracts remain unchanged.
+
+Control border/shadow tokens now own both dock glass and the study-set header.
+Light edge alpha and drop-shadow weight are reduced; dark shadow/edge are also
+restrained. The study header retains its existing neutral light/charcoal gradient
+and44px targets; dock controls retain48px proportions. Shared outline icons use
+20px boxes and1.8 strokes; Reader's existing1px optical back-chevron correction
+remains. Completed badges, writing tools and unrelated functional controls retain
+their own sizes. Scroll/gesture ownership and writing's always-expanded policy
+are unchanged. Real captures and trusted touch tests verify the affected states.
+
+### PDF slot regression contract
+
+The real morph/rotation suite reproduced its old22px-center assertion at320px:
+96px navigation,105.59375×48px pill,48px settings, balanced8px gaps and exactly
+24px pill-center offset. The prior44px side slot implied22px; the approved48px
+row implies24px at all widths, including a bounded centered tablet group. No
+product geometry change is needed. The suite now requires explicit96/48px
+navigation/settings,48px row heights, balanced8px gaps, a centered bounded row
+and pill center in the actual free interval. Compact centering, no-overlap,
+writing alignment, sidebar morph, thumbnail bounds and all later functional/
+rotation checks remain. The page button is checked inside its navigation slot
+rather than against the old viewport-edge assumption on centered tablet rows.
+
+The follow-on chrome-motion suite also derives the expanded PDF anchor from
+the actual free interval between the96px navigation and48px settings slots.
+Its former narrow22px/wide0px and reduced-motion217px expectations are obsolete
+under the approved row. Immediate continuity, synchronized easing, no overshoot,
+settling, interruption/reversal, writing and reduced-motion assertions remain.
+
+### Post268 optical review,2026-10-12 (Draft only)
+
+Parent verified private946×2048 reference images and supplied optical targets.
+The consumer's supported Library materialization failed; the consumer has not
+seen those original pixels. Parent owns direct comparison and final visual review.
+These are product requirements derived from screenshots, not published Safari
+capsule/glyph specifications. No merge, deployment or new release is authorized.
+
+Preserve48px row height, bottom safe-area rule,24px capsule radius,8px outer gaps,
+row cap and all material tokens. The PDF/EPUB pair uses two independent44×48px
+regions inside88px; the central capsule gains8px. Its center is the actual free
+interval (20px offset for the balanced row), and compact controls remain34px.
+The page button is anchored to the outer border edge and closed-only overflow
+is visible to prevent the old1px hit-rectangle overlap. The drawer keeps its
+contained overflow; no gesture owner, storage or navigation function changes.
+
+Reader and study back glyphs share32px frames and2.1 rounded stroke. Their actual
+painted area is much smaller than the SVG frame. The mode glyph uses24px/2.1
+and three paragraph lines, preserving the original/text semantics and labels.
+Unrelated glyphs, header44px targets and writing44px targets keep their sizes.
+
+Paired renders use identical fixtures/viewport/theme. Geometry guards require
+88px/48px slots,48px heights,8px gaps and real free-space centering. Touch tests
+keep exact44px rectangles, no overlap and subpixel DOM owner checks. Chromium's
+2px touch footprint straddled a0.25px seam sample and its synthesized click
+rounded to an integer; actual trusted taps now use the first unambiguous whole
+pixel inside each region. Assertions are retained; no delay/gesture workaround
+is added to product code. Both native reference comparison and native-device
+touch/rendering remain outside this browser evidence.
+
+### PR155 follow-up: slightly bolder, balanced paired glyphs
+
+User review asked for slightly bolder outlines and a page-finder glyph matching
+the chevron's optical size/weight. Shared20px outlines now use2.0 instead of1.8;
+back32px and mode24px frames use2.3 instead of2.1. The page-finder and its drawer
+toggle use24px frames with stroke2.3×4/3 to match the chevron's actual32/24 SVG
+scale. Nominal painted heights are20.07px (page) and19.60px (back), and both
+effective strokes are3.07px. Different glyph aspect ratios keep different widths;
+their bounding boxes are deliberately not forced equal.
+
+The88×48px pair, independent44×48px targets, gaps, padding, material and all
+functions remain. Full-view screenshots use the established PR155 PDF fixture
+and measured22px scroll; bottom crops are actual DPR2 browser screenshot clips,
+not resized/retouched artwork. The earlier126 comparison images remain intact.
+Onboarding's separate WebKit timeout is unproven: its pen property resets once
+the ready state removes the drawing animation. Add failure state/timeline/caption
+diagnostics only; retain exact pen===1, hold/ready assertions and30s deadlines.
+No product animation, deployment, merge or release boundary is changed.
+
+### Sidebar header consistency correction
+
+The30398694 CI comparison caught an actual asymmetry: the page-navigation
+toggle alone had24px/3.07px SVG styling while its44px bookmark peer retained
+22px/2px. Move both onto the shared sidebar-header rule (24px frame, matching
+stroke scale); remove the one-button override. Preserve44×44 circles,50% radius,
+background, fill/pressed semantics and all existing deep-equality assertions.
+Before/after own-browser sidebar renders ground the change. This does not force
+the differently shaped bookmark/page glyphs to equal painted widths.
+
+### App icon family review (PR155)
+
+Extend the reviewed general outline family (20px SVG frame, rounded 2-unit
+stroke) to Home settings/add, Wordbook export, folder add, PDF thumbnail actions
+and task/settings/article close buttons. Filled ellipses use a 20px frame and
+1.6-unit dot radius. Keep existing button rectangles, materials, accessible
+names and handlers; use centered SVG instead of the article preview's text X.
+Back roles retain the reviewed 32px/2.3 chevron, while the sidebar header retains
+its matched 24px/stroke-scale pair. Lookup, stars, disclosure indicators and
+writing tools keep their distinct functional treatment. This is a draft visual
+review; user sign-off precedes any new build or deployment. Frozen release
+receipts and checkers remain unchanged.
+
+### Separately approved Home/word-add corrections
+
+The user approved restoring the word-add popup X's shared circular neutral
+background/rim after the compact-task rule made it transparent. Its44×44 box,
+SVG, close handler and50% radius remain. Cancel/save text buttons are untouched;
+the generic task popup keeps its existing separate compact style. Home settings
+alone moves4 CSSpx downward for optical alignment with the wordmark's ink;
+header/logo boxes and the44px touch target remain. Paired phone/tablet/desktop/
+short light/dark captures record the exact4px shift and unchanged logo/actions.
+
+
+## Reader icon optics after 269
+
+Approved Reader-only adjustment keeps all existing touch targets, positions and
+materials: the 32px back SVG uses 1.5 viewBox units and the 24px page-navigation
+and mode SVGs use 2 units, each rendering a 2px stroke. Standalone and grouped
+Reader back now share that weight. General controls, study back icons and
+bookmark drawings retain their existing tokens. This addresses the Reader's
+previous 3.07px back/page stroke without a global icon or layout change.
+
+
+## Expanded all-control scope for the next build
+
+The subsequent user request extends the Reader-only adjustment to every app
+control family. A shared regular outline now renders2px at existing20/24/32px
+frames, rather than mixing1.5/1.67/3.07px strokes. General20px frames use2.4
+viewBox units, backs32px use1.5, page/mode24px use2. Filled ellipses use1.2-unit
+radii in20px frames, giving2px dot diameters. Inline actions/search render1.4px
+and compact disclosure glyphs1.2px; large onboarding artwork is illustrative,
+not a toolbar control. Existing filled selection states and star ratings keep
+their semantic roles. All button boxes, fonts, labels, materials and handlers
+are retained. Both PDF sidebar header drawings use the same24px/2 rule, preserving
+the existing strict geometry/material/weight equality contract.
+
+The Apple [SF Symbols guidance](https://developer.apple.com/design/human-interface-guidelines/sf-symbols)
+uses weights and contextual scales and recommends optical consistency for
+custom drawings; [SF Symbols](https://developer.apple.com/sf-symbols/) supplies
+system variants. This is a measured Breeze SVG alignment inspired by those
+principles, not an SF asset import or a published Safari pixel specification.
+Existing reference evidence describes private Safari proportions; the originals
+were not materialized in this cloud environment. Parent retains direct comparison.
+
+
+## Header shells and Home exit ownership (270 follow-up)
+
+The user clarified that control consistency includes circular diameter, material,
+rim, shadow, alignment, optical bounds, padding and press feedback. Matching44px
+header controls now share styles/header-controls.css: circular50% radius, existing
+study control palette/gradient,1px rim, shared shadow/18px blur, centered zero
+padding and shared hover/press filters. The editable detail surface owns this
+material; its inner button/menu remain clear and its existing inline morph wins.
+Dock slots retain their established geometry. Back/X use32px SVG/1.5 units with
+matched18px painted heights; dense/wide/filled header shapes use24px/2 units.
+Selected fills, accessible names, handlers and touch rectangles remain intact.
+Raw before/after pair captures and actual computed metrics cover phone/iPad/short
+in both themes. This applies Apple contextual optical-scale guidance to Breeze
+drawings; private Safari reference pixels were not retrieved in this workspace.
+
+Home exit commits the current reading scalar and anchor before the browser
+starts its view-transition snapshot. That exact book/history entry owns the
+already committed navigation position until the transition finishes. Subsequent
+saves from that departing surface cannot resample temporary snapshot geometry;
+saves for other books/entries remain valid. No maximum/clamp, timing extension,
+schema change or delayed Home repaint is added. Controlled deferred viewport
+reset reproduces100%→0% before the fix; regression checks preserve100/50/19%
+and exact durable original anchors, including backward reading. The real browser
+transition assertions remain, with actual WebKit CI required.

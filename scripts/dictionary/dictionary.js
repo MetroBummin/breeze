@@ -469,14 +469,11 @@ function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
   if(wordPeekSameTarget(k,node)){
-    if(!wordPeekHadPending&&!wordPeekPending()){closePanel();return;}
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.repeat(wordLookupLife);
-    // Original surfaces replace their display-only marker on each hit. Transfer
-    // ownership without opening another lookup or losing the pending shimmer.
-    if(node!==activeSelectedWordNode){
-      clearActiveWordSelection();activeSelectedWordNode=node;node.classList.add('sel');
-      renderWordPeek();
-    }
+    // PDF/OCR and EPUB create a disposable marker before dispatching the tap.
+    // Retire that new marker as well as the current lookup's owned selection.
+    if(node!==activeSelectedWordNode&&node.classList?.contains('original-selection-marker'))node.remove();
+    closePanel();
     return;
   }
   if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.switchTarget(wordLookupLife);
@@ -645,9 +642,8 @@ function wordPeekTargetVisible(node){
   return rect.right>left&&rect.left<right&&rect.bottom>top&&rect.top<bottom;
 }
 function wordPeekSameTarget(k,node){
-  if(!wordPeekActive||!selKey||!words[selKey]||!node) return false;
-  const root=words[selKey].root||selKey;
-  if(k!==root&&k!==selKey) return false;
+  if(!wordPeekActive||!node) return false;
+  // A token's source identity survives canonical/meaning-key changes.
   if(node===activeSelectedWordNode)return true;
   const current=wordLookupTargets.get(activeSelectedWordNode),next=wordLookupTargets.get(node);
   return !!(current&&next&&current.owner===next.owner&&current.start===next.start
@@ -1878,14 +1874,79 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize',wordPe
    않습니다. 별을 누르거나 동기화가 도착하면 목록 전체를 다시 그리므로, 열어 둔
    자리를 기억할 곳이 어딘가에는 있어야 합니다. */
 const vocabOpen = new Set();
-function vocabMoreHtml(w){
+function vocabMoreHtml(w,editable=true){
   return `<div class="vmore">
     ${w.example?`<div class="vex">${esc(w.example)}</div>`:''}
     <div class="vmeta">${w.book?`📖 ${esc(w.book)} · `:''}${new Date(w.addedAt).toLocaleDateString('ko-KR')}</div>
-    <button class="rowdel" title="이 뜻만 삭제">✕ 이 뜻 삭제</button>
+    ${editable?'<button class="rowdel" title="이 뜻만 삭제">✕ 이 뜻 삭제</button>':''}
   </div>`;
 }
+function vocabGroupMarkup(groupKey,entries,open,headKey,head,editable=true,ordinal=0){
+  const first=entries[0][1],stName={1:'★',2:'★★',3:'★★★'};
+  return `<div class="vgroup${open?' open':''}" data-g="${esc(groupKey)}" data-head="${esc(headKey)}">
+      <div class="vrow${ordinal?' vrow-numbered':''}">
+        ${ordinal?`<span class="vordinal" aria-hidden="true">${ordinal}</span>`:''}
+        <div class="vword" role="button" tabindex="0" aria-expanded="${open}">${esc(first.word)}</div>
+        <div class="vsenses">${entries.map(([k,w])=>`
+          <div class="vsense" data-k="${esc(k)}">
+            <div class="vko"${open&&editable?' contenteditable="true" spellcheck="false"':''}>${esc(w.ko||'')}</div>
+            ${open?vocabMoreHtml(w,editable):''}
+          </div>`).join('')}</div>
+        <button class="chip s${head.status}" title="클릭해서 모르는 정도 바꾸기">${stName[head.status]}</button>
+      </div>
+    </div>`;
+}
+function bindVocabularyGroupToggle(group,lookup,opened,editable=true){
+  const groupKey = group.dataset.g;
+    const toggle = ()=>{
+      const open=!opened.has(groupKey);
+      if(open)opened.add(groupKey);else opened.delete(groupKey);
+      group.querySelectorAll('.vsense').forEach(row=>{
+        const sense=/** @type {HTMLElement} */(row),k=sense.dataset.k,w=lookup(k);
+        const ko=sense.querySelector('.vko');
+        if(!w)return;
+        if(open){
+          if(editable){ko.setAttribute('contenteditable','true');ko.setAttribute('spellcheck','false');}
+          sense.insertAdjacentHTML('beforeend',vocabMoreHtml(w,editable));
+          if(editable)/** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>deleteMeaning(k);
+        }else{
+          ko.removeAttribute('contenteditable');ko.removeAttribute('spellcheck');
+          sense.querySelector('.vmore')?.remove();
+        }
+      });
+      // contenteditable can synchronously flush styles. Prepare editing before
+      // changing the group's geometry, so that flush does not reflow the list.
+      group.classList.toggle('open',open);
+      group.querySelector('.vword').setAttribute('aria-expanded',String(open));
+    };
+    /* 접었다 펴는 일은 줄 전체가 받습니다. 별·삭제·펼친 속은 각자 할 일이 있어서
+       여기서 한 번에 비켜 줍니다 — 세 곳에 stopPropagation 을 흩뿌리는 것보다
+       "무엇이 토글이 아닌지"가 한 줄에 모여 있는 편이 나중에 읽힙니다.
+       펼쳤을 때의 뜻은 `contenteditable` 이라 여기서 함께 걸러집니다: 고치려고
+       누른 손이 창을 닫아 버리면 고칠 수가 없습니다. */
+    group.addEventListener('click', event=>{
+      if((/** @type {HTMLElement} */(event.target)).closest('.chip, .rowdel, .vmore, [contenteditable]')) return;
+      toggle();
+    });
+    /** @type {HTMLElement} */(group.querySelector('.vword')).addEventListener('keydown', event=>{
+      const key=(/** @type {KeyboardEvent} */(event)).key;
+      if(key==='Enter' || key===' '){ event.preventDefault(); toggle(); }
+    });
+}
+// Snapshot adapters reuse the actual Memory renderer, not a parallel word UI.
+function createVocabularyGroup(entries,options={}){
+  const groupKey=entries[0][0],head=entries[0][1],opened=options.opened||new Set();
+  const host=document.createElement('div');
+  host.innerHTML=vocabGroupMarkup(groupKey,entries,opened.has(groupKey),groupKey,head,false,options.ordinal||0);
+  const group=host.firstElementChild,lookup=key=>entries.find(item=>item[0]===key)?.[1];
+  bindVocabularyGroupToggle(group,lookup,opened,false);
+  const chip=/** @type {HTMLButtonElement} */(group.querySelector('.chip'));
+  chip.setAttribute('aria-label',`${head.word} 별점 ${head.status||1}개`);
+  chip.onclick=()=>options.onStatus?.((head.status||1)%3+1);
+  return group;
+}
 function renderVocab(){
+  if(typeof refreshStudySetsEntry==='function')refreshStudySetsEntry();
   const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
     .sort((a,b)=>b[1].addedAt-a[1].addedAt);
   const q = document.getElementById('vsearch').value.trim().toLowerCase();
@@ -1919,55 +1980,11 @@ function renderVocab(){
        별도 그 레코드의 것을 씁니다(정렬이 이미 그 뜻을 맨 앞에 둡니다). */
     const headKey = words[groupKey] ? groupKey : entries[0][0];
     const head = words[headKey];
-    return `<div class="vgroup${open?' open':''}" data-g="${esc(groupKey)}" data-head="${esc(headKey)}">
-      <div class="vrow">
-        <div class="vword" role="button" tabindex="0" aria-expanded="${open}">${esc(first.word)}</div>
-        <div class="vsenses">${entries.map(([k,w])=>`
-          <div class="vsense" data-k="${esc(k)}">
-            <div class="vko"${open?' contenteditable="true" spellcheck="false"':''}>${esc(w.ko||'')}</div>
-            ${open?vocabMoreHtml(w):''}
-          </div>`).join('')}</div>
-        <button class="chip s${head.status}" title="클릭해서 모르는 정도 바꾸기">${stName[head.status]}</button>
-      </div>
-    </div>`;
+    return vocabGroupMarkup(groupKey,entries,open,headKey,head);
   }).join('');
   wrap.querySelectorAll('.vgroup').forEach(node=>{
     const group = /** @type {HTMLElement} */(node);
-    const groupKey = group.dataset.g;
-    const toggle = ()=>{
-      const open=!vocabOpen.has(groupKey);
-      if(open)vocabOpen.add(groupKey);else vocabOpen.delete(groupKey);
-      group.querySelectorAll('.vsense').forEach(row=>{
-        const sense=/** @type {HTMLElement} */(row),k=sense.dataset.k,w=words[k];
-        const ko=sense.querySelector('.vko');
-        if(!w)return;
-        if(open){
-          ko.setAttribute('contenteditable','true');ko.setAttribute('spellcheck','false');
-          sense.insertAdjacentHTML('beforeend',vocabMoreHtml(w));
-          /** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>deleteMeaning(k);
-        }else{
-          ko.removeAttribute('contenteditable');ko.removeAttribute('spellcheck');
-          sense.querySelector('.vmore')?.remove();
-        }
-      });
-      // contenteditable can synchronously flush styles. Prepare editing before
-      // changing the group's geometry, so that flush does not reflow the list.
-      group.classList.toggle('open',open);
-      group.querySelector('.vword').setAttribute('aria-expanded',String(open));
-    };
-    /* 접었다 펴는 일은 줄 전체가 받습니다. 별·삭제·펼친 속은 각자 할 일이 있어서
-       여기서 한 번에 비켜 줍니다 — 세 곳에 stopPropagation 을 흩뿌리는 것보다
-       "무엇이 토글이 아닌지"가 한 줄에 모여 있는 편이 나중에 읽힙니다.
-       펼쳤을 때의 뜻은 `contenteditable` 이라 여기서 함께 걸러집니다: 고치려고
-       누른 손이 창을 닫아 버리면 고칠 수가 없습니다. */
-    group.addEventListener('click', event=>{
-      if((/** @type {HTMLElement} */(event.target)).closest('.chip, .rowdel, .vmore, [contenteditable]')) return;
-      toggle();
-    });
-    /** @type {HTMLElement} */(group.querySelector('.vword')).addEventListener('keydown', event=>{
-      const key=(/** @type {KeyboardEvent} */(event)).key;
-      if(key==='Enter' || key===' '){ event.preventDefault(); toggle(); }
-    });
+    bindVocabularyGroupToggle(group,key=>words[key],vocabOpen);
     const headKey = group.dataset.head;
     /** @type {HTMLElement} */(group.querySelector('.chip')).onclick = ()=>{
       setStatus(headKey, words[headKey].status%3+1); renderVocab();

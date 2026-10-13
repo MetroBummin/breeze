@@ -12,7 +12,7 @@ const html=readFileSync(resolve(out,'index.html'),'utf8');
 for(const match of html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)="(?!https?:|\/\/|data:|#)([^"]+)"/g)){
  assert(existsSync(resolve(out,match[1].split('?')[0])),'missing entry dependency '+match[1]);
 }
-for(const path of ['assets/lib/readability-0.6.0.js','assets/longreads/homeward-lookup-data.js','scripts/reader/frame-trace.js','assets/classics/alice-in-wonderland.epub']){
+for(const path of ['assets/lib/readability-0.6.0.js','assets/longreads/homeward-lookup-data.js','scripts/reader/frame-trace.js','scripts/reader/pdf-ink-store.js','assets/classics/alice-in-wonderland.epub']){
  assert(existsSync(resolve(out,path)),'required offline/deferred resource missing: '+path);
 }
 for(const dir of ['assets/longreads','assets/brand/wordmarks']){
@@ -21,3 +21,10 @@ for(const dir of ['assets/longreads','assets/brand/wordmarks']){
  }
 }
 console.log('Native package: dormant resources excluded; source, live entry dependencies, deferred code and approved content retained.');
+
+// Native uses breeze://localhost. The same stamped script is the page entry
+// and worker URL; blocked worker admission must retain the tested IDB fallback.
+const inkStore='scripts/reader/pdf-ink-store.js';
+assert.deepEqual(readFileSync(resolve(out,inkStore)),readFileSync(resolve(root,inkStore)),'native ink worker bytes match reviewed source');
+assert.ok(html.indexOf(inkStore)<html.indexOf('scripts/reader/pdf-ink.js'),'ink storage owner precedes its engine');
+assert.match(html,/scripts\/reader\/pdf-ink-store\.js\?v=[a-f0-9]{8}/,'native worker shares the stamped page asset');

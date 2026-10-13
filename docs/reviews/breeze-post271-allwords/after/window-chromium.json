@@ -1,0 +1,347 @@
+{
+  "engine": "chromium",
+  "native": false,
+  "totalWords": 2294,
+  "totalMeanings": 2399,
+  "layouts": [
+    {
+      "size": "phone",
+      "dark": false,
+      "row": {
+        "x": 20,
+        "y": 111.1875,
+        "width": 350,
+        "height": 77,
+        "bottom": 188.1875
+      },
+      "chip": {
+        "x": 316,
+        "y": 130.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 166.6875
+      },
+      "word": {
+        "x": 30,
+        "y": 137.1875,
+        "width": 99,
+        "height": 23,
+        "bottom": 160.1875
+      },
+      "start": {
+        "x": 24,
+        "y": 780,
+        "width": 342,
+        "height": 48,
+        "bottom": 828
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 72,
+        "bottom": 72
+      },
+      "scroll": 0,
+      "rows": 19
+    },
+    {
+      "size": "phone",
+      "dark": true,
+      "row": {
+        "x": 20,
+        "y": 111.1875,
+        "width": 350,
+        "height": 77,
+        "bottom": 188.1875
+      },
+      "chip": {
+        "x": 316,
+        "y": 130.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 166.6875
+      },
+      "word": {
+        "x": 30,
+        "y": 137.1875,
+        "width": 99,
+        "height": 23,
+        "bottom": 160.1875
+      },
+      "start": {
+        "x": 24,
+        "y": 780,
+        "width": 342,
+        "height": 48,
+        "bottom": 828
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 72,
+        "bottom": 72
+      },
+      "scroll": 0,
+      "rows": 19
+    },
+    {
+      "size": "tablet",
+      "dark": false,
+      "row": {
+        "x": 20,
+        "y": 111.1875,
+        "width": 780,
+        "height": 77,
+        "bottom": 188.1875
+      },
+      "chip": {
+        "x": 746,
+        "y": 130.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 166.6875
+      },
+      "word": {
+        "x": 30,
+        "y": 137.1875,
+        "width": 220,
+        "height": 23,
+        "bottom": 160.1875
+      },
+      "start": {
+        "x": 24,
+        "y": 1116,
+        "width": 772,
+        "height": 48,
+        "bottom": 1164
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 820,
+        "height": 72,
+        "bottom": 72
+      },
+      "scroll": 0,
+      "rows": 27
+    },
+    {
+      "size": "tablet",
+      "dark": true,
+      "row": {
+        "x": 20,
+        "y": 111.1875,
+        "width": 780,
+        "height": 77,
+        "bottom": 188.1875
+      },
+      "chip": {
+        "x": 746,
+        "y": 130.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 166.6875
+      },
+      "word": {
+        "x": 30,
+        "y": 137.1875,
+        "width": 220,
+        "height": 23,
+        "bottom": 160.1875
+      },
+      "start": {
+        "x": 24,
+        "y": 1116,
+        "width": 772,
+        "height": 48,
+        "bottom": 1164
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 820,
+        "height": 72,
+        "bottom": 72
+      },
+      "scroll": 0,
+      "rows": 27
+    },
+    {
+      "size": "desktop",
+      "dark": false,
+      "row": {
+        "x": 160,
+        "y": 111.1875,
+        "width": 1120,
+        "height": 77,
+        "bottom": 188.1875
+      },
+      "chip": {
+        "x": 1226,
+        "y": 130.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 166.6875
+      },
+      "word": {
+        "x": 170,
+        "y": 137.1875,
+        "width": 220,
+        "height": 23,
+        "bottom": 160.1875
+      },
+      "start": {
+        "x": 164,
+        "y": 936,
+        "width": 1112,
+        "height": 48,
+        "bottom": 984
+      },
+      "header": {
+        "x": 140,
+        "y": 0,
+        "width": 1160,
+        "height": 72,
+        "bottom": 72
+      },
+      "scroll": 0,
+      "rows": 23
+    },
+    {
+      "size": "desktop",
+      "dark": true,
+      "row": {
+        "x": 160,
+        "y": 111.1875,
+        "width": 1120,
+        "height": 77,
+        "bottom": 188.1875
+      },
+      "chip": {
+        "x": 1226,
+        "y": 130.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 166.6875
+      },
+      "word": {
+        "x": 170,
+        "y": 137.1875,
+        "width": 220,
+        "height": 23,
+        "bottom": 160.1875
+      },
+      "start": {
+        "x": 164,
+        "y": 936,
+        "width": 1112,
+        "height": 48,
+        "bottom": 984
+      },
+      "header": {
+        "x": 140,
+        "y": 0,
+        "width": 1160,
+        "height": 72,
+        "bottom": 72
+      },
+      "scroll": 0,
+      "rows": 23
+    },
+    {
+      "size": "short",
+      "dark": false,
+      "row": {
+        "x": 20,
+        "y": 91.1875,
+        "width": 804,
+        "height": 77,
+        "bottom": 168.1875
+      },
+      "chip": {
+        "x": 770,
+        "y": 110.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 146.6875
+      },
+      "word": {
+        "x": 30,
+        "y": 117.1875,
+        "width": 220,
+        "height": 23,
+        "bottom": 140.1875
+      },
+      "start": {
+        "x": 24,
+        "y": 326,
+        "width": 796,
+        "height": 48,
+        "bottom": 374
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 52,
+        "bottom": 52
+      },
+      "scroll": 0,
+      "rows": 7
+    },
+    {
+      "size": "short",
+      "dark": true,
+      "row": {
+        "x": 20,
+        "y": 91.1875,
+        "width": 804,
+        "height": 77,
+        "bottom": 168.1875
+      },
+      "chip": {
+        "x": 770,
+        "y": 110.6875,
+        "width": 44,
+        "height": 36,
+        "bottom": 146.6875
+      },
+      "word": {
+        "x": 30,
+        "y": 117.1875,
+        "width": 220,
+        "height": 23,
+        "bottom": 140.1875
+      },
+      "start": {
+        "x": 24,
+        "y": 326,
+        "width": 796,
+        "height": 48,
+        "bottom": 374
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 52,
+        "bottom": 52
+      },
+      "scroll": 0,
+      "rows": 7
+    }
+  ],
+  "anchor": {
+    "index": "414",
+    "y": -45.8125,
+    "scroll": 28022
+  },
+  "restored": {
+    "y": -45.8125,
+    "scroll": 28022
+  },
+  "checks": "bounded DOM; all ordinals through final row; multi-meaning expansion/remount; 110 keyboard rows; deep-scroll return; complete queue/again/remember/reload; immutable vocabulary and legacy storage",
+  "errors": []
+}

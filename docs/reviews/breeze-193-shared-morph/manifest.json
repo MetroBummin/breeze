@@ -1,0 +1,132 @@
+{
+  "label": "WEB PREVIEW \u2014 Chromium touch emulation; not native iOS",
+  "base": "a733f17920d5c50d3742d3d6d3926cc0111366eb",
+  "capture_source_sha256": {
+    "scripts/ui/study-sets.js": "e0d2e6178e4fd218d82536c2f6dcfca50c4b7861d4658d89039d2d8938213df0",
+    "styles/study-sets.css": "d34f438dc94482dc26407c99b15158151c9081a968f30959dc322b7f402c1802",
+    "tests/verify-study-sets-touch-browser.mjs": "3080b2301ef27ca873ae090a264266444d28e378c2db3c9f84d21c7bfe600feb"
+  },
+  "images": [
+    {
+      "name": "web-preview-phone-add-books-dark.png",
+      "sha256": "31525e0b679d33c7d458702377440afdb3dc473c1cbc7f7124c7c95db06405e4",
+      "bytes": 8749
+    },
+    {
+      "name": "web-preview-phone-add-books-light.png",
+      "sha256": "cf1476eaa68604e4c76bb186a46e59342b1d5c391c6f84a171dcf703ce5ab9cb",
+      "bytes": 8815
+    },
+    {
+      "name": "web-preview-phone-detail-dark.png",
+      "sha256": "999aad699f11a0e44b84739cea75ba14978667f3d94c61c862e742d5291b233d",
+      "bytes": 36922
+    },
+    {
+      "name": "web-preview-phone-detail-light.png",
+      "sha256": "5592c3ddaefec93466b3519e0f0cb73ff51904746029610c971637ab3dfa770e",
+      "bytes": 36769
+    },
+    {
+      "name": "web-preview-phone-edit-closed-light.png",
+      "sha256": "af12dfb12c354b72ba283fc1b130801ee946635ae87314658ee637be46d71fcc",
+      "bytes": 36771
+    },
+    {
+      "name": "web-preview-phone-edit-mid-dark.png",
+      "sha256": "a85ab218a4067572c9a8ac197c31aa4d2988a2084d5f9e656e0506290bd1a7f1",
+      "bytes": 43345
+    },
+    {
+      "name": "web-preview-phone-edit-mid-light.png",
+      "sha256": "c4a9e480275e74654f939d391f7e0d26469b07fa8b40c1900465bbba69e250e2",
+      "bytes": 41934
+    },
+    {
+      "name": "web-preview-phone-edit-open-dark.png",
+      "sha256": "2512e30a3be54e5df9ed8baccd322487c56aeaf8ace013ad9e2fbc88a4a3f7e2",
+      "bytes": 49278
+    },
+    {
+      "name": "web-preview-phone-edit-open-light.png",
+      "sha256": "e64a3b2eb63ef630ab0eebf5556960aad779dc533cd1dd40a817e4c44c39a117",
+      "bytes": 47153
+    },
+    {
+      "name": "web-preview-phone-exclusion-undo-light.png",
+      "sha256": "5c7fb17ed617334539b3cfe84844551b3e5d4f253ac9d5da5b0a37793166897c",
+      "bytes": 36214
+    },
+    {
+      "name": "web-preview-phone-list-dark.png",
+      "sha256": "46a6accd6fd8cc0a78f910702e2fafced3087759eccb9d73f402f5e7d324c590",
+      "bytes": 36920
+    },
+    {
+      "name": "web-preview-phone-list-light.png",
+      "sha256": "0d3d324ad5ab77ba82da0f120b473ef33ab3ea118ed365fe864c82392b33cb50",
+      "bytes": 37273
+    },
+    {
+      "name": "web-preview-phone-swipe-moving-light.png",
+      "sha256": "67929f073e626eb874409b7c0e9b334bad05169ee5ac6f076cfda29b8a292aa6",
+      "bytes": 36583
+    },
+    {
+      "name": "web-preview-phone-swipe-parked-light.png",
+      "sha256": "8c9fe231f31e9cfa7a5db46781bdab0a06c8ab2cf22927a4ca68c168afeb6d7a",
+      "bytes": 37373
+    },
+    {
+      "name": "web-preview-tablet-add-books-dark.png",
+      "sha256": "98c13b17eb8023ce7231e76e9a3b7965a50c897a7876b994dcac1fdeae87a34f",
+      "bytes": 11592
+    },
+    {
+      "name": "web-preview-tablet-add-books-light.png",
+      "sha256": "6c195a2d7e8d9aad4a02008930c4de4767415583eb802505dd9cfaa6336d5642",
+      "bytes": 11666
+    },
+    {
+      "name": "web-preview-tablet-detail-dark.png",
+      "sha256": "dd06a5688938bf6f96a581e4c9af07fbd7e4a7a315673c2e5ed2fc3666cce5ad",
+      "bytes": 54483
+    },
+    {
+      "name": "web-preview-tablet-detail-light.png",
+      "sha256": "03198aab1bbf8d920968f6ccef966212669a19a5fa8548c56e96b77998a7fc4a",
+      "bytes": 53819
+    },
+    {
+      "name": "web-preview-tablet-edit-mid-dark.png",
+      "sha256": "36c9ff2f74f893090501adde9f279b38017fc9337ab0f7013448c9ed0fe37dd5",
+      "bytes": 61158
+    },
+    {
+      "name": "web-preview-tablet-edit-mid-light.png",
+      "sha256": "447953b5a06b3c2442198070c428b722a9e4e751876aec32e5f656a9a4b42fa2",
+      "bytes": 59411
+    },
+    {
+      "name": "web-preview-tablet-edit-open-dark.png",
+      "sha256": "8a9040612e9268e320a8d4348870bdf2334dd0a0d4420a8c91f053dfebd4668b",
+      "bytes": 68141
+    },
+    {
+      "name": "web-preview-tablet-edit-open-light.png",
+      "sha256": "c1515d33eb1c37a64636f5b8a8356d76ee1e7607deed0728a935d8675e93c257",
+      "bytes": 66116
+    },
+    {
+      "name": "web-preview-tablet-list-dark.png",
+      "sha256": "9181ad42db061aad120993e469dbdd982a9ffc88e479719a847d7e425c0218ae",
+      "bytes": 73400
+    },
+    {
+      "name": "web-preview-tablet-list-light.png",
+      "sha256": "30ac19d023c510185f1bf3df68c9e9720dc2049818bf528b852e698771f7d36b",
+      "bytes": 70625
+    }
+  ],
+  "touch_verification_sha256": "6d6bfce380bee14fc12121e7c159ab6aeeb7b19fd3f06b653d8dafb914a82e25"
+}
