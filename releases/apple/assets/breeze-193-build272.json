@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "appId": "6804570182",
+  "version": "1.9.3",
+  "buildNumber": "272",
+  "buildId": "10a92796-4109-4dbb-a519-45eda33768ea",
+  "sourceCommit": "37de13779b99bdfed7f0b20809577619f163f705",
+  "approvedAt": "2026-10-13T03:18:57.933656Z",
+  "approvalScope": "Exact13 original images; iPhone6 and iPad7, no byte edits",
+  "baseArchive": {
+    "file": "Breeze-AppStore-1.9.3-iPhone5-iPad6-final.zip",
+    "sha256": "091704c37135beb17163b28a334a702a28a6d9fba8008db7d904af14478f3d8f",
+    "libraryFileId": "libfile_6fe400be8bfc81919af0544a9f49d476",
+    "libraryVersion": 0
+  },
+  "baseManifest": {
+    "libraryFileId": "libfile_e1512f3b243481918bc8ef8ad9d24f17",
+    "libraryVersion": 0
+  },
+  "reviewPDF": {
+    "libraryFileId": "libfile_9ff17fd0a2848191a167fd76b4ba5a21",
+    "libraryVersion": 0
+  },
+  "groups": [
+    {
+      "device": "iPhone",
+      "orderedAssets": [
+        {
+          "file": "iPhone/Breeze-AppStore-1.9.3-01-word-iphone-1320x2868-final.png",
+          "sha256": "fa4ee1f350cf9f91c3338c22aad49ee14354c55bb0e1aa2f08bb8441dc144997",
+          "pixels": [
+            1320,
+            2868
+          ]
+        },
+        {
+          "file": "iPhone/Breeze-AppStore-1.9.3-02-sentence-iphone-1320x2868-final.png",
+          "sha256": "8f654b8f82cf9cf631cc31497fa7a7db22218ccdbe500439ff8a257682dc01e3",
+          "pixels": [
+            1320,
+            2868
+          ]
+        },
+        {
+          "file": "iPhone/Breeze-AppStore-1.9.3-03-simplify-iphone-1320x2868-final.png",
+          "sha256": "96184817b1c681c7efe06e9f71055e39b230de81c59b8c63214f9add09f6371d",
+          "pixels": [
+            1320,
+            2868
+          ]
+        },
+        {
+          "file": "iPhone/Breeze-AppStore-1.9.3-04-import-iphone-1320x2868-final.png",
+          "sha256": "7f7e863effd03865fb21a47faabc9209a5f38ba294c6966c4200211b8040fd12",
+          "pixels": [
+            1320,
+            2868
+          ]
+        },
+        {
+          "file": "iPhone/Breeze-AppStore-1.9.3-05-memory-iphone-1320x2868-final.png",
+          "sha256": "b4c3f8c43e76603c9728afc145bda05dcc10a6fa9ebd5bd7a31c0829d1a49715",
+          "pixels": [
+            1320,
+            2868
+          ]
+        },
+        {
+          "file": "Breeze-learning-iPhone-preview.png",
+          "sha256": "d694f6fd6b9967da709760a3ce04d0dcea6bfaedb1a61db679b8b743fb39e8be",
+          "pixels": [
+            1320,
+            2868
+          ],
+          "libraryFileId": "libfile_f41a4e9714048191a4d958c2db0e2e50",
+          "libraryVersion": 1
+        }
+      ]
+    },
+    {
+      "device": "iPad",
+      "orderedAssets": [
+        {
+          "file": "iPad/Breeze-AppStore-1.9.3-01-word-ipad-2064x2752-final.png",
+          "sha256": "b7d161e2199293ac71d4c191fde9ffb66d77de132cfcb13c509c570c78a1a093",
+          "pixels": [
+            2064,
+            2752
+          ]
+        },
+        {
+          "file": "iPad/Breeze-AppStore-1.9.3-02-sentence-ipad-2064x2752-final.png",
+          "sha256": "96bdfd5f443a84ef7d5462d5643003210d2b2bb342b1808d11688df0b2cfb636",
+          "pixels": [
+            2064,
+            2752
+          ]
+        },
+        {
+          "file": "iPad/Breeze-AppStore-1.9.3-03-simplify-ipad-2064x2752-final.png",
+          "sha256": "042a8af6fb986d688054429fb67d53ad43060277f8a0956ffe91a09cae85a683",
+          "pixels": [
+            2064,
+            2752
+          ]
+        },
+        {
+          "file": "iPad/Breeze-AppStore-1.9.3-04-import-ipad-2064x2752-final.png",
+          "sha256": "fa288b27512cdf9313ba0dbd4732b95e53271db6207b9c15168aeee613e9bb53",
+          "pixels": [
+            2064,
+            2752
+          ]
+        },
+        {
+          "file": "iPad/Breeze-AppStore-1.9.3-05-memory-ipad-2064x2752-final.png",
+          "sha256": "ea110953e5766f6611d3b85311d6c6b629f3ecc8686c5fb062338a50baf57eaf",
+          "pixels": [
+            2064,
+            2752
+          ]
+        },
+        {
+          "file": "iPad/Breeze-AppStore-1.9.3-06-annotate-ipad-2064x2752-final.png",
+          "sha256": "24fe40a9495961792a979131a0659935703897debb75af8ed885c19c49287cc7",
+          "pixels": [
+            2064,
+            2752
+          ]
+        },
+        {
+          "file": "Breeze-learning-iPad-preview.png",
+          "sha256": "800c18292b717ccaf8f93fb9ef284dc850550390b011c368525ad7a906d93b82",
+          "pixels": [
+            2064,
+            2752
+          ],
+          "libraryFileId": "libfile_b971231eeba08191b04dae8d52f2aa13",
+          "libraryVersion": 1
+        }
+      ]
+    }
+  ]
+}
