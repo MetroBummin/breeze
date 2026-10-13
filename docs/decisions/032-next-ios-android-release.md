@@ -51,3 +51,8 @@ unchanged OCR source and browser motion checks are not native offline proof.
 `tests/verify-next-release-boundary.mjs` pins the exact reviewed integration bytes,
 rejects unapproved paths/modes/deletions, checks disabled grading and runs the
 unchanged export/historical release gates on their original source commits.
+
+The integrated swipe fixture now lengthens the current saved example instead of
+inserting a sentence about `evidence` while testing `observe`. The approved
+conservative prompt correctly omitted that unrelated example. Visibility and
+actual overflow are asserted before the unchanged trusted vertical-scroll check.
