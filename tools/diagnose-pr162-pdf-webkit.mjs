@@ -64,7 +64,7 @@ const results=[];
 for(const mode of ['original','preview-ready'])for(const [label,ref] of Object.entries(refs).reverse()){
  const dir=dirs[label],runOut=join(out,`${mode}-${label}`);mkdirSync(runOut,{recursive:true});
  const entry=mode==='original'?testPath:'tests/.pr162-pdf-diagnostic.mjs';
- if(mode==='diagnostic')writeFileSync(join(dir,entry),probe);
+ if(mode!=='original')writeFileSync(join(dir,entry),probe);
  console.log(`RUN ${mode} ${label} ${ref}`);
  const result=spawnSync(process.execPath,[entry],{cwd:dir,env:{...process.env,BROWSER:'webkit',BREEZE_QA_ENGINE:'webkit',BREEZE_MOTION_OUTPUT:runOut},encoding:'utf8',timeout:180000,maxBuffer:8*1024*1024});
  const log=(result.stdout||'')+(result.stderr||'');writeFileSync(join(runOut,'console.log'),log);console.log(log);

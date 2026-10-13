@@ -4,6 +4,9 @@ on:
     branches: [diagnose/pr162-pdf-webkit-20261013]
 permissions:
   contents: read
+concurrency:
+  group: pr162-pdf-diagnostic
+  cancel-in-progress: true
 jobs:
   compare:
     runs-on: ubuntu-latest
