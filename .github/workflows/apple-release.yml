@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: '24.19.0'
       - name: Mock contracts (no secrets or Apple calls)
-        run: node --test tests/verify-apple-release.mjs tests/verify-apple-screenshot-assets.mjs tests/verify-apple-screenshots.mjs
+        run: node --test tests/verify-apple-release.mjs tests/verify-apple-build-inventory.mjs tests/verify-apple-screenshot-assets.mjs tests/verify-apple-screenshots.mjs
       - name: Validate actor, request-only diff, exact manifest and authorization
         id: gate
         env:

@@ -1,11 +1,12 @@
 apply plugin: 'com.android.application'
 
 // Android has its own monotonically increasing Play version code, independent of iOS.
-def requestedVersionCode = providers.gradleProperty('androidVersionCode').getOrElse('1')
+def requestedVersionCode = providers.gradleProperty('androidVersionCode').getOrElse('2')
 if (!(requestedVersionCode ==~ /[1-9][0-9]*/) || requestedVersionCode.toBigInteger() > 2100000000) {
     throw new GradleException('androidVersionCode must be an integer between 1 and 2100000000')
 }
-def appVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version
+// Store version follows the approved app release, not the web tooling package.
+def appVersion = '1.9.3'
 
 android {
     namespace = "kr.io.breeze.app"

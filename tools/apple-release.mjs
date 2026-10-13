@@ -1,3 +1,4 @@
+import {inspectAppleBuildInventory} from './apple-build-inventory.mjs';
 // App Store Connect orchestration only. Xcode Cloud owns building and signing.
 import {createHash, createPrivateKey, sign} from 'node:crypto';
 import {readFileSync, appendFileSync} from 'node:fs';
@@ -437,6 +438,7 @@ async function main(env) {
     screenshots = loadScreenshotBundle(trackedJson(SCREENSHOT_PLAN_PATH), invocation.manifest.screenshots, env.ASC_SCREENSHOT_ASSET_DIRECTORY);
   }
   const client = createClient({token: tokenFactory(env), allowWrites});
+  if (invocation.mode === 'status') console.log(JSON.stringify({buildInventory:await inspectAppleBuildInventory(client, invocation.manifest.appId)}));
   const result = await release(client, invocation.manifest, invocation.mode, Date.now, {screenshots});
   console.log(JSON.stringify(result));
 }
