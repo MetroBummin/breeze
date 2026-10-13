@@ -848,12 +848,12 @@ function renderStudySetsStudy(set){
   const underneath=studySetsNode('div','study-session-next');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
   const meanings=view.card.acceptedMeanings||[view.card.ko],meaningText=meanings.length>1?meanings.map((value,index)=>`${index+1}. ${value}`).join('\n'):view.card.ko;
   const example=BreezeVocabularyTest.prompt({...view.card,acceptedMeanings:meanings}).text;
-  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${example} ${view.revealed?meaningText+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
+  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${example} ${view.revealed?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
   if(example){const sentence=studySetsNode('p','study-sets-card-example');renderStoredStudyExample(sentence,{...view.card,example});card.append(sentence);}
   const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?meaningText:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
   stack.append(card);body.append(stack);
-  const hint=studySetsNode('p','study-session-hint',view.revealed?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인');hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
+  const hint=studySetsNode('p','study-session-hint','탭하여 정답 확인');hint.hidden=view.revealed;hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
   let busy=false;
   const reveal=()=>{if(busy||view.revealed)return;studySetsMutate(state=>BreezeStudySets.reveal(state,set.id,view.token),()=>{studySetsUI.notice='';});};
   const grade=async outcome=>{
@@ -869,7 +869,7 @@ function renderStudySetsStudy(set){
   });
   const actions=studySetsNode('div','study-session-accessible-actions');
   const revealAction=studySetsButton('정답 확인',reveal);revealAction.id='study-sets-reveal';revealAction.hidden=view.revealed;actions.append(revealAction);
-  for(const [outcome,label] of [['repeat','다시 볼게요'],['remembered','기억나요']]){const button=studySetsButton(label,event=>{if(event.detail>1)return;grade(outcome);});button.id='study-sets-grade-'+outcome;button.disabled=!view.revealed;button.hidden=!view.revealed;actions.append(button);}body.append(actions);
+  for(const [outcome,label] of [['repeat','← 다시 보기'],['remembered','알아요 →']]){const button=studySetsButton(label,event=>{if(event.detail>1)return;grade(outcome);});button.id='study-sets-grade-'+outcome;button.disabled=!view.revealed;button.hidden=!view.revealed;actions.append(button);}body.append(actions);
 
 }
 function studySetsStorageChanged(key){

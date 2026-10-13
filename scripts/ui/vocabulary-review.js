@@ -214,8 +214,8 @@ function renderSimpleWordCards(){
   progress.textContent=`${session.passed.length} / ${session.initial.length}`;
   progress.setAttribute('aria-label','이번 세션에서 기억한 카드');
   progress.setAttribute('role','progressbar');progress.setAttribute('aria-valuemin','0');progress.setAttribute('aria-valuemax',String(session.initial.length));progress.setAttribute('aria-valuenow',String(session.passed.length));
-  document.getElementById('simple-word-navigation').hidden=false;
-  const hint=document.getElementById('simple-study-hint');hint.hidden=!record;hint.textContent=simpleWordCards.flipped?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인';
+  document.getElementById('simple-word-navigation').hidden=!record||!simpleWordCards.flipped;
+  const hint=document.getElementById('simple-study-hint');hint.hidden=!record||simpleWordCards.flipped;hint.textContent='탭하여 정답 확인';
   /** @type {HTMLButtonElement} */(document.getElementById('simple-word-previous')).disabled=!session.history.length;
   document.getElementById('simple-word-previous').hidden=true;
   for(const id of ['simple-word-next','simple-word-again'])/** @type {HTMLButtonElement} */(document.getElementById(id)).disabled=!record||!simpleWordCards.flipped;
@@ -234,7 +234,7 @@ function renderSimpleWordCards(){
   document.getElementById('review-source').hidden=true;
   document.getElementById('review-reveal').hidden=!record||simpleWordCards.flipped;
   document.getElementById('review-reveal').textContent='정답 확인';
-  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${example} ${simpleWordCards.flipped?meaningText+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
+  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${example} ${simpleWordCards.flipped?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;

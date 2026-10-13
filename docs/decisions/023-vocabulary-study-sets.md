@@ -417,3 +417,15 @@ vocabulary. Existing sessions without representative metadata keep their queue,
 response history, denominator and resume point until explicit restart. All new
 metadata survives strict normalization; malformed or nested representatives are
 refused rather than partially salvaged. There is no database/schema migration.
+
+## Direction cues for revealed cards
+
+All Words and saved-set study now keep `← 다시 보기` and `알아요 →` visible below
+a revealed card, with at least 44 px tap targets and keyboard activation. Before
+reveal they cannot grade. Shared drag thresholds and repeat/remember ownership
+are unchanged; the larger text cue appears during a subthreshold drag so color
+is not the only signal. Left moves the word to the queue's end without progress,
+right completes it, and canceled short movement records nothing. Reduced-motion
+continues using the existing motion owner. The direction UI is a separate commit
+from the typed test. `verify-study-direction-browser.mjs` records actual app
+interaction and covers both paths, repeat return, label taps and reduced motion.
