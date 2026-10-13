@@ -61,3 +61,32 @@ The app-family scene contract now requires both approved revealed direction
 buttons to be visible and at least44px, replacing the superseded clipped-only
 expectation. Existing keyboard order, reveal gating and completion checks stay.
 A missing visible direction is explicitly rejected by the scene contract test.
+
+## Official offline-engine comparison (2026-10-13)
+
+The owner authorized QA with official Playwright versions to distinguish the
+offline local-Blob failure from application behavior. A separate diagnostic PR
+compares1.62.1, the locked1.63.0, and stable1.64.0 on Ubuntu24.04, plus1.64.0
+WebKit on macOS15 and a1.63.0 Chromium control. These are published stable
+packages; none is presumed to be a known-good offline version. Their WebKit
+patch sources all retain the unconditional emulated-offline loader failure.
+
+The no-app control uses persistent contexts, IndexedDB, fresh Blobs, FileReader,
+and real HTTP probes before/during/after `setOffline`. No routing and HTTP-only
+routing are separate cases. Every byte/text/read and online-state assertion must
+pass; failures remain nonzero. The existing80-page import/library regression
+and unchanged60-page OCR stress/strict offline gate run even if the control
+fails. No failure is marked allowed. Matching official browser binaries are
+installed on supported GitHub runners; denied local downloads are not bypassed.
+
+Each matrix package is isolated from the project's other dependencies. Neither
+package.json nor its lockfile is updated by this diagnostic, and no application
+or existing OCR test source changes. A version/platform can be proposed as the
+CI fix only after its minimal control and existing regressions both pass.
+Physical iOS airplane mode and native restart acceptance remain separate.
+
+Sources checked2026-10-13:
+- https://playwright.dev/docs/release-notes
+- https://github.com/microsoft/playwright/blob/v1.62.1/browser_patches/webkit/patches/bootstrap.diff
+- https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/webkit/patches/bootstrap.diff
+- https://github.com/microsoft/playwright/blob/v1.64.0/browser_patches/webkit/patches/bootstrap.diff

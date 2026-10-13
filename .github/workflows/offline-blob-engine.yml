@@ -1,0 +1,65 @@
+name: Offline Blob engine comparison
+on:
+  pull_request:
+    paths:
+      - 'tests/verify-offline-blob-engine.mjs'
+      - '.github/workflows/offline-blob-engine.yml'
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, version: '1.62.1', engine: webkit}
+          - {os: ubuntu-24.04, version: '1.63.0', engine: webkit}
+          - {os: ubuntu-24.04, version: '1.64.0', engine: webkit}
+          - {os: macos-15, version: '1.64.0', engine: webkit}
+          - {os: ubuntu-24.04, version: '1.63.0', engine: chromium}
+    env:
+      BROWSER: ${{ matrix.engine }}
+      PLAYWRIGHT_VERSION: ${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install exact official comparison package without changing the lockfile
+        shell: bash
+        run: |
+          package_root="$RUNNER_TEMP/breeze-playwright-comparison"
+          npm install --prefix "$package_root" --ignore-scripts --no-save --no-package-lock --no-audit --no-fund "playwright@$PLAYWRIGHT_VERSION"
+          rm -rf node_modules/playwright node_modules/playwright-core
+          ln -s "$package_root/node_modules/playwright" node_modules/playwright
+          ln -s "$package_root/node_modules/playwright-core" node_modules/playwright-core
+          node -e 'require("node:assert/strict").equal(require("playwright/package.json").version,process.env.PLAYWRIGHT_VERSION)'
+          git diff --exit-code -- package.json package-lock.json
+      - name: Install matching official browser
+        id: browser-install
+        run: node node_modules/playwright/cli.js install --with-deps ${{ matrix.engine }}
+      - name: No-app local Blob and FileReader control
+        if: ${{ !cancelled() && steps.browser-install.outcome == 'success' }}
+        run: node tests/verify-offline-blob-engine.mjs
+      # Failure in the control must not hide the unchanged product regression.
+      # No continue-on-error: either failed step keeps the job red.
+      - name: Existing real import and durable library regression
+        if: ${{ !cancelled() && steps.browser-install.outcome == 'success' }}
+        run: node tests/verify-pdf-ocr-library-browser.mjs
+      - name: Existing OCR unit and browser stress including strict offline gate
+        if: ${{ !cancelled() && steps.browser-install.outcome == 'success' }}
+        run: npm run test:pdf-ocr
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-engine-${{ matrix.os }}-${{ matrix.version }}-${{ matrix.engine }}
+          path: |
+            /tmp/breeze-offline-blob-control/
+            /tmp/breeze-ocr-browser-stress/
+            /tmp/breeze-ocr-confirm/
+            /tmp/breeze-ocr-library/
+          if-no-files-found: warn
+          retention-days: 7

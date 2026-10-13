@@ -11,6 +11,8 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const base='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
+  "tests/verify-offline-blob-engine.mjs": "84ca30d23049408a4b2742a8e105d54d727cfb7d376c0ae18781e78631f353a2",
+  ".github/workflows/offline-blob-engine.yml": "7b365a1bb1ee88a4fb9774db33f82e5c368e22272daba2426d7b25df5e660375",
   ".github/workflows/apple-release.yml": "483b649df36c39ab1d5f3c2c394c79bef9fb9190af83bd34d275f425ba5db89d",
   ".github/workflows/vocabulary-test.yml": "10d3dd7e82e7fc72299e6614947ac5d1467c5272c66cfa9e0be04c916bb3ca1e",
   "android/app/build.gradle": "669c6cf62ae4af864b914452a752c0b196db84feda2df6a32470d1fc29c874c3",
@@ -20,7 +22,7 @@ const expected={
   "docs/decisions/023-vocabulary-study-sets.md": "0047a9423775101d3953cb391828aa67d0e55aedd505900d50aea0ed6ba08993",
   "docs/decisions/031-apple-272-screenshot-preflight.md": "cebf316dc9f8761597ecebc58f4e84a59808a3b99502aa67cb035a51e9c6ad65",
   "docs/decisions/031-vocabulary-test.md": "d545f97a1388b988f3d285605d1ad03558988e434f79b55a007cf9ab0b1daff1",
-  "docs/decisions/032-next-ios-android-release.md": "6b2b8858ecf630eafdbe416830ed0d3774ceaee3780a8f0864cf78a1cd98cb5b",
+  "docs/decisions/032-next-ios-android-release.md": "98d74c37eda7b811a9c5e7c89ffe042b1fadb95cfc769961cd9c7b9df21f29cc",
   "docs/qa/vocabulary-test/README.md": "573e4e532614d7bf145953786088c3a82128f74fc47243178bf22d799509497f",
   "docs/qa/vocabulary-test/breeze-study-directions.mp4": "ad729d4658f9059b652dece7483afbcf42782d3f27a2ac46ebf7713344140c85",
   "docs/qa/vocabulary-test/breeze-study-meanings-iphone.png": "2e7d83b276b326deb3d356f7071e4538dc6192aa39e8967a2e9f31cbb3710b78",
