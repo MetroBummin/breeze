@@ -70,6 +70,9 @@ try{
    await detail(page,scope,id);
    await page.waitForFunction(scope=>document.getElementById(scope==='set'?'study-sets-start':'study-all-words-start')?.textContent==='이어서 학습 · 1/2',scope);
    assert.equal(await raw(page,scope),partial,'navigation preserves the incomplete durable session');
+   await page.reload();await page.evaluate(()=>homeReady);await detail(page,scope,id);
+   await page.waitForFunction(scope=>document.getElementById(scope==='set'?'study-sets-start':'study-all-words-start')?.textContent==='이어서 학습 · 1/2',scope);
+   assert.equal(await raw(page,scope),partial,'reload preserves the incomplete durable session');
    await start(page,scope);assert.equal(await progress.innerText(),'1 / 2');
    await remember(page,scope);await completion(page,scope);
    const complete=await raw(page,scope);

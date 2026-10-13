@@ -66,7 +66,7 @@ const expected={
   "tests/verify-study-direction-browser.mjs": "9cca0ddab6e5ca4aaca65a231364bc3ac68e195411a92a1a74c302a8ac20fa3c",
   "tests/verify-study-motion-browser.mjs": "f2324bb5a107d583c3e4175a36a2921bf67743ca8be12730f81d432faf92197a",
   "tests/verify-study-session-swipe-browser.mjs": "9faf71f5c7fe12b17b4e6a6123023bf2c3876cc999cd0250e4a9ba632e5cb989",
-  "tests/verify-study-sets-browser.mjs": "8e26c1959545ae1618d7c8231be499d900d7227f864affb12ffdf5757d6a4b3f",
+  "tests/verify-study-sets-browser.mjs": "c45d226d25303711c971f16470c9d7852b0e586b7a75db4f36fd80f75af78729",
   "tests/verify-study-sets-ui.mjs": "8f90145c872bfec64bcd60c95d41046ff4a5d454c939d3bc3acd1b26bf47a4ae",
   "tests/verify-study-sets.mjs": "b2ffa0751387d854e7ce3660f55b4fd984156d83d3f80575e9b4197744f2fc0f",
   "tests/verify-vocabulary-test-browser.mjs": "8660554dd52299520eba36a13f7c0a71e1980c33016bc584f6d03efee8bfd236",
@@ -79,7 +79,7 @@ const expected={
   "tools/verify-apple-release-boundary.mjs": "1d607169b82ceec028fddadd09cb2745f909935ad06f775b2acb6a2294e7c43c",
   "tools/verify-apple-screenshot-assets.mjs": "35224e1dcebfd44400cef0f5a00a544263aa189b9c82858c6b6b5a404fa389b4",
   "tests/helpers/study-sets-browser-fixture.mjs": "af86dc71ba7e8abe53e23398ed16464d4d8678b25cba8a2fbc3b957d90488087",
-  "tests/verify-study-completion-browser.mjs": "e35d8e511e798f4d68bf5fb90196edbac1bcf78c576dca3fcce06918cb41aa8f"
+  "tests/verify-study-completion-browser.mjs": "fb8092604361a546d9865e9052ece0d722b209822a452d50afc695ca21ec96e1"
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});
