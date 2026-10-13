@@ -51,6 +51,7 @@
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=93aa1460">
   <link rel="stylesheet" href="styles/study-sets.css?v=95cf0f87">
+  <link rel="stylesheet" href="styles/vocabulary-test.css">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=b89eaf89">
   <link rel="stylesheet" href="styles/onboarding.css?v=17f829a6">
@@ -112,6 +113,10 @@
   <script defer src="scripts/core/study-sets.js?v=e4ba4a22"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=e66657e2"></script>
   <script defer src="scripts/ui/study-sets.js?v=f10a91d5"></script>
+  <script defer src="scripts/core/vocabulary-test.js"></script>
+  <script defer src="scripts/core/vocabulary-test-storage.js"></script>
+  <script defer src="scripts/dictionary/vocabulary-test-grading.js"></script>
+  <script defer src="scripts/ui/vocabulary-test.js"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=fc16eb5f"></script>
@@ -461,7 +466,7 @@
       <button id="review-setup-extra" type="button" hidden>일일 한도 넘어 추가 학습</button>
     </div>
   </section>
-  <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
+  <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="wordbook-test" type="button" onclick="openVocabularyTest({kind:'filtered'})">테스트</button><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
   <div id="vtablewrap"></div>
   <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
@@ -470,6 +475,7 @@
     <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
   </nav></div>
 </div>
+<section id="v-vocabulary-test" class="view" aria-label="단어 테스트"></section>
 <section id="v-study" class="view"><main id="vocabulary-review-page" aria-label="단어 카드">
   <button id="review-close" type="button" aria-label="단어장으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
   <section id="review-journey" aria-label="오늘 학습 단계" hidden><div class="review-journey-meta"><span id="review-stage-label"></span><span id="review-day-count"></span></div><div id="review-stage-track" role="progressbar" aria-label="오늘 학습 진행도" aria-valuemin="0"></div></section>

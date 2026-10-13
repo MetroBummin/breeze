@@ -2,7 +2,7 @@
    inputs. No storage, vocabulary writes, scheduling, network or AI calls. */
 const BreezeStudySets = (() => {
   const VERSION=2;
-  /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number,status:number}} Card */
+  /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number,status:number,root?:string,group?:string,acceptedMeanings?:string[],senses?:Card[]}} Card */
   /** @typedef {{id:string,outcome:string,at:number}} Answer */
   /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean,format:number,serial:number}} Session */
   /** @typedef {{id:string,name:string,bookTitles:string[],createdAt:number,updatedAt:number,cards:Card[],excludedIds:string[],session:Session|null}} StudySet */
@@ -28,7 +28,20 @@ const BreezeStudySets = (() => {
   function copyCard(raw){
     if(!record(raw)||!nonblank(raw.word)||!nonblank(raw.ko)||!nonblank(raw.key)
       ||raw.id!==identity(raw.word,raw.ko)||!text(raw.example)||!text(raw.book)||!count(raw.addedAt)||(raw.status!==undefined&&![1,2,3].includes(raw.status)))fail();
-    return {id:raw.id,key:raw.key,word:raw.word,ko:raw.ko,example:raw.example,book:raw.book,addedAt:raw.addedAt,status:raw.status||1};
+    /** @type {Card} */
+    const card={id:raw.id,key:raw.key,word:raw.word,ko:raw.ko,example:raw.example,book:raw.book,addedAt:raw.addedAt,status:raw.status||1};
+    if(raw.root!==undefined){if(!nonblank(raw.root))fail();card.root=raw.root;}
+    const representative=raw.senses!==undefined||raw.acceptedMeanings!==undefined||raw.group!==undefined;
+    if(representative){
+      if(!nonblank(raw.group)||!Array.isArray(raw.senses)||!raw.senses.length
+        ||raw.senses.some(sense=>!record(sense)||sense.senses!==undefined||sense.acceptedMeanings!==undefined||sense.group!==undefined))fail();
+      const senses=copyCards(raw.senses),acceptedMeanings=strings(raw.acceptedMeanings);
+      const roots=new Set(senses.map(sense=>sense.root).filter(nonblank));
+      if(senses[0].id!==card.id||JSON.stringify(acceptedMeanings)!==JSON.stringify([...new Set(senses.map(sense=>sense.ko))])
+        ||senses.some(sense=>groupIdentity(sense,roots)!==raw.group))fail();
+      card.group=raw.group;card.senses=senses;card.acceptedMeanings=acceptedMeanings;
+    }
+    return card;
   }
   /** @returns {Card[]} */
   function copyCards(raw){
@@ -77,7 +90,7 @@ const BreezeStudySets = (() => {
       // A session freezes its content; its cards must still belong to this set.
       // Excluded cards remain stored and are not pruned from an active round.
       const ids=new Set(cards.map(card=>card.id));
-      if(excludedIds.some(id=>!ids.has(id))||(session&&session.queue.some(card=>!ids.has(card.id))))fail();
+      if(excludedIds.some(id=>!ids.has(id))||(session&&session.queue.some(card=>!ids.has(card.id)||card.senses?.some(sense=>!ids.has(sense.id)))))fail();
       return {id:item.id,name:item.name,bookTitles,createdAt:item.createdAt,updatedAt:item.updatedAt,cards,excludedIds,session};
     });
     if(new Set(sets.map(item=>item.id)).size!==sets.length)fail();
@@ -102,13 +115,30 @@ const BreezeStudySets = (() => {
       &&own(item,'word')&&own(item,'ko')&&nonblank(item.word)&&nonblank(item.ko)
       &&(!selected||selected.has(text(item.book)?item.book:'')))
       .map(([key,item])=>({id:identity(item.word,item.ko),key,word:item.word,ko:item.ko,
-        example:text(item.example)?item.example:'',book:text(item.book)?item.book:'',addedAt:count(item.addedAt)?item.addedAt:0,status:[1,2,3].includes(item.status)?item.status:1}))
+        example:text(item.example)?item.example:'',book:text(item.book)?item.book:'',addedAt:count(item.addedAt)?item.addedAt:0,status:[1,2,3].includes(item.status)?item.status:1,...(nonblank(item.root)?{root:item.root}:{})}))
       .sort((a,b)=>a.addedAt-b.addedAt||compare(a.key,b.key));
     const seen=new Set();
     return available.filter(card=>{if(seen.has(card.id))return false;seen.add(card.id);return true;});
   }
   function get(state,id){return state.sets.find(item=>item.id===id)||null;}
   function activeCards(set){const excluded=new Set(set.excludedIds);return set.cards.filter(card=>!excluded.has(card.id));}
+  /** Preserve every saved sense while projecting one card per word for a new
+      session. Old snapshots use exact case-preserving expression identity. */
+  function groupIdentity(card,roots){
+    const root=card.root||(roots.has(card.key)?card.key:'');
+    return root?'root:'+root:'word:'+card.word.trim().normalize('NFC').replace(/\s+/g,' ');
+  }
+  function groupedCards(setOrCards){
+    const source=Array.isArray(setOrCards)?setOrCards:activeCards(setOrCards);
+    const originals=source.flatMap(card=>card.senses||[card]),roots=new Set(originals.map(card=>card.root).filter(nonblank)),groups=new Map(),seen=new Set();
+    for(const raw of originals){
+      const card=copyCard(raw);if(seen.has(card.id))continue;seen.add(card.id);const group=groupIdentity(card,roots);
+      if(!groups.has(group))groups.set(group,[]);
+      groups.get(group).push(card);
+    }
+    return [...groups].map(([group,senses])=>({...senses[0],group,senses,acceptedMeanings:[...new Set(senses.map(card=>card.ko))]}));
+  }
+
   function allocate(state,prefix){
     if(state.sequence>=Number.MAX_SAFE_INTEGER)throw new RangeError('Study set sequence exhausted');
     state.sequence++;
@@ -189,7 +219,9 @@ const BreezeStudySets = (() => {
     for(const answer of session?.answers||[]){pending.shift();if(answer.outcome==='repeat')pending.push(answer.id);}
     const card=session&&pending.length?session.queue.find(card=>card.id===pending[0]):null;
     const repeatIds=[...new Set((session?.answers||[]).filter(answer=>answer.outcome==='repeat'&&pending.includes(answer.id)).map(answer=>answer.id))];
-    return {state,set,status:!set?'missing':session?(card?'active':'complete'):activeCards(set).length?'idle':'empty',
+    const pendingSet=new Set(pending),pendingMeaningIds=[],rememberedMeaningIds=[];
+    for(const representative of session?.queue||[]){const target=pendingSet.has(representative.id)?pendingMeaningIds:rememberedMeaningIds;target.push(...(representative.senses||[representative]).map(sense=>sense.id));}
+    return {state,set,pendingMeaningIds,rememberedMeaningIds,status:!set?'missing':session?(card?'active':'complete'):activeCards(set).length?'idle':'empty',
       card,token:card?JSON.stringify([set.id,session.id,session.round,session.serial,card.id]):'',
       revealed:!!card&&session.revealed,total,completed,
       remembered:completed,repeat:repeatIds.length,repeatIds,round:session?session.round:0,pendingIds:pending};
@@ -207,7 +239,7 @@ const BreezeStudySets = (() => {
       set.session.revealed=false;
       return {...snapshot(state,id),accepted:true};
     }
-    const queue=activeCards(set);
+    const queue=groupedCards(set);
     if(!queue.length){
       // Explicit restart of an all-excluded set ends the old completed/active
       // session without inventing progress or reintroducing excluded cards.
@@ -243,5 +275,5 @@ const BreezeStudySets = (() => {
   // Compatibility entry: repeats stay in the current session, not a completed round.
   function nextRound(raw,id,now){time(now);return {...view(raw,id),accepted:false};}
   return Object.freeze({VERSION,normalize,decode,cards,create,rename,remove,exclude,restore,setStatus,
-    importPreview,importNew,addBooks,view,start,reveal,grade,nextRound,undo});
+    importPreview,importNew,addBooks,groupedCards,view,start,reveal,grade,nextRound,undo});
 })();

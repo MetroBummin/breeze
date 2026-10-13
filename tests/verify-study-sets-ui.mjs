@@ -10,6 +10,8 @@ async function afterAction(result){const value=await result;await settle();retur
 // belongs to the trusted/synthetic browser motion suite, not Node scheduling.
 // Event-level UI checks only. Native focus trapping, browser history timing,
 // pointer capture, layout and paint are covered by verify-study-sets-browser.mjs.
+// Gesture fixtures use two distinct words; representative multi-meaning cases below
+// explicitly replace the second word so a real two-row drag remains meaningful.
 function harness(){
   const {window}=parseHTML('<!DOCTYPE html><html><body><section id="v-memory"><main id="study-sets-home-list"></main></section></body></html>');
   const {document}=window,storage=new Map();
@@ -23,7 +25,7 @@ function harness(){
     activeAppView:()=>context.currentView,currentView:'vocab',show:view=>{context.currentView=view;},openVocabularyReview:()=>{context.currentView='study';history.pushState({breeze:true,view:'study'});},history,words:{
       a:{word:'quiet',ko:'조용한',book:'One',example:'Stay quiet.',addedAt:1},
       b:{word:'quiet',ko:'조용한',book:'Two',addedAt:2},
-      c:{word:'quiet',ko:'고요한',book:'Two',addedAt:3},
+      c:{word:'calm',ko:'고요한',book:'Two',addedAt:3},
       d:{word:'direct',ko:'직접',book:'',addedAt:4}
     },esc:value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),renderStoredStudyExample:(target,card)=>{target.textContent=card.example||'';},validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
     localStorage:{getItem:key=>storage.has(key)?storage.get(key):null,setItem:(key,value)=>{storage.set(key,value);}}
@@ -50,7 +52,7 @@ function harness(){
     function readStudySets(){const raw=localStorage.getItem(STUDY_SETS_STORAGE);const value=BreezeStudySets.decode(raw);fixtureRead=raw;return value;}
     async function loadStudySets(){return readStudySets();}
     function commitStudySets(next){const raw=localStorage.getItem(STUDY_SETS_STORAGE);BreezeStudySets.decode(raw);if(raw!==fixtureRead)throw Error('changed');localStorage.setItem(STUDY_SETS_STORAGE,JSON.stringify(BreezeStudySets.normalize(next)));fixtureRead=localStorage.getItem(STUDY_SETS_STORAGE);}`,context);
-  for(const path of ['scripts/core/study-sets.js','scripts/ui/study-motion.js','scripts/ui/study-sets.js'])
+  for(const path of ['scripts/core/study-sets.js','scripts/core/vocabulary-test.js','scripts/ui/study-motion.js','scripts/ui/study-sets.js'])
     vm.runInContext(readFileSync(new URL('../'+path,import.meta.url),'utf8'),context,{filename:path});
   const run=source=>vm.runInContext(source,context);
   const query=selector=>{const node=document.querySelector(selector);assert.ok(node,'Missing '+selector);return node;};
@@ -591,4 +593,48 @@ test('release velocity follows the final turn even when the complete reversal fi
   assert.equal(run('studyReleaseVelocity([{x:0,t:0},{x:50,t:25},{x:100,t:50}],51)'),2);
   assert.equal(run('studyReleaseVelocity([{x:0,t:0},{x:50,t:25},{x:100,t:50}],131)'),0,'held release has no stale velocity');
   assert.equal(run('studyReleaseVelocity([{x:0,t:0},{x:50,t:0}],0)'),0,'zero-time fixture cannot invent infinite velocity');
+});
+
+test('multi-meaning list actions cover one representative and every saved member without source edits',async()=>{
+  const h=harness();h.context.words.c.word='quiet';h.context.words.c.example='The forest was quiet after the storm.';
+  const before=JSON.stringify(h.context.words);await afterAction(h.createSet('All meanings'));
+  assert.equal(h.document.querySelectorAll('#study-sets-word-list li').length,1);
+  assert.equal(h.context.readStudySets().sets[0].cards.length,2);
+  assert.match(h.query('#study-sets-word-list').textContent,/조용한/);assert.match(h.query('#study-sets-word-list').textContent,/고요한/);
+  await afterAction(h.click('.chip'));assert.deepEqual([...h.context.readStudySets().sets[0].cards].map(card=>card.status),[2,1],'group chip changes its representative star, preserving other saved stars');
+  await afterAction(h.click('.study-sets-row-action'));assert.equal(h.document.querySelectorAll('#study-sets-word-list li').length,0);assert.equal(h.context.readStudySets().sets[0].excludedIds.length,2);
+  await afterAction(h.click('.study-sets-undo button'));assert.equal(h.document.querySelectorAll('#study-sets-word-list li').length,1);assert.equal(h.context.readStudySets().sets[0].excludedIds.length,0);
+  assert.equal(JSON.stringify(h.context.words),before);
+});
+
+test('multi-meaning recall hides all answers and examples until reveal, numbers meanings and repeats the whole word',async()=>{
+  const h=harness();h.context.words.c.word='quiet';h.context.words.a.example='The room stayed quiet all morning.';h.context.words.c.example='The forest was quiet after the storm.';
+  await afterAction(h.createSet());await afterAction(h.click('#study-sets-start'));
+  assert.equal(h.query('#study-sets-progress').textContent,'0 / 1');assert.equal(h.query('#study-sets-answer').textContent,'');
+  assert.doesNotMatch(h.query('#study-sets-flashcard').textContent,/조용한|고요한|forest|morning/);assert.doesNotMatch(h.query('#study-sets-flashcard').getAttribute('aria-label'),/조용한|고요한|forest|morning/);
+  assert.equal(h.document.querySelector('.study-sets-card-example'),null);
+  await afterAction(h.click('#study-sets-reveal'));assert.equal(h.query('#study-sets-answer').textContent,'1. 조용한\n2. 고요한');
+  assert.equal(h.query('#study-sets-grade-repeat').hidden,false);assert.equal(h.query('#study-sets-grade-remembered').hidden,false);
+  await afterAction(h.click('#study-sets-grade-repeat'));assert.equal(h.query('#study-sets-progress').textContent,'0 / 1');assert.equal(h.query('#study-sets-answer').textContent,'');
+  await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));assert.equal(h.query('.study-sets-result').textContent,'1 / 1');
+  assert.equal(h.run('BreezeStudySets.view(studySetsUI.state,studySetsUI.setId).rememberedMeaningIds.length'),2);
+});
+
+test('single-meaning valid source uses the real shared prompt helper while instruction examples are omitted',async()=>{
+  const h=harness();h.context.words.a.example='The room stayed quiet all morning.';
+  await afterAction(h.createSet('One meaning',['One']));await afterAction(h.click('#study-sets-start'));
+  assert.equal(h.query('.study-sets-card-example').textContent,'The room stayed quiet all morning.');
+  assert.equal(h.query('#study-sets-answer').textContent,'');assert.equal(h.query('#study-sets-error').hidden,true);
+  const bad=harness();bad.context.words.a.example='Choose the correct answer for quiet.';await afterAction(bad.createSet('Instructions',['One']));await afterAction(bad.click('#study-sets-start'));
+  assert.equal(bad.document.querySelector('.study-sets-card-example'),null);assert.equal(bad.query('#study-sets-expression').textContent,'quiet');
+});
+
+test('test scope and study scope share representative roots, meanings and exclusions',async()=>{
+  const h=harness();h.context.words.c.root='a';h.context.words.c.word='quieter';
+  await afterAction(h.createSet('Same scope'));
+  const source=readFileSync(new URL('../scripts/ui/vocabulary-test.js',import.meta.url),'utf8');
+  h.run(source.slice(source.indexOf('function vocabularyTestScope('),source.indexOf('async function openVocabularyTest(')));
+  const compare=()=>h.run(`(()=>{const set=studySetsUI.state.sets[0],study=BreezeStudySets.groupedCards(set),test=vocabularyTestScope({kind:'set',setId:set.id}).cards;return JSON.stringify({study:study.map(card=>card.acceptedMeanings),test:[...BreezeVocabularyTest.groups(test).values()].map(senses=>[...new Set(senses.map(card=>card.ko))])});})()`);
+  let groups=JSON.parse(compare());assert.deepEqual(groups.test,groups.study);assert.equal(groups.study.length,1);
+  await afterAction(h.click('.study-sets-row-action'));groups=JSON.parse(compare());assert.deepEqual(groups,{study:[],test:[]});
 });

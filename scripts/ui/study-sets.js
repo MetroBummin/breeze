@@ -532,6 +532,7 @@ function renderStudySetsAllWords(){
   const groups=new Map();for(const entry of entries){const id=entry[1].root||entry[0];if(!groups.has(id))groups.set(id,[]);groups.get(id).push(entry);}
   ui.body.append(studySetsNode('p','study-sets-caption',`${groups.size}단어 · ${entries.length}개 뜻 카드`));
   ui.footer.hidden=false;const start=studySetsButton('학습 시작',startStudySetsAllWords,'study-sets-primary');start.id='study-all-words-start';start.disabled=!entries.length;ui.footer.append(start);
+  const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'all'}));test.id='study-all-words-test';test.disabled=!entries.length;ui.footer.append(test);
   if(!entries.length){ui.body.append(studySetsEmpty('저장된 단어가 없어요','읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));return;}
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id='study-all-words-list';
   if(!studySetsOpened.has('@all'))studySetsOpened.set('@all',new Set());
@@ -722,10 +723,11 @@ function renderStudySetsDetailFooter(set){
     const startText=view.status==='active'?`이어서 학습 · ${view.completed}/${view.total}`:view.status==='complete'?'학습 결과 보기':'학습 시작';
     const start=studySetsButton(startText,()=>studySetsStart(set.id),'study-sets-primary');start.id='study-sets-start';start.disabled=set.cards.length===set.excludedIds.length&&view.status!=='active'&&view.status!=='complete';
     studySetsUI.footer.hidden=false;studySetsUI.footer.append(start);
+    const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'set',setId:set.id}));test.id='study-sets-test';test.disabled=set.cards.length===set.excludedIds.length;studySetsUI.footer.append(test);
   }
   if(studySetsUI.undo){
     const undo=studySetsUI.undo;const notice=studySetsNode('div','study-sets-undo');notice.setAttribute('role','status');
-    const restore=()=>studySetsMutate(state=>BreezeStudySets.restore(state,set.id,undo.id,Date.now()),()=>{studySetsUI.undo=null;studySetsUI.notice='';});
+    const restore=()=>studySetsMutate(state=>(undo.ids||[undo.id]).reduce((next,id)=>BreezeStudySets.restore(next.state,set.id,id,Date.now()),{state}),()=>{studySetsUI.undo=null;studySetsUI.notice='';});
     const button=studySetsButton('실행 취소',restore);studySetsTouchAction(button,restore);
     notice.append(studySetsNode('span','',`“${undo.word}” 제외됨`),button);studySetsUI.footer.prepend(notice);
   }
@@ -736,19 +738,20 @@ function renderStudySetsDetail(set,excluded){
   if(!excluded)renderStudySetsDetailFooter(set);
   if(!cards.length){body.append(studySetsEmpty(excluded?'제외한 단어가 없어요':'세트에 학습할 단어가 없어요',''));return;}
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id=excluded?'study-sets-excluded-list':'study-sets-word-list';
-  for(const [index,card] of cards.entries()){
+  for(const [index,card] of BreezeStudySets.groupedCards(cards).entries()){
     const item=studySetsNode('li','study-sets-word-row');item.dataset.cardId=card.id;
     const clip=studySetsNode('div','study-sets-word-clip');
     const surface=studySetsNode('div','study-sets-word-surface');
     if(!studySetsOpened.has(set.id))studySetsOpened.set(set.id,new Set());
-    const copy=createVocabularyGroup([[card.id,{...card,status:card.status||1}]],{
+    const members=card.senses||[card],memberIds=members.map(sense=>sense.id);
+    const copy=createVocabularyGroup(members.map(sense=>[sense.id,{...sense,status:sense.status||1}]),{
       ordinal:index+1,opened:studySetsOpened.get(set.id),
       onStatus:status=>studySetsMutate(state=>BreezeStudySets.setStatus(state,set.id,card.id,status,Date.now()))
     });
     copy.querySelector('.vordinal')?.classList.add('study-sets-number');
     const action=studySetsButton(excluded?'다시 담기':'제외',()=>{
-      studySetsMutate(state=>excluded?BreezeStudySets.restore(state,set.id,card.id,Date.now()):BreezeStudySets.exclude(state,set.id,card.id,Date.now()),()=>{
-        studySetsUI.undo=excluded?null:{id:card.id,word:card.word};studySetsUI.notice='';
+      studySetsMutate(state=>memberIds.reduce((next,id)=>excluded?BreezeStudySets.restore(next.state,set.id,id,Date.now()):BreezeStudySets.exclude(next.state,set.id,id,Date.now()),{state}),()=>{
+        studySetsUI.undo=excluded?null:{id:card.id,ids:memberIds,word:card.word};studySetsUI.notice='';
       },excluded?null:item);
     },'study-sets-row-action'+(excluded?' study-sets-restore':''));action.setAttribute('aria-label',`${card.word} ${excluded?'다시 담기':'세트에서 제외'}`);
     surface.append(copy);
@@ -843,10 +846,12 @@ function renderStudySetsStudy(set){
   const meter=document.createElement('progress');meter.max=view.total;meter.value=view.completed;meter.setAttribute('aria-label','이번 세션에서 기억한 카드');body.append(progress,meter);
   const stack=studySetsNode('div','study-session-stack');
   const underneath=studySetsNode('div','study-session-next');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
-  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.card.example||''} ${view.revealed?view.card.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
+  const meanings=view.card.acceptedMeanings||[view.card.ko],meaningText=meanings.length>1?meanings.map((value,index)=>`${index+1}. ${value}`).join('\n'):view.card.ko;
+  const example=BreezeVocabularyTest.prompt({...view.card,acceptedMeanings:meanings}).text;
+  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${example} ${view.revealed?meaningText+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
-  if(view.card.example){const example=studySetsNode('p','study-sets-card-example');renderStoredStudyExample(example,view.card);card.append(example);}
-  const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?view.card.ko:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
+  if(example){const sentence=studySetsNode('p','study-sets-card-example');renderStoredStudyExample(sentence,{...view.card,example});card.append(sentence);}
+  const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?meaningText:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
   stack.append(card);body.append(stack);
   const hint=studySetsNode('p','study-session-hint',view.revealed?'← 다시 볼게요 · 기억나요 →':'탭하여 정답 확인');hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
   let busy=false;

@@ -29,6 +29,7 @@ const SIMPLE_STUDY_STORAGE='breeze.simple-study-session.v1';
 let simpleStudySession=null,simpleStudyBusy=false,simpleStudyTimer=0,simpleStudySuppressClickUntil=0;
 let simpleStudyReadValue,simpleStudyEpoch=0,simpleStudyResumeJob=Promise.resolve();
 let simpleWordCards={keys:[],index:0,flipped:false};
+let simpleStudyMeanings=new Map(),simpleStudyKeys=[];
 function decodeSimpleStudySession(raw){
   if(raw===null)return null;
   const session=SimpleStudySession.restore(raw);
@@ -42,9 +43,13 @@ async function loadSimpleStudySession(){
 }
 function ensureSimpleStudySession(){
   const keys=Object.keys(words).filter(key=>validWordMeaning(words[key])&&typeof words[key].word==='string'&&words[key].word.trim());
+  const groups=new Map();simpleStudyMeanings=new Map();
+  for(const key of keys){const root=words[key].root||key;if(!groups.has(root))groups.set(root,[]);groups.get(root).push(key);}
+  for(const members of groups.values()){const meanings=[...new Set(members.map(key=>words[key].ko))];for(const key of members)simpleStudyMeanings.set(key,meanings);}
+  const representatives=[...groups.values()].map(members=>members[0]);simpleStudyKeys=representatives;
   const available=new Set(keys);
   // Removed records invalidate the old scope; added vocabulary waits for the next session.
-  if(!simpleStudySession||simpleStudySession.initial.some(k=>!available.has(k))||!simpleStudySession.initial.length&&keys.length)simpleStudySession=SimpleStudySession.start(keys);
+  if(!simpleStudySession||simpleStudySession.initial.some(k=>!available.has(k))||!simpleStudySession.initial.length&&keys.length)simpleStudySession=SimpleStudySession.start(representatives);
   return simpleStudySession;
 }
 async function commitSimpleStudySession(next){
@@ -194,6 +199,8 @@ function renderReviewIntervals(view){
 function renderSimpleWordCards(){
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleCardMotion.reset();
   const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
+  const meanings=simpleStudyMeanings.get(key)||[],meaningText=meanings.length>1?meanings.map((value,index)=>`${index+1}. ${value}`).join('\n'):record?.ko||'';
+  const example=record&&meanings.length<2?BreezeVocabularyTest.prompt({...record,acceptedMeanings:meanings}).text:'';
   simpleWordCards.keys=session.queue;simpleWordCards.index=0;
   document.body.classList.add('simple-word-cards');
   vocabularyReviewPage.classList.toggle('complete',!record&&session.initial.length>0);
@@ -217,17 +224,17 @@ function renderSimpleWordCards(){
     document.getElementById('review-back-expression').textContent=record.word;
     document.getElementById('review-source').textContent=record.book||'';
     document.getElementById('review-source').hidden=!record.book;
-    renderStoredStudyExample(document.getElementById('review-sentence'),{...record,key,example:record.example||''});
-    document.getElementById('review-meaning').textContent=simpleWordCards.flipped?record.ko:'';
+    renderStoredStudyExample(document.getElementById('review-sentence'),{...record,key,example});
+    document.getElementById('review-meaning').textContent=simpleWordCards.flipped?meaningText:'';
     document.getElementById('review-meaning').hidden=!simpleWordCards.flipped;
   }
   document.getElementById('review-front').hidden=false;
   document.getElementById('review-back').hidden=!simpleWordCards.flipped;
-  document.getElementById('review-sentence').hidden=!record?.example;
+  document.getElementById('review-sentence').hidden=!example;
   document.getElementById('review-source').hidden=true;
   document.getElementById('review-reveal').hidden=!record||simpleWordCards.flipped;
   document.getElementById('review-reveal').textContent='정답 확인';
-  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${record?.example||''} ${simpleWordCards.flipped?record?.ko+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
+  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${example} ${simpleWordCards.flipped?meaningText+'. 오른쪽 기억나요, 왼쪽 다시 볼게요':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;
@@ -402,7 +409,7 @@ async function openVocabularyReview(daily=false,extra=false){
     const origin=activeAppView(),entry=history.state;
     try{
       await loadSimpleStudySession();if(activeAppView()!==origin||history.state!==entry)return;
-      if(ensureSimpleStudySession().initial.length&&!simpleStudySession.queue.length)await commitSimpleStudySession(SimpleStudySession.start(Object.keys(words).filter(k=>validWordMeaning(words[k]))));
+      if(ensureSimpleStudySession().initial.length&&!simpleStudySession.queue.length)await commitSimpleStudySession(SimpleStudySession.start(simpleStudyKeys));
       if(activeAppView()!==origin||history.state!==entry)return;
       simpleWordCards.flipped=false;show('study');await simpleStudyResumeJob;
     }catch(error){if(activeAppView()===origin){show('study');vocabularyReviewError(error);}}

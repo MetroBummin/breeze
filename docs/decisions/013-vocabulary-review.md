@@ -278,3 +278,10 @@ session includes passed cards again. No Meaning, star, sync, dormant review
 record or FSRS schedule is changed. Corrupt session storage cannot be overwritten
 by grading. The large central card, direction hint, hidden assistive actions and
 visible Undo share the set-study interaction; browser evidence is not native QA.
+
+## Independent typed recall tests (2026-10-13)
+
+The new [typed vocabulary test](031-vocabulary-test.md) owns its full page,
+question count, frozen word-group snapshot, typed responses and 10-answer batches.
+It never enters this review engine or updates its grades, FSRS, daily counters,
+simple-session storage or Meaning records.

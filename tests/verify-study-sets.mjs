@@ -410,3 +410,63 @@ test('v1 sessions migrate without losing inventory or responses, returning legac
   assert.equal(JSON.stringify(legacy),original);assert.equal(sets.view(sets.decode(JSON.stringify(migrated)),id).token,view.token);
   const undone=sets.undo(migrated,id,NOW+8);assert.equal(undone.completed,1);assert.equal(undone.card.id,session.queue[2].id);
 });
+
+test('new sessions present one word with all frozen meanings and preserve every source row',()=>{
+  const inventory={bank:saved('bank',{ko:'은행',example:'The bank opens early.',status:2}),
+    'bank::sense:river':saved('bank',{root:'bank',ko:'강둑',example:'They walked along the river bank.',status:3}),
+    wind:saved('wind',{ko:'바람'})},before=JSON.stringify(inventory);
+  const created=create(inventory),id=created.set.id,originalCards=plain(created.set.cards),current=sets.start(created.state,id,NOW);
+  assert.equal(current.total,2);assert.equal(current.set.cards.length,3);
+  assert.deepEqual(plain(current.card.acceptedMeanings),['은행','강둑']);assert.equal(current.card.senses.length,2);
+  assert.equal(current.card.senses[1].example,inventory['bank::sense:river'].example);
+  assert.deepEqual(plain(current.set.cards),originalCards);assert.equal(JSON.stringify(inventory),before);
+  const reloaded=sets.view(sets.decode(JSON.stringify(current.state)),id);assert.deepEqual(plain(reloaded.card),plain(current.card));
+});
+
+test('groupedCards accepts set or cards; exact snapshot words preserve case and phrases',()=>{
+  const inventory={one:saved('bank',{ko:'은행'}),two:saved('bank',{ko:'강둑'}),capital:saved('US',{ko:'미국'}),
+    pronoun:saved('us',{ko:'우리'}),phrase:saved('give up',{ko:'포기하다'}),verb:saved('give',{ko:'주다'})};
+  const created=create(inventory),grouped=sets.groupedCards(created.set);
+  assert.equal(grouped.length,5);assert.deepEqual(plain(sets.groupedCards(created.set.cards)),plain(grouped));
+  assert.deepEqual(plain(sets.groupedCards(grouped)),plain(grouped),'projection is idempotent without nested representative metadata');
+  assert.deepEqual(plain(grouped.find(card=>card.word==='bank').acceptedMeanings),['은행','강둑']);
+  const excluded=sets.exclude(created.state,created.set.id,created.set.cards.find(card=>card.ko==='강둑').id,NOW+1);
+  assert.equal(sets.groupedCards(excluded.set).find(card=>card.word==='bank').senses.length,1);assert.equal(excluded.set.cards.length,6);
+});
+
+test('preserved explicit roots group inflected saved forms without guessed lemma merging',()=>{
+  const created=create({run:saved('run',{ko:'달리다'}),running:saved('running',{root:'run',ko:'달리는'}),
+    runner:saved('runner',{ko:'달리는 사람'})});
+  const grouped=sets.groupedCards(created.set);assert.equal(grouped.length,2);assert.equal(grouped[0].group,'root:run');
+  assert.deepEqual(plain(grouped[0].senses.map(card=>card.word)),['run','running']);
+  assert.equal(sets.decode(JSON.stringify(created.state)).sets[0].cards.find(card=>card.word==='running').root,'run');
+});
+
+test('representative repeat retries all meanings without progress; remembered and undo cover frozen members',()=>{
+  let current=start({bank:saved('bank',{ko:'은행'}),other:saved('bank',{ko:'강둑'})});const id=current.set.id,memberIds=current.card.senses.map(card=>card.id);
+  assert.equal(current.total,1);current=answer(current,'repeat');assert.equal(current.completed,0);assert.equal(current.total,1);assert.equal(current.card.senses.length,2);
+  assert.deepEqual(plain(current.pendingMeaningIds),plain(memberIds));assert.deepEqual(plain(current.rememberedMeaningIds),[]);
+  current=answer(current,'remembered');assert.equal(current.status,'complete');assert.equal(current.completed,1);
+  assert.deepEqual(plain(current.rememberedMeaningIds),plain(memberIds));assert.equal(current.set.cards.every(card=>card.status===1),true);
+  current=sets.undo(current.state,id,NOW+3);assert.equal(current.completed,0);assert.deepEqual(plain(current.pendingMeaningIds),plain(memberIds));assert.equal(current.card.senses.length,2);
+});
+
+test('existing ungrouped in-progress sessions remain unchanged until explicit restart',()=>{
+  const created=create({a:saved('bank',{ko:'은행'}),b:saved('bank',{ko:'강둑'})}),id=created.set.id;
+  const legacy=plain(created.state);legacy.sets[0].session={id:'session-old',startedAt:NOW,round:1,queue:plain(created.set.cards),index:1,
+    answers:[{id:created.set.cards[0].id,outcome:'remembered',at:NOW}],revealed:true,format:2,serial:1};
+  const resumed=sets.start(legacy,id,NOW+1);assert.equal(resumed.total,2);assert.equal(resumed.completed,1);assert.equal(resumed.card.ko,'강둑');assert.equal(resumed.card.senses,undefined);assert.equal(resumed.revealed,false);
+  assert.deepEqual(plain(resumed.set.session.answers),legacy.sets[0].session.answers);
+  const restarted=sets.start(resumed.state,id,NOW+2,{restart:true});assert.equal(restarted.total,1);assert.equal(restarted.completed,0);assert.deepEqual(plain(restarted.card.acceptedMeanings),['은행','강둑']);
+});
+
+test('representative metadata corruption cannot drop, invent or nest saved meanings',()=>{
+  const current=start({a:saved('bank',{ko:'은행'}),b:saved('bank',{ko:'강둑'}),c:saved('wind',{ko:'바람'})});
+  for(const damage of [
+    card=>{card.acceptedMeanings=['invented'];},
+    card=>{card.senses[0].senses=[];},
+    card=>{card.group='word:other';},
+    card=>{card.senses.push({...current.set.cards[2]});card.acceptedMeanings.push('바람');},
+    card=>{card.senses[1].id='unknown';}
+  ]){const raw=plain(current.state);damage(raw.sets[0].session.queue[0]);assert.throws(()=>sets.normalize(raw),/Invalid study sets data/);}
+});

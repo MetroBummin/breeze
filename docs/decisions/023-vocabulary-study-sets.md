@@ -380,3 +380,40 @@ All Words retains the shared read-only vocabulary renderer and full study scope,
 The directory/create modal owns the document scroll while open, keeps its lists independently scrollable, and restores the exact document position when dismissed. Transitions to a full page release this ownership before the page scrolls. This ownership is separate from other overlays' CSS classes and styles. The background wordbook is hidden before native dialog focus restoration to avoid laying out thousands of hidden-bound rows during navigation.
 
 Evidence, before/after measurements and physical-device limitations: [build271 followup review](../reviews/breeze-post271-allwords/README.md).
+
+## Typed test entry (2026-10-13)
+
+All Words and set detail add an independent **단어 테스트** action beside study.
+The test captures precisely the selected active scope, keeps empty scopes empty,
+and uses a separate full page and IndexedDB database. Existing set snapshots and
+excluded cards remain unchanged. See [typed vocabulary tests](031-vocabulary-test.md)
+for unique-word counts, multi-meaning representatives, persistence and batching.
+
+## Representative word cards for new study sessions (2026-10-13)
+
+New study sessions and detail lists use `BreezeStudySets.groupedCards(setOrCards)`
+to project one representative per word. Optional captured roots identify a base
+record and its senses; legacy snapshots fall back to exact saved expression text
+(NFC, trimmed, whitespace collapsed, case preserved). No guessed stemming merges
+unrelated spellings or phrases. Set tests use the same helper and active exclusion
+scope. Source `set.cards` remains one record per saved meaning, with its original
+word, definition, example, source, identity and star status.
+
+A representative preserves its first member identity and freezes `group`,
+`acceptedMeanings` and the complete original `senses` array. Multi-meaning recall
+shows the word alone on the front; reveal numbers every saved meaning on separate
+lines. Single-meaning examples pass the same conservative saved-English-source
+check as typed tests. No definition is placed in the hidden front or its ARIA
+label. The list groups meanings under one word. A grouped exclusion/restore applies
+atomically to every represented member; its star chip changes only the
+representative's snapshot star, preserving the other saved stars and all original
+vocabulary records.
+
+A remembered answer completes one word and its frozen member meanings; Repeat
+requeues that same representative without progress and Undo restores it. The view
+exposes `rememberedMeaningIds` and `pendingMeaningIds` for member-level coverage,
+but progress counts representatives. Neither assessment changes saved stars or
+vocabulary. Existing sessions without representative metadata keep their queue,
+response history, denominator and resume point until explicit restart. All new
+metadata survives strict normalization; malformed or nested representatives are
+refused rather than partially salvaged. There is no database/schema migration.
