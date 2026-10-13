@@ -56,3 +56,8 @@ The integrated swipe fixture now lengthens the current saved example instead of
 inserting a sentence about `evidence` while testing `observe`. The approved
 conservative prompt correctly omitted that unrelated example. Visibility and
 actual overflow are asserted before the unchanged trusted vertical-scroll check.
+
+The app-family scene contract now requires both approved revealed direction
+buttons to be visible and at least44px, replacing the superseded clipped-only
+expectation. Existing keyboard order, reveal gating and completion checks stay.
+A missing visible direction is explicitly rejected by the scene contract test.
