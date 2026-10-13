@@ -186,3 +186,58 @@ secure setup or end-to-end release was exercised here.
 Run `node --test tests/verify-apple-release.mjs` (also in `npm test`). Node built-ins
 only; Actions and Node are pinned, GITHUB_TOKEN is `contents: read`, checkout
 credentials are discarded, and no dependencies install in the credential job.
+
+## Exact272 screenshot extension (2026-10-13)
+
+The reviewed13-image plan is `releases/apple/assets/breeze-193-build272.json`.
+Add this field to the exact272 release manifest, using its real byte digest and
+locales confirmed by the live GET inventory (the locale below is an example):
+
+```json
+"screenshots": {
+  "planSha256": "REPLACE-WITH-SHA256-OF-COMMITTED-ASSET-PLAN",
+  "locales": ["ko"],
+  "targets": {"iPhone": "APP_IPHONE_67", "iPad": "APP_IPAD_PRO_3GEN_129"}
+}
+```
+
+These are documented API enums; confirm the live slots and accepted dimensions
+before authorizing the write manifest. Do not invent APP_IPHONE_69 from a marketing
+screen size. Only existing version localizations are supported. Read-only modes
+can report set IDs, ordered screenshot IDs, states, sizes, checksums and dimensions
+without original bytes; `localBytesVerified:false` is not upload readiness.
+
+Before prepare/submit, the same executing consumer must independently materialize
+and verify original Library files. Put the unchanged ZIP, its selected extracted
+`iPhone/` and `iPad/` PNGs and the two root `Breeze-learning-*-preview.png` files in
+a private directory. Run `node tools/verify-apple-screenshot-assets.mjs DIR`.
+The protected process supplies `ASC_SCREENSHOT_ASSET_DIRECTORY=DIR`; no credential
+is acquired by this preflight. The current hosted workflow does not populate this
+directory: a supported consumer-specific transfer step is still required. It must
+fail before token construction if originals or their location are missing.
+
+The uploader uses Apple screenshot sets, reservations, upload operations and MD5
+commit. It validates ordered COMPLETE state and dimensions before release. It
+preserves matching images and refuses any unapproved existing image; replacement
+requiring deletion is outside this authorization. After a timeout, inspect status
+and issue a fresh authorized request. It reuses reservations and completed images;
+processing images cannot advance to review. Never rerun a write workflow attempt.
+
+Official API references consulted through indexed Apple documentation on2026-10-13:
+- [Asset upload contract](https://developer.apple.com/documentation/appstoreconnectapi/uploading-assets-to-app-store-connect)
+- [Set creation](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-appscreenshotsets)
+- [Set localization relationship](https://developer.apple.com/documentation/appstoreconnectapi/appscreenshotsetcreaterequest/data-data.dictionary/relationships-data.dictionary/appstoreversionlocalization-data.dictionary/data-data.dictionary)
+- [Screenshot reservation attributes](https://developer.apple.com/documentation/appstoreconnectapi/appscreenshotcreaterequest/data-data.dictionary/attributes-data.dictionary)
+- [Screenshot set relationship](https://developer.apple.com/documentation/appstoreconnectapi/appscreenshotcreaterequest/data-data.dictionary/relationships-data.dictionary)
+- [Upload operations](https://developer.apple.com/documentation/appstoreconnectapi/uploadoperation)
+- [Asset states](https://developer.apple.com/documentation/appstoreconnectapi/appmediaassetstate)
+- [Ordered ID read-back](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-appscreenshotsets-_id_-relationships-appscreenshots)
+- [Screenshot resource fields](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-appscreenshotsets-_id_-appscreenshots)
+- [Display-type enumeration](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-appstoreversionlocalizations-_id_-appscreenshotsets)
+
+Indexed official fields support the mock request/response contract; direct Markdown
+rendering and the full OpenAPI document were unavailable in this executor. Live
+schema acceptance, slot mapping and Apple processing remain to be verified with
+the existing protected API route. Unit success does not establish those results.
+Run `node --test tests/verify-apple-release.mjs tests/verify-apple-screenshot-assets.mjs tests/verify-apple-screenshots.mjs`
+and `node tests/verify-apple-release-boundary.mjs`.

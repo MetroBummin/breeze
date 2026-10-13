@@ -1,55 +1,73 @@
-# Exact build272 screenshot preparation
+# Exact build272 screenshots and release tooling
 
 The user approved the exact review-PDF set at2026-10-13T03:18:57.933656Z:
 the existing1.9.3 archive's five iPhone and six iPad images plus the supplied
 version1 learning image for each device. Preserve original bytes. Append the
 learning image after each device's existing ordered set; total counts are6/7.
-No future word-test feature belongs to build272 or this preparation.
+No future word-test feature belongs to build272 or this change.
 
-`releases/apple/assets/breeze-193-build272.json` records the supplied identities,
-approval, archive digest, exact image digests, dimensions and order. The local
-preflight reads only; it has no credentials or network client. It rejects an
-incorrect archive, missing/extra images, symlinks, paths outside the asset root,
-changed bytes, malformed PNG structure, wrong sizes, other builds and other
-approval identities. Its PNG check validates structure/dimensions, not full pixel
-decoding; the approved byte digests remain the content identity check.
+`releases/apple/assets/breeze-193-build272.json` records Library identities,
+approval, archive/image digests, dimensions and order. Local preflight rejects
+incorrect archives, missing/extra images, symlinks, unsafe paths, changed bytes,
+malformed PNG structure and wrong dimensions. It checks PNG structure/dimensions,
+not full pixel decoding; the approved SHA-256 hashes establish content identity.
 
-The consumer must independently materialize these Library originals and run:
+`apple-screenshots.mjs` adds inventory, set creation, reservation, binary PUT,
+MD5 commit, processed state/checksum/dimension read-back and exact ordering.
+It is reachable only through the existing release CLI gates. Exact272 prepare
+and submit now require a manifest-bound screenshot plan and locally verified
+originals. The plan path is fixed and loaded from committed Git bytes before
+credentials. A manifest includes the plan SHA-256, explicit locales and API
+slots; source37de137, Cloud run c5877215-c804-44e0-881d-25e3d6cf92b5,
+buildUUID10a92796-4109-4dbb-a519-45eda33768ea and APP_STORE_ELIGIBLE remain checked.
+No new key, live security setting, build or counter is introduced.
 
-```
-node tools/verify-apple-screenshot-assets.mjs /absolute/asset-root
-```
+Inspect every targeted set before any mutation. Existing matching MD5/size images
+are retained; COMPLETE images also require approved pixel dimensions. Other,
+duplicate, failed or unknown images stop with reconciliation required. No DELETE
+endpoint is allowed. Ordering sends only an exact permutation of current IDs.
+Other locales remain untouched. Nonempty unplanned display slots in a target
+locale block writes and are reported in read-only inventory. The version and target localizations
+must already exist; this bounded screenshot path does not create them implicitly.
 
-The root holds the untouched base ZIP, its selected extracted `iPhone/` and
-`iPad/` files, and the two untouched `Breeze-learning-*-preview.png` files.
-This is a preparation utility, not a screenshot uploader or submit command.
-No original bytes were successfully materialized in this executor: four official
-Library transfer preparations succeeded, then every supported byte-transfer
-helper call failed. The empty directory fails preflight. Tests use synthetic
-fixtures and do not establish live asset, API or screenshot upload readiness.
+Interrupted reservations use a deterministic full-SHA-256 filename and exact size.
+A fresh authorized invocation re-reads state: AWAITING_UPLOAD can resend its byte
+parts; UPLOAD_COMPLETE waits; COMPLETE is reused. No POST, commit or transfer is
+automatically retried. Lost responses require GET reconciliation and a new request.
+Processing returns action-required and cannot advance into review submission.
+All approved images must read back COMPLETE in order immediately before submit.
+External clients can still race; the API provides no transactional compare-and-swap
+across inventory and reorder. Coordinate ownership and inspect any ambiguous result.
 
-The existing `apple-release.mjs` remains unchanged. Its trusted-main/actor/hash/
-authorization/ancestry/write guards remain active. A separate worker owns the
-already-approved `ASC_WRITES_ENABLED` setting; do not change it concurrently.
-Before any upload, the existing authenticated route must validate exact ASC
-buildUUID10a92796-4109-4dbb-a519-45eda33768ea, source37de137, original Cloud run
-c5877215-c804-44e0-881d-25e3d6cf92b5 and APP_STORE_ELIGIBLE; read current1.9.3
-localizations and screenshot sets. Never infer the live display-type enum from
-marketing screen size or select a later automatic build.
+Storage PUTs use only Apple-returned HTTPS *.blobstore.apple.com operation URLs,
+exact contiguous byte ranges, bounded sizes/timeouts and supplied safe headers.
+No ASC JWT, cookies, redirects, URL logging or arbitrary remote destinations.
+An unfamiliar Apple storage host requires reviewed code support, not a bypass.
+Authorization expiry is checked before every PUT, commit and other Apple mutation.
 
-Apple documents screenshot-set creation, screenshot reservation/upload/commit
-and ordering in its App Store Connect API. The existing release client's write
-allowlist does not implement those operations. Current request/response schema,
-existing-set reconciliation, bounded asset transfer and ordered checksum/state
-read-back must be verified before extending it. Do not wire an unverified asset
-writer around the existing guards or declare uploads/submission complete.
+The previous272 boundary described packaging only and rejected any later repository
+file. CI now verifies this explicit release-tooling path set against main5f8b178;
+all shipped and historical bytes/modes remain fixed. CI runner edits are exact
+check-command substitutions, and package.json can only add the two mock suites.
+The original272 positive/negative tests and their historical chain still run
+unchanged in an isolated37de137 checkout. The OCR gate remains unwaived.
 
-Official references:
-- https://developer.apple.com/documentation/appstoreconnectapi/uploading-assets-to-app-store-connect
-- https://developer.apple.com/documentation/appstoreconnectapi/post-v1-appscreenshots
-- https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-appscreenshots-_id_
-- https://developer.apple.com/documentation/appstoreconnectapi/post-v1-appscreenshotsets
+Current executor evidence: official Library preparation succeeded for all four
+required source files, but each current supported byte-transfer helper returned
+`library file transfer failed: download failed`. No raw HTTP status was exposed;
+no automatic approval-review denial was observed. Another authorized consumer
+succeeded, which does not establish byte availability here. The local asset root
+is empty. Supported remediation is to restore this consumer's Library bridge/
+transfer runtime, have the provider materialize into this consumer's filesystem,
+or execute in a consumer where official transfer and original hash checks succeed.
+Do not copy signed URLs, hand-fetch originals, patch helpers or move credentials.
+The unrelated public Apple Markdown fetch received a gateway403; this does not
+prove the same cause for the Library failure.
 
-This local preparation changes no source272 bytes, native counters, keys,
-environment permissions, main branch or Apple state. CI21/22 and the inherited
-WebKit offline Blob/FileReader OCR failure remain unwaived.
+Tests use synthetic data and mock Apple APIs. No screenshots or metadata were
+uploaded, deleted, reordered or submitted here. The draft PR leaves source272,
+main/integration, credentials and live configuration untouched. Production execution
+still needs approved originals in the executing consumer, existing protected
+credentials, live inventory/eligibility, exact metadata/locales/publication choice,
+and the separately owned approved writes flag. The workflow intentionally has no
+unverified artifact-download or credential-copy step.

@@ -94,6 +94,15 @@ export function verifyScreenshotAssets(directory, plan = JSON.parse(readFileSync
     approvedAt: plan.approvedAt, count: expected.length, groups, networkRequests: 0, appleWrites: 0};
 }
 
+// Re-read through the same path and digest checks immediately before transfer.
+export function readScreenshotBytes(directory, asset) {
+  const supplied = resolve(directory);
+  check(lstatSync(supplied).isDirectory() && !lstatSync(supplied).isSymbolicLink(), 'Regular asset root required');
+  const bytes = regularFile(realpathSync(supplied), asset.file);
+  check(hash(bytes) === asset.sha256, 'Approved image SHA256 mismatch before transfer');
+  return bytes;
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     check(process.argv.length === 3, `Usage: node ${fileURLToPath(import.meta.url)} ASSET_DIRECTORY`);
