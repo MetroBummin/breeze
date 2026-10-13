@@ -45,8 +45,9 @@ The approved13-photo uploader still binds its manifest to272. It cannot authoriz
 or attest a next-build submission unchanged; the Apple operator must bind the new
 verified source/build and original assets before review. Successful status, CI,
 unsigned compile, upload, tester availability and review submission are separate
-states. The prior WebKit offline Blob/FileReader OCR failure remains unwaived;
-unchanged OCR source and browser motion checks are not native offline proof.
+states. The prior WebKit offline Blob/FileReader OCR failure is addressed by the
+official test-engine upgrade documented below; browser checks are not native
+offline proof.
 
 `tests/verify-next-release-boundary.mjs` pins the exact reviewed integration bytes,
 rejects unapproved paths/modes/deletions, checks disabled grading and runs the
@@ -61,3 +62,31 @@ The app-family scene contract now requires both approved revealed direction
 buttons to be visible and at least44px, replacing the superseded clipped-only
 expectation. Existing keyboard order, reveal gating and completion checks stay.
 A missing visible direction is explicitly rejected by the scene contract test.
+
+## Verified offline test-engine repair (2026-10-13)
+
+The no-app persistent IndexedDB/fresh Blob/FileReader control fails on official
+Playwright1.62.1 and1.63.0 WebKit on Ubuntu24.04, including a newly allocated
+13-byte Blob without any Breeze/PDF/native code. The same control passes on
+official1.64.0 WebKit27.2 (revision2370) on both Ubuntu24.04 and macOS15.
+The unchanged80-page library regression and60-page OCR stress also pass on
+both1.64.0 environments, including real `setOffline(true)`, all source bytes,
+two cache passes, nine reopens and zero additional OCR on the offline reopen.
+The1.63.0 Chromium control passes. Executed comparison:
+https://github.com/MetroBummin/breeze/actions/runs/38412637716 (QA PR164,
+be9a8b06ea474158d24644d13b688596869e406c; application bytes equal4786abb).
+Old-version failures stay failed in that comparison; none is waived.
+
+The release now pins Playwright and its lockfile to the tested stable1.64.0.
+The ordinary OCR workflow retains both engines and every existing assertion,
+and adds the no-app control before application regressions. No product storage
+change, navigator override, HTTP-only substitute or patched browser is used.
+The old offline-emulation failure branch remains in the published patch source;
+its presence alone does not predict the newer binary's behavior. The measured
+version comparison establishes this repair, without attributing it to an
+unverified upstream commit. Official package/version notes:
+https://playwright.dev/docs/release-notes#version-164
+
+Final-commit complete CI must pass after this tooling change. These results are
+browser-engine evidence with a controlled OCR bridge, not physical airplane
+mode,56-page native process restart or physical retry-tap acceptance.

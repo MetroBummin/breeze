@@ -11,6 +11,9 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const base='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
+  "package-lock.json": "20d62e70707d6ec1d9780d5891e6468bb559cb8071ed4f70be2eb27976b9bd12",
+  "tests/verify-offline-blob-engine.mjs": "84ca30d23049408a4b2742a8e105d54d727cfb7d376c0ae18781e78631f353a2",
+  ".github/workflows/pdf-ocr.yml": "6164af42ab60c61ea2de8744c9753668753e3289e3a2bb71761137f2754afa09",
   ".github/workflows/apple-release.yml": "483b649df36c39ab1d5f3c2c394c79bef9fb9190af83bd34d275f425ba5db89d",
   ".github/workflows/vocabulary-test.yml": "10d3dd7e82e7fc72299e6614947ac5d1467c5272c66cfa9e0be04c916bb3ca1e",
   "android/app/build.gradle": "669c6cf62ae4af864b914452a752c0b196db84feda2df6a32470d1fc29c874c3",
@@ -20,7 +23,7 @@ const expected={
   "docs/decisions/023-vocabulary-study-sets.md": "0047a9423775101d3953cb391828aa67d0e55aedd505900d50aea0ed6ba08993",
   "docs/decisions/031-apple-272-screenshot-preflight.md": "cebf316dc9f8761597ecebc58f4e84a59808a3b99502aa67cb035a51e9c6ad65",
   "docs/decisions/031-vocabulary-test.md": "d545f97a1388b988f3d285605d1ad03558988e434f79b55a007cf9ab0b1daff1",
-  "docs/decisions/032-next-ios-android-release.md": "6b2b8858ecf630eafdbe416830ed0d3774ceaee3780a8f0864cf78a1cd98cb5b",
+  "docs/decisions/032-next-ios-android-release.md": "185ccbf8bae22ababd727fa3c4a51230d5aca45055b978a42a1fe83d493b2b0c",
   "docs/qa/vocabulary-test/README.md": "573e4e532614d7bf145953786088c3a82128f74fc47243178bf22d799509497f",
   "docs/qa/vocabulary-test/breeze-study-directions.mp4": "ad729d4658f9059b652dece7483afbcf42782d3f27a2ac46ebf7713344140c85",
   "docs/qa/vocabulary-test/breeze-study-meanings-iphone.png": "2e7d83b276b326deb3d356f7071e4538dc6192aa39e8967a2e9f31cbb3710b78",
@@ -30,7 +33,7 @@ const expected={
   "docs/qa/vocabulary-test/browser-metrics.json": "075a7abeee9aba2846a54fb5e4c00c12ecab8fabe9f8669a86fdea4078447c8f",
   "docs/qa/vocabulary-test/direction-events.json": "87fd8a215b5c8dca7acff841ac9a0d90557dc8b83c7b906a28171d69e84089ba",
   "index.html": "22fcaf21d32ad8ab402fcb60402bf9e124944f7c0f1965664a24696a56cea5d0",
-  "package.json": "c8d540df1cf23fb75e188d358c9e77d5a8fa9a5d3cfc544e5cc10d88fe649e74",
+  "package.json": "452f0b4a3c36ada20b4fc5176ce9dba943923e76b8a4bf76ebdb5275b86366ff",
   "releases/apple/assets/breeze-193-build272.json": "5eb6bf34ed6789472365f2b8c9da3eccfee9d0bd056c1f656b43292bccd6e913",
   "scripts/core/state.js": "b29f6bf99cfd55ebce8d20a79be74b0f8749cb08f6d0f65647b1bfa86431484f",
   "scripts/core/study-sets.js": "9136b150a44aa5f5774ec616262f52d23d6d0c89ed36536607c2ef6396535ae5",
