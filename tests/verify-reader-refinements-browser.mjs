@@ -86,7 +86,8 @@ try{for(const engine of [chromium,webkit].filter(engine=>!process.env.BREEZE_QA_
   await page.evaluate(()=>window.dispatchEvent(new CustomEvent('breeze-vocabulary-export',{detail:{id:exportRequests[0].id,error:''}})));
   await page.waitForFunction(()=>!document.getElementById('btn-export').disabled);
   await page.evaluate(()=>{delete window.webkit;Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('Cancelled','AbortError')}});document.getElementById('toast').classList.remove('on');});
-  await page.locator('#btn-export').click();await page.waitForFunction(()=>!document.getElementById('btn-export').disabled);
+  await page.locator('#btn-export').click();await page.waitForFunction(()=>document.getElementById('task-dialog').open);
+  await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('btn-export').disabled);
   assert.equal(await page.locator('#toast').evaluate(n=>n.classList.contains('on')),false,'Cancelling export showed an error');
   await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false});});
   const download=page.waitForEvent('download');await page.locator('#btn-export').click();

@@ -1,0 +1,43 @@
+name: Vocabulary export
+on:
+  pull_request:
+    paths:
+      - 'scripts/dictionary/dictionary.js'
+      - 'scripts/ui/task-dialog.js'
+      - 'tests/verify-vocabulary-export*.mjs'
+      - 'tests/verify-reader-refinements-browser.mjs'
+      - '.github/workflows/vocabulary-export.yml'
+permissions:
+  contents: read
+concurrency:
+  group: vocabulary-export-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    env:
+      BREEZE_QA_ENGINE: ${{ matrix.engine }}
+      BREEZE_EXPORT_PROOF: /tmp/breeze-vocabulary-export
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/verify-vocabulary-export-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vocabulary-export-${{ matrix.engine }}
+          path: /tmp/breeze-vocabulary-export/
+          if-no-files-found: error
+          retention-days: 7
