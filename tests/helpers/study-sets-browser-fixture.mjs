@@ -8,13 +8,16 @@ export function studySetFixture(size,cardsPerSet=100){
  return {version:2,sequence:size*2,sets:Array.from({length:size},(_,i)=>({id:'set-'+(i+1),name:'Fixture '+(i+1),bookTitles:['Fixture book'],createdAt:100,updatedAt:100,cards,excludedIds:[],session:{id:'session-'+(i+1),startedAt:100,round:1,queue:cards,index:0,answers:[],revealed:false,format:2,serial:0}}))};
 }
 
-export async function serveStudyFixture({uiSource,instrument=false}={}){
+export async function serveStudyFixture({uiSource,instrument=false,vocabularyTestPrototype=false}={}){
  const root=fileURLToPath(new URL('../../',import.meta.url));
  const server=createServer((req,res)=>{
   try{
    const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
    if(!path.startsWith(root))throw Error('outside fixture root');
    let body=readFileSync(path);
+   // Opt-in fixture for the retained, unshipped typed-test prototype. Ordinary
+   // release/browser regressions always receive the default disabled source.
+   if(vocabularyTestPrototype&&path.endsWith('/scripts/core/vocabulary-test.js'))body=body.toString().replace('const ENABLED=false;','const ENABLED=true;');
    if(path.endsWith('/scripts/ui/study-sets.js')&&uiSource)body=readFileSync(uiSource);
    if(instrument&&path.endsWith('/scripts/core/study-sets.js'))body=body.toString().replace('function normalize(raw){','function normalize(raw){ window.studyListMetrics.normalizes++;');
    res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.mp4':'video/mp4'})[extname(path)]||'application/octet-stream');res.end(body);

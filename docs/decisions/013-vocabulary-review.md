@@ -1,5 +1,13 @@
 # Local saved-Meaning review
 
+The2026-10-13 pre-submission revision keeps unfinished All Words sessions at
+their existing point. Completed sessions expose one terminal return/restart pair;
+after leaving, the entry says `학습 시작하기`. Entry-label reads preserve completed
+answers, and explicit restart alone replaces the current session under the
+existing storage contract. See the completion revision in decision023. Typed
+vocabulary testing is deferred from1.9.3 under decision031; shared card prompts
+and multiple meanings remain available.
+
 Review reads saved Meaning records with a nonblank `word` and `ko`. It presents
 their exact saved word, contextual definition, source example and book. Missing
 source stays missing. Dictionary candidates and `ai.ko` never become answers.

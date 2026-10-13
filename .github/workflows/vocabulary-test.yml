@@ -40,7 +40,10 @@ jobs:
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.engine }}
-      - run: node tests/verify-vocabulary-test-browser.mjs
+      - name: Shipping release exclusion and study completion states
+        run: node tests/verify-study-completion-browser.mjs
+      - name: Retained typed-test prototype with explicit fixture opt-in
+        run: node tests/verify-vocabulary-test-browser.mjs
       - run: node tests/verify-simple-word-cards-browser.mjs
       - run: node tests/verify-study-direction-browser.mjs
       - uses: actions/upload-artifact@v4
@@ -50,4 +53,5 @@ jobs:
           path: |
             /tmp/breeze-vocabulary-test-proof/
             /tmp/breeze-study-direction-proof/
+            /tmp/breeze-study-completion-proof/
           retention-days: 14

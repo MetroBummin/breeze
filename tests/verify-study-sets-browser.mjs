@@ -304,7 +304,7 @@ try{
  assert.equal(await page.locator('#study-sets-progress').innerText(),'2 / 3');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);
  await studyAction(page.locator('#study-sets-flashcard').click(),page);await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForSelector('.study-sets-result');assert.equal(await page.locator('.study-sets-result').innerText(),'3 / 3');
- await studyAction(page.getByRole('button',{name:'전체 새로 학습',exact:true}).click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 4');
+ await studyAction(page.getByRole('button',{name:'다시 시작하기',exact:true}).click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 4');
  await context.setOffline(false);
  await page.evaluate(async ()=>{const state=(await loadStudySets()),result=BreezeStudySets.rename(state,state.sets[0].id,'아주 긴 시험 범위 이름과 저장된 단어를 확인하는 학습 세트 '.repeat(3).slice(0,100),Date.now());await commitStudySets(result.state);await studySetsReadAndRender();});
  const layouts=[];
@@ -471,8 +471,12 @@ try{
    const cold=await offline.newPage();await cold.goto(url);await cold.evaluate(()=>homeReady);
    await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(cold.locator('.study-sets-home-card[data-set-id]').click(),cold);await studyAction(cold.locator('#study-sets-start').click(),cold);await studyAction(cold.locator('#study-sets-flashcard').click(),cold);
    assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await studyAction(cold.locator('#study-sets-flashcard').press('ArrowRight'),cold);await cold.waitForSelector('.study-sets-result');
-   await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(cold.locator('.study-sets-home-card[data-set-id]').click(),cold);await studyAction(cold.locator('#study-sets-start').click(),cold);
-   assert.equal(await cold.locator('.study-sets-result').innerText(),'1 / 1');
+   const completed=await cold.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode));
+   await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(cold.locator('.study-sets-home-card[data-set-id]').click(),cold);
+   assert.equal(await cold.locator('#study-sets-start').innerText(),'학습 시작하기');
+   assert.equal(await cold.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)),completed,'offline reentry retains the completed answers');
+   await studyAction(cold.locator('#study-sets-start').click(),cold);
+   assert.equal(await cold.locator('#study-sets-progress').innerText(),'0 / 1','explicit offline Start opens a fresh session');
    await cold.screenshot({path:`${proof}/chromium-cold-offline.png`,fullPage:true});
   }finally{await offline.close();}
  }

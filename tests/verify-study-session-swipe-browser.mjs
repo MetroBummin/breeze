@@ -36,7 +36,7 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1
  await studyAction(card().tap(),page);await drag(-150);assert.equal((await state()).completed,2);assert.equal((await state()).status,'active');assert.equal((await state()).card.word,'observe');
  await studyAction(card().press('Enter'),page);await studyAction(card().press('ArrowRight'),page);await page.waitForTimeout(260);assert.equal((await state()).status,'complete');await screenshot('complete');
  await page.emulateMedia({reducedMotion:'reduce'});
- await studyAction(page.getByRole('button',{name:'전체 새로 학습',exact:true}).tap(),page);assert.equal((await state()).total,3);assert.equal((await state()).completed,0,'passed cards belong to later fresh sessions');
+ await studyAction(page.getByRole('button',{name:'다시 시작하기',exact:true}).tap(),page);assert.equal((await state()).total,3);assert.equal((await state()).completed,0,'passed cards belong to later fresh sessions');
  await studyAction(card().press('Enter'),page);await studyAction(card().press('ArrowRight'),page);assert.equal((await state()).completed,1,'reduced motion uses the same grade contract');
  await studyAction(page.evaluate(()=>studySetsStart(studySetsUI.setId,true)),page);
  await page.evaluate(async ()=>{const s=(await loadStudySets()),set=s.sets[0];const current=set.session.queue[0];current.example=(current.example+' ').repeat(30);await commitStudySets(s);await studySetsReadAndRender();document.getElementById('v-memory-set').style.fontSize='22px';});await page.addStyleTag({content:'.study-session-stack #study-sets-expression{font-size:60px!important}.study-session-stack .study-sets-card-example{font-size:26px!important}'});await studyAction(card().tap(),page);await screenshot('long-content');

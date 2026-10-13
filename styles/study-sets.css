@@ -117,7 +117,7 @@ html.study-sets-modal-open body{position:fixed;top:var(--study-sets-scroll-top);
 :is(#study-sets-dialog,#v-memory-set) .study-sets-card-meaning{margin:20px 0 0;font-size:20px;line-height:1.65;}
 .study-sets-grades{flex-wrap:nowrap;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-grades .study-sets-button{flex:1 1 0;min-width:0;min-height:52px;font-size:15px;}
-.study-sets-complete{display:grid;gap:12px;padding:24px 0;text-align:center;}
+.study-sets-complete,#simple-study-completion{display:grid;gap:12px;padding:24px 0;text-align:center;}
 .study-sets-eyebrow{font-size:12px;color:var(--sentence-glass-secondary);}
 .study-sets-result{font-size:14px;}
 @media(hover:hover){.study-sets-home-card:not(:disabled):hover,.study-sets-vocab-back:hover{background:var(--wordbook-row-hover);}:is(#study-sets-dialog,#v-memory-set) .study-sets-button:where(:not(.study-sets-home-card)):not(:disabled):hover{background:var(--sentence-glass-action-hover);}:is(#study-sets-dialog,#v-memory-set) .study-sets-danger:hover{background:var(--danger-bg-hover);}}

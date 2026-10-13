@@ -4,6 +4,7 @@ const vocabularyTestUI={
   saveJob:null,draft:'',dirty:false,returnFocus:null,epoch:0,lastError:null,ai:null,batchPage:-1
 };
 const vocabularyTestPage=document.getElementById('v-vocabulary-test');
+document.getElementById('wordbook-test').hidden=!BreezeVocabularyTest.ENABLED;
 function vocabularyTestNode(tag,className='',text=''){
   const node=document.createElement(tag);node.className=className;if(text)node.textContent=text;return node;
 }
@@ -27,6 +28,7 @@ function vocabularyTestScope(options){
   return {label:narrowed?'현재 필터의 단어':'전체 단어',cards:BreezeVocabularyTest.cards(filtered)};
 }
 async function openVocabularyTest(options={kind:'all'}){
+  if(!BreezeVocabularyTest.ENABLED)return;
   const ui=vocabularyTestUI;if(ui.loading||ui.busy)return;
   ui.returnFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
   try{ui.scope=vocabularyTestScope(options);ui.candidates=ui.scope.cards;}catch(error){return;}
@@ -35,6 +37,7 @@ async function openVocabularyTest(options={kind:'all'}){
   await loadVocabularyTestPage();
 }
 async function loadVocabularyTestPage(){
+  if(!BreezeVocabularyTest.ENABLED)return;
   const ui=vocabularyTestUI,epoch=++ui.epoch;ui.loading=true;renderVocabularyTest();
   try{
     // A failed pending draft stays in memory and must be retried, not replaced by
@@ -46,6 +49,7 @@ async function loadVocabularyTestPage(){
   finally{if(epoch===ui.epoch){ui.loading=false;renderVocabularyTest();}}
 }
 function resumeVocabularyTestPage(){
+  if(!BreezeVocabularyTest.ENABLED)return;
   const ui=vocabularyTestUI;
   if(!ui.scope){ui.scope=vocabularyTestScope({kind:'all'});ui.candidates=ui.scope.cards;}
   ui.screen='setup';return loadVocabularyTestPage();
@@ -71,6 +75,7 @@ function vocabularyTestError(error){
 }
 function clearVocabularyTestError(){vocabularyTestUI.lastError=null;const box=document.getElementById('vocabulary-test-error');if(box){box.hidden=true;box.replaceChildren();}}
 function renderVocabularyTest(){
+  if(!BreezeVocabularyTest.ENABLED)return;
   const ui=vocabularyTestUI;vocabularyTestPage.replaceChildren();
   const shell=vocabularyTestNode('main','vocabulary-test-shell');
   const header=vocabularyTestNode('header','vocabulary-test-header');

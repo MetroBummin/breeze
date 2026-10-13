@@ -1,5 +1,18 @@
 # Next 1.9.3 iOS and Android internal candidate
 
+## Scope superseded before review (2026-10-13)
+
+After275/main c4accd6 was built and validated, the owner held its review and the
+existing Android code2 upload. The next candidate excludes typed-test UI and
+removes the completed-set results-entry step. Interrupted study resumes, the
+terminal screen has one return/restart pair, and completed reentry offers Start
+without clearing saved answers on navigation. Decisions013/023/031 describe
+these narrow changes. CSV recovery, grouped meanings and swipe improvements stay.
+No new native counter is guessed; observe the next Xcode Cloud counter after
+verified merge. The existing ASC browser execution-approval block must not be
+bypassed through another submission route. The old signed Android artifact is
+not the new candidate; rebuild the final source and coordinate existing-key signing.
+
 The owner authorized finishing the previously presented vocabulary test/study
 swipe work, CSV export recovery, merge, the next iOS build for review, and the
 latest Android internal test. This supersedes PR160's earlier review-only draft
