@@ -262,6 +262,30 @@ establish physical iPhone frame rate.
 
 Task/import/edit dialogs and article preview share Reader settings material (surface token, 19px blur and theme reflection). Layout and content contracts remain unchanged. Memory uses its original image logo at Home entry as well as inside the view.
 
+### Browser vocabulary export recovery (2026-10-13)
+
+CSV sharing uses `text/csv` with the existing UTF-8 BOM. A browser share failure
+or cancellation offers the existing task dialog with an explicit CSV download
+action. Closing it never downloads a file. Each download/retry uses the user's
+new confirmation, retains the generated CSV snapshot and releases Blob URLs;
+synchronous download failures keep a retry/close choice. The browser cannot
+confirm that the OS actually persisted a download, so no saved-success claim is
+shown. The export button owns the pending share and recovery dialog to prevent
+duplicate exports. iOS vocabulary bridge completion/cancellation stays unchanged;
+native shells never receive a browser-download fallback.
+
+`tests/verify-vocabulary-export-browser.mjs` checks trusted gestures, repeated
+activation, cancellation, share/download exceptions, exact synthetic CSV bytes,
+native bridge completion and recovery-dialog geometry/focus in both themes.
+This repairs a reproducible recovery gap; the reported student's Android Chrome
+failure and physical-device behavior remain unconfirmed. No release counter or
+historical release receipt changes are part of this review.
+The review scope guard permits only export code/tests, this decision and cache
+stamps. Existing CI boundary entrypoints run that guard, which also executes the
+unaltered272 release checker (including its historical checks) at
+`37de13779b99bdfed7f0b20809577619f163f705`. This avoids treating new product work
+or main's later Apple request file as part of the frozen272 release.
+
 ## 2026-10-01: reduce Reader transition work
 
 Keep the existing +22 px narrow PDF expanded-pill position and centered collapsed position. Decorative control transitions must not invalidate PDF paper measurements. Original paper-growth and viewport watchers share one EPUB frame layout, coalescing paper growth in a frame and writing sizes only when changed; PDF viewport changes settle immediately to preserve pinch and rotation coordinates; hidden originals are skipped. Cached mode returns restore scroll synchronously before presenting the source.

@@ -1,0 +1,61 @@
+/* Typed recall shares the full-page Memory canvas and header controls. */
+html:has(#v-vocabulary-test.on),body:has(#v-vocabulary-test.on){background:var(--home-background);}
+body:has(#v-vocabulary-test.on)::before,body:has(#v-vocabulary-test.on) #topbar{display:none;}
+#v-vocabulary-test{background:var(--home-background);color:var(--settings-ink);min-height:100dvh;font-family:var(--ui);padding:0 0 calc(32px + env(safe-area-inset-bottom));}
+.vocabulary-test-shell{width:min(100%,680px);margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 24px 24px;box-sizing:border-box;}
+.vocabulary-test-header{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.vocabulary-test-header h1{font:600 20px/1.4 var(--ui);margin:0;}
+.vocabulary-test-body h2{font:600 24px/1.4 var(--ui);margin:0 0 16px;overflow-wrap:anywhere;}
+.vocabulary-test-body p{line-height:1.65;overflow-wrap:anywhere;}
+.vocabulary-test-button{min-width:44px;min-height:44px;padding:10px 16px;border:1px solid var(--settings-line);border-radius:12px;background:var(--settings-group);color:var(--settings-ink);font:500 14px/1.4 var(--ui);cursor:pointer;touch-action:manipulation;}
+.vocabulary-test-button:hover{background:var(--settings-close);}
+.vocabulary-test-button:active{opacity:.72;}
+.vocabulary-test-button:disabled{opacity:.45;cursor:default;}
+.vocabulary-test-button:focus-visible,.vocabulary-test-options label:has(:focus-visible),#vocabulary-test-answer:focus-visible,.vocabulary-test-batches summary:focus-visible{outline:2px solid var(--brand-strong);outline-offset:3px;}
+.vocabulary-test-back{flex:none;width:44px;height:44px;padding:11px;border-radius:50%;}
+.vocabulary-test-back svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;}
+.vocabulary-test-primary{display:block;width:100%;min-height:48px;border-radius:16px;font-weight:600;margin-top:24px;}
+.vocabulary-test-note{font:400 14px/1.65 var(--ui);color:var(--settings-muted);margin:12px 0 20px;}
+.vocabulary-test-options{border:0;padding:0;margin:32px 0 16px;display:flex;flex-wrap:wrap;gap:12px;}
+.vocabulary-test-options legend{font-size:14px;margin-bottom:12px;}
+.vocabulary-test-options label{display:flex;align-items:center;gap:8px;min-height:44px;border:1px solid var(--settings-line);border-radius:12px;padding:0 16px;cursor:pointer;}
+.vocabulary-test-options label:has(:checked){background:var(--settings-group);border-color:var(--brand-signature);box-shadow:inset 0 0 0 1px var(--brand-signature);}
+.vocabulary-test-options input{accent-color:var(--brand-strong);width:16px;height:16px;}
+.vocabulary-test-resume{padding:16px 0;border-bottom:1px solid var(--settings-line);}
+.vocabulary-test-resume p{margin:0 0 12px;font-size:14px;}
+.vocabulary-test-progress{font-size:13px;font-variant-numeric:tabular-nums;color:var(--settings-muted);padding-bottom:12px;border-bottom:2px solid var(--brand-signature);}
+.vocabulary-test-prompt{padding:24px 0 16px;outline:none;}
+.vocabulary-test-prompt h2{font-size:clamp(28px,5vw,40px);font-weight:600;}
+.vocabulary-test-sentence{font:400 20px/1.75 var(--ui);margin:16px 0;}
+.vocabulary-test-sentence strong{font-weight:700;text-decoration:underline;text-decoration-color:var(--brand-signature);text-decoration-thickness:3px;text-underline-offset:4px;}
+.vocabulary-test-form{margin-top:16px;}
+.vocabulary-test-form label{display:block;font-size:14px;margin-bottom:12px;}
+#vocabulary-test-answer{display:block;width:100%;min-height:96px;resize:vertical;box-sizing:border-box;border:1px solid var(--settings-line);border-radius:16px;background:var(--settings-group);color:var(--settings-ink);padding:16px;font:400 18px/1.6 var(--ui);scroll-margin-bottom:24px;}
+#vocabulary-test-answer::placeholder{color:var(--settings-muted);}
+.vocabulary-test-form .vocabulary-test-note{margin:8px 0;}
+.vocabulary-test-save-status{font-size:12px;color:var(--settings-muted);}
+.vocabulary-test-error{margin-bottom:24px;padding:16px;border:1px solid var(--settings-danger);border-radius:16px;}
+.vocabulary-test-error p{font-size:14px;margin:0 0 12px;}
+.vocabulary-test-replace{margin-top:24px;padding-top:16px;border-top:1px solid var(--settings-line);}
+.vocabulary-test-replace .vocabulary-test-button{margin:8px 0;}
+.vocabulary-test-results{padding-left:24px;margin:24px 0;}
+.vocabulary-test-result{padding:0 0 24px;margin-bottom:24px;border-bottom:1px solid var(--settings-line);}
+.vocabulary-test-result h3,.vocabulary-test-batch-answer h3{font:600 20px/1.4 var(--ui);margin:0 0 16px;overflow-wrap:anywhere;}
+.vocabulary-test-result p{white-space:pre-wrap;margin:12px 0;font-size:16px;}
+.vocabulary-test-result p>span{display:block;font-size:12px;color:var(--settings-muted);margin-bottom:4px;}
+.vocabulary-test-verdicts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.vocabulary-test-verdicts button{font-size:13px;padding:8px 12px;}
+.vocabulary-test-verdicts button[aria-pressed=true]{border-color:var(--brand-signature);box-shadow:inset 0 0 0 1px var(--brand-signature);font-weight:650;}
+.vocabulary-test-summary{font-size:14px;}
+.vocabulary-test-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:24px 0;font-size:13px;}
+.vocabulary-test-batches{margin-top:32px;border-top:1px solid var(--settings-line);}
+.vocabulary-test-batches details{border-bottom:1px solid var(--settings-line);}
+.vocabulary-test-batches summary{min-height:44px;box-sizing:border-box;padding:12px 0;font-size:14px;cursor:pointer;}
+.vocabulary-test-batch-detail{padding:8px 0 16px;}
+.vocabulary-test-batch-answer{padding:16px 0;}
+.vocabulary-test-batch-answer p{font-size:14px;white-space:pre-wrap;}
+#wordbook-test{min-height:44px;min-width:44px;border:0;background:none;color:var(--settings-ink);font:500 13px var(--ui);padding:8px;cursor:pointer;}
+@media(max-width:380px){.vocabulary-test-shell{padding-left:16px;padding-right:16px;}.vocabulary-test-verdicts{gap:4px;}.vocabulary-test-verdicts button{padding:8px;}}
+@media(max-height:600px){.vocabulary-test-header{margin-bottom:16px;}.vocabulary-test-prompt{padding:8px 0;}.vocabulary-test-prompt h2{font-size:28px;}.vocabulary-test-sentence{font-size:18px;margin:8px 0;}.vocabulary-test-form{margin-top:8px;}}
+.vocabulary-test-count-label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;}
+#vocabulary-test-count{width:104px;min-height:44px;box-sizing:border-box;border:1px solid var(--settings-line);border-radius:12px;padding:8px 12px;background:var(--settings-group);color:var(--settings-ink);font:400 16px var(--ui);}

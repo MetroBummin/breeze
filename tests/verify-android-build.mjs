@@ -30,6 +30,10 @@ test('native wrapper targets API 36 and separates debug identity from Play', () 
   assert.match(app, /applicationIdSuffix '\.debug'/);
   assert.match(app, /versionCode requestedVersionCode\.toInteger\(\)/);
   assert.match(app, /2100000000/);
+  assert.match(app, /getOrElse\('2'\)/, 'Next internal candidate follows uploaded code1');
+  const releaseVersion = app.match(/def appVersion = '([^']+)'/)[1];
+  const iosVersions = [...read('ios/App/App.xcodeproj/project.pbxproj').matchAll(/MARKETING_VERSION = ([^;]+);/g)].map(m=>m[1]);
+  assert.ok(iosVersions.length && iosVersions.every(version=>version===releaseVersion), 'Both stores identify the same release');
   assert.doesNotMatch(app, /signingConfig\s|storePassword|keyPassword/);
   assert.match(read('android/app/src/main/java/kr/io/breeze/app/MainActivity.java'), /extends BridgeActivity/);
 });

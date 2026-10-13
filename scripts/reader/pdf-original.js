@@ -643,16 +643,22 @@ function openPdfWord(page,box){
 
 function capturePdfAnchor(inset){
   const layout=pdfPageLayout();if(!layout)return null;
-  const {rects,outer,scroller}=layout,y=inset-outer.top+scroller.scrollTop;
-  let i=originalSession?.readDirection==='horizontal'?((originalSession.navigationPage||1)-1):pdfPageIndexAtY(rects,y);
-  if(i>=rects.length){i=rects.length-1;while(i>=0&&!rects[i][3])i--;}
-  const r=rects[i];if(!r)return null;
-  const anchor={kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
+  const {rects,outer,scroller}=layout;
+  const at=offset=>{
+    const y=offset-outer.top+scroller.scrollTop;
+    let i=originalSession?.readDirection==='horizontal'?((originalSession.navigationPage||1)-1):pdfPageIndexAtY(rects,y);
+    if(i>=rects.length){i=rects.length-1;while(i>=0&&!rects[i][3])i--;}
+    const r=rects[i];if(!r)return null;
+    return {kind:'pdf',page:i+1,y:Math.max(0,Math.min(1,(y-r[1])/Math.max(1,r[3])))};
+  };
+  const anchor=at(inset);if(!anchor)return null;
   // Resize/scroll callbacks can rebuild pageLayout before the resize observer.
   // Only commit a reading point while the viewport still matches its settled size.
   if(Math.round(scroller.clientWidth)===originalZoomObservedWidth
       &&Math.round(scroller.clientHeight)===originalZoomObservedHeight)
-    originalSession.readingAnchor=anchor;
+    // Progress probes at topInset()+10; rotation restores at topInset(). Keep
+    // that canonical point, including when the probe crosses a page boundary.
+    originalSession.readingAnchor=at(topInset());
   return anchor;
 }
 

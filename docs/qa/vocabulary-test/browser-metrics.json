@@ -1,0 +1,24 @@
+{
+  "engine": "chromium",
+  "scope": "Synthetic local browser data. No native iOS keyboard or VoiceOver validation; no live AI calls.",
+  "metrics": [
+    {
+      "size": 2000,
+      "sample": 100,
+      "startMs": 94,
+      "nodes": 19
+    },
+    {
+      "size": 12000,
+      "sample": 100,
+      "startMs": 370,
+      "nodes": 19
+    },
+    {
+      "size": 12000,
+      "sample": 12000,
+      "startMs": 686,
+      "nodes": 19
+    }
+  ]
+}

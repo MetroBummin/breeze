@@ -1,8 +1,11 @@
+import {inspectAppleBuildInventory} from './apple-build-inventory.mjs';
 // App Store Connect orchestration only. Xcode Cloud owns building and signing.
 import {createHash, createPrivateKey, sign} from 'node:crypto';
 import {readFileSync, appendFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {ScreenshotError, SCREENSHOT_PLAN_PATH, validateScreenshotConfig, loadScreenshotBundle, screenshotInventory,
+  screenshotSummary, uploadScreenshots, assertScreenshotsComplete} from './apple-screenshots.mjs';
 
 const ORIGIN = 'https://api.appstoreconnect.apple.com';
 const ID = /^[A-Za-z0-9-]{1,100}$/;
@@ -38,7 +41,8 @@ export function manifestDigest(raw) { return createHash('sha256').update(raw).di
 
 export function validateManifest(m, {appId, releaseId, mode = 'status', now = Date.now()} = {}) {
   exactKeys(m, ['schemaVersion', 'releaseId', 'appId', 'bundleId', 'version', 'buildId', 'buildNumber',
-    'ciBuildRunId', 'expectedCommit', 'releaseType', 'whatsNew', 'authorization'], 'manifest');
+    'ciBuildRunId', 'expectedCommit', 'releaseType', 'whatsNew', 'authorization',
+    ...(m && Object.hasOwn(m, 'screenshots') ? ['screenshots'] : [])], 'manifest');
   requireThat(m.schemaVersion === 1 && typeof m.releaseId === 'string' && SLUG.test(m.releaseId) && m.releaseId === releaseId, 'Invalid release ID or schema');
   requireThat(typeof m.appId === 'string' && /^[1-9]\d{0,19}$/.test(m.appId) && m.appId === appId && m.bundleId === 'kr.io.breeze.app', 'App identity mismatch');
   requireThat(typeof m.version === 'string' && /^\d{1,3}\.\d{1,3}(?:\.\d{1,3})?$/.test(m.version), 'Invalid exact marketing version');
@@ -53,6 +57,10 @@ export function validateManifest(m, {appId, releaseId, mode = 'status', now = Da
     requireThat(/^[a-z]{2}(?:-[A-Za-z0-9]{2,8}){0,2}$/.test(locale) &&
       typeof note === 'string' && note.trim().length > 0 && [...note].length <= 4000 &&
       !/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(note), 'Invalid locale or What\'s New text');
+  }
+  if (Object.hasOwn(m, 'screenshots')) validateScreenshotConfig(m.screenshots, m);
+  if (['prepare', 'submit'].includes(mode) && m.appId === '6804570182' && m.version === '1.9.3' && m.buildNumber === '272') {
+    requireThat(m.screenshots, 'Exact272 writes require the approved screenshot plan');
   }
   exactKeys(m.authorization, ['operation', 'expiresAt'], 'authorization');
   requireThat(['none', 'prepare', 'submit'].includes(m.authorization.operation), 'Invalid authorized operation');
@@ -152,7 +160,8 @@ export function createClient({token, fetchImpl = fetch, allowWrites = false}) {
     requireThat(url.origin === ORIGIN && !url.username && !url.password && !url.hash &&
       /^\/v1\/[A-Za-z0-9/-]+$/.test(url.pathname), 'Invalid ASC URL');
     requireThat(method === 'GET' || (allowWrites && ['POST', 'PATCH'].includes(method) &&
-      allowedWrite.test(url.pathname) && !url.search), 'Apple writes disabled or endpoint forbidden');
+      (allowedWrite.test(url.pathname) || (method === 'POST' && /^\/v1\/(appScreenshotSets|appScreenshots)$/.test(url.pathname)) ||
+        (method === 'PATCH' && /^\/v1\/(appScreenshots\/[A-Za-z0-9-]+|appScreenshotSets\/[A-Za-z0-9-]+\/relationships\/appScreenshots)$/.test(url.pathname))) && !url.search), 'Apple writes disabled or endpoint forbidden');
     let response;
     try {
       response = await fetchImpl(url.href, {method, redirect: 'error', signal: AbortSignal.timeout(30000),
@@ -283,19 +292,22 @@ function enforceOutcome(outcome, write) {
   return outcome;
 }
 
-export async function release(client, m, mode = 'status', clock = Date.now) {
+export async function release(client, m, mode = 'status', clock = Date.now, {screenshots, fetchImpl} = {}) {
   validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
   requireThat(['status', 'dry-run', 'prepare', 'submit'].includes(mode), 'Invalid release mode');
   const write = ['prepare', 'submit'].includes(mode);
-  const change = async (...args) => {
-    validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
-    return client.request(...args);
-  };
+  const beforeWrite = () => validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
+  const change = async (...args) => { beforeWrite(); return client.request(...args); };
+  if (m.screenshots) requireThat(screenshots?.planSha256 === m.screenshots.planSha256 && (!write || screenshots.receipt),
+    'Committed screenshot plan and verified original bytes required');
   let {version} = await inspect(client, m);
   let contents = version ? await versionContents(client, version) : null;
   let review = await reviewState(client, m.appId, version?.id);
   const existingOutcome = enforceOutcome(reviewOutcome(review, version, contents, m), write);
-  if (existingOutcome) return existingOutcome;
+  if (existingOutcome) {
+    if (m.screenshots && write) await assertScreenshotsComplete(client, contents, m.screenshots, screenshots);
+    return existingOutcome;
+  }
   if (version) requireThat(EDITABLE.includes(state(version)) ||
     (state(version) === 'READY_FOR_REVIEW' && review && contentsMatch(version, contents, m)), 'Version is not safely editable');
   if (review) requireThat(review.attributes.state === 'READY_FOR_REVIEW' && contentsMatch(version, contents, m), 'Review draft needs reconciliation');
@@ -303,7 +315,19 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
     createVersion: !version, selectBuild: contents?.selectedBuild !== m.buildId,
     updateLocales: Object.entries(m.whatsNew).filter(([locale, text]) => contents?.locales.get(locale)?.attributes?.whatsNew !== text).map(([locale]) => locale),
     releaseType: m.releaseType, submit: mode === 'submit'};
+  if (m.screenshots) {
+    plan.screenshots = screenshotSummary(await screenshotInventory(client, contents, m.screenshots, screenshots));
+  }
   if (!write) return plan;
+  if (m.screenshots) {
+    // Upload before metadata writes, after inspecting every existing target set.
+    requireThat(state(version) === 'PREPARE_FOR_SUBMISSION' || state(version) === 'READY_FOR_REVIEW', 'Screenshot version is not editable');
+    const uploaded = state(version) === 'READY_FOR_REVIEW'
+      ? {result: 'screenshots-complete', groups: await assertScreenshotsComplete(client, contents, m.screenshots, screenshots)}
+      : await uploadScreenshots(client, contents, m.screenshots, screenshots, {beforeWrite, fetchImpl});
+    if (uploaded.result !== 'screenshots-complete') return {result: 'action-required', reason: uploaded.result, screenshots: uploaded.groups};
+    plan.screenshots = uploaded.groups;
+  }
   // No destructive changes, build starts/uploads, beta invitations, or retries.
   if (!version) {
     version = resource((await change('POST', '/v1/appStoreVersions', payload('appStoreVersions',
@@ -324,6 +348,7 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
   version = resource((await client.request('GET', `/v1/appStoreVersions/${version.id}`)).data, 'appStoreVersions', version.id);
   requireThat(version.attributes?.versionString === m.version && version.attributes?.platform === 'IOS' &&
     contentsMatch(version, await versionContents(client, version), m), 'Release metadata read-back mismatch');
+  if (m.screenshots) await assertScreenshotsComplete(client, await versionContents(client, version), m.screenshots, screenshots);
   if (mode === 'prepare') return {...plan, versionId: version.id};
   validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
   // Recheck all provenance and active submissions immediately before submitting.
@@ -332,7 +357,10 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
   version = rechecked.version;
   review = await reviewState(client, m.appId, version.id);
   const concurrentOutcome = enforceOutcome(reviewOutcome(review, version, await versionContents(client, version), m), true);
-  if (concurrentOutcome) return concurrentOutcome;
+  if (concurrentOutcome) {
+    if (m.screenshots) await assertScreenshotsComplete(client, await versionContents(client, version), m.screenshots, screenshots);
+    return concurrentOutcome;
+  }
   if (!review) {
     review = resource((await change('POST', '/v1/reviewSubmissions', payload('reviewSubmissions',
       {platform: 'IOS'}, {app: link('apps', m.appId)}))).data, 'reviewSubmissions');
@@ -348,6 +376,7 @@ export async function release(client, m, mode = 'status', clock = Date.now) {
   requireThat(finalVersion.attributes?.versionString === m.version && finalVersion.attributes?.platform === 'IOS' &&
     contentsMatch(finalVersion, finalContents, m), 'Release contents changed before submit');
   enforceOutcome(reviewOutcome(ready, finalVersion, finalContents, m), true);
+  if (m.screenshots) await assertScreenshotsComplete(client, finalContents, m.screenshots, screenshots);
   validateManifest(m, {appId: m.appId, releaseId: m.releaseId, mode, now: clock()});
   await change('PATCH', `/v1/reviewSubmissions/${review.id}`, payload('reviewSubmissions', {submitted: true}, null, review.id));
   const submitted = await reviewState(client, m.appId, version.id);
@@ -391,6 +420,10 @@ async function main(env) {
     runAttempt: env.GITHUB_RUN_ATTEMPT, eventSha: env.GITHUB_SHA, mainSha, inputs, push: event,
     changes, requestRaw, raw, appId: env.ASC_APP_ID});
   if (invocation.manifest) git('merge-base', '--is-ancestor', invocation.manifest.expectedCommit, 'HEAD');
+  let screenshots;
+  if (invocation.manifest?.screenshots) {
+    screenshots = loadScreenshotBundle(trackedJson(SCREENSHOT_PLAN_PATH), invocation.manifest.screenshots);
+  }
   if (process.argv.includes('--gate')) {
     requireThat(env.GITHUB_OUTPUT, 'GitHub output file required');
     appendFileSync(env.GITHUB_OUTPUT, `mode=${invocation.mode}\nrelease_id=${invocation.releaseId ?? ''}\nmain_sha=${git('rev-parse', 'HEAD')}\n`);
@@ -400,14 +433,19 @@ async function main(env) {
   requireThat(env.ASC_RELEASE_ENABLED === 'true', 'Secure Apple environment setup is not enabled');
   const allowWrites = ['prepare', 'submit'].includes(invocation.mode);
   if (allowWrites) requireThat(env.ASC_WRITES_ENABLED === 'true', 'Apple writes require separate schema verification and secure setup');
+  if (screenshots && allowWrites) {
+    requireThat(env.ASC_SCREENSHOT_ASSET_DIRECTORY, 'Materialize approved originals in this consumer before Apple writes');
+    screenshots = loadScreenshotBundle(trackedJson(SCREENSHOT_PLAN_PATH), invocation.manifest.screenshots, env.ASC_SCREENSHOT_ASSET_DIRECTORY);
+  }
   const client = createClient({token: tokenFactory(env), allowWrites});
-  const result = await release(client, invocation.manifest, invocation.mode);
+  if (invocation.mode === 'status') console.log(JSON.stringify({buildInventory:await inspectAppleBuildInventory(client, invocation.manifest.appId)}));
+  const result = await release(client, invocation.manifest, invocation.mode, Date.now, {screenshots});
   console.log(JSON.stringify(result));
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main(process.env).catch(error => {
     // Never print a stack, request headers, raw server response, key, or JWT.
-    console.error(error instanceof ReleaseError ? error.message : 'Release validation failed; check trusted inputs and repository state.');
+    console.error(error instanceof ReleaseError || error instanceof ScreenshotError ? error.message : 'Release validation failed; check trusted inputs and repository state.');
     process.exitCode = 1;
   });
 }

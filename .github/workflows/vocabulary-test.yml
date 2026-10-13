@@ -1,0 +1,53 @@
+name: Vocabulary test prototype
+on:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'styles/**'
+      - 'server/dict/**'
+      - 'tests/**'
+      - 'index.html'
+      - 'package*.json'
+      - '.github/workflows/vocabulary-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --experimental-strip-types --test tests/verify-vocabulary-test.mjs tests/verify-vocabulary-test-storage.mjs tests/verify-vocabulary-test-grading.mjs tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs tests/verify-study-example.mjs tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs
+      - run: npm run typecheck
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    env:
+      BROWSER: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: node tests/verify-vocabulary-test-browser.mjs
+      - run: node tests/verify-simple-word-cards-browser.mjs
+      - run: node tests/verify-study-direction-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vocabulary-test-${{ matrix.engine }}
+          path: |
+            /tmp/breeze-vocabulary-test-proof/
+            /tmp/breeze-study-direction-proof/
+          retention-days: 14

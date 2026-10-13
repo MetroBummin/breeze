@@ -17,7 +17,7 @@ export const appFamilyScenes=Object.freeze({
  'study-detail':{visible:['#study-sets-back','#study-sets-edit','#study-sets-start'],hidden:['#study-sets-close','#study-sets-edit-menu']},
  'study-more':{visible:['#study-sets-back','#study-sets-edit-menu','#study-sets-edit-menu [role="menuitem"]:nth-child(1)','#study-sets-edit-menu [role="menuitem"]:nth-child(2)','#study-sets-edit-menu [role="menuitem"]:nth-child(3)'],hidden:['#study-sets-close']},
  'study-front':{visible:['#study-sets-back','#study-sets-expression','#study-sets-flashcard'],hidden:studyHidden.filter(s=>s!=='#study-sets-reveal'),accessible:['#study-sets-reveal']},
- 'study-revealed':{visible:['#study-sets-back','#study-sets-answer','#study-sets-flashcard'],accessible:['#study-sets-grade-repeat','#study-sets-grade-remembered'],hidden:['#study-sets-close','#study-sets-reveal','.study-sets-complete']},
+ 'study-revealed':{visible:['#study-sets-back','#study-sets-answer','#study-sets-flashcard','#study-sets-grade-repeat','#study-sets-grade-remembered'],accessible:['#study-sets-grade-repeat','#study-sets-grade-remembered'],hidden:['#study-sets-close','#study-sets-reveal','.study-sets-complete']},
  'study-completion':{visible:['#study-sets-back','.study-sets-complete'],hidden:studyHidden.filter(s=>s!=='.study-sets-complete')},
  'book-info':{visible:['#ed-close'],hidden:['#task-form .task-close']},
  'task-sheet':{visible:['#task-form .task-close'],hidden:['#ed-close']},
@@ -74,7 +74,8 @@ export async function captureAppFamilyStudy(page,capture){
  await studyAction(page.keyboard.press('Enter'),page);
  await capture('study-revealed',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'revealed card keeps keyboard action ownership');
- assert.equal(await page.locator('.study-session-accessible-actions').evaluate(n=>getComputedStyle(n).clipPath),'inset(50%)','normal revealed screen keeps rating alternatives clipped');
+ assert.equal(await page.locator('.study-session-accessible-actions').evaluate(n=>getComputedStyle(n).clipPath),'none','approved revealed directions remain visible');
+ for(const selector of ['#study-sets-grade-repeat','#study-sets-grade-remembered']){const box=await page.locator(selector).boundingBox();assert.ok(box&&box.width>=44&&box.height>=44,'visible direction remains a touch target: '+selector);}
  await page.keyboard.press('Tab');assert.equal(await page.locator('#study-sets-grade-repeat').evaluate(n=>n===document.activeElement),true,'Tab reaches repeat');
  await page.keyboard.press('Tab');assert.equal(await page.locator('#study-sets-grade-remembered').evaluate(n=>n===document.activeElement),true,'Tab reaches remembered');
  await studyAction(page.keyboard.press('Enter'),page);await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));

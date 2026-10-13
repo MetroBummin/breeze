@@ -2014,8 +2014,30 @@ function csvCell(value){
   const text = String(value == null ? '' : value);
   return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g,'""') + '"' : text;
 }
+function downloadVocabularyFile(file){
+  const link=document.createElement('a'),url=URL.createObjectURL(file);
+  let started=false;
+  try{
+    link.href=url;link.download=file.name;
+    document.body.append(link);link.click();started=true;
+  }finally{
+    link.remove();
+    if(started) setTimeout(()=>URL.revokeObjectURL(url),60000);
+    else URL.revokeObjectURL(url);
+  }
+}
+async function offerVocabularyDownload(file,description){
+  // A fresh explicit tap owns each download attempt. Cancellation never saves a file.
+  // Return true so the export owner restores focus after re-enabling its button.
+  while(await breezeTaskDialog({title:'CSV 파일로 저장',description,action:'CSV 다운로드'})){
+    try{downloadVocabularyFile(file);return true;}
+    catch(error){description='다운로드를 시작하지 못했어요. 다시 시도하거나 창을 닫아 주세요.';}
+  }
+  return true;
+}
 async function deliverVocabularyCsv(csv){
-  const file=new File([csv],'breeze_vocab.csv',{type:'text/csv;charset=utf-8'});
+  // Web Share checks the MIME itself; UTF-8 is already encoded by File and the BOM.
+  const file=new File([csv],'breeze_vocab.csv',{type:'text/csv'});
   const bridge=/** @type {any} */(window).webkit?.messageHandlers?.breezeVocabularyExport;
   if(bridge){
     await new Promise((resolve,reject)=>{
@@ -2030,29 +2052,41 @@ async function deliverVocabularyCsv(csv){
     });
     return;
   }
-  if(navigator.canShare?.({files:[file]}) && navigator.share){
-    await navigator.share({files:[file]});
-    return;
+  try{
+    if(navigator.canShare?.({files:[file]}) && navigator.share){
+      await navigator.share({files:[file]});
+      return;
+    }
+  }catch(error){
+    if(isNativeShell()) throw error;
+    // AbortError also covers missing share targets, not only a deliberate cancel.
+    return offerVocabularyDownload(file,error.name==='AbortError'
+      ?'공유를 마치지 않았어요. 원하면 CSV 파일을 직접 다운로드할 수 있어요.'
+      :'공유하지 못했어요. CSV 파일을 직접 다운로드할 수 있어요.');
   }
   if(isNativeShell()) throw new Error('내보내기를 지원하는 앱 버전이 필요해요');
-  const url=URL.createObjectURL(file),link=document.createElement('a');
-  link.href=url;link.download=file.name;
-  document.body.append(link);link.click();link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  try{downloadVocabularyFile(file);}
+  catch(error){return offerVocabularyDownload(file,'다운로드를 시작하지 못했어요. 다시 시도하거나 창을 닫아 주세요.');}
 }
 document.getElementById('btn-export').onclick = async ()=>{
-  const list = Object.values(words).filter(validWordMeaning).sort((a,b)=>b.addedAt-a.addedAt);
-  if(!list.length){ toast('내보낼 단어가 없어요'); return; }
-  const stName = {1:'★',2:'★★',3:'★★★'};
-  const rows = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
-    ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
-      w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
-  /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
-  const csv = '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
   const button=/** @type {HTMLButtonElement} */(document.getElementById('btn-export'));
   if(button.disabled) return;
   button.disabled=true;
-  try{await deliverVocabularyCsv(csv);}
+  let restoreFocus=false;
+  try{
+    const list = Object.values(words).filter(validWordMeaning).sort((a,b)=>b.addedAt-a.addedAt);
+    if(!list.length){ toast('내보낼 단어가 없어요'); return; }
+    const stName = {1:'★',2:'★★',3:'★★★'};
+    const rows = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
+      ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
+        w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
+    /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
+    const csv = '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+    restoreFocus=!!(await deliverVocabularyCsv(csv));
+  }
   catch(error){if(error.name!=='AbortError') toast('단어장을 내보내지 못했어요. 다시 시도해 주세요.');}
-  finally{button.disabled=false;}
+  finally{
+    button.disabled=false;
+    if(restoreFocus&&activeAppView()==='vocab')button.focus({preventScroll:true});
+  }
 };

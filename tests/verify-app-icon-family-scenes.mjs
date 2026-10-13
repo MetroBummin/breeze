@@ -22,3 +22,8 @@ test('front rejects a prematurely visible answer and duplicate reveal targets',a
  counts['#study-sets-answer:visible']=0;counts['#study-sets-flashcard:visible']=2;
  await assert.rejects(assertAppFamilyScene(pageWith(counts),'study-front'),/requires exactly one visible #study-sets-flashcard/);
 });
+
+test('revealed scene rejects a missing approved visible direction',async()=>{
+ const counts=scenePage('study-revealed');delete counts['#study-sets-grade-repeat:visible'];
+ await assert.rejects(assertAppFamilyScene(pageWith(counts),'study-revealed'),/requires exactly one visible #study-sets-grade-repeat/);
+});
