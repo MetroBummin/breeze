@@ -65,7 +65,7 @@ const expected={
   "tests/verify-simple-word-cards-browser.mjs": "a291524a077107b61ac86decbac0a681cc80436764111bcd6d9151ccd6d4725c",
   "tests/verify-study-direction-browser.mjs": "9cca0ddab6e5ca4aaca65a231364bc3ac68e195411a92a1a74c302a8ac20fa3c",
   "tests/verify-study-motion-browser.mjs": "f2324bb5a107d583c3e4175a36a2921bf67743ca8be12730f81d432faf92197a",
-  "tests/verify-study-session-swipe-browser.mjs": "9faf71f5c7fe12b17b4e6a6123023bf2c3876cc999cd0250e4a9ba632e5cb989",
+  "tests/verify-study-session-swipe-browser.mjs": "c9f6264d518c10a116012eb3ea54ec36b7a5350401a696213896d1ec91534a9a",
   "tests/verify-study-sets-browser.mjs": "c45d226d25303711c971f16470c9d7852b0e586b7a75db4f36fd80f75af78729",
   "tests/verify-study-sets-ui.mjs": "8f90145c872bfec64bcd60c95d41046ff4a5d454c939d3bc3acd1b26bf47a4ae",
   "tests/verify-study-sets.mjs": "b2ffa0751387d854e7ce3660f55b4fd984156d83d3f80575e9b4197744f2fc0f",
