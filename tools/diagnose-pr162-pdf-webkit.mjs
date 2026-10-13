@@ -44,8 +44,24 @@ probe=once(probe,'assert.equal(rotationRestored.anchor.page,rotationBefore.page)
 probe=once(probe,"assert.ok(Math.abs(rotationRestored.anchor.y-rotationBefore.y)*rotationRestored.height<=1.5,'return rotation preserves source point');","checkDiagnostic(Math.abs(rotationRestored.anchor.y-rotationBefore.y)*rotationRestored.height<=1.5,'return rotation preserves source point');");
 probe=once(probe,"console.log(`${engine.name()} PDF elastic motion passed`);","diagnostic('assertion-failures',diagnosticFailures);if(diagnosticFailures.length)process.exitCode=1;else console.log(`${engine.name()} PDF elastic motion passed`);");
 writeFileSync(join(out,'instrumented-test.mjs'),probe);
+// Follow-up justified by the first comparison: cold baseline passed but warm
+// head failed, the measured return had only three frames 200-300ms apart, and
+// rotation shifted 11.9px. Reverse original execution order and then control
+// the missing touchmove-render checkpoint while tracing anchor ownership.
+probe=once(probe,"await page.evaluate(async()=>{await restorePdfAnchor({kind:'pdf',page:2,y:.3},topInset(),++readerModeChangeToken);});",`await page.evaluate(()=>{
+ window.qaAnchorTrace=[];
+ const state=()=>({t:performance.now(),reading:originalSession?.readingAnchor,layout:originalSession?.pageLayout?.rects?.[1],observed:[originalZoomObservedWidth,originalZoomObservedHeight],size:[readerScroller().clientWidth,readerScroller().clientHeight],scroll:readerScroller().scrollTop,inset:topInset(),pinch:!!originalPinch,frame:originalPinchFrame,returning:!!originalPinchReturn,transform:originalZoomLayer().style.transform,token:readerModeChangeToken});
+ const record=(name,phase,result)=>{if(qaAnchorTrace.length<180)qaAnchorTrace.push({name,phase,result,...state()});};
+ for(const name of ['capturePdfAnchor','capturePdfRotationAnchor','restorePdfAnchor','restorePdfRotationAnchor','invalidatePdfPageLayout','cancelOriginalPinch','settleOriginalZoomGeometry']){
+  const fn=window[name];window[name]=function(...args){record(name,'before');const result=fn.apply(this,args);if(result&&typeof result.then==='function')result.then(value=>record(name,'resolved',value));else record(name,'after',name.startsWith('capture')?result:undefined);return result;};
+ }
+});await page.evaluate(async()=>{await restorePdfAnchor({kind:'pdf',page:2,y:.3},topInset(),++readerModeChangeToken);});`);
+probe=once(probe,"await touch('touchMove',110);await page.setViewportSize", "await touch('touchMove',110);await page.waitForFunction(()=>originalPinch&&originalPinchFrame===0);await page.setViewportSize");
+probe=once(probe,'diagnostic("rotation",{','diagnostic("anchor-trace",await page.evaluate(()=>qaAnchorTrace));diagnostic("rotation",{');
+probe=once(probe,'diagnostic("rotation-restored",{','diagnostic("anchor-trace-restored",await page.evaluate(()=>qaAnchorTrace));diagnostic("rotation-restored",{');
+writeFileSync(join(out,'preview-ready-test.mjs'),probe);
 const results=[];
-for(const mode of ['original','diagnostic'])for(const [label,ref] of Object.entries(refs)){
+for(const mode of ['original','preview-ready'])for(const [label,ref] of Object.entries(refs).reverse()){
  const dir=dirs[label],runOut=join(out,`${mode}-${label}`);mkdirSync(runOut,{recursive:true});
  const entry=mode==='original'?testPath:'tests/.pr162-pdf-diagnostic.mjs';
  if(mode==='diagnostic')writeFileSync(join(dir,entry),probe);
