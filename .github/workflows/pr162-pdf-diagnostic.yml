@@ -1,0 +1,25 @@
+name: PR162 PDF WebKit baseline comparison
+on:
+  push:
+    branches: [diagnose/pr162-pdf-webkit-20261013]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps webkit
+      - name: Compare original assertions and capture diagnostic measurements
+        run: node tools/diagnose-pr162-pdf-webkit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr162-pdf-webkit-baseline-comparison
+          path: /tmp/breeze-pr162-pdf-comparison/
+          retention-days: 14
