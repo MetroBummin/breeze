@@ -61,3 +61,18 @@ upload took place. Both remote gates remain false. Before live grading, review
 consent, semantic rubric calibration, quota/cost, the proposed receipt migration
 and retention policy. The live payload/model/cost details are in
 [decision 031](../../decisions/031-vocabulary-test.md).
+
+## Final review delivery
+
+[Download the actual 24-second study-direction recording](breeze-study-directions.mp4).
+The Library upload attempt returned `transfer_failed` for all five files;
+no Library item or Library ID was finalized. The MP4 and screenshots remain
+available in this PR, so the failed upload does not prevent visual review.
+
+At `03b61b0`, the dedicated [Vocabulary test workflow](https://github.com/MetroBummin/breeze/actions/runs/38342643807)
+passed local contracts and both Chromium/WebKit browser jobs. The existing full
+`npm test`, focused 182 tests and all four local Chromium suites also passed.
+One simultaneous npm/browser run timed out (6 s) while returning from the
+12k test to the pre-existing Memory list; the unchanged commit's standalone
+browser rerun and both CI engines passed. This timing incident is not a claim
+of physical-device responsiveness.

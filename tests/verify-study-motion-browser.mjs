@@ -47,6 +47,7 @@ try{
  await page.evaluate(()=>studySetsStart(studySetsUI.setId));
  for(const mode of ['set','all']){
   if(mode==='all')await page.evaluate(async()=>{closeStudySets(true);show('vocab');await openVocabularyReview();});
+  if(mode==='all'){const scope=await page.evaluate(()=>({questions:ensureSimpleStudySession().initial.length,meanings:Object.keys(words).length,roots:new Set(ensureSimpleStudySession().initial.map(key=>words[key].root||key)).size}));assert.deepEqual(scope,{questions:2294,meanings:2399,roots:2294},'motion uses one representative per word while preserving all saved meanings');}
   const card=()=>page.locator(mode==='set'?'#study-sets-flashcard':'#review-flip');
   const summary=()=>page.evaluate(async mode=>mode==='set'?(()=>{const v=BreezeStudySets.view(studySetsUI.state,studySetsUI.setId);return {passed:v.completed,token:v.token,word:v.card?.word,revealed:v.revealed};})():{passed:ensureSimpleStudySession().passed.length,token:SimpleStudySession.token(ensureSimpleStudySession()),word:words[ensureSimpleStudySession().queue[0]]?.word,revealed:simpleWordCards.flipped},mode);
   await card().tap();await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);const start=await summary();
