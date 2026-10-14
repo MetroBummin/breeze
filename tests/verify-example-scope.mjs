@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
-import { loadPassages, scoreAll, wordTaps } from '../benchmarks/example-scope/score.mjs';
+import { loadPassages, loadRealExamPassages, scoreAll, wordTaps } from '../benchmarks/example-scope/score.mjs';
 import { normalizeExample, ruleA, ruleB, ruleC, spanAt } from '../benchmarks/example-scope/rules.mjs';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
@@ -112,4 +112,27 @@ test('the headless comparison finishes and keeps every tap in one bucket', () =>
   }
   const winner = Object.entries(report.rules).sort((a, b) => b[1].overall.accuracy - a[1].overall.accuracy)[0];
   assert.ok(winner, 'comparison produced no rule');
+});
+
+test('photo exam text stays out of git and scores as its own category when present', () => {
+  const gitignore = readFileSync(resolve(root, '.gitignore'), 'utf8');
+  assert.match(gitignore, /benchmarks\/example-scope\/data\/private\//);
+  const exams = loadRealExamPassages();
+  if (!existsSync(resolve(root, 'benchmarks/example-scope/data/private/real-exam.json'))){
+    assert.equal(exams.length, 0);
+    return;
+  }
+  const datasets = new Set(exams.map(passage => passage.dataset));
+  assert.deepEqual([...datasets].sort(), ['g1-exam', 'g2-exam']);
+  const taps = exams.flatMap(wordTaps);
+  assert.ok(taps.length >= 80, `expected the scanned exams to yield taps, got ${taps.length}`);
+  assert.ok(taps.every(tap => tap.category === 'real-exam'));
+  const report = scoreAll(exams);
+  for (const rule of Object.values(report.rules)){
+    const row = rule.overall;
+    assert.equal(row.exact + row.truncated + row.missing + row.overlong + row.wrong, row.taps);
+    assert.ok(rule.categories['real-exam']);
+    assert.ok(rule.datasets['g1-exam']);
+    assert.ok(rule.datasets['g2-exam']);
+  }
 });

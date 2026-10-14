@@ -1,12 +1,29 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
 import { adversarialPassages } from './data/adversarial.mjs';
 import { mockExamPassages } from './data/mock-exam.mjs';
+import { fromParts } from './passage.mjs';
 import { RULES, normalizeExample, spanAt } from './rules.mjs';
+
+const PRIVATE_EXAM = new URL('./data/private/real-exam.json', import.meta.url);
 
 export function loadPassages(){
   const prose = JSON.parse(readFileSync(new URL('./data/prose-gold.json', import.meta.url), 'utf8'));
   return [...prose.passages, ...mockExamPassages(), ...adversarialPassages()];
+}
+
+/** Photo-scan exams stay out of git. An empty list means the local file is absent. */
+export function loadRealExamPassages(){
+  const path = fileURLToPath(PRIVATE_EXAM);
+  if (!existsSync(path)) return [];
+  const items = JSON.parse(readFileSync(path, 'utf8'));
+  return items.map(item => fromParts(
+    item.id,
+    item.dataset,
+    item.parts.map(part => ({ text: part, category: 'real-exam' })),
+    '\n',
+  ));
 }
 
 export function wordTaps(passage){
@@ -141,12 +158,14 @@ export function scoreAll(passages = loadPassages()){
   return {
     passages: passages.length,
     taps: taps.length,
-    datasets: {
+    datasets: Object.fromEntries([...new Set(passages.map(passage => passage.dataset))].map(id => [id, {
       gutenberg: 'Pride and Prejudice (Project Gutenberg #1342), header and footer removed',
       'long-text': 'Speckled Band and Hound of the Baskervilles excerpts already in the repo, plus line-broken copies',
       'mock-exam': 'Original exam-style pages in the same shape as a multiple-choice PDF',
       adversarial: 'Hand-labeled dense stress paragraphs',
-    },
+      'g1-exam': '중앙고 고1 공통영어2 photo scan, tesseract eng+kor, local only',
+      'g2-exam': '중앙고 고2 영어II photo scan, tesseract eng+kor, local only',
+    }[id] || id])),
     rules: byRule,
     failures,
   };
