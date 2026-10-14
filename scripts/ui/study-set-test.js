@@ -254,12 +254,6 @@ function studySetTestFinishNow(){
   if(tail)studySetTestEnqueue(answered-tail,answered);
   studySetTestShowResults();
 }
-function studySetTestAbandon(){
-  studySetTestQueue.length=0;
-  studySetTestRun=null;
-  studySetTestDismissToast();
-  studySetsBack();
-}
 function studySetTestCloseLeave(){
   const dialog=/** @type {HTMLDialogElement|null} */(document.getElementById('study-set-test-leave'));
   if(!dialog)return;
@@ -271,7 +265,6 @@ function studySetTestCloseLeave(){
 function studySetTestChoose(choice){
   studySetTestCloseLeave();
   if(choice==='stay'){studySetTestFocus();return;}
-  if(choice==='discard'){studySetTestAbandon();return;}
   studySetTestFinishNow();
 }
 function studySetTestLeaveButton(label,choice,className){
@@ -287,11 +280,11 @@ function studySetTestAskLeave(){
   dialog.id='study-set-test-leave';
   dialog.className='study-set-test-leave';
   dialog.setAttribute('aria-labelledby','study-set-test-leave-title');
-  const title=studySetsNode('h2','','테스트를 끝낼까요?');
+  const title=studySetsNode('h2','','정말 제출하고 나가시겠습니까?');
   title.id='study-set-test-leave-title';
   const actions=studySetsNode('div','study-set-test-leave-actions');
-  const stay=studySetTestLeaveButton('계속하기','stay','study-set-test-leave-stay');
-  actions.append(studySetTestLeaveButton('제출하고 나가기','submit'),stay,studySetTestLeaveButton('그냥 나가기','discard','study-set-test-leave-discard'));
+  const stay=studySetTestLeaveButton('취소','stay','study-set-test-leave-stay');
+  actions.append(stay,studySetTestLeaveButton('나가기','leave','study-set-test-leave-go'));
   dialog.append(title,actions);
   dialog.addEventListener('cancel',event=>{
     event.preventDefault();

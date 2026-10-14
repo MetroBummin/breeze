@@ -868,7 +868,7 @@ test('lenient grading stays off the field, and a failed grade falls back without
   assert.equal(offline.run(`BreezeStudySetTest.save('{', 'set', ${JSON.stringify(record)}).ok`),false);
 });
 
-test('recall back asks, keeps answered words, or discards them',async()=>{
+test('recall back asks before saving the answers so far',async()=>{
   const h=harness();loadRecall(h);
   await afterAction(h.createSet());
   await afterAction(h.click('#study-sets-test'));
@@ -884,15 +884,14 @@ test('recall back asks, keeps answered words, or discards them',async()=>{
   assert.equal(h.query('#study-set-test-progress').textContent,'2 / 2');
   assert.equal(h.storage.has('breeze.study-set-tests.v1'),false);
   await afterAction(h.click('#study-sets-back'));
-  assert.equal(h.query('#study-set-test-leave-title').textContent,'테스트를 끝낼까요?');
-  assert.deepEqual([...h.document.querySelectorAll('#study-set-test-leave button')].map(button=>button.textContent),['제출하고 나가기','계속하기','그냥 나가기']);
-  assert.equal(h.query('.study-set-test-leave-discard').textContent,'그냥 나가기');
-  await afterAction(h.button('계속하기'));
+  assert.equal(h.query('#study-set-test-leave-title').textContent,'정말 제출하고 나가시겠습니까?');
+  assert.deepEqual([...h.document.querySelectorAll('#study-set-test-leave button')].map(button=>button.textContent),['취소','나가기']);
+  await afterAction(h.button('취소'));
   assert.equal(h.document.querySelector('#study-set-test-leave'),null);
   assert.equal(h.query('#study-set-test-word').textContent,h.run(`studySetTestRun.questions[1].word`));
   assert.equal(h.storage.has('breeze.study-set-tests.v1'),false);
   await afterAction(h.click('#study-sets-back'));
-  await afterAction(h.button('제출하고 나가기'));
+  await afterAction(h.button('나가기'));
   assert.equal(h.query('#study-set-test-score').textContent,'100/100');
   assert.equal(h.query('#study-set-test-caption').textContent,'1개 중 1개 맞음');
   const setId=h.run('studySetsUI.setId');
@@ -903,9 +902,10 @@ test('recall back asks, keeps answered words, or discards them',async()=>{
   await afterAction(h.click('#study-set-test-start'));
   await afterAction(h.context.history.back());
   assert.equal(h.run('studySetsUI.screen'),'test');
-  assert.equal(h.query('#study-set-test-leave-title').textContent,'테스트를 끝낼까요?');
-  await afterAction(h.button('그냥 나가기'));
-  assert.equal(h.run('studySetTestRun'),null);
+  assert.equal(h.query('#study-set-test-leave-title').textContent,'정말 제출하고 나가시겠습니까?');
+  await afterAction(h.button('취소'));
+  assert.equal(h.run('studySetsUI.screen'),'test');
+  assert.ok(h.run('studySetTestRun'));
   assert.equal(h.document.querySelector('#study-set-test-leave'),null);
   assert.equal(JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId].length,1);
 });
