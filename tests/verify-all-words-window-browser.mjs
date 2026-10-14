@@ -7,10 +7,13 @@ const engine=process.env.BROWSER==='webkit'?webkit:chromium,server=await serveSt
 const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
 const output=process.env.BREEZE_ALL_WORDS_OUTPUT||'/tmp/breeze-all-words-after';mkdirSync(output,{recursive:true});
 const errors=[],layouts=[];
+const records=allWordsFixture();
+// Variable-height expansion still matters while examples are hidden: use source metadata.
+Object.values(records).at(-1).book='A long original source title with additional bibliographic details. '.repeat(40);
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block',reducedMotion:'reduce'}),page=await context.newPage();
  page.on('pageerror',e=>errors.push(e.message));page.on('crash',()=>errors.push('renderer crash'));await prepareStudyPage(page,server.url);
- await page.evaluate(async records=>{words=records;saveWords();window.qaWords=JSON.stringify(words);window.qaStorage=Object.fromEntries(Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)]));show('vocab');await openStudySetsDirectory();await studySetsGo('all');},allWordsFixture());
+ await page.evaluate(async records=>{words=records;saveWords();window.qaWords=JSON.stringify(words);window.qaStorage=Object.fromEntries(Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)]));show('vocab');await openStudySetsDirectory();await studySetsGo('all');},records);
  const total=2294,list=page.locator('#study-all-words-list'),rows=()=>list.locator('.study-all-words-row');
  assert.equal(await list.getAttribute('data-total'),String(total));
  assert.match(await page.locator('.study-sets-caption').last().textContent(),/2294단어 · 2399개/);
@@ -28,7 +31,8 @@ try{
  assert.equal(immediate,'1','same-task expansion then Tab works before ResizeObserver delivery');await page.waitForTimeout(80);
  assert.equal(await first.locator('.vsense').count(),2,'all meanings in a grouped word remain available');assert.equal(await first.locator('.vmore').count(),2);
  const firstKey=await first.locator('.vgroup').getAttribute('data-g');
- const originalHeight=await first.evaluate(n=>n.getBoundingClientRect().height);assert.ok(originalHeight>500,'long examples expand without clipping');
+ const originalHeight=await first.evaluate(n=>n.getBoundingClientRect().height);assert.ok(originalHeight>500,'long source metadata expands without clipping: '+originalHeight);
+ assert.equal(await first.locator('.vex').count(),0,'stored long examples remain hidden');
  // Keyboard traversal crosses several mounted windows, preserving logical order.
  await first.locator('.vword').focus();
  await page.evaluate(()=>{window.qaKeyTrace=[];document.getElementById('study-all-words-list').addEventListener('keydown',event=>{const trace={key:event.key,target:event.target.outerHTML,prevented:event.defaultPrevented};qaKeyTrace.push(trace);queueMicrotask(()=>{trace.after=document.activeElement.outerHTML;trace.index=document.activeElement.closest('.study-all-words-row')?.dataset.index;trace.mounted=[...document.querySelectorAll('.study-all-words-row')].map(n=>n.dataset.index);});});});
