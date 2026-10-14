@@ -134,7 +134,8 @@ https://docs.ankiweb.net/studying.html#answer-buttons.
 Book, root-star and search filters scope individual Meaning rows. The visible
 selection row and manual checkbox state were removed at user request on
 2026-10-03. Filtering narrows the visible intersection without expanding an empty
-scope.
+scope. A windowed Memory list does not narrow this scope to the rows on screen:
+the filtered meanings stay the practice set even when only a viewport is mounted.
 An explicit action opens regular study over all books without filters.
 
 Filtered practice includes precisely that scope, including future-due
