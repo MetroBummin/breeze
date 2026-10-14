@@ -318,6 +318,7 @@ function closeStudySets(fromHistory=false){
   }
 }
 window.addEventListener('popstate',event=>{
+  if(typeof studySetTestHoldHistory==='function'&&studySetTestHoldHistory()){event.stopImmediatePropagation();return;}
   const wasOpen=studySetsIsOpen(),pending=studySetsUI.pendingClose;
   studySetsUI.pendingClose=false;
   const sameSheet=wasOpen&&studySetsUI.dialog?.open&&studySetsUI.directoryOrigin&&event.state?.studySetsDirectoryOrigin&&event.state.studySets===studySetsUI.historyToken&&!studySetsFullPage(event.state.studySetsScreen);
@@ -502,6 +503,7 @@ function studySetsGo(screen,setId=studySetsUI.setId){
 function studySetsBack(){
   if(studySetsUI.editOpen){studySetsCloseEditMenu(true);return;}
   const screen=studySetsUI.screen;
+  if(screen==='test'&&typeof studySetTestAskLeave==='function'&&studySetTestAskLeave())return;
   if(studySetsUI.directoryOrigin){if(screen==='directory')closeStudySets();else history.back();return;}
   if(['detail','all'].includes(screen)&&studySetsUI.pageOpen||screen==='list'||studySetsUI.homeEntry&&['detail','create','menu'].includes(screen)){closeStudySets();return;}
   if(screen==='test'||screen==='test-result'){studySetsGo('test-setup');return;}
@@ -572,6 +574,7 @@ function renderStudySets(focus=true){
   }
   ui.allWordsList?.refresh();
   if(typeof studySetTestPlaceKeyboard==='function')studySetTestPlaceKeyboard();
+  if(typeof studySetTestSyncSystemBack==='function')studySetTestSyncSystemBack();
 }
 function renderStudySetsList(){
   const body=studySetsUI.body;

@@ -2,7 +2,7 @@
    does not dismiss between words. Grading never awaits before the next word. */
 let studySetTestRun=null;
 const studySetTestQueue=[];
-let studySetTestPumping=false,studySetTestToastTimer=0,studySetTestKeyboardBound=false;
+let studySetTestPumping=false,studySetTestToastTimer=0,studySetTestKeyboardBound=false,studySetTestLeaveClosing=false;
 
 function studySetTestPool(set){
   const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
@@ -120,17 +120,21 @@ function studySetTestMaybeSave(){
   const saved=BreezeStudySetTest.save(localStorage.getItem(BreezeStudySetTest.KEY),run.setId,record);
   if(saved.ok)localStorage.setItem(BreezeStudySetTest.KEY,saved.raw);
 }
+function studySetTestResultCopy(run){
+  const pending=run.rows.some(row=>row.status==='pending');
+  const correct=run.rows.filter(row=>row.status==='correct').length;
+  const total=run.questions.length;
+  const points=BreezeStudySetTest.score(correct,total);
+  return {pending,correct,total,points,score:pending?'채점 중':total<1?'—':points+'/100',caption:pending?`${total}개 중 ${correct}개 확인됨`:total<1?'제출한 답이 없어요.':`${total}개 중 ${correct}개 맞음`};
+}
 function studySetTestRefreshResults(){
   if(studySetsUI.screen!=='test-result'||!studySetTestRun)return;
   const score=document.getElementById('study-set-test-score');
   if(!score){renderStudySets(false);return;}
-  const run=studySetTestRun,pending=run.rows.some(row=>row.status==='pending');
-  const correct=run.rows.filter(row=>row.status==='correct').length;
-  const total=run.questions.length;
-  const points=BreezeStudySetTest.score(correct,total);
-  score.textContent=pending?'채점 중':points+'/100';
+  const run=studySetTestRun,copy=studySetTestResultCopy(run);
+  score.textContent=copy.score;
   const caption=document.getElementById('study-set-test-caption');
-  if(caption)caption.textContent=pending?`${total}개 중 ${correct}개 확인됨`:`${total}개 중 ${correct}개 맞음`;
+  if(caption)caption.textContent=copy.caption;
   const list=document.getElementById('study-set-test-wrong');
   if(list){
     list.replaceChildren();
@@ -142,12 +146,12 @@ function studySetTestRefreshResults(){
   }
   const empty=document.getElementById('study-set-test-clear');
   const wrong=run.rows.filter(row=>row.status==='incorrect').length;
-  if(empty)empty.hidden=pending||wrong>0;
+  if(empty)empty.hidden=copy.pending||wrong>0||copy.total<1;
   const retry=document.getElementById('study-set-test-retry');
-  if(retry){retry.hidden=pending||!wrong;retry.toggleAttribute('disabled',pending||!wrong);}
+  if(retry){retry.hidden=copy.pending||!wrong;retry.toggleAttribute('disabled',copy.pending||!wrong);}
   const heading=document.getElementById('study-set-test-wrong-title');
-  if(heading)heading.hidden=pending||!wrong;
-  if(list)list.hidden=pending||!wrong;
+  if(heading)heading.hidden=copy.pending||!wrong;
+  if(list)list.hidden=copy.pending||!wrong;
   studySetTestMaybeSave();
 }
 function studySetTestAfterBatch(end){
@@ -240,6 +244,82 @@ function studySetTestShowResults(){
   if(history.state?.studySets===ui.historyToken)replaceStudySetsHistory({studySetsScreen:'test-result',view:'memory-set'});
   renderStudySets(true);
 }
+function studySetTestFinishNow(){
+  const run=studySetTestRun;
+  if(!run)return;
+  const answered=run.rows.length;
+  run.questions=run.questions.slice(0,answered);
+  run.index=answered;
+  const tail=answered%10;
+  if(tail)studySetTestEnqueue(answered-tail,answered);
+  studySetTestShowResults();
+}
+function studySetTestAbandon(){
+  studySetTestQueue.length=0;
+  studySetTestRun=null;
+  studySetTestDismissToast();
+  studySetsBack();
+}
+function studySetTestCloseLeave(){
+  const dialog=/** @type {HTMLDialogElement|null} */(document.getElementById('study-set-test-leave'));
+  if(!dialog)return;
+  studySetTestLeaveClosing=true;
+  if(dialog.open&&typeof dialog.close==='function')dialog.close();
+  dialog.remove();
+  studySetTestLeaveClosing=false;
+}
+function studySetTestChoose(choice){
+  studySetTestCloseLeave();
+  if(choice==='stay'){studySetTestFocus();return;}
+  if(choice==='discard'){studySetTestAbandon();return;}
+  studySetTestFinishNow();
+}
+function studySetTestLeaveButton(label,choice,className){
+  const button=studySetsButton(label,()=>studySetTestChoose(choice));
+  button.className='study-set-test-leave-action'+(className?' '+className:'');
+  return button;
+}
+function studySetTestAskLeave(){
+  if(!studySetTestRun||studySetsUI.screen!=='test')return false;
+  if(document.getElementById('study-set-test-leave'))return true;
+  document.getElementById('study-set-test-answer')?.blur();
+  const dialog=document.createElement('dialog');
+  dialog.id='study-set-test-leave';
+  dialog.className='study-set-test-leave';
+  dialog.setAttribute('aria-labelledby','study-set-test-leave-title');
+  const title=studySetsNode('h2','','테스트를 끝낼까요?');
+  title.id='study-set-test-leave-title';
+  const actions=studySetsNode('div','study-set-test-leave-actions');
+  const stay=studySetTestLeaveButton('계속하기','stay','study-set-test-leave-stay');
+  actions.append(studySetTestLeaveButton('제출하고 나가기','submit'),stay,studySetTestLeaveButton('그냥 나가기','discard','study-set-test-leave-discard'));
+  dialog.append(title,actions);
+  dialog.addEventListener('cancel',event=>{
+    event.preventDefault();
+    if(!studySetTestLeaveClosing)studySetTestChoose('stay');
+  });
+  document.body.append(dialog);
+  if(typeof dialog.showModal==='function')dialog.showModal();
+  else dialog.setAttribute('open','');
+  stay.focus();
+  return true;
+}
+function studySetTestHoldHistory(){
+  if(studySetsUI.pendingClose||studySetsUI.screen!=='test'||!studySetTestRun)return false;
+  history.pushState({
+    breeze:true,view:'memory-set',studySets:studySetsUI.historyToken,studySetsScreen:'test',
+    studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,
+    studySetsHomeScroll:studySetsUI.homeScroll,studySetsDirectoryOrigin:studySetsUI.directoryOrigin,
+    studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsDirectoryScroll:studySetsUI.directoryScroll,
+    studySetsVocabScroll:studySetsUI.vocabScroll,studySetsDetailEditing:studySetsUI.detailEditing
+  },'');
+  studySetTestAskLeave();
+  return true;
+}
+function studySetTestSyncSystemBack(){
+  const webkit=/** @type {any} */(window).webkit;
+  const bridge=webkit&&webkit.messageHandlers&&webkit.messageHandlers.breezeTestBack;
+  if(bridge&&typeof bridge.postMessage==='function')bridge.postMessage(studySetsUI.screen==='test');
+}
 function studySetTestRetryWrong(){
   const run=studySetTestRun;
   if(!run||run.rows.some(row=>row.status==='pending'))return;
@@ -315,13 +395,12 @@ function renderStudySetTest(set){
   input.setAttribute('autocapitalize','none');input.setAttribute('autocorrect','off');
   input.setAttribute('enterkeyhint','done');
   input.setAttribute('aria-label','한국어 뜻');
-  const submit=studySetsButton('제출',()=>{},'study-sets-primary');submit.id='study-set-test-submit';submit.type='submit';
-  form.append(label,input,submit);
+  form.append(label,input);
   input.addEventListener('keydown',event=>{
     if(event.key!=='Enter'||event.isComposing||event.keyCode===229)return;
     event.preventDefault();
     if(typeof form.requestSubmit==='function')form.requestSubmit();
-    else form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));
+    else form.dispatchEvent(new window.Event('submit',{cancelable:true,bubbles:true}));
   });
   form.addEventListener('submit',event=>{
     event.preventDefault();
@@ -335,14 +414,12 @@ function renderStudySetTest(set){
 function renderStudySetTestResult(set){
   const run=studySetTestRun;
   if(!run||run.setId!==set.id){renderStudySetTestSetup(set);return;}
-  const body=studySetsUI.body,pending=run.rows.some(row=>row.status==='pending');
-  const correct=run.rows.filter(row=>row.status==='correct').length,total=run.questions.length;
-  const points=BreezeStudySetTest.score(correct,total);
+  const body=studySetsUI.body,copy=studySetTestResultCopy(run),pending=copy.pending,total=copy.total;
   const result=studySetsNode('div','study-set-test-result');
   const hero=studySetsNode('section','study-set-test-hero study-set-test-score-card');
   hero.append(studySetsNode('p','study-set-test-kicker','결과'));
-  const score=studySetsNode('p','study-set-test-score',pending?'채점 중':points+'/100');score.id='study-set-test-score';
-  const caption=studySetsNode('p','study-set-test-note',pending?`${total}개 중 ${correct}개 확인됨`:`${total}개 중 ${correct}개 맞음`);caption.id='study-set-test-caption';
+  const score=studySetsNode('p','study-set-test-score',copy.score);score.id='study-set-test-score';
+  const caption=studySetsNode('p','study-set-test-note',copy.caption);caption.id='study-set-test-caption';
   hero.append(score,caption);
   const wrong=run.rows.filter(row=>row.status==='incorrect');
   const section=studySetsNode('section','study-set-test-history');
@@ -353,7 +430,7 @@ function renderStudySetTestResult(set){
     item.append(studySetsNode('strong','',row.word),studySetsNode('span','',row.meanings.join(' · ')));
     list.append(item);
   }
-  const clear=studySetsNode('p','study-set-test-empty','모두 맞았어요.');clear.id='study-set-test-clear';clear.hidden=pending||wrong.length>0;
+  const clear=studySetsNode('p','study-set-test-empty','모두 맞았어요.');clear.id='study-set-test-clear';clear.hidden=pending||wrong.length>0||total<1;
   const retry=studySetsButton('틀린 단어만 다시',()=>studySetTestRetryWrong(),'study-sets-primary');
   retry.id='study-set-test-retry';retry.hidden=pending||!wrong.length;retry.disabled=pending||!wrong.length;
   section.append(title,list,clear);
