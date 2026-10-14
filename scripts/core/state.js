@@ -115,6 +115,7 @@ const saveWords = (keys) => {
   for(const [key,item] of entries)if(!save(WORD_ITEM_PREFIX+key,item))return false;
   try{localStorage.removeItem(WORD_WRITE_PENDING);}catch(e){return false;}
   entries.forEach(([key,item])=>{if(item===null)persistedWordItems.delete(key);else persistedWordItems.set(key,stableWordJson(item));});
+  if(typeof scheduleStudySetsVocabularySync==='function'&&typeof studySetsIsOpen==='function'&&studySetsIsOpen())scheduleStudySetsVocabularySync();
   return true;
 };
 if(cleanOrphanWords(words,dead)){

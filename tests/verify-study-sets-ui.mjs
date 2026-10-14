@@ -91,8 +91,8 @@ test('study set UI creates safe deduplicated snapshots, excludes with undo, impo
   await afterAction(click('#study-sets-reveal'));assert.equal(query('#study-sets-answer').hidden,false);
   assert.equal(document.activeElement.id,'study-sets-flashcard');await afterAction(click('#study-sets-grade-repeat'));
   await afterAction(click('#study-sets-back'));context.words.new={word:'new',ko:'새로운',book:'One',addedAt:8};await afterAction(run('studySetsReadAndRender()'));
-  assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);assert.match(query('#study-sets-import').textContent,/1개/);
-  await afterAction(click('#study-sets-import'));await afterAction(run("studySetsGo('detail')"));assert.equal(document.querySelectorAll('#study-sets-word-list li').length,3);
+  assert.equal(document.querySelector('#study-sets-import'),null);
+  assert.equal(document.querySelectorAll('#study-sets-word-list li').length,3);
   await afterAction(click('#study-sets-start'));assert.equal(query('#study-sets-progress').textContent,'0 / 2');
   await afterAction(click('#study-sets-reveal'));await afterAction(click('#study-sets-grade-remembered'));
   assert.equal(query('#study-sets-progress').textContent,'1 / 2');await afterAction(click('#study-sets-reveal'));await afterAction(click('#study-sets-grade-remembered'));
@@ -569,19 +569,37 @@ test('Undo during row exit restores membership and obsolete animation cannot rem
 });
 
 
-test('detail imports pending words once without restoring exclusions or changing the active round',async ()=>{
+test('detail adopts a new book word once without restoring exclusions or changing the active round',async ()=>{
   const {context,document,query,click,run,createSet}=harness();await afterAction(createSet());await afterAction(click('#study-sets-start'));await afterAction(click('#study-sets-back'));
   await afterAction(click('.study-sets-row-action'));const excluded=JSON.stringify(context.readStudySets().sets[0].excludedIds);
   const frozen=JSON.stringify(context.readStudySets().sets[0].session);
   context.words.fresh={word:'fresh',ko:'새로운',book:'One',example:'A fresh start.',addedAt:30};
   const source=JSON.stringify(context.words);await afterAction(run('studySetsReadAndRender(false)'));
-  const add=query('#study-sets-import');assert.ok(add.parentNode.classList.contains('study-sets-footer'));
-  assert.match(add.textContent,/새 단어 가져오기 · 1개/);await afterAction(add.click());await afterAction(add.click());
+  await afterAction(run('studySetsReadAndRender(false)'));
   const set=context.readStudySets().sets[0];assert.equal(set.cards.length,3);assert.equal(new Set(set.cards.map(c=>c.id)).size,3);
   assert.equal(JSON.stringify(set.excludedIds),excluded);assert.equal(JSON.stringify(set.session),frozen);assert.equal(JSON.stringify(context.words),source);
-  assert.equal(document.querySelector('#study-sets-import'),null);await afterAction(run('studySetsToggleEditMenu()'));
+  assert.equal(document.querySelector('#study-sets-import'),null);assert.equal(query('#study-sets-start').parentNode.classList.contains('study-sets-footer'),true);
+  await afterAction(run('studySetsToggleEditMenu()'));
   assert.equal(document.querySelector('.study-sets-menu #study-sets-import'),null);
   assert.deepEqual([...document.querySelectorAll('.study-sets-edit-menu button')].map(n=>n.textContent),['이름 변경','책 추가','세트 삭제']);
+});
+
+test('a save while the set is open appears in the list and leaves the current round unchanged',async ()=>{
+  const {context,document,query,click,run,createSet}=harness();await afterAction(createSet());
+  assert.equal(document.querySelectorAll('#study-sets-word-list li').length,2);
+  context.words.live={word:'live',ko:'바로',book:'One',addedAt:9};
+  await afterAction(run('scheduleStudySetsVocabularySync()'));
+  assert.equal(document.querySelector('#study-sets-import'),null);
+  assert.equal([...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='live'),true);
+  await afterAction(click('#study-sets-start'));assert.equal(query('#study-sets-progress').textContent,'0 / 3');
+  context.words.during={word:'during',ko:'도중',book:'One',addedAt:10};
+  delete context.words.live;
+  await afterAction(run('scheduleStudySetsVocabularySync()'));
+  assert.equal(query('#study-sets-progress').textContent,'0 / 3');
+  assert.equal(query('#study-sets-expression').textContent!=='during',true);
+  await afterAction(click('#study-sets-back'));
+  const labels=[...document.querySelectorAll('#study-sets-word-list .vword')].map(node=>node.textContent);
+  assert.equal(labels.includes('during'),true);assert.equal(labels.includes('live'),true,'a deleted word stays until this round ends');
 });
 
 test('create quota failure preserves prior bytes and retries once; selection order is stable by card count',async ()=>{

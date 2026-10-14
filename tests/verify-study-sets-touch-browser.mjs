@@ -30,7 +30,7 @@ try{
   words.unrelated={word:'unrelated',ko:'관련 없는',book:'별도 책',status:3,addedAt:40};saveWords();
   const state=BreezeStudySets.create((await loadStudySets()),{name:'이번 주 읽은 글',bookTitles:['The Adventures of Sherlock Holmes']},words,100).state;
   words.pending={word:'method',ko:'방법',book:'The Adventures of Sherlock Holmes',example:'His method was simple.',status:1,addedAt:50};saveWords();
-  await commitStudySets(state);show('vocab');renderVocab();openStudySetsDirectory();
+  await commitStudySets(state);show('vocab');renderVocab();openStudySetsDirectory();await studySetsReadAndRender();
   window.undoTouchTrace=[];for(const type of ['pointerdown','pointerup','click'])window.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-undo button'))undoTouchTrace.push({type,trusted:e.isTrusted,pointerType:e.pointerType,exiting:!!document.querySelector('.study-sets-exiting')});},true);window.touchTrace=[];for(const type of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])document.addEventListener(type,e=>{if(e.target.closest?.('.study-sets-word-row'))touchTrace.push({type,target:e.target.className,pointerType:e.pointerType,trusted:e.isTrusted});},true);
  });
  await page.evaluate(()=>{
@@ -191,12 +191,14 @@ try{
  }
  await page.setViewportSize({width:390,height:844});await openSet();await menu();const firstRow=await row().elementHandle();await page.locator('#study-sets-content').evaluate(n=>n.scrollTop=80);await page.waitForFunction(()=>studySetsUI.editMenu.hidden);assert.equal(await firstRow.evaluate(n=>n.isConnected),true);await back();
  await page.emulateMedia({reducedMotion:'reduce'});await openSet();await menu();assert.equal(await page.evaluate(()=>studySetsUI.editAnimation),null);await tap(page.locator('#study-sets-edit'));assert.equal(await page.evaluate(()=>studySetsUI.editMenu.hidden),true);await back();await page.emulateMedia({reducedMotion:'no-preference'});
- // Direct detail import is idempotent even if a detached button fires again.
- await openSet();const pending=page.locator('#study-sets-import');assert.match(await pending.innerText(),/새 단어 가져오기 · 1개/);
- const stale=await pending.elementHandle(),beforeImport=await page.evaluate(async ()=>(await loadStudySets()).sets[0]);await tap(pending);
- await stale.evaluate(n=>n.click());const imported=await page.evaluate(async ()=>(await loadStudySets()).sets[0]);
- assert.equal(imported.cards.length,beforeImport.cards.length+1);assert.deepEqual(imported.excludedIds,excluded);
- assert.equal(new Set(imported.cards.map(c=>c.id)).size,imported.cards.length);assert.equal(await pending.count(),0);assert.deepEqual(await page.evaluate(()=>words),inventory);
+ // A word saved after the set was created is already in the set, once.
+ await openSet();assert.equal(await page.locator('#study-sets-import').count(),0);
+ const imported=await page.evaluate(async ()=>(await loadStudySets()).sets[0]);
+ assert.equal(imported.cards.some(card=>card.word==='method'),true);
+ assert.equal(new Set(imported.cards.map(c=>c.id)).size,imported.cards.length);assert.deepEqual(imported.excludedIds,excluded);
+ await page.evaluate(async ()=>{await studySetsReadAndRender();});
+ assert.equal(await page.evaluate(async ()=>(await loadStudySets()).sets[0].cards.length),imported.cards.length);
+ assert.deepEqual(await page.evaluate(()=>words),inventory);
  await back();
  // Isolate native scrolling and its inertia from the following tap checks.
  await openSet();await menu();const scrollCount=await page.locator('#study-sets-word-list>li').count();

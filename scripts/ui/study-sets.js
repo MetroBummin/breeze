@@ -127,7 +127,7 @@ function refreshStudySetsEntry(state=null){
 // Both list renderers receive decoded or successfully committed state. Counts
 // need no card copies, answer scan, or collection-wide view normalization.
 function studySetsListSummary(set){
-  const active=set.cards.length-set.excludedIds.length,session=set.session;
+  const active=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words).length,session=set.session;
   const total=session?.queue.length||0,completed=session?.index||0;
   return {active,total,completed,status:session?(completed<total?'active':'complete'):active?'idle':'empty'};
 }
@@ -347,23 +347,63 @@ function studySetsOwner(){
   const {historyToken,screen,setId}=studySetsUI;
   return ()=>studySetsIsOpen()&&studySetsUI.historyToken===historyToken&&studySetsUI.screen===screen&&studySetsUI.setId===setId;
 }
+let studySetsWriteChain=Promise.resolve();
+function enqueueStudySetsWrite(task){
+  const run=studySetsWriteChain.then(task,task);
+  studySetsWriteChain=run.then(()=>{},()=>{});
+  return run;
+}
+function scheduleStudySetsVocabularySync(){
+  return enqueueStudySetsWrite(async()=>{
+    let lastError;
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        const state=await loadStudySets();
+        const synced=BreezeStudySets.syncVocabulary(state,words,Date.now());
+        if(!synced.accepted)return synced;
+        await commitStudySets(synced.state);
+        // The open set list follows the save. An in-progress card keeps its
+        // starting queue, so that screen is left until the round is left.
+        if(studySetsIsOpen()&&!studySetsUI.retry&&!studySetsUI.mutating&&!['create','rename','books','delete','study','all'].includes(studySetsUI.screen)){
+          studySetsUI.state=synced.state;renderStudySets(false);
+        }
+        return synced;
+      }catch(error){
+        lastError=error;
+        if(attempt===2||!/changed|Reopen|retry/i.test(String(error?.message||'')))throw error;
+      }
+    }
+    throw lastError;
+  });
+}
 async function studySetsReadAndRender(focus=true,context={phase:'read',committed:false}){
   const epoch=++studySetsReadEpoch,owns=studySetsOwner();
   if(studySetsUI.screen==='all'){studySetsClearError();renderStudySets(focus);return;}
   studySetsUI.body?.setAttribute('aria-busy','true');
-  try{const state=await loadStudySets();if(epoch!==studySetsReadEpoch||!owns())return;studySetsUI.state=state;studySetsClearError();renderStudySets(focus);}
+  try{
+    await enqueueStudySetsWrite(async()=>{
+      if(epoch!==studySetsReadEpoch||!owns())return;
+      const state=await loadStudySets();if(epoch!==studySetsReadEpoch||!owns())return;
+      const synced=BreezeStudySets.syncVocabulary(state,words,Date.now());
+      if(synced.accepted)await commitStudySets(synced.state);
+      if(epoch!==studySetsReadEpoch||!owns())return;
+      studySetsUI.state=synced.state;studySetsClearError();renderStudySets(focus);
+    });
+  }
   catch(error){if(epoch===studySetsReadEpoch&&owns())studySetsShowError(error,()=>studySetsReadAndRender(focus,context),context);}
   finally{if(epoch===studySetsReadEpoch)studySetsUI.body?.removeAttribute('aria-busy');}
 }
-async function studySetsMutate(change,success,exitRow=null,handoff=null){
+function studySetsMutate(change,success,exitRow=null,handoff=null){
   if(studySetsUI.pendingClose)return;
   if(studySetsUI.mutating){
     if(!exitRow||studySetsQueuedRows.has(exitRow))return;
     const ownsQueued=studySetsOwner();studySetsQueuedRows.add(exitRow);
-    await studySetsMutationDone;studySetsQueuedRows.delete(exitRow);
-    if(ownsQueued()&&exitRow.isConnected)return studySetsMutate(change,success,exitRow,handoff);
-    return;
+    return studySetsMutationDone.then(()=>{studySetsQueuedRows.delete(exitRow);if(ownsQueued()&&exitRow.isConnected)return studySetsMutate(change,success,exitRow,handoff);});
   }
+  return enqueueStudySetsWrite(()=>studySetsMutateUnlocked(change,success,exitRow,handoff));
+}
+async function studySetsMutateUnlocked(change,success,exitRow=null,handoff=null){
+  if(studySetsUI.pendingClose)return;
   let releaseMutation=()=>{};studySetsMutationDone=new Promise(resolve=>{releaseMutation=()=>resolve(undefined);});
   studySetsUI.mutating=true;if(exitRow)studySetsQueuedRows.add(exitRow);
   ++studySetsReadEpoch;const owns=studySetsOwner();
@@ -797,15 +837,10 @@ function studySetsTouchAction(button,action){
 }
 function renderStudySetsDetailFooter(set){
   studySetsUI.footer.replaceChildren();
-  const preview=BreezeStudySets.importPreview(studySetsUI.state,set.id,words);
-  if(preview.count){
-    const add=studySetsButton(`새 단어 가져오기 · ${preview.count}개`,()=>studySetsMutate(state=>BreezeStudySets.importNew(state,set.id,words,Date.now()),()=>{studySetsUI.notice='';}),'study-sets-import');
-    add.id='study-sets-import';studySetsUI.footer.append(add);
-  }
   {
     const view=BreezeStudySets.view(studySetsUI.state,set.id);
     const startText=view.status==='active'?`이어서 학습 · ${view.completed}/${view.total}`:'학습 시작하기';
-    const start=studySetsButton(startText,()=>studySetsStart(set.id),'study-sets-primary');start.id='study-sets-start';start.disabled=set.cards.length===set.excludedIds.length&&view.status!=='active';
+    const start=studySetsButton(startText,()=>studySetsStart(set.id),'study-sets-primary');start.id='study-sets-start';start.disabled=!BreezeStudySets.listedCards(set,words).length&&view.status!=='active';
     studySetsUI.footer.hidden=false;studySetsUI.footer.append(start);
     if(BreezeVocabularyTest.ENABLED){const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'set',setId:set.id}));test.id='study-sets-test';test.disabled=set.cards.length===set.excludedIds.length;studySetsUI.footer.append(test);}
   }
@@ -817,8 +852,8 @@ function renderStudySetsDetailFooter(set){
   }
 }
 function renderStudySetsDetail(set,excluded){
-  const body=studySetsUI.body,excludedIds=new Set(set.excludedIds);
-  const cards=set.cards.filter(card=>excluded===excludedIds.has(card.id));
+  const body=studySetsUI.body;
+  const cards=BreezeStudySets.listedCards(set,words,excluded);
   if(!excluded)renderStudySetsDetailFooter(set);
   if(!cards.length){body.append(studySetsEmpty(excluded?'제외한 단어가 없어요':'세트에 학습할 단어가 없어요',''));return;}
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id=excluded?'study-sets-excluded-list':'study-sets-word-list';
@@ -915,7 +950,10 @@ document.addEventListener('pointerdown',event=>{
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
 function studySetsStart(id,restart=false){
-  return studySetsMutate(state=>BreezeStudySets.start(state,id,Date.now(),{restart:restart||BreezeStudySets.view(state,id).status==='complete'}),()=>{
+  return studySetsMutate(state=>{
+    const replacing=restart||BreezeStudySets.view(state,id).status==='complete';
+    return BreezeStudySets.start(state,id,Date.now(),{restart:replacing,words:replacing?words:undefined});
+  },()=>{
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
     if(entering){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
 }

@@ -201,7 +201,9 @@ const BreezeStudySets = (() => {
   function restore(raw,id,cardId,now){return setExcluded(raw,id,cardId,false,now);}
   function newCards(set,words){
     const known=new Set([...set.cards.map(card=>card.id),...set.excludedIds]);
-    return cards(words,set.bookTitles).filter(card=>!known.has(card.id));
+    const knownKeys=new Set(set.cards.map(card=>card.key));
+    // An edited meaning keeps the captured card. Only a new save is added.
+    return cards(words,set.bookTitles).filter(card=>!known.has(card.id)&&!knownKeys.has(card.key));
   }
   function importPreview(raw,id,words){
     const state=normalize(raw),set=get(state,id),pending=set?newCards(set,words):[];
@@ -225,6 +227,63 @@ const BreezeStudySets = (() => {
     if(!pending.length)return result(state,id,false);
     set.cards.push(...pending);set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true,pending.length);
+  }
+  function liveIdentities(vocabulary){return new Set(cards(vocabulary).map(card=>card.id));}
+  // An in-place meaning edit keeps its snapshot. A record is gone only when its
+  // key is absent and no remaining save still has the same word and meaning.
+  function meaningGone(card,vocabulary,live){
+    const current=vocabulary[card.key];
+    if(record(current)&&nonblank(current.word)&&nonblank(current.ko))return false;
+    return !live.has(card.id);
+  }
+  function sessionReferences(session){
+    const ids=new Set();if(!session)return ids;
+    for(const card of session.queue){ids.add(card.id);for(const sense of card.senses||[])ids.add(sense.id);}
+    return ids;
+  }
+  function sessionIsActive(session){
+    if(!session)return false;
+    const pending=session.queue.map(card=>card.id);
+    for(const answer of session.answers){
+      const at=pending.indexOf(answer.id);if(at<0)continue;
+      pending.splice(at,1);if(answer.outcome==='repeat')pending.push(answer.id);
+    }
+    return pending.length>0;
+  }
+  function dropMissingCards(set,vocabulary){
+    const live=liveIdentities(vocabulary),gone=new Set();
+    for(const card of set.cards)if(meaningGone(card,vocabulary,live))gone.add(card.id);
+    if(!gone.size)return 0;
+    set.cards=set.cards.filter(card=>!gone.has(card.id));
+    set.excludedIds=set.excludedIds.filter(id=>!gone.has(id));
+    return gone.size;
+  }
+  /** Cards the set list should show. An active round keeps a deleted word until
+      that round ends; a finished round hides it without breaking Undo. */
+  function listedCards(set,vocabulary,excludedSide=false){
+    const excluded=new Set(set.excludedIds),protect=sessionIsActive(set.session)?sessionReferences(set.session):new Set();
+    const live=record(vocabulary)?liveIdentities(vocabulary):null;
+    return set.cards.filter(card=>{
+      if(excluded.has(card.id)!==!!excludedSide)return false;
+      if(!live||protect.has(card.id))return true;
+      return !meaningGone(card,vocabulary,live);
+    });
+  }
+  // Book sets follow later saves from their books. Exclusions stay out. An
+  // active or finished round keeps every card it still references.
+  function syncVocabulary(raw,vocabulary,now){
+    const state=normalize(raw),at=time(now);
+    if(!record(vocabulary))return {state,accepted:false,added:0,removed:0};
+    const live=liveIdentities(vocabulary);let added=0,removed=0;
+    for(const set of state.sets){
+      const pending=newCards(set,vocabulary),protect=sessionReferences(set.session),gone=new Set();
+      for(const card of set.cards)if(meaningGone(card,vocabulary,live)&&!protect.has(card.id))gone.add(card.id);
+      if(!pending.length&&!gone.size)continue;
+      if(pending.length){set.cards.push(...pending);added+=pending.length;}
+      if(gone.size){set.cards=set.cards.filter(card=>!gone.has(card.id));set.excludedIds=set.excludedIds.filter(id=>!gone.has(id));removed+=gone.size;}
+      set.updatedAt=Math.max(set.updatedAt,at);
+    }
+    return {state,accepted:added+removed>0,added,removed};
   }
   function snapshot(state,id){
     const set=get(state,id),session=set?.session||null;
@@ -253,6 +312,8 @@ const BreezeStudySets = (() => {
       set.session.revealed=false;
       return {...snapshot(state,id),accepted:true};
     }
+    // The round being replaced kept deleted words so its own queue stayed valid.
+    if(record(options.words))dropMissingCards(set,options.words);
     const queue=groupedCards(set);
     if(!queue.length){
       // Explicit restart of an all-excluded set ends the old completed/active
@@ -289,5 +350,5 @@ const BreezeStudySets = (() => {
   // Compatibility entry: repeats stay in the current session, not a completed round.
   function nextRound(raw,id,now){time(now);return {...view(raw,id),accepted:false};}
   return Object.freeze({VERSION,normalize,decode,cards,countsByBook,create,rename,remove,exclude,restore,setStatus,
-    importPreview,importNew,addBooks,groupedCards,view,start,reveal,grade,nextRound,undo});
+    importPreview,importNew,addBooks,groupedCards,listedCards,syncVocabulary,view,start,reveal,grade,nextRound,undo});
 })();
