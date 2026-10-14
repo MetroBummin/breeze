@@ -94,6 +94,8 @@ let positions = load(LS_POS, {});   // bookId -> text anchor + original source a
 let curBook = null, selKey = null;
 /* A lookup may need a temporary in-memory card while its sheet is open. It is
    not vocabulary yet and must never become a persisted orphan on failure. */
+/* Reader paint and the home round-trip reuse a map until a meaning is actually written. */
+let wordPaintRevision=0;
 const saveWords = (keys) => {
   const pending=load(WORD_WRITE_PENDING,{});
   const changes={...pending};
@@ -106,6 +108,7 @@ const saveWords = (keys) => {
   }
   const entries=Object.entries(changes);
   if(!entries.length)return true;
+  wordPaintRevision++;
   // Publish the complete small transaction first. A reload can replay it even
   // if quota exhaustion or termination interrupts the individual record writes.
   if(!save(WORD_WRITE_PENDING,changes))return false;

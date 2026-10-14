@@ -120,6 +120,20 @@ const BreezeStudySets = (() => {
     const seen=new Set();
     return available.filter(card=>{if(seen.has(card.id))return false;seen.add(card.id);return true;});
   }
+  /** Unique saved meanings per book. Same selection as cards(words, [book]).length. */
+  function countsByBook(words){
+    if(!record(words))return new Map();
+    const counts=new Map(),seen=new Map();
+    for(const [key,item] of Object.entries(words)){
+      if(!nonblank(key)||!record(item)||!own(item,'word')||!own(item,'ko')||!nonblank(item.word)||!nonblank(item.ko))continue;
+      const book=text(item.book)?item.book:'',id=identity(item.word,item.ko);
+      let ids=seen.get(book);
+      if(!ids){ids=new Set();seen.set(book,ids);}
+      if(ids.has(id))continue;
+      ids.add(id);counts.set(book,(counts.get(book)||0)+1);
+    }
+    return counts;
+  }
   function get(state,id){return state.sets.find(item=>item.id===id)||null;}
   function activeCards(set){const excluded=new Set(set.excludedIds);return set.cards.filter(card=>!excluded.has(card.id));}
   /** Preserve every saved sense while projecting one card per word for a new
@@ -274,6 +288,6 @@ const BreezeStudySets = (() => {
   }
   // Compatibility entry: repeats stay in the current session, not a completed round.
   function nextRound(raw,id,now){time(now);return {...view(raw,id),accepted:false};}
-  return Object.freeze({VERSION,normalize,decode,cards,create,rename,remove,exclude,restore,setStatus,
+  return Object.freeze({VERSION,normalize,decode,cards,countsByBook,create,rename,remove,exclude,restore,setStatus,
     importPreview,importNew,addBooks,groupedCards,view,start,reveal,grade,nextRound,undo});
 })();

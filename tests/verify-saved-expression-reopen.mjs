@@ -146,6 +146,26 @@ test('PDF: boxes from a released page or another document cannot open a phrase',
   pdfFixture(f,'Come to the point.');old.tap(3);
   assert.equal(f.calls.selected.length,0);assert.equal(f.calls.new.length,0);
 });
+test('scroll reuses the phrase map until a meaning is saved, while a live paint still reads words',()=>{
+  const c={words:{[phraseKey]:saved(),point:{word:'point',ko:'점',status:1}},lemmaCands:raw=>[String(raw).toLowerCase()],wordPaintRevision:0};
+  vm.createContext(c);
+  vm.runInContext(['savedPhraseStarts','savedPhraseStartsForPaint','readerWordPresentation'].map(n=>fn(reader,n)).join('\n'),c);
+  const first=c.savedPhraseStartsForPaint();
+  assert.equal(c.savedPhraseStartsForPaint(),first);
+  const presentation=c.readerWordPresentation();
+  assert.equal(c.readerWordPresentation(),presentation);
+  c.words.extra={word:'extra phrase',phraseParts:['extra','phrase'],phraseGaps:[0],status:1,mark:true};
+  c.words[phraseKey].status=2;
+  assert.equal(c.savedPhraseStartsForPaint(),first);
+  assert.equal(c.readerWordPresentation(),presentation);
+  const live=c.savedPhraseStarts();
+  assert.ok(live.has('extra'),'callers that paint an in-memory edit still scan words');
+  c.wordPaintRevision++;
+  const next=c.savedPhraseStartsForPaint();
+  assert.notEqual(next,first);
+  assert.ok(next.has('extra'));
+  assert.notEqual(c.readerWordPresentation(),presentation);
+});
 test('EPUB: source-node identity and exact boundaries, not equal offsets/text, select the phrase',()=>{
   const f=fixture({[phraseKey]:saved()}),view=epubFixture(f,'Come to the point.');
   const other=documentFixture(['Come to the point.']);

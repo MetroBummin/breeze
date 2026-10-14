@@ -149,6 +149,11 @@ async function countWhere(table: string, column: string, value: string) {
   if (result.error) throw new ApiError(500, result.error.message);
   return result.count || 0;
 }
+async function countIn(table: string, column: string, values: string[]) {
+  const result = await db.from(table).select("*", { count: "exact", head: true }).in(column, values);
+  if (result.error) throw new ApiError(500, result.error.message);
+  return result.count || 0;
+}
 async function deleteImpact(body: any) {
   const targetType = clean(body.targetType, 20), targetId = required(body.targetId, "삭제 대상", 80);
   if (targetType === "student") {
@@ -166,8 +171,8 @@ async function deleteImpact(body: any) {
     const passage = await db.from("ready_passages").select("id,title").eq("id", targetId).maybeSingle();
     if (passage.error) throw new ApiError(500, passage.error.message); if (!passage.data) throw new ApiError(404, "지문을 찾지 못했습니다.");
     const questions = rows<any[]>(await db.from("ready_questions").select("id").eq("passage_id", targetId)), questionIds = questions.map(item => item.id);
-    const attempts = questionIds.length ? rows<any[]>(await db.from("ready_attempts").select("id").in("question_id", questionIds)).length : 0;
-    const [sentences, examLinks, savedWords, savedSentences, wordLookups, translationViews] = await Promise.all([
+    const [attempts, sentences, examLinks, savedWords, savedSentences, wordLookups, translationViews] = await Promise.all([
+      questionIds.length ? countIn("ready_attempts", "question_id", questionIds) : Promise.resolve(0),
       countWhere("ready_passage_sentences", "passage_id", targetId),countWhere("ready_exam_passages", "passage_id", targetId),
       countWhere("ready_saved_words", "passage_id", targetId), countWhere("ready_saved_sentences", "passage_id", targetId),
       countWhere("ready_word_lookup_events", "passage_id", targetId), countWhere("ready_sentence_translation_view_events", "passage_id", targetId),
@@ -288,10 +293,16 @@ async function attemptedQuestionIds(studentId: string, examId: string) {
 async function scopePassages(examId: string, studentId: string) {
   const links = rows<any[]>(await db.from("ready_exam_passages").select("passage_id,position").eq("exam_id", examId).order("position"));
   const linkedIds = links.map(item => item.passage_id);
-  const sourcePassages = linkedIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", linkedIds)) : [];
-  const sentenceRows = linkedIds.length ? rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", linkedIds).order("sentence_index")) : [];
-  const availableQuestions = linkedIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,status,payload").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available")) : [];
-  const attempted = await attemptedQuestionIds(studentId, examId);
+  const emptyRows = () => Promise.resolve({ data: [] as any[], error: null });
+  const [passageResult, sentenceResult, questionResult, attempted] = await Promise.all([
+    linkedIds.length ? db.from("ready_passages").select("id,title,source_type,source_label").in("id", linkedIds) : emptyRows(),
+    linkedIds.length ? db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", linkedIds).order("sentence_index") : emptyRows(),
+    linkedIds.length ? db.from("ready_questions").select("id,passage_id,type,status,payload").in("passage_id", linkedIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available") : emptyRows(),
+    attemptedQuestionIds(studentId, examId),
+  ]);
+  const sourcePassages = rows<any[]>(passageResult);
+  const sentenceRows = rows<any[]>(sentenceResult);
+  const availableQuestions = rows<any[]>(questionResult);
   const questionCounts = new Map<string, number>();
   const byId = new Map(sourcePassages.map(item => [item.id, item]));
   const passageText = new Map(linkedIds.map(id => [id, sentenceRows.filter(sentence => sentence.passage_id === id).map(sentence => sentence.text).join(" ")]));
@@ -305,11 +316,19 @@ async function scopePassages(examId: string, studentId: string) {
 }
 async function studentBootstrap(session: ReadySession) {
   const student = await studentForSession(session), scope = rows<any>(await db.from("ready_exams").select("id,school,grade").eq("school", student.school).eq("grade", student.grade).eq("is_current", true).maybeSingle());
-  const passages = scope ? await scopePassages(scope.id, student.id) : [];
-  const reviewCount = scope ? (await eligibleUnresolvedQuestionIds(student.id, scope.id)).length : 0;
-  return { student: { id: student.id, school: student.school, grade: student.grade }, scope, passages, reviewCount };
+  const [passages, reviewIds] = scope ? await Promise.all([scopePassages(scope.id, student.id), eligibleUnresolvedQuestionIds(student.id, scope.id)]) : [[], []];
+  return { student: { id: student.id, school: student.school, grade: student.grade }, scope, passages, reviewCount: reviewIds.length };
 }
-async function studentPassageAccess(examId: string, passageId: string, student: Student) { await studentExamAccess(examId, student); const linked = await db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(); if (linked.error) throw new ApiError(500, linked.error.message); if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다."); return rows<any>(await db.from("ready_passages").select("id,title,source_type,source_label,updated_at").eq("id", passageId).single()); }
+async function studentPassageAccess(examId: string, passageId: string, student: Student) {
+  await studentExamAccess(examId, student);
+  const [linked, passage] = await Promise.all([
+    db.from("ready_exam_passages").select("passage_id").eq("exam_id", examId).eq("passage_id", passageId).maybeSingle(),
+    db.from("ready_passages").select("id,title,source_type,source_label,updated_at").eq("id", passageId).single(),
+  ]);
+  if (linked.error) throw new ApiError(500, linked.error.message);
+  if (!linked.data) throw new ApiError(404, "현재 시험범위에 없는 지문입니다.");
+  return rows<any>(passage);
+}
 async function studentPassage(body: any, session: ReadySession) {
   const student=await studentForSession(session),examId=required(body.examId,"Exam",80),passageId=required(body.passageId,"지문",80),passage=await studentPassageAccess(examId,passageId,student);
   const sentences=await db.from("ready_passage_sentences").select("id,sentence_index,text").eq("passage_id",passageId).order("sentence_index");
@@ -559,11 +578,11 @@ function publicQuestion(row: any, passageText = "") {
 function isReadyQuestion(row: any) { return validateQuestionSpec(row?.payload || {}, clean(row?.type, 40), row?.status || "available").ready; }
 async function studentQuestions(body: any, session: ReadySession) {
   const student = await studentForSession(session), examId = required(body.examId, "Exam", 80);
-  const study = await studentPassage(body, session), passageId = study.passage.id;
+  const [study, attempted] = await Promise.all([studentPassage(body, session), attemptedQuestionIds(student.id, examId)]);
+  const passageId = study.passage.id;
   const questionRows = rows<any[]>(await db.from("ready_questions").select("id,type,payload,status,created_at").eq("passage_id", passageId).in("type", ["multiple_choice", "written_response"]).eq("status", "available").order("created_at"));
   questionRows.sort((a, b) => (Number(a.payload?.position) || 0) - (Number(b.payload?.position) || 0));
   const passageText = study.sentences.map((sentence: any) => sentence.text).join(" ");
-  const attempted = await attemptedQuestionIds(student.id, examId);
   const normalizedQuestions = normalizeMainTextQuestionRows(questionRows, study.passage, passageText);
   return { ...study, questions: normalizedQuestions.filter(row => !attempted.has(row.id) && isReadyQuestion(row) && isMainTextQuestion(row, study.passage, passageText)).map(row => publicQuestion(row, passageText)) };
 }
@@ -578,9 +597,15 @@ async function eligibleUnresolvedQuestionIds(studentId: string, examId: string) 
   if (!questionIds.length) return [];
   const unresolvedQuestions = rows<any[]>(await db.from("ready_questions").select("id,passage_id,payload").in("id", questionIds).eq("status", "available"));
   const passageIds = [...new Set(unresolvedQuestions.map(question => question.passage_id))];
-  const questions = passageIds.length ? rows<any[]>(await db.from("ready_questions").select("id,passage_id,payload").in("passage_id", passageIds).eq("status", "available")) : [];
-  const passages = passageIds.length ? rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds)) : [];
-  const sentences = passageIds.length ? rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index")) : [];
+  const emptyRows = () => Promise.resolve({ data: [] as any[], error: null });
+  const [questionResult, passageResult, sentenceResult] = await Promise.all([
+    passageIds.length ? db.from("ready_questions").select("id,passage_id,payload").in("passage_id", passageIds).eq("status", "available") : emptyRows(),
+    passageIds.length ? db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds) : emptyRows(),
+    passageIds.length ? db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index") : emptyRows(),
+  ]);
+  const questions = rows<any[]>(questionResult);
+  const passages = rows<any[]>(passageResult);
+  const sentences = rows<any[]>(sentenceResult);
   const passageById = new Map(passages.map(passage => [passage.id, passage]));
   const textById = new Map(passageIds.map(id => [id, sentences.filter(sentence => sentence.passage_id === id).map(sentence => sentence.text).join(" ")]));
   const unresolved = new Set(questionIds);
@@ -595,9 +620,14 @@ async function studentReviewQuestions(body: any, session: ReadySession) {
   const unresolvedRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,status,created_at").in("id", questionIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
   if (!unresolvedRows.length) return { items: [] };
   const passageIds = [...new Set(unresolvedRows.map(question => question.passage_id))];
-  const questionRows = rows<any[]>(await db.from("ready_questions").select("id,passage_id,type,payload,status,created_at").in("passage_id", passageIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"));
-  const sentenceRows = rows<any[]>(await db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index"));
-  const passageRows = rows<any[]>(await db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds));
+  const [questionResult, sentenceResult, passageResult] = await Promise.all([
+    db.from("ready_questions").select("id,passage_id,type,payload,status,created_at").in("passage_id", passageIds).in("type", ["multiple_choice", "written_response"]).eq("status", "available"),
+    db.from("ready_passage_sentences").select("passage_id,sentence_index,text").in("passage_id", passageIds).order("sentence_index"),
+    db.from("ready_passages").select("id,title,source_type,source_label").in("id", passageIds),
+  ]);
+  const questionRows = rows<any[]>(questionResult);
+  const sentenceRows = rows<any[]>(sentenceResult);
+  const passageRows = rows<any[]>(passageResult);
   const passages = new Map(passageRows.map(passage => [passage.id, passage]));
   const passageText = new Map<string, string>();
   for (const passageId of passageIds) passageText.set(passageId, sentenceRows.filter(sentence => sentence.passage_id === passageId).map(sentence => sentence.text).join(" "));
