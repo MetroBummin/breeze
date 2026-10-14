@@ -104,8 +104,8 @@ test('study set UI creates safe deduplicated snapshots, excludes with undo, impo
 
 test('incomplete study resumes, completion has one terminal pair, and leaving preserves completed history',async ()=>{
   const h=harness();await afterAction(h.createSet());
-  assert.equal(h.query('#study-sets-start').textContent,'학습 시작하기');
-  assert.equal(h.document.querySelector('#study-sets-test'),null);
+  assert.equal(h.query('#study-sets-start').textContent,'학습');
+  assert.equal(h.query('#study-sets-test').textContent,'테스트');
   const words=JSON.stringify(h.context.words);
   await afterAction(h.click('#study-sets-start'));
   await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));
@@ -119,7 +119,7 @@ test('incomplete study resumes, completion has one terminal pair, and leaving pr
   const complete=h.storage.get('breeze.study-sets.v1'),completed=JSON.parse(complete).sets[0].session;
   assert.equal(completed.answers.length,2);
   await afterAction(h.click('#study-sets-complete-back'));
-  assert.equal(h.query('#study-sets-start').textContent,'학습 시작하기');
+  assert.equal(h.query('#study-sets-start').textContent,'학습');
   await afterAction(h.run('studySetsReadAndRender()'));
   assert.equal(h.storage.get('breeze.study-sets.v1'),complete,'leaving and rereading do not clear completion history');
   await afterAction(h.click('#study-sets-start'));
@@ -578,7 +578,7 @@ test('detail adopts a new book word once without restoring exclusions or changin
   await afterAction(run('studySetsReadAndRender(false)'));
   const set=context.readStudySets().sets[0];assert.equal(set.cards.length,3);assert.equal(new Set(set.cards.map(c=>c.id)).size,3);
   assert.equal(JSON.stringify(set.excludedIds),excluded);assert.equal(JSON.stringify(set.session),frozen);assert.equal(JSON.stringify(context.words),source);
-  assert.equal(document.querySelector('#study-sets-import'),null);assert.equal(query('#study-sets-start').parentNode.classList.contains('study-sets-footer'),true);
+  assert.equal(document.querySelector('#study-sets-import'),null);assert.equal(query('#study-sets-start').closest('.study-sets-footer')?.contains(query('#study-sets-start')),true);
   await afterAction(run('studySetsToggleEditMenu()'));
   assert.equal(document.querySelector('.study-sets-menu #study-sets-import'),null);
   assert.deepEqual([...document.querySelectorAll('.study-sets-edit-menu button')].map(n=>n.textContent),['이름 변경','책 추가','세트 삭제']);
@@ -755,4 +755,98 @@ test('a saved set uses the same bounded window as 전체 단어 after 100 words'
   await new Promise(resolve=>setTimeout(resolve,40));
   const indexes=[...windowed.document.querySelectorAll('.study-sets-word-row')].map(row=>Number(row.dataset.index));
   assert.ok(Math.min(...indexes)>0,'scrolling a saved set mounts a later window');
+});
+
+function loadRecall(h){
+  h.context.navigator={onLine:true};
+  h.context.dictCall=()=>null;
+  for(const path of ['scripts/core/study-set-test.js','scripts/ui/study-set-test.js'])
+    vm.runInContext(readFileSync(new URL('../'+path,import.meta.url),'utf8'),h.context,{filename:path});
+}
+function recallAnswer(h,text){
+  const field=h.query('#study-set-test-answer');
+  field.value=text;
+  h.query('#study-set-test-form').dispatchEvent(new h.window.Event('submit',{cancelable:true}));
+  return field;
+}
+
+test('saved-set recall keeps one field, toasts each ten, and stores the score',async()=>{
+  const h=harness();loadRecall(h);
+  for(let i=0;i<10;i++)h.context.words['extra'+i]={word:'word'+i,ko:'뜻'+i,book:'One',example:'Hidden example '+i,addedAt:20+i};
+  await afterAction(h.createSet());
+  await afterAction(h.click('#study-sets-test'));
+  const slider=h.query('#study-set-test-count');
+  assert.equal(slider.value,slider.max);
+  assert.ok(Number(slider.max)>=12);
+  slider.value='12';slider.dispatchEvent(new h.window.Event('input'));
+  assert.equal(h.query('#study-set-test-count-label').textContent,'12개');
+  await afterAction(h.click('#study-set-test-start'));
+  const field=h.query('#study-set-test-answer');
+  assert.equal(h.document.activeElement,field);
+  assert.equal(h.query('.study-set-test-card').textContent.includes('Hidden'),false);
+  for(let i=0;i<12;i++){
+    const word=h.query('#study-set-test-word').textContent;
+    const meaning=Object.values(h.context.words).find(item=>item.word===word).ko;
+    const same=recallAnswer(h,i<8||i>=10?meaning:'');
+    if(i<11){
+      assert.equal(same,h.query('#study-set-test-answer'));
+      assert.equal(same.value,'');
+      assert.equal(h.document.activeElement,same);
+    }
+    if(i===9)assert.equal(h.document.querySelector('#study-set-test-toast').textContent,'10개 중 8개 맞음');
+  }
+  assert.equal(h.query('#study-set-test-score').textContent,'83/100');
+  assert.equal(h.document.querySelectorAll('#study-set-test-wrong li').length,2);
+  assert.equal(h.query('#study-sets-title').textContent,'결과');
+  const stored=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));
+  const setId=h.run('studySetsUI.setId');
+  assert.deepEqual(stored.sets[setId].map(row=>({count:row.count,correct:row.correct,score:row.score})),[{count:12,correct:10,score:83}]);
+  await afterAction(h.click('#study-set-test-retry'));
+  assert.equal(h.query('#study-set-test-progress').textContent,'1 / 2');
+  assert.equal(h.document.activeElement.id,'study-set-test-answer');
+  recallAnswer(h,'');recallAnswer(h,'');
+  assert.equal(stored.sets[setId].length,1);
+  assert.equal(JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId][0].count,2);
+  await afterAction(h.click('#study-sets-back'));
+  assert.equal(h.document.querySelectorAll('.study-set-test-record').length,2);
+  assert.match(h.document.querySelector('.study-set-test-record').textContent,/2개/);
+  assert.match(h.document.querySelector('.study-set-test-record').textContent,/0\/100/);
+});
+
+test('lenient grading stays off the field, and a failed grade falls back without a partial toast',async()=>{
+  const h=harness();
+  const seen=[];
+  loadRecall(h);
+  h.window.BreezeStudySetTestGrader={grade(items){seen.push(items);return items.map(()=>({ok:true}));}};
+  h.context.dictCall=()=>{throw new Error('live call');};
+  await afterAction(h.createSet('Lenient',['One']));
+  await afterAction(h.click('#study-sets-test'));
+  h.query('#study-set-test-count').value='1';
+  await afterAction(h.click('#study-set-test-start'));
+  const word=h.query('#study-set-test-word').textContent;
+  recallAnswer(h,'비슷한 말');
+  for(let n=0;n<6;n++)await afterAction();
+  assert.equal(seen.length,1);
+  assert.deepEqual(Object.keys(seen[0][0]).sort(),['answer','meanings','word']);
+  assert.equal(seen[0][0].word,word);
+  assert.equal(JSON.stringify(seen[0]).includes('example'),false);
+  assert.equal(h.query('#study-set-test-score').textContent,'100/100');
+  assert.equal(h.document.querySelector('#study-set-test-toast'),null);
+
+  const offline=harness();loadRecall(offline);
+  delete offline.window.BreezeStudySetTestGrader;
+  offline.context.setTimeout=fn=>fn();
+  offline.context.dictCall=async()=>null;
+  await afterAction(offline.createSet('Offline',['One']));
+  await afterAction(offline.click('#study-sets-test'));
+  offline.query('#study-set-test-count').value='1';
+  await afterAction(offline.click('#study-set-test-start'));
+  recallAnswer(offline,'전혀 다름');
+  for(let n=0;n<8;n++)await afterAction();
+  assert.equal(offline.query('#study-set-test-score').textContent,'0/100');
+  assert.equal(offline.document.querySelectorAll('#study-set-test-wrong li').length,1);
+  assert.equal(offline.document.querySelector('#study-set-test-retry').disabled,false);
+  const raw=offline.storage.get('breeze.study-set-tests.v1');
+  const record=JSON.parse(raw).sets[Object.keys(JSON.parse(raw).sets)[0]][0];
+  assert.equal(offline.run(`BreezeStudySetTest.save('{', 'set', ${JSON.stringify(record)}).ok`),false);
 });

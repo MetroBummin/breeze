@@ -499,7 +499,7 @@ try{
    assert.equal(await cold.locator('#study-sets-answer').innerText(),'회복력이 있는');await studyAction(cold.locator('#study-sets-flashcard').press('ArrowRight'),cold);await cold.waitForSelector('.study-sets-result');
    const completed=await cold.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode));
    await cold.reload();await cold.evaluate(()=>homeReady);await cold.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(cold.locator('.study-sets-home-card[data-set-id]').click(),cold);
-   assert.equal(await cold.locator('#study-sets-start').innerText(),'학습 시작하기');
+   assert.equal(await cold.locator('#study-sets-start').innerText(),'학습');
    assert.equal(await cold.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)),completed,'offline reentry retains the completed answers');
    await studyAction(cold.locator('#study-sets-start').click(),cold);
    assert.equal(await cold.locator('#study-sets-progress').innerText(),'0 / 1','explicit offline Start opens a fresh session');

@@ -497,3 +497,13 @@ round, not the one already started.
 Existing sets, captured cards, exclusions and unfinished rounds stay as they
 were. Nothing is rebuilt or discarded on update. The shared 100-word window
 still mounts the set list. Cloud vocabulary sync is unchanged.
+
+## Saved-set recall test (2026-10-14)
+
+A saved set's detail now has two equal-width actions in one row. **학습** stays the primary study action, including `이어서 학습 · n/m` while a round is open and a fresh start after a finished round. **테스트** is the secondary action and opens setup, not the questions. Where earlier notes say that set button reads **학습 시작하기**, the set detail now reads **학습**. All Words keeps a single **학습 시작하기** and does not offer this test.
+
+Setup offers a slider from 1 to the set's grouped word count, defaulting to every word, then **테스트 시작**, then a compact list of this set's past results (date, word count, and score as `n/100`). Records live in `localStorage` under `breeze.study-set-tests.v1`, newest first, capped at 40. A damaged or newer store is left untouched. An unfinished test is not saved.
+
+The test draws that many grouped words in random order. The card shows the English word only. The learner types a Korean meaning and submits; the next word appears immediately, with no per-word mark. The same text field stays mounted so the keyboard can remain up. A blank answer is incorrect at once. An exact normalized match against any saved meaning is correct at once. Anything else is graded leniently in the background, ten submitted answers at a time, without blocking typing. When a ten-answer batch finishes, a short top toast shows the cumulative count, such as `10개 중 8개 맞음`. A trailing remainder under ten does not toast; it updates the result. Offline or failed grading retries, then treats a non-exact answer as incorrect. The result shows the score out of 100, the missed words with their saved meanings, and **틀린 단어만 다시**.
+
+This path does not enable the separate self-check vocabulary test, its IndexedDB session, or the jev receipt grader. Those gates stay false.

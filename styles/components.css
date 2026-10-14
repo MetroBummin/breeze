@@ -79,7 +79,7 @@
   .sm-account{margin:0 0 13px; color:var(--soft); font-size:11px; line-height:1.4;}
   .sm-account b{display:block; overflow-wrap:anywhere; color:var(--ink); font-size:12px;}
   .sm-account span{display:block; margin-top:2px;}
-  #sm-email, #sm-password-email, #sm-password{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px;
+  #sm-email, #sm-password-email, #sm-password{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:16px;
     font-family:var(--ui); outline:none; margin-bottom:12px; background:var(--field);}
   #sm-email:focus, #sm-password-email:focus, #sm-password:focus{border-color:var(--blue);}
   /* input 은 글자색을 물려받지 않습니다(브라우저 기본값이 이깁니다). 어두운
@@ -145,6 +145,8 @@
   html.native-shell #am-text,
   html.native-shell #am-url,
   html.native-shell #ed-title{font-size:16px;}
+  html.native-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="hidden"]):not([type="color"]):not([type="image"]),
+  html.native-shell textarea{font-size:16px;}
 
   #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
     background:var(--minitoast-bg); color:var(--minitoast-ink); font-size:11.5px; letter-spacing:.2px;
