@@ -25,6 +25,16 @@ function savedPhraseStarts(){
   starts.forEach(list=>list.sort((a,b)=>b.parts.length-a.parts.length));
   return starts;
 }
+/* Scroll hydrates many paragraphs. The map changes only when a meaning is saved.
+   Callers that paint a live in-memory edit keep calling savedPhraseStarts(). */
+const savedPhrasePaint={revision:null,cache:null};
+function savedPhraseStartsForPaint(){
+  const revision=typeof wordPaintRevision==='number'?wordPaintRevision:null;
+  if(revision!==null&&savedPhrasePaint.revision===revision)return savedPhrasePaint.cache;
+  const starts=savedPhraseStarts();
+  if(revision!==null){savedPhrasePaint.revision=revision;savedPhrasePaint.cache=starts;}
+  return starts;
+}
 function savedPhraseMatch(matches,start,item){
   const selected=[start];let cursor=start;
   for(let part=1;part<item.parts.length;part++){
@@ -73,7 +83,7 @@ function wordSpans(text,starts,preview=false){
    원문 텍스트는 그대로 남으므로 검색·문단 앵커는 전 범위에서 즉시 작동합니다. */
 let wordSpanObserver=null;
 function hydrateWordSpanBatch(elements){
-  const starts=savedPhraseStarts();
+  const starts=savedPhraseStartsForPaint();
   elements.forEach(el=>{
     if(!el || el.dataset.wordSpans==='1') return;
     const parts=el.querySelectorAll(':scope > .holmes-paragraph-part');
@@ -295,9 +305,14 @@ function renderBookBody(b){
 // Keep one recently closed Reader for quick Home round trips, for at most 60s.
 let retainedReader=null,retainedReaderTimer=0,readerPreparedOriginal=null;
 // Only lexical paint affects retained pages; definitions and metadata do not.
+const readerWordPresentationCache={revision:null,cache:null};
 function readerWordPresentation(){
-  return JSON.stringify(Object.entries(words).map(([key,word])=>
+  const revision=typeof wordPaintRevision==='number'?wordPaintRevision:null;
+  if(revision!==null&&readerWordPresentationCache.revision===revision)return readerWordPresentationCache.cache;
+  const presentation=JSON.stringify(Object.entries(words).map(([key,word])=>
     [key,word?.status,word?.mark,word?.phraseParts,word?.phraseGaps]));
+  if(revision!==null){readerWordPresentationCache.revision=revision;readerWordPresentationCache.cache=presentation;}
+  return presentation;
 }
 function releaseRetainedReader(){
   clearTimeout(retainedReaderTimer);retainedReaderTimer=0;

@@ -28,7 +28,8 @@ function harness(){
       c:{word:'calm',ko:'고요한',book:'Two',addedAt:3},
       d:{word:'direct',ko:'직접',book:'',addedAt:4}
     },esc:value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),renderStoredStudyExample:(target,card)=>{target.textContent=card.example||'';},validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
-    localStorage:{getItem:key=>storage.has(key)?storage.get(key):null,setItem:(key,value)=>{storage.set(key,value);}}
+    localStorage:{getItem:key=>storage.has(key)?storage.get(key):null,setItem:(key,value)=>{storage.set(key,value);}},
+    ResizeObserver:window.ResizeObserver||class{observe(){}unobserve(){}disconnect(){}}
   };
   const create=document.createElement.bind(document);
   document.createElement=tag=>{
@@ -669,4 +670,35 @@ test('test scope and study scope share representative roots, meanings and exclus
   const compare=()=>h.run(`(()=>{const set=studySetsUI.state.sets[0],study=BreezeStudySets.groupedCards(set),test=vocabularyTestScope({kind:'set',setId:set.id}).cards;return JSON.stringify({study:study.map(card=>card.acceptedMeanings),test:[...BreezeVocabularyTest.groups(test).values()].map(senses=>[...new Set(senses.map(card=>card.ko))])});})()`);
   let groups=JSON.parse(compare());assert.deepEqual(groups.test,groups.study);assert.equal(groups.study.length,1);
   await afterAction(h.click('.study-sets-row-action'));groups=JSON.parse(compare());assert.deepEqual(groups,{study:[],test:[]});
+});
+
+test('a long word list does not remeasure rows while the mounted window stays put',async()=>{
+  const h=harness();
+  const words={};
+  for(let i=0;i<150;i++)words['w'+i]={word:'word'+i,ko:'뜻'+i,book:'Book',addedAt:i+1};
+  h.context.words=words;
+  const box=(top,height)=>({top,left:0,right:390,bottom:top+height,width:390,height,x:0,y:top});
+  Object.defineProperty(h.window.HTMLElement.prototype,'clientHeight',{configurable:true,get:()=>600});
+  Object.defineProperty(h.window.HTMLElement.prototype,'clientWidth',{configurable:true,get:()=>390});
+  await afterAction(h.run('openStudySetsAllWords()'));
+  const body=h.query('#study-sets-content'),list=h.query('#study-all-words-list');
+  assert.equal(list.dataset.total,'150');
+  let reads=0;
+  body.getBoundingClientRect=()=>{reads++;return box(0,600);};
+  list.getBoundingClientRect=()=>{reads++;return box(80-body.scrollTop,150*64);};
+  const proto=h.window.HTMLElement.prototype,original=proto.getBoundingClientRect;
+  proto.getBoundingClientRect=function(){reads++;const base=original.call(this);return box(base.top||0,base.height||64);};
+  h.run('studySetsUI.allWordsList.refresh(null,true)');
+  const mounted=h.document.querySelectorAll('.study-all-words-row').length;
+  assert.ok(mounted>1&&mounted<150);
+  reads=0;body.scrollTop=10;body.dispatchEvent(new h.window.Event('scroll'));
+  await new Promise(resolve=>setTimeout(resolve,40));
+  assert.equal(reads,0);
+  assert.equal(h.document.querySelectorAll('.study-all-words-row').length,mounted);
+  body.scrollTop=80+64*40;body.dispatchEvent(new h.window.Event('scroll'));
+  await new Promise(resolve=>setTimeout(resolve,40));
+  assert.ok(reads>0);
+  const indexes=[...h.document.querySelectorAll('.study-all-words-row')].map(row=>Number(row.dataset.index));
+  assert.ok(Math.min(...indexes)>0);
+  proto.getBoundingClientRect=original;
 });

@@ -568,12 +568,26 @@ function studySetsWindowAllWords(list,groups,createRow){
   const locate=y=>{let lo=0,hi=groups.length;while(lo<hi){const mid=(lo+hi)>>1;if(offsets[mid+1]<=y)lo=mid+1;else hi=mid;}return Math.min(lo,groups.length-1);};
   const top=()=>list.getBoundingClientRect().top-body.getBoundingClientRect().top+body.scrollTop;
   const spacer=height=>{const node=studySetsNode('li','study-all-words-spacer');node.setAttribute('aria-hidden','true');node.setAttribute('role','presentation');node.style.height=height+'px';return node;};
-  const schedule=()=>{if(!disposed&&!frame)frame=requestAnimationFrame(()=>{frame=0;refresh();});};
-  const observer=new ResizeObserver(schedule);
-  function refresh(requiredIndex=null){
+  let paintedStart=-1,paintedEnd=-1,paintedFocus=-1,cachedOrigin=0,pendingMeasure=false;
+  const schedule=measure=>{
+    if(disposed)return;
+    if(measure)pendingMeasure=true;
+    if(!frame)frame=requestAnimationFrame(()=>{frame=0;const measureNow=pendingMeasure;pendingMeasure=false;refresh(null,measureNow);});
+  };
+  const observer=new ResizeObserver(()=>schedule(true));
+  function refresh(requiredIndex=null,measure=true){
     if(disposed||!list.isConnected)return;
+    const resized=width!==body.clientWidth;
+    // A scroll that stays inside the mounted window does not change row heights.
+    if(!measure&&!resized&&requiredIndex==null){
+      const y=Math.max(0,body.scrollTop-cachedOrigin),anchor=locate(y),within=y-offsets[anchor],corrected=offsets[anchor]+within;
+      const start=locate(Math.max(0,corrected-body.clientHeight)),end=Math.min(groups.length,locate(corrected+body.clientHeight*2)+1);
+      const focused=document.activeElement?.closest('.study-all-words-row');
+      const focusIndex=focused&&list.contains(focused)?Number(focused.getAttribute('data-index')):-1;
+      if(start===paintedStart&&end===paintedEnd&&focusIndex===paintedFocus)return;
+    }
     const origin=top(),y=Math.max(0,body.scrollTop-origin),anchor=locate(y),within=y-offsets[anchor];
-    const resized=width!==body.clientWidth;width=body.clientWidth;
+    width=body.clientWidth;
     if(resized){heights.fill(64);sum();}
     // Read the existing window in one layout pass before writing its replacement.
     let measured=false;
@@ -605,6 +619,9 @@ function studySetsWindowAllWords(list,groups,createRow){
     while(next){const removed=next;next=next.nextSibling;removed.remove();}
     if(focused&&active instanceof HTMLElement&&document.activeElement!==active)active.focus({preventScroll:true});
     if((measured||resized)&&anchor>0)body.scrollTop=origin+corrected;
+    paintedStart=start;paintedEnd=end;
+    paintedFocus=focused&&list.contains(focused)?Number(focused.getAttribute('data-index')):-1;
+    cachedOrigin=origin;
   }
   const keyboard=event=>{
     const row=event.target.closest?.('.study-all-words-row');
@@ -613,25 +630,27 @@ function studySetsWindowAllWords(list,groups,createRow){
     if(index<0||index>=groups.length)return;
     // Expansion/rotation may precede ResizeObserver delivery. Measure first,
     // then mount the requested row even if the browser clamps the old scroll.
-    event.preventDefault();refresh();body.scrollTop=top()+offsets[index];refresh(index);
+    event.preventDefault();refresh(null,true);body.scrollTop=top()+offsets[index];refresh(index,true);
     rows.get(index)?.querySelector('.vword').focus({preventScroll:true});
   };
-  body.addEventListener('scroll',schedule,{passive:true});list.addEventListener('keydown',keyboard);
-  observer.observe(body);refresh();
-  return {refresh,dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();body.removeEventListener('scroll',schedule);list.removeEventListener('keydown',keyboard);rows.clear();}};
+  const onScroll=()=>schedule(false);
+  body.addEventListener('scroll',onScroll,{passive:true});list.addEventListener('keydown',keyboard);
+  observer.observe(body);refresh(null,true);
+  return {refresh,dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();body.removeEventListener('scroll',onScroll);list.removeEventListener('keydown',keyboard);rows.clear();}};
 }
 function renderStudySetsCreate(){
   const body=studySetsUI.body,form=document.createElement('form');form.id='study-sets-create-form';form.className='study-sets-form';
   const label=studySetsNode('label','study-sets-field','세트 이름');
   const input=document.createElement('input');input.id='study-sets-name';input.name='name';input.type='text';input.required=true;input.maxLength=100;input.placeholder='예: 이번 주 읽은 책';input.autocomplete='off';label.append(input);
   const booksField=studySetsNode('fieldset','study-sets-books');booksField.append(studySetsNode('legend','','책 선택'));
-  const names=[...new Set(Object.values(words).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))].sort((a,b)=>BreezeStudySets.cards(words,[b]).length-BreezeStudySets.cards(words,[a]).length);
+  const counts=BreezeStudySets.countsByBook(words);
+  const names=[...new Set(Object.values(words).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))].sort((a,b)=>(counts.get(b)||0)-(counts.get(a)||0));
   const selection=new Set(),count=studySetsNode('p','study-sets-selection-count','책을 선택해 주세요.');count.id='study-sets-selection-count';count.setAttribute('aria-live','polite');
   const create=studySetsButton('세트 만들기',()=>{},'study-sets-primary');create.type='submit';create.id='study-sets-save';create.disabled=true;
   for(const title of names){
     const row=studySetsNode('label','study-sets-book');const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=title;
     const text=studySetsNode('span','study-sets-book-name',title||'직접 추가');
-    const number=studySetsNode('span','study-sets-caption',`${BreezeStudySets.cards(words,[title]).length}개`);
+    const number=studySetsNode('span','study-sets-caption',`${counts.get(title)||0}개`);
     checkbox.addEventListener('change',()=>{
       if(checkbox.checked)selection.add(title);else selection.delete(title);
       const total=selection.size?BreezeStudySets.cards(words,[...selection]).length:0;
@@ -672,6 +691,7 @@ function renderStudySetsEdit(set){
 function renderStudySetsBooks(set){
   const form=studySetsNode('form','study-sets-form'),field=studySetsNode('fieldset','study-sets-books');
   field.append(studySetsNode('legend','','책 선택'));
+  const counts=BreezeStudySets.countsByBook(words);
   const names=[...new Set(Object.values(words).filter(validWordMeaning).map(item=>typeof item.book==='string'?item.book:''))]
     .filter(title=>!set.bookTitles.includes(title)).sort((a,b)=>a.localeCompare(b));
   const selection=new Set(),count=studySetsNode('p','study-sets-selection-count');count.setAttribute('aria-live','polite');
@@ -684,7 +704,7 @@ function renderStudySetsBooks(set){
       count.textContent=selection.size?`${selection.size}권 · ${preview.added}개`:'';save.disabled=!selection.size;
     });
     row.append(checkbox,studySetsNode('span','study-sets-book-name',title||'직접 추가'),
-      studySetsNode('span','study-sets-caption',`${BreezeStudySets.cards(words,[title]).length}개`));field.append(row);
+      studySetsNode('span','study-sets-caption',`${counts.get(title)||0}개`));field.append(row);
   }
   if(!names.length)field.append(studySetsEmpty('추가할 책이 없어요',''));
   form.append(field,count,save);form.addEventListener('submit',event=>{
