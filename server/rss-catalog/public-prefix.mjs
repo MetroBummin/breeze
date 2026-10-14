@@ -3,14 +3,9 @@
 import {request as httpRequest} from 'node:http';
 import {request as httpsRequest} from 'node:https';
 import {lookup} from 'node:dns/promises';
-import {publicUrl,publicAddresses} from '../article/public-fetch.mjs';
+import {publicUrl,publicAddresses,untilAbort} from '../article/public-fetch.mjs';
 const redirects=[301,302,303,307,308];
 const join=chunks=>{const bytes=new Uint8Array(chunks.reduce((sum,chunk)=>sum+chunk.length,0));let at=0;for(const chunk of chunks){bytes.set(chunk,at);at+=chunk.length;}return bytes;};
-const abortable=(job,signal)=>new Promise((resolve,reject)=>{
-  const abort=()=>reject(signal.reason||new DOMException('Aborted','AbortError'));
-  if(signal.aborted)return abort();signal.addEventListener('abort',abort,{once:true});
-  Promise.resolve(job).then(resolve,reject).finally(()=>signal.removeEventListener('abort',abort));
-});
 export function prefixHeadersAllowed(status,headers){
   return status===200&&/^(?:text\/html|application\/xhtml\+xml)\b/i.test(headers['content-type']||'')&&
     !/(?:^|,)\s*(?:private|no-store)(?:\s|,|$)/i.test(headers['cache-control']||'')&&
@@ -110,8 +105,8 @@ export async function fetchPublicPrefix(raw,{limit=131072,timeoutMs=4000,maxRedi
   transport=transport||(typeof Deno==='undefined'?requestPrefixNode:requestPrefixDeno);
   try{for(let hop=0;hop<=maxRedirects;hop++){
     if(!allowed(url))throw Error('photo_source_blocked');
-    const addresses=await abortable(publicAddresses(url,resolve),signal);
-    httpAttempts++;const result=await abortable(transport(url,addresses,{signal,limit,stop}),signal);
+    const addresses=await untilAbort(publicAddresses(url,resolve),signal);
+    httpAttempts++;const result=await untilAbort(transport(url,addresses,{signal,limit,stop}),signal);
     if(redirects.includes(result.status)){
       if(hop===maxRedirects||!result.location)throw Error('redirect_limit');url=publicUrl(new URL(result.location,url).href);continue;
     }

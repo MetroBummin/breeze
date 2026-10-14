@@ -88,7 +88,6 @@ let originalZoomLevel = 1;
 let originalZoomBaseHeight = 0;
 let originalZoomObservedWidth = null;
 let originalZoomObservedHeight = null;
-let originalZoomGeometryWaiters = [];
 let originalRotationAnchor = null;
 let originalRotationAnchorGeneration = 0;
 
@@ -167,24 +166,9 @@ function applyOriginalZoomTransform(){
   layoutOriginalZoom();
 }
 
-/* Reader 폭 변경의 최종 geometry는 실제 ResizeObserver 알림이 확정합니다.
-   패널 작업은 이 Promise 하나를 기다린 뒤 source anchor를 복원합니다. 시간이나
-   프레임 수를 추측하지 않고, 다음 폭 알림이 기대한 작업의 것인지도 확인합니다. */
-function waitForOriginalZoomGeometry(width,isCurrent){
-  const expected=Math.round(width||0);
-  if(!window.ResizeObserver){ layoutOriginalZoom(); return Promise.resolve(true); }
-  if(originalZoomObservedWidth!=null&&Math.abs(originalZoomObservedWidth-expected)<1){
-    layoutOriginalZoom(); return Promise.resolve(!isCurrent||isCurrent());
-  }
-  return new Promise(resolve=>originalZoomGeometryWaiters.push({expected,isCurrent,resolve}));
-}
-
 function settleOriginalZoomGeometry(width,height){
   originalZoomObservedWidth=Math.round(width||0);
   if(height!=null) originalZoomObservedHeight=Math.round(height||0);
-  const waiters=originalZoomGeometryWaiters.splice(0);
-  waiters.forEach(waiter=>waiter.resolve((!waiter.isCurrent||waiter.isCurrent())
-    && Math.abs(waiter.expected-originalZoomObservedWidth)<1));
 }
 
 /* 종이의 왼쪽 위가 스크롤 칸 안쪽 어디에 있는지. 위쪽 안내줄과 여백은 확대를

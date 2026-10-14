@@ -56,20 +56,6 @@ function sharedHomeCard(item) {
   return card;
 }
 
-function homeSharedLinkSpecs() {
-  return sharedLinks.filter(item => !item.openedAt && !unavailableSharedLinks.has(sharedAttemptKey(item))).map(item => ({
-    key: `shared:${item.url}`,
-    stamp: JSON.stringify([item.id, item.title, item.originalText, item.savedAt]),
-    create: () => sharedHomeCard(item),
-  }));
-}
-
-function renderReadSharedLinks(container) {
-  const read = sharedLinks.filter(item => item.openedAt && !sharedArticleBook(item) && !unavailableSharedLinks.has(sharedAttemptKey(item)));
-  for (const item of read) container.appendChild(sharedHomeCard(item));
-  return read.length;
-}
-
 function receiveSharedLinks(items) {
   const byURL = new Map();
   for (const item of Array.isArray(items) ? items : []) {

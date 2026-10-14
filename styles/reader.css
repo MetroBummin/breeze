@@ -81,8 +81,6 @@
       #reader-scroll{scrollbar-width:thin; scrollbar-color:var(--sb-thumb) transparent;}
     }
   }
-  .iconbtn{border:none; background:none; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13.5px; color:var(--soft);}
-  .iconbtn:hover{background:var(--hover-quiet);}
   /* 모드를 바꿨을 때 "여기 있었어요" 하고 짚어 주는 자리. Breeze 라서 로고 그라디언트의
      바람색(#4DAED6)을 씁니다 — 초록은 이 앱 어디에도 없는 색이었습니다. */
   ::highlight(breeze-mode-cue){background:var(--cue); color:inherit;}

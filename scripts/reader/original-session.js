@@ -279,7 +279,3 @@ function refreshOriginalSavedWords(statusKey=null){
   const format=originalFormat();
   if(format) format.refreshSavedWords(originalSession,statusKey);
 }
-
-function clearOriginalSelectionMarkers(){
-  if(typeof clearActiveWordSelection==='function') clearActiveWordSelection();
-}

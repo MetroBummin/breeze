@@ -11,15 +11,6 @@
   /* ---- section headers ---- */
   .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:4px;}
   .sec-head h2{font-family:var(--display); font-size:23px; font-weight:600; letter-spacing:-.7px;}
-  .sec-head .sec-sub{font-size:13px; color:var(--soft); flex:1; min-width:0;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .sec-acts{display:flex; gap:5px; align-self:center; margin-left:auto;}
-  .sec-acts button{width:30px; height:30px; border-radius:50%; border:1px solid var(--sec-act-line); background:var(--sec-act-bg);
-    color:var(--sec-act-ink); cursor:pointer; display:flex; align-items:center; justify-content:center;
-    font-size:18px; line-height:1; font-family:var(--ui); transition:.15s;}
-  .sec-acts button svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:calc(var(--control-inline-icon-stroke) * 24 / 16);
-    stroke-linecap:round; stroke-linejoin:round;}
-  .sec-acts button:hover{background:var(--sec-act-hover); border-color:var(--sec-act-hover-line); color:var(--sec-act-hover-ink);}
 
   /* ---- Casuals: a horizontal rail, one thumb per glass ---- */
   /* 레일이 페이지 여백 밖까지 흘러야 "옆으로 더 있다"가 잘려 보입니다. */

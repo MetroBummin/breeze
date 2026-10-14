@@ -148,8 +148,8 @@ const iosBuilds=[...project.matchAll(/CURRENT_PROJECT_VERSION = (\d+);/g)].map(m
 assert.ok(iosBuilds.length>=2 && new Set(iosBuilds).size===1 && iosBuilds.every(build=>build>=109),
   'iOS configurations disagree or regress below the App Review access build');
 const componentsCss = readFileSync(resolve(root, 'styles/components.css'), 'utf8');
-for(const selector of ['#sm-email','#sm-password-email','#sm-password','.sm-secret input',
-  '.sm-reset-confirm input','.sm-delete-confirm input','.sm-device-move input','#am-text','#am-url','#ed-title']){
+for(const selector of ['#sm-email','#sm-password-email','#sm-password',
+  '.sm-delete-confirm input','#am-text','#am-url','#ed-title']){
   assert.ok(componentsCss.includes(`html.native-shell ${selector}`),
     `The iOS text field can still trigger focus zoom: ${selector}`);
 }

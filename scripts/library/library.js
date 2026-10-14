@@ -205,17 +205,6 @@ function wireBookCard(card, book, canManage=true){
   return card;
 }
 
-/* 표지 그림이 없는 짧은 글은 글 자체가 표지입니다 — 첫 문단을 카드에 깝니다.
-   그런데 그 자리에는 기자 이름("By Owen Delaney")이나 사진 표시가 먼저 오기도
-   합니다. 그러면 카드가 아무 말도 하지 않게 됩니다. 읽을 만한 길이의 첫 줄을
-   찾고, 없으면 지금까지처럼 맨 앞을 씁니다. */
-function cardLede(book){
-  const paras = book.paras || [];
-  const real = paras.slice(1).find(text =>
-    !text.startsWith(IMG_MARK) && text.trim().length >= 60);
-  return real || paras[1] || paras[0] || '';
-}
-
 /* Deterministic, local cover ornament; never stands in for an article photo. */
 function coverArtwork(key){
   const patterns=[

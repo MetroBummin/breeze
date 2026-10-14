@@ -252,7 +252,6 @@ async function originalBookForHash(candidates,hash){
     };
   });
 }
-async function originalDel(id){return localDelete('originals',id);}
 async function vaultPut(key,value){return localPut('vault',key,value);}
 async function vaultGet(key){ try{ const db=await idb(); return await new Promise(res=>{
   const rq=db.transaction('vault').objectStore('vault').get(key);
