@@ -163,6 +163,16 @@ The captured content supports offline study without the original book or
 vocabulary record. Storage lifecycle remains the same as other local app data:
 clearing the app/browser's data removes these sets; cloud backup is not implied.
 
+## Memory list behind 학습하기 (2026-10-14)
+
+Opening 학습하기 lays out Breeze Memory behind the sheet. Memory lists over
+100 groups now mount only the visible window, so that open no longer walks
+every saved row. 전체 단어 reuses its grouped order until the saved words
+change, instead of sorting the whole wordbook on every open. Saved-set and
+제외한 단어 lists keep the existing 100-row window. Swipe exclusion still
+animates the row that is leaving and updates that window in place. Book-link
+sync rules are unchanged.
+
 ## List refresh cost (PR155 follow-up)
 
 Hidden Memory directories defer mutation and storage-event refreshes until the

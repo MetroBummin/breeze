@@ -47,6 +47,19 @@ Row disclosure changes only that row's extra details and editable state, preserv
 other rows, focus and the existing multi-meaning deletion rules. Structural
 filter/sort/deletion and remote changes still use the full render path.
 
+## Memory window (2026-10-14)
+
+Breeze Memory scrolls the document. Lists of 100 groups or fewer still mount
+every row. Longer lists mount the visible window plus overscan and leave the
+rest as height. Search, star and book filters, sorting, starring and deletion
+still go through that same render. A deletion or star replaces the window
+rather than every saved row. The grouped order is reused until the saved
+words change, a word is added or removed, or the in-memory word collection is
+replaced. Advanced review, while disabled, still receives every filtered
+meaning rather than only the mounted rows. Known word saves mark sync dirty
+without serializing the whole vocabulary; the sync implementation stays in
+place and dormant when nobody is signed in.
+
 ## Saved meaning/example pair and transient help
 
 Opening a saved Meaning in a second sentence does not overwrite its example. A
