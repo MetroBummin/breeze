@@ -405,6 +405,10 @@ The directory/create modal owns the document scroll while open, keeps its lists 
 
 Evidence, before/after measurements and physical-device limitations: [build271 followup review](../reviews/breeze-post271-allwords/README.md).
 
+## Custom sets share the All Words window
+
+전체 단어 and a saved set's word list, including its excluded-word list, now share one mounting path. Lists of 100 words or fewer still mount every row. Longer lists mount the measured viewport plus overscan; spacers keep scroll height, ordinals, and keyboard reach. 전체 단어 stays read-only. A saved set keeps swipe exclusion, stars, and undo. Removing a card updates that same window, including a second row already leaving, without rebuilding every offscreen word. The shared limit is the one introduced for large 전체 단어 lists in PR #159 (`bf1b5f90`). PR #168 only stopped that window from remeasuring rows while the mounted range stayed put.
+
 ## Typed test entry (2026-10-13)
 
 All Words and set detail add an independent **단어 테스트** action beside study.
