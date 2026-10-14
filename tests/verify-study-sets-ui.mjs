@@ -702,3 +702,39 @@ test('a long word list does not remeasure rows while the mounted window stays pu
   assert.ok(Math.min(...indexes)>0);
   proto.getBoundingClientRect=original;
 });
+
+test('a saved set uses the same bounded window as 전체 단어 after 100 words',async()=>{
+  const openSized=async count=>{
+    const h=harness();
+    const sample={};
+    for(let i=0;i<count;i++)sample['w'+i]={word:'word '+i,ko:'뜻 '+i,book:'Book',addedAt:i+1};
+    h.context.words=sample;
+    Object.defineProperty(h.window.HTMLElement.prototype,'clientHeight',{configurable:true,get:()=>600});
+    Object.defineProperty(h.window.HTMLElement.prototype,'clientWidth',{configurable:true,get:()=>390});
+    await afterAction(h.run(`(async()=>{const created=BreezeStudySets.create(await loadStudySets(),{name:'큰 세트',bookTitles:['Book']},words,10);await commitStudySets(created.state);await openStudySet(created.set.id);})()`));
+    return h;
+  };
+  const full=await openSized(100);
+  assert.equal(full.document.querySelectorAll('#study-sets-word-list .study-sets-word-row').length,100);
+  assert.equal(full.run('studySetsUI.allWordsList'),null);
+  const windowed=await openSized(200);
+  const mounted=windowed.document.querySelectorAll('#study-sets-word-list .study-sets-word-row').length;
+  assert.ok(mounted>1&&mounted<200,'a 200-word set mounts a viewport, not every word');
+  assert.equal(windowed.query('#study-sets-word-list').dataset.total,'200');
+  assert.equal(windowed.run('typeof studySetsUI.allWordsList.removeId'),'function');
+  const removedId=windowed.query('.study-sets-word-row').dataset.cardId;
+  const kept=windowed.run(`(()=>{const row=document.querySelector('.study-sets-word-row[data-index="1"]');row.classList.add('study-sets-exiting');return row.dataset.cardId;})()`);
+  windowed.run(`studySetsUI.allWordsList.removeId(${JSON.stringify(removedId)})`);
+  assert.equal(windowed.query('#study-sets-word-list').dataset.total,'199');
+  assert.equal(windowed.run(`!!document.querySelector(${JSON.stringify('.study-sets-word-row')})&&![...document.querySelectorAll('.study-sets-word-row')].some(row=>row.dataset.cardId===${JSON.stringify(removedId)})`),true);
+  assert.equal(windowed.run(`[...document.querySelectorAll('.study-sets-word-row')].some(row=>row.dataset.cardId===${JSON.stringify(kept)}&&row.dataset.index==='0')`),true,'a row already leaving keeps its identity and moves up one index');
+  windowed.run(`document.querySelector('.study-sets-exiting')?.classList.remove('study-sets-exiting')`);
+  const box=(top,height)=>({top,left:0,right:390,bottom:top+height,width:390,height,x:0,y:top});
+  const body=windowed.query('#study-sets-content'),list=windowed.query('#study-sets-word-list');
+  body.getBoundingClientRect=()=>box(0,600);
+  list.getBoundingClientRect=()=>box(80-body.scrollTop,199*64);
+  body.scrollTop=80+64*40;body.dispatchEvent(new windowed.window.Event('scroll'));
+  await new Promise(resolve=>setTimeout(resolve,40));
+  const indexes=[...windowed.document.querySelectorAll('.study-sets-word-row')].map(row=>Number(row.dataset.index));
+  assert.ok(Math.min(...indexes)>0,'scrolling a saved set mounts a later window');
+});
