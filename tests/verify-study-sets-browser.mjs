@@ -446,24 +446,31 @@ try{
   assert.equal(await page.locator('#study-sets-word-list').getAttribute('data-total'),'1001');
   assert.ok(await page.locator('#study-sets-word-list > li.study-sets-word-row').count()<1001,'a large set stays windowed');
   for(const ordinal of [999,1000]){
-   await page.evaluate(async index=>{
+   // Read the gutter in the same turn the row mounts. A later locator waits
+   // across a height correction, and that correction can drop the end row.
+   const measured=await page.evaluate(async index=>{
     const body=studySetsUI.body;
     const selector=`#study-sets-word-list > li.study-sets-word-row[data-index="${index}"]`;
     const deadline=performance.now()+4000;
+    let node=null;
     while(performance.now()<deadline){
      body.scrollTop=body.scrollHeight;
      body.dispatchEvent(new Event('scroll'));
      await new Promise(resolve=>requestAnimationFrame(resolve));
-     if(document.querySelector(selector))return;
+     node=document.querySelector(selector);
+     if(node)break;
     }
-    const seen=[...document.querySelectorAll('#study-sets-word-list .vordinal')].map(node=>node.textContent).join(',');
-    throw new Error(`row ${index+1} stayed outside the window (${seen})`);
+    if(!node){
+     const seen=[...document.querySelectorAll('#study-sets-word-list .vordinal')].map(item=>item.textContent).join(',');
+     throw new Error(`row ${index+1} stayed outside the window (${seen})`);
+    }
+    const number=node.querySelector('.vordinal').getBoundingClientRect(),word=node.querySelector('.vword').getBoundingClientRect(),group=node.querySelector('.vgroup');
+    const box=target=>{const r=target.getBoundingClientRect();return {x:r.x,width:r.width,height:r.height};};
+    return {ordinal:node.querySelector('.vordinal').innerText,bounds:{number:{left:number.left,right:number.right,width:number.width},word:{left:word.left,right:word.right}},geometry:{':scope':box(group),'.vrow':box(group.querySelector('.vrow')),'.vword':box(group.querySelector('.vword')),'.vko':box(group.querySelector('.vko')),'.chip':box(group.querySelector('.chip'))}};
    },ordinal-1);
-   const row=page.locator(`#study-sets-word-list > li.study-sets-word-row[data-index="${ordinal-1}"]`);
-   const bounds=await row.evaluate(node=>{const number=node.querySelector('.vordinal').getBoundingClientRect(),word=node.querySelector('.vword').getBoundingClientRect();return {number:{left:number.left,right:number.right,width:number.width},word:{left:word.left,right:word.right}};});
-   assert.ok(bounds.number.left>=0&&bounds.number.right<=bounds.word.left-1,JSON.stringify({width,ordinal,bounds}));
-   assert.equal(await row.locator('.vordinal').innerText(),String(ordinal));
-   const geometry=await vocabularyGeometry(row.locator('.vgroup'));recordRowMetrics({width,ordinal,original,set:geometry,bounds});assertGeometry(geometry,original,`${width}px ordinal ${ordinal}`);
+   assert.ok(measured.bounds.number.left>=0&&measured.bounds.number.right<=measured.bounds.word.left-1,JSON.stringify({width,ordinal,bounds:measured.bounds}));
+   assert.equal(measured.ordinal,String(ordinal));
+   recordRowMetrics({width,ordinal,original,set:measured.geometry,bounds:measured.bounds});assertGeometry(measured.geometry,original,`${width}px ordinal ${ordinal}`);
   }
   await closeSheet();
  }

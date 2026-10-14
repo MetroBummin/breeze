@@ -73,7 +73,7 @@ const expected={
   "tests/verify-study-direction-browser.mjs": "9cca0ddab6e5ca4aaca65a231364bc3ac68e195411a92a1a74c302a8ac20fa3c",
   "tests/verify-study-motion-browser.mjs": "f2324bb5a107d583c3e4175a36a2921bf67743ca8be12730f81d432faf92197a",
   "tests/verify-study-session-swipe-browser.mjs": "d3f87c673ba5a5525d596aef53e5134ad0bb1ec9ef770935e68e915f7c3d0228",
-  "tests/verify-study-sets-browser.mjs": "b31677fd27ac68074ad7edad463085029ab478eca94da39c095f6dfcf9b0ca07",
+  "tests/verify-study-sets-browser.mjs": "92062bc63fdbab2368ecf16b74a2317e95d22f808aa727cd8e43ddb90864454b",
   "tests/verify-study-sets-ui.mjs": "7d3598f1bdf299c098d47d3b2fb1415740ac2c07e048d1ac1e89c9c401fb5528",
   "tests/verify-study-sets.mjs": "b5b6d8ce232609b83b2ba10fa895b69e76cfb924d07675590ef845a85fcb729e",
   "tests/verify-vocabulary-test-browser.mjs": "96db829a2c9015a2db6f3d48f42339dab1e5e8bb6dde93137de7d1291a74c74e",
