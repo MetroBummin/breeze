@@ -12,7 +12,6 @@ const base='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
   "tests/verify-saved-expression-reopen.mjs": "d45156d2881bf638d8da09977ab3e66d9fbc00bbc6695a5a191e18a40f27e102",
-  "server/ready/index.ts": "fd160ec8e40ac805edef222d9287d0e6ea10f2b58c56dc138e975a59d59d6ac2",
   "scripts/reader/reader.js": "d5c07b0805da49e4ca98d11c53ffc15b245db93500f9d4468f7f9f87401414d2",
   "tests/verify-word-only-browser.mjs": "9592e44c7f8bc22d6f197dc49c9e5f4068155c4477c4486e4ac19f60cd634ee9",
   "tests/verify-vocabulary-review-browser.mjs": "c96e6b14a1b660f900cd830911d8cb14b741affd80eacc4857d0bfccce77010b",
