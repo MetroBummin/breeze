@@ -61,8 +61,7 @@ try{
   for(let i=0;i<11;i++){
    const word=order[i],prompt=await page.locator('#vocabulary-test-prompt').innerText();
    for(const ko of Object.values(words).map(w=>w.ko))assert.ok(!prompt.includes(ko),'prompt leaks '+ko);
-   if(['bank','gentle','bright'].includes(word))assert.equal(await page.locator('#vocabulary-test-sentence').count(),0);
-   if(word==='quiet')assert.equal(await page.locator('#vocabulary-test-sentence strong').innerText(),'quiet');
+   assert.equal(await page.locator('#vocabulary-test-sentence').count(),0,'all examples stay hidden, including algorithm-approved sentences');
    await answer(page,i===0?'고요한':'');
   }
   assert.equal(await page.locator('.vocabulary-test-result').count(),11);assert.match(await page.locator('#vocabulary-test-ai-note').innerText(),/아직 연결되지/);
@@ -82,6 +81,7 @@ try{
   await page.screenshot({path:proof+'/'+engine.name()+'-phone-previous-batch.png',fullPage:true});
   await answer(page,'마지막');await page.waitForFunction(()=>window.testBatches.length===2);
   assert.deepEqual(await page.evaluate(()=>window.testBatches.map(b=>b.items.length)),[10,1]);
+  assert.equal(await page.evaluate(()=>window.testBatches.every(b=>b.items.every(item=>item.example===''))),true,'grading inputs remain word/meaning only');
   await page.evaluate(()=>window.testResponses[1]());await page.waitForFunction(()=>vocabularyTestUI.session.batches.get(10).status==='complete');
   const ids=await page.evaluate(()=>window.testBatches.map(b=>b.batchId));assert.equal(new Set(ids).size,2);
   await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>show('vocab'));await open(page);await page.locator('#vocabulary-test-resume').click();assert.equal(await page.locator('[data-batch="10"]').getAttribute('data-status'),'complete');

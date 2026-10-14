@@ -42,6 +42,8 @@ jobs:
       - run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Shipping release exclusion and study completion states
         run: node tests/verify-study-completion-browser.mjs
+      - name: Word-only display with retained source examples and CSV
+        run: node tests/verify-word-only-browser.mjs
       - name: Retained typed-test prototype with explicit fixture opt-in
         run: node tests/verify-vocabulary-test-browser.mjs
       - run: node tests/verify-simple-word-cards-browser.mjs
@@ -54,4 +56,5 @@ jobs:
             /tmp/breeze-vocabulary-test-proof/
             /tmp/breeze-study-direction-proof/
             /tmp/breeze-study-completion-proof/
+            /tmp/breeze-word-only-proof/
           retention-days: 14

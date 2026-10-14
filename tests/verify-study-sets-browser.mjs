@@ -106,7 +106,7 @@ try{
  await studyAction(originalQuiet.locator('.vword').click(),page);
  assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'true');
  assert.equal(await originalQuiet.locator('.vko').getAttribute('contenteditable'),'true');
- assert.equal(await originalQuiet.locator('.vex').isVisible(),true);
+ assert.equal(await originalQuiet.locator('.vex').count(),0);assert.equal(await originalQuiet.locator('.vmeta').isVisible(),true);
  await originalQuiet.locator('.vko').fill('조용하고 차분한');await studyAction(page.locator('#vcnt').click(),page);
  assert.equal(await page.evaluate(()=>words.q.ko),'조용하고 차분한','original wordbook meaning blur persists editing');
  await originalQuiet.locator('.vko').fill('조용한');await studyAction(page.locator('#vcnt').click(),page);
@@ -181,8 +181,8 @@ try{
  assert.equal(await quiet().locator('.chip').innerText(),chipBefore,'drag beginning on star cannot change its rating');
  assert.equal(await rows().count(),2,'drag beginning on star cannot exclude the row');await waitTranslation(quiet(),0);
  assert.equal(await quiet().locator('.vword').getAttribute('aria-expanded'),'false','star drag does not expand the word');
- await studyAction(quiet().locator('.vword').click(),page);assert.equal(await quiet().locator('.vex').isVisible(),true);
- await studyAction(quiet().locator('.vword').click(),page);assert.equal(await quiet().locator('.vex').isVisible(),false);
+ await studyAction(quiet().locator('.vword').click(),page);assert.equal(await quiet().locator('.vmeta').isVisible(),true);
+ await studyAction(quiet().locator('.vword').click(),page);assert.equal(await quiet().locator('.vmeta').isVisible(),false);
  // A pre-existing selected meaning must remain a row gesture, never initiate
  // the unrelated library's native drag/drop overlay (trusted mouse events).
  await quiet().locator('.vko').evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
@@ -217,8 +217,8 @@ try{
  for(const duration of [motion.transition,motion.animation])assert.ok(duration.split(',').every(value=>parseFloat(value)<=0.01),`reduced motion duration ${duration}`);
  await page.emulateMedia({reducedMotion:'no-preference'});
  await quiet().locator('.vword').focus();await studyAction(page.keyboard.press('Enter'),page);
- assert.equal(await quiet().locator('.vex').isVisible(),true,'keyboard opens example');
- await studyAction(page.keyboard.press('Space'),page);assert.equal(await quiet().locator('.vex').isVisible(),false,'keyboard closes example');
+ assert.equal(await quiet().locator('.vmeta').isVisible(),true,'keyboard opens source metadata');
+ await studyAction(page.keyboard.press('Space'),page);assert.equal(await quiet().locator('.vmeta').isVisible(),false,'keyboard closes source metadata');
  const hiddenAction=quiet().getByRole('button',{name:'quiet 세트에서 제외',exact:true});await hiddenAction.focus();
  await studyAction(page.keyboard.press('Enter'),page);await waitRows(1);assert.equal(await rows().count(),1,'keyboard fallback excludes without swipe');
  await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);assert.equal(await rows().count(),2);

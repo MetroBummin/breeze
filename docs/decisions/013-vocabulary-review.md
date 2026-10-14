@@ -293,3 +293,24 @@ The new [typed vocabulary test](031-vocabulary-test.md) owns its full page,
 question count, frozen word-group snapshot, typed responses and 10-answer batches.
 It never enters this review engine or updates its grades, FSRS, daily counters,
 simple-session storage or Meaning records.
+
+## Word-only display hold (2026-10-14 KST)
+
+The owner requested that word learning and word tests show words and meanings
+only until the example algorithm is reliable. Memory, All Words, saved-set lists,
+word detail and both study cards therefore omit examples, including accessible
+card labels. The retained typed-test prototype also omits example prompts and
+sends an empty example field to its optional grader. The prototype remains
+disabled in 1.9.3; this change does not approve enabling it.
+
+Stored examples, source metadata, captured card manifests, answers, study history
+and CSV examples remain intact. Reader original text, sentence interpretation and
+easy explanation remain available. The example extraction/highlight helpers and
+their algorithm tests are retained for later evaluation, but successful evaluation
+cannot reenable UI presentation: restoring it requires the owner's explicit
+subsequent decision and a separate implementation change.
+
+`verify-word-only-browser.mjs` checks display policy independently of a valid
+algorithm result, source metadata, CSV/data retention and 20 light/dark layouts.
+Existing completion/reentry and explicitly opted-in prototype tests retain their
+previous state/history contracts. Browser evidence does not prove native iOS QA.

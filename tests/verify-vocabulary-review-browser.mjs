@@ -168,7 +168,7 @@ try{
     await page.keyboard.press('Escape');
   });
 
-  await scenario('saved senses and phrase highlighting are independent and HTML-safe',{
+  await scenario('saved senses and source metadata stay independent while examples are hidden',{
     bank:fixture('bank',1,{ko:'은행',example:'The bank is open.',book:'Finance source'}),
     'bank::river':fixture('bank',2,{root:'bank',sense:true,ko:'강둑',example:'We sat on the bank beside the river.',book:'River source'}),
     'take care of':fixture('take care of',3,{ko:'돌보다',example:'Please take care of <img src=x onerror="window.reviewInjected=true"> & keep <b>words</b> literal.',book:'Source <b>literal</b> & text',phrase:true})
@@ -179,16 +179,13 @@ try{
     for(let i=0;i<3;i++){
       await assertHiddenAnswer(page);
       const expression=await page.locator('#review-expression').innerText();
-      const sentence=await page.locator('#review-sentence').innerText();
-      const marks=await page.locator('#review-sentence mark').allTextContents();
-      assert.ok(marks.some(text=>text.toLowerCase()===expression.toLowerCase()),'The saved expression is highlighted inside its original sentence');
+      assert.equal(await page.locator('#review-sentence').isVisible(),false);
+      assert.equal(await page.locator('#review-sentence').textContent(),'');
       assert.equal(await page.locator('#review-sentence img, #review-sentence b, #review-source b').count(),0,'Saved text is never interpreted as HTML');
       await reveal(page);
       const meaning=await page.locator('#review-meaning').innerText();
       const source=await page.locator('#review-source').innerText();seen.push([expression,meaning]);
       if(expression==='take care of'){
-        assert.ok(sentence.includes('<img src=x onerror="window.reviewInjected=true">'));
-        assert.ok(sentence.includes('<b>words</b>'));
         assert.ok(source.includes('Source <b>literal</b> & text'));
       }
       assert.equal(await page.evaluate(()=>window.reviewInjected),undefined);

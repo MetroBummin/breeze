@@ -853,10 +853,9 @@ function renderStudySetsStudy(set){
   const stack=studySetsNode('div','study-session-stack');
   const underneath=studySetsNode('div','study-session-next');underneath.setAttribute('aria-hidden','true');stack.append(underneath);
   const meanings=view.card.acceptedMeanings||[view.card.ko],meaningText=meanings.length>1?meanings.map((value,index)=>`${index+1}. ${value}`).join('\n'):view.card.ko;
-  const example=BreezeVocabularyTest.prompt({...view.card,acceptedMeanings:meanings}).text;
-  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${example} ${view.revealed?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
+  // Word/meaning only until the owner explicitly approves example display again.
+  const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.revealed?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
-  if(example){const sentence=studySetsNode('p','study-sets-card-example');renderStoredStudyExample(sentence,{...view.card,example});card.append(sentence);}
   const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?meaningText:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
   stack.append(card);body.append(stack);
   const hint=studySetsNode('p','study-session-hint','탭하여 정답 확인');hint.hidden=view.revealed;hint.setAttribute('aria-live','polite');body.append(hint,undoButton);

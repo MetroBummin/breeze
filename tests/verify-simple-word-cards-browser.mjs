@@ -31,7 +31,7 @@ try{
  assert.equal(await page.locator('#review-status').innerText(),'저장된 단어가 없어요. 읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 보세요.');
  assert.equal(await page.locator('#simple-word-next').isDisabled(),true);
  await page.evaluate(async ()=>{show('vocab');words={one:{word:'quiet',ko:'조용한',example:'The room is quiet.',book:'Book',status:2}};saveWords();renderVocab();await openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'0 / 1',JSON.stringify(await page.evaluate(()=>({view:activeAppView(),error:String(vocabularyReviewLastError),state:simpleStudySession,word:words})))) ;assert.equal(await page.locator('#review-sentence').isVisible(),true);assert.equal(await page.locator('#review-sentence strong').innerText(),'quiet');assert.equal(await page.locator('#review-meaning').isVisible(),false);
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 1',JSON.stringify(await page.evaluate(()=>({view:activeAppView(),error:String(vocabularyReviewLastError),state:simpleStudySession,word:words})))) ;assert.equal(await page.locator('#review-sentence').isVisible(),false);assert.equal(await page.locator('#review-sentence').textContent(),'');assert.equal(await page.locator('#review-meaning').isVisible(),false);
  await studyAction(page.locator('#review-flip').press('ArrowRight'),page);assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');
  await studyAction(page.locator('#review-flip').press('Enter'),page);assert.equal(await page.locator('#review-meaning').innerText(),'조용한');
  await studyAction(page.locator('#review-flip').press('Enter'),page);assert.equal(await page.locator('#review-meaning').isVisible(),true,'tap is one-way reveal');
