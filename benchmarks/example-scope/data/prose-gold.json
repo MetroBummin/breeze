@@ -1,0 +1,1832 @@
+{
+  "passages": [
+    {
+      "id": "austen-001",
+      "dataset": "gutenberg",
+      "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 116,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "austen-002",
+      "dataset": "gutenberg",
+      "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 260,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "austen-003",
+      "dataset": "gutenberg",
+      "text": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 106,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-004",
+      "dataset": "gutenberg",
+      "text": "Mr. Bennet replied that he had not.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 35,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-005",
+      "dataset": "gutenberg",
+      "text": "“But it is,” returned she; “for Mrs. Long has just been here, and she told me all about it.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 92,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-006",
+      "dataset": "gutenberg",
+      "text": "Mr. Bennet made no answer.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 26,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-007",
+      "dataset": "gutenberg",
+      "text": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 72,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-008",
+      "dataset": "gutenberg",
+      "text": "“_You_ want to tell me, and I have no objection to hearing it.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 63,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-009",
+      "dataset": "gutenberg",
+      "text": "“He came down to see the place”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 31,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-010",
+      "dataset": "gutenberg",
+      "text": "This was invitation enough.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 27,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "austen-011",
+      "dataset": "gutenberg",
+      "text": "“Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 397,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-012",
+      "dataset": "gutenberg",
+      "text": "“What is his name?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 19,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-013",
+      "dataset": "gutenberg",
+      "text": "“Is he married or single?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 26,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-014",
+      "dataset": "gutenberg",
+      "text": "“Oh, single, my dear, to be sure! A single man of large fortune; four or five thousand a year. What a fine thing for our girls!”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 33,
+          "category": "dialogue"
+        },
+        {
+          "start": 34,
+          "end": 94,
+          "category": "prose"
+        },
+        {
+          "start": 95,
+          "end": 128,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-015",
+      "dataset": "gutenberg",
+      "text": "“How so? how can it affect them?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 8,
+          "category": "dialogue"
+        },
+        {
+          "start": 9,
+          "end": 33,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-016",
+      "dataset": "gutenberg",
+      "text": "“My dear Mr. Bennet,” replied his wife, “how can you be so tiresome? You must know that I am thinking of his marrying one of them.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 68,
+          "category": "abbrev"
+        },
+        {
+          "start": 69,
+          "end": 131,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-017",
+      "dataset": "gutenberg",
+      "text": "“Is that his design in settling here?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 38,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-018",
+      "dataset": "gutenberg",
+      "text": "“Design? Nonsense, how can you talk so! But it is very likely that he _may_ fall in love with one of them, and therefore you must visit him as soon as he comes.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 8,
+          "category": "dialogue"
+        },
+        {
+          "start": 9,
+          "end": 39,
+          "category": "prose"
+        },
+        {
+          "start": 40,
+          "end": 161,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-019",
+      "dataset": "gutenberg",
+      "text": "“I see no occasion for that. You and the girls may go--or you may send them by themselves, which perhaps will be still better; for as you are as handsome as any of them, Mr. Bingley might like you the best of the party.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 28,
+          "category": "dialogue"
+        },
+        {
+          "start": 29,
+          "end": 220,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-020",
+      "dataset": "gutenberg",
+      "text": "“My dear, you flatter me. I certainly _have_ had my share of beauty, but I do not pretend to be anything extraordinary now. When a woman has five grown-up daughters, she ought to give over thinking of her own beauty.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 25,
+          "category": "dialogue"
+        },
+        {
+          "start": 26,
+          "end": 123,
+          "category": "prose"
+        },
+        {
+          "start": 124,
+          "end": 217,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-021",
+      "dataset": "gutenberg",
+      "text": "“In such cases, a woman has not often much beauty to think of.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 63,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-022",
+      "dataset": "gutenberg",
+      "text": "“But, my dear, you must indeed go and see Mr. Bingley when he comes into the neighbourhood.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 92,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-023",
+      "dataset": "gutenberg",
+      "text": "“It is more than I engage for, I assure you.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 45,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-024",
+      "dataset": "gutenberg",
+      "text": "“But consider your daughters. Only think what an establishment it would be for one of them. Sir William and Lady Lucas are determined to go, merely on that account; for in general, you know, they visit no new comers. Indeed you must go, for it will be impossible for _us_ to visit him, if you do not.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 29,
+          "category": "dialogue"
+        },
+        {
+          "start": 30,
+          "end": 91,
+          "category": "prose"
+        },
+        {
+          "start": 92,
+          "end": 216,
+          "category": "prose"
+        },
+        {
+          "start": 217,
+          "end": 301,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-025",
+      "dataset": "gutenberg",
+      "text": "“You are over scrupulous, surely. I dare say Mr. Bingley will be very glad to see you; and I will send a few lines by you to assure him of my hearty consent to his marrying whichever he chooses of the girls--though I must throw in a good word for my little Lizzy.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 33,
+          "category": "dialogue"
+        },
+        {
+          "start": 34,
+          "end": 264,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-026",
+      "dataset": "gutenberg",
+      "text": "“I desire you will do no such thing. Lizzy is not a bit better than the others: and I am sure she is not half so handsome as Jane, nor half so good-humoured as Lydia. But you are always giving _her_ the preference.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 36,
+          "category": "dialogue"
+        },
+        {
+          "start": 37,
+          "end": 166,
+          "category": "prose"
+        },
+        {
+          "start": 167,
+          "end": 215,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-027",
+      "dataset": "gutenberg",
+      "text": "“They have none of them much to recommend them,” replied he: “they are all silly and ignorant like other girls; but Lizzy has something more of quickness than her sisters.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 172,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-028",
+      "dataset": "gutenberg",
+      "text": "“Mr. Bennet, how can you abuse your own children in such a way? You take delight in vexing me. You have no compassion on my poor nerves.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 63,
+          "category": "abbrev"
+        },
+        {
+          "start": 64,
+          "end": 94,
+          "category": "prose"
+        },
+        {
+          "start": 95,
+          "end": 137,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-029",
+      "dataset": "gutenberg",
+      "text": "“You mistake me, my dear. I have a high respect for your nerves. They are my old friends. I have heard you mention them with consideration these twenty years at least.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 25,
+          "category": "dialogue"
+        },
+        {
+          "start": 26,
+          "end": 64,
+          "category": "prose"
+        },
+        {
+          "start": 65,
+          "end": 89,
+          "category": "prose"
+        },
+        {
+          "start": 90,
+          "end": 168,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-030",
+      "dataset": "gutenberg",
+      "text": "“Ah, you do not know what I suffer.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 36,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-031",
+      "dataset": "gutenberg",
+      "text": "“But I hope you will get over it, and live to see many young men of four thousand a year come into the neighbourhood.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 118,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-032",
+      "dataset": "gutenberg",
+      "text": "“It will be no use to us, if twenty such should come, since you will not visit them.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 85,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-033",
+      "dataset": "gutenberg",
+      "text": "“Depend upon it, my dear, that when there are twenty, I will visit them all.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 77,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-034",
+      "dataset": "gutenberg",
+      "text": "Mr. Bennet was so odd a mixture of quick parts, sarcastic humour, reserve, and caprice, that the experience of three-and-twenty years had been insufficient to make his wife understand his character. _Her_ mind was less difficult to develope. She was a woman of mean understanding, little information, and uncertain temper. When she was discontented, she fancied herself nervous. The business of her life was to get her daughters married: its solace was visiting and news.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 198,
+          "category": "abbrev"
+        },
+        {
+          "start": 199,
+          "end": 241,
+          "category": "prose"
+        },
+        {
+          "start": 242,
+          "end": 322,
+          "category": "prose"
+        },
+        {
+          "start": 323,
+          "end": 378,
+          "category": "prose"
+        },
+        {
+          "start": 379,
+          "end": 471,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "austen-035",
+      "dataset": "gutenberg",
+      "text": "“I hope Mr. Bingley will like it”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 33,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-036",
+      "dataset": "gutenberg",
+      "text": "Mr. Bennet was among the earliest of those who waited on Mr. Bingley. He had always intended to visit him, though to the last always assuring his wife that he should not go; and till the evening after the visit was paid she had no knowledge of it. It was then disclosed in the following manner. Observing his second daughter employed in trimming a hat, he suddenly addressed her with,--",
+      "spans": [
+        {
+          "start": 0,
+          "end": 69,
+          "category": "abbrev"
+        },
+        {
+          "start": 70,
+          "end": 247,
+          "category": "prose"
+        },
+        {
+          "start": 248,
+          "end": 294,
+          "category": "prose"
+        },
+        {
+          "start": 295,
+          "end": 386,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "austen-037",
+      "dataset": "gutenberg",
+      "text": "“I hope Mr. Bingley will like it, Lizzy.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 41,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-038",
+      "dataset": "gutenberg",
+      "text": "“We are not in a way to know _what_ Mr. Bingley likes,” said her mother, resentfully, “since we are not to visit.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 114,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-039",
+      "dataset": "gutenberg",
+      "text": "“But you forget, mamma,” said Elizabeth, “that we shall meet him at the assemblies, and that Mrs. Long has promised to introduce him.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 134,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-040",
+      "dataset": "gutenberg",
+      "text": "“I do not believe Mrs. Long will do any such thing. She has two nieces of her own. She is a selfish, hypocritical woman, and I have no opinion of her.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 51,
+          "category": "abbrev"
+        },
+        {
+          "start": 52,
+          "end": 82,
+          "category": "prose"
+        },
+        {
+          "start": 83,
+          "end": 151,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-041",
+      "dataset": "gutenberg",
+      "text": "“No more have I,” said Mr. Bennet; “and I am glad to find that you do not depend on her serving you.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 101,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-042",
+      "dataset": "gutenberg",
+      "text": "Mrs. Bennet deigned not to make any reply; but, unable to contain herself, began scolding one of her daughters.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 111,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-043",
+      "dataset": "gutenberg",
+      "text": "“Don’t keep coughing so, Kitty, for heaven’s sake! Have a little compassion on my nerves. You tear them to pieces.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 50,
+          "category": "dialogue"
+        },
+        {
+          "start": 51,
+          "end": 89,
+          "category": "prose"
+        },
+        {
+          "start": 90,
+          "end": 115,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-044",
+      "dataset": "gutenberg",
+      "text": "“Kitty has no discretion in her coughs,” said her father; “she times them ill.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 79,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-045",
+      "dataset": "gutenberg",
+      "text": "“I do not cough for my own amusement,” replied Kitty, fretfully. “When is your next ball to be, Lizzy?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 64,
+          "category": "dialogue"
+        },
+        {
+          "start": 65,
+          "end": 103,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-046",
+      "dataset": "gutenberg",
+      "text": "“To-morrow fortnight.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 22,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-047",
+      "dataset": "gutenberg",
+      "text": "“Ay, so it is,” cried her mother, “and Mrs. Long does not come back till the day before; so, it will be impossible for her to introduce him, for she will not know him herself.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 176,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-048",
+      "dataset": "gutenberg",
+      "text": "“Then, my dear, you may have the advantage of your friend, and introduce Mr. Bingley to _her_.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 95,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-049",
+      "dataset": "gutenberg",
+      "text": "“Impossible, Mr. Bennet, impossible, when I am not acquainted with him myself; how can you be so teasing?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 106,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-050",
+      "dataset": "gutenberg",
+      "text": "“I honour your circumspection. A fortnight’s acquaintance is certainly very little. One cannot know what a man really is by the end of a fortnight. But if _we_ do not venture, somebody else will; and after all, Mrs. Long and her nieces must stand their chance; and, therefore, as she will think it an act of kindness, if you decline the office, I will take it on myself.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 30,
+          "category": "dialogue"
+        },
+        {
+          "start": 31,
+          "end": 83,
+          "category": "prose"
+        },
+        {
+          "start": 84,
+          "end": 147,
+          "category": "prose"
+        },
+        {
+          "start": 148,
+          "end": 371,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-051",
+      "dataset": "gutenberg",
+      "text": "The girls stared at their father. Mrs. Bennet said only, “Nonsense, nonsense!”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 33,
+          "category": "prose"
+        },
+        {
+          "start": 34,
+          "end": 78,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-052",
+      "dataset": "gutenberg",
+      "text": "“What can be the meaning of that emphatic exclamation?” cried he. “Do you consider the forms of introduction, and the stress that is laid on them, as nonsense? I cannot quite agree with you _there_. What say you, Mary? For you are a young lady of deep reflection, I know, and read great books, and make extracts.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 65,
+          "category": "dialogue"
+        },
+        {
+          "start": 66,
+          "end": 159,
+          "category": "dialogue"
+        },
+        {
+          "start": 160,
+          "end": 198,
+          "category": "prose"
+        },
+        {
+          "start": 199,
+          "end": 218,
+          "category": "prose"
+        },
+        {
+          "start": 219,
+          "end": 313,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-053",
+      "dataset": "gutenberg",
+      "text": "Mary wished to say something very sensible, but knew not how.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 61,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "austen-054",
+      "dataset": "gutenberg",
+      "text": "“While Mary is adjusting her ideas,” he continued, “let us return to Mr. Bingley.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 82,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-055",
+      "dataset": "gutenberg",
+      "text": "“I am sick of Mr. Bingley,” cried his wife.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 43,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-056",
+      "dataset": "gutenberg",
+      "text": "“I am sorry to hear _that_; but why did you not tell me so before? If I had known as much this morning, I certainly would not have called on him. It is very unlucky; but as I have actually paid the visit, we cannot escape the acquaintance now.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 66,
+          "category": "dialogue"
+        },
+        {
+          "start": 67,
+          "end": 145,
+          "category": "prose"
+        },
+        {
+          "start": 146,
+          "end": 244,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-057",
+      "dataset": "gutenberg",
+      "text": "The astonishment of the ladies was just what he wished--that of Mrs. Bennet perhaps surpassing the rest; though when the first tumult of joy was over, she began to declare that it was what she had expected all the while.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 220,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-058",
+      "dataset": "gutenberg",
+      "text": "“How good it was in you, my dear Mr. Bennet! But I knew I should persuade you at last. I was sure you loved your girls too well to neglect such an acquaintance. Well, how pleased I am! And it is such a good joke, too, that you should have gone this morning, and never said a word about it till now.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 44,
+          "category": "abbrev"
+        },
+        {
+          "start": 45,
+          "end": 86,
+          "category": "prose"
+        },
+        {
+          "start": 87,
+          "end": 160,
+          "category": "prose"
+        },
+        {
+          "start": 161,
+          "end": 184,
+          "category": "prose"
+        },
+        {
+          "start": 185,
+          "end": 299,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "austen-059",
+      "dataset": "gutenberg",
+      "text": "“Now, Kitty, you may cough as much as you choose,” said Mr. Bennet; and, as he spoke, he left the room, fatigued with the raptures of his wife.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 143,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-060",
+      "dataset": "gutenberg",
+      "text": "“What an excellent father you have, girls,” said she, when the door was shut. “I do not know how you will ever make him amends for his kindness; or me either, for that matter. At our time of life, it is not so pleasant, I can tell you, to be making new acquaintances every day; but for your sakes we would do anything. Lydia, my love, though you _are_ the youngest, I dare say Mr. Bingley will dance with you at the next ball.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 77,
+          "category": "dialogue"
+        },
+        {
+          "start": 78,
+          "end": 175,
+          "category": "dialogue"
+        },
+        {
+          "start": 176,
+          "end": 318,
+          "category": "prose"
+        },
+        {
+          "start": 319,
+          "end": 427,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "austen-061",
+      "dataset": "gutenberg",
+      "text": "“Oh,” said Lydia, stoutly, “I am not afraid; for though I _am_ the youngest, I’m the tallest.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 94,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-001",
+      "dataset": "long-text",
+      "text": "On glancing over my notes of the seventy odd cases in which I have during the last eight years studied the methods of my friend Sherlock Holmes, I find many tragic, some comic, a large number merely strange, but none commonplace; for, working as he did rather for the love of his art than for the acquisition of wealth, he refused to associate himself with any investigation which did not tend towards the unusual, and even the fantastic. Of all these varied cases, however, I cannot recall any which presented more singular features than that which was associated with the well-known Surrey family of the Roylotts of Stoke Moran. The events in question occurred in the early days of my association with Holmes, when we were sharing rooms as bachelors in Baker Street. It is possible that I might have placed them upon record before, but a promise of secrecy was made at the time, from which I have only been freed during the last month by the untimely death of the lady to whom the pledge was given. It is perhaps as well that the facts should now come to light, for I have reasons to know that there are widespread rumours as to the death of Dr. Grimesby Roylott which tend to make the matter even more terrible than the truth.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 438,
+          "category": "prose"
+        },
+        {
+          "start": 439,
+          "end": 630,
+          "category": "prose"
+        },
+        {
+          "start": 631,
+          "end": 768,
+          "category": "prose"
+        },
+        {
+          "start": 769,
+          "end": 1000,
+          "category": "prose"
+        },
+        {
+          "start": 1001,
+          "end": 1229,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "speckled-002",
+      "dataset": "long-text",
+      "text": "It was early in April in the year '83 that I woke one morning to find Sherlock Holmes standing, fully dressed, by the side of my bed. He was a late riser, as a rule, and as the clock on the mantelpiece showed me that it was only a quarter-past seven, I blinked up at him in some surprise, and perhaps just a little resentment, for I was myself regular in my habits.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 133,
+          "category": "prose"
+        },
+        {
+          "start": 134,
+          "end": 365,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "speckled-003",
+      "dataset": "long-text",
+      "text": "\"Very sorry to wake you, Watson,\" said he, \"but it's the common lot this morning. Mrs. Hudson was woken, she did the same to me, and I to you.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 81,
+          "category": "dialogue"
+        },
+        {
+          "start": 82,
+          "end": 143,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "speckled-004",
+      "dataset": "long-text",
+      "text": "\"What is it, then--a fire?\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 27,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-005",
+      "dataset": "long-text",
+      "text": "\"No; a client. It seems that a young lady has arrived in a considerable state of excitement, who insists upon seeing me. She is waiting now in the sitting-room. Now, when young ladies wander about the metropolis at this hour of the morning, and wake sleepy people in their beds, I presume that it is something very pressing which they have to communicate. Should it prove to be an interesting case, you would, I am sure, wish to follow it from the outset. I thought, at any rate, that I should call you and give you the chance.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 14,
+          "category": "dialogue"
+        },
+        {
+          "start": 15,
+          "end": 120,
+          "category": "prose"
+        },
+        {
+          "start": 121,
+          "end": 160,
+          "category": "prose"
+        },
+        {
+          "start": 161,
+          "end": 355,
+          "category": "prose"
+        },
+        {
+          "start": 356,
+          "end": 455,
+          "category": "prose"
+        },
+        {
+          "start": 456,
+          "end": 528,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-006",
+      "dataset": "long-text",
+      "text": "\"My dear fellow, I would not miss it for anything.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 51,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-007",
+      "dataset": "long-text",
+      "text": "I had no keener pleasure than in following Holmes in his professional investigations, and in admiring the rapid deductions, as swift as intuitions, and yet always founded on a logical basis with which he unravelled the problems which were submitted to him. I rapidly threw on my clothes and was ready in a few minutes to accompany my friend down to the sitting-room. A lady dressed in black and heavily veiled, who had been sitting in the window, rose as we entered.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 256,
+          "category": "prose"
+        },
+        {
+          "start": 257,
+          "end": 366,
+          "category": "prose"
+        },
+        {
+          "start": 367,
+          "end": 466,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "speckled-008",
+      "dataset": "long-text",
+      "text": "\"Good-morning, madam,\" said Holmes cheerily. \"My name is Sherlock Holmes. This is my intimate friend and associate, Dr. Watson, before whom you can speak as freely as before myself. Ha! I am glad to see that Mrs. Hudson has had the good sense to light the fire. Please draw up to it, and I shall order you a cup of hot coffee, for I observe that you are shivering.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 44,
+          "category": "dialogue"
+        },
+        {
+          "start": 45,
+          "end": 73,
+          "category": "dialogue"
+        },
+        {
+          "start": 74,
+          "end": 181,
+          "category": "abbrev"
+        },
+        {
+          "start": 182,
+          "end": 185,
+          "category": "prose"
+        },
+        {
+          "start": 186,
+          "end": 261,
+          "category": "abbrev"
+        },
+        {
+          "start": 262,
+          "end": 365,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-009",
+      "dataset": "long-text",
+      "text": "\"It is not cold which makes me shiver,\" said the woman in a low voice, changing her seat as requested.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 102,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-010",
+      "dataset": "long-text",
+      "text": "\"It is fear, Mr. Holmes. It is terror.\" She raised her veil as she spoke, and we could see that she was indeed in a pitiable state of agitation, her face all drawn and grey, with restless frightened eyes, like those of some hunted animal. Her features and figure were those of a woman of thirty, but her hair was shot with premature grey, and her expression was weary and haggard. Sherlock Holmes ran her over with one of his quick, all-comprehensive glances.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 24,
+          "category": "abbrev"
+        },
+        {
+          "start": 25,
+          "end": 39,
+          "category": "dialogue"
+        },
+        {
+          "start": 40,
+          "end": 238,
+          "category": "prose"
+        },
+        {
+          "start": 239,
+          "end": 380,
+          "category": "prose"
+        },
+        {
+          "start": 381,
+          "end": 459,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "speckled-011",
+      "dataset": "long-text",
+      "text": "\"You must not fear,\" said he soothingly, bending forward and patting her forearm. \"We shall soon set matters right, I have no doubt. You have come in by train this morning, I see.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 81,
+          "category": "dialogue"
+        },
+        {
+          "start": 82,
+          "end": 132,
+          "category": "dialogue"
+        },
+        {
+          "start": 133,
+          "end": 180,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-012",
+      "dataset": "long-text",
+      "text": "\"You know me, then?\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 20,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-013",
+      "dataset": "long-text",
+      "text": "\"No, but I observe the second half of a return ticket in the palm of your left glove. You must have started early, and yet you had a good drive in a dog-cart, along heavy roads, before you reached the station.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 85,
+          "category": "dialogue"
+        },
+        {
+          "start": 86,
+          "end": 210,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "speckled-014",
+      "dataset": "long-text",
+      "text": "The lady gave a violent start and stared in bewilderment at my companion.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 73,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "speckled-015",
+      "dataset": "long-text",
+      "text": "\"There is no mystery, my dear madam,\" said he, smiling. \"The left arm of your jacket is spattered with mud in no less than seven places. The marks are perfectly fresh. There is no vehicle save a dog-cart which throws up mud in that way, and then only when you sit on the left-hand side of the driver.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 55,
+          "category": "dialogue"
+        },
+        {
+          "start": 56,
+          "end": 136,
+          "category": "dialogue"
+        },
+        {
+          "start": 137,
+          "end": 167,
+          "category": "prose"
+        },
+        {
+          "start": 168,
+          "end": 301,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-001",
+      "dataset": "long-text",
+      "text": "Mr. Sherlock Holmes, who was usually very late in the mornings, save upon those not infrequent occasions when he was up all night, was seated at the breakfast table. I stood upon the hearth-rug and picked up the stick which our visitor had left behind him the night before. It was a fine, thick piece of wood, bulbous-headed, of the sort which is known as a “Penang lawyer.” Just under the head was a broad silver band nearly an inch across. “To James Mortimer, M.R.C.S., from his friends of the C.C.H.,” was engraved upon it, with the date “1884.” It was just such a stick as the old-fashioned family practitioner used to carry—dignified, solid, and reassuring.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 165,
+          "category": "abbrev"
+        },
+        {
+          "start": 166,
+          "end": 273,
+          "category": "prose"
+        },
+        {
+          "start": 274,
+          "end": 374,
+          "category": "dialogue"
+        },
+        {
+          "start": 375,
+          "end": 441,
+          "category": "prose"
+        },
+        {
+          "start": 442,
+          "end": 548,
+          "category": "abbrev"
+        },
+        {
+          "start": 549,
+          "end": 662,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "hound-002",
+      "dataset": "long-text",
+      "text": "“Well, Watson, what do you make of it?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 39,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-003",
+      "dataset": "long-text",
+      "text": "Holmes was sitting with his back to me, and I had given him no sign of my occupation.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 85,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "hound-004",
+      "dataset": "long-text",
+      "text": "“How did you know what I was doing? I believe you have eyes in the back of your head.” “I have, at least, a well-polished, silver-plated coffee-pot in front of me,” said he. “But, tell me, Watson, what do you make of our visitor’s stick? Since we have been so unfortunate as to miss him and have no notion of his errand, this accidental souvenir becomes of importance. Let me hear you reconstruct the man by an examination of it.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 35,
+          "category": "dialogue"
+        },
+        {
+          "start": 36,
+          "end": 86,
+          "category": "dialogue"
+        },
+        {
+          "start": 87,
+          "end": 173,
+          "category": "dialogue"
+        },
+        {
+          "start": 174,
+          "end": 237,
+          "category": "dialogue"
+        },
+        {
+          "start": 238,
+          "end": 368,
+          "category": "prose"
+        },
+        {
+          "start": 369,
+          "end": 430,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-005",
+      "dataset": "long-text",
+      "text": "“I think,” said I, following as far as I could the methods of my companion, “that Dr. Mortimer is a successful, elderly medical man, well-esteemed since those who know him give him this mark of their appreciation.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 214,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "hound-006",
+      "dataset": "long-text",
+      "text": "“Good!” said Holmes. “Excellent!”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 20,
+          "category": "dialogue"
+        },
+        {
+          "start": 21,
+          "end": 33,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-007",
+      "dataset": "long-text",
+      "text": "“I think also that the probability is in favour of his being a country practitioner who does a great deal of his visiting on foot.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 131,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-008",
+      "dataset": "long-text",
+      "text": "“Because this stick, though originally a very handsome one has been so knocked about that I can hardly imagine a town practitioner carrying it. The thick-iron ferrule is worn down, so it is evident that he has done a great amount of walking with it.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 143,
+          "category": "dialogue"
+        },
+        {
+          "start": 144,
+          "end": 250,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-009",
+      "dataset": "long-text",
+      "text": "“Perfectly sound!” said Holmes.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 31,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-010",
+      "dataset": "long-text",
+      "text": "“And then again, there is the ‘friends of the C.C.H.’ I should guess that to be the Something Hunt, the local hunt to whose members he has possibly given some surgical assistance, and which has made him a small presentation in return.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 235,
+          "category": "abbrev"
+        }
+      ]
+    },
+    {
+      "id": "hound-011",
+      "dataset": "long-text",
+      "text": "“Really, Watson, you excel yourself,” said Holmes, pushing back his chair and lighting a cigarette. “I am bound to say that in all the accounts which you have been so good as to give of my own small achievements you have habitually underrated your own abilities. It may be that you are not yourself luminous, but you are a conductor of light. Some people without possessing genius have a remarkable power of stimulating it. I confess, my dear fellow, that I am very much in your debt.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 99,
+          "category": "dialogue"
+        },
+        {
+          "start": 100,
+          "end": 262,
+          "category": "dialogue"
+        },
+        {
+          "start": 263,
+          "end": 342,
+          "category": "prose"
+        },
+        {
+          "start": 343,
+          "end": 423,
+          "category": "prose"
+        },
+        {
+          "start": 424,
+          "end": 485,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-012",
+      "dataset": "long-text",
+      "text": "He had never said as much before, and I must admit that his words gave me keen pleasure, for I had often been piqued by his indifference to my admiration and to the attempts which I had made to give publicity to his methods. I was proud, too, to think that I had so far mastered his system as to apply it in a way which earned his approval. He now took the stick from my hands and examined it for a few minutes with his naked eyes. Then with an expression of interest he laid down his cigarette, and carrying the cane to the window, he looked over it again with a convex lens.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 224,
+          "category": "prose"
+        },
+        {
+          "start": 225,
+          "end": 340,
+          "category": "prose"
+        },
+        {
+          "start": 341,
+          "end": 431,
+          "category": "prose"
+        },
+        {
+          "start": 432,
+          "end": 576,
+          "category": "prose"
+        }
+      ]
+    },
+    {
+      "id": "hound-013",
+      "dataset": "long-text",
+      "text": "“Interesting, though elementary,” said he as he returned to his favourite corner of the settee. “There are certainly one or two indications upon the stick. It gives us the basis for several deductions.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 95,
+          "category": "dialogue"
+        },
+        {
+          "start": 96,
+          "end": 155,
+          "category": "dialogue"
+        },
+        {
+          "start": 156,
+          "end": 202,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-014",
+      "dataset": "long-text",
+      "text": "“Has anything escaped me?” I asked with some self-importance. “I trust that there is nothing of consequence which I have overlooked?”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 26,
+          "category": "dialogue"
+        },
+        {
+          "start": 27,
+          "end": 61,
+          "category": "prose"
+        },
+        {
+          "start": 62,
+          "end": 133,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "hound-015",
+      "dataset": "long-text",
+      "text": "“I am afraid, my dear Watson, that most of your conclusions were erroneous. When I said that you stimulated me I meant, to be frank, that in noting your fallacies I was occasionally guided towards the truth. Not that you are entirely wrong in this instance. The man is certainly a country practitioner. And he walks a good deal.”",
+      "spans": [
+        {
+          "start": 0,
+          "end": 75,
+          "category": "dialogue"
+        },
+        {
+          "start": 76,
+          "end": 207,
+          "category": "prose"
+        },
+        {
+          "start": 208,
+          "end": 257,
+          "category": "prose"
+        },
+        {
+          "start": 258,
+          "end": 302,
+          "category": "prose"
+        },
+        {
+          "start": 303,
+          "end": 329,
+          "category": "dialogue"
+        }
+      ]
+    },
+    {
+      "id": "wrap-001",
+      "dataset": "long-text",
+      "text": "On glancing over my notes of the seventy odd cases in which I have during the last eight years studied the methods of my friend Sherlock Holmes, I find many tragic, some comic, a large number merely strange, but none commonplace;\nfor, working as he did rather for the love of his art than for the acquisition of wealth, he refused to associate himself with any investigation which did not tend towards the unusual, and even the fantastic.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 438,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-002",
+      "dataset": "long-text",
+      "text": "Of all these varied cases, however, I cannot recall any which presented more singular features than\nthat which was associated with the well-known Surrey family of the Roylotts of Stoke Moran.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 191,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-003",
+      "dataset": "long-text",
+      "text": "The events in question occurred in the early days of my association with\nHolmes, when we were sharing rooms as bachelors in Baker Street.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 137,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-004",
+      "dataset": "long-text",
+      "text": "It is possible that I might have placed them upon record before, but a promise of secrecy was made at the time, from\nwhich I have only been freed during the last month by the untimely death of the lady to whom the pledge was given.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 231,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-005",
+      "dataset": "long-text",
+      "text": "It is perhaps as well that the facts should now come to light, for I have reasons to know that there are widespread\nrumours as to the death of Dr. Grimesby Roylott which tend to make the matter even more terrible than the truth.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 228,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-006",
+      "dataset": "long-text",
+      "text": "It was early in April in the year '83 that I woke one morning to find\nSherlock Holmes standing, fully dressed, by the side of my bed.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 133,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-007",
+      "dataset": "long-text",
+      "text": "He was a late riser, as a rule, and as the clock on the mantelpiece showed me that it was only a quarter-past seven,\nI blinked up at him in some surprise, and perhaps just a little resentment, for I was myself regular in my habits.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 231,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-008",
+      "dataset": "long-text",
+      "text": "\"Very sorry to wake you, Watson,\" said he,\n\"but it's the common lot this morning.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 81,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-009",
+      "dataset": "long-text",
+      "text": "It seems that a young lady has arrived in a considerable\nstate of excitement, who insists upon seeing me.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 105,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-010",
+      "dataset": "long-text",
+      "text": "Now, when young ladies wander about the metropolis at this hour of the morning, and wake sleepy people\nin their beds, I presume that it is something very pressing which they have to communicate.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 194,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-011",
+      "dataset": "long-text",
+      "text": "Should it prove to be an interesting case, you would,\nI am sure, wish to follow it from the outset.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 99,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-012",
+      "dataset": "long-text",
+      "text": "I had no keener pleasure than in following Holmes in his professional investigations, and in admiring the rapid deductions, as swift\nas intuitions, and yet always founded on a logical basis with which he unravelled the problems which were submitted to him.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 256,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-013",
+      "dataset": "long-text",
+      "text": "I rapidly threw on my clothes and was ready in a few minutes\nto accompany my friend down to the sitting-room.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 109,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-014",
+      "dataset": "long-text",
+      "text": "A lady dressed in black and heavily veiled, who had\nbeen sitting in the window, rose as we entered.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 99,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-015",
+      "dataset": "long-text",
+      "text": "This is my intimate friend and associate, Dr. Watson,\nbefore whom you can speak as freely as before myself.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 107,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-016",
+      "dataset": "long-text",
+      "text": "Please draw up to it, and I shall order you a cup of\nhot coffee, for I observe that you are shivering.\"",
+      "spans": [
+        {
+          "start": 0,
+          "end": 103,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-017",
+      "dataset": "long-text",
+      "text": "\"It is not cold which makes me shiver,\" said the woman\nin a low voice, changing her seat as requested.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 102,
+          "category": "pdf-linebreak"
+        }
+      ]
+    },
+    {
+      "id": "wrap-018",
+      "dataset": "long-text",
+      "text": "She raised her veil as she spoke, and we could see that she was indeed in a pitiable state of agitation,\nher face all drawn and grey, with restless frightened eyes, like those of some hunted animal.",
+      "spans": [
+        {
+          "start": 0,
+          "end": 198,
+          "category": "pdf-linebreak"
+        }
+      ]
+    }
+  ]
+}

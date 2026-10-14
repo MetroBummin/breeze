@@ -1,5 +1,8 @@
 .DS_Store
 node_modules/
+
+# Local exam text for the example-scope run. Do not commit the PDFs or the JSON.
+benchmarks/example-scope/data/private/
 supabase/.temp/
 supabase/.env.article-preview.local
 
