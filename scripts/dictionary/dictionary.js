@@ -261,10 +261,6 @@ function contextCardKey(root, sentence){ return `${root}::${sentenceHash(sentenc
 function senseCardKey(root, meaning){ return `${root}::sense:${sentenceHash(meaning)}`; }
 function phraseCardKey(canonical){return 'phrase:'+String(canonical||'').trim().replace(/\s+/g,' ').toLowerCase();}
 function meaningKey(meaning){ return String(meaning||'').trim().replace(/\s+/g,' ').toLowerCase(); }
-function findContextCard(root, sentence){
-  const id=contextCardKey(root,sentence);
-  return words[id] ? id : null;
-}
 function rememberSenseContext(id, sentence, clickedIndex=-1){
   const item=words[id],hash='v2:'+sentenceHash(sentence)+':'+clickedIndex;
   if(!item||!hash)return;

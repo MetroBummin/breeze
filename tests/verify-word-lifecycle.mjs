@@ -39,7 +39,7 @@ const lexicalCore = readFileSync(resolve(root, 'modules/lexical/core.js'), 'utf8
 const wordIntegrity = readFileSync(resolve(root, 'scripts/core/word-integrity.js'), 'utf8');
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
 const mergeWordStateSource = syncSource.slice(syncSource.indexOf('function preserveWordConflict('),
-  syncSource.indexOf('async function mergeVaultPayload('));
+  syncSource.indexOf('async function readLegacyRows('));
 
 /* ---- 가짜 화면 ----
    사전 창은 그리는 자리가 많습니다. 여기서 보고 싶은 것은 그 내용이 아니라

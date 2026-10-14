@@ -26,7 +26,7 @@ const DIRS  = ['scripts', 'styles', 'assets', 'modules', 'public'];
    빠지는 것은 사람이 읽으려고 둔 메모뿐입니다. */
 const SKIP = /(^|\/)\.DS_Store$|^scripts\/library\/samples\.js$|^assets\/samples\/|^assets\/brand\/icons\/|^assets\/brand\/wordmarks\/.*\.png$|^assets\/brand\/(?:app-icon\.svg|README\.md|breeze-day(?:-wide)?\.(?:jpg|avif))$|^assets\/fonts\/gowun-batang-ui\.txt$/;
 // Kept in source for future review/experiments, never needed by the shipped OFF deck.
-const PARKED = /^(?:assets\/brand\/review\/|assets\/brand\/thunderhead-round\.png$|modules\/(?:exam-shorts|dict-seed)\/|scripts\/vendor\/ts-fsrs-5\.4\.2\.js$|scripts\/core\/vocabulary-review\.js$)/;
+const PARKED = /^(?:assets\/brand\/review\/|assets\/brand\/thunderhead-round\.png$|modules\/(?:exam-shorts|dict-seed)\/|scripts\/vendor\/ts-fsrs-5\.4\.2\.js$|scripts\/core\/vocabulary-review\.js$|scripts\/sync\/dormant\/)/;
 if(!/const ADVANCED_VOCABULARY_REVIEW_ENABLED=false;/.test(readFileSync(resolve(root,'scripts/ui/vocabulary-review.js'),'utf8'))){
   throw new Error('Advanced review requires restoring its entry scripts and native assets before packaging.');
 }

@@ -42,18 +42,18 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=7b532ed7">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
-  <link rel="stylesheet" href="styles/home.css?v=26f7c2fb">
+  <link rel="stylesheet" href="styles/home.css?v=07a20309">
   <link rel="stylesheet" href="styles/article-preview.css?v=86bd1892">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=552ccfe3">
-  <link rel="stylesheet" href="styles/reader.css?v=5bacd539">
-  <link rel="stylesheet" href="styles/dictionary.css?v=af3e1997">
-  <link rel="stylesheet" href="styles/components.css?v=d347f199">
+  <link rel="stylesheet" href="styles/reader.css?v=d8d7ce52">
+  <link rel="stylesheet" href="styles/dictionary.css?v=e8263cbe">
+  <link rel="stylesheet" href="styles/components.css?v=007ef09d">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=fd5f7e37">
-  <link rel="stylesheet" href="styles/study-sets.css?v=f7b68315">
-  <link rel="stylesheet" href="styles/vocabulary-test.css?v=2c75722a">
+  <link rel="stylesheet" href="styles/study-sets.css?v=2d142181">
+  <link rel="stylesheet" href="styles/vocabulary-test.css?v=844a3652">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=b89eaf89">
+  <link rel="stylesheet" href="styles/home-shell.css?v=ff1c9643">
   <link rel="stylesheet" href="styles/onboarding.css?v=17f829a6">
   <link rel="stylesheet" href="styles/header-controls.css?v=509167f0">
 
@@ -71,7 +71,7 @@
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=01738380"></script>
   <script defer src="scripts/core/lazy-lib.js?v=152792fc"></script>
-  <script defer src="scripts/core/storage.js?v=abd59462"></script>
+  <script defer src="scripts/core/storage.js?v=1c1cde90"></script>
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=114c4fca"></script>
@@ -81,15 +81,15 @@
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=903649aa"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=5c42e803"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=f0e41667"></script>
   <script defer src="scripts/reader/pdf-pinch.js?v=2e47e0f6"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=b33b0d4a"></script>
-  <script defer src="scripts/library/shared-links.js?v=264756e6"></script>
+  <script defer src="scripts/library/library.js?v=3f27e9ed"></script>
+  <script defer src="scripts/library/shared-links.js?v=9b5e1c4a"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=14fe2693"></script>
   <script defer src="scripts/library/longreads.js?v=902909ef"></script>
@@ -103,7 +103,7 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=e5d75402"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=cd263ecc"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/study-motion.js?v=9b1d7066"></script>
@@ -112,14 +112,14 @@
   <script defer src="scripts/ui/wordbook.js?v=55ebd609"></script>
   <script defer src="scripts/core/study-sets.js?v=8658200b"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=e66657e2"></script>
-  <script defer src="scripts/ui/study-sets.js?v=8cf929bb"></script>
+  <script defer src="scripts/ui/study-sets.js?v=691c48e2"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
   <script defer src="scripts/core/vocabulary-test-storage.js?v=7e78cae9"></script>
   <script defer src="scripts/dictionary/vocabulary-test-grading.js?v=83c32b98"></script>
   <script defer src="scripts/ui/vocabulary-test.js?v=ae468ef8"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
-  <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
-  <script defer src="scripts/reader/original-session.js?v=fc16eb5f"></script>
+  <script defer src="scripts/reader/mode-bridge.js?v=922378bf"></script>
+  <script defer src="scripts/reader/original-session.js?v=08a077c1"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
   <script defer src="scripts/reader/pdf-ink-store.js?v=5159b552"></script>
   <script defer src="scripts/reader/pdf-ink.js?v=73b7f3d7"></script>
@@ -134,7 +134,7 @@
   <script defer src="scripts/ui/preferences.js?v=605490b3"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
-  <script defer src="scripts/sync/sync.js?v=0485e5de"></script>
+  <script defer src="scripts/sync/sync.js?v=54e68659"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=89f4b588"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
@@ -144,7 +144,7 @@
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=0c680478"></script>
   <link rel="stylesheet" href="styles/study.css?v=da9a7021">
-  <link rel="stylesheet" href="styles/surfaces.css?v=03a845f8">
+  <link rel="stylesheet" href="styles/surfaces.css?v=a1d19656">
 </head>
 <body>
 <div id="app">
@@ -587,8 +587,6 @@
     <input id="onboard-fileinput" type="file" accept=".pdf,.epub,.txt" hidden>
   </section>
 </div>
-<input type="file" id="recovery-fileinput" accept=".txt,text/plain" hidden>
-<input type="file" id="reading-backup-input" accept=".zip,.breeze.zip,application/zip" hidden>
 <dialog id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
   <div id="am-card" class="task-surface">
     <button id="am-close" class="task-close" type="button" aria-label="추가 창 닫기" onclick="closeAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>

@@ -59,12 +59,6 @@ function bridgeSentenceFinder(value){
   };
 }
 
-/* 한 자리만 물을 때. 여러 자리를 물을 것이라면 위의 finder 를 한 번 만들어 두고
-   그것을 부르세요 — 그러라고 나눠 놓았습니다. */
-function bridgeSentenceAt(value,offset){
-  return bridgeSentenceFinder(value)(offset);
-}
-
 /* 문장 하나는 자리를 가리키기에 모자랍니다. "He nodded." 같은 문장은 책 어디에나
    있는데, 예전에는 **처음 나오는 자리**를 그냥 돌려주었습니다. 그래서 400쪽짜리
    책 한가운데서 모드를 바꾸면 1장으로 튀었습니다.

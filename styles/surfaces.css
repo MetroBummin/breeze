@@ -29,7 +29,7 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 .task-surface button:focus-visible,#set-close:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
 #wordbook-add-form>.task-close,#task-form>.task-close{margin:0;}
 /* Settings keeps opaque content groups and a blue sign-in primary exception. */
-#settings-modal :is(.sm-mini,.sm-linkish,.settings-actions-group>button,.sm-recovery-actions button,.sm-device-move button){min-height:44px;font-size:14px;}
+#settings-modal :is(.sm-mini,.sm-linkish,.settings-actions-group>button){min-height:44px;font-size:14px;}
 #settings-modal .sm-mini{border-radius:12px;}
 #settings-modal .sm-btn{min-height:48px;border-radius:16px;}
 #settings-modal .set-row{flex-wrap:wrap;}

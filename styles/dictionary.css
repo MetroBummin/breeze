@@ -96,7 +96,6 @@ body.dark :is(#word-peek,#sentence-peek)::before{
      쨍한 빨강이 아니라 창의 다른 곳에서 이미 쓰는 `--danger` 한 벌입니다. */
   /* 팝업 폭 안에서 이 두 단추가 한 줄에 다 서지 못하면 글자를 줄이는 대신
      줄을 바꿉니다. 넘쳐서 창에 가로 스크롤을 만드는 것보다 낫습니다. */
-  #p-word-tools{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
   .p-tool{flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px;
     border:1px solid var(--mark-line); border-radius:9px; background:var(--mark-bg); color:var(--soft2);
     cursor:pointer; font:600 11px var(--ui); white-space:nowrap; transition:.16s;}
@@ -124,9 +123,6 @@ body.dark :is(#word-peek,#sentence-peek)::before{
   #p-ai-saved{position:absolute; top:9px; right:10px; padding:2px 7px; border-radius:9px;
     background:var(--sky); color:var(--brand-strong); font-size:9.5px; font-weight:600;
     letter-spacing:0; white-space:nowrap;}
-  /* 그 자리에 지우기 단추가 이미 서 있으면 그 왼쪽으로 비켜섭니다. 단추는 이
-     배지보다 앞에 있으므로(`~`) 있는지 없는지를 CSS 가 그대로 읽습니다. */
-  #p-meaning-del:not([hidden]) ~ .cap #p-ai-saved{right:38px;}
   #p-ai-saved[hidden]{display:none;}
   #p-ai .m{font-size:18px; font-weight:700; color:var(--ai-ink); line-height:1.4;}
   #p-ai .pos{font-size:11.5px; color:var(--soft); font-style:italic; margin-left:6px; font-weight:400;}
@@ -135,12 +131,6 @@ body.dark :is(#word-peek,#sentence-peek)::before{
   /* 뜻은 읽는 글자입니다. 고치는 칸이 아닙니다 — 바꾸고 싶으면 × 로 지우고
      ＋ 로 새로 적습니다. 그래야 뜻에 필요한 손짓이 셋으로 남습니다. */
   #p-ai .mk{display:inline;}
-  /* 지우는 단추는 뜻 칸 안에만 있습니다. 칩 안에는 두지 않습니다 — 손가락 하나
-     넓이에서 "고르기"와 "지우기"가 겹치면 둘 다 못 믿게 됩니다. */
-  #p-meaning-del{position:absolute; top:7px; right:7px; width:26px; height:26px; border:none; border-radius:50%;
-    background:transparent; color:var(--ai-quiet); font:400 17px/1 var(--ui); cursor:pointer;}
-  #p-meaning-del:hover{background:var(--danger-bg); color:var(--danger);}
-  #p-meaning-del[hidden]{display:none;}
   #p-ai .cap{padding-right:26px;}
   /* ══ 오로라 ══════════════════════════════════════════════
      AI 를 기다리는 동안 뜨는 장치. 낱말 하나든 문장 하나든 같은 것을 씁니다 —
@@ -295,19 +285,6 @@ body.sentence-result-anchored #ps-easy{margin:12px 0 0;}
   .p-sec-row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px;}
   #p-alt-sec{display:none; letter-spacing:0; font-weight:500;}
   #p-alt-sec.on{display:block;}
-  #p-add-sense{flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:50%;
-    background:var(--paper2); color:var(--soft); font:400 14px/1 var(--ui); cursor:pointer;}
-  #p-add-sense:hover{border-color:var(--blue); color:var(--blue); background:var(--sky);}
-  #p-sense-add{margin-top:8px;}
-  #p-sense-add[hidden]{display:none;}
-  /* 이 칸의 글자는 16px 밑으로 내려가면 안 됩니다. iOS Safari 는 글자가 그보다
-     작은 칸에 손이 닿으면 읽으라고 화면 전체를 당겨 키웁니다 — 낱말 창만이 아니라
-     읽던 쪽까지 함께 커지고, 손가락으로 되돌리기가 쉽지 않습니다. 막는 길은 두
-     가지인데, viewport 에 확대 금지를 적는 쪽은 원본 종이를 손으로 키워 보는 길까지
-     같이 막습니다. 그래서 이 칸의 글자만 16px 로 둡니다. */
-  #p-sense-input{width:100%; box-sizing:border-box; border:1px solid var(--blue); border-radius:12px;
-    padding:9px 11px; background:var(--field); color:var(--ink); font:400 16px var(--ui); outline:none;
-    box-shadow:0 0 0 2px var(--blue-ring);}
   #p-alts{display:none; flex-wrap:wrap; gap:7px;}
   #p-alts.on{display:flex;}
   #p-saved-senses{display:none; flex-wrap:wrap; gap:6px;}
@@ -374,7 +351,7 @@ body.sentence-result-anchored #ps-easy{margin:12px 0 0;}
 #panel #p-top,#panel #p-clicked,#panel #p-ai,#panel #p-aibtn,#panel #p-aihint{order:0;}
 #panel #p-en-section{order:3;}
 #panel #p-ex-fold{order:4;}
-#panel #p-sense-add,#panel #p-alt-sec,#panel #p-alts{order:5;}
+#panel #p-alt-sec,#panel #p-alts{order:5;}
 #panel #p-tools-fold{order:6;}
 #panel details{font:13px/1.5 var(--ui);}
 #panel summary{cursor:pointer;color:var(--sentence-glass-secondary);padding:5px 0;}
@@ -386,8 +363,6 @@ body.sentence-result-anchored #ps-easy{margin:12px 0 0;}
 #panel .saved-sense:hover .sense-remove{color:var(--sentence-glass-ink);}
 #panel #p-defs{font-size:14px;line-height:1.55;margin:0;}
 #panel #p-ex{font-size:15px;line-height:1.6;margin:5px 0 0;}
-#panel #p-word-tools{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0;}
-#panel #p-word-tools button{position:static;width:auto;height:auto;min-height:36px;padding:6px 10px;border:1px solid var(--sentence-glass-line);border-radius:10px;background:transparent;color:inherit;font:12px var(--ui);}
 #panel #p-en-retry{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--sentence-glass-line);border-radius:50%;background:transparent;color:var(--sentence-glass-secondary);padding:0;cursor:pointer;}
 #panel [hidden]{display:none!important;}
 

@@ -26,8 +26,6 @@ body:has(#v-vocabulary-test.on)::before,body:has(#v-vocabulary-test.on) #topbar{
 .vocabulary-test-progress{font-size:13px;font-variant-numeric:tabular-nums;color:var(--settings-muted);padding-bottom:12px;border-bottom:2px solid var(--brand-signature);}
 .vocabulary-test-prompt{padding:24px 0 16px;outline:none;}
 .vocabulary-test-prompt h2{font-size:clamp(28px,5vw,40px);font-weight:600;}
-.vocabulary-test-sentence{font:400 20px/1.75 var(--ui);margin:16px 0;}
-.vocabulary-test-sentence strong{font-weight:700;text-decoration:underline;text-decoration-color:var(--brand-signature);text-decoration-thickness:3px;text-underline-offset:4px;}
 .vocabulary-test-form{margin-top:16px;}
 .vocabulary-test-form label{display:block;font-size:14px;margin-bottom:12px;}
 #vocabulary-test-answer{display:block;width:100%;min-height:96px;resize:vertical;box-sizing:border-box;border:1px solid var(--settings-line);border-radius:16px;background:var(--settings-group);color:var(--settings-ink);padding:16px;font:400 18px/1.6 var(--ui);scroll-margin-bottom:24px;}
@@ -56,6 +54,6 @@ body:has(#v-vocabulary-test.on)::before,body:has(#v-vocabulary-test.on) #topbar{
 .vocabulary-test-batch-answer p{font-size:14px;white-space:pre-wrap;}
 #wordbook-test{min-height:44px;min-width:44px;border:0;background:none;color:var(--settings-ink);font:500 13px var(--ui);padding:8px;cursor:pointer;}
 @media(max-width:380px){.vocabulary-test-shell{padding-left:16px;padding-right:16px;}.vocabulary-test-verdicts{gap:4px;}.vocabulary-test-verdicts button{padding:8px;}}
-@media(max-height:600px){.vocabulary-test-header{margin-bottom:16px;}.vocabulary-test-prompt{padding:8px 0;}.vocabulary-test-prompt h2{font-size:28px;}.vocabulary-test-sentence{font-size:18px;margin:8px 0;}.vocabulary-test-form{margin-top:8px;}}
+@media(max-height:600px){.vocabulary-test-header{margin-bottom:16px;}.vocabulary-test-prompt{padding:8px 0;}.vocabulary-test-prompt h2{font-size:28px;}.vocabulary-test-form{margin-top:8px;}}
 .vocabulary-test-count-label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;}
 #vocabulary-test-count{width:104px;min-height:44px;box-sizing:border-box;border:1px solid var(--settings-line);border-radius:12px;padding:8px 12px;background:var(--settings-group);color:var(--settings-ink);font:400 16px var(--ui);}

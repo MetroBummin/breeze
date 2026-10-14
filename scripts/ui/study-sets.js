@@ -10,7 +10,7 @@ const studySetsDirectoryPositions=new Map();
 const studySetsDirectoryFocus=new Map();
 let studySetsReadEpoch=0,studySetsHomeEpoch=0;
 const studySetsUI={
-  allWordsList:/** @type {{refresh:()=>void,dispose:()=>void}|null} */(null),
+  allWordsList:/** @type {{refresh:()=>void,removeId:(id:string)=>(Element|null),dispose:()=>void}|null} */(null),
   dialog:/** @type {HTMLDialogElement|null} */(null),
   sheet:/** @type {HTMLElement|null} */(null),
   body:/** @type {HTMLElement|null} */(null),
@@ -423,7 +423,7 @@ function studySetsAnimateExit(row){
       const replacement=studySetsUI.allWordsList.removeId(row.dataset.cardId);
       if(row.isConnected)row.remove();
       if(!studySetsUI.body.querySelector('.study-sets-word-row'))studySetsUI.body.replaceChildren(studySetsEmpty('세트에 학습할 단어가 없어요',''));
-      else if(focused){(replacement?.querySelector('.vword')||studySetsUI.title).focus({preventScroll:true});}
+      else if(focused){/** @type {HTMLElement} */(replacement?.querySelector('.vword')||studySetsUI.title).focus({preventScroll:true});}
       return;
     }
     row.remove();

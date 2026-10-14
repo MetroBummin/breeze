@@ -41,5 +41,5 @@
     "skipLibCheck": true
   },
   "include": ["types/**/*.d.ts", "scripts/**/*.js"],
-  "exclude": ["scripts/vendor"]
+  "exclude": ["scripts/vendor", "scripts/sync/dormant"]
 }

@@ -9,7 +9,7 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const helper=readFileSync(resolve(root,'scripts/core/word-integrity.js'),'utf8');
 const sync=readFileSync(resolve(root,'scripts/sync/sync.js'),'utf8');
 const state=readFileSync(resolve(root,'scripts/core/state.js'),'utf8');
-const merger=sync.slice(sync.indexOf('function preserveWordConflict('),sync.indexOf('async function mergeVaultPayload('));
+const merger=sync.slice(sync.indexOf('function preserveWordConflict('),sync.indexOf('async function readLegacyRows('));
 assert.ok(merger.startsWith('function preserveWordConflict('));
 
 function world(initial={},deleted={}){

@@ -39,7 +39,7 @@ export async function publicAddresses(url,resolve=lookup){
   if(!addresses.length||addresses.some(item=>!publicAddress(item.address)))throw new Error('bad_url');
   return addresses;
 }
-function untilAbort(job,signal){
+export function untilAbort(job,signal){
   return new Promise((resolve,reject)=>{
     const abort=()=>reject(signal.reason||new DOMException('Aborted','AbortError'));
     if(signal.aborted)return abort();

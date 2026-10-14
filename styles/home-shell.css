@@ -26,7 +26,6 @@ body.settings-open{overflow:hidden;}
 .settings-handle{position:absolute;top:12px;left:calc(50% - 18px);width:36px;height:4px;border-radius:2px;background:var(--settings-handle);}
 #settings-modal #set-card h2{font:650 23px/32px var(--ui);letter-spacing:-.35px;margin:0 0 16px;}
 #settings-modal #set-close{position:absolute;right:24px;top:20px;float:none;width:36px;height:36px;font:400 23px/1 var(--ui);background:var(--settings-close);color:var(--settings-ink);}
-#settings-modal .set-tabs{display:none;}
 #settings-modal #set-card .set-panel{display:block;}
 .settings-section-title{font:500 10px/15px var(--ui);color:var(--settings-muted);margin:22px 0 8px;text-transform:uppercase;letter-spacing:.2px;}
 #sm-body>.settings-section-title:first-child{margin-top:0;}
@@ -52,8 +51,6 @@ body.settings-open{overflow:hidden;}
 @media(prefers-reduced-motion:reduce){#settings-modal,#settings-modal #set-card{transition:none;}}
 
 #settings-modal #sm-body>.desc{background:var(--settings-group);border-radius:15px;padding:16px;}
-#settings-modal .sm-vault{background:var(--settings-group);border-color:var(--settings-line);color:var(--settings-ink);}
-#settings-modal .sm-vault p{color:var(--settings-muted);}
 
 /* Book and article import shares the expanded word popup's glass surface. */
 #add-modal #am-card{position:relative;isolation:isolate;box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-height:min(76vh,760px);margin:0;padding:22px 22px 24px;border:1px solid var(--sentence-glass-line);border-radius:22px;background:var(--sentence-glass-solid);color:var(--sentence-glass-ink);box-shadow:var(--sentence-glass-shadow);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(5px) scale(.985);transition:transform .24s cubic-bezier(.2,.7,.25,1);--ink:var(--sentence-glass-ink);--soft:var(--sentence-glass-muted);--sheet:var(--sentence-glass-action);--line:var(--sentence-glass-line);}
