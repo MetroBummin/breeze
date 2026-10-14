@@ -109,6 +109,10 @@ const segmented = identityContext.bookContentFingerprint(['Hello', 'world.', 'Ne
 const joined = identityContext.bookContentFingerprint(['Hello world.', 'Next page']);
 assert.equal(segmented, joined, 'Fingerprint changed with paragraph segmentation');
 
+assert.equal(existsSync(resolve(root, 'scripts/sync/dormant/vault-recovery.js')), true,
+  'The dormant recovery, pairing, and reading-backup archive is missing');
+assert.doesNotMatch(index, /scripts\/sync\/dormant/,
+  'Dormant sync recovery code is loaded by the app again');
 const syncSource = readFileSync(resolve(root, 'scripts/sync/sync.js'), 'utf8');
 assert.match(syncSource,/const WORDBOOK_ROW='__breeze_wordbook_v1__'/,
   'The account wordbook row is missing');

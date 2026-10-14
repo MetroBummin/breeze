@@ -4,7 +4,7 @@ import {existsSync,readFileSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url)),out=resolve(root,'www');
-for(const path of ['scripts/vendor/ts-fsrs-5.4.2.js','scripts/core/vocabulary-review.js','assets/brand/review','assets/brand/thunderhead-round.png','modules/exam-shorts','modules/dict-seed']){
+for(const path of ['scripts/vendor/ts-fsrs-5.4.2.js','scripts/core/vocabulary-review.js','assets/brand/review','assets/brand/thunderhead-round.png','modules/exam-shorts','modules/dict-seed','scripts/sync/dormant']){
  assert(existsSync(resolve(root,path)),'source must remain: '+path);
  assert(!existsSync(resolve(out,path)),'parked resource must not ship: '+path);
 }
