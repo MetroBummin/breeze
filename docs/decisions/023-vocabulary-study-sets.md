@@ -121,15 +121,14 @@ never merges different definitions. The stored identity is independent of a
 source's book label, example, record key, or timestamp. Conservative exact
 matching avoids silently merging differing saved content.
 
-Source deletion or editing cannot erase or rewrite an existing captured card.
+Editing a saved meaning does not rewrite an existing captured card.
 Exclusion removes a card only from this set's active membership, with Undo.
 Excluded identities remain recorded; the old excluded-screen history remains
 readable without adding a fourth action to the new edit menu.
-`새 단어 가져오기 · N개` is an explicit action in the set detail footer,
-shown only when unseen eligible words are available. A tap imports them directly;
-repeated activation cannot duplicate snapshots. It is never automatic synchronization;
-it adds only unseen, non-excluded identities. No automatic import prompt or
-synchronization toggle is introduced.
+Saving a word from a book that already belongs to a set adds that word to the
+set. The same word and meaning, once excluded, is not added again. Deleting a
+word from Breeze Memory removes it from the set as well; an open study round
+keeps its starting list until that round ends. See the book-link section below.
 
 `책 추가` explicitly extends a set with selected additional source titles and
 captures only unseen, non-excluded identities from those new titles. It never
@@ -478,3 +477,23 @@ subsequent decision and a separate implementation change.
 algorithm result, source metadata, CSV/data retention and 20 light/dark layouts.
 Existing completion/reentry and explicitly opted-in prototype tests retain their
 previous state/history contracts. Browser evidence does not prove native iOS QA.
+
+## Book sets follow later saves (2026-10-14)
+
+A set made from one or more books stays linked to those books. Saving a word
+from one of those books adds the word to every such set. No **새 단어 가져오기**
+action remains. `책 추가` still captures the newly chosen books at that moment.
+
+The link adds only a word and meaning the set has not seen. Removing a word
+from the set keeps it in Breeze Memory and records the exclusion, so saving
+that same word again from the same book does not put it back. Deleting the
+word from Breeze Memory removes that captured card from the set. While
+**학습 시작하기** is in progress, the round keeps the list it started with,
+including a word deleted from Memory during the round. After the round, the
+set list omits it, and the next **학습 시작하기** uses the updated count.
+Words saved during a round appear in the set immediately and join the following
+round, not the one already started.
+
+Existing sets, captured cards, exclusions and unfinished rounds stay as they
+were. Nothing is rebuilt or discarded on update. The shared 100-word window
+still mounts the set list. Cloud vocabulary sync is unchanged.

@@ -272,7 +272,7 @@ try{
  assert.equal(await quiet().count(),0,'undo of second swipe does not silently restore first');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore,'all gesture and undo paths preserve source vocabulary');
  await page.evaluate(async ()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};await studySetsReadAndRender();});
- assert.match(await page.locator('#study-sets-import').innerText(),/2개/);await studyAction(page.locator('#study-sets-import').click(),page);
+ assert.equal(await page.locator('#study-sets-import').count(),0,'a later save joins the set without 새 단어 가져오기');
  assert.equal(await page.locator('#study-sets-word-list li').count(),2);
  await openHomeMenu('keyboard');
  await studyAction(page.evaluate(()=>{studySetsCloseEditMenu(false,true);studySetsGo('excluded');}),page);assert.equal(await page.locator('#study-sets-excluded-list li').count(),1);
@@ -281,8 +281,11 @@ try{
  await openHomeMenu();await studyAction(page.getByRole('menuitem',{name:'이름 변경',exact:true}).click(),page);await page.locator('#study-sets-rename-input').fill('중간고사 단어');await studyAction(page.getByRole('button',{name:'이름 저장',exact:true}).click(),page);
  await openHomeMenu('keyboard');await studyAction(page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click(),page);await studyAction(page.getByRole('button',{name:'취소',exact:true}).click(),page);
  await closeSheet();await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
- await page.evaluate(()=>{words={};saveWords();renderVocab();});
- assert.equal(await page.locator('#study-sets-word-list li').count(),3,'source deletion preserves captured content');
+ const vocabularySnapshot=await page.evaluate(()=>JSON.parse(JSON.stringify(words)));
+ await page.evaluate(()=>{const key=Object.keys(words).find(item=>words[item].word==='swift');delete words[key];saveWords();});
+ await page.waitForFunction(()=>![...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='swift'));
+ await page.evaluate(snapshot=>{words=snapshot;saveWords();},vocabularySnapshot);
+ await page.waitForFunction(()=>[...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='swift'));
  console.log(`${engine.name()}: snapshot study starts`);await studyAction(page.locator('#study-sets-start').click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 3');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);assert.equal(await page.locator('.study-sets-card-example').count(),0,'multi-meaning representatives show only the word');assert.doesNotMatch(await page.locator('#study-sets-flashcard').getAttribute('aria-label'),/바람|감다/);
  await studyAction(page.locator('#study-sets-flashcard').click(),page);assert.equal(await page.locator('#study-sets-answer').innerText(),'1. 바람\n2. 감다\n3. 바람의 기운');
@@ -297,7 +300,7 @@ try{
  await closeSheet();
  await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await studyAction(page.locator('.study-sets-home-card[data-set-id]').click(),page);
  await page.evaluate(async ()=>{words.late={word:'later',ko:'나중에',book:'A',addedAt:20};saveWords();await studySetsReadAndRender();});
- assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await studyAction(page.locator('#study-sets-import').click(),page);
+ assert.equal(await page.locator('#study-sets-import').count(),0);
  await studyAction(page.locator('#study-sets-start').click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 3');
  await context.setOffline(true);
  for(let i=0;i<2;i++){await studyAction(page.locator('#study-sets-flashcard').click(),page);await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForFunction(()=>!document.getElementById('study-sets-answer')?.hidden===false);}
@@ -332,7 +335,7 @@ try{
  // Very long captured expressions must not grow Undo over the short-screen CTA.
  const longExpression='a deliberately long captured expression '.repeat(80).trim();
  await page.evaluate(async expression=>{words.longPhrase={word:expression,ko:'긴 표현',book:'A',addedAt:30};saveWords();await studySetsReadAndRender();},longExpression);
- assert.match(await page.locator('#study-sets-import').innerText(),/1개/);await studyAction(page.locator('#study-sets-import').click(),page);
+ assert.equal(await page.locator('#study-sets-import').count(),0);
  const countWithPhrase=await rows().count();
  await page.setViewportSize({width:844,height:390});
  await page.getByRole('button',{name:longExpression+' 세트에서 제외',exact:true}).focus();await studyAction(page.keyboard.press('Enter'),page);await waitRows(countWithPhrase-1);
@@ -433,9 +436,9 @@ try{
  // original row gutter while preserving the default long-word wrapping geometry.
  const largeSetId=await page.evaluate(async ()=>{
   const word='pneumonoultramicroscopicsilicovolcanoconiosis';
-  words={layoutReference:{word:word+'-1000',ko:'뜻 1000',book:'Layout',status:1}};saveWords();
   const source=Object.fromEntries(Array.from({length:1001},(_,i)=>['layout'+i,{word:word+'-'+String(i+1).padStart(4,'0'),ko:'뜻 '+(i+1),book:'Layout',status:1,addedAt:i}]));
-  const result=BreezeStudySets.create((await loadStudySets()),{name:'숫자 너비 확인',bookTitles:['Layout']},source,500);await commitStudySets(result.state);show('vocab');return result.set.id;
+  words=source;saveWords();if(typeof scheduleStudySetsVocabularySync==='function'&&studySetsIsOpen())await scheduleStudySetsVocabularySync();
+  const result=BreezeStudySets.create((await loadStudySets()),{name:'숫자 너비 확인',bookTitles:['Layout']},words,500);await commitStudySets(result.state);show('vocab');return result.set.id;
  });
  for(const width of [390,320,820]){
   await page.setViewportSize({width,height:844});await page.evaluate(()=>{show('vocab');window.scrollTo(0,0);});
@@ -485,8 +488,9 @@ try{
    await offline.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
    const warm=await offline.newPage();await warm.goto(url);await warm.evaluate(()=>homeReady);
    await warm.evaluate(async()=>{
-    const result=BreezeStudySets.create((await loadStudySets()),{name:'오프라인 세트',bookTitles:['Offline']},{cached:{word:'resilient',ko:'회복력이 있는',book:'Offline',example:'A resilient reader.'}},100);
-    await commitStudySets(result.state);words={};saveWords();
+    words={cached:{word:'resilient',ko:'회복력이 있는',book:'Offline',example:'A resilient reader.'}};saveWords();
+    const result=BreezeStudySets.create((await loadStudySets()),{name:'오프라인 세트',bookTitles:['Offline']},words,100);
+    await commitStudySets(result.state);
     const registration=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker did not become ready: '+JSON.stringify({installing:registration.installing?.state,waiting:registration.waiting?.state,active:registration.active?.state}))),30000))]);
    });
    await warm.close();await offline.setOffline(true);
