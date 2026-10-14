@@ -909,3 +909,36 @@ test('recall back asks before saving the answers so far',async()=>{
   assert.equal(h.document.querySelector('#study-set-test-leave'),null);
   assert.equal(JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId].length,1);
 });
+
+test('recall tally shows a pending count, then moves it into correct and wrong',async()=>{
+  const h=harness();loadRecall(h);
+  let release=()=>{};
+  const gate=new Promise(resolve=>{release=resolve;});
+  h.window.BreezeStudySetTestGrader={grade(items){return gate.then(()=>items.map(item=>({ok:item.answer!=='오답'})));}};
+  for(let i=0;i<12;i++)h.context.words['tally'+i]={word:'tally'+i,ko:'뜻'+i,book:'One',example:'Hidden',addedAt:40+i};
+  await afterAction(h.createSet('Tally',['One']));
+  await afterAction(h.click('#study-sets-test'));
+  h.query('#study-set-test-count').value='12';
+  await afterAction(h.click('#study-set-test-start'));
+  const tally=kind=>h.query(`#study-set-test-tally [data-kind="${kind}"]`);
+  assert.equal(h.query('#study-set-test-tally').previousElementSibling.id,'study-set-test-progress');
+  assert.equal(tally('pending').hidden,true);
+  assert.equal(tally('correct').querySelector('b').textContent,'0');
+  for(let i=0;i<10;i++){
+    const word=h.query('#study-set-test-word').textContent;
+    const meaning=Object.values(h.context.words).find(item=>item.word===word).ko;
+    recallAnswer(h,i<6?meaning:i<8?'':'오답');
+  }
+  assert.equal(h.query('#study-set-test-progress').textContent,'11 / 12');
+  assert.equal(tally('correct').querySelector('b').textContent,'6');
+  assert.equal(tally('incorrect').querySelector('b').textContent,'2');
+  assert.equal(tally('pending').hidden,false);
+  assert.equal(tally('pending').querySelector('b').textContent,'2');
+  assert.equal(h.query('#study-set-test-tally').getAttribute('aria-label'),'맞음 6, 틀림 2, 채점 중 2');
+  release();
+  for(let n=0;n<6;n++)await afterAction();
+  assert.equal(tally('pending').hidden,true);
+  assert.equal(tally('correct').querySelector('b').textContent,'6');
+  assert.equal(tally('incorrect').querySelector('b').textContent,'4');
+  assert.equal(h.query('#study-set-test-tally').getAttribute('aria-label'),'맞음 6, 틀림 4');
+});

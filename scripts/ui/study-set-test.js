@@ -110,7 +110,7 @@ function studySetTestShowToast(message){
   node.textContent=message;
   node.classList.add('on');
   clearTimeout(studySetTestToastTimer);
-  studySetTestToastTimer=setTimeout(()=>node.classList.remove('on'),2600);
+  studySetTestToastTimer=setTimeout(()=>node.classList.remove('on'),1600);
 }
 function studySetTestMaybeSave(){
   const run=studySetTestRun;
@@ -156,8 +156,47 @@ function studySetTestRefreshResults(){
 }
 function studySetTestAfterBatch(end){
   if(end%10===0)studySetTestShowToast(studySetTestCumulative(end));
+  studySetTestPaintTally();
   studySetTestMaybeSave();
   studySetTestRefreshResults();
+}
+function studySetTestTallyCounts(){
+  const counts={correct:0,incorrect:0,pending:0};
+  for(const row of studySetTestRun?.rows||[]) if(Object.prototype.hasOwnProperty.call(counts,row.status)) counts[row.status]++;
+  return counts;
+}
+function studySetTestSetCount(item,value){
+  const num=item.querySelector('b');
+  const next=String(value);
+  if(!num||num.textContent===next)return;
+  const from=Number(num.textContent);
+  const media=typeof matchMedia==='function'?matchMedia:window.matchMedia;
+  const reduce=media?.('(prefers-reduced-motion: reduce)')?.matches!==false;
+  if(reduce||!Number.isFinite(from)||typeof requestAnimationFrame!=='function'){num.textContent=next;return;}
+  const started=performance.now();
+  const frame=now=>{
+    const t=Math.min(1,(now-started)/280);
+    const eased=1-Math.pow(1-t,3);
+    num.textContent=String(Math.round(from+(value-from)*eased));
+    if(t<1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+function studySetTestPaintTally(){
+  const row=document.getElementById('study-set-test-tally');
+  if(!row||!studySetTestRun)return;
+  const counts=studySetTestTallyCounts();
+  const labels={correct:'맞음',incorrect:'틀림',pending:'채점 중'};
+  for(const kind of ['correct','incorrect','pending']){
+    const item=row.querySelector(`[data-kind="${kind}"]`);
+    if(!(item instanceof HTMLElement))continue;
+    if(kind==='pending') item.hidden=counts.pending===0;
+    item.setAttribute('aria-label',labels[kind]+' '+counts[kind]);
+    studySetTestSetCount(item,counts[kind]);
+  }
+  const spoken=[`맞음 ${counts.correct}`,`틀림 ${counts.incorrect}`];
+  if(counts.pending) spoken.push(`채점 중 ${counts.pending}`);
+  row.setAttribute('aria-label',spoken.join(', '));
 }
 function studySetTestWait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 function studySetTestOffline(){const error=new Error('offline');error.name='OfflineError';return error;}
@@ -237,6 +276,7 @@ function studySetTestSubmit(value){
     return;
   }
   studySetTestPaint();
+  studySetTestPaintTally();
 }
 function studySetTestShowResults(){
   const ui=studySetsUI;
@@ -376,6 +416,23 @@ function renderStudySetTest(set){
   body.classList.add('study-set-test-body');
   const session=studySetsNode('div','study-set-test-session');
   const progress=studySetsNode('p','study-set-test-progress',`${run.index+1} / ${run.questions.length}`);progress.id='study-set-test-progress';
+  const tally=studySetsNode('div','study-set-test-tally');
+  tally.id='study-set-test-tally';
+  tally.setAttribute('role','status');
+  tally.setAttribute('aria-live','polite');
+  const tallyLabels={correct:'맞음',incorrect:'틀림',pending:'채점 중'};
+  for(const kind of ['correct','incorrect','pending']){
+    const item=studySetsNode('span','study-set-test-tally-item');
+    item.dataset.kind=kind;
+    item.setAttribute('aria-label',tallyLabels[kind]+' 0');
+    if(kind==='pending') item.hidden=true;
+    const dot=studySetsNode('i');
+    dot.setAttribute('aria-hidden','true');
+    item.append(dot,studySetsNode('b','','0'));
+    tally.append(item);
+  }
+  const head=studySetsNode('div','study-set-test-head');
+  head.append(progress,tally);
   const card=studySetsNode('section','study-set-test-card');
   const word=studySetsNode('p','study-set-test-word',run.questions[run.index].word);word.id='study-set-test-word';
   card.append(word);
@@ -402,7 +459,7 @@ function renderStudySetTest(set){
     studySetTestSubmit(value);
     if(studySetsUI.screen==='test')studySetTestFocus();
   });
-  session.append(progress,card,form);body.append(session);
+  session.append(head,card,form);body.append(session);
 }
 function renderStudySetTestResult(set){
   const run=studySetTestRun;
