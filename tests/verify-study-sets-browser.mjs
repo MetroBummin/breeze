@@ -446,10 +446,19 @@ try{
   assert.equal(await page.locator('#study-sets-word-list').getAttribute('data-total'),'1001');
   assert.ok(await page.locator('#study-sets-word-list > li.study-sets-word-row').count()<1001,'a large set stays windowed');
   for(const ordinal of [999,1000]){
-   await page.evaluate(async ()=>{
-    studySetsUI.body.scrollTop=studySetsUI.body.scrollHeight;
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-   });
+   await page.evaluate(async index=>{
+    const body=studySetsUI.body;
+    const selector=`#study-sets-word-list > li.study-sets-word-row[data-index="${index}"]`;
+    const deadline=performance.now()+4000;
+    while(performance.now()<deadline){
+     body.scrollTop=body.scrollHeight;
+     body.dispatchEvent(new Event('scroll'));
+     await new Promise(resolve=>requestAnimationFrame(resolve));
+     if(document.querySelector(selector))return;
+    }
+    const seen=[...document.querySelectorAll('#study-sets-word-list .vordinal')].map(node=>node.textContent).join(',');
+    throw new Error(`row ${index+1} stayed outside the window (${seen})`);
+   },ordinal-1);
    const row=page.locator(`#study-sets-word-list > li.study-sets-word-row[data-index="${ordinal-1}"]`);
    const bounds=await row.evaluate(node=>{const number=node.querySelector('.vordinal').getBoundingClientRect(),word=node.querySelector('.vword').getBoundingClientRect();return {number:{left:number.left,right:number.right,width:number.width},word:{left:word.left,right:word.right}};});
    assert.ok(bounds.number.left>=0&&bounds.number.right<=bounds.word.left-1,JSON.stringify({width,ordinal,bounds}));
