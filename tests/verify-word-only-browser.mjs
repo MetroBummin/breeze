@@ -26,6 +26,7 @@ try{
  await page.evaluate(()=>selectWord('quiet',null));
  assert.equal(await page.locator('#p-ex-fold').isVisible(),false);assert.equal(await page.locator('#p-ex').textContent(),'');
  // Selecting a saved word legitimately updates pickedAt; compare its retained fields first.
+ await page.waitForFunction(()=>Number.isFinite(words.quiet.pickedAt));
  assert.deepEqual(await page.evaluate(()=>{const {pickedAt,...stored}=words.quiet;return stored;}),data.quiet);
  before=await page.evaluate(()=>JSON.stringify(words));
  await page.evaluate(()=>{closePanel();window.qaExport='';deliverVocabularyCsv=async csv=>{window.qaExport=csv;return false;};});

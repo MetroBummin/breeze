@@ -11,7 +11,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const base='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
-  "tests/verify-word-only-browser.mjs": "37a8259656543bbfce2264287f10ec9ee6023cf7b9ed8db0e49bb72bc1c1ce95",
+  "tests/verify-word-only-browser.mjs": "9592e44c7f8bc22d6f197dc49c9e5f4068155c4477c4486e4ac19f60cd634ee9",
   "tests/verify-vocabulary-review-browser.mjs": "c96e6b14a1b660f900cd830911d8cb14b741affd80eacc4857d0bfccce77010b",
   "tests/verify-easy-explanation-browser.mjs": "d5b98275f413be840f1f417bf0ea6ef48bbc3431cedb354664aac4c8700e0351",
   "tests/verify-control-optics-browser.mjs": "649bca7843fbf8f002898b3d0b9e9eecbf710069f1da1939228765d7cc969129",
