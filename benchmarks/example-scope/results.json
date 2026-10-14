@@ -1,0 +1,1007 @@
+{
+  "passages": 183,
+  "taps": 1433,
+  "datasets": {
+    "gutenberg": "Pride and Prejudice (Project Gutenberg #1342), header and footer removed",
+    "long-text": "Speckled Band and Hound of the Baskervilles excerpts already in the repo, plus line-broken copies",
+    "mock-exam": "Original exam-style pages in the same shape as a multiple-choice PDF",
+    "adversarial": "Hand-labeled dense stress paragraphs"
+  },
+  "rules": {
+    "A": {
+      "name": "지금 규칙",
+      "runtimeMs": 3.26,
+      "perPassageMs": 0.018,
+      "overall": {
+        "taps": 1433,
+        "exact": 616,
+        "truncated": 293,
+        "missing": 0,
+        "overlong": 396,
+        "wrong": 128,
+        "accuracy": 43
+      },
+      "datasets": {
+        "gutenberg": {
+          "taps": 320,
+          "exact": 208,
+          "truncated": 112,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 65
+        },
+        "long-text": {
+          "taps": 283,
+          "exact": 242,
+          "truncated": 41,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 85.5
+        },
+        "mock-exam": {
+          "taps": 501,
+          "exact": 111,
+          "truncated": 50,
+          "missing": 0,
+          "overlong": 232,
+          "wrong": 108,
+          "accuracy": 22.2
+        },
+        "adversarial": {
+          "taps": 329,
+          "exact": 55,
+          "truncated": 90,
+          "missing": 0,
+          "overlong": 164,
+          "wrong": 20,
+          "accuracy": 16.7
+        }
+      },
+      "categories": {
+        "prose": {
+          "taps": 289,
+          "exact": 289,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "abbrev": {
+          "taps": 200,
+          "exact": 2,
+          "truncated": 198,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 1
+        },
+        "dialogue": {
+          "taps": 240,
+          "exact": 231,
+          "truncated": 9,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 96.3
+        },
+        "pdf-linebreak": {
+          "taps": 64,
+          "exact": 54,
+          "truncated": 10,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 84.4
+        },
+        "options": {
+          "taps": 515,
+          "exact": 0,
+          "truncated": 40,
+          "missing": 0,
+          "overlong": 371,
+          "wrong": 104,
+          "accuracy": 0
+        },
+        "options-lower": {
+          "taps": 47,
+          "exact": 0,
+          "truncated": 8,
+          "missing": 0,
+          "overlong": 15,
+          "wrong": 24,
+          "accuracy": 0
+        },
+        "decimals": {
+          "taps": 17,
+          "exact": 0,
+          "truncated": 17,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 0
+        },
+        "inline": {
+          "taps": 6,
+          "exact": 6,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "no-terminator": {
+          "taps": 13,
+          "exact": 3,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 10,
+          "wrong": 0,
+          "accuracy": 23.1
+        },
+        "brand": {
+          "taps": 8,
+          "exact": 8,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "number-start": {
+          "taps": 6,
+          "exact": 6,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "quotes": {
+          "taps": 15,
+          "exact": 7,
+          "truncated": 8,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 46.7
+        },
+        "ellipsis": {
+          "taps": 13,
+          "exact": 10,
+          "truncated": 3,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 76.9
+        }
+      },
+      "failures": [
+        {
+          "id": "austen-003@0+1",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "My",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "“My dear Mr."
+        },
+        {
+          "id": "austen-003@0+4",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "dear",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "“My dear Mr."
+        },
+        {
+          "id": "austen-003@0+100",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "last",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+        },
+        {
+          "id": "austen-003@0+13",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "Bennet",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+        },
+        {
+          "id": "austen-007@0+1",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "Do",
+          "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+          "predicted": "“Do not you want to know who has taken it?”"
+        },
+        {
+          "id": "austen-007@0+12",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "want",
+          "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+          "predicted": "“Do not you want to know who has taken it?”"
+        }
+      ]
+    },
+    "B": {
+      "name": "약어 목록 규칙",
+      "runtimeMs": 3.13,
+      "perPassageMs": 0.017,
+      "overall": {
+        "taps": 1433,
+        "exact": 1388,
+        "truncated": 11,
+        "missing": 0,
+        "overlong": 34,
+        "wrong": 0,
+        "accuracy": 96.9
+      },
+      "datasets": {
+        "gutenberg": {
+          "taps": 320,
+          "exact": 315,
+          "truncated": 5,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 98.4
+        },
+        "long-text": {
+          "taps": 283,
+          "exact": 279,
+          "truncated": 4,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 98.6
+        },
+        "mock-exam": {
+          "taps": 501,
+          "exact": 491,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 10,
+          "wrong": 0,
+          "accuracy": 98
+        },
+        "adversarial": {
+          "taps": 329,
+          "exact": 303,
+          "truncated": 2,
+          "missing": 0,
+          "overlong": 24,
+          "wrong": 0,
+          "accuracy": 92.1
+        }
+      },
+      "categories": {
+        "prose": {
+          "taps": 289,
+          "exact": 278,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 11,
+          "wrong": 0,
+          "accuracy": 96.2
+        },
+        "abbrev": {
+          "taps": 200,
+          "exact": 187,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 13,
+          "wrong": 0,
+          "accuracy": 93.5
+        },
+        "dialogue": {
+          "taps": 240,
+          "exact": 231,
+          "truncated": 9,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 96.3
+        },
+        "pdf-linebreak": {
+          "taps": 64,
+          "exact": 64,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "options": {
+          "taps": 515,
+          "exact": 515,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "options-lower": {
+          "taps": 47,
+          "exact": 47,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "decimals": {
+          "taps": 17,
+          "exact": 17,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "inline": {
+          "taps": 6,
+          "exact": 6,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "no-terminator": {
+          "taps": 13,
+          "exact": 13,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "brand": {
+          "taps": 8,
+          "exact": 8,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "number-start": {
+          "taps": 6,
+          "exact": 6,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "quotes": {
+          "taps": 15,
+          "exact": 13,
+          "truncated": 2,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 86.7
+        },
+        "ellipsis": {
+          "taps": 13,
+          "exact": 3,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 10,
+          "wrong": 0,
+          "accuracy": 23.1
+        }
+      },
+      "failures": [
+        {
+          "id": "austen-007@0+1",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "Do",
+          "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+          "predicted": "“Do not you want to know who has taken it?”"
+        },
+        {
+          "id": "austen-007@0+12",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "want",
+          "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+          "predicted": "“Do not you want to know who has taken it?”"
+        },
+        {
+          "id": "hound-006@0+1",
+          "dataset": "long-text",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "Good",
+          "gold": "“Good!” said Holmes.",
+          "predicted": "“Good!”"
+        },
+        {
+          "id": "hound-006@0+13",
+          "dataset": "long-text",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "Holmes",
+          "gold": "“Good!” said Holmes.",
+          "predicted": "said Holmes."
+        },
+        {
+          "id": "exam-ellipsis-lines@0+0",
+          "dataset": "mock-exam",
+          "category": "ellipsis",
+          "kind": "overlong",
+          "word": "She",
+          "gold": "She opened the letter...",
+          "predicted": "She opened the letter... Then she sat down."
+        },
+        {
+          "id": "exam-ellipsis-lines@0+4",
+          "dataset": "mock-exam",
+          "category": "ellipsis",
+          "kind": "overlong",
+          "word": "opened",
+          "gold": "She opened the letter...",
+          "predicted": "She opened the letter... Then she sat down."
+        },
+        {
+          "id": "adv-ampm-next@0+0",
+          "dataset": "adversarial",
+          "category": "abbrev",
+          "kind": "overlong",
+          "word": "Meet",
+          "gold": "Meet me at 9 a.m.",
+          "predicted": "Meet me at 9 a.m. The door will be open."
+        },
+        {
+          "id": "adv-ampm-next@0+15",
+          "dataset": "adversarial",
+          "category": "abbrev",
+          "kind": "overlong",
+          "word": "m",
+          "gold": "Meet me at 9 a.m.",
+          "predicted": "Meet me at 9 a.m. The door will be open."
+        },
+        {
+          "id": "austen-007@0+60",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "impatiently",
+          "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+          "predicted": "cried his wife, impatiently."
+        },
+        {
+          "id": "austen-052@0+1",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "truncated",
+          "word": "What",
+          "gold": "“What can be the meaning of that emphatic exclamation?” cried he.",
+          "predicted": "“What can be the meaning of that emphatic exclamation?”"
+        },
+        {
+          "id": "exam-ellipsis-lines@0+15",
+          "dataset": "mock-exam",
+          "category": "ellipsis",
+          "kind": "overlong",
+          "word": "letter",
+          "gold": "She opened the letter...",
+          "predicted": "She opened the letter... Then she sat down."
+        },
+        {
+          "id": "exam-ellipsis-lines@25+0",
+          "dataset": "mock-exam",
+          "category": "prose",
+          "kind": "overlong",
+          "word": "Then",
+          "gold": "Then she sat down.",
+          "predicted": "She opened the letter... Then she sat down."
+        },
+        {
+          "id": "exam-ellipsis-lines@25+13",
+          "dataset": "mock-exam",
+          "category": "prose",
+          "kind": "overlong",
+          "word": "down",
+          "gold": "Then she sat down.",
+          "predicted": "She opened the letter... Then she sat down."
+        },
+        {
+          "id": "exam-ellipsis-pdf@0+0",
+          "dataset": "mock-exam",
+          "category": "ellipsis",
+          "kind": "overlong",
+          "word": "She",
+          "gold": "She opened the letter...",
+          "predicted": "She opened the letter... Then she sat down."
+        }
+      ]
+    },
+    "C": {
+      "name": "대문자 규칙",
+      "runtimeMs": 2.74,
+      "perPassageMs": 0.015,
+      "overall": {
+        "taps": 1433,
+        "exact": 1010,
+        "truncated": 250,
+        "missing": 0,
+        "overlong": 163,
+        "wrong": 10,
+        "accuracy": 70.5
+      },
+      "datasets": {
+        "gutenberg": {
+          "taps": 320,
+          "exact": 190,
+          "truncated": 105,
+          "missing": 0,
+          "overlong": 23,
+          "wrong": 2,
+          "accuracy": 59.4
+        },
+        "long-text": {
+          "taps": 283,
+          "exact": 201,
+          "truncated": 35,
+          "missing": 0,
+          "overlong": 45,
+          "wrong": 2,
+          "accuracy": 71
+        },
+        "mock-exam": {
+          "taps": 501,
+          "exact": 399,
+          "truncated": 54,
+          "missing": 0,
+          "overlong": 48,
+          "wrong": 0,
+          "accuracy": 79.6
+        },
+        "adversarial": {
+          "taps": 329,
+          "exact": 220,
+          "truncated": 56,
+          "missing": 0,
+          "overlong": 47,
+          "wrong": 6,
+          "accuracy": 66.9
+        }
+      },
+      "categories": {
+        "prose": {
+          "taps": 289,
+          "exact": 259,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 30,
+          "wrong": 0,
+          "accuracy": 89.6
+        },
+        "abbrev": {
+          "taps": 200,
+          "exact": 15,
+          "truncated": 178,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 7,
+          "accuracy": 7.5
+        },
+        "dialogue": {
+          "taps": 240,
+          "exact": 180,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 60,
+          "wrong": 0,
+          "accuracy": 75
+        },
+        "pdf-linebreak": {
+          "taps": 64,
+          "exact": 54,
+          "truncated": 10,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 84.4
+        },
+        "options": {
+          "taps": 515,
+          "exact": 450,
+          "truncated": 57,
+          "missing": 0,
+          "overlong": 6,
+          "wrong": 2,
+          "accuracy": 87.4
+        },
+        "options-lower": {
+          "taps": 47,
+          "exact": 0,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 47,
+          "wrong": 0,
+          "accuracy": 0
+        },
+        "decimals": {
+          "taps": 17,
+          "exact": 11,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 6,
+          "wrong": 0,
+          "accuracy": 64.7
+        },
+        "inline": {
+          "taps": 6,
+          "exact": 6,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "no-terminator": {
+          "taps": 13,
+          "exact": 13,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        },
+        "brand": {
+          "taps": 8,
+          "exact": 2,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 6,
+          "wrong": 0,
+          "accuracy": 25
+        },
+        "number-start": {
+          "taps": 6,
+          "exact": 0,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 6,
+          "wrong": 0,
+          "accuracy": 0
+        },
+        "quotes": {
+          "taps": 15,
+          "exact": 7,
+          "truncated": 5,
+          "missing": 0,
+          "overlong": 2,
+          "wrong": 1,
+          "accuracy": 46.7
+        },
+        "ellipsis": {
+          "taps": 13,
+          "exact": 13,
+          "truncated": 0,
+          "missing": 0,
+          "overlong": 0,
+          "wrong": 0,
+          "accuracy": 100
+        }
+      },
+      "failures": [
+        {
+          "id": "austen-003@0+1",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "My",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "“My dear Mr."
+        },
+        {
+          "id": "austen-003@0+4",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "dear",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "“My dear Mr."
+        },
+        {
+          "id": "austen-003@0+100",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "last",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+        },
+        {
+          "id": "austen-003@0+13",
+          "dataset": "gutenberg",
+          "category": "abbrev",
+          "kind": "truncated",
+          "word": "Bennet",
+          "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+          "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+        },
+        {
+          "id": "austen-015@0+1",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "overlong",
+          "word": "How",
+          "gold": "“How so?",
+          "predicted": "“How so? how can it affect them?”"
+        },
+        {
+          "id": "austen-015@0+5",
+          "dataset": "gutenberg",
+          "category": "dialogue",
+          "kind": "overlong",
+          "word": "so",
+          "gold": "“How so?",
+          "predicted": "“How so? how can it affect them?”"
+        }
+      ]
+    }
+  },
+  "failures": {
+    "A": [
+      {
+        "id": "austen-003@0+1",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "My",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "“My dear Mr."
+      },
+      {
+        "id": "austen-003@0+4",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "dear",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "“My dear Mr."
+      },
+      {
+        "id": "austen-003@0+100",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "last",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+      },
+      {
+        "id": "austen-003@0+13",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "Bennet",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+      },
+      {
+        "id": "austen-007@0+1",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "Do",
+        "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+        "predicted": "“Do not you want to know who has taken it?”"
+      },
+      {
+        "id": "austen-007@0+12",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "want",
+        "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+        "predicted": "“Do not you want to know who has taken it?”"
+      }
+    ],
+    "B": [
+      {
+        "id": "austen-007@0+1",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "Do",
+        "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+        "predicted": "“Do not you want to know who has taken it?”"
+      },
+      {
+        "id": "austen-007@0+12",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "want",
+        "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+        "predicted": "“Do not you want to know who has taken it?”"
+      },
+      {
+        "id": "hound-006@0+1",
+        "dataset": "long-text",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "Good",
+        "gold": "“Good!” said Holmes.",
+        "predicted": "“Good!”"
+      },
+      {
+        "id": "hound-006@0+13",
+        "dataset": "long-text",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "Holmes",
+        "gold": "“Good!” said Holmes.",
+        "predicted": "said Holmes."
+      },
+      {
+        "id": "exam-ellipsis-lines@0+0",
+        "dataset": "mock-exam",
+        "category": "ellipsis",
+        "kind": "overlong",
+        "word": "She",
+        "gold": "She opened the letter...",
+        "predicted": "She opened the letter... Then she sat down."
+      },
+      {
+        "id": "exam-ellipsis-lines@0+4",
+        "dataset": "mock-exam",
+        "category": "ellipsis",
+        "kind": "overlong",
+        "word": "opened",
+        "gold": "She opened the letter...",
+        "predicted": "She opened the letter... Then she sat down."
+      },
+      {
+        "id": "adv-ampm-next@0+0",
+        "dataset": "adversarial",
+        "category": "abbrev",
+        "kind": "overlong",
+        "word": "Meet",
+        "gold": "Meet me at 9 a.m.",
+        "predicted": "Meet me at 9 a.m. The door will be open."
+      },
+      {
+        "id": "adv-ampm-next@0+15",
+        "dataset": "adversarial",
+        "category": "abbrev",
+        "kind": "overlong",
+        "word": "m",
+        "gold": "Meet me at 9 a.m.",
+        "predicted": "Meet me at 9 a.m. The door will be open."
+      },
+      {
+        "id": "austen-007@0+60",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "impatiently",
+        "gold": "“Do not you want to know who has taken it?” cried his wife, impatiently.",
+        "predicted": "cried his wife, impatiently."
+      },
+      {
+        "id": "austen-052@0+1",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "truncated",
+        "word": "What",
+        "gold": "“What can be the meaning of that emphatic exclamation?” cried he.",
+        "predicted": "“What can be the meaning of that emphatic exclamation?”"
+      },
+      {
+        "id": "exam-ellipsis-lines@0+15",
+        "dataset": "mock-exam",
+        "category": "ellipsis",
+        "kind": "overlong",
+        "word": "letter",
+        "gold": "She opened the letter...",
+        "predicted": "She opened the letter... Then she sat down."
+      },
+      {
+        "id": "exam-ellipsis-lines@25+0",
+        "dataset": "mock-exam",
+        "category": "prose",
+        "kind": "overlong",
+        "word": "Then",
+        "gold": "Then she sat down.",
+        "predicted": "She opened the letter... Then she sat down."
+      },
+      {
+        "id": "exam-ellipsis-lines@25+13",
+        "dataset": "mock-exam",
+        "category": "prose",
+        "kind": "overlong",
+        "word": "down",
+        "gold": "Then she sat down.",
+        "predicted": "She opened the letter... Then she sat down."
+      },
+      {
+        "id": "exam-ellipsis-pdf@0+0",
+        "dataset": "mock-exam",
+        "category": "ellipsis",
+        "kind": "overlong",
+        "word": "She",
+        "gold": "She opened the letter...",
+        "predicted": "She opened the letter... Then she sat down."
+      }
+    ],
+    "C": [
+      {
+        "id": "austen-003@0+1",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "My",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "“My dear Mr."
+      },
+      {
+        "id": "austen-003@0+4",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "dear",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "“My dear Mr."
+      },
+      {
+        "id": "austen-003@0+100",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "last",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+      },
+      {
+        "id": "austen-003@0+13",
+        "dataset": "gutenberg",
+        "category": "abbrev",
+        "kind": "truncated",
+        "word": "Bennet",
+        "gold": "“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”",
+        "predicted": "Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”"
+      },
+      {
+        "id": "austen-015@0+1",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "overlong",
+        "word": "How",
+        "gold": "“How so?",
+        "predicted": "“How so? how can it affect them?”"
+      },
+      {
+        "id": "austen-015@0+5",
+        "dataset": "gutenberg",
+        "category": "dialogue",
+        "kind": "overlong",
+        "word": "so",
+        "gold": "“How so?",
+        "predicted": "“How so? how can it affect them?”"
+      }
+    ]
+  }
+}
