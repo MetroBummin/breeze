@@ -1015,8 +1015,9 @@ function renderPanel(){
   const original = (w.clicked && w.clicked.toLowerCase()!==w.word.toLowerCase()) ? `${w.clicked}에서 찾음` : '';
   clickedLine.textContent = original;
   clickedLine.classList.toggle('on', !!original);
-  document.getElementById('p-ex').textContent = base.example || '—';
-  document.getElementById('p-ex-preview').textContent=base.example||'';
+  // Pause example presentation only; lookup context, saved data and export remain intact.
+  document.getElementById('p-ex').textContent='';
+  document.getElementById('p-ex-preview').textContent='';
   document.getElementById('p-know').hidden=!!previewWordCard;
   document.getElementById('p-highlight-row').hidden=!!previewWordCard;
   document.querySelectorAll('#p-status .stbtn').forEach(b=>{
@@ -1124,7 +1125,7 @@ function renderPanel(){
 
   /* ── 저장된 뜻 ──
      다른 뜻은 문맥 뜻 아래 칩으로 둡니다. 본체는 선택, 끝의 × 는 삭제입니다. */
-  document.getElementById('p-ex-fold').hidden=activeAppView()==='read'||!base.example;
+  document.getElementById('p-ex-fold').hidden=true;
   if(context&&shown&&!asking)aiCap.textContent='저장된 뜻';
   if(typeof renderEasyExplanation==='function')renderEasyExplanation();
   if(previewWordCard){
@@ -1876,7 +1877,6 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize',wordPe
 const vocabOpen = new Set();
 function vocabMoreHtml(w,editable=true){
   return `<div class="vmore">
-    ${w.example?`<div class="vex">${esc(w.example)}</div>`:''}
     <div class="vmeta">${w.book?`📖 ${esc(w.book)} · `:''}${new Date(w.addedAt).toLocaleDateString('ko-KR')}</div>
     ${editable?'<button class="rowdel" title="이 뜻만 삭제">✕ 이 뜻 삭제</button>':''}
   </div>`;

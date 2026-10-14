@@ -120,8 +120,8 @@ try{
   await page.evaluate(()=>closePanel());
   assert.equal(await page.locator('#p-easy-skeleton').isVisible(),false);
   await page.evaluate(()=>{closePanel();show('vocab');selectWord('inflation',null);});
-  assert.equal(await page.locator('#p-ex-fold').evaluate(n=>n.hidden),false);
-  assert.equal(await page.locator('#p-ex').textContent(),'Inflation was low last year.');
+  assert.equal(await page.locator('#p-ex-fold').evaluate(n=>n.hidden),true);
+  assert.equal(await page.locator('#p-ex').textContent(),'');assert.equal(await page.evaluate(()=>words.inflation.example),'Inflation was low last year.');
   assert.equal(await page.evaluate(()=>easyCalls.length),5);
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: explicit explanation, unchanged A example, no durable answer, responsive light/dark passed`);

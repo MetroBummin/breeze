@@ -103,20 +103,20 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=53b4437c"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=e5d75402"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=82629eed"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/study-motion.js?v=9b1d7066"></script>
   <script defer src="scripts/ui/study-example.js?v=c3f22f9a"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=84d334eb"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=a37546cb"></script>
   <script defer src="scripts/ui/wordbook.js?v=55ebd609"></script>
   <script defer src="scripts/core/study-sets.js?v=9136b150"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=e66657e2"></script>
-  <script defer src="scripts/ui/study-sets.js?v=392966b1"></script>
+  <script defer src="scripts/ui/study-sets.js?v=af664f23"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
   <script defer src="scripts/core/vocabulary-test-storage.js?v=7e78cae9"></script>
   <script defer src="scripts/dictionary/vocabulary-test-grading.js?v=83c32b98"></script>
-  <script defer src="scripts/ui/vocabulary-test.js?v=a90c4cfa"></script>
+  <script defer src="scripts/ui/vocabulary-test.js?v=ae468ef8"></script>
   <script defer src="scripts/reader/pdf-word-geometry.js?v=06bb6d0d"></script>
   <script defer src="scripts/reader/mode-bridge.js?v=9cddbed0"></script>
   <script defer src="scripts/reader/original-session.js?v=fc16eb5f"></script>
@@ -434,7 +434,7 @@
       <div id="p-highlight-row"><div><span>본문 색칠</span><small>꺼도 단어장에는 남아요</small></div><button id="p-mark" type="button" aria-pressed="true" aria-label="본문 색칠"><span>켜짐</span><i aria-hidden="true"></i></button></div>
       <section id="p-en-section" hidden><div class="p-sec">영어 뜻</div>
       <div id="p-defs"></div></section>
-      <details id="p-ex-fold"><summary><span>예문</span><span id="p-ex-preview"></span></summary><div id="p-ex"></div></details>
+      <details id="p-ex-fold" hidden><summary><span>예문</span><span id="p-ex-preview"></span></summary><div id="p-ex"></div></details>
     </div>
   </div>
 </div>
@@ -468,7 +468,7 @@
   </section>
   <div class="wordbook-results"><span class="cnt" id="vcnt" role="status"></span><button id="wordbook-test" type="button" hidden onclick="openVocabularyTest({kind:'filtered'})">테스트</button><button id="vfilter-clear" type="button" hidden onclick="clearWordbookFilters()">필터 초기화</button></div>
   <div id="vtablewrap"></div>
-  <p class="wordbook-hint">단어를 누르면 뜻·예문·저장한 책을 확인하고 수정할 수 있어요.</p>
+  <p class="wordbook-hint">단어를 누르면 뜻·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="wordbook-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg></button>
     <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openStudySetsDirectory()">학습하기</button>
@@ -487,7 +487,7 @@
       <div id="review-front" class="review-face">
         <p id="review-source"></p>
         <h3 id="review-expression"></h3>
-        <p id="review-sentence"></p>
+        <p id="review-sentence" hidden></p>
       </div>
       <div id="review-back" class="review-face" hidden>
         <p id="review-back-expression"></p>

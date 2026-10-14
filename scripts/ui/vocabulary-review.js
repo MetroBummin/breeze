@@ -200,7 +200,8 @@ function renderSimpleWordCards(){
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleCardMotion.reset();
   const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
   const meanings=simpleStudyMeanings.get(key)||[],meaningText=meanings.length>1?meanings.map((value,index)=>`${index+1}. ${value}`).join('\n'):record?.ko||'';
-  const example=record&&meanings.length<2?BreezeVocabularyTest.prompt({...record,acceptedMeanings:meanings}).text:'';
+  // Keep stored examples intact, but never render them in word study.
+  const sentence=document.getElementById('review-sentence');sentence.replaceChildren();sentence.hidden=true;
   simpleWordCards.keys=session.queue;simpleWordCards.index=0;
   document.body.classList.add('simple-word-cards');
   vocabularyReviewPage.classList.toggle('complete',!record&&session.initial.length>0);
@@ -225,17 +226,15 @@ function renderSimpleWordCards(){
     document.getElementById('review-back-expression').textContent=record.word;
     document.getElementById('review-source').textContent=record.book||'';
     document.getElementById('review-source').hidden=!record.book;
-    renderStoredStudyExample(document.getElementById('review-sentence'),{...record,key,example});
     document.getElementById('review-meaning').textContent=simpleWordCards.flipped?meaningText:'';
     document.getElementById('review-meaning').hidden=!simpleWordCards.flipped;
   }
   document.getElementById('review-front').hidden=false;
   document.getElementById('review-back').hidden=!simpleWordCards.flipped;
-  document.getElementById('review-sentence').hidden=!example;
   document.getElementById('review-source').hidden=true;
   document.getElementById('review-reveal').hidden=!record||simpleWordCards.flipped;
   document.getElementById('review-reveal').textContent='정답 확인';
-  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${example} ${simpleWordCards.flipped?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
+  const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${simpleWordCards.flipped?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||!simpleWordCards.keys.length||simpleStudyBusy||Date.now()<simpleStudySuppressClickUntil||simpleWordCards.flipped)return;
@@ -299,6 +298,7 @@ const simpleCardMotion=studyCardMotion(document.getElementById('review-flip'),{
 });
 function renderVocabularyReview(view,focus=true){
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){renderSimpleWordCards();return;}
+  const sentence=document.getElementById('review-sentence');sentence.replaceChildren();sentence.hidden=true;
   vocabularyReviewView=view;vocabularyReviewRevealed=false;
   document.getElementById('review-recovery').hidden=!view.state?.recovery;
   document.getElementById('review-front').hidden=false;
@@ -342,7 +342,6 @@ function renderVocabularyReview(view,focus=true){
     renderReviewIntervals(view);
     document.getElementById('review-source').textContent=view.card.book||'';
     document.getElementById('review-source').hidden=!view.card.book;
-    highlightReviewSentence(view.card);
     if(focus)document.getElementById('review-reveal').focus();
   }else{
     if(complete&&journey){status.textContent=milestone?`오늘 ${journey.done}/${journey.target}개${journey.repeats?` · 다시 연습 ${journey.repeats}회`:''}${journey.done>=journey.target&&view.dueReviewCount+view.dueRelearningCount?` · 남은 복습 ${view.dueReviewCount+view.dueRelearningCount}개`:''}`:`이번 ${graded}개 완료 · ${journey.stage}단계 ${journey.percent}%`; }

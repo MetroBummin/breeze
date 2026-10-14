@@ -272,11 +272,11 @@ test('storage refresh leaves an in-progress creation form intact and refreshes h
 });
 
 
-test('minimal detail shows examples only after tapping and keeps primary action outside scroll body',async ()=>{
+test('minimal detail shows source metadata without examples after tapping and keeps primary action outside scroll body',async ()=>{
   const {query,document,click,createFromHome}=harness();await afterAction(createFromHome());
   const toggle=query('.vword');
   assert.equal(document.querySelector('.vex'),null);assert.equal(toggle.getAttribute('aria-expanded'),'false');
-  await afterAction(toggle.click());assert.ok(query('.vex'));await afterAction(toggle.click());assert.equal(document.querySelector('.vex'),null);
+  await afterAction(toggle.click());assert.ok(query('.vmeta'));assert.equal(document.querySelector('.vex'),null);await afterAction(toggle.click());assert.equal(document.querySelector('.vex'),null);
   assert.ok(query('.chip'));assert.equal(document.querySelector('[contenteditable]'),null);assert.equal(document.querySelector('.rowdel'),null);
   assert.ok(query('.study-sets-footer #study-sets-start'));
   assert.equal(document.querySelector('#study-sets-content #study-sets-start'),null);
@@ -375,10 +375,10 @@ test('set detail and study are real pages with no modal close control and return
   await afterAction(click('#study-sets-back'));assert.equal(context.currentView,'memory');assert.equal(await afterAction(run('studySetsIsOpen()')),false);assert.equal(restored,420);assert.equal(document.activeElement.id,'study-sets-home-create');
 });
 
-test('shared vocabulary status chip changes only snapshot status and retains expanded examples',async ()=>{
+test('shared vocabulary status chip changes only snapshot status and retains expanded source metadata',async ()=>{
   const {context,document,query,run,createFromHome}=harness();await afterAction(createFromHome());
-  const source=JSON.stringify(context.words);await afterAction(query('.vword').click());assert.ok(query('.vex'));
-  await afterAction(query('.chip').click());assert.equal(query('.chip').textContent,'★★');assert.ok(query('.vex'));
+  const source=JSON.stringify(context.words);await afterAction(query('.vword').click());assert.ok(query('.vmeta'));assert.equal(document.querySelector('.vex'),null);
+  await afterAction(query('.chip').click());assert.equal(query('.chip').textContent,'★★');assert.ok(query('.vmeta'));assert.equal(document.querySelector('.vex'),null);
   assert.equal(await afterAction(run('readStudySets().sets[0].cards[0].status')),2);assert.equal(JSON.stringify(context.words),source);
   assert.equal(document.querySelector('[contenteditable]'),null);assert.equal(document.querySelector('.rowdel'),null);
   await afterAction(run('studySetsReadAndRender(false)'));assert.equal(query('.chip').getAttribute('aria-label'),'quiet 별점 2개');
@@ -650,10 +650,12 @@ test('multi-meaning recall hides all answers and examples until reveal, numbers 
   assert.equal(h.run('BreezeStudySets.view(studySetsUI.state,studySetsUI.setId).rememberedMeaningIds.length'),2);
 });
 
-test('single-meaning valid source uses the real shared prompt helper while instruction examples are omitted',async()=>{
+test('single-meaning examples stay stored but are omitted even when the prompt algorithm accepts them',async()=>{
   const h=harness();h.context.words.a.example='The room stayed quiet all morning.';
   await afterAction(h.createSet('One meaning',['One']));await afterAction(h.click('#study-sets-start'));
-  assert.equal(h.query('.study-sets-card-example').textContent,'The room stayed quiet all morning.');
+  assert.equal(h.run('BreezeVocabularyTest.prompt(words.a).text'),'The room stayed quiet all morning.');
+  assert.equal(h.document.querySelector('.study-sets-card-example'),null);assert.equal(h.context.words.a.example,'The room stayed quiet all morning.');
+  assert.doesNotMatch(h.query('#study-sets-flashcard').getAttribute('aria-label'),/room stayed/);
   assert.equal(h.query('#study-sets-answer').textContent,'');assert.equal(h.query('#study-sets-error').hidden,true);
   const bad=harness();bad.context.words.a.example='Choose the correct answer for quiet.';await afterAction(bad.createSet('Instructions',['One']));await afterAction(bad.click('#study-sets-start'));
   assert.equal(bad.document.querySelector('.study-sets-card-example'),null);assert.equal(bad.query('#study-sets-expression').textContent,'quiet');

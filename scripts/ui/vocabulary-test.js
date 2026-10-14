@@ -144,12 +144,7 @@ function renderVocabularyTestQuestion(body){
   const progress=vocabularyTestNode('p','vocabulary-test-progress',`${index+1} / ${session.manifest.cards.length}`);progress.id='vocabulary-test-progress';progress.setAttribute('aria-label',`${session.manifest.cards.length}문항 중 ${index+1}번째`);body.append(progress);
   const prompt=vocabularyTestNode('section','vocabulary-test-prompt');prompt.id='vocabulary-test-prompt';prompt.tabIndex=-1;
   const word=vocabularyTestNode('h2','',card.word);word.lang='en';prompt.append(word);
-  const source=BreezeVocabularyTest.prompt(card);
-  if(source.text){
-    const sentence=vocabularyTestNode('p','vocabulary-test-sentence');sentence.id='vocabulary-test-sentence';sentence.lang='en';let end=0;
-    for(const range of source.ranges){sentence.append(document.createTextNode(source.text.slice(end,range.start)));sentence.append(vocabularyTestNode('strong','',source.text.slice(range.start,range.end)));end=range.end;}
-    sentence.append(document.createTextNode(source.text.slice(end)));prompt.append(sentence);
-  }
+  // The retained prototype also uses words/meanings only. Saved examples stay in its manifest.
   body.append(prompt);
   const form=document.createElement('form');form.className='vocabulary-test-form';
   const label=vocabularyTestNode('label','','한국어 뜻');label.htmlFor='vocabulary-test-answer';
@@ -243,7 +238,7 @@ function queueVocabularyTestBatches(){
       try{
         const running={...batch,status:'grading'};await writeVocabularyTestBatch(session,running,'waiting');claimed=true;
         session.batches.set(batch.start,running);refreshVocabularyTestBatches();
-        const items=session.manifest.cards.slice(batch.start,batch.end).map((card,offset)=>({id:card.id,word:card.word,meanings:card.acceptedMeanings,answer:session.answers.get(batch.start+offset).text,example:BreezeVocabularyTest.prompt(card).text}));
+        const items=session.manifest.cards.slice(batch.start,batch.end).map((card,offset)=>({id:card.id,word:card.word,meanings:card.acceptedMeanings,answer:session.answers.get(batch.start+offset).text,example:''}));
         const response=await grader.grade({sessionId:session.manifest.id,batchId:batch.token,items});
         const received=Array.isArray(response?.results)?response.results:[],byId=new Map();
         for(const result of received){if(result&&typeof result.id==='string'){if(byId.has(result.id))byId.set(result.id,null);else byId.set(result.id,result);}}
