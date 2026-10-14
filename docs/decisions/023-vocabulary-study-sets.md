@@ -416,7 +416,7 @@ Evidence, before/after measurements and physical-device limitations: [build271 f
 
 ## Custom sets share the All Words window
 
-전체 단어 and a saved set's word list, including its excluded-word list, now share one mounting path. Lists of 100 words or fewer still mount every row. Longer lists mount the measured viewport plus overscan; spacers keep scroll height, ordinals, and keyboard reach. 전체 단어 stays read-only. A saved set keeps swipe exclusion, stars, and undo. Removing a card updates that same window, including a second row already leaving, without rebuilding every offscreen word. The shared limit is the one introduced for large 전체 단어 lists in PR #159 (`bf1b5f90`). PR #168 only stopped that window from remeasuring rows while the mounted range stayed put.
+전체 단어 and a saved set's word list, including its excluded-word list, now share one mounting path. Lists of 100 words or fewer still mount every row. Longer lists mount the measured viewport plus overscan; spacers keep scroll height, ordinals, and keyboard reach. 전체 단어 meanings and stars stay read-only; its left-swipe removal is defined below. A saved set keeps swipe exclusion, stars, and undo. Removing a card updates that same window, including a second row already leaving, without rebuilding every offscreen word. The shared limit is the one introduced for large 전체 단어 lists in PR #159 (`bf1b5f90`). PR #168 only stopped that window from remeasuring rows while the mounted range stayed put.
 
 ## Typed test entry (2026-10-13)
 
@@ -507,3 +507,19 @@ round, not the one already started.
 Existing sets, captured cards, exclusions and unfinished rounds stay as they
 were. Nothing is rebuilt or discarded on update. The shared 100-word window
 still mounts the set list. Cloud vocabulary sync is unchanged.
+
+## Word-row swipe release (2026-10-14)
+
+A saved set's left swipe still excludes only that set. The finger now meets
+resistance after the commit line instead of a hard edge. Releasing uses the
+existing spring, so a committed row carries its speed and settles past the
+edge before the row below closes the gap. While the finger is down, the row
+and its action move by position only; the action's real width is set when the
+row parks. Crossing the commit line taps once, and the removal taps once more,
+through the iPhone haptic plugin when it is present. A right swipe still does
+not act. The same left swipe on 전체 단어 deletes that saved word, tombstone
+included, so a book-linked set drops it and does not take it back. That screen
+reuses the set's existing undo notice and 실행 취소 button, and hides the
+notice after a few seconds. Meanings stay read-only and stars do not write.
+Lists over 100 words remove the row from the same window without measuring
+every remaining row.

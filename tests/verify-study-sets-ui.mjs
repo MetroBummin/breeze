@@ -28,6 +28,11 @@ function harness(){
       c:{word:'calm',ko:'고요한',book:'Two',addedAt:3},
       d:{word:'direct',ko:'직접',book:'',addedAt:4}
     },esc:value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),renderStoredStudyExample:(target,card)=>{target.textContent=card.example||'';},validWordMeaning:item=>!!(item&&typeof item.ko==='string'&&item.ko.trim()),
+    dead:{},LS_DEAD:'breeze.dead',
+    save:(key,value)=>{storage.set(key,JSON.stringify(value));return true;},
+    saveWords(keys){context.lastSaveKeys=keys;context.lastSync=typeof context.scheduleStudySetsVocabularySync==='function'&&context.studySetsIsOpen?.()?context.scheduleStudySetsVocabularySync():null;return true;},
+    queueSync(){context.queuedSync=(context.queuedSync||0)+1;},paintWord(){},refreshReaderWords(){},
+    senseCardKey:(root,meaning)=>`${root}::sense:${meaning}`,
     localStorage:{getItem:key=>storage.has(key)?storage.get(key):null,setItem:(key,value)=>{storage.set(key,value);}},
     ResizeObserver:window.ResizeObserver||class{observe(){}unobserve(){}disconnect(){}}
   };
@@ -312,11 +317,11 @@ test('reference swipe parks its circular action, grows a capsule, and closes on 
   const pointer=(row,type,x,y=20)=>{const event=new window.Event(type,{cancelable:true,bubbles:true});Object.assign(event,{timeStamp:0,button:0,pointerId:1,clientX:x,clientY:y});row.dispatchEvent(event);};
   const rows=[...document.querySelectorAll('.study-sets-word-row')],row=rows[0],surface=row.querySelector('.study-sets-word-surface'),action=row.querySelector('.study-sets-row-action');
   await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',220));await afterAction(pointer(row,'pointerup',220));
-  assert.equal(surface.style.transform,'translateX(-72px)');assert.equal(action.style.width,'44px');assert.equal(rows.length,2);
+  assert.equal(surface.style.transform,'translate3d(-72px,0,0)');assert.equal(action.style.width,'44px');assert.equal(rows.length,2);
   await afterAction(pointer(rows[1],'pointerdown',280));assert.equal(surface.style.transform,'');await afterAction(pointer(rows[1],'pointercancel',280));
   await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',220));await afterAction(pointer(row,'pointerup',220));
   await afterAction(pointer(document.body,'pointerdown',0));assert.equal(surface.style.transform,'');
-  await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',180));assert.equal(action.style.width,'72px');
+  await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',180));assert.match(action.style.transform,/scaleX\(1\.636/);assert.equal(action.style.width,'');
   await afterAction(pointer(row,'pointercancel',180));assert.equal(surface.style.transform,'');
   await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',220));await afterAction(pointer(row,'pointerup',220));await afterAction(action.click());
   assert.equal(document.querySelectorAll('.study-sets-word-row').length,1);await afterAction(query('.study-sets-undo button').click());assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);
@@ -358,7 +363,7 @@ test('a second row keeps pointer ownership while the first committed row collaps
   await afterAction(pointer('pointerdown',280));await afterAction(pointer('pointermove',190));
   finishExit();await new Promise(resolve=>setImmediate(resolve));finishCollapse();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(second.isConnected,true);assert.equal(second.classList.contains('study-sets-dragging'),true);
-  assert.equal(second.querySelector('.study-sets-word-surface').style.transform,'translateX(-90px)');
+  assert.equal(second.querySelector('.study-sets-word-surface').style.transform,'translate3d(-90px,0,0)');
   await afterAction(pointer('pointermove',20));await afterAction(pointer('pointerup',20));assert.equal(document.querySelectorAll('.study-sets-word-row').length,0);assert.ok(query('.study-sets-undo button'));
 });
 
@@ -755,4 +760,23 @@ test('a saved set uses the same bounded window as 전체 단어 after 100 words'
   await new Promise(resolve=>setTimeout(resolve,40));
   const indexes=[...windowed.document.querySelectorAll('.study-sets-word-row')].map(row=>Number(row.dataset.index));
   assert.ok(Math.min(...indexes)>0,'scrolling a saved set mounts a later window');
+});
+
+test('전체 단어 swipe deletes the saved word, keeps book sets in step, and reuses undo',async()=>{
+  const h=harness();await afterAction(h.createSet());
+  assert.deepEqual([...h.context.readStudySets().sets[0].cards].map(card=>card.word).sort(),['calm','quiet']);
+  await afterAction(h.run("studySetsGo('all')"));
+  const row=[...h.document.querySelectorAll('.study-all-words-row')].find(item=>item.querySelector('.vword')?.textContent==='calm');
+  assert.ok(row);assert.equal(row.querySelector('[contenteditable],button.chip,.rowdel'),null);assert.equal(row.querySelector('.chip').getAttribute('role'),'img');
+  await afterAction(row.querySelector('.study-sets-row-action').click());
+  assert.equal(h.context.words.c,undefined);assert.ok(h.context.dead.c);
+  assert.equal(h.document.querySelector('.study-sets-undo span').textContent,'“calm” 삭제됨');
+  assert.equal(h.document.querySelector('.study-sets-undo button').textContent,'실행 취소');
+  await h.context.lastSync;
+  assert.deepEqual([...h.context.readStudySets().sets[0].cards].map(card=>card.word),['quiet']);
+  await afterAction(h.query('.study-sets-undo button').click());
+  assert.equal(h.context.words.c.word,'calm');assert.equal(h.document.querySelector('.study-sets-undo'),null);
+  await h.context.lastSync;
+  assert.deepEqual([...h.context.readStudySets().sets[0].cards].map(card=>card.word).sort(),['calm','quiet']);
+  assert.ok([...h.document.querySelectorAll('.study-all-words-row')].some(item=>item.textContent.includes('calm')));
 });

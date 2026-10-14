@@ -10,7 +10,7 @@ const studySetsDirectoryPositions=new Map();
 const studySetsDirectoryFocus=new Map();
 let studySetsReadEpoch=0,studySetsHomeEpoch=0;
 const studySetsUI={
-  allWordsList:/** @type {{refresh:()=>void,removeId:(id:string)=>(Element|null),dispose:()=>void}|null} */(null),
+  allWordsList:/** @type {{refresh:()=>void,removeId:(id:string)=>(Element|null),unobserve:(row:Element)=>void,dispose:()=>void}|null} */(null),
   dialog:/** @type {HTMLDialogElement|null} */(null),
   sheet:/** @type {HTMLElement|null} */(null),
   body:/** @type {HTMLElement|null} */(null),
@@ -21,7 +21,7 @@ const studySetsUI={
   returnFocus:/** @type {HTMLElement|null} */(null),
   retry:/** @type {null|(()=>void)} */(null),
   lastError:null,diagnostic:null,mutating:false,
-  screen:'list',setId:'',notice:'',undo:null,historyToken:'',pendingClose:false,homeEntry:false,managementEntry:false,
+  screen:'list',setId:'',notice:'',undo:null,undoTimer:0,historyToken:'',pendingClose:false,homeEntry:false,managementEntry:false,
   swipeClose:/** @type {null|(()=>void)} */(null),
   releaseClickId:/** @type {number|null} */(null),
   pageOpen:false,transitioning:false,homeScroll:0,detailEditing:false,detailScroll:0,
@@ -438,45 +438,86 @@ async function studySetsMutateUnlocked(change,success,exitRow=null,handoff=null)
     studySetsShowError(error,committed?()=>studySetsReadAndRender(true,{phase:'display',committed,serializedCharacters,operation}):retry,{phase,committed,serializedCharacters,operation});
   }finally{if(exitRow)studySetsQueuedRows.delete(exitRow);studySetsUI.mutating=false;releaseMutation();}
 }
+const studySetsFlights=new WeakMap();
+function studySetsHaptic(style){
+  const haptics=window.Capacitor?.Plugins?.Haptics;
+  if(!haptics||typeof haptics.impact!=='function')return;
+  try{haptics.impact({style});}catch(_){}
+}
+function studySetsClearUndo(){
+  if(studySetsUI.undoTimer){clearTimeout(studySetsUI.undoTimer);studySetsUI.undoTimer=0;}
+  studySetsUI.undo=null;
+}
+function studySetsUndoNotice(message,restore){
+  const notice=studySetsNode('div','study-sets-undo');notice.setAttribute('role','status');
+  const button=studySetsButton('실행 취소',restore);studySetsTouchAction(button,restore);
+  notice.append(studySetsNode('span','',message),button);return notice;
+}
+function studySetsPlaceWordUndo(){
+  if(studySetsUI.undo?.kind!=='word'||!studySetsUI.footer)return;
+  const undo=studySetsUI.undo,notice=studySetsUndoNotice(`“${undo.word}” 삭제됨`,undo.restore);
+  const existing=studySetsUI.footer.querySelector('.study-sets-undo');
+  if(existing)existing.replaceWith(notice);else studySetsUI.footer.prepend(notice);
+  studySetsUI.footer.hidden=false;
+}
+function studySetsRefreshAllWordsCount(){
+  const catalog=studySetsAllWordsGroups(),caption=studySetsUI.body?.querySelector('.study-sets-caption');
+  if(caption)caption.textContent=`${catalog.values.length}단어 · ${catalog.entries.length}개 뜻 카드`;
+  const list=document.getElementById('study-all-words-list');
+  if(!list)return;
+  list.dataset.total=String(catalog.values.length);list.setAttribute('aria-label',`전체 ${catalog.values.length}단어`);
+}
+function studySetsFinishRowExit(row){
+  if(!row.isConnected||!studySetsIsOpen())return;
+  const all=row.classList.contains('study-all-words-row'),word=row.classList.contains('study-sets-word-row');
+  const focused=row.contains(document.activeElement),next=row.nextElementSibling||row.previousElementSibling;
+  const selector=all?'.study-all-words-row':'.study-sets-word-row';
+  const empty=()=>{
+    studySetsUI.body.replaceChildren(studySetsEmpty(all?'저장된 단어가 없어요':'세트에 학습할 단어가 없어요',all?'읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.':''));
+    if(all){const start=document.getElementById('study-all-words-start');if(start)start.disabled=true;const test=document.getElementById('study-all-words-test');if(test)test.disabled=true;}
+  };
+  // A windowed list owns indexes and spacers. Drop this row there so offscreen
+  // words are not rebuilt, and reuse cached heights instead of remeasuring.
+  if(studySetsUI.allWordsList?.removeId&&row.dataset.cardId&&(all||word)){
+    const replacement=studySetsUI.allWordsList.removeId(row.dataset.cardId);
+    if(row.isConnected)row.remove();
+    if(!studySetsUI.body.querySelector(selector))empty();
+    else if(focused){/** @type {HTMLElement} */(replacement?.querySelector('.vword')||studySetsUI.title).focus({preventScroll:true});}
+    if(all)studySetsRefreshAllWordsCount();
+    return;
+  }
+  row.remove();
+  studySetsUI.body.querySelectorAll(selector+' .study-sets-number').forEach((node,index)=>{node.textContent=String(index+1);});
+  if(!studySetsUI.body.querySelector(selector))empty();
+  else if(all)studySetsRefreshAllWordsCount();
+  if(focused){(next?.querySelector('.vword')||studySetsUI.title)?.focus({preventScroll:true});}
+}
 function studySetsAnimateExit(row){
   if(!row.isConnected||typeof row.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return false;
-  const surface=row.querySelector('.study-sets-word-surface'),height=row.getBoundingClientRect().height;
-  const width=surface?.getBoundingClientRect().width||row.getBoundingClientRect().width;
+  const surface=row.querySelector('.study-sets-word-surface'),height=Number(row.dataset.rowHeight)||row.getBoundingClientRect().height;
+  const width=Number(row.dataset.rowWidth)||surface?.getBoundingClientRect().width||row.getBoundingClientRect().width;
   if(!surface||!height)return false;
   const screen=studySetsUI.screen,setId=studySetsUI.setId;
+  studySetsUI.allWordsList?.unobserve?.(row);
   studySetsUI.swipeClose=null;row.classList.add('study-sets-exiting');row.setAttribute('aria-busy','true');
   const action=row.querySelector('.study-sets-row-action');if(action){action.disabled=true;action.style.width=Math.max(44,width-24)+'px';}
   // Undo owns the committed state immediately, including during row removal.
-  // Keep its target stable when the row finishes, even if a finger is down.
-  const committed=studySetsUI.state?.sets.find(item=>item.id===setId);
-  if(committed)renderStudySetsDetailFooter(committed);
-  // Membership is already durable. Animate only the committed visual removal.
-  let exit;
-  try{exit=surface.animate([{transform:surface.style.transform||'translateX(0)'},{transform:`translateX(${-width}px)`}],{duration:Math.max(100,Math.min(180,(width-Math.abs(Number((surface.style.transform||'').match(/translateX\(([-\d.]+)px\)/)?.[1])||0))/Math.max(2,Number(row.dataset.releaseVelocity)||0))),easing:'cubic-bezier(.18,.65,.35,1)',fill:'forwards'});}catch(_){row.classList.remove('study-sets-exiting');return false;}
+  if(screen==='all')studySetsPlaceWordUndo();
+  else{const committed=studySetsUI.state?.sets.find(item=>item.id===setId);if(committed)renderStudySetsDetailFooter(committed);}
   const finish=()=>{
     if(!row.isConnected||!studySetsIsOpen()||studySetsUI.screen!==screen||studySetsUI.setId!==setId)return;
-    const set=studySetsUI.state?.sets.find(item=>item.id===setId);if(!set)return;
-    const focused=row.contains(document.activeElement),next=row.nextElementSibling||row.previousElementSibling;
-    // A windowed set list owns indexes and spacers. Drop this card there so
-    // offscreen rows are not rebuilt or renumbered as if every row were mounted.
-    if(studySetsUI.allWordsList?.removeId&&row.dataset.cardId&&row.classList.contains('study-sets-word-row')){
-      const replacement=studySetsUI.allWordsList.removeId(row.dataset.cardId);
-      if(row.isConnected)row.remove();
-      if(!studySetsUI.body.querySelector('.study-sets-word-row'))studySetsUI.body.replaceChildren(studySetsEmpty('세트에 학습할 단어가 없어요',''));
-      else if(focused){/** @type {HTMLElement} */(replacement?.querySelector('.vword')||studySetsUI.title).focus({preventScroll:true});}
-      return;
-    }
-    row.remove();
-    studySetsUI.body.querySelectorAll('.study-sets-number').forEach((node,index)=>{node.textContent=String(index+1);});
-    // Keep neighboring rows and their pointer capture alive during consecutive swipes.
-    if(!studySetsUI.body.querySelector('.study-sets-word-row'))studySetsUI.body.replaceChildren(studySetsEmpty('세트에 학습할 단어가 없어요',''));
-    if(focused){const target=next?.querySelector('.vword')||studySetsUI.title;target.focus({preventScroll:true});}
+    if(screen==='detail'&&!studySetsUI.state?.sets.find(item=>item.id===setId))return;
+    studySetsFinishRowExit(row);
   };
-  exit.finished.then(()=>{
-    if(!row.isConnected)return;
-    const collapse=row.animate([{height:height+'px',opacity:1},{height:'0px',opacity:0}],{duration:180,easing:'ease-out',fill:'forwards'});
-    return collapse.finished;
-  }).then(finish,finish);
+  const collapse=()=>{
+    if(!row.isConnected)return Promise.resolve();
+    try{return row.animate([{height:height+'px',opacity:1},{height:'0px',opacity:0}],{duration:180,easing:'ease-out',fill:'forwards'}).finished;}catch(_){return Promise.resolve();}
+  };
+  const flight=studySetsFlights.get(row);
+  if(flight){flight.then(collapse).then(finish,finish);return true;}
+  let exit;
+  try{exit=surface.animate([{transform:surface.style.transform||'translate3d(0,0,0)'},{transform:`translate3d(${-width}px,0,0)`}],{duration:Math.max(100,Math.min(180,(width-Math.abs(Number((surface.style.transform||'').match(/translate(?:3d|X)\(([-\d.]+)px/)?.[1])||0))/Math.max(2,Number(row.dataset.releaseVelocity)||0))),easing:'cubic-bezier(.18,.65,.35,1)',fill:'forwards'});}catch(_){row.classList.remove('study-sets-exiting');return false;}
+  exit.finished.then(collapse).then(finish,finish);
   return true;
 }
 function studySetsGo(screen,setId=studySetsUI.setId){
@@ -489,7 +530,7 @@ function studySetsGo(screen,setId=studySetsUI.setId){
     history.pushState({...history.state,studySetsScreen:screen,studySetsDetailEditing:studySetsUI.detailEditing,studySetsSetId:setId,studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsManagement:studySetsUI.managementEntry,view:['detail','study','all'].includes(screen)?'memory-set':'vocab'},'');
   }
   studySetsUI.screen=screen;studySetsUI.setId=setId;studySetsUI.notice='';
-  if(screen!=='detail')studySetsUI.undo=null;
+  if(screen!=='detail')studySetsClearUndo();
   return studySetsReadAndRender();
 }
 function studySetsBack(){
@@ -597,21 +638,26 @@ function renderStudySetsAllWords(){
     if(start.isConnected&&session.queue.length&&session.history.length)start.textContent=`이어서 학습 · ${session.passed.length}/${session.initial.length}`;
   }).catch(error=>{vocabularyReviewLastError=error;});
   if(BreezeVocabularyTest.ENABLED){const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'all'}));test.id='study-all-words-test';test.disabled=!entries.length;ui.footer.append(test);}
+  studySetsPlaceWordUndo();
   if(!entries.length){ui.body.append(studySetsEmpty('저장된 단어가 없어요','읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));return;}
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id='study-all-words-list';
   if(!studySetsOpened.has('@all'))studySetsOpened.set('@all',new Set());
   list.setAttribute('aria-label',`전체 ${values.length}단어`);list.dataset.total=String(values.length);
   const createRow=index=>{
-    const entries=values[index],row=studySetsNode('li','study-all-words-row'),copy=createVocabularyGroup(entries,{ordinal:index+1,opened:studySetsOpened.get('@all')});
-    row.dataset.index=String(index);row.setAttribute('aria-posinset',String(index+1));row.setAttribute('aria-setsize',String(values.length));
-    // This detail is a projection of saved vocabulary, with no deletion,
-    // exclusion gesture or incidental storage write from its rating display.
+    const group=values[index],row=studySetsNode('li','study-all-words-row'),copy=createVocabularyGroup(group,{ordinal:index+1,opened:studySetsOpened.get('@all')});
+    const groupId=group[0][1].root||group[0][0];
+    row.dataset.cardId=groupId;row.dataset.index=String(index);row.setAttribute('aria-posinset',String(index+1));row.setAttribute('aria-setsize',String(values.length));
+    // Meanings and stars stay read-only. A left swipe deletes the saved word.
     const chip=copy.querySelector('.chip');if(chip){const rating=studySetsNode('span',chip.className,chip.textContent);rating.setAttribute('role','img');rating.setAttribute('aria-label',chip.getAttribute('aria-label'));chip.replaceWith(rating);}
-    copy.querySelector('.vordinal')?.classList.add('study-sets-number');row.append(copy);return row;
+    copy.querySelector('.vordinal')?.classList.add('study-sets-number');
+    const clip=studySetsNode('div','study-sets-word-clip'),surface=studySetsNode('div','study-sets-word-surface');
+    const action=studySetsButton('',()=>studySetsDeleteSavedGroup(row,group),'study-sets-row-action');
+    action.append(studySetsIcon('remove'));action.title='단어장에서 삭제';action.setAttribute('aria-label',`${group[0][1].word} 단어장에서 삭제`);
+    surface.append(copy);clip.append(action,surface);row.append(clip);studySetsSwipe(row,surface,action);return row;
   };
   ui.body.append(list);
   const opened=studySetsOpened.get('@all');
-  ui.allWordsList=studySetsMountRows(list,values,createRow,{rowClass:'study-all-words-row',spacerClass:'study-all-words-spacer',tab:'word',key:entries=>entries[0][0],open:entries=>opened.has(entries[0][0])});
+  ui.allWordsList=studySetsMountRows(list,values,createRow,{rowClass:'study-all-words-row',spacerClass:'study-all-words-spacer',tab:'word',key:entries=>entries[0][0],id:entries=>entries[0][1].root||entries[0][0],open:entries=>opened.has(entries[0][0])});
 }
 // 전체 단어 and a saved set share this cutoff. Longer lists mount a viewport.
 function studySetsMountRows(list,items,createRow,options){
@@ -640,7 +686,7 @@ function studySetsWindowRows(list,items,createRow,options){
     if(!frame)frame=requestAnimationFrame(()=>{frame=0;const measureNow=pendingMeasure;pendingMeasure=false;refresh(null,measureNow);});
   };
   const observer=new ResizeObserver(()=>schedule(true));
-  function refresh(requiredIndex=null,measure=true){
+  function refresh(requiredIndex=null,measure=true,layoutOnly=false){
     if(disposed||!list.isConnected)return;
     const resized=width!==body.clientWidth;
     // A scroll that stays inside the mounted window does not change row heights.
@@ -656,8 +702,10 @@ function studySetsWindowRows(list,items,createRow,options){
     width=body.clientWidth;
     if(resized){heights.fill(64);sum();}
     // Read the existing window in one layout pass before writing its replacement.
+    // A row that just collapsed already removed its cached height; do not
+    // measure every remaining row to discover that one absence.
     let measured=false;
-    for(const [index,row] of rows){
+    if(!layoutOnly)for(const [index,row] of rows){
       if(row.classList.contains('study-sets-exiting')||row.classList.contains('study-sets-dragging')||index>=items.length)continue;
       const height=row.getBoundingClientRect().height;
       if(height&&height!==heights[index]){heights[index]=height;measured=true;}
@@ -717,9 +765,10 @@ function studySetsWindowRows(list,items,createRow,options){
     const nextFocusables=next?[...next.querySelectorAll('button,.vword')].filter(node=>!node.disabled&&node.tabIndex>=0):[];
     (event.shiftKey?nextFocusables[nextFocusables.length-1]:nextFocusables[0])?.focus({preventScroll:true});
   };
-  // Drop one custom-set card without remounting rows that are still moving.
+  function unobserve(row){observer.unobserve(row);}
+  // Drop one card or saved word without remounting rows that are still moving.
   function removeId(id){
-    const index=items.findIndex(item=>item.id===id);
+    const index=items.findIndex((item,itemIndex)=>(options.id?options.id(item,itemIndex):item.id)===id);
     if(disposed||index<0)return null;
     items.splice(index,1);heights.splice(index,1);
     const removed=rows.get(index);rows.delete(index);
@@ -737,14 +786,14 @@ function studySetsWindowRows(list,items,createRow,options){
     list.dataset.total=String(items.length);
     paintedStart=paintedEnd=paintedFocus=-1;
     if(!items.length){list.replaceChildren();rows.clear();return null;}
-    refresh(null,true);
+    refresh(null,false,true);
     return rows.get(Math.min(index,items.length-1))||null;
   }
   const onScroll=()=>schedule(false);
   list.style.overflowAnchor='none';
   body.addEventListener('scroll',onScroll,{passive:true});list.addEventListener('keydown',keyboard);
   observer.observe(body);refresh(null,true);
-  return {refresh,removeId,dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();body.removeEventListener('scroll',onScroll);list.removeEventListener('keydown',keyboard);rows.clear();}};
+  return {refresh,removeId,unobserve,dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();body.removeEventListener('scroll',onScroll);list.removeEventListener('keydown',keyboard);rows.clear();}};
 }
 function renderStudySetsCreate(){
   const body=studySetsUI.body,form=document.createElement('form');form.id='study-sets-create-form';form.className='study-sets-form';
@@ -852,12 +901,73 @@ function renderStudySetsDetailFooter(set){
     studySetsUI.footer.hidden=false;studySetsUI.footer.append(start);
     if(BreezeVocabularyTest.ENABLED){const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'set',setId:set.id}));test.id='study-sets-test';test.disabled=set.cards.length===set.excludedIds.length;studySetsUI.footer.append(test);}
   }
-  if(studySetsUI.undo){
-    const undo=studySetsUI.undo;const notice=studySetsNode('div','study-sets-undo');notice.setAttribute('role','status');
-    const restore=()=>studySetsMutate(state=>(undo.ids||[undo.id]).reduce((next,id)=>BreezeStudySets.restore(next.state,set.id,id,Date.now()),{state}),()=>{studySetsUI.undo=null;studySetsUI.notice='';});
-    const button=studySetsButton('실행 취소',restore);studySetsTouchAction(button,restore);
-    notice.append(studySetsNode('span','',`“${undo.word}” 제외됨`),button);studySetsUI.footer.prepend(notice);
+  if(studySetsUI.undo&&studySetsUI.undo.kind!=='word'){
+    const undo=studySetsUI.undo;
+    const restore=()=>studySetsMutate(state=>(undo.ids||[undo.id]).reduce((next,id)=>BreezeStudySets.restore(next.state,set.id,id,Date.now()),{state}),()=>{studySetsClearUndo();studySetsUI.notice='';});
+    studySetsUI.footer.prepend(studySetsUndoNotice(`“${undo.word}” 제외됨`,restore));
   }
+}
+function studySetsRememberWordUndo(snapshot,word){
+  const restore=()=>{
+    const current=studySetsUI.undo;
+    studySetsClearUndo();
+    if(!snapshot.length)return;
+    for(const snap of snapshot){
+      words[snap.id]=snap.item;
+      if(snap.dead)dead[snap.id]=snap.dead;else delete dead[snap.id];
+      if(snap.sense){if(snap.senseDead)dead[snap.sense]=snap.senseDead;else delete dead[snap.sense];}
+    }
+    if(typeof save==='function')save(typeof LS_DEAD==='string'?LS_DEAD:'breeze.dead',dead);
+    if(typeof saveWords==='function')saveWords(snapshot.map(item=>item.id));
+    if(typeof queueSync==='function')queueSync(true);
+    for(const snap of snapshot)if(typeof paintWord==='function')paintWord(snap.item.root||snap.id);
+    if(current&&studySetsUI.screen==='all')renderStudySets(false);
+  };
+  if(studySetsUI.undoTimer)clearTimeout(studySetsUI.undoTimer);
+  const undo={kind:'word',word,restore};
+  studySetsUI.undo=undo;
+  const timer=setTimeout(()=>{
+    if(studySetsUI.undo!==undo)return;
+    studySetsClearUndo();
+    studySetsUI.footer?.querySelector('.study-sets-undo')?.remove();
+  },5000);
+  timer.unref?.();
+  studySetsUI.undoTimer=timer;
+  studySetsPlaceWordUndo();
+}
+function studySetsDeleteSavedGroup(row,group){
+  if(!row?.isConnected||studySetsQueuedRows.has(row)||row.classList.contains('study-sets-exiting'))return;
+  const root=group[0][1].root||group[0][0];
+  const ids=Object.keys(words).filter(id=>id===root||words[id]&&words[id].root===root);
+  if(!ids.length){studySetsUI.swipeClose?.();return;}
+  const senseKey=item=>item?.ko&&typeof senseCardKey==='function'?senseCardKey(root,item.ko):'';
+  const snapshot=ids.map(id=>{
+    const item=words[id],sense=senseKey(item);
+    return {id,item:JSON.parse(JSON.stringify(item)),dead:dead[id]||0,sense,senseDead:sense?(dead[sense]||0):0};
+  });
+  const stamp=Date.now();
+  for(const id of ids){
+    const item=words[id],mark=Math.max(stamp,(item.up||0)+1,(dead[id]||0)+1);
+    const sense=senseKey(item);if(sense)dead[sense]=mark;
+    dead[id]=mark;delete words[id];
+  }
+  const deadName=typeof LS_DEAD==='string'?LS_DEAD:'breeze.dead';
+  if(typeof save==='function')save(deadName,dead);
+  const saved=typeof saveWords==='function'?saveWords(ids):true;
+  if(saved===false){
+    for(const snap of snapshot){
+      words[snap.id]=snap.item;
+      if(snap.dead)dead[snap.id]=snap.dead;else delete dead[snap.id];
+      if(snap.sense){if(snap.senseDead)dead[snap.sense]=snap.senseDead;else delete dead[snap.sense];}
+    }
+    if(typeof save==='function')save(deadName,dead);
+    studySetsUI.swipeClose?.();return;
+  }
+  if(typeof queueSync==='function')queueSync(true);
+  if(typeof paintWord==='function')paintWord(root);
+  if(typeof refreshReaderWords==='function'&&snapshot.some(snap=>Array.isArray(snap.item?.phraseParts)))refreshReaderWords();
+  studySetsRememberWordUndo(snapshot,group[0][1].word||'');
+  if(!studySetsAnimateExit(row))studySetsFinishRowExit(row);
 }
 function renderStudySetsDetail(set,excluded){
   const body=studySetsUI.body;
@@ -893,29 +1003,56 @@ function renderStudySetsDetail(set,excluded){
   studySetsUI.allWordsList=studySetsMountRows(list,grouped,createRow,{rowClass:'study-sets-word-row',spacerClass:'study-sets-window-spacer',tab:'edge',key:card=>'set:'+set.id+':'+card.id,open:card=>opened.has(card.id)});
 }
 function studySetsSwipe(row,surface,action){
-  // These read-only rows own a horizontal gesture. Native text dragging would
-  // cancel pointer events and hand the gesture to the app's file-drop overlay.
+  // These rows own a horizontal gesture. Native text dragging would cancel
+  // pointer events and hand the gesture to the app's file-drop overlay.
   // Cancel only selection/drag defaults here, not pointerdown or vertical scroll.
   row.addEventListener('selectstart',event=>event.preventDefault(),true);
   row.addEventListener('dragstart',event=>{event.preventDefault();event.stopPropagation();},true);
-  let start=null,suppressClick=false,offset=0,stop=null;
-  const width=()=>row.getBoundingClientRect().width||320;
-  const fullThreshold=()=>Math.max(144,width()*.62);
-  const paint=amount=>{
-    offset=Math.max(0,Math.min(width(),amount));
-    surface.style.transform=offset?`translateX(${-offset}px)`:'';
-    action.style.width=Math.max(44,offset-28)+'px';action.style.opacity=String(Math.min(1,offset/32));
+  let start=null,suppressClick=false,offset=0,rawOffset=0,rowWidth=0,stop=null,finger=false,hapticArmed=true;
+  const threshold=()=>Math.max(144,(rowWidth||320)*.62);
+  const rubber=amount=>{const raw=Math.max(0,amount),edge=threshold();if(raw<=edge)return raw;const extra=raw-edge;return edge+extra*48/(extra+48);};
+  const paintVisual=visual=>{
+    offset=Math.max(0,visual);
+    surface.style.transform=offset?`translate3d(${-offset}px,0,0)`:'';
+    const grow=Math.max(44,offset-28),past=offset>=threshold();
+    // Drag and spring move the action with a transform. Width is written once
+    // the row parks, so the finger never forces layout on every sample.
+    action.style.width='';
+    action.style.opacity=offset?String(Math.min(1,offset/32)):'';
+    action.style.transformOrigin=offset?'right center':'';
+    action.style.transform=offset?`translateY(-50%) scaleX(${grow/44})`:'';
+    if(finger&&past&&hapticArmed){hapticArmed=false;studySetsHaptic('LIGHT');}
+    if(!past)hapticArmed=true;
     row.classList.toggle('study-sets-revealed',offset>0);
-    row.classList.toggle('study-sets-swiped',offset>=fullThreshold());
+    row.classList.toggle('study-sets-swiped',past);
   };
-  const settle=(target,velocity=0)=>{stop?.();row.classList.add('study-sets-dragging');stop=studySpring(offset,target,velocity,paint,()=>{stop=null;row.classList.remove('study-sets-dragging');});};
-  const close=()=>{start=null;settle(0);if(studySetsUI.swipeClose===close)studySetsUI.swipeClose=null;};
+  const paintFinger=raw=>{rawOffset=Math.max(0,raw);paintVisual(rubber(rawOffset));};
+  const settle=(target,velocity=0)=>{
+    stop?.();finger=false;row.classList.add('study-sets-dragging');
+    stop=studySpring(offset,target,velocity,paintVisual,()=>{
+      stop=null;rawOffset=Math.max(0,target);row.classList.remove('study-sets-dragging');
+      if(target<=0){offset=0;rawOffset=0;surface.style.transform='';action.style.transform='';action.style.width='';action.style.opacity='';row.classList.remove('study-sets-revealed','study-sets-swiped');}
+      else if(target<threshold()){action.style.transform='';action.style.width='44px';}
+    });
+  };
+  const close=()=>{start=null;finger=false;settle(0);if(studySetsUI.swipeClose===close)studySetsUI.swipeClose=null;};
   const park=(velocity=0)=>{settle(72,velocity);studySetsUI.swipeClose=close;};
+  const fling=(target,velocity)=>{
+    stop?.();finger=false;row.dataset.releaseVelocity=String(velocity);row.dataset.flinging='1';
+    const flight=new Promise(resolve=>{
+      row.classList.add('study-sets-dragging');
+      stop=studySpring(offset,target,velocity,paintVisual,()=>{stop=null;row.classList.remove('study-sets-dragging');resolve();});
+    });
+    studySetsFlights.set(row,flight);
+    const abort=()=>{stop?.();stop=null;studySetsFlights.delete(row);row.classList.remove('study-sets-exiting');delete row.dataset.flinging;settle(0);if(studySetsUI.swipeClose===abort)studySetsUI.swipeClose=null;};
+    studySetsUI.swipeClose=abort;
+  };
+  action.addEventListener('click',()=>{if(!studySetsFlights.has(row))studySetsHaptic('MEDIUM');},true);
   action.addEventListener('focus',()=>{if(!start&&!row.classList.contains('study-sets-exiting')){if(studySetsUI.swipeClose!==close)studySetsUI.swipeClose?.();park();}});
   row.addEventListener('pointerdown',event=>{
     if(studySetsQueuedRows.has(row)||row.classList.contains('study-sets-exiting')||event.button!==0||event.isPrimary===false||event.target instanceof Element&&event.target.closest('.study-sets-row-action'))return;
     if(studySetsUI.swipeClose!==close)studySetsUI.swipeClose?.();
-    stop?.();stop=null;suppressClick=false;start={x:event.clientX,y:event.clientY,id:event.pointerId,axis:'',base:offset,samples:[{x:event.clientX,t:event.timeStamp}],control:event.target instanceof Element&&!!event.target.closest('.chip')};
+    stop?.();stop=null;rawOffset=offset;suppressClick=false;finger=false;start={x:event.clientX,y:event.clientY,id:event.pointerId,axis:'',base:rawOffset,samples:[{x:event.clientX,t:event.timeStamp}],control:event.target instanceof Element&&!!event.target.closest('.chip')};
   });
   row.addEventListener('pointermove',event=>{
     if(!start||start.id!==event.pointerId)return;
@@ -925,18 +1062,19 @@ function studySetsSwipe(row,surface,action){
     if(!start.axis){
       if(Math.max(Math.abs(dx),Math.abs(dy))<8)return;
       if(Math.abs(dy)>=Math.abs(dx)||dx>0&&!start.base){suppressClick=true;close();return;}
-      start.axis='x';try{row.setPointerCapture(event.pointerId);}catch(_){}row.classList.add('study-sets-dragging');studySetsUI.swipeClose=close;
+      start.axis='x';rowWidth=row.getBoundingClientRect().width||320;row.dataset.rowWidth=String(rowWidth);row.dataset.rowHeight=String(row.getBoundingClientRect().height||62);
+      try{row.setPointerCapture(event.pointerId);}catch(_){}finger=true;row.classList.add('study-sets-dragging');studySetsUI.swipeClose=close;
     }
-    suppressClick=true;event.preventDefault();paint(start.base-dx);
+    suppressClick=true;event.preventDefault();paintFinger(start.base-dx);
   });
   row.addEventListener('pointerup',event=>{
     if(!start||start.id!==event.pointerId)return;
     if(start.control){start=null;return;}
-    const moved=start.axis==='x',wasOpen=!!start.base,travel=start.x-event.clientX,amount=start.base+travel,velocity=-studyReleaseVelocity(start.samples,event.timeStamp);start=null;
+    const moved=start.axis==='x',wasOpen=!!start.base,travel=start.x-event.clientX,amount=start.base+travel,velocity=-studyReleaseVelocity(start.samples,event.timeStamp);start=null;finger=false;
     row.classList.remove('study-sets-dragging');
-    if(moved&&velocity>=-.2&&travel>=36&&amount+Math.max(0,velocity)*140>=fullThreshold()){paint(amount);row.dataset.releaseVelocity=String(velocity);action.click();}
-    else if(moved&&velocity>=-.2&&amount>=36)park(velocity);
-    else{if(wasOpen)suppressClick=true;close();}
+    if(moved&&velocity>=-.2&&travel>=36&&amount+Math.max(0,velocity)*140>=threshold()){fling((rowWidth||320)+28,velocity);studySetsHaptic('MEDIUM');action.click();return;}
+    if(moved&&velocity>=-.2&&amount>=36)park(velocity);
+    else{if(wasOpen)suppressClick=true;settle(0,velocity);}
   });
   row.addEventListener('pointercancel',()=>{if(start)suppressClick=true;close();});
   // Touch initially captures to the hit child (e.g. .vko). Its capture-loss

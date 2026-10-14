@@ -118,16 +118,24 @@ try{
  await studyAction(entry.click(),page);await assertDirectory();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
  assert.equal(await page.locator('#study-all-words-list > li').count(),5);
- assert.equal(await page.locator('#study-all-words-list .study-sets-row-action,#study-all-words-list .rowdel,#study-all-words-list [contenteditable]').count(),0);
- const allWordsBytes=await page.evaluate(()=>JSON.stringify(words)),allSetBytes=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
+ assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable],#study-all-words-list button.chip').count(),0);
+ assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').count(),5);
+ assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');
+ const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
+ const removedWord=await page.locator('#study-all-words-list > li').first().locator('.vword').innerText();
  const allRow=page.locator('#study-all-words-list > li').first(),allBox=await allRow.boundingBox();await page.mouse.move(allBox.x+allBox.width*.8,allBox.y+allBox.height/2);await page.mouse.down();await page.mouse.move(allBox.x+10,allBox.y+allBox.height/2,{steps:10});await page.mouse.up();
- assert.equal(await page.locator('#study-all-words-list > li').count(),5,'all-word swipe neither excludes nor deletes');
+ await page.waitForFunction(()=>document.querySelectorAll('#study-all-words-list > li').length===4);
+ assert.equal(await page.evaluate(word=>words[Object.keys(words).find(id=>words[id]?.word===word)]?.word||'',removedWord),'','all-word swipe deletes the saved word');
+ assert.equal(await page.locator('.study-sets-undo button').innerText(),'실행 취소');
+ await page.locator('.study-sets-undo button').click();
+ await page.waitForFunction(()=>document.querySelectorAll('#study-all-words-list > li').length===5);
+ assert.equal(await page.evaluate(word=>Object.values(words).some(item=>item?.word===word),removedWord),true,'undo restores the saved word');
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
   const button=await page.locator('#study-all-words-start').boundingBox();assert.ok(button&&button.x>=0&&button.y>=0&&button.x+button.width<=width+1&&button.y+button.height<=height+1,'All Words start remains inside safe viewport '+JSON.stringify(button));
   assert.equal(await page.locator('#v-memory-set').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);await page.screenshot({path:`${proof}/all-detail-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`});
  }
- assert.equal(await page.evaluate(()=>JSON.stringify(words)),allWordsBytes);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
+ assert.equal(await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allWordsBytes);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
 
  await studyAction(page.locator('#study-all-words-start').click(),page);await page.waitForFunction(()=>activeAppView()==='study');
  await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
