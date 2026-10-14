@@ -1,7 +1,7 @@
 .DS_Store
 node_modules/
 
-# School exam OCR used only for the local example-scope run. Do not commit.
+# Local exam text for the example-scope run. Do not commit the PDFs or the JSON.
 benchmarks/example-scope/data/private/
 supabase/.temp/
 supabase/.env.article-preview.local

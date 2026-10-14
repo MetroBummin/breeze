@@ -7,10 +7,23 @@ import { fromParts } from './passage.mjs';
 import { RULES, normalizeExample, spanAt } from './rules.mjs';
 
 const PRIVATE_EXAM = new URL('./data/private/real-exam.json', import.meta.url);
+const PRIVATE_JUNE = new URL('./data/private/june-mock.json', import.meta.url);
 
 export function loadPassages(){
   const prose = JSON.parse(readFileSync(new URL('./data/prose-gold.json', import.meta.url), 'utf8'));
   return [...prose.passages, ...mockExamPassages(), ...adversarialPassages()];
+}
+
+/**
+ * 2024 grade-1 June mock exams. The PDF and the labeled JSON stay out of git.
+ * The joiner is a space because the app joins PDF lines with a space before
+ * it asks for the sentence. An empty list means the local file is absent.
+ */
+export function loadJunePassages(joiner = ' '){
+  const path = fileURLToPath(PRIVATE_JUNE);
+  if (!existsSync(path)) return [];
+  const items = JSON.parse(readFileSync(path, 'utf8'));
+  return items.map(item => fromParts(item.id, item.dataset, item.parts, joiner));
 }
 
 /** Photo-scan exams stay out of git. An empty list means the local file is absent. */
@@ -33,7 +46,14 @@ export function wordTaps(passage){
     const words = [...slice.matchAll(/[A-Za-z][A-Za-z'’-]*|[0-9]+(?:\.[0-9]+)?/g)];
     const usable = words.filter(word => /[A-Za-z]/.test(word[0]));
     const pool = usable.length ? usable : words;
-    if (!pool.length) continue;
+    if (!pool.length){
+      // A choice such as "① ⓐ" has no ASCII word, but the tap still has to
+      // land inside that choice. Public spans all contain a word.
+      if (!String(span.category || '').startsWith('opt-')) continue;
+      const at = slice.search(/\S/);
+      if (at < 0) continue;
+      pool.push({ 0: slice[at], index: at });
+    }
     const picks = [pool[0]];
     const longer = pool.filter(word => word[0].length >= 4);
     if (longer.length) picks.push(longer[Math.min(longer.length - 1, 1)] === pool[0] ? longer[longer.length - 1] : longer[0]);
@@ -163,6 +183,8 @@ export function scoreAll(passages = loadPassages()){
       'long-text': 'Speckled Band and Hound of the Baskervilles excerpts already in the repo, plus line-broken copies',
       'mock-exam': 'Original exam-style pages in the same shape as a multiple-choice PDF',
       adversarial: 'Hand-labeled dense stress paragraphs',
+      'june-workbook': '2024 고1 6월 모의고사 workbook, text layer, local only',
+      'june-abcd': '2024 고1 6월 예상문제 유형 A–D, text layer, local only',
       'g1-exam': '중앙고 고1 공통영어2 photo scan, tesseract eng+kor, local only',
       'g2-exam': '중앙고 고2 영어II photo scan, tesseract eng+kor, local only',
     }[id] || id])),

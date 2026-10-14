@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
-import { loadPassages, loadRealExamPassages, scoreAll, wordTaps } from '../benchmarks/example-scope/score.mjs';
+import { loadJunePassages, loadPassages, loadRealExamPassages, scoreAll, wordTaps } from '../benchmarks/example-scope/score.mjs';
 import { normalizeExample, ruleA, ruleB, ruleC, spanAt } from '../benchmarks/example-scope/rules.mjs';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
@@ -112,6 +112,34 @@ test('the headless comparison finishes and keeps every tap in one bucket', () =>
   }
   const winner = Object.entries(report.rules).sort((a, b) => b[1].overall.accuracy - a[1].overall.accuracy)[0];
   assert.ok(winner, 'comparison produced no rule');
+});
+
+test('the 2024 June mock stays out of git and is the main labeled set when present', () => {
+  const gitignore = readFileSync(resolve(root, '.gitignore'), 'utf8');
+  assert.match(gitignore, /benchmarks\/example-scope\/data\/private\//);
+  const june = loadJunePassages();
+  if (!existsSync(resolve(root, 'benchmarks/example-scope/data/private/june-mock.json'))){
+    assert.equal(june.length, 0);
+    return;
+  }
+  assert.deepEqual([...new Set(june.map(passage => passage.dataset))].sort(), ['june-abcd', 'june-workbook']);
+  assert.ok(june.every(passage => !passage.text.includes('\n')));
+  assert.ok(june.some(passage => passage.text.includes('①')));
+  const taps = june.flatMap(wordTaps);
+  const options = taps.filter(tap => String(tap.category).startsWith('opt-'));
+  assert.ok(options.length >= 800, `expected a large option set, got ${options.length}`);
+  for (const category of ['main-passage', 'opt-paren', 'opt-lower', 'opt-capital', 'opt-letter'])
+    assert.ok(taps.some(tap => tap.category === category), `missing ${category}`);
+  assert.ok(!loadPassages().some(passage => String(passage.dataset).startsWith('june-')));
+  const report = scoreAll(june);
+  for (const rule of Object.values(report.rules)){
+    const row = rule.overall;
+    assert.equal(row.exact + row.truncated + row.missing + row.overlong + row.wrong, row.taps);
+    assert.ok(rule.datasets['june-workbook']);
+    assert.ok(rule.datasets['june-abcd']);
+    assert.ok(rule.categories['main-passage']);
+    assert.ok(rule.categories['opt-lower']);
+  }
 });
 
 test('photo exam text stays out of git and scores as its own category when present', () => {
