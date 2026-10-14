@@ -30,12 +30,23 @@ function studySetTestFocus(){
   if(document.activeElement!==input)input.focus({preventScroll:true});
   studySetTestPlaceKeyboard();
 }
+function studySetTestReleaseKeyboard(){
+  const host=document.getElementById('v-memory-set');
+  if(!host)return;
+  host.classList.remove('study-set-test-keyboard');
+  host.style.removeProperty('height');
+  host.style.removeProperty('top');
+}
 function studySetTestPlaceKeyboard(){
-  const viewport=window.visualViewport,form=document.getElementById('study-set-test-form');
-  if(!viewport||!form)return;
+  const host=document.getElementById('v-memory-set'),viewport=window.visualViewport;
+  if(!host||studySetsUI.screen!=='test'||!viewport||viewport.scale!==1){studySetTestReleaseKeyboard();return;}
   const overlap=Math.max(0,Math.round(window.innerHeight-(viewport.height+viewport.offsetTop)));
-  form.style.marginBottom=overlap?overlap+'px':'';
-  if(overlap)document.getElementById('study-set-test-answer')?.scrollIntoView({block:'nearest'});
+  if(overlap<1){studySetTestReleaseKeyboard();return;}
+  host.classList.add('study-set-test-keyboard');
+  host.style.height=Math.round(viewport.height)+'px';
+  host.style.top=Math.round(viewport.offsetTop)+'px';
+  const body=host.querySelector('.study-sets-body');
+  if(body)body.scrollTop=0;
 }
 function studySetTestWatchKeyboard(){
   const viewport=window.visualViewport;
@@ -51,8 +62,23 @@ function studySetTestPaintFill(slider){
   slider.setAttribute('aria-valuemin',String(min));
   slider.setAttribute('aria-valuemax',String(max));
   slider.setAttribute('aria-valuenow',String(value));
-  const count=document.getElementById('study-set-test-count-label');
-  if(count)count.textContent=value+'개';
+  const count=document.getElementById('study-set-test-count-value');
+  if(count)count.textContent=String(value);
+  for(const chip of document.querySelectorAll('.study-set-test-preset')){
+    const chosen=chip.getAttribute('data-count')==='all'?value===max:Number(chip.getAttribute('data-count'))===value;
+    chip.classList.toggle('on',chosen);
+    chip.setAttribute('aria-pressed',chosen?'true':'false');
+  }
+}
+function studySetTestPreset(slider,count,label){
+  const chip=studySetsButton(label,()=>{
+    slider.value=count==='all'?slider.max:String(count);
+    studySetTestPaintFill(slider);
+  });
+  chip.classList.add('study-set-test-preset');
+  chip.setAttribute('data-count',String(count));
+  chip.setAttribute('aria-pressed','false');
+  return chip;
 }
 function studySetTestBegin(set,cards){
   studySetTestQueue.length=0;
@@ -232,13 +258,18 @@ function renderStudySetTestSetup(set){
   const setup=studySetsNode('div','study-set-test-setup');
   const hero=studySetsNode('section','study-set-test-hero');
   hero.append(studySetsNode('p','study-set-test-kicker','단어 수'));
-  const count=studySetsNode('p','study-set-test-count',String(pool.length)+'개');count.id='study-set-test-count-label';
+  const count=studySetsNode('p','study-set-test-count');count.id='study-set-test-count-label';
+  const countValue=studySetsNode('span','study-set-test-count-value',String(Math.max(pool.length,0)));countValue.id='study-set-test-count-value';
+  count.append(countValue,studySetsNode('span','study-set-test-count-total',' / '+pool.length));
   const slider=document.createElement('input');
   slider.type='range';slider.id='study-set-test-count';slider.min='1';slider.max=String(Math.max(1,pool.length));slider.value=String(Math.max(1,pool.length));
   slider.setAttribute('aria-label','테스트할 단어 수');
   if(!pool.length)slider.disabled=true;
   slider.addEventListener('input',()=>studySetTestPaintFill(slider));
-  studySetTestPaintFill(slider);
+  const presets=studySetsNode('div','study-set-test-presets');
+  presets.setAttribute('role','group');presets.setAttribute('aria-label','단어 수 바로 선택');
+  for(const preset of [10,20,50])if(preset<pool.length)presets.append(studySetTestPreset(slider,preset,preset+'개'));
+  if(pool.length>1)presets.append(studySetTestPreset(slider,'all','전체'));
   const note=studySetsNode('p','study-set-test-note',pool.length?`이 세트 ${pool.length}개 중에서 뽑아요.`:'테스트할 단어가 없어요.');
   const start=studySetsButton('테스트 시작',()=>{
     const chosen=BreezeStudySetTest.questions(pool,Number(slider.value));
@@ -247,7 +278,7 @@ function renderStudySetTestSetup(set){
     studySetTestFocus();
   },'study-sets-primary');
   start.id='study-set-test-start';start.disabled=!pool.length;
-  hero.append(count,slider,note,start);
+  hero.append(count,slider,presets,note,start);
   const history=studySetsNode('section','study-set-test-history');
   history.append(studySetsNode('h3','','지난 테스트'));
   const records=studySetTestStorage();
@@ -262,6 +293,7 @@ function renderStudySetTestSetup(set){
     history.append(list);
   }
   setup.append(hero,history);body.append(setup);
+  studySetTestPaintFill(slider);
 }
 function renderStudySetTest(set){
   const run=studySetTestRun;
@@ -278,12 +310,19 @@ function renderStudySetTest(set){
   const label=studySetsNode('label','study-set-test-label','한국어 뜻');label.htmlFor='study-set-test-answer';
   const input=document.createElement('input');
   input.id='study-set-test-answer';input.type='text';input.maxLength=BreezeStudySetTest.MAX_ANSWER;
-  input.placeholder='뜻을 입력';input.enterKeyHint='send';input.inputMode='text';
+  input.placeholder='뜻을 입력';input.enterKeyHint='done';input.inputMode='text';
   input.autocomplete='off';input.spellcheck=false;
   input.setAttribute('autocapitalize','none');input.setAttribute('autocorrect','off');
+  input.setAttribute('enterkeyhint','done');
   input.setAttribute('aria-label','한국어 뜻');
   const submit=studySetsButton('제출',()=>{},'study-sets-primary');submit.id='study-set-test-submit';submit.type='submit';
   form.append(label,input,submit);
+  input.addEventListener('keydown',event=>{
+    if(event.key!=='Enter'||event.isComposing||event.keyCode===229)return;
+    event.preventDefault();
+    if(typeof form.requestSubmit==='function')form.requestSubmit();
+    else form.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));
+  });
   form.addEventListener('submit',event=>{
     event.preventDefault();
     const value=input.value;

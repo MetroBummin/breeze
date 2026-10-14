@@ -571,6 +571,7 @@ function renderStudySets(focus=true){
     else if(focusedIndex>=0)ui.title.focus({preventScroll:true});
   }
   ui.allWordsList?.refresh();
+  if(typeof studySetTestPlaceKeyboard==='function')studySetTestPlaceKeyboard();
 }
 function renderStudySetsList(){
   const body=studySetsUI.body;

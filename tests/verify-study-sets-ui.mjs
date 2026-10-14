@@ -779,10 +779,25 @@ test('saved-set recall keeps one field, toasts each ten, and stores the score',a
   assert.equal(slider.value,slider.max);
   assert.ok(Number(slider.max)>=12);
   slider.value='12';slider.dispatchEvent(new h.window.Event('input'));
-  assert.equal(h.query('#study-set-test-count-label').textContent,'12개');
+  assert.equal(h.query('#study-set-test-count-label').textContent,'12 / 12');
+  assert.equal(h.query('.study-set-test-preset[data-count="all"]').classList.contains('on'),true);
+  assert.equal(h.query('.study-set-test-preset[data-count="10"]').textContent,'10개');
+  h.click('.study-set-test-preset[data-count="10"]');
+  assert.equal(slider.value,'10');
+  assert.equal(h.query('#study-set-test-count-value').textContent,'10');
+  assert.equal(h.query('.study-set-test-preset[data-count="10"]').classList.contains('on'),true);
+  assert.equal(h.query('.study-set-test-preset[data-count="all"]').classList.contains('on'),false);
+  slider.value='12';slider.dispatchEvent(new h.window.Event('input'));
   await afterAction(h.click('#study-set-test-start'));
   const field=h.query('#study-set-test-answer');
+  assert.equal(field.enterKeyHint,'done');
   assert.equal(h.document.activeElement,field);
+  h.window.visualViewport={height:420,offsetTop:80,scale:1,addEventListener(){}};
+  h.window.innerHeight=844;
+  h.run('studySetTestPlaceKeyboard()');
+  assert.equal(h.query('#v-memory-set').style.height,'420px');
+  assert.equal(h.query('#v-memory-set').style.top,'80px');
+  assert.equal(h.query('#v-memory-set').classList.contains('study-set-test-keyboard'),true);
   assert.equal(h.query('.study-set-test-card').textContent.includes('Hidden'),false);
   for(let i=0;i<12;i++){
     const word=h.query('#study-set-test-word').textContent;
