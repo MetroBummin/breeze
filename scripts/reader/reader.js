@@ -27,11 +27,12 @@ function savedPhraseStarts(){
 }
 /* Scroll hydrates many paragraphs. The map changes only when a meaning is saved.
    Callers that paint a live in-memory edit keep calling savedPhraseStarts(). */
+const savedPhrasePaint={revision:null,cache:null};
 function savedPhraseStartsForPaint(){
   const revision=typeof wordPaintRevision==='number'?wordPaintRevision:null;
-  if(revision!==null&&savedPhraseStartsForPaint.revision===revision)return savedPhraseStartsForPaint.cache;
+  if(revision!==null&&savedPhrasePaint.revision===revision)return savedPhrasePaint.cache;
   const starts=savedPhraseStarts();
-  if(revision!==null){savedPhraseStartsForPaint.revision=revision;savedPhraseStartsForPaint.cache=starts;}
+  if(revision!==null){savedPhrasePaint.revision=revision;savedPhrasePaint.cache=starts;}
   return starts;
 }
 function savedPhraseMatch(matches,start,item){
@@ -304,12 +305,13 @@ function renderBookBody(b){
 // Keep one recently closed Reader for quick Home round trips, for at most 60s.
 let retainedReader=null,retainedReaderTimer=0,readerPreparedOriginal=null;
 // Only lexical paint affects retained pages; definitions and metadata do not.
+const readerWordPresentationCache={revision:null,cache:null};
 function readerWordPresentation(){
   const revision=typeof wordPaintRevision==='number'?wordPaintRevision:null;
-  if(revision!==null&&readerWordPresentation.revision===revision)return readerWordPresentation.cache;
+  if(revision!==null&&readerWordPresentationCache.revision===revision)return readerWordPresentationCache.cache;
   const presentation=JSON.stringify(Object.entries(words).map(([key,word])=>
     [key,word?.status,word?.mark,word?.phraseParts,word?.phraseGaps]));
-  if(revision!==null){readerWordPresentation.revision=revision;readerWordPresentation.cache=presentation;}
+  if(revision!==null){readerWordPresentationCache.revision=revision;readerWordPresentationCache.cache=presentation;}
   return presentation;
 }
 function releaseRetainedReader(){

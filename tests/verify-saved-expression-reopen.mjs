@@ -149,7 +149,7 @@ test('PDF: boxes from a released page or another document cannot open a phrase',
 test('scroll reuses the phrase map until a meaning is saved, while a live paint still reads words',()=>{
   const c={words:{[phraseKey]:saved(),point:{word:'point',ko:'점',status:1}},lemmaCands:raw=>[String(raw).toLowerCase()],wordPaintRevision:0};
   vm.createContext(c);
-  vm.runInContext(['savedPhraseStarts','savedPhraseStartsForPaint','readerWordPresentation'].map(n=>fn(reader,n)).join('\n'),c);
+  vm.runInContext('const savedPhrasePaint={revision:null,cache:null};const readerWordPresentationCache={revision:null,cache:null};\n'+['savedPhraseStarts','savedPhraseStartsForPaint','readerWordPresentation'].map(n=>fn(reader,n)).join('\n'),c);
   const first=c.savedPhraseStartsForPaint();
   assert.equal(c.savedPhraseStartsForPaint(),first);
   const presentation=c.readerWordPresentation();

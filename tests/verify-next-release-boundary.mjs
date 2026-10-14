@@ -11,9 +11,9 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const base='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
-  "tests/verify-saved-expression-reopen.mjs": "e435802d59003a102eccc9fb4b5d37ba03a4b5f68e500ab2af00be3254ab39c6",
+  "tests/verify-saved-expression-reopen.mjs": "d45156d2881bf638d8da09977ab3e66d9fbc00bbc6695a5a191e18a40f27e102",
   "server/ready/index.ts": "fd160ec8e40ac805edef222d9287d0e6ea10f2b58c56dc138e975a59d59d6ac2",
-  "scripts/reader/reader.js": "da835333323fefc4a259d46a0fe5076ecda7f33e04755b3e8bcdfa82d55d7df6",
+  "scripts/reader/reader.js": "d5c07b0805da49e4ca98d11c53ffc15b245db93500f9d4468f7f9f87401414d2",
   "tests/verify-word-only-browser.mjs": "9592e44c7f8bc22d6f197dc49c9e5f4068155c4477c4486e4ac19f60cd634ee9",
   "tests/verify-vocabulary-review-browser.mjs": "c96e6b14a1b660f900cd830911d8cb14b741affd80eacc4857d0bfccce77010b",
   "tests/verify-easy-explanation-browser.mjs": "d5b98275f413be840f1f417bf0ea6ef48bbc3431cedb354664aac4c8700e0351",
@@ -40,7 +40,7 @@ const expected={
   "docs/qa/vocabulary-test/breeze-test-setup-ipad-dark.png": "f02c37c2b8f047e2b01daba7573838803265c1086c11e785136bf9238ac8f352",
   "docs/qa/vocabulary-test/browser-metrics.json": "075a7abeee9aba2846a54fb5e4c00c12ecab8fabe9f8669a86fdea4078447c8f",
   "docs/qa/vocabulary-test/direction-events.json": "87fd8a215b5c8dca7acff841ac9a0d90557dc8b83c7b906a28171d69e84089ba",
-  "index.html": "2d1da06868c71900c4e992df87603d5d69b3dbd689521bcea2ff646b58153c12",
+  "index.html": "96a34a6b8c0c265c6438f8cdcd430a48bf7daaf4677363d6defe878763287f65",
   "package.json": "452f0b4a3c36ada20b4fc5176ce9dba943923e76b8a4bf76ebdb5275b86366ff",
   "releases/apple/assets/breeze-193-build272.json": "5eb6bf34ed6789472365f2b8c9da3eccfee9d0bd056c1f656b43292bccd6e913",
   "scripts/core/state.js": "116b25160234f3656a7f3c198ff6586b36b184a824e43d5a119fb7ec1c4ba125",
@@ -59,7 +59,7 @@ const expected={
   "styles/study-sets.css": "f7b68315dd3492e1c9e8410d0d125a83f602fbb64f2f6bc0ead848181d21608b",
   "styles/vocabulary-test.css": "2c75722a6f21d8a8ef319765bc5a563b0a092f29330edfa8794796f5ebf0e4b1",
   "styles/wordbook.css": "fd5f7e3797b90eb31dadbb148d403529e1b758c9b51438ae17d981290c032c85",
-  "sw.js": "a63f946809a40a804490ef308a552dd4f6cbd425a3d1a0d25fb00cbf9be25680",
+  "sw.js": "025afb97b65e1e25f312a572b0f6e6a8f92c393f3b615de8b8c90f7d84595e3a",
   "tests/helpers/app-icon-family-scenes.mjs": "7c95d6a549db3e9ec1071466f5d9ee01d25ee00aba4c167f7fa31fb78d786d55",
   "tests/verify-all-words-window-browser.mjs": "11e8235ba10557cff22e3d503747f2362d7bd7752b7c6acf65360f8fb3401a5f",
   "tests/verify-android-build.mjs": "d48ee9d93fa8db6e795ef84f200b6b90f9ac96082b34050d9860cfea1e95dad8",
