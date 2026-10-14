@@ -460,6 +460,25 @@ test('existing ungrouped in-progress sessions remain unchanged until explicit re
   const restarted=sets.start(resumed.state,id,NOW+2,{restart:true});assert.equal(restarted.total,1);assert.equal(restarted.completed,0);assert.deepEqual(plain(restarted.card.acceptedMeanings),['은행','강둑']);
 });
 
+test('book counts match one-book card selection, including duplicates and a blank book',()=>{
+  const inventory={
+    a:saved('wind',{ko:'바람',book:'Book A',addedAt:10}),
+    b:saved('wind',{ko:'바람',book:'Book A',addedAt:20}),
+    c:saved('wind',{ko:'감다',book:'Book B',addedAt:30}),
+    d:saved('direct',{book:'',addedAt:40}),
+    e:saved('none',{book:null,addedAt:50}),
+    blank:saved('blank',{ko:'  '}),
+    gone:null
+  };
+  const counts=sets.countsByBook(inventory);
+  const names=[...new Set(Object.values(inventory).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))];
+  for(const name of names)assert.equal(counts.get(name)||0,sets.cards(inventory,[name]).length,name);
+  assert.equal(counts.get('Book A'),1);
+  assert.equal(counts.get('Book B'),1);
+  assert.equal(counts.get(''),2);
+  assert.equal(sets.countsByBook(null).size,0);
+});
+
 test('representative metadata corruption cannot drop, invent or nest saved meanings',()=>{
   const current=start({a:saved('bank',{ko:'은행'}),b:saved('bank',{ko:'강둑'}),c:saved('wind',{ko:'바람'})});
   for(const damage of [

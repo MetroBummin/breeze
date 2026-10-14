@@ -1,7 +1,9 @@
 /* Study sets are local snapshots. This surface never writes saved Meanings or
    enters the general word-card deck. Every action starts from durable state. */
 const studySetsOpened=new Map();
+// Shared row-height cache for 전체 단어 and custom set windows.
 const studySetsAllWordsHeights=new Map();
+const studySetsWindowLimit=100;
 const studySetsQueuedRows=new WeakSet();
 let studySetsMutationDone=Promise.resolve();
 const studySetsDirectoryPositions=new Map();
@@ -415,6 +417,15 @@ function studySetsAnimateExit(row){
     if(!row.isConnected||!studySetsIsOpen()||studySetsUI.screen!==screen||studySetsUI.setId!==setId)return;
     const set=studySetsUI.state?.sets.find(item=>item.id===setId);if(!set)return;
     const focused=row.contains(document.activeElement),next=row.nextElementSibling||row.previousElementSibling;
+    // A windowed set list owns indexes and spacers. Drop this card there so
+    // offscreen rows are not rebuilt or renumbered as if every row were mounted.
+    if(studySetsUI.allWordsList?.removeId&&row.dataset.cardId&&row.classList.contains('study-sets-word-row')){
+      const replacement=studySetsUI.allWordsList.removeId(row.dataset.cardId);
+      if(row.isConnected)row.remove();
+      if(!studySetsUI.body.querySelector('.study-sets-word-row'))studySetsUI.body.replaceChildren(studySetsEmpty('세트에 학습할 단어가 없어요',''));
+      else if(focused){(replacement?.querySelector('.vword')||studySetsUI.title).focus({preventScroll:true});}
+      return;
+    }
     row.remove();
     studySetsUI.body.querySelectorAll('.study-sets-number').forEach((node,index)=>{node.textContent=String(index+1);});
     // Keep neighboring rows and their pointer capture alive during consecutive swipes.
@@ -551,45 +562,68 @@ function renderStudySetsAllWords(){
     copy.querySelector('.vordinal')?.classList.add('study-sets-number');row.append(copy);return row;
   };
   ui.body.append(list);
-  if(values.length<=100)for(let i=0;i<values.length;i++)list.append(createRow(i));
-  else ui.allWordsList=studySetsWindowAllWords(list,values,createRow);
+  const opened=studySetsOpened.get('@all');
+  ui.allWordsList=studySetsMountRows(list,values,createRow,{rowClass:'study-all-words-row',spacerClass:'study-all-words-spacer',tab:'word',key:entries=>entries[0][0],open:entries=>opened.has(entries[0][0])});
 }
-// The viewport owns a bounded set of read-only rows. Offscreen heights retain
-// scroll geometry; the complete vocabulary and study queue never leave storage.
-function studySetsWindowAllWords(list,groups,createRow){
-  const body=studySetsUI.body,opened=studySetsOpened.get('@all'),rows=new Map();
+// 전체 단어 and a saved set share this cutoff. Longer lists mount a viewport.
+function studySetsMountRows(list,items,createRow,options){
+  list.dataset.total=String(items.length);
+  if(items.length<=studySetsWindowLimit){for(let i=0;i<items.length;i++)list.append(createRow(i));return null;}
+  return studySetsWindowRows(list,items,createRow,options);
+}
+// The viewport owns a bounded set of rows. Offscreen heights retain scroll
+// geometry; the complete vocabulary and study queue never leave storage.
+function studySetsWindowRows(list,items,createRow,options){
+  const body=studySetsUI.body,rows=new Map(),rowSelector='.'+options.rowClass;
   let frame=0,disposed=false,width=body.clientWidth;
-  const heights=groups.map(entries=>{
-    const cached=studySetsAllWordsHeights.get(entries[0][0]);
-    return cached?.width===width&&cached.open===opened.has(entries[0][0])?cached.height:64;
+  const heights=items.map((item,index)=>{
+    const cached=studySetsAllWordsHeights.get(options.key(item,index));
+    return cached?.width===width&&cached.open===options.open(item,index)?cached.height:64;
   });
-  const offsets=new Float64Array(groups.length+1);
-  const sum=()=>{for(let i=0;i<heights.length;i++)offsets[i+1]=offsets[i]+heights[i];};sum();
-  const locate=y=>{let lo=0,hi=groups.length;while(lo<hi){const mid=(lo+hi)>>1;if(offsets[mid+1]<=y)lo=mid+1;else hi=mid;}return Math.min(lo,groups.length-1);};
+  let offsets=new Float64Array(items.length+1);
+  const sum=()=>{offsets[0]=0;for(let i=0;i<heights.length;i++)offsets[i+1]=offsets[i]+heights[i];};sum();
+  const locate=y=>{let lo=0,hi=items.length;while(lo<hi){const mid=(lo+hi)>>1;if(offsets[mid+1]<=y)lo=mid+1;else hi=mid;}return items.length?Math.min(lo,items.length-1):0;};
   const top=()=>list.getBoundingClientRect().top-body.getBoundingClientRect().top+body.scrollTop;
-  const spacer=height=>{const node=studySetsNode('li','study-all-words-spacer');node.setAttribute('aria-hidden','true');node.setAttribute('role','presentation');node.style.height=height+'px';return node;};
-  const schedule=()=>{if(!disposed&&!frame)frame=requestAnimationFrame(()=>{frame=0;refresh();});};
-  const observer=new ResizeObserver(schedule);
-  function refresh(requiredIndex=null){
+  const spacer=height=>{const node=studySetsNode('li',options.spacerClass);node.setAttribute('aria-hidden','true');node.setAttribute('role','presentation');node.style.height=height+'px';return node;};
+  let paintedStart=-1,paintedEnd=-1,paintedFocus=-1,cachedOrigin=0,pendingMeasure=false;
+  const schedule=measure=>{
+    if(disposed)return;
+    if(measure)pendingMeasure=true;
+    if(!frame)frame=requestAnimationFrame(()=>{frame=0;const measureNow=pendingMeasure;pendingMeasure=false;refresh(null,measureNow);});
+  };
+  const observer=new ResizeObserver(()=>schedule(true));
+  function refresh(requiredIndex=null,measure=true){
     if(disposed||!list.isConnected)return;
+    const resized=width!==body.clientWidth;
+    // A scroll that stays inside the mounted window does not change row heights.
+    if(!measure&&!resized&&requiredIndex==null){
+      const y=Math.max(0,body.scrollTop-cachedOrigin),anchor=locate(y),within=y-offsets[anchor],corrected=offsets[anchor]+within;
+      const start=locate(Math.max(0,corrected-body.clientHeight)),end=Math.min(items.length,locate(corrected+body.clientHeight*2)+1);
+      const focused=document.activeElement?.closest(rowSelector);
+      const focusIndex=focused&&list.contains(focused)?Number(focused.getAttribute('data-index')):-1;
+      if(start===paintedStart&&end===paintedEnd&&focusIndex===paintedFocus)return;
+    }
+    if(!items.length){list.replaceChildren();rows.clear();return;}
     const origin=top(),y=Math.max(0,body.scrollTop-origin),anchor=locate(y),within=y-offsets[anchor];
-    const resized=width!==body.clientWidth;width=body.clientWidth;
+    width=body.clientWidth;
     if(resized){heights.fill(64);sum();}
     // Read the existing window in one layout pass before writing its replacement.
     let measured=false;
     for(const [index,row] of rows){
+      if(row.classList.contains('study-sets-exiting')||row.classList.contains('study-sets-dragging')||index>=items.length)continue;
       const height=row.getBoundingClientRect().height;
       if(height&&height!==heights[index]){heights[index]=height;measured=true;}
-      if(height)studySetsAllWordsHeights.set(groups[index][0][0],{height,width,open:opened.has(groups[index][0][0])});
+      if(height)studySetsAllWordsHeights.set(options.key(items[index],index),{height,width,open:options.open(items[index],index)});
     }
     if(measured)sum();
     const corrected=offsets[anchor]+within;
-    const start=locate(Math.max(0,corrected-body.clientHeight)),end=Math.min(groups.length,locate(corrected+body.clientHeight*2)+1);
-    const indices=new Set(Array.from({length:end-start},(_,i)=>start+i));
+    const start=locate(Math.max(0,corrected-body.clientHeight)),end=Math.min(items.length,locate(corrected+body.clientHeight*2)+1);
+    const indices=new Set(Array.from({length:Math.max(0,end-start)},(_,i)=>start+i));
     if(Number.isInteger(requiredIndex))indices.add(requiredIndex);
-    const focused=document.activeElement?.closest('.study-all-words-row');
+    const focused=document.activeElement?.closest(rowSelector);
     const active=document.activeElement;
     if(focused&&list.contains(focused))indices.add(Number(focused.getAttribute('data-index')));
+    for(const [index,row] of rows)if(index<items.length&&(row.classList.contains('study-sets-dragging')||row.classList.contains('study-sets-revealed')||row.classList.contains('study-sets-exiting')))indices.add(index);
     for(const [index,row] of rows)if(!indices.has(index)){observer.unobserve(row);row.remove();rows.delete(index);}
     const nodes=[];let cursor=0;
     for(const index of [...indices].sort((a,b)=>a-b)){
@@ -598,40 +632,85 @@ function studySetsWindowAllWords(list,groups,createRow){
       if(!row){row=createRow(index);rows.set(index,row);observer.observe(row);}
       nodes.push(row);cursor=index+1;
     }
-    if(cursor<groups.length)nodes.push(spacer(offsets[groups.length]-offsets[cursor]));
+    if(cursor<items.length)nodes.push(spacer(offsets[items.length]-offsets[cursor]));
     // Keep focused retained nodes attached through a scroll/resize update.
     let next=list.firstChild;
     for(const node of nodes){if(node===next)next=next.nextSibling;else list.insertBefore(node,next);}
     while(next){const removed=next;next=next.nextSibling;removed.remove();}
     if(focused&&active instanceof HTMLElement&&document.activeElement!==active)active.focus({preventScroll:true});
     if((measured||resized)&&anchor>0)body.scrollTop=origin+corrected;
+    paintedStart=start;paintedEnd=end;
+    paintedFocus=focused&&list.contains(focused)?Number(focused.getAttribute('data-index')):-1;
+    cachedOrigin=origin;
   }
-  const keyboard=event=>{
-    const row=event.target.closest?.('.study-all-words-row');
-    if(event.key!=='Tab'||!row||!event.target.matches('.vword'))return;
-    const index=Number(row.dataset.index)+(event.shiftKey?-1:1);
-    if(index<0||index>=groups.length)return;
-    // Expansion/rotation may precede ResizeObserver delivery. Measure first,
-    // then mount the requested row even if the browser clamps the old scroll.
-    event.preventDefault();refresh();body.scrollTop=top()+offsets[index];refresh(index);
-    rows.get(index)?.querySelector('.vword').focus({preventScroll:true});
+  const focusRow=index=>{
+    // Expansion may precede ResizeObserver delivery. Measure first, then mount
+    // the requested row even if the browser clamps the old scroll.
+    refresh(null,true);body.scrollTop=top()+offsets[index];refresh(index,true);return rows.get(index);
   };
-  body.addEventListener('scroll',schedule,{passive:true});list.addEventListener('keydown',keyboard);
-  observer.observe(body);refresh();
-  return {refresh,dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();body.removeEventListener('scroll',schedule);list.removeEventListener('keydown',keyboard);rows.clear();}};
+  const keyboard=event=>{
+    const row=event.target.closest?.(rowSelector);
+    if(event.key!=='Tab'||!row||!list.contains(row))return;
+    if(options.tab==='word'){
+      if(!event.target.matches('.vword'))return;
+      const index=Number(row.dataset.index)+(event.shiftKey?-1:1);
+      if(index<0||index>=items.length)return;
+      event.preventDefault();focusRow(index)?.querySelector('.vword').focus({preventScroll:true});
+      return;
+    }
+    const focusables=[...row.querySelectorAll('button,.vword')].filter(node=>!node.disabled&&node.tabIndex>=0);
+    if(!focusables.length)return;
+    const edge=event.shiftKey?focusables[0]:focusables[focusables.length-1];
+    if(event.target!==edge)return;
+    const index=Number(row.dataset.index)+(event.shiftKey?-1:1);
+    if(index<0||index>=items.length||rows.has(index))return;
+    event.preventDefault();
+    const next=focusRow(index);
+    const nextFocusables=next?[...next.querySelectorAll('button,.vword')].filter(node=>!node.disabled&&node.tabIndex>=0):[];
+    (event.shiftKey?nextFocusables[nextFocusables.length-1]:nextFocusables[0])?.focus({preventScroll:true});
+  };
+  // Drop one custom-set card without remounting rows that are still moving.
+  function removeId(id){
+    const index=items.findIndex(item=>item.id===id);
+    if(disposed||index<0)return null;
+    items.splice(index,1);heights.splice(index,1);
+    const removed=rows.get(index);rows.delete(index);
+    if(removed){observer.unobserve(removed);removed.remove();}
+    const shifted=[...rows.entries()].filter(([rowIndex])=>rowIndex>index).sort((a,b)=>a[0]-b[0]);
+    for(const [rowIndex] of shifted)rows.delete(rowIndex);
+    for(const [rowIndex,kept] of shifted){
+      const nextIndex=rowIndex-1;
+      kept.dataset.index=String(nextIndex);kept.setAttribute('aria-posinset',String(nextIndex+1));kept.setAttribute('aria-setsize',String(items.length));
+      const number=kept.querySelector('.study-sets-number');if(number)number.textContent=String(nextIndex+1);
+      rows.set(nextIndex,kept);
+    }
+    for(const [,kept] of rows)kept.setAttribute('aria-setsize',String(items.length));
+    offsets=new Float64Array(items.length+1);sum();
+    list.dataset.total=String(items.length);
+    paintedStart=paintedEnd=paintedFocus=-1;
+    if(!items.length){list.replaceChildren();rows.clear();return null;}
+    refresh(null,true);
+    return rows.get(Math.min(index,items.length-1))||null;
+  }
+  const onScroll=()=>schedule(false);
+  list.style.overflowAnchor='none';
+  body.addEventListener('scroll',onScroll,{passive:true});list.addEventListener('keydown',keyboard);
+  observer.observe(body);refresh(null,true);
+  return {refresh,removeId,dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();body.removeEventListener('scroll',onScroll);list.removeEventListener('keydown',keyboard);rows.clear();}};
 }
 function renderStudySetsCreate(){
   const body=studySetsUI.body,form=document.createElement('form');form.id='study-sets-create-form';form.className='study-sets-form';
   const label=studySetsNode('label','study-sets-field','세트 이름');
   const input=document.createElement('input');input.id='study-sets-name';input.name='name';input.type='text';input.required=true;input.maxLength=100;input.placeholder='예: 이번 주 읽은 책';input.autocomplete='off';label.append(input);
   const booksField=studySetsNode('fieldset','study-sets-books');booksField.append(studySetsNode('legend','','책 선택'));
-  const names=[...new Set(Object.values(words).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))].sort((a,b)=>BreezeStudySets.cards(words,[b]).length-BreezeStudySets.cards(words,[a]).length);
+  const counts=BreezeStudySets.countsByBook(words);
+  const names=[...new Set(Object.values(words).filter(item=>item&&typeof item.word==='string'&&item.word.trim()&&typeof item.ko==='string'&&item.ko.trim()).map(item=>typeof item.book==='string'?item.book:''))].sort((a,b)=>(counts.get(b)||0)-(counts.get(a)||0));
   const selection=new Set(),count=studySetsNode('p','study-sets-selection-count','책을 선택해 주세요.');count.id='study-sets-selection-count';count.setAttribute('aria-live','polite');
   const create=studySetsButton('세트 만들기',()=>{},'study-sets-primary');create.type='submit';create.id='study-sets-save';create.disabled=true;
   for(const title of names){
     const row=studySetsNode('label','study-sets-book');const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=title;
     const text=studySetsNode('span','study-sets-book-name',title||'직접 추가');
-    const number=studySetsNode('span','study-sets-caption',`${BreezeStudySets.cards(words,[title]).length}개`);
+    const number=studySetsNode('span','study-sets-caption',`${counts.get(title)||0}개`);
     checkbox.addEventListener('change',()=>{
       if(checkbox.checked)selection.add(title);else selection.delete(title);
       const total=selection.size?BreezeStudySets.cards(words,[...selection]).length:0;
@@ -672,6 +751,7 @@ function renderStudySetsEdit(set){
 function renderStudySetsBooks(set){
   const form=studySetsNode('form','study-sets-form'),field=studySetsNode('fieldset','study-sets-books');
   field.append(studySetsNode('legend','','책 선택'));
+  const counts=BreezeStudySets.countsByBook(words);
   const names=[...new Set(Object.values(words).filter(validWordMeaning).map(item=>typeof item.book==='string'?item.book:''))]
     .filter(title=>!set.bookTitles.includes(title)).sort((a,b)=>a.localeCompare(b));
   const selection=new Set(),count=studySetsNode('p','study-sets-selection-count');count.setAttribute('aria-live','polite');
@@ -684,7 +764,7 @@ function renderStudySetsBooks(set){
       count.textContent=selection.size?`${selection.size}권 · ${preview.added}개`:'';save.disabled=!selection.size;
     });
     row.append(checkbox,studySetsNode('span','study-sets-book-name',title||'직접 추가'),
-      studySetsNode('span','study-sets-caption',`${BreezeStudySets.cards(words,[title]).length}개`));field.append(row);
+      studySetsNode('span','study-sets-caption',`${counts.get(title)||0}개`));field.append(row);
   }
   if(!names.length)field.append(studySetsEmpty('추가할 책이 없어요',''));
   form.append(field,count,save);form.addEventListener('submit',event=>{
@@ -742,14 +822,16 @@ function renderStudySetsDetail(set,excluded){
   if(!excluded)renderStudySetsDetailFooter(set);
   if(!cards.length){body.append(studySetsEmpty(excluded?'제외한 단어가 없어요':'세트에 학습할 단어가 없어요',''));return;}
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id=excluded?'study-sets-excluded-list':'study-sets-word-list';
-  for(const [index,card] of BreezeStudySets.groupedCards(cards).entries()){
-    const item=studySetsNode('li','study-sets-word-row');item.dataset.cardId=card.id;
+  if(!studySetsOpened.has(set.id))studySetsOpened.set(set.id,new Set());
+  const opened=studySetsOpened.get(set.id),grouped=BreezeStudySets.groupedCards(cards);
+  const createRow=index=>{
+    const card=grouped[index],item=studySetsNode('li','study-sets-word-row');item.dataset.cardId=card.id;item.dataset.index=String(index);
+    item.setAttribute('aria-posinset',String(index+1));item.setAttribute('aria-setsize',String(grouped.length));
     const clip=studySetsNode('div','study-sets-word-clip');
     const surface=studySetsNode('div','study-sets-word-surface');
-    if(!studySetsOpened.has(set.id))studySetsOpened.set(set.id,new Set());
     const members=card.senses||[card],memberIds=members.map(sense=>sense.id);
     const copy=createVocabularyGroup(members.map(sense=>[sense.id,{...sense,status:sense.status||1}]),{
-      ordinal:index+1,opened:studySetsOpened.get(set.id),
+      ordinal:index+1,opened,
       onStatus:status=>studySetsMutate(state=>BreezeStudySets.setStatus(state,set.id,card.id,status,Date.now()))
     });
     copy.querySelector('.vordinal')?.classList.add('study-sets-number');
@@ -760,10 +842,12 @@ function renderStudySetsDetail(set,excluded){
     },'study-sets-row-action'+(excluded?' study-sets-restore':''));action.setAttribute('aria-label',`${card.word} ${excluded?'다시 담기':'세트에서 제외'}`);
     surface.append(copy);
     if(excluded)surface.append(action);else{action.textContent='';action.append(studySetsIcon('remove'));action.title='세트에서 제외';clip.append(action);}
-    clip.append(surface);item.append(clip);list.append(item);
+    clip.append(surface);item.append(clip);
     if(!excluded)studySetsSwipe(item,surface,action);
-  }
+    return item;
+  };
   body.append(list);
+  studySetsUI.allWordsList=studySetsMountRows(list,grouped,createRow,{rowClass:'study-sets-word-row',spacerClass:'study-sets-window-spacer',tab:'edge',key:card=>'set:'+set.id+':'+card.id,open:card=>opened.has(card.id)});
 }
 function studySetsSwipe(row,surface,action){
   // These read-only rows own a horizontal gesture. Native text dragging would
