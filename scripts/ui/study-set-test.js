@@ -2,7 +2,7 @@
    does not dismiss between words. Grading never awaits before the next word. */
 let studySetTestRun=null;
 const studySetTestQueue=[];
-let studySetTestPumping=false,studySetTestToastTimer=0,studySetTestKeyboardBound=false,studySetTestLeaveClosing=false;
+let studySetTestPumping=false,studySetTestKeyboardBound=false,studySetTestLeaveClosing=false;
 
 function studySetTestPool(set){
   const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
@@ -87,31 +87,6 @@ function studySetTestBegin(set,cards){
     setId:set.id,startedAt:Date.now(),questions:cards,index:0,rows:[]
   };
 }
-function studySetTestCumulative(end){
-  const rows=studySetTestRun?.rows.slice(0,end)||[];
-  const correct=rows.filter(row=>row.status==='correct').length;
-  return `${end}개 중 ${correct}개 맞음`;
-}
-function studySetTestDismissToast(){
-  clearTimeout(studySetTestToastTimer);
-  const node=document.getElementById('study-set-test-toast');
-  if(!node)return;
-  node.classList.remove('on');
-  studySetTestToastTimer=setTimeout(()=>{if(!node.classList.contains('on'))node.textContent='';},400);
-}
-function studySetTestShowToast(message){
-  let node=document.getElementById('study-set-test-toast');
-  if(!node){
-    node=document.createElement('p');
-    node.id='study-set-test-toast';node.className='study-set-test-toast';
-    node.setAttribute('role','status');node.setAttribute('aria-live','polite');
-    document.body.append(node);
-  }
-  node.textContent=message;
-  node.classList.add('on');
-  clearTimeout(studySetTestToastTimer);
-  studySetTestToastTimer=setTimeout(()=>node.classList.remove('on'),1600);
-}
 function studySetTestMaybeSave(){
   const run=studySetTestRun;
   if(!run||run.rows.length<run.questions.length||run.rows.some(row=>row.status==='pending'))return;
@@ -154,8 +129,7 @@ function studySetTestRefreshResults(){
   if(list)list.hidden=copy.pending||!wrong;
   studySetTestMaybeSave();
 }
-function studySetTestAfterBatch(end){
-  if(end%10===0)studySetTestShowToast(studySetTestCumulative(end));
+function studySetTestAfterBatch(){
   studySetTestPaintTally();
   studySetTestMaybeSave();
   studySetTestRefreshResults();
@@ -229,19 +203,19 @@ async function studySetTestPump(){
       if(!run){studySetTestQueue.shift();continue;}
       const pending=[];
       for(let i=job.start;i<job.end;i++)if(run.rows[i]?.status==='pending')pending.push(i);
-      if(!pending.length){studySetTestQueue.shift();studySetTestAfterBatch(job.end);continue;}
+      if(!pending.length){studySetTestQueue.shift();studySetTestAfterBatch();continue;}
       try{
         const verdicts=await studySetTestGrade(pending.map(index=>run.rows[index]));
         if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
         pending.forEach((index,number)=>{run.rows[index].status=verdicts[number]?'correct':'incorrect';run.rows[index].via='ai';});
-        studySetTestQueue.shift();studySetTestAfterBatch(job.end);
+        studySetTestQueue.shift();studySetTestAfterBatch();
       }catch(error){
         if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
         job.attempts+=1;
         const offline=error instanceof Error&&error.name==='OfflineError',limit=offline?3:4;
         if(job.attempts<limit){await studySetTestWait(offline?400:[1200,3500,8000][job.attempts-1]||8000);continue;}
         for(const index of pending)if(run.rows[index].status==='pending'){run.rows[index].status='incorrect';run.rows[index].via='exact';}
-        studySetTestQueue.shift();studySetTestAfterBatch(job.end);
+        studySetTestQueue.shift();studySetTestAfterBatch();
       }
     }
   }finally{
@@ -366,7 +340,6 @@ function studySetTestRetryWrong(){
   studySetTestFocus();
 }
 function renderStudySetTestSetup(set){
-  studySetTestDismissToast();
   const pool=studySetTestPool(set),body=studySetsUI.body;
   const setup=studySetsNode('div','study-set-test-setup');
   const hero=studySetsNode('section','study-set-test-hero');

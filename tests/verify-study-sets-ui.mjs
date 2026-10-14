@@ -770,7 +770,7 @@ function recallAnswer(h,text){
   return field;
 }
 
-test('saved-set recall keeps one field, toasts each ten, and stores the score',async()=>{
+test('saved-set recall keeps one field, counts on the score row, and stores the score',async()=>{
   const h=harness();loadRecall(h);
   for(let i=0;i<10;i++)h.context.words['extra'+i]={word:'word'+i,ko:'뜻'+i,book:'One',example:'Hidden example '+i,addedAt:20+i};
   await afterAction(h.createSet());
@@ -810,7 +810,12 @@ test('saved-set recall keeps one field, toasts each ten, and stores the score',a
       assert.equal(same.value,'');
       assert.equal(h.document.activeElement,same);
     }
-    if(i===9)assert.equal(h.document.querySelector('#study-set-test-toast').textContent,'10개 중 8개 맞음');
+    if(i===9){
+      assert.equal(h.document.querySelector('#study-set-test-toast'),null);
+      assert.equal(h.query('#study-set-test-tally [data-kind="correct"] b').textContent,'8');
+      assert.equal(h.query('#study-set-test-tally [data-kind="incorrect"] b').textContent,'2');
+      assert.equal(h.query('#study-set-test-tally [data-kind="pending"]').hidden,true);
+    }
   }
   assert.equal(h.query('#study-set-test-score').textContent,'83/100');
   assert.equal(h.document.querySelectorAll('#study-set-test-wrong li').length,2);
@@ -830,7 +835,7 @@ test('saved-set recall keeps one field, toasts each ten, and stores the score',a
   assert.match(h.document.querySelector('.study-set-test-record').textContent,/0\/100/);
 });
 
-test('lenient grading stays off the field, and a failed grade falls back without a partial toast',async()=>{
+test('lenient grading stays off the field, and a failed grade falls back without a toast',async()=>{
   const h=harness();
   const seen=[];
   loadRecall(h);
