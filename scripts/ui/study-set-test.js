@@ -118,7 +118,7 @@ function studySetTestRefreshResults(){
   const wrong=run.rows.filter(row=>row.status==='incorrect').length;
   if(empty)empty.hidden=pending||wrong>0;
   const retry=document.getElementById('study-set-test-retry');
-  if(retry){retry.hidden=pending||!wrong;retry.disabled=pending||!wrong;}
+  if(retry){retry.hidden=pending||!wrong;retry.toggleAttribute('disabled',pending||!wrong);}
   const heading=document.getElementById('study-set-test-wrong-title');
   if(heading)heading.hidden=pending||!wrong;
   if(list)list.hidden=pending||!wrong;
@@ -130,13 +130,14 @@ function studySetTestAfterBatch(end){
   studySetTestRefreshResults();
 }
 function studySetTestWait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+function studySetTestOffline(){const error=new Error('offline');error.name='OfflineError';return error;}
 async function studySetTestGrade(items){
   const payload=items.map(row=>({word:row.word,meanings:row.meanings,answer:row.answer}));
-  const grader=window.BreezeStudySetTestGrader;
+  const grader=/** @type {{grade?:(rows:unknown)=>unknown}|undefined} */(/** @type {any} */(window).BreezeStudySetTestGrader);
   if(grader&&typeof grader.grade==='function')return studySetTestVerdicts(await grader.grade(payload),payload.length);
-  if(typeof dictCall!=='function'||navigator.onLine===false){const error=new Error('offline');error.offline=true;throw error;}
+  if(typeof dictCall!=='function'||navigator.onLine===false)throw studySetTestOffline();
   const response=await dictCall({op:'study_set_test_grade',device:typeof deviceId==='function'?deviceId():'',items:payload});
-  if(!response){const error=new Error('offline');error.offline=true;throw error;}
+  if(!response)throw studySetTestOffline();
   if(response.error||!Array.isArray(response.results))throw new Error(response.error||'grade_failed');
   return studySetTestVerdicts(response.results,payload.length);
 }
@@ -168,7 +169,7 @@ async function studySetTestPump(){
       }catch(error){
         if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
         job.attempts+=1;
-        const offline=!!error?.offline,limit=offline?3:4;
+        const offline=error instanceof Error&&error.name==='OfflineError',limit=offline?3:4;
         if(job.attempts<limit){await studySetTestWait(offline?400:[1200,3500,8000][job.attempts-1]||8000);continue;}
         for(const index of pending)if(run.rows[index].status==='pending'){run.rows[index].status='incorrect';run.rows[index].via='exact';}
         studySetTestQueue.shift();studySetTestAfterBatch(job.end);
@@ -278,7 +279,8 @@ function renderStudySetTest(set){
   const input=document.createElement('input');
   input.id='study-set-test-answer';input.type='text';input.maxLength=BreezeStudySetTest.MAX_ANSWER;
   input.placeholder='뜻을 입력';input.enterKeyHint='send';input.inputMode='text';
-  input.autocomplete='off';input.autocapitalize='none';input.autocorrect='off';input.spellcheck=false;
+  input.autocomplete='off';input.spellcheck=false;
+  input.setAttribute('autocapitalize','none');input.setAttribute('autocorrect','off');
   input.setAttribute('aria-label','한국어 뜻');
   const submit=studySetsButton('제출',()=>{},'study-sets-primary');submit.id='study-set-test-submit';submit.type='submit';
   form.append(label,input,submit);
