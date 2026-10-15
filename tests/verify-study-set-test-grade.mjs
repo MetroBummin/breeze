@@ -25,12 +25,14 @@ test('quota comes before the model, and the prompt is word and meaning only',asy
       assert.match(prompt,/any one accepted meaning/i);
       assert.ok(prompt.includes(JSON.stringify([{word:item.word,meanings:item.meanings,answer:item.answer}])));
       assert.equal(prompt.includes('example'),false);
-      return {results:[{ok:true}]};
+      return {ok:[1]};
     }
   });
   assert.deepEqual(sequence,['quota','model']);
   assert.deepEqual(result,{status:200,body:{results:[{ok:true}],left:4}});
-  assert.throws(()=>studySetTestVerdicts({results:[{ok:'yes'}]},1),/invalid_grade/);
+  assert.deepEqual(studySetTestVerdicts({ok:[1,0]},2),[true,false]);
+  assert.throws(()=>studySetTestVerdicts({ok:[2]},1),/invalid_grade/);
+  assert.throws(()=>studySetTestVerdicts({results:[{ok:true}]},1),/invalid_grade/);
   const failure=await runStudySetTestGrade({items:[item]},{charge:async()=>({ok:true,left:3}),generate:async()=>{throw Error('provider');}});
   assert.equal(failure.status,502);assert.equal(failure.body.left,3);
   const unavailable=await runStudySetTestGrade({items:[item]},{charge:async()=>({ok:false,error:'quota_unavailable'}),generate:async()=>{calls++;}});

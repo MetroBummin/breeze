@@ -169,7 +169,7 @@ async function opStudySetTest(body:any,userId:string|null,signal?:AbortSignal){
       return {ok:true,left:Math.max(0,ANON_FREE-(quota.calls??ANON_FREE))};
     },
     generate:async prompt=>{
-      const out=await ask({action:"explain",prompt,maxTokens:400,temperature:0,schema:{type:"object",required:["results"],properties:{results:{type:"array",items:{type:"object",required:["ok"],properties:{ok:{type:"boolean"}}}}}},signal});
+      const out=await ask({action:"explain",prompt,maxTokens:64,temperature:0,system:"Reply with minified JSON only.",schema:{type:"object",additionalProperties:false,required:["ok"],properties:{ok:{type:"array",items:{type:"integer",enum:[0,1]}}}},signal});
       return parseJson(out.text);
     }
   });
