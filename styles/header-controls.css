@@ -100,7 +100,7 @@ html body :is(#home-resume,#wordbook-review,#readpill){
   font-size:15px;
   font-weight:600;
 }
-html body :is(#home-resume-title,#readpill-title,#wordbook-review){
+html body :is(#home-resume-title,#readpill-title){
   font-size:15px;
   font-weight:600;
   color:inherit;
@@ -234,5 +234,5 @@ html body :is(
   }
 }
 @media(prefers-reduced-motion:reduce){
-  html body :is(#nav-settings,#readback,#aafab,#home-resume,#wordbook-review,#readpill,.study-sets-edit-surface){transition:none;}
+  html body :is(#nav-settings,#readback,#aafab,#home-resume,#wordbook-review,.study-sets-edit-surface){transition:none;}
 }
