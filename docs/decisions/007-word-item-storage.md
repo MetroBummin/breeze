@@ -95,3 +95,45 @@ Acknowledgement is page memory, cleared on account/session reset. Restart, manua
 sync, unknown revisions, pending migration and dirty state retain full read/merge
 and conditional writes. Failed local persistence never advances acknowledgement.
 No server schema, per-word delta protocol or authentication policy changes.
+
+## Account-scoped incremental saves (2026-10-15)
+
+Word and tombstone overlays, pending transactions and synchronization markers
+now use the active account scope. Tombstones also use per-item overlays and a
+small pending transaction; `breeze.dead` remains an unchanged legacy archive.
+Known changes pass explicit IDs to `saveWords` and `saveDead`. Root/meaning and
+retry-owner indexes are built once at load/account change and updated for those
+IDs. The same versioned changed-ID map supplies batch synchronization patches;
+an acknowledgement only clears the exact versions it sent in its scope epoch.
+
+The Memory catalog updates only affected groups and book-name counts. Recent,
+oldest and alphabetical views retain their sorted indexes; unchanged search,
+book and star filters reevaluate only affected groups. Changing filter settings
+intentionally computes the new view once. Virtual-list height
+offsets use sparse Fenwick deltas for measured rows. Review-key flattening is
+deferred until review is requested. Initial loading, full recovery/remote
+conflict merges, explicit search/filter/sort changes, and export can still scan
+the collection. The sorted group array uses native insertion/removal and can
+move O(N) references; it does not visit or serialize every word record.
+
+`verify-incremental-word-save.mjs` separates initial loading from real meaning
+creation/local journal writes/sync queue capture at 1,000, 5,000, 12,000 and
+50,000 words. `verify-incremental-word-browser.mjs` includes the visible default
+Memory render with all three sorts and active search/book/star filters, asserting
+zero whole-vocabulary serialization/enumeration or
+whole-group map/filter passes, bounded item bytes, and a viewport-sized DOM.
+Timing values are synthetic measurements, not an iPhone latency guarantee.
+
+A `QuotaExceededError` proves an app storage limit, not exhausted physical
+device storage. The local-write message now says “이 앱의 저장소 한도에 도달했어요.”
+No recovery path deletes the user's data to make room.
+
+
+## Account ownership and delta transport (2026-10-15)
+
+[Account learning ownership](033-account-learning-data.md) adds user/guest
+namespaces, keyed tombstones, per-record dirty revisions and root indexes.
+Ordinary additions persist and upload only changed records after initial
+hydration/acknowledgement. Legacy unscoped values remain preserved for explicit
+ownership confirmation. Conditional RPC patches retain the old full wordbook
+row for old-client compatibility; the SQL is review-only and unapplied.

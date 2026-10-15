@@ -1696,10 +1696,18 @@ assert.doesNotMatch(index, /id="p-airetry"/, 'Removed detail retry action return
    다시 연** 경우를 가릴 수 없습니다 — 열쇠가 같다고 같은 열림은 아닙니다. */
 assert.doesNotMatch(runningCode(dictionarySource), /if\(selKey===k\) renderPanel\(\)/,
   'Rendering is gated on the word key again, so a reopened lookup accepts the previous opening\'s answer');
-/* 도착한 답까지 버리면 한도만 쓰고 낱말은 빈 채로 남습니다. 끊겨서 **빈손으로**
-   돌아온 것만 없던 일입니다. */
-assert.match(dictionarySource, /if\(!j && !wordLookupAlive\(life\)\) return false;/,
-  'An answer that beat the cancellation is thrown away again');
+/* Same-account dismissal retains an already-arrived usable answer. An account
+   generation change must stop it before cache/quota or vocabulary writes. */
+const fetchLookOwnershipSource=(dictionarySource.match(/async function fetchLook\([\s\S]*?\n\}/)||[''])[0];
+assert.match(fetchLookOwnershipSource,/const current=\(\)=>!scope\|\|isLearningScopeCurrent\(scope\);/,
+  'The lookup result guard lost its captured account generation');
+assert.match(fetchLookOwnershipSource,/if\(!current\(\)\|\|\(!j && !wordLookupAlive\(life\)\)\) return false;/,
+  'Account changes must reject results, while same-account cancellation only rejects an empty response');
+const lookupCacheWrite=fetchLookOwnershipSource.indexOf('void dictPut(');
+assert.ok(lookupCacheWrite>fetchLookOwnershipSource.indexOf('if(!current()||(!j && !wordLookupAlive(life)))'),
+  'An old account response reaches the cache before its account guard');
+assert.doesNotMatch(fetchLookOwnershipSource.slice(0,lookupCacheWrite),/if\(!wordLookupAlive\(life\)\)\s*return false;/,
+  'An answer that beat same-account cancellation is thrown away before caching');
 /* 세는 곳은 서버 하나입니다 — 여기서 빼지도, 되돌리지도 않습니다. */
 assert.doesNotMatch(runningCode(dictionarySource), /anonLooksLeft\s*(--|\+\+|-=|\+=)/,
   'The client counts the AI quota by itself again — the server is the only place that knows');

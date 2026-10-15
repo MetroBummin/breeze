@@ -27,7 +27,7 @@ const SimpleStudySession=(()=>{
 })();
 const SIMPLE_STUDY_STORAGE='breeze.simple-study-session.v1';
 let simpleStudySession=null,simpleStudyBusy=false,simpleStudyTimer=0,simpleStudySuppressClickUntil=0;
-let simpleStudyReadValue,simpleStudyEpoch=0,simpleStudyResumeJob=Promise.resolve();
+let simpleStudyReadValue,simpleStudyReadScope,simpleStudyEpoch=0,simpleStudyResumeJob=Promise.resolve();
 let simpleWordCards={keys:[],index:0,flipped:false};
 let simpleStudyMeanings=new Map(),simpleStudyKeys=[];
 function decodeSimpleStudySession(raw){
@@ -37,7 +37,8 @@ function decodeSimpleStudySession(raw){
   return session;
 }
 async function loadSimpleStudySession(){
-  const raw=await readStudyStorage(SIMPLE_STUDY_STORAGE,decodeSimpleStudySession);
+  const scope=studyScopeCapture(),raw=await readStudyStorage(SIMPLE_STUDY_STORAGE,decodeSimpleStudySession,scope);
+  studyScopeAssert(scope);simpleStudyReadScope=scope;
   if(raw!==simpleStudyReadValue){simpleStudySession=decodeSimpleStudySession(raw);simpleStudyReadValue=raw;}
   return ensureSimpleStudySession();
 }
@@ -53,9 +54,13 @@ function ensureSimpleStudySession(){
   return simpleStudySession;
 }
 async function commitSimpleStudySession(next){
+  const scope=simpleStudyReadScope;studyScopeAssert(scope);
   const serialized=JSON.stringify(next),expected=simpleStudyReadValue;
-  await commitStudyStorage(SIMPLE_STUDY_STORAGE,serialized,expected,decodeSimpleStudySession);
-  simpleStudyReadValue=serialized;simpleStudySession=next;
+  const previous=expected===undefined?null:decodeSimpleStudySession(expected);
+  if(previous&&(JSON.stringify(previous.initial)!==JSON.stringify(next.initial)||next.serial<previous.serial))await archiveSimpleStudySession(previous,scope);
+  studyScopeAssert(scope);
+  await commitStudyStorage(SIMPLE_STUDY_STORAGE,serialized,expected,decodeSimpleStudySession,scope);
+  studyScopeAssert(scope);simpleStudyReadValue=serialized;simpleStudySession=next;
 }
 /* Review progress is device-local and never touches vocabulary/sync records. */
 const VOCABULARY_STAGE_ASSETS=Object.freeze(Object.fromEntries(
@@ -106,6 +111,7 @@ function vocabularyReviewError(cause=null){
 function visibleVocabularyReviewKeys(){
   // A windowed Memory list keeps every filtered meaning in scope. Mounted rows
   // are only the viewport, so the DOM is not the whole practice set.
+  if(typeof vocabFilteredReviewKeys==='function')return vocabFilteredReviewKeys().filter(key=>validWordMeaning(words[key]));
   if(Array.isArray(vocabFilteredReviewKeys))return vocabFilteredReviewKeys.filter(key=>validWordMeaning(words[key]));
   return Array.from(document.querySelectorAll('#vtablewrap .vsense')).map(node=>/** @type {HTMLElement} */(node).dataset.k).filter(key=>validWordMeaning(words[key]));
 }
@@ -270,7 +276,7 @@ async function gradeSimpleWordCard(outcome){
     if(next===current){simpleWordCards.flipped=false;renderSimpleWordCards();return;}
     await commitSimpleStudySession(next);
     await handoff;
-  }catch(error){simpleCardMotion.reset();vocabularyReviewLastError=error;if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);else toast('학습 기록을 저장하지 못했어요. 다시 열어 시도해 주세요.');return;}
+  }catch(error){if(error?.syncCancelled)return;simpleCardMotion.reset();vocabularyReviewLastError=error;if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);else toast('학습 기록을 저장하지 못했어요. 다시 열어 시도해 주세요.');return;}
   finally{if(epoch===simpleStudyEpoch)simpleStudyBusy=false;}
   if(epoch!==simpleStudyEpoch||activeAppView()!=='study')return;
   simpleWordCards.flipped=false;renderSimpleWordCards();document.getElementById(next.queue.length?'review-flip':'review-status').focus({preventScroll:true});
@@ -282,7 +288,7 @@ async function undoSimpleWordCard(){
     if(epoch!==simpleStudyEpoch||activeAppView()!=='study'||next===current)return;
     await commitSimpleStudySession(next);
     if(epoch===simpleStudyEpoch&&activeAppView()==='study'){simpleWordCards.flipped=false;renderSimpleWordCards();document.getElementById('review-flip').focus();}
-  }catch(error){vocabularyReviewLastError=error;if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);else toast('학습 기록을 저장하지 못했어요. 다시 열어 시도해 주세요.');}
+  }catch(error){if(error?.syncCancelled)return;vocabularyReviewLastError=error;if(epoch===simpleStudyEpoch&&activeAppView()==='study')vocabularyReviewError(error);else toast('학습 기록을 저장하지 못했어요. 다시 열어 시도해 주세요.');}
   finally{if(epoch===simpleStudyEpoch)simpleStudyBusy=false;}
 }
 document.getElementById('simple-word-previous').addEventListener('click',undoSimpleWordCard);
@@ -422,13 +428,13 @@ function reviewSettingsError(){
 async function openVocabularyReview(daily=false,extra=false){
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED){
     if(daily||extra)return;
-    const origin=activeAppView(),entry=history.state;
+    const origin=activeAppView(),entry=history.state,scope=studyScopeCapture();
     try{
-      await loadSimpleStudySession();if(activeAppView()!==origin||history.state!==entry)return;
+      await loadSimpleStudySession();studyScopeAssert(scope);if(activeAppView()!==origin||history.state!==entry)return;
       if(ensureSimpleStudySession().initial.length&&!simpleStudySession.queue.length)await commitSimpleStudySession(SimpleStudySession.start(simpleStudyKeys));
-      if(activeAppView()!==origin||history.state!==entry)return;
+      studyScopeAssert(scope);if(activeAppView()!==origin||history.state!==entry)return;
       simpleWordCards.flipped=false;show('study');await simpleStudyResumeJob;
-    }catch(error){if(activeAppView()===origin){show('study');vocabularyReviewError(error);}}
+    }catch(error){if(error?.syncCancelled)return;if(activeAppView()===origin){show('study');vocabularyReviewError(error);}}
     return;
   }
   try{
@@ -542,3 +548,13 @@ if(ADVANCED_VOCABULARY_REVIEW_ENABLED)setInterval(()=>{
     }catch{/* Explicit actions surface persistence errors. */}
   }
 },30000);
+
+window.addEventListener('breeze-learning-scope',()=>{
+  ++simpleStudyEpoch;clearTimeout(simpleStudyTimer);
+  simpleStudyReadValue=undefined;simpleStudyReadScope=undefined;simpleStudySession=null;simpleStudyBusy=false;
+  simpleWordCards={keys:[],index:0,flipped:false};simpleStudyMeanings=new Map();simpleStudyKeys=[];
+  vocabularyReviewView=null;vocabularyReviewLastError=null;vocabularyReviewRevealed=false;
+  simpleCardMotion.reset();
+  for(const id of ['review-word','review-meaning','review-sentence','review-source'])document.getElementById(id)?.replaceChildren();
+  if(typeof activeAppView==='function'&&activeAppView()==='study')show('memory',{fromHistory:true});
+});

@@ -29,6 +29,7 @@ try{
     await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
     await page.evaluate(()=>{
       words={and:{word:'and',ko:'그리고',status:2,book:'Book A',addedAt:1},port:{word:'port',ko:'항구',status:1,book:'Book B',addedAt:2}};
+      saveWords(Object.keys(words));
       show('vocab');
     });
     await page.evaluate(()=>document.fonts.ready);
@@ -88,11 +89,19 @@ try{
       assert.equal(await books.getAttribute('open'),null,'Navigation/reopen closes disclosure');
       await page.evaluate(()=>clearWordbookFilters());
       await page.evaluate(()=>{
-        for(let i=0;i<40;i++)words['fixture'+i]={word:'fixture'+i,ko:'긴 뜻과 한글 입력 확인 '.repeat(8),status:1,book:'ZZ '+i+' 아주 긴 책 제목 '.repeat(6),addedAt:i+3};
+        const keys=[];
+        for(let i=0;i<40;i++){
+          const key='fixture'+i;keys.push(key);
+          words[key]={word:key,ko:'긴 뜻과 한글 입력 확인 '.repeat(8),status:1,book:'ZZ '+i+' 아주 긴 책 제목 '.repeat(6),addedAt:i+3};
+        }
+        // Production writes notify the incremental catalog through this keyed
+        // persistence API; render alone does not discover arbitrary mutations.
+        saveWords(keys);
         renderVocab();
       });
       await trigger.click();
       const options=page.locator('#vbook-options');
+      assert.equal(await options.locator('label').count(),42,'Every saved source book is present before scroll verification');
       assert.ok(await options.evaluate(e=>e.scrollHeight>e.clientHeight),'Long book list is internally scrollable');
       // Locator hover can first scroll the short viewport to reveal the menu.
       await options.hover();

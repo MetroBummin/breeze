@@ -28,8 +28,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'));
  await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
  await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length&&!readerPositionPending());
- await page.evaluate(()=>{
-  sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-pinch'};
+ await page.evaluate(async()=>{
+  sbUser={id:'qa-pinch'};
+  sb={auth:{getSession:async()=>({data:{session:{user:{id:'qa-pinch'},access_token:'synthetic-qa-pinch'}}})}};
+  await switchLearningAccount(sbUser.id);
   window.qaCache=new Map();dictGet=async key=>qaCache.get(key)||null;dictPut=async(key,value)=>qaCache.set(key,value);fillDictionaryMetadata=async()=>{};
   window.qaRequests=[];window.qaAnimationIds=new WeakMap();window.qaAnimationSerial=0;
   // Match dictCall's production abort contract: an aborted transport returns null.

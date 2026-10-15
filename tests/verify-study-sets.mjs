@@ -497,7 +497,7 @@ test('book sets pick up later saves, keep exclusions, and drop Memory deletions 
   assert.equal(kept.accepted,false);
   assert.equal(kept.state.sets[0].cards[0].ko,original[0].ko);
   const removed={...added};delete removed.b;
-  const dropped=sets.syncVocabulary(linked.state,removed,NOW+6);
+  const dropped=sets.syncVocabulary(linked.state,removed,NOW+6,{deletedKeys:['b']});
   assert.equal(dropped.removed,1);
   assert.equal(dropped.state.sets[0].cards.some(card=>card.key==='b'),false);
   assert.equal(sets.decode(JSON.stringify(created.state)).sets[0].cards.length,3);
@@ -515,21 +515,21 @@ test('a study round stays at its starting size, then the next round sees saves a
   assert.deepEqual(plain(current.set.session.queue),queue);
   assert.equal(sets.listedCards(current.set,grown).some(card=>card.word==='fresh'),true);
   const during={...grown};delete during.a;
-  linked=sets.syncVocabulary(current.state,during,NOW+2);
+  linked=sets.syncVocabulary(current.state,during,NOW+2,{deletedKeys:['a']});
   current=sets.view(linked.state,id);
   assert.equal(linked.removed,0);assert.equal(current.total,3);assert.equal(current.card.word,'a');
   assert.equal(current.set.cards.some(card=>card.key==='a'),true);
-  assert.equal(sets.listedCards(current.set,during).some(card=>card.key==='a'),true);
+  assert.equal(sets.listedCards(current.set,during,false,{deletedKeys:['a']}).some(card=>card.key==='a'),true);
   while(current.status==='active')current=answer(current);
   assert.equal(current.status,'complete');assert.equal(current.total,3);
-  assert.equal(sets.listedCards(current.set,during).some(card=>card.key==='a'),false);
+  assert.equal(sets.listedCards(current.set,during,false,{deletedKeys:['a']}).some(card=>card.key==='a'),false);
   assert.equal(current.set.cards.some(card=>card.key==='a'),true,'the finished round can still undo');
   const undone=sets.undo(current.state,id,NOW+3);
   assert.equal(undone.accepted,true);assert.equal(undone.status,'active');
-  const next=sets.start(current.state,id,NOW+4,{restart:true,words:during});
+  const next=sets.start(current.state,id,NOW+4,{restart:true,words:during,deletedKeys:['a']});
   assert.equal(next.total,3);assert.equal(next.set.session.queue.some(card=>card.key==='a'),false);
   assert.equal(next.set.session.queue.some(card=>card.word==='fresh'),true);
-  assert.equal(sets.syncVocabulary(next.state,during,NOW+5).accepted,false);
+  assert.equal(sets.syncVocabulary(next.state,during,NOW+5,{deletedKeys:['a']}).accepted,false);
 });
 
 test('representative metadata corruption cannot drop, invent or nest saved meanings',()=>{

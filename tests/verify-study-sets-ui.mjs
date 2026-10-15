@@ -55,6 +55,7 @@ function harness(){
   // DOM/event contracts use a storage facade. The separate storage and browser
   // suites exercise real IDB completion, migration, rollback and concurrent writes.
   vm.runInContext(`const STUDY_SETS_STORAGE='breeze.study-sets.v1';let fixtureRead;
+    function studyScopeCapture(){return null;}function studyScopeAssert(){}function studyScopeKey(key){return key;}
     function readStudySets(){const raw=localStorage.getItem(STUDY_SETS_STORAGE);const value=BreezeStudySets.decode(raw);fixtureRead=raw;return value;}
     async function loadStudySets(){return readStudySets();}
     function commitStudySets(next){const raw=localStorage.getItem(STUDY_SETS_STORAGE);BreezeStudySets.decode(raw);if(raw!==fixtureRead)throw Error('changed');localStorage.setItem(STUDY_SETS_STORAGE,JSON.stringify(BreezeStudySets.normalize(next)));fixtureRead=localStorage.getItem(STUDY_SETS_STORAGE);}`,context);
@@ -970,4 +971,38 @@ test('recall tally shows a pending count, then moves it into correct and wrong',
   assert.equal(tally('correct').querySelector('b').textContent,'6');
   assert.equal(tally('incorrect').querySelector('b').textContent,'4');
   assert.equal(h.query('#study-set-test-tally').getAttribute('aria-label'),'맞음 6, 틀림 4');
+});
+
+test('an old account grader cannot save its result or shift the new account queue',async()=>{
+  const h=harness();loadRecall(h);const waits=[];
+  h.window.BreezeStudySetTestGrader={grade(){return new Promise(resolve=>waits.push(resolve));}};
+  h.run(`let testScope={id:'user:A',generation:1};studyScopeCapture=()=>({...testScope});
+    function isLearningScopeCurrent(scope){return scope.id===testScope.id&&scope.generation===testScope.generation;}
+    studyScopeAssert=scope=>{if(scope&&!isLearningScopeCurrent(scope))throw Object.assign(Error('changed account'),{syncCancelled:true});};`);
+  await afterAction(h.createSet('A',['One']));await afterAction(h.click('#study-sets-test'));h.query('#study-set-test-count').value='1';await afterAction(h.click('#study-set-test-start'));recallAnswer(h,'old pending answer');
+  assert.equal(waits.length,1);h.run(`testScope={id:'user:B',generation:2};`);h.window.dispatchEvent(new h.window.Event('breeze-learning-scope'));
+  assert.equal(h.run('studySetTestRun'),null);
+  h.run(`studySetTestBegin({id:'b-set'},[{id:'b-word',word:'new',meanings:['새로운']}]);studySetsUI.screen='test';studySetTestSubmit('new pending answer');`);
+  waits[0]([{ok:true}]);for(let i=0;i<5;i++)await settle();
+  assert.equal(waits.length,2,'new account batch must remain queued after old response');
+  assert.equal(h.storage.get('breeze.study-set-tests.v1'),undefined,'old account summary must not be written');
+  waits[1]([{ok:false}]);for(let i=0;i<5;i++)await settle();
+  const saved=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));assert.deepEqual(Object.keys(saved.sets),['b-set']);assert.equal(saved.sets['b-set'][0].correct,0);
+});
+
+test('queued duplicate restart replaces a completed round once and failed restart remains retryable',async()=>{
+  const h=harness();await afterAction(h.createSet('One card',['One']));
+  await afterAction(h.click('#study-sets-start'));await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));
+  const completed=h.run('readStudySets().sets[0].session.id'),restart=h.query('#study-sets-restart');
+  const native=h.context.localStorage.setItem;let writes=0;
+  h.context.localStorage.setItem=(key,value)=>{if(key==='breeze.study-sets.v1')writes++;return native(key,value);};
+  restart.click();restart.click();await afterAction(h.run('studySetsWriteChain'));
+  const fresh=h.run('readStudySets().sets[0].session.id');assert.notEqual(fresh,completed);assert.equal(writes,1);
+  restart.click();await afterAction(h.run('studySetsWriteChain'));assert.equal(writes,1);assert.equal(h.run('readStudySets().sets[0].session.id'),fresh);
+  await afterAction(h.click('#study-sets-reveal'));await afterAction(h.click('#study-sets-grade-remembered'));
+  const before=h.storage.get('breeze.study-sets.v1');
+  h.context.localStorage.setItem=()=>{throw Error('Synthetic failed restart');};
+  await afterAction(h.click('#study-sets-restart'));assert.equal(h.storage.get('breeze.study-sets.v1'),before);assert.equal(h.query('#study-sets-error').hidden,false);
+  h.context.localStorage.setItem=native;await afterAction(h.click('#study-sets-error button'));
+  assert.notEqual(h.run('readStudySets().sets[0].session.id'),fresh);assert.equal(h.query('#study-sets-progress').textContent,'0 / 1');
 });

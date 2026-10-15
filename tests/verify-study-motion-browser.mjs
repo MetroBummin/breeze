@@ -8,7 +8,7 @@ const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const out=process.env.BREEZE_MOTION_OUTPUT||'/tmp/breeze-motion-proof';mkdirSync(out,{recursive:true});
 const server=await serveStudyFixture({uiSource:process.env.BREEZE_MOTION_BASELINE});
 const browser=await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
-const records=Object.fromEntries(Array.from({length:2399},(_,i)=>['w'+i,{word:'word '+(i%2294),root:'w'+(i%2294),ko:'저장된 뜻 '+i,example:('This is the unchanged saved example for word '+(i%2294)+'. ').repeat(i<8||i>2390?5:1),book:'Saved',status:i%3+1,addedAt:i+1}]));
+const records=Object.fromEntries(Array.from({length:2399},(_,i)=>['w'+i,{word:'word '+(i%2294),root:'w'+(i%2294),ko:'저장된 뜻 '+i,example:('This is the unchanged saved example for word '+(i%2294)+'. ').repeat(i<8||i>2390?5:1),book:i<8?'Motion':'Saved',status:i%3+1,addedAt:i+1}]));
 const evidence=[];
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block',recordVideo:{dir:out,size:{width:390,height:844}}});
@@ -28,7 +28,9 @@ try{
  const input=async(type,x,y)=>{if(cdp)return cdp.send('Input.dispatchTouchEvent',{type:({down:'touchStart',move:'touchMove',up:'touchEnd',cancel:'touchCancel'})[type],touchPoints:['up','cancel'].includes(type)?[]:[{x,y,id:1}]});await page.evaluate(({type,x,y})=>{if(type==='down')window.qaPointerTarget=document.elementFromPoint(x,y);window.qaPointerTarget?.dispatchEvent(new PointerEvent('pointer'+type,{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',isPrimary:true,button:0,clientX:x,clientY:y}));},{type,x,y});};
  const gesture=async(locator,points,{cancel=false,hold=0}={})=>{const b=await locator.boundingBox(),x=b.x+b.width*.55,y=Math.min(690,b.y+Math.min(80,b.height*.55));await input('down',x,y);for(const [dx,dy,ms=20]of points){await input('move',x+dx,y+dy);await page.waitForTimeout(ms);}if(hold)await page.waitForTimeout(hold);const last=points.at(-1)||[0,0];await input(cancel?'cancel':'up',x+last[0],y+last[1]);};
  await gesture(page.locator('#study-all-words-list .vgroup').first(),[[-48,0,120]]);await page.waitForTimeout(400);assert.equal(await page.locator('#study-all-words-list').getAttribute('data-total'),'2294','a short swipe parks instead of deleting');assert.ok(await page.locator('#study-all-words-list .study-sets-row-action').count()>0);assert.equal(await page.locator('#study-all-words-list [contenteditable],#study-all-words-list button.chip,#study-all-words-list .rowdel').count(),0);
- await page.evaluate(async()=>{const made=BreezeStudySets.create(await loadStudySets(),{name:'Motion',bookTitles:['Saved']},Object.fromEntries(Object.entries(words).slice(0,8)),Date.now());await commitStudySets(made.state);await studySetsGo('detail',made.state.sets[0].id);});
+ // The eight-card motion fixture owns a distinct source. A book-linked set
+ // must also include later saves from that book when its detail is hydrated.
+ await page.evaluate(async()=>{const made=BreezeStudySets.create(await loadStudySets(),{name:'Motion',bookTitles:['Motion']},words,Date.now());await commitStudySets(made.state);await studySetsGo('detail',made.state.sets[0].id);});
  const optics=await page.evaluate(()=>{const b=document.getElementById('study-sets-back'),e=document.getElementById('study-sets-edit'),shell=e.parentElement;const r=e.getBoundingClientRect(),svg=e.querySelector('svg');return {width:r.width,height:r.height,svg:svg.getBoundingClientRect().width,dots:[...svg.querySelectorAll('circle')].map(n=>parseFloat(getComputedStyle(n).r)*2),backPaint:getComputedStyle(b).background,menuPaint:getComputedStyle(shell).background};});
  assert.equal(optics.width,44);assert.equal(optics.height,44);assert.equal(optics.svg,24);assert.deepEqual(optics.dots,[2.3,2.3,2.3]);assert.equal(optics.backPaint,optics.menuPaint);evidence.push({optics});
  const row=()=>page.locator('#study-sets-word-list .study-sets-word-row').first();

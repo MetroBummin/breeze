@@ -93,7 +93,7 @@ async function reveal(page){
 async function persistedWords(page){
   // LocalStorage enumeration order is unspecified after reload. Compare a deep
   // record snapshot, not JSON object-key order, while retaining exact item bytes.
-  return page.evaluate(()=>({words:JSON.parse(JSON.stringify(words)),storage:Object.fromEntries(Object.keys(localStorage).filter(key=>key==='breeze.words'||key==='breeze.dead'||key.startsWith('breeze.word-item.')||key==='breeze.word-write.pending').sort().map(key=>[key,localStorage.getItem(key)]))}));
+  return page.evaluate(()=>({words:JSON.parse(JSON.stringify(words)),storage:Object.fromEntries(Object.keys(localStorage).filter(key=>key===learningStorageKey('breeze.words')||key===learningStorageKey('breeze.dead')||key.startsWith(learningStorageKey('breeze.word-item.'))||key.startsWith(learningStorageKey('breeze.dead-item.'))||key===learningStorageKey('breeze.word-write.pending')||key===learningStorageKey('breeze.dead-write.pending')).sort().map(key=>[key,localStorage.getItem(key)]))}));
 }
 async function reviewState(page){return page.evaluate(key=>localStorage.getItem(key),REVIEW_KEY);}
 async function progress(page){return (await page.locator('#review-progress').textContent()).match(/\d+/g)?.map(Number)||[];}

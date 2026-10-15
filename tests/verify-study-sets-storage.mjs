@@ -57,13 +57,13 @@ test('interruption after archive commit or during cleanup resumes without losing
  }
 });
 test('legacy changes after migration are preserved and block writing over newer IDB data',async()=>{
- const w=world();await seed(w);const before=await w.record();w.storage.set(key,legacy());
+ const w=world();await seed(w);const before=await w.record();const legacyRaw=legacy();w.storage.set(key,legacyRaw);
  await assert.rejects(w.context.loadStudySets(),/changed/);await assert.rejects(w.context.commitStudySets(w.context.readStudySets()),/changed/);
- assert.equal((await w.record()).value,before.value);assert.equal(w.storage.get(key),legacy());
+ assert.equal((await w.record()).value,before.value);assert.equal(w.storage.get(key),legacyRaw);
 });
 test('IDB abort after put success does not report a committed answer or change cached state',async()=>{
  const w=world();await seed(w);const before=(await w.record()).value,put=IDBObjectStore.prototype.put;
- const next=w.context.engine.rename(w.context.readStudySets(),'set-1','New name',200).state;
+ const next=w.context.engine.rename(w.context.readStudySets(),w.context.readStudySets().sets[0].id,'New name',200).state;
  IDBObjectStore.prototype.put=function(...args){const request=put.apply(this,args);request.addEventListener('success',()=>this.transaction.abort());return request;};
  try{await assert.rejects(w.context.commitStudySets(next));}finally{IDBObjectStore.prototype.put=put;}
  assert.equal((await w.record()).value,before);assert.equal(w.context.readStudySets().sets[0].name,'Exam');
@@ -72,8 +72,8 @@ test('IDB abort after put success does not report a committed answer or change c
 test('unread writes and competing-tab stale writes fail transactionally',async()=>{
  const a=world();await assert.rejects(a.context.commitStudySets(a.context.engine.normalize(null)),/read/);await seed(a);
  const b=world(a);await b.context.loadStudySets();
- const first=a.context.engine.rename(a.context.readStudySets(),'set-1','Writer A',200).state;
- const stale=b.context.engine.rename(b.context.readStudySets(),'set-1','Writer B',200).state;
+ const first=a.context.engine.rename(a.context.readStudySets(),a.context.readStudySets().sets[0].id,'Writer A',200).state;
+ const stale=b.context.engine.rename(b.context.readStudySets(),b.context.readStudySets().sets[0].id,'Writer B',200).state;
  const results=await Promise.allSettled([a.context.commitStudySets(first),b.context.commitStudySets(stale)]);
  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.filter(r=>r.status==='rejected').length,1);
  assert.equal((await b.context.loadStudySets()).sets[0].name,'Writer A');

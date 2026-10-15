@@ -131,7 +131,7 @@ function addWord(k, span){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     if(!wordLookupAlive(life)||!words[k]) return;
     requestDurableLocalStorage();
-    delete dead[k]; save(LS_DEAD, dead);
+    delete dead[k]; saveDead(k);
     saveWords(k); paintWord(k);
     fetchDict(k,span);
   }));
@@ -193,7 +193,8 @@ function pendingWordResolved(key){
   const w = words[key];
   if(!w) return true;
   if(hasResolvedMeaning(w)) return true;
-  return Object.values(words).some(item=>item && item.root===key && hasResolvedMeaning(item));
+  const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(key):Object.entries(words);
+  return entries.some(([,item])=>item && item.root===key && hasResolvedMeaning(item));
 }
 /* 확정되는 순간 이 낱말은 더 이상 "이번 조회가 만든 껍데기"가 아닙니다. 표를
    그때 떼지 않으면, 뜻을 받은 뒤에 사람이 그 뜻을 × 로 지웠을 때 낱말까지 함께
@@ -212,7 +213,7 @@ function discardPendingWord(){
   /* 지웠던 낱말을 다시 눌렀다가 그냥 닫은 것이라면, `addWord` 가 떼어 낸 부고를
      그 시각 그대로 도로 붙입니다. 새 부고를 쓰는 것이 아니라 `addWord` 가 한 일을
      되돌리는 것이라, 이 조회 전후의 저장소가 한 글자도 다르지 않게 됩니다. */
-  if(held.deadAt){ dead[held.key]=held.deadAt; save(LS_DEAD, dead); }
+  if(held.deadAt){ dead[held.key]=held.deadAt; saveDead(held.key); }
   saveWords(held.key);
   paintWord(held.key);
 }
@@ -223,9 +224,9 @@ function discardPendingWord(){
 const RECENT_WORD_OPEN_MS = 30000;
 const recentWordOpens = new Map();
 function deferWordOpenState(id,bump){
-  const item=words[id];
+  const item=words[id],scope=typeof captureLearningScope==='function'?captureLearningScope():null;
   requestAnimationFrame(()=>{
-    if(!item||words[id]!==item)return;
+    if(!item||words[id]!==item||(scope&&!isLearningScopeCurrent(scope)))return;
     const changed=bump&&item.status<3;
     if(item.ko)touchMeaning(id);
     if(changed){item.status++;item.up=Date.now();}
@@ -277,7 +278,8 @@ function findSavedSense(root,sentence,clickedIndex=-1,candidates=savedMeaningRec
 }
 function findSenseByMeaning(root, meaning){
   const wanted=meaningKey(meaning); if(!wanted) return null;
-  const pairs=Object.entries(words).filter(([id,item])=>item&&(id===root||item.root===root)
+  const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(root):Object.entries(words);
+  const pairs=entries.filter(([id,item])=>item&&(id===root||item.root===root)
     && meaningKey(item.ko)===wanted);
   pairs.sort(([a],[b])=>(a===root?-1:0)-(b===root?-1:0));
   return pairs.length ? pairs[0][0] : null;
@@ -316,11 +318,11 @@ function createMeaning(root, text, source){
   const base=words[root]; if(!meaning || !base) return '';
   const from=source||{};
   const already=findSenseByMeaning(root,meaning);
-  if(already){applyWordCanonical(base,from);applyWordCanonical(words[already],from);touchMeaning(already);dropSuggestion(root,meaning);saveWords();queueSync(true);return already;}
+  if(already){applyWordCanonical(base,from);applyWordCanonical(words[already],from);touchMeaning(already);saveWords([root,already,...dropSuggestion(root,meaning)]);queueSync(true);return already;}
   const buriedMeaning=dead[senseCardKey(root,meaning)]||0;
   if(from.automatic&&buriedMeaning)return '';
   applyWordCanonical(base,from);
-  if(buriedMeaning&&!from.automatic){delete dead[senseCardKey(root,meaning)];save(LS_DEAD,dead);}
+  if(buriedMeaning&&!from.automatic){delete dead[senseCardKey(root,meaning)];saveDead(senseCardKey(root,meaning));}
   const ai={...(from.ai||{}),ko:meaning};
   /* 아직 뜻이 하나도 없는 낱말이면 대표 카드의 빈 뜻자리를 채웁니다. 빈 카드를
      남겨 두고 옆에 새 카드를 만들면, 화면에 없는 뜻이 저장소에만 생깁니다. */
@@ -332,7 +334,7 @@ function createMeaning(root, text, source){
     if(from.example) base.example=from.example;
     if(from.book) base.book=from.book;
     base.pickedAt=Date.now(); base.up=Math.max(Date.now(),(base.up||0)+1,buriedMeaning+1);
-    dropSuggestion(root,meaning); saveWords(); queueSync(true); return root;
+    saveWords([root,...dropSuggestion(root,meaning)]); queueSync(true); return root;
   }
   /* 뜻 카드의 주소는 뜻 글자에서 나옵니다. 그래서 지웠던 뜻을 똑같이 다시 적으면
      주소도 똑같고, 그 주소에는 "지웠다"는 표(`dead`)가 아직 붙어 있습니다. 표를
@@ -341,7 +343,7 @@ function createMeaning(root, text, source){
      (낱말을 다시 넣을 때 `addWord` 가 하는 일과 같습니다). */
   const id=senseCardKey(root,meaning), previous=words[id];
   const buried=Math.max(dead[id]||0,buriedMeaning);
-  if(dead[id]){ delete dead[id]; save(LS_DEAD,dead); }
+  if(dead[id]){ delete dead[id]; saveDead(id); }
   words[id]={...(previous||{}), word:base.word, root, sense:true,
     clicked:from.clicked||base.clicked||base.word, forms:base.forms||[base.word],
     example:from.example||base.example||'', book:from.book||base.book||'',
@@ -349,7 +351,8 @@ function createMeaning(root, text, source){
     ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[],
     defs:[], addedAt:previous?previous.addedAt:Date.now(),
     pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
-  dropSuggestion(root,meaning); saveWords(); queueSync(true);
+  if(typeof refreshWordIndex==='function')refreshWordIndex(id);
+  saveWords([root,id,...dropSuggestion(root,meaning)]); queueSync(true);
   return id;
 }
 /* Keep one replaceable retry slot. During a new word's first lookup, update its
@@ -366,20 +369,21 @@ function saveRetriedMeaning(root, text, source){
     if(from.example)base.example=from.example;
     if(from.book)base.book=from.book;
     base.up=Date.now();base.pickedAt=base.up;
-    saveWords();queueSync(true);return root;
+    saveWords(root);queueSync(true);return root;
   }
-  const retry=Object.entries(words).find(([id,item])=>id!==root&&item&&item.retryCandidate
+  const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(root):Object.entries(words);
+  const retry=entries.find(([id,item])=>id!==root&&item&&item.retryCandidate
     &&(item.retryOwner||item.root)===root);
   const existing=findSenseByMeaning(root,meaning);
   if(existing){
     if(retry&&retry[0]!==existing)discardRetryCandidate(retry[0]);
     const item=words[existing];
     if(item){applyWordCanonical(item,from);if(!retry||retry[0]!==existing)delete item.retryCandidate;touchMeaning(existing);}
-    saveWords();queueSync(true);return existing;
+    saveWords([root,existing]);queueSync(true);return existing;
   }
   if(retry&&meaningKey(words[retry[0]].ko)!==meaningKey(meaning))discardRetryCandidate(retry[0]);
   const id=createMeaning(root,meaning,{...from,ai});
-  if(id&&id!==root){words[id].retryCandidate=true;saveWords();queueSync(true);}
+  if(id&&id!==root){words[id].retryCandidate=true;saveWords(id);queueSync(true);}
   return id;
 }
 function discardRetryCandidate(id){
@@ -387,16 +391,19 @@ function discardRetryCandidate(id){
   const root=item.retryOwner||item.root||id;
   const key=item.root?senseCardKey(root,item.ko):id;
   dead[key]=Math.max(Date.now(),(item.up||item.addedAt||0)+1,(dead[key]||0)+1);
-  delete words[id];save(LS_DEAD,dead);saveWords();queueSync(true);
+  delete words[id];saveDead(key);saveWords(id);queueSync(true);
 }
 /* 저장한 뜻은 더 이상 추천이 아닙니다. 같은 말이 두 줄에 동시에 있으면
    "칩을 누르면 이 뜻을 본다"는 규칙이 흔들립니다. */
 function dropSuggestion(root, meaning){
-  const wanted=meaningKey(meaning); if(!wanted) return;
-  Object.entries(words).forEach(([id,item])=>{
+  const wanted=meaningKey(meaning),changed=[]; if(!wanted) return changed;
+  const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(root):Object.entries(words);
+  entries.forEach(([id,item])=>{
     if(!item || (id!==root && item.root!==root) || !Array.isArray(item.alts)) return;
-    item.alts=item.alts.filter(alt=>meaningKey(alt)!==wanted);
+    const remaining=item.alts.filter(alt=>meaningKey(alt)!==wanted);
+    if(remaining.length!==item.alts.length){item.alts=remaining;changed.push(id);}
   });
+  return changed;
 }
 /* × — 뜻 하나를 지웁니다. 확인창은 없습니다.
 
@@ -410,7 +417,7 @@ function deleteMeaning(id){
   const root=item.root||id;
   const changedKeys=new Set([id,root]);
   dead[senseCardKey(root,item.ko)]=Math.max(Date.now(),(item.up||0)+1);
-  save(LS_DEAD,dead);
+  const changedDead=new Set([senseCardKey(root,item.ko)]);
   const wasActive=id===selKey;
   let next=wasActive ? '' : selKey;
   /* Destructive decisions use every stored meaning, never the filtered/deduped
@@ -421,11 +428,11 @@ function deleteMeaning(id){
   const bury=key=>{
     changedKeys.add(key);
     dead[key]=Math.max(Date.now(),(words[key]&&(words[key].up||words[key].addedAt)||0)+1);
-    delete words[key]; save(LS_DEAD,dead);
+    delete words[key]; changedDead.add(key);
   };
   if(!rest.length){
-    Object.keys(words).filter(key=>key===root || (words[key]&&words[key].root===root))
-      .forEach(key=>bury(key));
+    const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(root):Object.entries(words);
+    entries.filter(([key,item])=>key===root || (item&&item.root===root)).forEach(([key])=>bury(key));
     next='';
   }else if(id===root){
     /* 대표 카드의 주소는 원문 색칠이 기대는 열쇠라 비울 수 없습니다. 다른 뜻 하나를
@@ -445,7 +452,7 @@ function deleteMeaning(id){
   if(!next || !words[next]) next=words[root]?root:'';
   if(next)changedKeys.add(next);
   addingMeaning=false;
-  saveWords([...changedKeys]); queueSync(true); paintWord(root); refreshReaderWords();
+  saveDead([...changedDead]);saveWords([...changedKeys]); queueSync(true); paintWord(root); refreshReaderWords();
   if(typeof renderVocab==='function' && document.getElementById('v-vocab').classList.contains('on')) renderVocab();
   contextView=null;
   if(panelWasOpen){
@@ -495,10 +502,12 @@ function openWord(k, node, point){
 }
 async function resolveCurrentLookup(k,input,life,node){
   const w=words[k];if(!w)return;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>wordLookupAlive(life)&&words[k]===w&&(!scope||isLearningScopeCurrent(scope));
   let local=homewardWordFor(w,node,input),answer=null;
   if(!local){
     answer=await dictGet(lookKey(w.word,input.sentence,input.clickedIndex));
-    if(!wordLookupAlive(life))return;
+    if(!current())return;
     if(!answer&&typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
       if(!await prepareHomewardWordLookup(k,life))return;
       local=homewardWordFor(w,node,input);
@@ -510,9 +519,9 @@ async function resolveCurrentLookup(k,input,life,node){
     await homewardPresentationWait(Date.now(),()=>wordLookupAlive(life));
   }
 
-  if(!wordLookupAlive(life))return;
+  if(!current())return;
   if(!answer)answer=await fetchLook(k,{...input,node,hold:true,life});
-  if(!wordLookupAlive(life)||!words[k])return;
+  if(!current())return;
   const context=currentContext(k);
   if(!answer||!answer.ko){if(context){context.loading='';context.error=w.aiOff||'error';}renderWordLookup();return;}
   const phrase=expressionFromMini(answer,input.sentence,input.clicked,input.clickedIndex);
@@ -523,7 +532,7 @@ async function resolveCurrentLookup(k,input,life,node){
     if(id===(w.root||k))firstLookupMeaning={root:w.root||k,life};
     rememberSenseContext(id,input.sentence,input.clickedIndex);selKey=id;
     contextView=words[id].example===input.sentence?null:{key:id,...input,loading:''};
-    saveWords();
+    saveWords(id);
   }
   else if(context){context.loading='';context.error='deleted';}
   renderWordLookup();
@@ -927,14 +936,14 @@ async function retryWordPeek(){
         up:stamp,pickedAt:stamp};
       delete words[wordId].phraseParts;delete words[wordId].phraseGaps;
       delete words[wordId].retryCandidate;delete words[wordId].retryOwner;
-      dead[root]=Math.max(stamp,(dead[root]||0)+1);delete words[root];save(LS_DEAD,dead);
+      dead[root]=Math.max(stamp,(dead[root]||0)+1);delete words[root];saveDead(root);saveWords(root);
       firstLookupMeaning={root:wordId,life};targetRoot=wordId;
       refreshReaderWords();
     }
   }
   const id=saveRetriedMeaning(targetRoot,parsed.ko,{clicked,example:sentence,book,ai:parsed.ai,
     aiLemma:parsed.aiLemma,alts:parsed.alts,phrase:parsed.phrase});
-  if(id){ rememberSenseContext(id,sentence,clickedIndex);saveWords();selKey=id; contextView=null; paintWord(targetRoot); }
+  if(id){ rememberSenseContext(id,sentence,clickedIndex);saveWords(id);selKey=id; contextView=null; paintWord(targetRoot); }
   wordPeekRetryState=null;
   renderWordPeek();
 }
@@ -971,6 +980,22 @@ function closePanel(){
   document.getElementById('word-peek').hidden=true;
   clearActiveWordSelection();
 }
+/* Called before replacing the active learning account. Lookup close may retire
+   an unresolved local card, so cleanup must still belong to the outgoing scope. */
+function resetDictionaryLearningScope(){
+  closePanel();
+  if(typeof closeSentence==='function')closeSentence();
+  pendingWord=null;firstLookupMeaning=null;contextView=null;
+  recentWordOpens.clear();wordLookupRecoveries.clear();
+  if(typeof sentenceRecoveries!=='undefined')sentenceRecoveries.clear();
+  if(typeof easyExplanationCache!=='undefined')easyExplanationCache.clear();
+  if(typeof easyExplanationContexts!=='undefined')easyExplanationContexts.clear();
+  if(typeof clearSentenceEasyCache==='function')clearSentenceEasyCache();
+  vocabOpen.clear();vocabCatalogCache=null;vocabWindowHeights.clear();
+  if(typeof wordbookFilteredCache!=='undefined')wordbookFilteredCache=null;
+  disposeVocabWindow();
+  anonLooksLeft=null;
+}
 /* 원본의 PDF 표시는 지우고 다시 만듭니다. 그래서 칠하기가 먼저면 방금 칠한
    덩어리가 사라집니다 — 예전에는 뒤에 한 번 더 칠해서 덮었는데, 그러면 한
    프레임 동안 옛 색이 보입니다. 다시 만든 다음에 칠하면 한 번이면 됩니다. */
@@ -992,6 +1017,8 @@ function setStatus(k, st){
   renderWordLookup();
 }
 function renderPanel(){
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>!scope||isLearningScopeCurrent(scope);
   settlePendingWord();
   const base = displayedWord(selKey); if(!base) return;
   const k = selKey;
@@ -1143,6 +1170,7 @@ function renderPanel(){
     [...savedBox.querySelectorAll('.saved-sense')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
       chip.onclick=event=>{
+        if(!current())return;
         const id=chip.dataset.k||'';
         if((/** @type {HTMLElement} */(event.target)).closest('.sense-remove')){ deleteMeaning(id); return; }
         if(id===selKey) return;
@@ -1166,7 +1194,7 @@ function renderPanel(){
     altBox.innerHTML=alts.map(item=>`<button type="button" class="kochip" data-meaning="${esc(item)}">${esc(item)}</button>`).join('');
     [...altBox.querySelectorAll('.kochip')].forEach(button=>{
       const chip=/** @type {HTMLElement} */(button);
-      chip.onclick=()=>adoptSuggestion(k,chip.dataset.meaning||'');
+      chip.onclick=()=>{if(current())adoptSuggestion(k,chip.dataset.meaning||'');};
     });
   }else{ altSec.className='p-sec'; altBox.className=''; altBox.innerHTML=''; }
   const defs = document.getElementById('p-defs');
@@ -1179,7 +1207,7 @@ function renderPanel(){
     defs.insertAdjacentHTML('beforeend',`<small class="p-dict-source"><a href="https://en.wiktionary.org/wiki/${encodeURIComponent(w.definitionSourceWord||w.word)}#English" target="_blank" rel="noopener">Wiktionary</a> · <a href="https://freedictionaryapi.com/" target="_blank" rel="noopener">FreeDictionaryAPI</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></small>`);
   }
   const retry=document.getElementById('p-en-retry');
-  if(retry)retry.onclick=()=>{delete words[k].enRetryAt;void fillDictionaryMetadata(k,wordLookupLife,true);};
+  if(retry)retry.onclick=()=>{if(!current()||!words[k])return;delete words[k].enRetryAt;void fillDictionaryMetadata(k,wordLookupLife,true);};
 
 }
 /* 추천 뜻 클릭 = 그 뜻을 저장하고 지금 뜻으로 삼기. 확인은 묻지 않습니다 —
@@ -1208,13 +1236,15 @@ document.getElementById('p-know').onclick = ()=>{
   if(!selKey) return;
   const k=words[selKey]&&(words[selKey].root||selKey);if(!k)return;
   const expression=Array.isArray(words[k]&&words[k].phraseParts);
-  const removed=Object.keys(words).filter(id=>id===k||words[id]&&words[id].root===k);
+  const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(k):Object.entries(words);
+  const removed=entries.filter(([id,item])=>id===k||item&&item.root===k).map(([id])=>id);
+  const removedDead=[...removed];
   removed.forEach(id=>{
     const item=words[id],stamp=Math.max(Date.now(),(item.up||0)+1,dead[id]||0);
-    if(item.ko)dead[senseCardKey(k,item.ko)]=stamp;
+    if(item.ko){const meaningId=senseCardKey(k,item.ko);dead[meaningId]=stamp;removedDead.push(meaningId);}
     dead[id]=stamp;delete words[id];
   });
-  save(LS_DEAD,dead);closePanel();saveWords(removed);paintWord(k);if(expression)refreshReaderWords();queueSync(true);
+  saveDead(removedDead);closePanel();saveWords(removed);paintWord(k);if(expression)refreshReaderWords();queueSync(true);
 };
 function refreshReaderWords(){
   if(curBook && currentReaderMode==='text'){
@@ -1363,6 +1393,10 @@ function rememberAiLeft(left){
 
 async function dictCall(payload, signal){
   if(!sb || navigator.onLine === false || signal?.aborted) return null;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const actor=sbUser?.id||null;
+  if(scope&&(actor?scope.id!=='user:'+actor:scope.id.startsWith('user:')))return null;
+  const current=()=>!scope||(isLearningScopeCurrent(scope)&&(sbUser?.id||null)===actor);
   // Authentication can refresh a session before fetch even begins. Bound the
   // whole call, not just fetch, and let the opening's shorter deadline win.
   const controller=new AbortController();
@@ -1372,10 +1406,16 @@ async function dictCall(payload, signal){
   const timeout=setTimeout(cancel,30000);
   const request=async()=>{
     let token = SB_KEY;
-    try{ const { data:{ session } } = await sb.auth.getSession(); if(session) token = session.access_token; }catch(e){}
+    try{
+      const { data:{ session } } = await sb.auth.getSession();
+      // Auth state may change before its notification reaches the application.
+      // Never spend another account's quota on a request started by this one.
+      if(scope&&(session?.user?.id||null)!==actor)return null;
+      if(session)token=session.access_token;
+    }catch(e){}
     // getSession cannot be aborted. A late completion must never start a request
     // for a timed-out or closed lookup, even if another lookup is now active.
-    if(controller.signal.aborted)return null;
+    if(controller.signal.aborted||!current())return null;
     const opt = {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SB_KEY },
@@ -1384,7 +1424,7 @@ async function dictCall(payload, signal){
     try{
       const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
       const j = await r.json().catch(()=>null);
-      if(controller.signal.aborted)return null;
+      if(controller.signal.aborted||!current())return null;
       if(!r.ok || !j) console.warn('dict', r.status, j && j.error);
       /* 오류도 답입니다. 한도 초과와 서버 장애는 화면에서 다르게 말해야 하므로
          null 로 뭉개지 않고 그대로 올려 보냅니다. */
@@ -1412,6 +1452,8 @@ function technicalLookupFailure(j,payload){
     ||(!j.error&&!usableLookupAnswer(j,payload));
 }
 async function recoverableWordLookup(payload,life){
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>!scope||isLearningScopeCurrent(scope);
   const actor=sbUser?.id||deviceId();
   const key=JSON.stringify([actor,payload.word,payload.clicked,payload.sentence,payload.before,payload.after,payload.clickedIndex,payload.cands]);
   let logical=wordLookupRecoveries.get(key);
@@ -1420,7 +1462,7 @@ async function recoverableWordLookup(payload,life){
     wordLookupRecoveries.set(key,logical);
     if(wordLookupRecoveries.size>32)wordLookupRecoveries.delete(wordLookupRecoveries.keys().next().value);
   }
-  while(wordLookupAlive(life)){
+  while(wordLookupAlive(life)&&current()){
     if(navigator.onLine===false)return {error:'offline'};
     const controller=new AbortController(),owner=wordLookupSignal();
     const cancel=()=>controller.abort();
@@ -1430,6 +1472,7 @@ async function recoverableWordLookup(payload,life){
     let answer;
     try{answer=await dictCall(logical.payload,controller.signal);}
     finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel);}
+    if(!current())return null;
     if(usableLookupAnswer(answer,logical.payload)){
       wordLookupRecoveries.delete(key);return answer;
     }
@@ -1539,8 +1582,9 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   const initial=!!(pendingWord&&pendingWord.key===k);
   const owner=base.retryOwner||base.root||k;
   const first=!!(opt.explicit&&firstLookupMeaning&&firstLookupMeaning.root===owner&&firstLookupMeaning.life===life);
-  const priorRetry=opt.explicit?Object.entries(words).find(([key,item])=>key!==id&&item&&item.retryCandidate
-    &&(item.retryOwner||item.root)===owner):null;
+  const retryEntries=opt.explicit?(typeof wordEntriesForRoot==='function'?wordEntriesForRoot(owner):Object.entries(words)):[];
+  const priorRetry=retryEntries.find(([key,item])=>key!==id&&item&&item.retryCandidate
+    &&(item.retryOwner||item.root)===owner);
   if(dead[id]&&!explicit){const ctx=currentContext(k);if(ctx){ctx.loading='';ctx.error='deleted';}renderIfAlive(life);return '';}
   let active=id;
   if(previous){
@@ -1554,7 +1598,7 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
     if(!active){const ctx=currentContext(k);if(ctx){ctx.loading='';ctx.error='deleted';}renderIfAlive(life);return '';}
   }else{
     const buried=dead[id]||0;
-    if(explicit){delete dead[id];save(LS_DEAD,dead);}
+    if(explicit){delete dead[id];saveDead(id);}
     words[id]={word:phrase.canonical,clicked:phrase.surface,forms:phrase.parts,
       phraseParts:phrase.parts,phraseGaps:phrase.gaps,example:sentence||base.example,book:book||base.book,
       status:base.status,mark:base.mark,ko:resolved.ko,ai:resolved.ai,alts:[],defs:[],
@@ -1563,13 +1607,13 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   rememberSenseContext(active,sentence,opt.clickedIndex===undefined?-1:opt.clickedIndex);
   if(pendingWord&&pendingWord.key===k&&id!==k){
     const held=pendingWord;pendingWord=null;delete words[k];
-    if(held.deadAt){dead[k]=held.deadAt;save(LS_DEAD,dead);}
+    if(held.deadAt){dead[k]=held.deadAt;saveDead(k);}
   }
   if(initial&&!previous)firstLookupMeaning={root:id,life};
   if(opt.explicit&&active){
     if(first&&owner!==id&&!previous){
       const old=words[owner];
-      if(old){dead[owner]=Math.max(Date.now(),(old.up||old.addedAt||0)+1,(dead[owner]||0)+1);delete words[owner];save(LS_DEAD,dead);}
+      if(old){dead[owner]=Math.max(Date.now(),(old.up||old.addedAt||0)+1,(dead[owner]||0)+1);delete words[owner];saveDead(owner);}
       firstLookupMeaning={root:id,life};
     }else if(!first&&!previous){words[id].retryCandidate=true;words[id].retryOwner=owner;}
     if(priorRetry)discardRetryCandidate(priorRetry[0]);
@@ -1578,7 +1622,7 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   // Carry its cooldown so an immediate recheck is not a new learning event.
   recentWordOpens.set(id,Math.max(recentWordOpens.get(id)||0,recentWordOpens.get(base.root||k)||0,Date.now()));
   selKey=active;contextView=null;
-  saveWords();queueSync(true);refreshReaderWords();renderIfAlive(life);return active;
+  saveWords([k,id,active,owner]);queueSync(true);refreshReaderWords();renderIfAlive(life);return active;
 }
 
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
@@ -1592,13 +1636,15 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
       그래서 곧장 내놓고, 창의 머리글도 다르게 답니다. */
 async function loadCachedLook(k, began, life, node){
   const w = words[k]; if(!w) return false;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>words[k]===w&&(!scope||isLearningScopeCurrent(scope));
   const input=lookupRequestFor(w,node,false);
   const local=homewardWordFor(w,node,input);
   if(local){
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.source(life,'reviewed_local');
     const answer=homewardAnswerAsLook(local);
     await homewardPresentationWait(began||Date.now(),()=>wordLookupAlive(life));
-    if(!wordLookupAlive(life)||words[k]!==w)return true;
+    if(!wordLookupAlive(life)||!current())return true;
     const phrase=expressionFromMini(answer,input.sentence,input.clicked,input.clickedIndex);
     if(phrase)saveDetectedExpression(k,phrase,input.sentence,input.book,answer,life,{clickedIndex:input.clickedIndex});
     else applyLook(w,answer,k,{life});
@@ -1606,6 +1652,7 @@ async function loadCachedLook(k, began, life, node){
   }
   for(const key of entryKeys(w)){
     const hit = await dictGet(lookKey(key,input.sentence,input.clickedIndex));
+    if(!current())return true;
     /* 기기에 이미 있던 답입니다. 창이 닫혔어도 카드에는 바릅니다 — 여기서
        거르면 그 낱말은 답을 가진 채로 영영 빈 카드가 됩니다. 그리는 것은
        `applyLook` 이 `life` 로 가립니다. */
@@ -1615,6 +1662,7 @@ async function loadCachedLook(k, began, life, node){
         const left = AI_MIN_WAIT - (Date.now() - (began || Date.now()));
         if(left > 0) await new Promise(res => setTimeout(res, left));
       }
+      if(!current())return true;
       const index=input.clickedIndex;
       const phrase=expressionFromMini(hit,input.sentence,input.clicked,index);
       if(phrase)saveDetectedExpression(k,phrase,input.sentence,w.book||'',hit,life,{clickedIndex:index});
@@ -1635,6 +1683,8 @@ const wordLookRequests=new WeakMap();
 const wordDictRequests=new WeakMap();
 async function fetchLook(k, opt){
   const w = words[k]; if(!w) return false;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>!scope||isLearningScopeCurrent(scope);
   opt = opt || {};
   /* 이 요청이 어느 열림의 것인지. 단추에서 바로 부를 때는 지금 열려 있는 것입니다. */
   if(opt.life === undefined) opt.life = wordLookupLife;
@@ -1642,6 +1692,7 @@ async function fetchLook(k, opt){
   const node=opt.node||activeSelectedWordNode;
   // Missing optional local data must not silently become a charged lookup.
   if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)&&!await prepareHomewardWordLookup(k,life))return false;
+  if(!current())return false;
   if(!opt.sentence)Object.assign(opt,lookupRequestFor(w,node,!opt.retry&&!opt.wider));
   else if(!opt.retry&&!opt.wider){
     // A fresh AI request may already carry the selected sentence/index from the
@@ -1698,7 +1749,7 @@ async function fetchLook(k, opt){
        반대로 **도착한 답은 창이 닫혔어도 답입니다.** 검증된 답만 서버가 차감하고 답은
        옳으므로, 아래의 캐시와 카드 바르기는 그대로 지납니다. 닫힌 열림이 잃는
        것은 화면을 만질 권리 하나뿐입니다. */
-    if(!j && !wordLookupAlive(life)) return false;
+    if(!current()||(!j && !wordLookupAlive(life))) return false;
     if(!j || j.error || !j.ko){
       const e = j && j.error;
       w.aiOff = e === 'quota_exceeded' ? 'quota'
@@ -1717,6 +1768,7 @@ async function fetchLook(k, opt){
     const left = AI_MIN_WAIT - (Date.now() - began);
     /* 볼 사람이 있을 때만 뜸을 들입니다. */
     if(left > 0 && wordLookupAlive(life)) await new Promise(res=>setTimeout(res, left));
+    if(!current()||words[k]!==w)return false;
     if(opt.hold) return j;
     const phrase=expressionFromMini(j,querySentence,opt.clicked||w.clicked,clickedIndex);
     if(phrase){saveDetectedExpression(k,phrase,querySentence,opt.book||w.book||'',j,life,{clickedIndex});return true;}
@@ -1793,12 +1845,14 @@ addEventListener('offline', () => { if(selKey) renderWordLookup(); });
 
 async function fillDictionaryMetadata(k,life,force=false){
   const w=words[k];if(!w||previewWordCard)return;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>words[k]===w&&(!scope||isLearningScopeCurrent(scope));
   const selected=activeSelectedWordNode;
   if(homewardWordFor(w,selected))return;
   if(w.defs&&w.defs.length)return;
   if(englishCardRequests.has(w)){
     await englishCardRequests.get(w);
-    if(wordLookupAlive(life)&&words[k]===w)return fillDictionaryMetadata(k,life,force);
+    if(wordLookupAlive(life)&&current())return fillDictionaryMetadata(k,life,force);
     return;
   }
   if(!force&&w.enProvider==='v2'&&w.enRetryAt>Date.now())return;
@@ -1814,18 +1868,18 @@ async function fillDictionaryMetadata(k,life,force=false){
     try{
       for(const form of forms){
         const result=await fetchEnMetadata(form,force);
-        if(!wordLookupAlive(life)||words[k]!==w)return;
+        if(!wordLookupAlive(life)||!current())return;
         if(!result)return;
         if(result.missing)continue;
         Object.assign(w,{defs:result.defs,phon:result.phon,definitionSource:result.source,definitionSourceWord:result.sourceWord});
         delete w.enRetryAt;return;
       }
-      if(words[k]===w)w.enRetryAt=Date.now()+86400000;
+      if(current())w.enRetryAt=Date.now()+86400000;
     }catch(error){
-      if(words[k]===w&&wordLookupAlive(life)){w.enError=true;w.enRetryAt=Date.now()+30000;}
+      if(current()&&wordLookupAlive(life)){w.enError=true;w.enRetryAt=Date.now()+30000;}
     }finally{
       delete w.enLoading;englishCardRequests.delete(w);
-      if(words[k]===w&&wordLookupAlive(life)){saveWords(k);renderIfAlive(life);}
+      if(current()&&wordLookupAlive(life)){saveWords(k);renderIfAlive(life);}
     }
   })();
   englishCardRequests.set(w,work);return work;
@@ -1833,14 +1887,16 @@ async function fillDictionaryMetadata(k,life,force=false){
 
 async function fetchDict(k,node){
   const w=words[k];if(!w)return;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
   const life=wordLookupLife,began=Date.now(),request={};
   wordDictRequests.set(w,request);
   w.loading=true;w.aiLoading=true;renderIfAlive(life);
   const cached=await loadCachedLook(k,began,life,node);
+  if(scope&&!isLearningScopeCurrent(scope))return;
   if(!cached&&wordLookupAlive(life)){delete w.aiLoading;await fetchLook(k,{life,node});}
   if(wordDictRequests.get(w)!==request)return;
   wordDictRequests.delete(w);
-  if(words[k]!==w)return;
+  if(words[k]!==w||(scope&&!isLearningScopeCurrent(scope)))return;
   delete w.loading;
   if(!wordLookRequests.has(w))delete w.aiLoading;
   w.up=Date.now();
@@ -1894,7 +1950,10 @@ function vocabGroupMarkup(groupKey,entries,open,headKey,head,editable=true,ordin
 }
 function bindVocabularyGroupToggle(group,lookup,opened,editable=true){
   const groupKey = group.dataset.g;
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>!scope||isLearningScopeCurrent(scope);
     const toggle = ()=>{
+      if(!current())return;
       const open=!opened.has(groupKey);
       if(open)opened.add(groupKey);else opened.delete(groupKey);
       group.querySelectorAll('.vsense').forEach(row=>{
@@ -1904,7 +1963,7 @@ function bindVocabularyGroupToggle(group,lookup,opened,editable=true){
         if(open){
           if(editable){ko.setAttribute('contenteditable','true');ko.setAttribute('spellcheck','false');}
           sense.insertAdjacentHTML('beforeend',vocabMoreHtml(w,editable));
-          if(editable)/** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>deleteMeaning(k);
+          if(editable)/** @type {HTMLElement} */(sense.querySelector('.rowdel')).onclick=()=>{if(current())deleteMeaning(k);};
         }else{
           ko.removeAttribute('contenteditable');ko.removeAttribute('spellcheck');
           sense.querySelector('.vmore')?.remove();
@@ -1941,37 +2000,91 @@ function createVocabularyGroup(entries,options={}){
   chip.onclick=()=>options.onStatus?.((head.status||1)%3+1);
   return group;
 }
-/* 같은 저장본을 검색·정렬·다시 열 때마다 전부 다시 정렬하지 않습니다.
-   단어가 바뀌거나 단어 수가 바뀌면 저장본을 버리고 다시 묶습니다. */
+/* Load/group once, then replace only the groups owning changed Meaning IDs.
+   Binary insertion maintains the recent-order index without reading other words. */
 let vocabCatalogCache=null;
+function vocabCatalogOrder(left,right){return right.addedAt-left.addedAt||left.order-right.order;}
+function vocabCatalogPosition(groups,record,records){
+  let lo=0,hi=groups.length;
+  while(lo<hi){const mid=(lo+hi)>>1;if(vocabCatalogOrder(records.get(groups[mid][0]),record)<0)lo=mid+1;else hi=mid;}
+  return lo;
+}
+function updateVocabCatalogKeys(keys){
+  const cache=vocabCatalogCache;if(!cache||cache.words!==words)return;
+  const affected=new Set();
+  const adjustBook=(book,delta)=>{
+    const previous=cache.bookCounts.get(book)||0,next=previous+delta;
+    if(next)cache.bookCounts.set(book,next);else cache.bookCounts.delete(book);
+    if(!!previous===!!next)return;
+    const names=cache.bookNames.slice();let lo=0,hi=names.length;
+    while(lo<hi){const mid=(lo+hi)>>1;if(names[mid]<book)lo=mid+1;else hi=mid;}
+    if(next)names.splice(lo,0,book);else names.splice(lo,1);
+    cache.bookNames=names;
+  };
+  for(const key of new Set(keys)){
+    const previous=cache.items.get(key),item=words[key];
+    if(previous){
+      affected.add(previous.root);cache.items.delete(key);
+      if(!validWordMeaning(item)||(item.book||'')!==previous.book)adjustBook(previous.book,-1);
+    }
+    if(validWordMeaning(item)){
+      const root=item.root||key,book=item.book||'';
+      cache.items.set(key,{root,book});affected.add(root);
+      if(!previous||previous.book!==book)adjustBook(book,1);
+    }
+  }
+  for(const root of affected){
+    const previous=cache.groupRecords.get(root);
+    if(previous){
+      const at=vocabCatalogPosition(cache.groups,previous,cache.groupRecords);
+      cache.groups.splice(at,1);cache.groupRecords.delete(root);
+    }
+    const entries=(typeof wordEntriesForRoot==='function'?wordEntriesForRoot(root):Object.entries(words))
+      .filter(([key,item])=>(item.root||key)===root&&validWordMeaning(item));
+    if(!entries.length)continue;
+    orderVocabEntries(entries);
+    const record={entries,addedAt:Math.max(...entries.map(([,item])=>Number(item.addedAt)||0)),order:previous?previous.order:cache.nextOrder++};
+    const at=vocabCatalogPosition(cache.groups,record,cache.groupRecords);
+    cache.groupRecords.set(root,record);cache.groups.splice(at,0,[root,entries]);
+  }
+  cache.revision=typeof wordPaintRevision==='number'?wordPaintRevision:0;cache.count=cache.items.size;
+  if(typeof updateWordbookFilteredCatalog==='function')updateWordbookFilteredCatalog(cache,affected);
+}
 function vocabCatalog(){
   const revision=typeof wordPaintRevision==='number'?wordPaintRevision:0;
-  const count=Object.keys(words).length;
-  if(vocabCatalogCache&&vocabCatalogCache.revision===revision&&vocabCatalogCache.count===count&&vocabCatalogCache.words===words)return vocabCatalogCache;
+  if(vocabCatalogCache&&vocabCatalogCache.revision===revision&&vocabCatalogCache.words===words)return vocabCatalogCache;
   const list=Object.entries(words).filter(([,item])=>validWordMeaning(item))
-    .sort((a,b)=>b[1].addedAt-a[1].addedAt);
-  const grouped=new Map();
+    .sort((a,b)=>(Number(b[1].addedAt)||0)-(Number(a[1].addedAt)||0));
+  const grouped=new Map(),items=new Map(),bookCounts=new Map(),groupRecords=new Map();
   list.forEach(([k,w])=>{
-    const groupKey=w.root||k;
+    const groupKey=w.root||k,book=w.book||'';
     if(!grouped.has(groupKey))grouped.set(groupKey,[]);
     grouped.get(groupKey).push([k,w]);
+    items.set(k,{root:groupKey,book});bookCounts.set(book,(bookCounts.get(book)||0)+1);
   });
-  vocabCatalogCache={revision,count,words,list,groups:[...grouped.entries()]};
+  let nextOrder=0;
+  for(const [root,entries] of grouped){
+    groupRecords.set(root,{entries,addedAt:Math.max(...entries.map(([,item])=>Number(item.addedAt)||0)),order:nextOrder++});orderVocabEntries(entries);
+  }
+  vocabCatalogCache={revision,count:items.size,words,items,bookCounts,bookNames:[...bookCounts.keys()].sort(),groupRecords,nextOrder,groups:[...grouped.entries()]};
   return vocabCatalogCache;
 }
 function bindMemoryVocabularyGroup(group){
+  const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
+  const current=()=>!scope||isLearningScopeCurrent(scope);
   bindVocabularyGroupToggle(group,key=>words[key],vocabOpen);
   const headKey=group.dataset.head;
   /** @type {HTMLElement} */(group.querySelector('.chip')).onclick=()=>{
+    if(!current()||!words[headKey])return;
     setStatus(headKey,words[headKey].status%3+1);renderVocab();
   };
   group.querySelectorAll('.vsense').forEach(row=>{
     const sense=/** @type {HTMLElement} */(row);
     const k=sense.dataset.k;
     const del=/** @type {HTMLElement} */(sense.querySelector('.rowdel'));
-    if(del)del.onclick=()=>deleteMeaning(k);
+    if(del)del.onclick=()=>{if(current())deleteMeaning(k);};
     sense.querySelector('.vko').addEventListener('blur',event=>{
-      if(!words[k])return;
+      if(!current()||!words[k])return;
       const value=(/** @type {HTMLElement} */(event.target)).textContent.trim();
       if(!value){deleteMeaning(k);return;}
       if(words[k].ko===value)return;
@@ -2025,13 +2138,15 @@ function mountVocabWindow(wrap,groups){
   const rows=new Map();
   let frame=0,disposed=false,width=0;
   const estimate=63;
-  const heights=groups.map(([groupKey])=>{
-    const cached=vocabWindowHeights.get(groupKey);
-    return cached&&cached.width===wrap.clientWidth&&cached.open===vocabOpen.has(groupKey)?cached.height:estimate;
-  });
-  let offsets=new Float64Array(groups.length+1);
-  const sum=()=>{offsets[0]=0;for(let i=0;i<heights.length;i++)offsets[i+1]=offsets[i]+heights[i];};sum();
-  const locate=y=>{let lo=0,hi=groups.length;while(lo<hi){const mid=(lo+hi)>>1;if(offsets[mid+1]<=y)lo=mid+1;else hi=mid;}return groups.length?Math.min(lo,groups.length-1):0;};
+  // Sparse Fenwick deltas keep offsets proportional to measured rows. Opening
+  // or changing one card never allocates/walks an entry for every hidden row.
+  const heights=new Map(),deltas=new Map();
+  const offset=index=>{let value=index*estimate;for(let i=index;i>0;i-=i&-i)value+=deltas.get(i)||0;return value;};
+  const setHeight=(index,height)=>{
+    const difference=height-(heights.get(index)||estimate);heights.set(index,height);
+    for(let i=index+1;i<=groups.length;i+=i&-i)deltas.set(i,(deltas.get(i)||0)+difference);
+  };
+  const locate=y=>{let lo=0,hi=groups.length;while(lo<hi){const mid=(lo+hi)>>1;if(offset(mid+1)<=y)lo=mid+1;else hi=mid;}return groups.length?Math.min(lo,groups.length-1):0;};
   const top=()=>wrap.getBoundingClientRect().top+window.scrollY;
   const spacer=height=>{const node=document.createElement('div');node.className='vocab-window-spacer';node.setAttribute('aria-hidden','true');node.style.height=height+'px';return node;};
   let paintedStart=-1,paintedEnd=-1,paintedFocus=-1,cachedOrigin=0,pendingMeasure=false;
@@ -2046,25 +2161,24 @@ function mountVocabWindow(wrap,groups){
     const nextWidth=wrap.clientWidth;
     const resized=width!==nextWidth;
     if(!measure&&!resized&&requiredIndex==null){
-      const y=Math.max(0,window.scrollY-cachedOrigin),anchor=locate(y),within=y-offsets[anchor],corrected=offsets[anchor]+within;
+      const y=Math.max(0,window.scrollY-cachedOrigin),anchor=locate(y),within=y-offset(anchor),corrected=offset(anchor)+within;
       const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
       const focused=document.activeElement?.closest('.vgroup');
       const focusIndex=focused instanceof HTMLElement&&wrap.contains(focused)?Number(focused.dataset.index):-1;
       if(start===paintedStart&&end===paintedEnd&&focusIndex===paintedFocus)return;
     }
     if(!groups.length){wrap.replaceChildren();rows.clear();return;}
-    const origin=top(),y=Math.max(0,window.scrollY-origin),anchor=locate(y),within=y-offsets[anchor];
+    const origin=top(),y=Math.max(0,window.scrollY-origin),anchor=locate(y),within=y-offset(anchor);
     width=nextWidth;
-    if(resized){heights.fill(estimate);sum();}
+    if(resized){heights.clear();deltas.clear();}
     let measured=false;
     for(const [index,row] of rows){
       if(index>=groups.length)continue;
       const height=row.getBoundingClientRect().height;
-      if(height&&height!==heights[index]){heights[index]=height;measured=true;}
+      if(height&&height!==heights.get(index)){setHeight(index,height);measured=true;}
       if(height)vocabWindowHeights.set(groups[index][0],{height,width,open:vocabOpen.has(groups[index][0])});
     }
-    if(measured)sum();
-    const corrected=offsets[anchor]+within;
+    const corrected=offset(anchor)+within;
     const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
     const indices=new Set(Array.from({length:Math.max(0,end-start)},(_,i)=>start+i));
     if(Number.isInteger(requiredIndex))indices.add(requiredIndex);
@@ -2075,12 +2189,12 @@ function mountVocabWindow(wrap,groups){
     for(const [index,row] of rows)if(!indices.has(index)){observer.unobserve(row);row.remove();rows.delete(index);}
     const nodes=[];let cursor=0;
     for(const index of [...indices].sort((a,b)=>a-b)){
-      if(index>cursor)nodes.push(spacer(offsets[index]-offsets[cursor]));
+      if(index>cursor)nodes.push(spacer(offset(index)-offset(cursor)));
       let row=rows.get(index);
       if(!row){row=vocabGroupElement(groups[index][0],groups[index][1],index,groups.length);rows.set(index,row);observer.observe(row);}
       nodes.push(row);cursor=index+1;
     }
-    if(cursor<groups.length)nodes.push(spacer(offsets[groups.length]-offsets[cursor]));
+    if(cursor<groups.length)nodes.push(spacer(offset(groups.length)-offset(cursor)));
     let next=wrap.firstChild;
     for(const node of nodes){if(node===next)next=next.nextSibling;else wrap.insertBefore(node,next);}
     while(next){const removed=next;next=next.nextSibling;removed.remove();}
@@ -2091,7 +2205,7 @@ function mountVocabWindow(wrap,groups){
     cachedOrigin=origin;
   }
   const focusRow=index=>{
-    refresh(null,true);window.scrollTo(window.scrollX,top()+offsets[index]);refresh(index,true);return rows.get(index);
+    refresh(null,true);window.scrollTo(window.scrollX,top()+offset(index));refresh(index,true);return rows.get(index);
   };
   const keyboard=event=>{
     if(event.key!=='Tab')return;
@@ -2125,13 +2239,13 @@ function renderVocab(){
   const catalog=vocabCatalog();
   const q=document.getElementById('vsearch').value.trim().toLowerCase();
   const groups=filterWordbookGroups(catalog.groups,q);
-  renderWordbookBookOptions(catalog.list);
+  renderWordbookBookOptions(null,catalog.bookNames);
   document.getElementById('vcnt').textContent=groups.length===catalog.groups.length?`전체 ${catalog.groups.length}단어`:`전체 ${catalog.groups.length}단어 · ${groups.length}개 표시`;
   syncWordbookFilterLabels();
   const wrap=document.getElementById('vtablewrap');
   if(!groups.length){
     wrap.style.overflowAnchor='';
-    wrap.innerHTML=catalog.list.length?'<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>':'<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>';
+    wrap.innerHTML=catalog.count?'<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>':'<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>';
     refreshVocabularyReviewEntry();return;
   }
   if(groups.length<=vocabWindowLimit){
@@ -2145,8 +2259,7 @@ function renderVocab(){
     wrap.querySelectorAll('.vgroup').forEach(node=>bindMemoryVocabularyGroup(/** @type {HTMLElement} */(node)));
     refreshVocabularyReviewEntry();return;
   }
-  groups.forEach(([,entries])=>orderVocabEntries(entries));
-  vocabFilteredReviewKeys=groups.flatMap(([,entries])=>entries.map(([key])=>key));
+  vocabFilteredReviewKeys=()=>groups.flatMap(([,entries])=>entries.map(([key])=>key));
   vocabWindow=mountVocabWindow(wrap,groups);
   refreshVocabularyReviewEntry();
 }

@@ -1,6 +1,7 @@
 const LS_WORDS='breeze.words', LS_POS='breeze.pos', LS_FS='breeze.fs';
 /* ?? 는 2020년 문법이라 오래된 태블릿 브라우저가 파일 전체를 못 읽습니다. 풀어서 씁니다. */
-function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return (v===null||v===undefined) ? d : v; }catch(e){ return d; } }
+function learningStateKey(k){return typeof learningLocalKey==='function'?learningLocalKey(k):k;}
+function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(learningStateKey(k))); return (v===null||v===undefined) ? d : v; }catch(e){ return d; } }
 
 /* 저장에 실패해도 하던 일은 막지 않습니다. 단어를 담다가 모달이 뜨면 읽기가
    끊기는데, 그게 더 나쁩니다. 대신 무엇을 못 지켰는지는 정확히 말합니다 —
@@ -13,11 +14,15 @@ const SAVE_FAIL_NAMES = {
   'breeze.words': '단어장을 이 기기에 저장하지 못했어요',
   'breeze.dead':  '단어장을 이 기기에 저장하지 못했어요',
   'breeze.word-write.pending': '단어장을 이 기기에 저장하지 못했어요',
+  'breeze.dead-write.pending': '단어장을 이 기기에 저장하지 못했어요',
 };
 const SAVE_FAIL_QUIET = new Set(['breeze.pos']);
 let lastSaveWarnAt = 0;
 function save(k, v){
-  try{ localStorage.setItem(k, JSON.stringify(v)); return true; }
+  // Full tombstone saves are reserved for merge/migration callers. Frequent
+  // edits pass their changed IDs to saveDead(), preserving the legacy archive.
+  if(k==='breeze.dead')return saveDead(undefined,v);
+  try{ localStorage.setItem(learningStateKey(k), JSON.stringify(v)); return true; }
   catch(e){
     console.warn('저장 실패:', k, e && e.name);
     if(SAVE_FAIL_QUIET.has(k)) return false;
@@ -27,11 +32,13 @@ function save(k, v){
     const what = SAVE_FAIL_NAMES[k] || '방금 한 변경을 이 기기에 저장하지 못했어요';
     /* 로그인 상태만으로 방금 변경이 서버에 반영됐다고 보장할 수 없습니다. */
     const quota=e && (e.name==='QuotaExceededError'||e.code===22);
-    toast(what + (quota ? ' 기기 저장 공간이 부족해요.' : ' 기기 저장소를 확인해 주세요.'));
+    toast(what + (quota ? ' 이 앱의 저장소 한도에 도달했어요.' : ' 기기 저장소를 확인해 주세요.'));
     return false;
   }
 }
 const LS_DEAD='breeze.dead';
+const DEAD_ITEM_PREFIX='breeze.dead-item.';
+const DEAD_WRITE_PENDING='breeze.dead-write.pending';
 const WORD_ITEM_PREFIX='breeze.word-item.';
 const WORD_WRITE_PENDING='breeze.word-write.pending';
 /* Remote and local JSON may have identical fields in a different order. */
@@ -44,8 +51,8 @@ function loadWordState(){
   const apply=(key,item)=>{if(item===null)delete result[key];else result[key]=item;};
   try{for(let i=0;i<localStorage.length;i++){
     const name=localStorage.key(i);
-    if(name&&name.startsWith(WORD_ITEM_PREFIX)){
-      try{apply(name.slice(WORD_ITEM_PREFIX.length),JSON.parse(localStorage.getItem(name)));}catch(e){}
+    if(name&&name.startsWith(learningStateKey(WORD_ITEM_PREFIX))){
+      try{apply(name.slice(learningStateKey(WORD_ITEM_PREFIX).length),JSON.parse(localStorage.getItem(name)));}catch(e){}
     }
   }
   }catch(e){}
@@ -60,15 +67,101 @@ function loadWordState(){
   }
   if(Object.keys(outstanding).length!==Object.keys(pending).length){
     try{
-      if(Object.keys(outstanding).length)localStorage.setItem(WORD_WRITE_PENDING,JSON.stringify(outstanding));
-      else localStorage.removeItem(WORD_WRITE_PENDING);
+      if(Object.keys(outstanding).length)localStorage.setItem(learningStateKey(WORD_WRITE_PENDING),JSON.stringify(outstanding));
+      else localStorage.removeItem(learningStateKey(WORD_WRITE_PENDING));
     }catch(e){ /* Keep the original journal if compaction cannot be stored. */ }
+  }
+  // A deletion may commit before its word-record removal is interrupted.
+  // Durable tombstones dominate stale records even while fully offline.
+  for(const [key,at] of Object.entries(loadDeadState())){
+    const item=result[key];
+    if(item&&at>=Math.max(item.up||0,item.addedAt||0))delete result[key];
   }
   return result;
 }
 let words = loadWordState();
 const persistedWordItems=new Map(Object.entries(words).map(([key,item])=>[key,stableWordJson(item)]));
-let dead = load(LS_DEAD, {});
+// Build once at load/scope replacement, then update only the written keys.
+// Related meanings and retry expressions never need a whole-vocabulary scan.
+let indexedWordSource=words;
+const wordGroupKeys=new Map(),wordKeyGroups=new Map();
+function refreshWordIndex(keys){
+  for(const key of (Array.isArray(keys)?keys:[keys])){
+    for(const group of wordKeyGroups.get(key)||[]){
+      const members=wordGroupKeys.get(group);members?.delete(key);
+      if(members&&!members.size)wordGroupKeys.delete(group);
+    }
+    const item=words[key];wordKeyGroups.delete(key);if(!item)continue;
+    const groups=new Set([item.root||key,...(item.retryOwner?[item.retryOwner]:[])]);
+    wordKeyGroups.set(key,groups);
+    for(const group of groups){
+      if(!wordGroupKeys.has(group))wordGroupKeys.set(group,new Set());
+      wordGroupKeys.get(group).add(key);
+    }
+  }
+}
+function rebuildWordIndex(){
+  indexedWordSource=words;wordGroupKeys.clear();wordKeyGroups.clear();refreshWordIndex(Object.keys(words));
+}
+function wordEntriesForRoot(root){
+  if(indexedWordSource!==words)rebuildWordIndex();
+  const keys=new Set([root,...(wordGroupKeys.get(root)||[])]);
+  return [...keys].filter(key=>words[key]).map(key=>[key,words[key]]);
+}
+rebuildWordIndex();
+function loadDeadState(){
+  const result=load(LS_DEAD,{}),prefix=learningStateKey(DEAD_ITEM_PREFIX);
+  const apply=(key,value)=>{if(value===null)delete result[key];else result[key]=value;};
+  try{for(let i=0;i<localStorage.length;i++){
+    const name=localStorage.key(i);
+    if(name&&name.startsWith(prefix)){
+      try{apply(name.slice(prefix.length),JSON.parse(localStorage.getItem(name)));}catch(e){}
+    }
+  }}catch(e){}
+  for(const [key,value] of Object.entries(load(DEAD_WRITE_PENDING,{})))apply(key,value);
+  return result;
+}
+let dead = loadDeadState();
+const persistedDeadItems=new Map(Object.entries(dead));
+let wordChangeSerial=0,wordChangeEpoch=0;
+const changedWordVersions=new Map();
+function wordChangeRevision(){return wordChangeSerial;}
+function hasWordChanges(){return changedWordVersions.size>0;}
+function markWordChanges(keys){
+  const version=++wordChangeSerial;
+  for(const key of keys)changedWordVersions.set(key,version);
+}
+function resetWordChangeTracking(){
+  changedWordVersions.clear();wordChangeEpoch++;wordChangeSerial++;
+}
+function captureWordChanges(){
+  const snapshot={version:wordChangeSerial,epoch:wordChangeEpoch,words:{},dead:{},keys:[],versions:{}};
+  for(const [key,version] of changedWordVersions){
+    snapshot.keys.push(key);snapshot.versions[key]=version;
+    snapshot.words[key]=validWordMeaning(words[key])?JSON.parse(stableWordJson(words[key])):null;
+    snapshot.dead[key]=dead[key]===undefined?null:dead[key];
+  }
+  return snapshot;
+}
+function acknowledgeWordChanges(snapshot){
+  if(!snapshot||snapshot.epoch!==wordChangeEpoch)return;
+  for(const key of snapshot.keys)if(changedWordVersions.get(key)===snapshot.versions[key])changedWordVersions.delete(key);
+}
+function saveDead(keys,source=dead){
+  const pending=load(DEAD_WRITE_PENDING,{}),changes={...pending};
+  const candidates=keys?(Array.isArray(keys)?keys:[keys]):new Set([...persistedDeadItems.keys(),...Object.keys(source)]);
+  for(const key of candidates){
+    const value=source[key]===undefined?null:source[key];
+    if(value!==(persistedDeadItems.has(key)?persistedDeadItems.get(key):null)||Object.prototype.hasOwnProperty.call(pending,key))changes[key]=value;
+  }
+  const entries=Object.entries(changes);if(!entries.length)return true;
+  markWordChanges(entries.map(([key])=>key));
+  if(!save(DEAD_WRITE_PENDING,changes))return false;
+  for(const [key,value] of entries)if(!save(DEAD_ITEM_PREFIX+key,value))return false;
+  try{localStorage.removeItem(learningStateKey(DEAD_WRITE_PENDING));}catch(e){return false;}
+  for(const [key,value] of entries){if(value===null)persistedDeadItems.delete(key);else persistedDeadItems.set(key,value);}
+  return true;
+}
 
 let books = [];                       // 본문은 IndexedDB에 저장(부팅 시 로드)
 /* 부팅할 때마다 돌던 옛 판 변환들(localStorage 에 있던 책 옮기기, AI 조판
@@ -101,21 +194,34 @@ const saveWords = (keys) => {
   const changes={...pending};
   const candidates=keys ? (Array.isArray(keys)?keys:[keys])
     : new Set([...persistedWordItems.keys(),...Object.keys(words)]);
+  if(indexedWordSource!==words)rebuildWordIndex();
+  refreshWordIndex([...candidates]);
   for(const key of candidates){
     const item=validWordMeaning(words[key])?words[key]:null;
     const encoded=item===null?undefined:stableWordJson(item);
     if(encoded!==persistedWordItems.get(key)||Object.prototype.hasOwnProperty.call(pending,key))changes[key]=item;
   }
   const entries=Object.entries(changes);
-  if(!entries.length)return true;
+  if(!entries.length){
+    if(typeof updateVocabCatalogKeys==='function')updateVocabCatalogKeys([...candidates]);
+    return true;
+  }
   wordPaintRevision++;
+  const changedKeys=entries.map(([key])=>key);
+  markWordChanges(changedKeys);
+  if(typeof updateVocabCatalogKeys==='function')updateVocabCatalogKeys(changedKeys);
   // Publish the complete small transaction first. A reload can replay it even
   // if quota exhaustion or termination interrupts the individual record writes.
   if(!save(WORD_WRITE_PENDING,changes))return false;
   for(const [key,item] of entries)if(!save(WORD_ITEM_PREFIX+key,item))return false;
-  try{localStorage.removeItem(WORD_WRITE_PENDING);}catch(e){return false;}
+  try{localStorage.removeItem(learningStateKey(WORD_WRITE_PENDING));}catch(e){return false;}
   entries.forEach(([key,item])=>{if(item===null)persistedWordItems.delete(key);else persistedWordItems.set(key,stableWordJson(item));});
-  if(typeof scheduleStudySetsVocabularySync==='function'&&typeof studySetsIsOpen==='function'&&studySetsIsOpen())scheduleStudySetsVocabularySync();
+  if(typeof scheduleStudySetsVocabularySync==='function'){
+    // Local word persistence/lookup never waits for related-set IDB work.
+    Promise.resolve(scheduleStudySetsVocabularySync(changedKeys)).catch(error=>{
+      if(!error?.syncCancelled)console.warn('학습 세트 갱신 실패:',error?.name||'Error');
+    });
+  }
   return true;
 };
 if(cleanOrphanWords(words,dead)){

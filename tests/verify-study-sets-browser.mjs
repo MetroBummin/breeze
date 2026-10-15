@@ -37,6 +37,9 @@ try{
  const wordRow=word=>rows().filter({has:page.locator('.vword',{hasText:new RegExp(`${word}$`)})});
  const assertDirectory=async()=>{
   await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog')?.open);
+  // Browser history opens the dialog before its IndexedDB read renders the
+  // directory. Wait for that content, then assert the complete visible surface.
+  await page.locator('#study-sets-all').waitFor({state:'visible'});
   assert.equal(await page.locator('dialog[open]').count(),1,'one directory sheet over the original vocabulary');
   assert.equal(await page.locator('#v-vocab').isVisible(),true);
   assert.equal(await page.locator('#study-sets-all').isVisible(),true);
@@ -121,7 +124,7 @@ try{
  assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable],#study-all-words-list button.chip').count(),0);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').count(),5);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');
- const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
+ const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode));
  const removedWord=await page.locator('#study-all-words-list > li').first().locator('.vword').innerText();
  const allRow=page.locator('#study-all-words-list > li').first(),allBox=await allRow.boundingBox();await page.mouse.move(allBox.x+allBox.width*.8,allBox.y+allBox.height/2);await page.mouse.down();await page.mouse.move(allBox.x+10,allBox.y+allBox.height/2,{steps:10});await page.mouse.up();
  await page.waitForFunction(()=>document.querySelectorAll('#study-all-words-list > li').length===4);
@@ -135,7 +138,7 @@ try{
   const button=await page.locator('#study-all-words-start').boundingBox();assert.ok(button&&button.x>=0&&button.y>=0&&button.x+button.width<=width+1&&button.y+button.height<=height+1,'All Words start remains inside safe viewport '+JSON.stringify(button));
   assert.equal(await page.locator('#v-memory-set').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);await page.screenshot({path:`${proof}/all-detail-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`});
  }
- assert.equal(await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allWordsBytes);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
+ assert.equal(await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allWordsBytes);assert.equal(await page.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
 
  await studyAction(page.locator('#study-all-words-start').click(),page);await page.waitForFunction(()=>activeAppView()==='study');
  await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
@@ -249,7 +252,7 @@ try{
  assert.equal(await rows().count(),2,'outside touch dismisses action without excluding');
  // A failed durable write never starts the exit/collapse or loses the row.
  const beforeSwipeFailure=await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)));
- await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===STUDY_SETS_STORAGE)throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,value,key);};});
+ await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===studyScopeKey(STUDY_SETS_STORAGE))throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,value,key);};});
  await fullSwipe(quiet(),{inspect:true,inspectAction:true});
  assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await quiet().isVisible(),true);
  assert.equal(await rows().count(),2);assert.equal(await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode))),beforeSwipeFailure);
@@ -272,14 +275,17 @@ try{
  assert.ok(overlapDelay>=0&&overlapDelay<140,`second pointer must start during first exit, got ${overlapDelay}ms`);
  await page.mouse.move(continuousX-continuousDistance/2,continuousY,{steps:3});
  await page.mouse.move(continuousX-continuousDistance,continuousY,{steps:3});
- await page.waitForTimeout(400);
+ // Keep the second pointer held until the first spring and collapse really
+ // finish. WebKit can leave WAAPI pending beyond a wall-clock timer; observing
+ // the actual removal still requires the original second node and capture.
+ await page.waitForFunction(()=>document.querySelectorAll('#study-sets-word-list > li').length===1,null,{timeout:3000});
  const held=await page.evaluate(()=>({connected:window.qaContinuousRow.isConnected,captured:window.qaContinuousRow.hasPointerCapture(window.qaSecondPointerId),rows:document.querySelectorAll('#study-sets-word-list > li').length}));
  assert.deepEqual(held,{connected:true,captured:true,rows:1},'first exit must not replace or cancel the second held gesture');
  await page.mouse.up();await waitRows(0);
  await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(1);
  assert.equal(await quiet().count(),0,'undo of second swipe does not silently restore first');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore,'all gesture and undo paths preserve source vocabulary');
- await page.evaluate(async ()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};await studySetsReadAndRender();});
+ await page.evaluate(async ()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};saveWords(['q2','swift','other']);await studySetsReadAndRender();});
  assert.equal(await page.locator('#study-sets-import').count(),0,'a later save joins the set without 새 단어 가져오기');
  assert.equal(await page.locator('#study-sets-word-list li').count(),2);
  await openHomeMenu('keyboard');
@@ -290,9 +296,9 @@ try{
  await openHomeMenu('keyboard');await studyAction(page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click(),page);await studyAction(page.getByRole('button',{name:'취소',exact:true}).click(),page);
  await closeSheet();await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
  const vocabularySnapshot=await page.evaluate(()=>JSON.parse(JSON.stringify(words)));
- await page.evaluate(()=>{const key=Object.keys(words).find(item=>words[item].word==='swift');delete words[key];saveWords();});
+ await page.evaluate(()=>{const key=Object.keys(words).find(item=>words[item].word==='swift');window.qaRemovedStudyKey=key;dead[key]=Date.now();saveDead([key]);delete words[key];saveWords([key]);});
  await page.waitForFunction(()=>![...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='swift'));
- await page.evaluate(snapshot=>{words=snapshot;saveWords();},vocabularySnapshot);
+ await page.evaluate(snapshot=>{words=snapshot;delete dead[window.qaRemovedStudyKey];saveDead([window.qaRemovedStudyKey]);saveWords([window.qaRemovedStudyKey]);},vocabularySnapshot);
  await page.waitForFunction(()=>[...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='swift'));
  console.log(`${engine.name()}: snapshot study starts`);await studyAction(page.locator('#study-sets-start').click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 3');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);assert.equal(await page.locator('.study-sets-card-example').count(),0,'multi-meaning representatives show only the word');assert.doesNotMatch(await page.locator('#study-sets-flashcard').getAttribute('aria-label'),/바람|감다/);
@@ -300,7 +306,7 @@ try{
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-flashcard');
  // Failure must leave the revealed answer and the exact durable value retryable.
  const rawBefore=await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)));
- await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===STUDY_SETS_STORAGE)throw Error('Synthetic quota');return window.qaSetItem.call(this,value,key);};});
+ await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===studyScopeKey(STUDY_SETS_STORAGE))throw Error('Synthetic quota');return window.qaSetItem.call(this,value,key);};});
  await studyAction(page.locator('#study-sets-flashcard').press('ArrowLeft'),page);await page.waitForSelector('#study-sets-error:not([hidden])');assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);
  assert.equal(await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode))),rawBefore);
  await page.evaluate(()=>{IDBObjectStore.prototype.put=window.qaSetItem;});await studyAction(page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click(),page);

@@ -31,7 +31,9 @@ try{
  await page.waitForFunction(pdf=>pdf?originalSession?.wordBoxes.get(1)?.length&&!readerPositionPending():document.querySelectorAll('#rtext .w').length>10,pdf);
  await page.evaluate(async format=>{
   window.qaFormat=format;window.qaRequests=[];
-  sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-retap'};
+  sbUser={id:'qa-retap'};
+  sb={auth:{getSession:async()=>({data:{session:{user:{id:'qa-retap'},access_token:'synthetic-qa-retap'}}})}};
+  await switchLearningAccount(sbUser.id);
   dictGet=async()=>null;dictPut=async()=>{};fillDictionaryMetadata=async()=>{};
   // Deliberately deliver even after abort: stale completions must not reopen UI.
   dictCall=(payload,signal)=>new Promise(resolve=>qaRequests.push({payload,signal,resolve}));

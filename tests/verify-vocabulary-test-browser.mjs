@@ -53,7 +53,7 @@ try{
   await page.locator('#vocabulary-test-answer').fill('입력하던 뜻');await page.waitForFunction(()=>!vocabularyTestUI.saveJob);
   await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(()=>show('vocab'));await open(page);await page.locator('#vocabulary-test-resume').click();
   assert.equal(await page.locator('#vocabulary-test-answer').inputValue(),'입력하던 뜻');assert.deepEqual(await page.evaluate(()=>vocabularyTestUI.session.manifest.cards.map(c=>c.word)),order);
-  await page.evaluate(()=>{window.testPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.transaction.db.name==='breeze-vocabulary-test')throw new DOMException('Synthetic storage full','QuotaExceededError');return window.testPut.apply(this,args);};});
+  await page.evaluate(()=>{window.testPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.transaction.db.name===learningStorageKey('breeze-vocabulary-test'))throw new DOMException('Synthetic storage full','QuotaExceededError');return window.testPut.apply(this,args);};});
   await page.locator('#vocabulary-test-answer').fill('보존해야 할 답');await page.locator('#vocabulary-test-error').waitFor();await page.locator('#vocabulary-test-next').click();
   assert.equal(await page.evaluate(()=>vocabularyTestUI.session.meta.index),0);assert.equal(await page.locator('#vocabulary-test-answer').inputValue(),'보존해야 할 답');
   await page.waitForFunction(()=>!vocabularyTestUI.busy&&!vocabularyTestUI.saveJob);

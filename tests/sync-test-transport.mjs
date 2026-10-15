@@ -124,7 +124,7 @@ export function device(db,label,{user='user',words={},dead={},books=[],positions
   const source=readFileSync(new URL('../scripts/sync/progress-merge.js',import.meta.url),'utf8')+'\n'+
     readFileSync(process.env.BREEZE_SYNC_SOURCE||new URL('../scripts/sync/sync.js',import.meta.url),'utf8');
   new Script(source+`\n;globalThis.syncTest={
-    setup(client,user,meta){sb=client;sbUser={id:user};vaultMaster={};vaultMeta=meta;},
+    setup(client,user,meta){sb=client;sbUser={id:user};acceptedSyncIdentity=user;syncAccountReady=true;vaultMaster={};vaultMeta=meta;},
     vault:doSync,progress:doProgressSync,all:syncRemoteChanges,logout:sbLogout,attach:attachSupabaseAuth,
     queueWords:queueSync,queueProgress:queueReadingProgressSync,
     render:()=>{renderSyncModal();return document.getElementById('sm-body').innerHTML;},

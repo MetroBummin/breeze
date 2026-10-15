@@ -149,6 +149,7 @@ function makeContext(world, net, store){
     LS_DEAD:'dead', LS_POS:'pos',
     load:(_key,fallback)=>fallback??'', save(){return true;},
     saveWords(){ world.saves++; },
+    saveDead(){ world.saves++; },
     validWordMeaning:item=>!!(item && String(item.ko||'').trim()),
     queueSync(){ world.syncs++; },
     keyOf:k=>k,

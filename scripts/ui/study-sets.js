@@ -39,7 +39,8 @@ function studySetsNode(tag,className='',text=''){
 function studySetsButton(text,action,className=''){
   const button=document.createElement('button');button.type='button';
   button.className='study-sets-button'+(className?' '+className:'');
-  button.textContent=text;button.addEventListener('click',action);return button;
+  const scope=studyScopeCapture();
+  button.textContent=text;button.addEventListener('click',event=>{if(!scope||isLearningScopeCurrent(scope))action(event);});return button;
 }
 function studySetsIcon(kind){
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -348,38 +349,53 @@ function studySetsShowError(error,retry,context={phase:'read',committed:false}){
 }
 function studySetsClearError(){studySetsUI.retry=null;studySetsUI.error.hidden=true;studySetsUI.error.replaceChildren();}
 function studySetsOwner(){
-  const {historyToken,screen,setId}=studySetsUI;
-  return ()=>studySetsIsOpen()&&studySetsUI.historyToken===historyToken&&studySetsUI.screen===screen&&studySetsUI.setId===setId;
+  const {historyToken,screen,setId}=studySetsUI,scope=studyScopeCapture();
+  return ()=>(!scope||isLearningScopeCurrent(scope))&&studySetsIsOpen()&&studySetsUI.historyToken===historyToken&&studySetsUI.screen===screen&&studySetsUI.setId===setId;
 }
 let studySetsWriteChain=Promise.resolve();
 function enqueueStudySetsWrite(task){
-  const run=studySetsWriteChain.then(task,task);
+  const scope=studyScopeCapture(),guarded=()=>{studyScopeAssert(scope);return task();};
+  const run=studySetsWriteChain.then(guarded,guarded);
   studySetsWriteChain=run.then(()=>{},()=>{});
   return run;
 }
-function scheduleStudySetsVocabularySync(){
-  return enqueueStudySetsWrite(async()=>{
-    let lastError;
+let studyVocabularyIndex=null,studyVocabularyState=null,studyVocabularyJob=null;
+const studyVocabularyPending=new Set();let studyVocabularyFull=false;
+function resetStudyVocabularyIndex(){studyVocabularyIndex=null;studyVocabularyState=null;}
+function scheduleStudySetsVocabularySync(keys){
+  if(Array.isArray(keys))for(const key of keys)studyVocabularyPending.add(key);else studyVocabularyFull=true;
+  if(studyVocabularyJob)return studyVocabularyJob;
+  const work=enqueueStudySetsWrite(async()=>{
+    const changedKeys=[...studyVocabularyPending],full=studyVocabularyFull;studyVocabularyPending.clear();studyVocabularyFull=false;
     for(let attempt=0;attempt<3;attempt++){
       try{
-        const state=await loadStudySets();
-        const synced=BreezeStudySets.syncVocabulary(state,words,Date.now());
+        const cached=typeof studySetsLoadedState!=='undefined'?studySetsLoadedState:null;
+        const state=attempt===0&&cached?cached:await loadStudySets();
+        let synced;
+        if(full)synced=BreezeStudySets.syncVocabulary(state,words,Date.now(),{deletedKeys:typeof dead==='undefined'?[]:Object.keys(dead)});
+        else{
+          if(!studyVocabularyIndex||studyVocabularyState!==state)studyVocabularyIndex=BreezeStudySets.createVocabularySyncIndex(state,words);
+          synced=BreezeStudySets.syncVocabularyChanges(state,words,changedKeys,Date.now(),studyVocabularyIndex,{deletedKeys:changedKeys.filter(key=>typeof dead!=='undefined'&&dead[key])});
+        }
+        studyVocabularyState=synced.state;
         if(!synced.accepted)return synced;
-        await commitStudySets(synced.state);
-        // The open set list follows the save. An in-progress card keeps its
-        // starting queue, so that screen is left until the round is left.
+        const setIds=synced.changedSetIds||synced.state.sets.filter((set,index)=>set!==state.sets[index]).map(set=>set.id);
+        if(!full&&typeof commitStudySetsIncremental==='function')await commitStudySetsIncremental(synced.state,setIds);
+        else await commitStudySets(synced.state);
         if(studySetsIsOpen()&&!studySetsUI.retry&&!studySetsUI.mutating&&!['create','rename','books','delete','study','all'].includes(studySetsUI.screen)){
           studySetsUI.state=synced.state;renderStudySets(false);
         }
         return synced;
       }catch(error){
-        lastError=error;
-        if(attempt===2||!/changed|Reopen|retry/i.test(String(error?.message||'')))throw error;
+        resetStudyVocabularyIndex();
+        if(error?.syncCancelled||attempt===2||!/changed|Reopen|retry/i.test(String(error?.message||'')))throw error;
       }
     }
-    throw lastError;
   });
+  studyVocabularyJob=work.finally(()=>{studyVocabularyJob=null;if(studyVocabularyPending.size||studyVocabularyFull)void scheduleStudySetsVocabularySync([]).catch(error=>{if(!error?.syncCancelled)console.warn('Study set update remains retryable:',error?.name||'Error');});});
+  return studyVocabularyJob;
 }
+
 async function studySetsReadAndRender(focus=true,context={phase:'read',committed:false}){
   const epoch=++studySetsReadEpoch,owns=studySetsOwner();
   if(studySetsUI.screen==='all'){studySetsClearError();renderStudySets(focus);return;}
@@ -388,7 +404,7 @@ async function studySetsReadAndRender(focus=true,context={phase:'read',committed
     await enqueueStudySetsWrite(async()=>{
       if(epoch!==studySetsReadEpoch||!owns())return;
       const state=await loadStudySets();if(epoch!==studySetsReadEpoch||!owns())return;
-      const synced=BreezeStudySets.syncVocabulary(state,words,Date.now());
+      const synced=BreezeStudySets.syncVocabulary(state,words,Date.now(),{deletedKeys:typeof dead==='undefined'?[]:Object.keys(dead)});
       if(synced.accepted)await commitStudySets(synced.state);
       if(epoch!==studySetsReadEpoch||!owns())return;
       studySetsUI.state=synced.state;studySetsClearError();renderStudySets(focus);
@@ -423,7 +439,7 @@ async function studySetsMutateUnlocked(change,success,exitRow=null,handoff=null)
       studySetsUI.notice='다른 곳에서 변경된 최신 상태를 불러왔어요.';phase='display';renderStudySets();refreshStudySetsEntry(result.state);return;
     }
     phase='commit';serializedCharacters=JSON.stringify(result.state).length;
-    await commitStudySets(result.state);committed=true;
+    await commitStudySets(result.state);resetStudyVocabularyIndex();committed=true;
     if(handoff)await handoff;
     if(!owns())return;
     studySetsUI.state=result.state;studySetsClearError();
@@ -435,6 +451,7 @@ async function studySetsMutateUnlocked(change,success,exitRow=null,handoff=null)
     if(exitRow&&studySetsAnimateExit(exitRow))return;
     renderStudySets(focus);
   }catch(error){
+    if(error?.syncCancelled)return;
     if(!owns()&&!committed){toast('학습 변경을 저장하지 못했어요. 다시 열어 시도해 주세요.');return;}
     if(exitRow)studySetsUI.swipeClose?.();
     // A durable operation must never be repeated because its display failed.
@@ -928,7 +945,9 @@ function renderStudySetsDetailFooter(set){
   }
 }
 function studySetsRememberWordUndo(snapshot,word){
+  const scope=studyScopeCapture();
   const restore=()=>{
+    if(scope&&!isLearningScopeCurrent(scope))return;
     const current=studySetsUI.undo;
     studySetsClearUndo();
     if(!snapshot.length)return;
@@ -937,7 +956,8 @@ function studySetsRememberWordUndo(snapshot,word){
       if(snap.dead)dead[snap.id]=snap.dead;else delete dead[snap.id];
       if(snap.sense){if(snap.senseDead)dead[snap.sense]=snap.senseDead;else delete dead[snap.sense];}
     }
-    if(typeof save==='function')save(typeof LS_DEAD==='string'?LS_DEAD:'breeze.dead',dead);
+    if(typeof saveDead==='function')saveDead(snapshot.flatMap(snap=>[snap.id,snap.sense].filter(Boolean)));
+    else if(typeof save==='function')save(typeof LS_DEAD==='string'?LS_DEAD:'breeze.dead',dead);
     if(typeof saveWords==='function')saveWords(snapshot.map(item=>item.id));
     if(typeof queueSync==='function')queueSync(true);
     for(const snap of snapshot)if(typeof paintWord==='function')paintWord(snap.item.root||snap.id);
@@ -973,7 +993,8 @@ function studySetsDeleteSavedGroup(row,group){
     dead[id]=mark;delete words[id];
   }
   const deadName=typeof LS_DEAD==='string'?LS_DEAD:'breeze.dead';
-  if(typeof save==='function')save(deadName,dead);
+  if(typeof saveDead==='function')saveDead(snapshot.flatMap(snap=>[snap.id,snap.sense].filter(Boolean)));
+  else if(typeof save==='function')save(deadName,dead);
   const saved=typeof saveWords==='function'?saveWords(ids):true;
   if(saved===false){
     for(const snap of snapshot){
@@ -981,7 +1002,8 @@ function studySetsDeleteSavedGroup(row,group){
       if(snap.dead)dead[snap.id]=snap.dead;else delete dead[snap.id];
       if(snap.sense){if(snap.senseDead)dead[snap.sense]=snap.senseDead;else delete dead[snap.sense];}
     }
-    if(typeof save==='function')save(deadName,dead);
+    if(typeof saveDead==='function')saveDead(snapshot.flatMap(snap=>[snap.id,snap.sense].filter(Boolean)));
+  else if(typeof save==='function')save(deadName,dead);
     studySetsUI.swipeClose?.();return;
   }
   if(typeof queueSync==='function')queueSync(true);
@@ -1117,8 +1139,14 @@ document.addEventListener('pointerdown',event=>{
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
 function studySetsStart(id,restart=false){
+  const expectedSession=restart?studySetsUI.state?.sets.find(set=>set.id===id)?.session?.id:null;
   return studySetsMutate(state=>{
-    const replacing=restart||BreezeStudySets.view(state,id).status==='complete';
+    const current=BreezeStudySets.view(state,id);
+    // A second click can enter the write queue before the first marks the UI
+    // busy. Only the rendered completed round may be replaced; a failed commit
+    // retains that same identity and can still be retried.
+    if(restart&&current.set?.session?.id!==expectedSession)return {...current,accepted:false};
+    const replacing=restart||current.status==='complete';
     return BreezeStudySets.start(state,id,Date.now(),{restart:replacing,words:replacing?words:undefined});
   },()=>{
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
@@ -1167,7 +1195,7 @@ function renderStudySetsStudy(set){
 
 }
 function studySetsStorageChanged(key){
-  if(key!==null&&key!==STUDY_SETS_STORAGE)return;
+  if(key!==null&&key!==studyScopeKey(STUDY_SETS_STORAGE))return;
   refreshStudySetsEntry();
   // Never discard typed input or replace a retryable answer after a failed write.
   if(studySetsIsOpen()&&!studySetsUI.retry&&!studySetsUI.mutating&&!['create','rename','books','delete','test-setup','test','test-result'].includes(studySetsUI.screen))studySetsReadAndRender(false);
@@ -1177,3 +1205,17 @@ window.addEventListener('breeze-study-storage',event=>studySetsStorageChanged(/*
 refreshStudySetsEntry();
 
 document.addEventListener('keydown',event=>{if(!studySetsUI.editOpen)return;const items=[...(studySetsUI.editMenu?.querySelectorAll('button')||[])];if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();studySetsCloseEditMenu(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const at=items.findIndex(item=>item===document.activeElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(at+(event.key==='ArrowUp'?-1:1)+items.length)%items.length;items[next]?.focus({preventScroll:true});}else if(event.key==='Tab'){studySetsCloseEditMenu(false,true);}},true);
+
+window.addEventListener('breeze-learning-scope',()=>{
+  resetStudyVocabularyIndex();studyVocabularyPending.clear();studyVocabularyFull=false;
+  ++studySetsReadEpoch;++studySetsHomeEpoch;
+  clearTimeout(studySetsUI.undoTimer);studySetsUI.swipeClose?.();studySetsUI.allWordsList?.dispose();
+  studySetsOpened.clear();studySetsDirectoryPositions.clear();studySetsDirectoryFocus.clear();studySetsAllWordsHeights.clear();
+  studySetsUI.state=null;studySetsUI.undo=null;studySetsUI.retry=null;studySetsUI.notice='';studySetsUI.lastError=null;
+  studySetsUI.historyToken='';studySetsUI.setId='';studySetsUI.screen='list';studySetsUI.mutating=false;studySetsUI.pendingClose=false;
+  studySetsUI.body?.replaceChildren();studySetsUI.footer?.replaceChildren();studySetsUI.directoryList?.replaceChildren();
+  if(studySetsUI.dialog?.open)studySetsUI.dialog.close();
+  studySetsUI.pageOpen=false;
+  if(typeof activeAppView==='function'&&activeAppView()==='memory-set')show('memory',{fromHistory:true});
+  void refreshStudySetsEntry();
+});

@@ -10,6 +10,7 @@ let syncCooldownUntil=0, syncFailureCount=0;
 let progressSyncPromise=null, progressSyncAgain=false, progressSyncAgainRemote=false;
 let remoteSyncPromise=null, remoteSyncManual=false;
 let syncSessionEpoch=0;
+let syncAccountReady=true, syncAccountReadyPromise=Promise.resolve(true), acceptedSyncIdentity;
 const SYNC_CAS_ATTEMPTS=4;
 let lastQueuedWordState='';
 let legacyWordbookPending=false;
@@ -94,11 +95,13 @@ function vaultDeviceId(){
 }
 const vaultKeyName=suffix=>`u:${sbUser?sbUser.id:'none'}:${suffix}`;
 
-function syncSession(){ return {epoch:syncSessionEpoch,userId:sbUser&&sbUser.id}; }
+function syncSession(){ return {epoch:syncSessionEpoch,userId:sbUser&&sbUser.id,
+  scope:typeof captureLearningScope==='function'?captureLearningScope():null}; }
 function assertSyncSession(session){
-  if(!session.userId||session.epoch!==syncSessionEpoch||!sbUser||session.userId!==sbUser.id){
+  if(!syncAccountReady||!session.userId||session.epoch!==syncSessionEpoch||!sbUser||session.userId!==sbUser.id){
     throw Object.assign(new Error('동기화 계정이 바뀌었어요'),{syncCancelled:true});
   }
+  if(session.scope&&typeof assertLearningScope==='function')assertLearningScope(session.scope);
 }
 function resetSyncSession(){
   cancelSocialLogin();
@@ -113,6 +116,35 @@ function resetSyncSession(){
   lastProgressSyncAt=0; noteSyncSuccess();
   legacyWordbookPending=false;
   wordbookRemote=null;
+  if(typeof resetLearningSync==='function')resetLearningSync();
+}
+/* Change the local owner before any network callback can run. A return to the
+   same user gets a new epoch too, so an earlier A request cannot commit to A
+   after the intervening B session. Local activation never awaits a server ACK. */
+function activateSyncAccount(next){
+  const identity=next&&next.id||null;
+  if(acceptedSyncIdentity===identity&&(sbUser&&sbUser.id||null)===identity)return syncAccountReadyPromise;
+  acceptedSyncIdentity=identity;
+  resetSyncSession();sbUser=next;syncAccountReady=false;
+  const epoch=syncSessionEpoch;
+  let activation;
+  try{activation=typeof switchLearningAccount==='function'?switchLearningAccount(identity):null;}
+  catch(error){activation=Promise.reject(error);}
+  syncAccountReadyPromise=Promise.resolve(activation).then(()=>{
+    if(epoch!==syncSessionEpoch)return false;
+    syncAccountReady=true;lastSync=load('breeze.lastsync',0);
+    lastQueuedWordState=typeof wordChangeRevision==='function'?null:syncStableJson({words,dead});
+    if(identity&&typeof confirmLegacyLearningImport==='function')
+      Promise.resolve().then(()=>{if(epoch===syncSessionEpoch)return confirmLegacyLearningImport();}).catch(error=>console.error(error));
+    return true;
+  }).catch(error=>{
+    if(epoch===syncSessionEpoch){
+      syncAccountReady=false;acceptedSyncIdentity=undefined;sbUser=null;
+      syncBadge();console.error(error);syncStatus('이 계정의 학습 자료를 열지 못했어요. 원본은 보관되어 있어요.');
+    }
+    return false;
+  });
+  return syncAccountReadyPromise;
 }
 function markSyncDirty(key){
   // Distinct writes in the same millisecond must not clear each other's dirty flag.
@@ -439,8 +471,10 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Enter'&&event.target===document.getElementById('sm-password')){ event.preventDefault(); sbPasswordLogin(); }
 });
 async function sbLogout(){
+  const previous=sbUser&&sbUser.id,epoch=syncSessionEpoch;
   await sb.auth.signOut({scope:'local'});
-  resetSyncSession(); sbUser=null;
+  if(sbUser&&(sbUser.id!==previous||syncSessionEpoch!==epoch))return;
+  await activateSyncAccount(null);
   syncBadge(); renderSyncModal(); renderAllBookViews();
 }
 function openAccountDelete(){ accountDeleteOpen=true; accountDeleteError=''; renderSyncModal(); }
@@ -450,14 +484,18 @@ async function confirmAccountDelete(){
   const typed=(syncInput('sm-delete-input').value||'').trim();
   if(typed!=='DELETE'){ accountDeleteError='DELETE를 정확히 입력해 주세요.'; renderSyncModal(); return; }
   syncStatus('계정을 지우는 중…');
+  const session=syncSession();
   try{
     const answer=await dictCall({op:'delete_account'});
+    assertSyncSession(session);
     if(!answer||!answer.ok) throw new Error((answer&&(answer.message||answer.error))||'서버가 응답하지 않았어요');
+    const logoutEpoch=syncSessionEpoch;
     try{ await sb.auth.signOut({scope:'local'}); }catch(error){}
-    resetSyncSession(); sbUser=null; accountDeleteOpen=false;
+    if(sbUser&&(sbUser.id!==session.userId||syncSessionEpoch!==logoutEpoch))return;
+    await activateSyncAccount(null);accountDeleteOpen=false;
     lastSync=0; save('breeze.lastsync',0); syncBadge(); renderSyncModal(); renderAllBookViews();
     syncStatus('계정을 지웠어요. 이 기기의 자료는 그대로 있어요.');
-  }catch(error){ accountDeleteError='계정을 지우지 못했어요: '+(error.message||error); renderSyncModal(); }
+  }catch(error){ if(error.syncCancelled)return;accountDeleteError='계정을 지우지 못했어요: '+(error.message||error); renderSyncModal(); }
 }
 
 
@@ -472,7 +510,9 @@ function serverBookIdFor(book){
 function queueSync(changed=false){
   // Lookup already knows which record it mutated. Mark it dirty immediately
   // without serializing the entire vocabulary on the interaction frame.
-  if(changed===true)lastQueuedWordState=null;
+  if(typeof hasWordChanges==='function'){
+    if(changed!==true&&!hasWordChanges()&&!Number(load(VAULT_LOCAL_CHANGED,0)))return;
+  }else if(changed===true)lastQueuedWordState=null;
   else{
     const current=syncStableJson({words,dead});
     if(current===lastQueuedWordState)return;
@@ -493,6 +533,7 @@ function sameProgressLocation(left,right){
 const upOf=word=>word?(word.up||word.addedAt||0):0;
 function doSync(manual){
   if(!sb||!sbUser) return Promise.resolve(false);
+  if(!syncAccountReady){const epoch=syncSessionEpoch;return syncAccountReadyPromise.then(ready=>ready&&epoch===syncSessionEpoch?doSync(manual):false);}
   if(!manual&&Date.now()<syncCooldownUntil) return Promise.resolve(false);
   if(syncPromise){
     /* Auth can report the same session more than once during startup. A second
@@ -561,29 +602,63 @@ async function localVaultItem(book){
 function itemIdentity(item){
   return item.identity||'id:'+item.id;
 }
-/* Keep a local, exportable conflict journal before replacing a different meaning.
-   This preserves both definitions without inventing which device edited which field. */
+/* Keep a local, exportable conflict journal before replacing a different
+   expression/meaning tuple. Neither spelling nor meaning alone proves equality. */
 function preserveWordConflict(key,left,right){
-  if(!left||!right||!left.ko||!right.ko||left.ko===right.ko)return;
+  if(!left||!right||!left.ko||!right.ko)return;
+  const text=value=>String(value||'').normalize('NFC').trim().replace(/\s+/g,' ');
+  const identity=item=>JSON.stringify([text(item.word||key),text(item.ko)]);
+  const leftIdentity=identity(left),rightIdentity=identity(right);
+  if(leftIdentity===rightIdentity)return;
   const saved=load('breeze.word-conflicts',{});
   const conflicts=saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{};
-  const id=JSON.stringify([key,...[String(left.ko),String(right.ko)].sort()]);
+  const id=JSON.stringify([key,...[leftIdentity,rightIdentity].sort()]);
   if(Object.prototype.hasOwnProperty.call(conflicts,id))return;
   conflicts[id]={key,left,right,at:Date.now()};
   if(!save('breeze.word-conflicts',conflicts))throw new Error('뜻 충돌 사본을 저장하지 못했어요');
-  toast('기기 간 다른 뜻을 발견했어요. 두 뜻을 이 기기에 보존했어요.');
+  toast('기기 간 다른 학습 항목을 발견했어요. 두 항목을 이 기기에 보존했어요.');
 }
 window['breezeExportWordConflicts']=function(){
   const blob=new Blob([JSON.stringify(load('breeze.word-conflicts',{}),null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='breeze-word-conflicts.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+function wordSyncMeaning(item){return String(item&&item.ko||'').normalize('NFC').trim().replace(/\s+/g,' ');}
+function wordSyncExpression(key,item){return String(item&&item.word||key).normalize('NFC').trim().replace(/\s+/g,' ');}
+function wordSyncIdentity(key,item){return JSON.stringify([wordSyncExpression(key,item),wordSyncMeaning(item)]);}
+function wordSyncOrder(item){
+  const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'
+    ?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;
+  return JSON.stringify(stable(item));
+}
+function retainConcurrentWordMeaning(key,loser,winner,remoteWords,remoteDead){
+  const root=loser.root||key;
+  // Keep the complete spelling/meaning in the ID: no hash collision can merge
+  // unrelated senses, and a retry or another device chooses the same address.
+  const sameExpression=wordSyncExpression(key,loser)===wordSyncExpression(key,winner);
+  const id=root+(sameExpression?'::sync-sense:':'::sync-expression:')+encodeURIComponent(wordSyncIdentity(key,loser));
+  const buried=Math.max(dead[id]||0,(remoteDead||{})[id]||0);
+  const remote=(remoteWords||{})[id],existing=words[id];
+  const retained={...loser};
+  if(sameExpression){retained.root=root;retained.sense=true;}
+  else{delete retained.root;delete retained.sense;}
+  const candidates=[existing,remote,retained].filter(Boolean);
+  candidates.sort((a,b)=>upOf(b)-upOf(a)||wordSyncOrder(b).localeCompare(wordSyncOrder(a)));
+  if(buried>=upOf(candidates[0])&&buried){delete words[id];dead[id]=buried;return;}
+  words[id]=candidates[0];delete dead[id];
+}
 function mergeWordState(remoteWords,remoteDead){
   const all=new Set([...Object.keys(remoteWords||{}),...Object.keys(remoteDead||{}),...Object.keys(words),...Object.keys(dead)]);
   for(const key of all){
     const rw=(remoteWords||{})[key],rd=(remoteDead||{})[key]||0,lw=words[key],ld=dead[key]||0;
     const newest=Math.max(upOf(rw),rd,upOf(lw),ld);
     if((rd&&newest===rd)||(ld&&newest===ld)){ delete words[key]; dead[key]=newest; }
-    else{preserveWordConflict(key,lw,rw);if(newest===upOf(rw)){words[key]=rw;delete dead[key];}}
+    else{
+      preserveWordConflict(key,lw,rw);
+      const remoteWins=upOf(rw)>upOf(lw)||(upOf(rw)===upOf(lw)&&rw&&(!lw||wordSyncOrder(rw)>=wordSyncOrder(lw)));
+      if(lw&&rw&&wordSyncMeaning(lw)&&wordSyncMeaning(rw)&&wordSyncIdentity(key,lw)!==wordSyncIdentity(key,rw))
+        retainConcurrentWordMeaning(key,remoteWins?lw:rw,remoteWins?rw:lw,remoteWords,remoteDead);
+      if(remoteWins){words[key]=rw;delete dead[key];}
+    }
   }
   cleanOrphanWords(words,dead,pendingWord&&pendingWord.key);
 }
@@ -631,8 +706,12 @@ async function importLegacyWordbook(session,wordbook){
   const oldWords={},oldDead={};
   for(const row of rows){
     const value=row.data||{};
+    // Legacy clients interpret every non-reserved words row as a dictionary
+    // item. Learning snapshots therefore live in their own table, and this
+    // migration additionally refuses unknown objects instead of inventing words.
+    if(typeof row.key!=='string'||row.key.startsWith('__breeze_')||!value||typeof value!=='object'||Array.isArray(value))continue;
     if(value.deleted) oldDead[row.key]=value.up||0;
-    else oldWords[row.key]=value;
+    else if(typeof value.ko==='string'&&value.ko.trim()||value.ai&&value.ai.done&&typeof value.ai.ko==='string'&&value.ai.ko.trim())oldWords[row.key]=value;
   }
   mergeWordState(oldWords,oldDead);
   legacyWordbookPending=false;
@@ -647,22 +726,47 @@ async function completeWordbookSync(manual,session){
   if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();
   return true;
 }
+async function patchAcknowledgedWordbook(session,acknowledged){
+  if(typeof captureWordChanges!=='function'||typeof acknowledgeWordChanges!=='function')return null;
+  if(!hasWordChanges())return null;
+  let patch=captureWordChanges();
+  if(!saveWords(patch.keys)||(typeof saveDead==='function'&&!saveDead(patch.keys)))
+    throw new Error('이 기기에 단어장을 저장하지 못했어요');
+  patch=captureWordChanges();
+  const dirtyAt=Number(load(VAULT_LOCAL_CHANGED,0))||0,revision=VaultCrypto.uuid();
+  if(typeof sb.rpc!=='function')throw new Error('단어 변경 동기화 서버 준비가 필요해요. 변경은 이 기기에 보관했어요.');
+  const result=await sb.rpc('breeze_patch_wordbook',{expected_user_id:session.userId,expected_revision:acknowledged.revision,next_revision:revision,
+    patch_words:patch.words,patch_dead:patch.dead});
+  assertSyncSession(session);
+  if(result.error)throw result.error;
+  if(result.data!==true)return null; // Another writer won: fetch and merge once.
+  acknowledgeWordChanges(patch);
+  if(!hasWordChanges()&&Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt&&!save(VAULT_LOCAL_CHANGED,0))
+    throw new Error('동기화 상태를 저장하지 못했어요');
+  wordbookRemote={userId:session.userId,revision,version:patch.version};
+  if(hasWordChanges())syncAgain=true;
+  return true;
+}
 async function runSyncPass(manual){
   const session=syncSession();
   if(manual) syncStatus('단어장을 동기화하는 중…');
   try{
     const acknowledged=wordbookRemote;
+    if(acknowledged&&acknowledged.userId===session.userId&&typeof wordChangeRevision==='function'
+      &&load(`breeze.wordbook.legacy-imported:${session.userId}`,false)){
+      if(await patchAcknowledgedWordbook(session,acknowledged))return await completeWordbookSync(manual,session);
+    }
     if(!manual&&acknowledged&&acknowledged.userId===session.userId
       &&!Number(load(VAULT_LOCAL_CHANGED,0))
       &&load(`breeze.wordbook.legacy-imported:${session.userId}`,false)
-      &&acknowledged.state===syncStableJson({words,dead})){
+      &&(typeof wordChangeRevision==='function'?acknowledged.version===wordChangeRevision():acknowledged.state===syncStableJson({words,dead}))){
       const header=await sb.from('words').select('revision:data->>revision,legacyImportedAt:data->legacyImportedAt')
         .eq('user_id',session.userId).eq('key',WORDBOOK_ROW).maybeSingle();
       assertSyncSession(session);if(header.error)throw header.error;
       // A local mutation while the probe was in flight must still take the
       // ordinary read/merge/CAS path, including writes without a dirty hook.
       if(header.data&&header.data.revision===acknowledged.revision&&header.data.legacyImportedAt
-        &&!Number(load(VAULT_LOCAL_CHANGED,0))&&acknowledged.state===syncStableJson({words,dead})){
+        &&!Number(load(VAULT_LOCAL_CHANGED,0))&&(typeof wordChangeRevision==='function'?acknowledged.version===wordChangeRevision():acknowledged.state===syncStableJson({words,dead}))){
         return await completeWordbookSync(manual,session);
       }
     }
@@ -674,12 +778,13 @@ async function runSyncPass(manual){
       const imported=await importLegacyWordbook(session,previous); assertSyncSession(session);
       if(previous) mergeWordState(previous.words||{},previous.dead||{});
       if(!saveWords()||!save(LS_DEAD,dead))throw new Error('이 기기에 단어장을 저장하지 못했어요');
+      const localChanges=typeof captureWordChanges==='function'?captureWordChanges():null;
       const syncedWords={...words};
       if(pendingWord&&!pendingWordResolved(pendingWord.key)) delete syncedWords[pendingWord.key];
       const changed=!previous||(imported&&!previous.legacyImportedAt)
         ||syncStableJson(previous.words||{})!==syncStableJson(syncedWords)
         ||syncStableJson(previous.dead||{})!==syncStableJson(dead);
-      const syncedState=syncStableJson({words,dead});
+      const syncedState=localChanges?null:syncStableJson({words,dead});
       let revision=previous&&previous.revision;
       if(changed){
         const data={v:1,updatedAt:Date.now(),revision:VaultCrypto.uuid(),words:syncedWords,dead:{...dead},
@@ -688,10 +793,12 @@ async function runSyncPass(manual){
         revision=data.revision;
       }
       assertSyncSession(session);
+      if(localChanges)acknowledgeWordChanges(localChanges);
       if(imported) save(`breeze.wordbook.legacy-imported:${session.userId}`,true);
-      if(Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt&&!save(VAULT_LOCAL_CHANGED,0))throw new Error('동기화 상태를 저장하지 못했어요');
-      lastQueuedWordState=syncStableJson({words,dead});
-      wordbookRemote=imported&&revision?{userId:session.userId,revision,state:syncedState}:null;
+      if((!localChanges||!hasWordChanges())&&Number(load(VAULT_LOCAL_CHANGED,0))===dirtyAt&&!save(VAULT_LOCAL_CHANGED,0))throw new Error('동기화 상태를 저장하지 못했어요');
+      if(localChanges&&hasWordChanges())syncAgain=true;
+      lastQueuedWordState=localChanges?null:syncStableJson({words,dead});
+      wordbookRemote=imported&&revision?{userId:session.userId,revision,...(localChanges?{version:localChanges.version}:{state:syncedState})}:null;
       return await completeWordbookSync(manual,session);
     }
     throw new Error('다른 기기의 변경과 충돌했어요. 이 기기의 단어는 보관하고 다음에 다시 합칩니다.');
@@ -803,6 +910,7 @@ function doProgressSync(manual,checkRemote){
   return progressSyncPromise;
 }
 function syncRemoteChanges(manual){
+  if(!syncAccountReady){const epoch=syncSessionEpoch;return syncAccountReadyPromise.then(ready=>ready&&epoch===syncSessionEpoch?syncRemoteChanges(manual):false);}
   if(remoteSyncPromise){ remoteSyncManual=remoteSyncManual||!!manual; return remoteSyncPromise; }
   const epoch=syncSessionEpoch;
   remoteSyncPromise=(async()=>{
@@ -811,6 +919,10 @@ function syncRemoteChanges(manual){
       remoteSyncManual=false;
       const vaultOk=await doSync(nextManual); if(epoch!==syncSessionEpoch) return false;
       completed=completed&&!!vaultOk;
+      if(typeof doLearningSync==='function'){
+        const learningOk=await doLearningSync(nextManual);if(epoch!==syncSessionEpoch)return false;
+        completed=completed&&!!learningOk;
+      }
       nextManual=remoteSyncManual;
     }while(nextManual&&sb&&sbUser);
     if(manual&&completed){ renderSyncModal(); syncStatus('단어장 동기화를 마쳤어요'); }
@@ -850,11 +962,12 @@ function storedAuthUser(){
 
 function attachSupabaseAuth(){
   if(!sb||authListenerAttached) return; authListenerAttached=true;
-  const accept=session=>{
+  let authVersion=0;
+  const accept=(session,event)=>{
     /* 서버가 세션을 주지 않았어도 이 기기에 남아 있으면 그것이 지금의 사실입니다. */
-    const next=session?session.user:storedAuthUser();
-    if(!next||!sbUser||sbUser.id!==next.id) resetSyncSession();
-    sbUser=next; syncBadge();
+    const next=event==='SIGNED_OUT'?null:session?session.user:storedAuthUser();
+    const ready=activateSyncAccount(next),epoch=syncSessionEpoch;
+    syncBadge();
     if(sbUser&&isNativeShell()){
       const url=new URL(location.href);
       if(url.searchParams.has('breeze_auth_return')){
@@ -863,14 +976,15 @@ function attachSupabaseAuth(){
       }
     }
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
-    if(sbUser) syncRemoteChanges(false);
+    ready.then(ok=>{if(ok&&epoch===syncSessionEpoch&&sbUser)syncRemoteChanges(false);});
     if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
   };
   /* 부팅하는 그 자리에서 한 번. `getSession()` 이 오프라인에서 돌아오지 않아도
      로그인 상태는 이미 서 있습니다. */
   accept(null);
-  sb.auth.onAuthStateChange((_event,session)=>accept(session));
-  sb.auth.getSession().then(({data:{session}})=>accept(session));
+  sb.auth.onAuthStateChange((event,session)=>{authVersion++;accept(session,event);});
+  const initialVersion=authVersion;
+  sb.auth.getSession().then(({data:{session}})=>{if(authVersion===initialVersion)accept(session);});
 }
 lastQueuedWordState=syncStableJson({words,dead});
 initSupabase();

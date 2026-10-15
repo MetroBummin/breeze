@@ -48,21 +48,25 @@ function socialPlainBlocks(text){
   })}));
 }
 function socialHasCutoff(text){
-  return /(?:show more|read (?:the full (?:article|post)|more)|continue reading|subscribe to (?:read|continue))\s*[.→»]*$/i.test(text)||/(?:…|\.{3})\s*(?:https?:\/\/\S+)?\s*$/.test(text);
+  // oEmbed appends media display labels, not necessarily the anchor's t.co URL.
+  // Those labels must not conceal an ellipsis at the end of the actual prose.
+  const prose=String(text||'').replace(/(?:\s+(?:https?:\/\/|pic\.(?:twitter|x)\.com\/)[^\s<>]+)+\s*$/i,'').trim();
+  return /(?:show more|read (?:the full (?:article|post)|more)|continue reading|subscribe to (?:read|continue))\s*[.→»]*$/i.test(prose)||/(?:…|\.{3})\s*$/.test(prose);
 }
 function socialLinkOnlyText(text){
   const value=String(text||'').trim();
-  return /(?:https?:\/\/|pic\.twitter\.com\/)/i.test(value)
-    && !value.replace(/(?:https?:\/\/|pic\.twitter\.com\/)[^\s<>]+/gi,'').replace(/[\s.,;:!?()[\]{}<>“”"'‘’—–-]/g,'');
+  return /(?:https?:\/\/|pic\.(?:twitter|x)\.com\/)/i.test(value)
+    && !value.replace(/(?:https?:\/\/|pic\.(?:twitter|x)\.com\/)[^\s<>]+/gi,'').replace(/[\s.,;:!?()[\]{}<>“”"'‘’—–-]/g,'');
 }
-// Only the known old oEmbed placeholder is eligible for an explicit reimport.
+// Only known old oEmbed placeholders/excerpts are eligible for explicit reimport.
 // A short real post, a manually pasted link and an image-only post stay intact.
 function socialSavedNeedsRefresh(book){
   const source=socialUrlInfo(book?.sourceUrl);
   return book?.social?.platform==='x'&&book.social.extraction==='x-oembed'
     && book.social.scope==='single-post'&&source?.kind==='post'&&source.id===book.social.id
     && Array.isArray(book.paras)&&book.paras.length>1
-    && book.paras.slice(1).every(text=>socialLinkOnlyText(text));
+    && (book.paras.slice(1).every(text=>socialLinkOnlyText(text))
+      ||socialHasCutoff(book.paras.slice(1).filter(text=>!text.startsWith(IMG_MARK)).join('\n')));
 }
 function socialDocument(html){
   if(typeof html!=='string'||html.length>3000000)throw socialImportError('oversized');
@@ -75,13 +79,54 @@ function socialDocument(html){
 function socialDomBlocks(root,url){
   const copy=/** @type {Element} */(root.cloneNode(true));
   copy.querySelectorAll('script,style,noscript,iframe,object,embed,form,button,svg,nav,[hidden],[aria-hidden="true"],blockquote.twitter-tweet,article,[data-testid="tweet"],[data-testid="quoteTweet"]').forEach(n=>n.remove());
+  // X renders inline emoji as images. Only its emoji assets with an emoji-only
+  // alt become text; photo descriptions and arbitrary remote images stay media.
+  for(const image of copy.querySelectorAll('img[alt]')){
+    const src=socialHttpUrl(image.getAttribute('src'),url),alt=image.getAttribute('alt')||'';
+    if(!src||!alt||alt.length>64)continue;
+    const asset=new URL(src);
+    if(/^abs(?:-\d+)?\.twimg\.com$/i.test(asset.hostname)&&asset.pathname.startsWith('/emoji/')
+      &&/^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\uFE0F|\u200D|[\u{E0020}-\u{E007F}]|[0-9#*]\uFE0F?\u20E3)+$/u.test(alt))
+      image.replaceWith(document.createTextNode(alt));
+  }
+  const postLines=root.matches('[data-testid="tweetText"]');
+  const preservesLines=element=>{
+    for(let current=element;current;current=current===copy?root.parentElement:current.parentElement){
+      const space=current.style?.whiteSpace;
+      if(space)return /^(pre|pre-wrap|pre-line|break-spaces)$/i.test(space);
+    }
+    return postLines;
+  };
   const blocks=[];
-  const addLine=node=>{
-    const value=articleInline(node,url);
-    if(value.t)blocks.push({r:node.closest('blockquote')?'quote':'p',...value});
+  const addLines=(node,meta,preserve)=>{
+    let text='';const marks=[];
+    const inline=(current,keepLines)=>{
+      if(current.nodeType===3){
+        const value=current.textContent.replace(/\r\n?/g,'\n');
+        text+=keepLines?value.replace(/[^\S\n]+/g,' '):value.replace(/\s+/g,' ');return;
+      }
+      if(current.nodeType!==1)return;
+      if(current.tagName==='BR'){text+='\n';return;}
+      const space=current.style?.whiteSpace;
+      if(space)keepLines=/^(pre|pre-wrap|pre-line|break-spaces)$/i.test(space);
+      const start=text.length;
+      for(const child of current.childNodes)inline(child,keepLines);
+      const tag=current.tagName.toLowerCase();
+      if(['strong','b','em','i','a'].includes(tag)){
+        const href=tag==='a'?socialHttpUrl(current.getAttribute('href'),url):'';
+        if(tag!=='a'||href)marks.push({start,end:text.length,kind:tag==='a'?'link':['b','strong'].includes(tag)?'strong':'em',href});
+      }
+    };
+    inline(node,preserve);
+    let offset=0;
+    for(const line of text.split('\n')){
+      const t=line.trim(),start=offset+line.length-line.trimStart().length,end=start+t.length;
+      if(t)blocks.push({...meta,t,marks:marks.map(mark=>({...mark,start:Math.max(start,mark.start)-start,end:Math.min(end,mark.end)-start})).filter(mark=>mark.end>mark.start)});
+      offset+=line.length+1;
+    }
   };
   function visit(node){
-    if(node.nodeType===3){const t=node.textContent.trim();if(t)blocks.push({r:'p',t,marks:[]});return;}
+    if(node.nodeType===3){addLines(node,{r:'p'},preservesLines(node.parentElement));return;}
     if(node.nodeType!==1)return;
     const element=/** @type {Element} */(node),tag=element.tagName.toLowerCase();
     if(tag==='img'){
@@ -96,19 +141,18 @@ function socialDomBlocks(root,url){
         blocks.push({r:'img',t:poster,alt:'Video preview'});
       blocks.push({r:'p',t:tag==='video'?'[Video — open the original post]':'[Audio — open the original post]',marks:[]});return;
     }
-    if(!element.querySelector('p,div,h1,h2,h3,h4,li,blockquote,pre,figure,br,img,video,audio')){
-      const value=articleInline(element,url);if(!value.t)return;
-      blocks.push({r:tag==='pre'?'code':/^h[1-6]$/.test(tag)?'h2':tag==='blockquote'||element.closest('blockquote')?'quote':'p',...value,
+    if(!element.querySelector('p,div,h1,h2,h3,h4,li,blockquote,pre,figure,img,video,audio')){
+      addLines(element,{r:tag==='pre'?'code':/^h[1-6]$/.test(tag)?'h2':tag==='blockquote'||element.closest('blockquote')?'quote':'p',
         ...(tag==='li'?{list:element.parentElement?.tagName==='OL'?String([...element.parentElement.children].indexOf(element)+1)+'.':'•'}:{}),
-        ...(tag==='figcaption'?{caption:true}:{})});return;
+        ...(tag==='figcaption'?{caption:true}:{})},preservesLines(element));return;
     }
     // Inline runs around BRs keep links/emphasis and actual newline boundaries.
     let run=document.createElement('span');
-    const flush=()=>{addLine(run);run=document.createElement('span');};
+    const flush=()=>{addLines(run,{r:element.closest('blockquote')?'quote':'p'},preservesLines(element));run=document.createElement('span');};
     for(const child of element.childNodes){
-      if(child.nodeType===1&&(/^(BR|P|DIV|H[1-6]|LI|UL|OL|BLOCKQUOTE|PRE|FIGURE|FIGCAPTION|IMG|VIDEO|AUDIO)$/.test(child.nodeName)
-        ||/** @type {Element} */(child).querySelector('p,div,h1,h2,h3,h4,h5,h6,li,blockquote,pre,figure,br,img,video,audio'))){
-        flush();if(child.nodeName!=='BR')visit(child);
+      if(child.nodeType===1&&(/^(P|DIV|H[1-6]|LI|UL|OL|BLOCKQUOTE|PRE|FIGURE|FIGCAPTION|IMG|VIDEO|AUDIO)$/.test(child.nodeName)
+        ||/** @type {Element} */(child).querySelector('p,div,h1,h2,h3,h4,h5,h6,li,blockquote,pre,figure,img,video,audio'))){
+        flush();visit(child);
       }else run.appendChild(child.cloneNode(true));
     }
     flush();
@@ -120,10 +164,10 @@ function socialAssemble(info,blocks,meta={}){
   const prose=blocks.filter(b=>b.r!=='img').map(b=>b.t).join('\n');
   if(prose.length>120000||blocks.length>800)throw socialImportError('oversized');
   const hasImage=blocks.some(b=>b.r==='img');
+  if(info.kind==='article'&&prose.length<ARTICLE_MIN_CHARS)throw socialImportError('incomplete');
   if(prose.trim().length<2&&!hasImage)throw socialImportError('unavailable');
   if(socialLinkOnlyText(prose)&&!hasImage)throw socialImportError('incomplete');
   if(socialHasCutoff(prose))throw socialImportError('incomplete');
-  if(info.kind==='article'&&prose.length<ARTICLE_MIN_CHARS)throw socialImportError('incomplete');
   const author=String(meta.author||'').slice(0,160),site=info.platform==='x'?'X':'Threads';
   const title=String(meta.title||blocks.find(b=>b.r!=='img')?.t||site).replace(/\s+/g,' ').trim().slice(0,180);
   return {title,site,author,publishedAt:String(meta.date||'').slice(0,80),url:info.url,cover:blocks.find(b=>b.r==='img')?.t||'',blocks,
@@ -143,11 +187,19 @@ function socialArticleScopeOf(node){
     if(socialIsArticleScope(scope))return scope;
   return null;
 }
+function socialHasCutoffControl(root,post){
+  const selector='[data-truncated="true"],[data-testid="tweet-text-show-more-link"],[data-testid*="ShowMore"]';
+  const scope=socialArticleScopeOf(root);
+  return [root,...root.querySelectorAll(selector)].some(node=>node.matches(selector)
+    &&node.closest('article,[data-testid="tweet"]')===post&&socialArticleScopeOf(node)===scope
+    &&!node.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'));
+}
 function parseSocialXArticleDom(doc,info){
   if(info.platform!=='x')return null;
   const canonical=doc.querySelector('link[rel="canonical"]')?.getAttribute('href');
   if(!canonical||!socialSameUrl(socialHttpUrl(canonical,info.url),info.url))return null;
   const articleScope='[itemscope][itemtype]';
+  let incomplete=false;
   const sameDocument=raw=>{const candidate=socialUrlInfo(socialHttpUrl(raw,info.url));return candidate?.platform==='x'&&candidate.kind!=='unsupported'&&candidate.id===info.id;};
   for(const scope of doc.querySelectorAll(articleScope)){
     if(!socialIsArticleScope(scope))continue;
@@ -164,10 +216,7 @@ function parseSocialXArticleDom(doc,info){
     if(own('[itemprop~="isAccessibleForFree"]').some(node=>/^false$/i.test(value(node).trim())))throw socialImportError('restricted');
     const body=own('[itemprop~="articleBody"],.x-article-body,[data-testid="twitterArticleRichTextView"]')
       .find(node=>node.closest('article,[data-testid="tweet"]')===post);
-    if(!body)continue;
-    if(body.closest('[hidden],[aria-hidden="true"]'))continue;
-    const cutoff='[data-truncated="true"],[data-testid="tweet-text-show-more-link"],[data-testid*="ShowMore"]';
-    if(body.matches(cutoff)||body.querySelector(cutoff))throw socialImportError('incomplete');
+    if(!body||body.closest('[hidden],[aria-hidden="true"]')||socialHasCutoffControl(body,post)){incomplete=true;continue;}
     const copy=body.cloneNode(true);
     copy.querySelectorAll(articleScope).forEach(node=>{if(socialIsArticleScope(node))node.remove();});
     const blocks=socialDomBlocks(copy,info.url);
@@ -177,10 +226,13 @@ function parseSocialXArticleDom(doc,info){
       blocks.unshift({r:'img',t:cover,alt:coverNode?.getAttribute('alt')||''});
     let photos=0;
     const author=own('[itemprop~="author"]')[0];
-    return socialAssemble({...info,kind:'article'},blocks.filter(block=>block.r!=='img'||++photos<=ARTICLE_IMG_MAX),{
-      title:value(own('[itemprop~="headline"]')[0]),author:value(author?.querySelector('[itemprop~="name"]')),
-      date:value(own('[itemprop~="datePublished"]')[0]),extraction:'x-article-dom'});
+    try{
+      return socialAssemble({...info,kind:'article'},blocks.filter(block=>block.r!=='img'||++photos<=ARTICLE_IMG_MAX),{
+        title:value(own('[itemprop~="headline"]')[0]),author:value(author?.querySelector('[itemprop~="name"]')),
+        date:value(own('[itemprop~="datePublished"]')[0]),extraction:'x-article-dom'});
+    }catch(error){if(error.code!=='social_incomplete')throw error;incomplete=true;}
   }
+  if(incomplete)throw socialImportError('incomplete');
   return null;
 }
 function parseSocialHtml(html,url){
@@ -201,14 +253,66 @@ function parseSocialHtml(html,url){
     try{collect(JSON.parse(script.textContent));}catch{}
   }
   const identity=value=>typeof value==='string'?value:value?.['@id']||value?.url||'';
-  for(const node of nodes){
+  const owned=nodes.filter(node=>{
     const types=(Array.isArray(node['@type'])?node['@type']:[node['@type']]).map(v=>String(v||'').split('/').pop());
-    if(!types.some(t=>['SocialMediaPosting','DiscussionForumPosting','Article','BlogPosting','NewsArticle'].includes(t)))continue;
-    if(![node.url,node['@id'],node.mainEntityOfPage].some(v=>socialSameUrl(socialHttpUrl(identity(v),url),url)))continue;
-    if(node.isAccessibleForFree===false||node.isAccessibleForFree==='false')throw socialImportError('restricted');
+    return types.some(t=>['SocialMediaPosting','DiscussionForumPosting','Article','BlogPosting','NewsArticle'].includes(t))
+      &&[node.url,node['@id'],node.mainEntityOfPage].some(v=>socialSameUrl(socialHttpUrl(identity(v),url),url));
+  });
+  if(owned.some(node=>node.isAccessibleForFree===false||node.isAccessibleForFree==='false'))throw socialImportError('restricted');
+  const articleNode=node=>(Array.isArray(node['@type'])?node['@type']:[node['@type']])
+    .some(type=>['Article','BlogPosting','NewsArticle'].includes(String(type||'').split('/').pop()));
+  let requiresArticle=owned.some(articleNode);
+  let incomplete=false;
+  const candidate=read=>{
+    try{return read();}catch(error){if(error.code!=='social_incomplete')throw error;incomplete=true;return null;}
+  };
+  // A declared, owned rendered Article is the full document. A post's JSON-LD
+  // may be only its share teaser, even when both are in this same response.
+  const article=candidate(()=>parseSocialXArticleDom(doc,info));if(article)return article;
+  requiresArticle=requiresArticle||incomplete;
+  const posts=[];
+  if(info.kind==='post')for(const post of doc.querySelectorAll('article,[data-testid="tweet"]')){
+    if(post.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'))continue;
+    const time=[...post.querySelectorAll('time')].find(n=>n.closest('article,[data-testid="tweet"]')===post
+      &&!n.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'));
+    if(!socialSameUrl(socialHttpUrl(time?.closest('a')?.getAttribute('href'),url),url))continue;
+    const body=[...post.querySelectorAll('[data-testid="tweetText"],[itemprop="articleBody"]')].find(n=>
+      n.closest('article,[data-testid="tweet"]')===post&&!socialArticleScopeOf(n)&&!n.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'));
+    posts.push({post,time,blocks:body?socialDomBlocks(body,url):[]});
+  }
+  // A declared Article cannot become its share teaser, and an explicitly cut
+  // owned post cannot become shorter posting metadata from the same response.
+  if(!requiresArticle&&posts.some(({post,blocks})=>socialHasCutoffControl(post,post)
+    ||socialHasCutoff(blocks.filter(block=>block.r!=='img').map(block=>block.t).join('\n'))))throw socialImportError('incomplete');
+  const restricted=/"isAccessibleForFree"\s*:\s*(false|"false")/i.test(html);
+  const postingMeta=owned.find(node=>!articleNode(node));
+  const readPost=({post,time,blocks:bodyBlocks})=>{
+    if(restricted)throw socialImportError('restricted');
+    const blocks=[...bodyBlocks];
+    for(const image of post.querySelectorAll('[data-testid="tweetPhoto"] img')){
+      if(image.closest('article,[data-testid="tweet"]')!==post||socialArticleScopeOf(image)||image.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'))continue;
+      const src=socialHttpUrl(articleBestSrc(image),url);
+      if(src&&!ARTICLE_IMG_BAD.test(src)&&!articleTooSmall(image)&&!blocks.some(block=>block.r==='img'&&block.t===src)
+        &&blocks.filter(block=>block.r==='img').length<ARTICLE_IMG_MAX)blocks.push({r:'img',t:src,alt:(image.getAttribute('alt')||'').slice(0,500)});
+    }
+    const author=[...post.querySelectorAll('[data-testid="User-Name"]')].find(node=>
+      node.closest('article,[data-testid="tweet"]')===post&&!node.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'))?.textContent;
+    return blocks.length?candidate(()=>socialAssemble(info,blocks,{
+      author:author||(typeof postingMeta?.author==='string'?postingMeta.author:postingMeta?.author?.name),
+      date:time?.getAttribute('datetime')||postingMeta?.datePublished})):null;
+  };
+  // Prefer a rendered owned text body over a complete-looking metadata teaser.
+  // Photo-only DOM waits until structured text has had a chance to supply prose.
+  if(!requiresArticle)for(const post of posts){
+    const prose=post.blocks.filter(block=>block.r!=='img').map(block=>block.t).join('\n').trim();
+    if(prose.length<2||socialLinkOnlyText(prose))continue;
+    const parsed=readPost(post);if(parsed)return parsed;
+  }
+  for(const node of owned){
+    if(requiresArticle&&!articleNode(node))continue;
     const text=node.articleBody||node.text;
     if(typeof text!=='string')continue; // OG/JSON-LD description is never a full body.
-    if(socialHasCutoff(text))throw socialImportError('incomplete');
+    if(socialHasCutoff(text)){incomplete=true;continue;}
     const blocks=/** @type {any[]} */(socialPlainBlocks(text));
     const images=Array.isArray(node.image)?node.image:[node.image];
     for(const image of images.slice(0,ARTICLE_IMG_MAX)){
@@ -216,31 +320,14 @@ function parseSocialHtml(html,url){
       if(src&&!ARTICLE_IMG_BAD.test(src))blocks.push({r:'img',t:src,alt:String(image?.caption||'').slice(0,500)});
     }
     if(node.video||node.audio)blocks.push({r:'p',t:node.video?'[Video — open the original post]':'[Audio — open the original post]',marks:[]});
-    return socialAssemble(info,blocks,{title:node.headline,author:typeof node.author==='string'?node.author:node.author?.name,
-      date:node.datePublished,extraction:'jsonld'});
+    const kind=articleNode(node)?'article':info.kind;
+    const parsed=candidate(()=>socialAssemble({...info,kind},blocks,{title:node.headline,author:typeof node.author==='string'?node.author:node.author?.name,
+      date:node.datePublished,extraction:'jsonld'}));
+    if(parsed)return parsed;
   }
-  if(/"isAccessibleForFree"\s*:\s*(false|"false")/i.test(html))throw socialImportError('restricted');
-  const article=parseSocialXArticleDom(doc,info);if(article)return article;
-  if(info.kind==='post'){
-    for(const post of doc.querySelectorAll('article,[data-testid="tweet"]')){
-      const time=[...post.querySelectorAll('time')].find(n=>n.closest('article,[data-testid="tweet"]')===post);
-      const permalink=time?.closest('a')?.getAttribute('href');
-      if(!socialSameUrl(socialHttpUrl(permalink,url),url))continue;
-      if(post.querySelector('[data-testid="tweet-text-show-more-link"],[data-truncated="true"]'))throw socialImportError('incomplete');
-      const body=[...post.querySelectorAll('[data-testid="tweetText"],[itemprop="articleBody"]')].find(n=>
-        n.closest('article,[data-testid="tweet"]')===post&&!socialArticleScopeOf(n)&&!n.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'));
-      const blocks=body?socialDomBlocks(body,url):[];
-      for(const image of post.querySelectorAll('[data-testid="tweetPhoto"] img')){
-        if(image.closest('article,[data-testid="tweet"]')!==post||socialArticleScopeOf(image)||image.closest('[hidden],[aria-hidden="true"],[data-testid="quoteTweet"],blockquote.twitter-tweet'))continue;
-        const src=socialHttpUrl(articleBestSrc(image),url);
-        if(src&&!ARTICLE_IMG_BAD.test(src)&&!articleTooSmall(image)&&!blocks.some(block=>block.r==='img'&&block.t===src)
-          &&blocks.filter(block=>block.r==='img').length<ARTICLE_IMG_MAX)blocks.push({r:'img',t:src,alt:(image.getAttribute('alt')||'').slice(0,500)});
-      }
-      if(blocks.length)return socialAssemble(info,blocks,{author:post.querySelector('[data-testid="User-Name"]')?.textContent,
-        date:time?.getAttribute('datetime')});
-    }
-  }
-  throw socialImportError('unavailable');
+  if(restricted)throw socialImportError('restricted');
+  if(!requiresArticle)for(const post of posts){const parsed=readPost(post);if(parsed)return parsed;}
+  throw socialImportError(incomplete||requiresArticle?'incomplete':'unavailable');
 }
 function parseSocialOembed(data,url){
   const info=socialUrlInfo(url);
@@ -285,7 +372,7 @@ async function loadSocialArticle(url,providedHtml){
     return socialResponseText(response,controller.signal,max);
   };
   try{
-    if(providedHtml!==undefined){try{return parseSocialHtml(providedHtml,info.url);}catch(error){lastError=error;if(error.code==='social_restricted')throw error;}}
+    if(providedHtml!==undefined){try{return parseSocialHtml(providedHtml,info.url);}catch(error){lastError=error;if(['social_restricted','social_incomplete','social_oversized'].includes(error.code))throw error;}}
     // Prefer the public page: an embed may contain only an Article short link,
     // or omit post photos. A rich success takes one source request. One official
     // embed remains a short-post fallback within the same overall deadline.
@@ -297,7 +384,7 @@ async function loadSocialArticle(url,providedHtml){
         if(!payload||typeof payload.html!=='string'||!socialSameUrl(payload.url||info.url,info.url))throw socialImportError('unavailable');
         return parseSocialHtml(payload.html,info.url);
       }catch(error){
-        if(['social_rate_limited','social_restricted','social_oversized'].includes(error.code))throw error;
+        if(['social_rate_limited','social_restricted','social_oversized','social_incomplete'].includes(error.code))throw error;
         if(lastError.code!=='social_incomplete')lastError=error;
       }
     }
