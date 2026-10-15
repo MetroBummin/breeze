@@ -74,19 +74,14 @@ try{
   assert.deepEqual(await pill.boundingBox(),rect,'accent moved the pill');
   // Under 750ms of continuous visibility remains unseen and can reveal again.
   // Protocol round trips above can exceed that interval on a slow WebKit runner.
+  // Set the fixture's visibility age at the same turn that initiates the scroll.
   const scrollStart=await page.evaluate(()=>{
     window.qaArrivalScrollTrace=[];const nativeScroll=wordPeekUserScrolled,nativeClose=closePanel;
     const state=()=>({key:selKey,life:wordLookupLife,active:wordPeekActive,hadPending:wordPeekHadPending,presentation:wordPeekPresentation,age:wordPeekShownAt===null?null:performance.now()-wordPeekShownAt,visible:!!activeSelectedWordNode&&wordPeekTargetVisible(activeSelectedWordNode),connected:!!activeSelectedWordNode?.isConnected,scroll:readerScroller().scrollTop});
-    let arrivalAgeArmed=true;
-    wordPeekUserScrolled=function(...args){
-      // WebKit can deliver this scroll after the 750ms seen threshold. The age
-      // belongs to the handled event, not the earlier turn that requested it.
-      if(arrivalAgeArmed){arrivalAgeArmed=false;wordPeekShownAt=performance.now();}
-      const before=state(),result=nativeScroll.apply(this,args);qaArrivalScrollTrace.push({kind:'scroll',args,before,after:state()});return result;
-    };
+    wordPeekUserScrolled=function(...args){const before=state(),result=nativeScroll.apply(this,args);qaArrivalScrollTrace.push({kind:'scroll',args,before,after:state()});return result;};
     closePanel=function(...args){qaArrivalScrollTrace.push({kind:'close',state:state(),stack:new Error().stack});return nativeClose.apply(this,args);};
     const start=state();if(!start.active||!start.key||!start.visible||!start.connected||!start.hadPending)throw Error('Arrival scroll fixture lost its pending-to-ready precondition: '+JSON.stringify(start));
-    readerScroller().scrollTop+=8;return start;
+    wordPeekShownAt=performance.now();readerScroller().scrollTop+=8;return start;
   });
   assert.equal(scrollStart.hadPending,true,'this case tests a genuinely pending answer, not an already saved meaning');
   await page.waitForFunction(()=>document.getElementById('word-peek').hidden);
