@@ -174,3 +174,11 @@ subsequent decision and a separate implementation change.
 algorithm result, source metadata, CSV/data retention and 20 light/dark layouts.
 Existing completion/reentry and explicitly opted-in prototype tests retain their
 previous state/history contracts. Browser evidence does not prove native iOS QA.
+
+## Saved-set recall test stays separate (2026-10-14)
+
+Saved sets now have their own recall test, described in
+[vocabulary study sets](023-vocabulary-study-sets.md). That test does not turn
+this prototype on. `BreezeVocabularyTest.ENABLED`,
+`VOCABULARY_TEST_REMOTE_ENABLED`, and `VOCABULARY_TEST_GRADING_ENABLED` stay
+false. The IndexedDB one-session store and the jev receipt path are unchanged.

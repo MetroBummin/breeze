@@ -338,6 +338,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private static let sharedFileHandler = "breezeSharedFile"
     private let sharedFileQueue = DispatchQueue(label: "kr.io.breeze.shared-files", qos: .userInitiated)
     private static let readerSelectionHandler = "breezeReaderSelection"
+    private static let testBackHandler = "breezeTestBack"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
     private static let darkReaderBackground = UIColor(red: 23 / 255, green: 24 / 255, blue: 22 / 255, alpha: 1)
     private let speechSynthesizer = AVSpeechSynthesizer()
@@ -362,10 +363,17 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         // reader is an inner web scroller, so restoring the native setting
         // brings the same edge bounce to Text, EPUB, and PDF without JS.
         guard let webView else { return }
+        // The saved-set recall test focuses the same field for the next word.
+        // Without this, WKWebView ignores that focus and the keyboard stays down.
+        webView.keyboardDisplayRequiresUserAction = false
+        // The saved-set test turns this on only while a card is open, so the
+        // system edge swipe can ask before leaving. Other screens keep it off.
+        webView.allowsBackForwardNavigationGestures = false
 
         // Stop native selection at its owner, before it can take touches away
         // from DOM gestures. CSS/selectionchange remain the browser fallback.
         webView.configuration.userContentController.add(self, name: Self.readerSelectionHandler)
+        webView.configuration.userContentController.add(self, name: Self.testBackHandler)
         webView.configuration.userContentController.addUserScript(
             WKUserScript(source: Self.readerSelectionScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         )
@@ -703,6 +711,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             return
         }
         #endif
+        if message.name == Self.testBackHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let enabled = message.body as? Bool,
+                  let webView else { return }
+            webView.allowsBackForwardNavigationGestures = enabled
+            return
+        }
         if message.name == Self.libraryRefreshHandler {
             guard message.frameInfo.isMainFrame,
                   message.frameInfo.securityOrigin.protocol == "breeze",

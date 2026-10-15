@@ -61,7 +61,8 @@ try{
    await page.evaluate(()=>show('vocabulary-test',{fromHistory:true}));
    assert.equal(await page.evaluate(()=>activeAppView()),'vocab','old test history falls back to Memory');
    await detail(page,scope,id);
-   assert.equal(await page.locator('#study-sets-test,#study-all-words-test').count(),0);
+   if(scope==='set'){assert.equal(await page.locator('#study-sets-test').innerText(),'테스트');assert.equal(await page.locator('#study-all-words-test').count(),0);}
+   else assert.equal(await page.locator('#study-sets-test,#study-all-words-test').count(),0);
    await start(page,scope);await remember(page,scope);
    const progress=page.locator(scope==='set'?'#study-sets-progress':'#review-progress');assert.equal(await progress.innerText(),'1 / 2');
    const partial=await raw(page,scope);
@@ -80,10 +81,10 @@ try{
    await studyAction(page.locator(scope==='set'?'#study-sets-complete-back':'#simple-study-complete-back').click(),page);
    await detail(page,scope,id);
    const entry=page.locator(scope==='set'?'#study-sets-start':'#study-all-words-start');
-   assert.equal(await entry.innerText(),'학습 시작하기');
+   assert.equal(await entry.innerText(),scope==='set'?'학습':'학습 시작하기');
    assert.equal(await raw(page,scope),complete,'reentry preserves completed answers and history');
    await page.reload();await page.evaluate(()=>homeReady);await detail(page,scope,id);
-   assert.equal(await entry.innerText(),'학습 시작하기');
+   assert.equal(await entry.innerText(),scope==='set'?'학습':'학습 시작하기');
    assert.equal(await raw(page,scope),complete,'reload does not clear completed history');
    await start(page,scope);assert.equal(await progress.innerText(),'0 / 2','only explicit start creates the next full session');
    await remember(page,scope);await remember(page,scope);await completion(page,scope);

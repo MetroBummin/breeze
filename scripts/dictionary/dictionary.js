@@ -2049,7 +2049,7 @@ function mountVocabWindow(wrap,groups){
       const y=Math.max(0,window.scrollY-cachedOrigin),anchor=locate(y),within=y-offsets[anchor],corrected=offsets[anchor]+within;
       const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
       const focused=document.activeElement?.closest('.vgroup');
-      const focusIndex=focused&&wrap.contains(focused)?Number(focused.dataset.index):-1;
+      const focusIndex=focused instanceof HTMLElement&&wrap.contains(focused)?Number(focused.dataset.index):-1;
       if(start===paintedStart&&end===paintedEnd&&focusIndex===paintedFocus)return;
     }
     if(!groups.length){wrap.replaceChildren();rows.clear();return;}
@@ -2070,7 +2070,7 @@ function mountVocabWindow(wrap,groups){
     if(Number.isInteger(requiredIndex))indices.add(requiredIndex);
     const focused=document.activeElement?.closest('.vgroup');
     const active=document.activeElement;
-    const focusIndex=focused&&wrap.contains(focused)?Number(focused.dataset.index):NaN;
+    const focusIndex=focused instanceof HTMLElement&&wrap.contains(focused)?Number(focused.dataset.index):NaN;
     if(Number.isInteger(focusIndex))indices.add(focusIndex);
     for(const [index,row] of rows)if(!indices.has(index)){observer.unobserve(row);row.remove();rows.delete(index);}
     const nodes=[];let cursor=0;
