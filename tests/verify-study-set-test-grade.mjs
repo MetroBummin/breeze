@@ -23,6 +23,7 @@ test('quota comes before the model, and the prompt is word and meaning only',asy
     generate:async prompt=>{
       sequence.push('model');
       assert.match(prompt,/any one accepted meaning/i);
+      assert.match(prompt,/책\/도서/);
       assert.ok(prompt.includes(JSON.stringify([{word:item.word,meanings:item.meanings,answer:item.answer}])));
       assert.equal(prompt.includes('example'),false);
       return {ok:[1]};
