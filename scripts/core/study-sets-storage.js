@@ -171,28 +171,93 @@ function studyTestsDecode(raw){
   return result.data;
 }
 function studyStorageStableJson(value){return JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])):item);}
+function studyTestStoredRow(row){
+  // A finished summary is a score, not the answer sheet. Pending rows stay so
+  // an interrupted grade can resume.
+  if(!row||typeof row!=='object'||Array.isArray(row)||row.pending||!Object.prototype.hasOwnProperty.call(row,'rows'))return row;
+  const copy={...row};delete copy.rows;return copy;
+}
 function studyTestsMerge(left,right){
   const sets={};
-  for(const id of [...new Set([...Object.keys(left.sets),...Object.keys(right.sets)])].sort()){
+  for(const id of [...new Set([...Object.keys(left.sets||{}),...Object.keys(right.sets||{})])].sort()){
     const rows=new Map();
-    for(const row of [...left.sets[id]||[],...right.sets[id]||[]]){
+    for(const row of [...left.sets?.[id]||[],...right.sets?.[id]||[]]){
+      const stored=studyTestStoredRow(row);
       // The complete existing summary is the conflict identity. Exact retries
       // collapse; conflicting same-ID summaries are preserved in stable order.
-      rows.set(studyStorageStableJson(row),row);
+      rows.set(studyStorageStableJson(stored),stored);
     }
     const settled=new Set([...rows.values()].filter(row=>row&&row.id&&!row.pending).map(row=>row.id));
     sets[id]=[...rows.values()].filter(row=>!(row&&row.pending&&settled.has(row.id))).sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id)||studyStorageStableJson(a).localeCompare(studyStorageStableJson(b)));
   }
   return {version:1,sets};
 }
+function studyTestsPartition(data){
+  const local={version:1,sets:{}},overflow={version:1,sets:{}};
+  const cap=BreezeStudySetTest.MAX_RECORDS;
+  for(const [id,rows] of Object.entries(data.sets||{})){
+    const pending=[],done=[];
+    for(const row of rows||[]){if(row&&row.pending)pending.push(row);else done.push(row);}
+    local.sets[id]=pending.concat(done.slice(0,cap));
+    if(done.length>cap)overflow.sets[id]=done.slice(cap);
+  }
+  return {local,overflow};
+}
+const studyTestOverflowWrites=new Map();
+async function studyTestsOverflowRead(key){
+  const db=await studyStorageDb();
+  const record=await localTransaction(db,'records','readonly',(tx,done)=>{
+    const request=tx.objectStore('records').get(key+'.test-overflow');
+    request.onsuccess=()=>done(request.result||null);
+  });
+  if(!record||typeof record.value!=='string')return {version:1,sets:{}};
+  return studyTestsDecode(record.value);
+}
+async function studyTestsReadMerged(scope=studyScopeCapture()){
+  if(globalThis.__breezeTestOverflowChain)await globalThis.__breezeTestOverflowChain.catch(()=>{});
+  const key=studyTestsKey(scope);
+  await studyTestOverflowWrites.get(key)?.catch(()=>{});
+  return studyTestsMerge(studyTestsDecode(localStorage.getItem(key)),await studyTestsOverflowRead(key));
+}
+function writeStudyTestOverflow(key,overflow,complete){
+  const task=async()=>{
+    const next=complete?overflow:studyTestsMerge(await studyTestsOverflowRead(key),overflow);
+    const empty=!Object.values(next.sets||{}).some(rows=>Array.isArray(rows)&&rows.length);
+    const db=await studyStorageDb();
+    await localTransaction(db,'records','readwrite',tx=>{
+      const store=tx.objectStore('records');
+      if(empty)store.delete(key+'.test-overflow');
+      else store.put({value:JSON.stringify(next)},key+'.test-overflow');
+    });
+  };
+  const previous=studyTestOverflowWrites.get(key)||Promise.resolve();
+  const job=previous.catch(()=>{}).then(task);
+  studyTestOverflowWrites.set(key,job);
+  return job;
+}
+function persistStudyTests(scope,data,complete=false){
+  const key=studyTestsKey(scope),parts=studyTestsPartition(data);
+  localStorage.setItem(key,JSON.stringify(parts.local));
+  const queueOverflow=globalThis.breezeQueueTestOverflow;
+  const job=typeof queueOverflow==='function'
+    ?queueOverflow(key,parts.overflow,complete)
+    :writeStudyTestOverflow(key,parts.overflow,complete);
+  studyTestOverflowWrites.set(key,job);
+  return job;
+}
 function saveStudySetTestRecord(setId,record,scope=studyScopeCapture()){
-  studyScopeAssert(scope);const key=studyTestsKey(scope),raw=localStorage.getItem(key);
-  const previous=studyTestsDecode(raw),saved=BreezeStudySetTest.save(raw,setId,record);
-  if(!saved.ok)return false;
-  // Import and device merges can bring more than forty extant summaries. Keep
-  // those summaries instead of silently clipping another device's history.
-  const next=studyTestsMerge(previous,studyTestsDecode(saved.raw));
-  localStorage.setItem(key,JSON.stringify(next));studyStorageNotify(BreezeStudySetTest.KEY,scope);return true;
+  try{
+    studyScopeAssert(scope);const key=studyTestsKey(scope),raw=localStorage.getItem(key);
+    const previous=studyTestsDecode(raw),saved=BreezeStudySetTest.save(raw,setId,record);
+    if(!saved.ok)return false;
+    // The hot local document keeps forty summaries per set. Older summaries
+    // move to IndexedDB so another device's history is still exported.
+    const next=studyTestsMerge(previous,studyTestsDecode(saved.raw));
+    persistStudyTests(scope,next,false);studyStorageNotify(BreezeStudySetTest.KEY,scope);return true;
+  }catch(error){
+    if(error&&(error.name==='QuotaExceededError'||error.code===22||error.code===1014))return false;
+    throw error;
+  }
 }
 function studySimpleArchiveDecode(raw){
   if(raw===null)return {version:1,sessions:[]};
@@ -236,7 +301,7 @@ async function exportLearningStorage(scope=studyScopeCapture(),guard=studyScopeC
     readLearningSource(STUDY_SIMPLE_ARCHIVE,studySimpleArchiveDecode,scope,guard)
   ]);
   studyScopeAssert(guard);
-  const result={version:1,sets:typeof setsRaw==='object'&&setsRaw!==null?setsRaw.state:BreezeStudySets.decode(setsRaw),simple:{version:1,active:decodeSimpleStudySession(simpleRaw),sessions:studySimpleArchiveDecode(archiveRaw).sessions},tests:studyTestsDecode(localStorage.getItem(studyTestsKey(scope)))};
+  const result={version:1,sets:typeof setsRaw==='object'&&setsRaw!==null?setsRaw.state:BreezeStudySets.decode(setsRaw),simple:{version:1,active:decodeSimpleStudySession(simpleRaw),sessions:studySimpleArchiveDecode(archiveRaw).sessions},tests:await studyTestsReadMerged(scope)};
   Object.defineProperty(result,'localRevision',{value:setsRaw?.revision||0});return result;
 }
 function validateLearningPayload(payload){
@@ -286,8 +351,8 @@ async function mergeLearningStorage(remote,scope=studyScopeCapture(),guard=study
       studyScopeAssert(guard);
       // Read summaries again after IDB awaits; their synchronous local writer
       // can have added a completed test while the transaction was running.
-      merged.tests=studyTestsMerge(studyTestsDecode(localStorage.getItem(studyTestsKey(scope))),merged.tests);
-      localStorage.setItem(studyTestsKey(scope),JSON.stringify(merged.tests));
+      merged.tests=studyTestsMerge(await studyTestsReadMerged(scope),merged.tests);
+      persistStudyTests(scope,merged.tests,true);
       if(!scope||typeof isLearningScopeCurrent!=='function'||isLearningScopeCurrent(scope))studyScopeChanged();
       studyStorageNotify(STUDY_SETS_STORAGE,scope,false);
       if(typeof window.dispatchEvent==='function')window.dispatchEvent(new CustomEvent('breeze-study-storage',{detail:studyScopeKey(STUDY_SETS_STORAGE,scope)}));

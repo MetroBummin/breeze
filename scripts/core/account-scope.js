@@ -200,9 +200,65 @@ function deviceLocalSources(){
   if(guest.startsWith('guest:'))sources.push({id:guest,generation:0});
   return sources;
 }
-function deviceLocalSourceOpen(source,entry){
-  const words=learningSourceWords(source),dead=learningSourceDead(source);
-  const conflicts=learningReadJson('breeze.word-conflicts',{},source);
+const learningArchiveDb=openDb('breeze-learning-archive',1,db=>{
+  if(!db.objectStoreNames.contains('sources'))db.createObjectStore('sources');
+});
+function learningStableValue(value){
+  return JSON.stringify(value,(_key,item)=>{
+    if(!item||typeof item!=='object'||Array.isArray(item))return item;
+    return Object.keys(item).sort().reduce((sorted,key)=>{sorted[key]=item[key];return sorted;},{});
+  });
+}
+function learningSourcePayload(source){
+  return {version:1,words:learningSourceWords(source),dead:learningSourceDead(source),conflicts:learningReadJson('breeze.word-conflicts',{},source)};
+}
+async function readLearningArchive(sourceId){
+  try{
+    const db=await learningArchiveDb();
+    return await localTransaction(db,'sources','readonly',(tx,done)=>{
+      const request=tx.objectStore('sources').get(sourceId);
+      request.onsuccess=()=>done(request.result||null);
+    });
+  }catch{return null;}
+}
+async function deviceLocalSourceMaterial(source){
+  const live=learningSourcePayload(source);
+  if(Object.keys(live.words).length||Object.keys(live.dead).length||Object.keys(live.conflicts).length)return live;
+  const archived=await readLearningArchive(source.id);
+  if(archived&&archived.version===1)return {version:1,words:archived.words||{},dead:archived.dead||{},conflicts:archived.conflicts||{}};
+  return {version:1,words:{},dead:{},conflicts:{}};
+}
+function learningWordKeysFor(token){
+  const prefix=token.id==='legacy'?'':'breeze.account.v1.'+encodeURIComponent(token.id)+'.';
+  const bases=['breeze.words','breeze.dead','breeze.word-write.pending','breeze.dead-write.pending','breeze.word-conflicts'];
+  const drop=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(!key)continue;
+    const rest=prefix?key.startsWith(prefix)?key.slice(prefix.length):'':key.startsWith('breeze.account.v1.')?'':key;
+    if(!rest)continue;
+    if(bases.includes(rest)||rest.startsWith('breeze.word-item.')||rest.startsWith('breeze.dead-item.'))drop.push(key);
+  }
+  return drop;
+}
+async function releaseDuplicatedDeviceSource(source){
+  // The live guest collection is what logout shows. It stays in localStorage.
+  // The unscoped original stays available, in IndexedDB, after an account has
+  // its own copy. A failed archive write leaves the localStorage keys in place.
+  if(!source||source.id===learningGuestId()||source.id.startsWith('user:'))return;
+  const payload=learningSourcePayload(source);
+  if(!Object.keys(payload.words).length&&!Object.keys(payload.dead).length&&!Object.keys(payload.conflicts).length)return;
+  const db=await learningArchiveDb();
+  await localTransaction(db,'sources','readwrite',tx=>tx.objectStore('sources').put(payload,source.id));
+  const saved=await readLearningArchive(source.id);
+  if(!saved||learningStableValue(saved.words)!==learningStableValue(payload.words)
+    ||learningStableValue(saved.dead)!==learningStableValue(payload.dead)
+    ||learningStableValue(saved.conflicts)!==learningStableValue(payload.conflicts))return;
+  for(const key of learningWordKeysFor(source))localStorage.removeItem(key);
+}
+async function deviceLocalSourceOpen(source,entry){
+  const material=await deviceLocalSourceMaterial(source);
+  const words=material.words,dead=material.dead,conflicts=material.conflicts;
   const wordKeys=[...Object.keys(words),...Object.keys(dead)];
   const knownWords=entry?.keyMap||{},knownConflicts=entry?.conflicts||{};
   const newWords=!entry||!entry.done?wordKeys.length>0||!entry:wordKeys.some(key=>!Object.prototype.hasOwnProperty.call(knownWords,key));
@@ -224,9 +280,9 @@ async function mergeOneDeviceLocalSource(source,target){
     if(prior&&prior.owner===target.id&&prior.keyMap)entry={id:prior.id,keyMap:prior.keyMap,conflicts:{},done:!!prior.complete};
     else entry={id:'local:'+learningDeviceId()+':'+source.id,keyMap:{},conflicts:{},done:false};
   }
-  const opened=deviceLocalSourceOpen(source,entry);
+  const opened=await deviceLocalSourceOpen(source,entry);
   if(!opened.open){
-    if(entry.done)return false;
+    if(entry.done){await releaseDuplicatedDeviceSource(source);return false;}
     let hasStudy=false;
     if(typeof exportLearningStorage==='function'){
       const study=await exportLearningStorage(source,target);
@@ -236,6 +292,7 @@ async function mergeOneDeviceLocalSource(source,target){
     if(!hasStudy){
       journal.sources[source.id]={...entry,done:true};
       localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(journal));
+      await releaseDuplicatedDeviceSource(source);
       return false;
     }
   }
@@ -288,6 +345,7 @@ async function mergeOneDeviceLocalSource(source,target){
   const finished=readDeviceLocalMerge(target);
   finished.sources[source.id]={...entry,done:true};
   localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(finished));
+  await releaseDuplicatedDeviceSource(source);
   if(typeof queueSync==='function')queueSync();
   return true;
 }
