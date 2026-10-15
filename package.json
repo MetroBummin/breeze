@@ -77,15 +77,16 @@
     "@capacitor/cli": "^8.5.0",
     "@electric-sql/pglite": "^0.5.8",
     "@mozilla/readability": "0.6.0",
+    "fake-indexeddb": "6.2.5",
     "linkedom": "0.18.12",
     "playwright": "1.64.0",
-    "typescript": "^5.9.3",
-    "fake-indexeddb": "6.2.5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.5.0",
-    "ts-fsrs": "5.4.2",
-    "@capacitor/android": "^8.5.0"
+    "ts-fsrs": "5.4.2"
   }
 }

@@ -18,7 +18,7 @@ try{
  assert.equal(await list.getAttribute('data-total'),String(total));
  assert.match(await page.locator('.study-sets-caption').last().textContent(),/2294단어 · 2399개/);
  assert.ok(await rows().count()<100,'DOM contains a viewport, not every stored word');
- assert.equal(await list.locator('[contenteditable],button.chip,.rowdel,.study-sets-row-action').count(),0);
+ assert.equal(await list.locator('[contenteditable],button.chip,.rowdel').count(),0);assert.ok(await list.locator('.study-sets-row-action').count()>0);assert.equal(await list.locator('.study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');
  for(const [size,width,height] of [['phone',390,844],['tablet',820,1180],['desktop',1440,1000],['short',844,390]])for(const dark of [false,true]){
   await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();studySetsUI.body.scrollTop=0;},dark);await page.waitForTimeout(80);
   const layout=await rows().first().evaluate(row=>{const rect=n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom};};return {row:rect(row),chip:rect(row.querySelector('.chip')),word:rect(row.querySelector('.vword')),start:rect(document.getElementById('study-all-words-start')),header:rect(document.querySelector('#v-memory-set .study-sets-header')),scroll:window.scrollY,rows:document.querySelectorAll('.study-all-words-row').length};});

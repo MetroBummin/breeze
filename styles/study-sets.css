@@ -87,9 +87,9 @@ html.study-sets-modal-open body{position:fixed;top:var(--study-sets-scroll-top);
 .study-sets-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
 .study-sets-actions>.study-sets-button{flex:1 1 auto;}
 .study-sets-word-row{position:relative;border-bottom:1px solid var(--settings-line);touch-action:pan-y;}
-#study-sets-word-list .study-sets-word-surface,#study-sets-word-list .study-sets-word-surface *{-webkit-user-select:none;user-select:none;-webkit-user-drag:none;}
+#study-sets-word-list .study-sets-word-surface,#study-all-words-list .study-sets-word-surface,#study-sets-word-list .study-sets-word-surface *,#study-all-words-list .study-sets-word-surface *{-webkit-user-select:none;user-select:none;-webkit-user-drag:none;}
 .study-sets-word-clip{position:relative;overflow:hidden;margin-left:-20px;width:calc(100% + 20px);}
-.study-sets-word-surface{position:relative;padding-left:20px;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:border-radius .2s ease;}
+.study-sets-word-surface{position:relative;padding-left:20px;display:flex;align-items:center;min-height:62px;background:var(--home-background);transition:border-radius .2s ease;will-change:transform;}
 .study-sets-revealed .study-sets-word-surface{border-radius:0 24px 24px 0;background:var(--wordbook-field);}
 .study-sets-dragging .study-sets-word-surface{transition:none;}
 .study-sets-exiting{overflow:hidden;pointer-events:none;}
