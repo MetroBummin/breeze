@@ -32,13 +32,16 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
     const source=url.searchParams.get('url'),mode=url.searchParams.get('as');counts.set(mode||'html',(counts.get(mode||'html')||0)+1);
     if(delay)await new Promise(r=>setTimeout(r,delay));
     if(mode==='image')return route.abort();
-    if(behavior==='429')return route.fulfill({status:429,body:'{}'});
-    if(behavior==='403')return route.fulfill({status:403,body:'{}'});
+    if(['401','403','429'].includes(behavior))return route.fulfill({status:Number(behavior),body:'{}'});
     if(behavior==='broken')return route.fulfill({contentType:'application/json',body:'not json'});
     if(behavior==='no-body')return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:'<h1>Sign in</h1>'})});
+    if(behavior==='short-link')return route.fulfill({contentType:'application/json',body:JSON.stringify({url:'https://x.com/writer/status/78889',html:ld('https://x.com/writer/status/78889')})});
+    if(behavior==='article-after-teaser')return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:ld(source,'A synthetic excerpt... pic.twitter.com/media')+publicArticle(source)})});
+    if(behavior==='html-incomplete'&&mode!=='x-oembed')return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:ld(source,'A tempting short teaser.')+publicArticle(source).replace('class="x-article-body"','class="x-article-body" data-truncated="true"')})});
+    if(behavior==='media-excerpt'&&mode==='x-oembed')return route.fulfill({contentType:'application/json',body:JSON.stringify(embed(new URL(source).pathname.match(/status\/(\d+)/)?.[1],'A synthetic excerpt... <a href="https://t.co/media">pic.twitter.com/media</a>'))});
     if(behavior==='link-only'&&mode==='x-oembed')return route.fulfill({contentType:'application/json',body:JSON.stringify(embed(new URL(source).pathname.match(/status\/(\d+)/)?.[1],'<a href="https://t.co/8UKrTHEa6N">https://t.co/8UKrTHEa6N</a>'))});
     if(mode==='x-oembed')return route.fulfill({contentType:'application/json',body:JSON.stringify(embed(new URL(source).pathname.match(/status\/(\d+)/)?.[1]))});
-    if(behavior==='link-only'||behavior==='embed-fallback')return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:'<h1>Post</h1>'})});
+    if(['link-only','embed-fallback','media-excerpt'].includes(behavior))return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:'<h1>Post</h1>'})});
     if(behavior==='public-article')return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:publicArticle(source)})});
     return route.fulfill({contentType:'application/json',body:JSON.stringify({url:source,html:ld(source)})});
    }
@@ -56,6 +59,13 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
    assert.deepEqual(result,['generic','generic','unsupported','unsupported','unsupported']);
   });
   for(const url of [post,threads])await check('short social body and newline order '+url,async()=>{const r=await parse(ld(url),url);assert.equal(r.parsed.blocks.length,3);assert.equal(r.parsed.blocks[1].t,'A second line with a new thought.');assert.equal(r.parsed.social.scope,'single-post');});
+  await check('native full body beats metadata while preserving newlines and inline emoji',async()=>{
+   const html=ld(post,'A short share teaser.')+`<article><a href="${post}"><time></time></a><div data-testid="tweetText">The complete first line.\nThe final line <strong><img src="https://abs.twimg.com/emoji/v2/svg/1f642.svg" alt="🙂"></strong>.</div></article>`;
+   const result=(await parse(html,post)).parsed;
+   assert.deepEqual(result.blocks.map(block=>block.t),['The complete first line.','The final line 🙂.']);
+   assert.equal(result.author,'Writer');assert.equal(result.publishedAt,'2026-09-24');
+   const mark=result.blocks[1].marks.find(item=>item.kind==='strong');assert.equal(result.blocks[1].t.slice(mark.start,mark.end),'🙂');
+  });
   await check('unrelated replies and recommendations never become root post',async()=>{
    const html=ld(threads,body,{comment:{'@type':'SocialMediaPosting',url:threads+'/reply',articleBody:'Unrelated reply'},sharedContent:{text:'Quoted post'},hasPart:[{text:'Unverified continuation'}]});
    const r=await parse(html,threads);assert(!JSON.stringify(r).includes('Unrelated reply'));assert(!JSON.stringify(r).includes('Unverified continuation'));
@@ -81,11 +91,11 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
   await check('public Article identity and owner must agree',async()=>{
    assert.equal((await parse(publicArticle(post).replaceAll('writer/article/123456789','other/article/999'),post)).code,'social_unavailable');
    assert.equal((await parse(publicArticle(post).replace('<a href="'+post+'">','<a href="https://x.com/other/status/999">'),post)).code,'social_unavailable');
-   assert.equal((await parse(publicArticle(post).replace('<div class="x-article-body">','<div>'),post)).code,'social_unavailable');
+   assert.equal((await parse(publicArticle(post).replace('<div class="x-article-body">','<div>'),post)).code,'social_incomplete');
   });
   await check('restricted, hidden and truncated public Article bodies reject',async()=>{
    assert.equal((await parse(publicArticle(post).replace('content="true"','content="false"'),post)).code,'social_restricted');
-   assert.equal((await parse(publicArticle(post).replace('class="x-article-body"','class="x-article-body" hidden'),post)).code,'social_unavailable');
+   assert.equal((await parse(publicArticle(post).replace('class="x-article-body"','class="x-article-body" hidden'),post)).code,'social_incomplete');
    assert.equal((await parse(publicArticle(post).replace('class="x-article-body"','class="x-article-body" data-truncated="true"'),post)).code,'social_incomplete');
   });
   await check('an unowned rich-text view cannot bypass Article checks',async()=>{
@@ -93,7 +103,7 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
    const html=`<link rel="canonical" href="${url}"><div data-testid="quoteTweet"><div data-testid="twitterArticleRichTextView">${body.repeat(8)}</div></div>`;
    assert.equal((await parse(html,url)).code,'social_unavailable');
    const hidden=publicArticle(post).replace('class="x-article-body"','class="x-article-body" itemprop="articleBody" hidden');
-   assert.equal((await parse(hidden,post)).code,'social_unavailable');
+   assert.equal((await parse(hidden,post)).code,'social_incomplete');
   });
   await check('Article images and poster previews share the eight-image limit',async()=>{
    const html=publicArticle(post).replace('</video>', '</video>'+Array.from({length:12},(_,i)=>`<a href="${post}/photo/${i}"><img src="https://pbs.twimg.com/media/test-${i}.jpg"></a>`).join(''));
@@ -147,6 +157,16 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
    behavior='embed-fallback';counts.clear();const r=await page.evaluate(async()=>{const b=await ingestArticle('https://x.com/writer/status/78882',{present:false});return b.social.extraction;});
    assert.equal(r,'x-oembed');assert.equal(counts.get('html'),1);assert.equal(counts.get('x-oembed'),1);behavior='embed';
   });
+  await check('complete Article after a teaser reaches durable Reader with its final paragraph',async()=>{
+   behavior='article-after-teaser';counts.clear();
+   const result=await page.evaluate(async()=>{const book=await ingestArticle('https://x.com/writer/status/78887');const stored=(await bookAll()).find(item=>item.id===book.id);return {scope:book.social.scope,last:book.paras.at(-1),storedLast:stored.paras.at(-1),reader:curBook.id===book.id};});
+   assert.equal(result.scope,'article');assert.match(result.last,/^The final paragraph/);assert.equal(result.storedLast,result.last);assert.equal(result.reader,true);assert.equal(counts.get('html'),1);assert.equal(counts.get('x-oembed')||0,0);behavior='embed';
+  });
+  await check('t.co resolved X identity reuses one saved book through its twitter alias',async()=>{
+   behavior='short-link';counts.clear();
+   const result=await page.evaluate(async()=>{const first=await ingestArticle('https://t.co/publicPost',{present:false});const second=await ingestArticle('https://mobile.twitter.com/writer/status/78889/photo/1?s=20',{present:false});return {same:first.id===second.id,scope:first.social.scope,source:first.sourceUrl,resolved:first.resolvedUrl,count:(await bookAll()).filter(book=>book.social?.id==='78889').length};});
+   assert.deepEqual(result,{same:true,scope:'single-post',source:'https://t.co/publicPost',resolved:'https://x.com/writer/status/78889',count:1});assert.equal(counts.get('html'),1);behavior='embed';
+  });
   await check('social Preview saves only after Read is pressed',async()=>{
    const url='https://x.com/writer/status/76666';
    const before=await page.evaluate(async()=>({memory:books.length,stored:(await bookAll()).length}));
@@ -160,12 +180,22 @@ for(const engine of (process.env.BREEZE_TEST_BROWSER==='chromium'?[chromium]:[ch
    await page.waitForFunction(()=>curBook?.social?.id==='76666'&&!articlePreviewDialog.open);
    assert.deepEqual(await page.evaluate(async()=>({memory:books.length,stored:(await bookAll()).length})),{memory:before.memory+1,stored:before.stored+1});
   });
-  for(const mode of ['429','403','broken','no-body','link-only'])await check('no bad book persisted / retry allowed: '+mode,async()=>{
+  for(const mode of ['429','403','401','broken','no-body','link-only','media-excerpt','html-incomplete'])await check('no bad book persisted / retry allowed: '+mode,async()=>{
    behavior=mode;counts.clear();
-   const result=await page.evaluate(async()=>{const before=books.length;let code;try{await ingestArticle('https://x.com/writer/status/77777');}catch(e){code=e.code;}return {code,delta:books.length-before,jobs:articleJobs.size};});
-   assert.equal(result.delta,0);assert.equal(result.jobs,0);assert(result.code.startsWith('social_'));if(mode==='429'||mode==='403')assert.equal(counts.get('x-oembed')||0,0);
+   const result=await page.evaluate(async()=>{const before=books.length,stored=(await bookAll()).length;let code;try{await ingestArticle('https://x.com/writer/status/77777');}catch(e){code=e.code;}return {code,delta:books.length-before,storedDelta:(await bookAll()).length-stored,jobs:articleJobs.size};});
+   assert.equal(result.delta,0);assert.equal(result.storedDelta,0);assert.equal(result.jobs,0);assert(result.code.startsWith('social_'));if(['401','403','429','html-incomplete'].includes(mode))assert.equal(counts.get('x-oembed')||0,0);if(['media-excerpt','html-incomplete'].includes(mode))assert.equal(result.code,'social_incomplete');
   });
   behavior='embed';
+  await check('explicit retry of an old media-suffix excerpt preserves it until complete replacement commits',async()=>{
+   const url='https://x.com/writer/status/78888';
+   const original=await page.evaluate(async url=>{const excerpt='A synthetic excerpt... pic.twitter.com/media',parsed=articleAssemble('Old excerpt',[{r:'p',t:excerpt}]);const book=await saveCasualBook({...parsed,title:'Old excerpt'},{kind:'article',sourceUrl:url,social:{platform:'x',id:'78888',scope:'single-post',extraction:'x-oembed'}},{present:false});return {id:book.id,paras:book.paras};},url);
+   behavior='media-excerpt';
+   const failed=await page.evaluate(async url=>{let code;try{await ingestArticle(url,{present:false});}catch(error){code=error.code;}return {code,book:(await bookAll()).find(book=>book.sourceUrl===url)};},url);
+   assert.equal(failed.code,'social_incomplete');assert.equal(failed.book.id,original.id);assert.deepEqual(failed.book.paras,original.paras);
+   behavior='article-after-teaser';
+   const repaired=await page.evaluate(async url=>{const book=await ingestArticle(url,{present:false});return {id:book.id,last:book.paras.at(-1),count:(await bookAll()).filter(item=>item.sourceUrl===url).length};},url);
+   assert.equal(repaired.id,original.id);assert.match(repaired.last,/^The final paragraph/);assert.equal(repaired.count,1);behavior='embed';
+  });
   await check('known saved link-only import refetches and repairs one record after successful persistence',async()=>{
    const url='https://x.com/writer/status/78883';
    const original=await page.evaluate(async url=>{

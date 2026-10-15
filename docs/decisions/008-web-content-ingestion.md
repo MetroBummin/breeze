@@ -396,7 +396,7 @@ An explicit reimport may repair an existing X oEmbed record whose body contains
 only URLs. It fetches and validates the source before a durable in-place update,
 retaining the local ID, added time, reading positions and manual title/cover
 choices. Failed retrieval or persistence leaves the prior book intact. Ordinary
-short posts, manually pasted links and image-bearing books are not migrated.
+short posts, manually pasted links and complete image-bearing books are not migrated.
 
 ### Evidence and release boundary
 
@@ -405,6 +405,50 @@ That endpoint supplies an embed of one post, not all conversation replies or a
 guaranteed complete X Article. Threads public HTML can omit the required body;
 no universal Threads-import success is claimed. Platform availability is not
 proven by fixtures. See `docs/qa/social-import-20260925.md`.
+
+### X excerpt integrity follow-up (2026-10-15)
+
+A supplied Reader screenshot ends at an ellipsis followed by a
+`pic.twitter.com` media label; the supplied original continues with more prose.
+The old cutoff check recognized a trailing HTTP URL but missed the displayed
+media label. A synthetic oEmbed reproduction confirms that false success.
+Trailing HTTP links and `pic.twitter.com`/`pic.x.com` labels no longer hide a
+cutoff, and link-only labels remain incomplete. Complete short posts retain
+their links. The conservative ellipsis rule remains; punctuation alone cannot
+prove that a public response is complete.
+
+An owned rendered X Article takes precedence over its JSON-LD share teaser.
+An owned native post text body also takes precedence over posting metadata;
+photo-only DOM still permits structured prose to supply the post text.
+An incomplete candidate does not prevent examining another target-matching
+body in the same response. A declared owned Article, including a missing or hidden
+body, cannot fall back to posting metadata or its outer share teaser. Once HTML
+is judged incomplete, the loader stops rather than accepting a shorter oEmbed,
+including HTML received after resolving a short link. Article-typed metadata
+retains the Article minimum length even at a status URL. Cutoff controls are checked within the same post
+and Article ownership boundary, excluding hidden and quoted content. Target
+access restrictions remain terminal. The HTML relay preserves upstream
+401/403/429 so the client cannot mistake access/rate limits for missing HTML
+and try oEmbed afterward.
+
+Native post newlines and explicit pre-wrap text preserve their line boundaries
+and inline link/emphasis ranges. Emoji-only alt text from X's known emoji image
+paths stays inline; arbitrary image descriptions never become article prose.
+Pretty-printed Article indentation still collapses as normal HTML whitespace.
+
+Explicit reimport can also repair an old X oEmbed excerpt with this cutoff
+signature. It uses the existing durable replacement path: failed retrieval or
+storage keeps the original, and successful replacement preserves the local ID,
+reading position and manual title/cover. No startup migration or deletion is
+performed. Books with complete text are not refetched by this rule.
+
+Regression evidence is synthetic and runs the production parser, relay handler
+and browser storage flow. The exact failing status URL is not available; the
+partial screenshot URL is never reconstructed. The two supplied public reference
+links are not confirmed failures and returned 403 during this investigation.
+No claim is made that the original long post is obtainable from unauthenticated
+public HTML/oEmbed, or that an unseen thread is complete. No private endpoint,
+login bypass, paid API, provider change or deployment is part of this fix.
 
 ## Device polish and numeric validation repair (2026-09-26)
 

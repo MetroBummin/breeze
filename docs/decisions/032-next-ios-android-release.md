@@ -57,6 +57,13 @@ binary. App and Share Debug/Release `MARKETING_VERSION` move to1.9.4. The
 checked-in build counter stays273, and the cloud bootstrap still replaces it
 with `CI_BUILD_NUMBER`. Android `versionName` follows the same release.
 
+## Checked-in counter 288 (2026-10-15)
+
+The latest TestFlight build is287. The next archive ships account-owned
+learning sync and the X import fix together. App and Share Debug/Release
+counters move to288. Marketing version stays1.9.4. The cloud bootstrap still
+replaces that baseline with `CI_BUILD_NUMBER`.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports

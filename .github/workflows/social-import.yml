@@ -30,7 +30,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Type check
         run: node tools/typecheck.mjs || (npx tsc -p tsconfig.json --pretty false; exit 1)
-      - run: node --test tests/verify-social-import-server.mjs
+      - run: node --test tests/verify-social-import-server.mjs tests/verify-social-content.mjs tests/verify-social-inline.mjs
       - run: npx playwright install --with-deps chromium webkit
       - run: node tests/verify-social-import-browser.mjs
       - run: npm run test:ingestion
