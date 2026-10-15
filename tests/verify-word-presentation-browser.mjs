@@ -172,7 +172,17 @@ try{
   assert.equal(await page.locator('#p-aibtn-t').textContent(),'로그인하고 계속 쓰기','signed-out lookup lost its single login action');
   await page.evaluate(()=>closePanel());
 
-  await page.evaluate(()=>readerScrollTo(1500));
+  await page.evaluate(()=>{
+    readerScrollTo(1500);
+    const visible=()=>[...document.querySelectorAll('#rtext .w')].find(node=>{
+      if(node.textContent.toLowerCase()!=='carefully') return false;
+      const box=node.getBoundingClientRect();
+      return box.width>0&&box.top>80&&box.bottom<700;
+    });
+    if(visible()) return;
+    const span=[...document.querySelectorAll('#rtext .w')].find(node=>node.textContent.toLowerCase()==='carefully');
+    if(span) readerScrollTo(readerScrollTop()+span.getBoundingClientRect().top-200);
+  });
   await page.waitForTimeout(200);
   const expressionScroll=await page.evaluate(()=>readerScrollTop());
   /* 처음 보는 lexical item을 DeepSeek가 expression으로 판정해도 같은 필이 lookup
