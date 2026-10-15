@@ -43,6 +43,13 @@ Xcode Cloud bootstrap replaces App/Share counters with Apple's CI_BUILD_NUMBER;
 no archive with the unchanged baseline may be uploaded. Observe the actual next
 Cloud counter and source after promotion; do not select or submit reported274.
 
+## Checked-in counter 273 (2026-10-15)
+
+App Store Connect rejected main `14b04786` while preparing the archive upload.
+App and Share Debug/Release counters move together from272 to273. Marketing
+version stays1.9.3. The cloud bootstrap still replaces both with `CI_BUILD_NUMBER`
+before archive, and now requires the checked-in baseline to be273.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports
