@@ -12,11 +12,11 @@ body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark::before{content:"";
 @media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more){body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark{background-image:none!important;}body:has(:is(#v-home,#v-casuals,#v-longform).on) #logo .mark::before{display:block;}}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings{margin-left:auto;flex:none;width:44px;height:44px;}
 body:has(#v-home.on) #nav-settings{transform:translateY(4px);}
-body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg{width:var(--am-icon-gear);height:var(--am-icon-gear);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-complex);stroke-linecap:round;stroke-linejoin:round;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #v-home{padding-top:20px;}
 body:has(:is(#v-home,#v-casuals,#v-longform).on) #toast,body:has(:is(#v-home,#v-casuals,#v-longform).on) #minitoast{bottom:calc(env(safe-area-inset-bottom) + 78px);transition-property:opacity;}
-#home-add svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+#home-add svg{width:var(--am-icon-plus);height:var(--am-icon-plus);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-plus);stroke-linecap:round;stroke-linejoin:round;}
 
 body.settings-open{overflow:hidden;}
 #settings-modal{display:flex;align-items:flex-end;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 0 0;overflow:hidden;background:var(--settings-scrim);visibility:hidden;opacity:0;pointer-events:none;transition:opacity .36s ease,visibility 0s .36s;}
@@ -25,7 +25,6 @@ body.settings-open{overflow:hidden;}
 #settings-modal.on #set-card{transform:translateY(0);}
 .settings-handle{position:absolute;top:12px;left:calc(50% - 18px);width:36px;height:4px;border-radius:2px;background:var(--settings-handle);}
 #settings-modal #set-card h2{font:650 23px/32px var(--ui);letter-spacing:-.35px;margin:0 0 16px;}
-#settings-modal #set-close{position:absolute;right:24px;top:20px;float:none;width:36px;height:36px;font:400 23px/1 var(--ui);background:var(--settings-close);color:var(--settings-ink);}
 #settings-modal #set-card .set-panel{display:block;}
 .settings-section-title{font:500 10px/15px var(--ui);color:var(--settings-muted);margin:22px 0 8px;text-transform:uppercase;letter-spacing:.2px;}
 #sm-body>.settings-section-title:first-child{margin-top:0;}
@@ -107,7 +106,7 @@ html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 @media(prefers-reduced-motion:reduce){#library-refresh{transition:none;}#library-refresh.refreshing .refresh-spinner{animation:none;}}
 
 /* Selected bookmark; shared glass geometry stays unchanged. */
-#home-controls #nav-vocab svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:var(--settings-ink);stroke-width:var(--control-icon-stroke);}
+#home-controls #nav-vocab svg{width:var(--am-icon-mark);height:var(--am-icon-mark);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-complex);}
 
 .home-resume-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%;}
 #home-resume-percent{font-size:10px;line-height:13px;opacity:.8;}
@@ -126,7 +125,7 @@ html:is(.home-resuming,.home-returning)::view-transition-group(reader-control){
 }
 html:is(.home-resuming,.home-returning)::view-transition-old(reader-control),
 html:is(.home-resuming,.home-returning)::view-transition-new(reader-control){animation-duration:.16s;mix-blend-mode:normal;object-fit:none;object-position:center;}
-html:is(.home-resuming,.home-returning)::view-transition-image-pair(reader-control){overflow:clip;border-radius:24px;}
+html:is(.home-resuming,.home-returning)::view-transition-image-pair(reader-control){overflow:clip;border-radius:22px;}
 
 /* Shelf headings and cards share one left edge and vertical rhythm. */
 #v-casuals .casual-library-head,#v-longform .head{margin:0;gap:10px;}

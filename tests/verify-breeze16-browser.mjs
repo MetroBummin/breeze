@@ -16,11 +16,11 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 const qaDir=resolve(tmpdir(),'breeze16-qa');
 mkdirSync(qaDir,{recursive:true});
-// Optical review:88px navigation with independent44px targets,48px settings
+// Optical review:88px navigation with independent44px targets,44px settings
 // and balanced8px gaps. Center the pill in the actual available interval.
 function assertPdfDock(nav,pill,settings,width,label){
- assert.equal(nav.width,88,label+': two44px navigation targets');assert.equal(settings.width,48,label+': settings target');
- for(const r of [nav,pill,settings])assert.equal(r.height,48,label+': common row height');
+ assert.equal(nav.width,88,label+': two44px navigation targets');assert.equal(settings.width,44,label+': settings target');
+ for(const r of [nav,pill,settings])assert.equal(r.height,44,label+': common row height');
  const gaps=[pill.x-nav.x-nav.width,settings.x-pill.x-pill.width];
  assert.ok(gaps.every(g=>Math.abs(g-8)<1),label+': balanced8px gaps '+JSON.stringify({nav,pill,settings,gaps}));
  assert.ok(Math.abs(pill.x+pill.width/2-(nav.x+nav.width+settings.x)/2)<1,label+': pill centers in the interval between navigation and settings');

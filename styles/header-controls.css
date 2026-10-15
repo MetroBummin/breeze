@@ -1,28 +1,238 @@
-/* Matching 44px header controls share one shell. Dock slots retain their own
-   geometry. The edit surface owns its material while its button/menu stay clear. */
-:root{--header-control-size:44px;--header-control-radius:50%;--header-icon-size:32px;--header-icon-stroke:1.5;--header-more-dot-radius:1px;}
-html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#v-memory-set .study-sets-edit-surface,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary){
-  box-sizing:border-box;display:grid;place-items:center;flex:none;width:var(--header-control-size);height:var(--header-control-size);min-width:var(--header-control-size);min-height:var(--header-control-size);padding:0;border:1px solid var(--study-set-control-line);border-radius:var(--header-control-radius);background:var(--study-set-control-surface);box-shadow:var(--study-set-control-shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:var(--study-set-control-ink);transform:none;filter:none;transition:filter .12s ease;cursor:pointer;
-}
-/* Close/back have matched18px painted heights. Wide/filled/dense shapes keep
-   a24px frame so they carry comparable visual emphasis without filling the shell. */
-html :is(#study-sets-edit,#pdf-bookmarks-only,#pdf-navigation-toggle,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary){--header-icon-size:24px;--header-icon-stroke:2;}
-html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#v-memory-set #study-sets-edit,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary)>svg{
-  display:block;width:var(--header-icon-size);height:var(--header-icon-size);flex:none;stroke:currentColor;stroke-width:var(--header-icon-stroke);stroke-linecap:round;stroke-linejoin:round;
-}
-#v-memory-set #study-sets-edit svg circle,.library-folder-controls .library-folder-menu>summary svg circle{r:var(--header-more-dot-radius);fill:currentColor;stroke:none;}
-.library-folder-controls .library-folder-menu>summary>svg{fill:currentColor;stroke:none;}
-/* Persistent selection uses its existing semantic fill, separate from press. */
-#pdf-bookmarks-only[aria-pressed=true]>svg{fill:currentColor;}
-html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary):hover,#v-memory-set .study-sets-edit-surface:has(#study-sets-edit:hover){filter:brightness(.98);}
-html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary):active,#v-memory-set .study-sets-edit-surface:has(#study-sets-edit:active){filter:brightness(.92);}
-html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#v-memory-set #study-sets-edit,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary):focus-visible{outline:2px solid var(--selection-ink);outline-offset:3px;}
-@media(prefers-reduced-transparency:reduce){
-  html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#v-memory-set .study-sets-edit-surface,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary){background:var(--study-set-control-solid);backdrop-filter:none;-webkit-backdrop-filter:none;}
-}
-@media(prefers-reduced-motion:reduce){
-  html :is(#study-sets-dialog #study-sets-back,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-back,#v-memory-set .study-sets-edit-surface,#review-close,#vocabulary-test-close,#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close,#pdf-bookmarks-only,#pdf-navigation-toggle,.ap-close,#btn-export,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary){transition:none;}
+/* Apple Music (iOS 26) glass for circular controls, center pills, and sheet closes.
+   PDF toolbar and sidebar icons stay uncircled. Lookup, stars, sign-in, and
+   destructive actions keep their own materials. Dock slot size lives in reader.css.
+   The :is() list includes a two-id argument so this file wins over earlier
+   id+id shells without !important. */
+
+html body :is(
+  #nav-settings,
+  #nav-home.control-circle,
+  #nav-vocab,
+  #wordbook-home,
+  #home-add,
+  #wordbook-add,
+  #readback,
+  #aafab,
+  #btn-export,
+  #review-close,
+  #vocabulary-test-close,
+  #study-sets-directory-back,
+  #study-sets-close,
+  #study-sets-dialog #study-sets-back,
+  #v-memory-set #study-sets-back,
+  #settings-modal #set-close,
+  #am-card #am-close,
+  #ed-card #ed-close,
+  #wordbook-add-form .task-close,
+  #task-form .task-close,
+  .ap-close,
+  .study-sets-edit-surface,
+  .library-folder-controls .library-folder-add,
+  .library-folder-controls .library-folder-menu>summary
+){
+  box-sizing:border-box;
+  display:grid;
+  place-items:center;
+  flex:none;
+  width:var(--am-control-size);
+  height:var(--am-control-size);
+  min-width:var(--am-control-size);
+  min-height:var(--am-control-size);
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:var(--am-glass);
+  box-shadow:var(--am-glass-shadow);
+  backdrop-filter:var(--am-blur);
+  -webkit-backdrop-filter:var(--am-blur);
+  color:var(--am-ink);
+  font-weight:600;
+  cursor:pointer;
 }
 
-/* Filled set-menu dots need a small optical lift beside the open Back glyph. */
-#v-memory-set #study-sets-edit{--header-more-dot-radius:1.15px;}
+/* Home settings keeps its optical drop beside the wordmark. */
+html body:has(#v-home.on) #nav-settings{transform:translateY(4px);}
+
+/* Sheet closes sit 16px from the card's top-right. A PDF navigation close, if
+   one is mounted, stays in document flow. */
+html body :is(#set-close,#am-close,#ed-close,#wordbook-add-form .task-close,#task-form .task-close,.ap-close){
+  position:absolute;
+  z-index:2;
+  top:16px;
+  right:16px;
+  float:none;
+  margin:0;
+}
+html body #pdf-page-navigation .task-close{position:static;top:auto;right:auto;}
+html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close)::before,
+html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close)::after{display:none;}
+
+html body #review-close{align-self:flex-start;margin:0 0 12px;}
+html body #wordbook-controls #wordbook-add{background:var(--am-glass-strong);}
+
+/* The edit surface owns the glass. Its button and menu stay clear. */
+html body #study-sets-edit{
+  position:absolute;
+  z-index:2;
+  top:0;
+  right:0;
+  width:var(--am-control-size);
+  height:var(--am-control-size);
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  box-shadow:none;
+  color:inherit;
+}
+html body #study-sets-edit:is(:hover,:active){background:transparent;}
+
+/* Center pills. Height stays with the dock row so compact chrome and reader
+   notices can still shrink or grow the capsule. */
+html body :is(#home-resume,#wordbook-review,#readpill){
+  border:0;
+  border-radius:22px;
+  background:var(--am-glass);
+  box-shadow:var(--am-glass-shadow);
+  backdrop-filter:var(--am-blur);
+  -webkit-backdrop-filter:var(--am-blur);
+  color:var(--am-ink-primary);
+  font-size:15px;
+  font-weight:600;
+}
+html body :is(#home-resume-title,#readpill-title,#wordbook-review){
+  font-size:15px;
+  font-weight:600;
+  color:inherit;
+}
+html body #aafab{font-size:17px;font-weight:600;letter-spacing:-.2px;color:var(--am-ink);}
+html body #readpill #modefab{color:var(--am-ink);}
+
+/* PDF toolbar and sidebar: secondary ink, no circle. Pressed bookmark red and
+   pressed pen color stay in their own rules. */
+html body :is(#pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control){
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  color:var(--am-ink);
+}
+
+html body :is(
+  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#btn-export,
+  #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-back,#study-sets-close,#study-sets-edit,
+  #set-close,#am-close,#ed-close,.task-close,.ap-close,
+  #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
+  .library-folder-add,.library-folder-menu>summary
+) svg{
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  transform:none;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+html body :is(
+  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#btn-export,
+  #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-back,#study-sets-close,#study-sets-edit,
+  #set-close,#am-close,#ed-close,.task-close,.ap-close,
+  #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
+  .library-folder-add,.library-folder-menu>summary
+) svg :is(path,line,polyline,rect,circle){
+  vector-effect:non-scaling-stroke;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+html body :is(#readback,#study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,#memory-home-controls #study-sets-directory-back,#review-close,#vocabulary-test-close) svg{
+  width:var(--am-icon-chevron);
+  height:var(--am-icon-chevron);
+  stroke-width:var(--am-stroke-chevron);
+}
+html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close,#study-sets-dialog #study-sets-close,#v-memory-set #study-sets-close) svg{
+  width:var(--am-icon-close);
+  height:var(--am-icon-close);
+  stroke-width:var(--am-stroke-close);
+}
+html body :is(#home-controls #home-add,#wordbook-add,.library-folder-controls .library-folder-add) svg{
+  width:var(--am-icon-plus);
+  height:var(--am-icon-plus);
+  stroke-width:var(--am-stroke-plus);
+}
+html body:has(:is(#v-home,#v-casuals,#v-longform).on) #nav-settings svg,
+html body #nav-settings svg{
+  width:var(--am-icon-gear);
+  height:var(--am-icon-gear);
+  stroke-width:var(--am-stroke-complex);
+}
+html body #nav-settings svg circle{fill:none;stroke:currentColor;vector-effect:non-scaling-stroke;}
+html body #home-controls #nav-vocab svg,
+html body #nav-vocab svg{
+  width:var(--am-icon-mark);
+  height:var(--am-icon-mark);
+  stroke-width:var(--am-stroke-complex);
+}
+html body :is(#home-controls #nav-home,#wordbook-home,#btn-export,#study-sets-edit,.library-folder-menu>summary) svg{
+  width:var(--am-icon-complex);
+  height:var(--am-icon-complex);
+  stroke-width:var(--am-stroke-complex);
+}
+html body :is(#pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab) svg{
+  width:var(--am-icon-toolbar);
+  height:var(--am-icon-toolbar);
+  stroke-width:var(--am-stroke-complex);
+}
+html body :is(#pdf-page-button,#pdf-navigation-toggle,#study-sets-edit,.library-folder-menu>summary) svg circle{
+  fill:currentColor;
+  stroke:none;
+  vector-effect:none;
+}
+html body :is(#v-memory-set #study-sets-edit,.library-folder-menu>summary) svg circle{r:1.15px;}
+html body .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
+
+html body :is(
+  #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#aafab,#btn-export,
+  #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-close,
+  #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
+  #set-close,#am-close,#ed-close,.task-close,.ap-close,
+  .library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
+  #home-resume,#wordbook-review,#readpill
+):hover{filter:brightness(.98);}
+html body :is(
+  #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#aafab,#btn-export,
+  #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-close,
+  #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
+  #set-close,#am-close,#ed-close,.task-close,.ap-close,
+  .library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
+  #home-resume,#wordbook-review,#readpill
+):active{filter:brightness(.92);}
+html body .study-sets-edit-surface:has(#study-sets-edit:hover){filter:brightness(.98);}
+html body .study-sets-edit-surface:has(#study-sets-edit:active){filter:brightness(.92);}
+
+/* Opening a sheet focuses its close. Pointer and touch focus do not draw a ring. */
+html body :is(
+  #nav-settings,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#aafab,#btn-export,
+  #review-close,#vocabulary-test-close,#study-sets-back,#study-sets-close,#study-sets-edit,#study-sets-directory-back,
+  #set-close,#am-close,#ed-close,.task-close,.ap-close,
+  #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
+  .library-folder-add,.library-folder-menu>summary,#home-resume,#wordbook-review,#readpill
+):is(:focus,:focus-visible){outline:none;}
+
+@media(prefers-reduced-transparency:reduce){
+  html body :is(
+    #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#readback,#aafab,#btn-export,
+    #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-close,
+    #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
+    #set-close,#am-close,#ed-close,.task-close,.ap-close,
+    .study-sets-edit-surface,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
+    #home-resume,#wordbook-review,#readpill,#wordbook-add
+  ){
+    background:var(--am-glass-solid);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  html body :is(#nav-settings,#readback,#aafab,#home-resume,#wordbook-review,#readpill,.study-sets-edit-surface){transition:none;}
+}

@@ -1545,8 +1545,12 @@ for(const clockGuard of ['ignoreNextClickUntil','dismissGuardUntil','modalCloseA
 assert.match(index, /id="word-peek"[\s\S]{0,700}id="word-peek-retry"[\s\S]{0,500}id="word-peek-more"/,
   'The near-word meaning pill or its detail chevron is missing');
 assert.match(index,
-  /id="readback"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-retry"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-more"[\s\S]{0,240}stroke-width="2\.1"/,
-  'Back, retry, and chevron icons no longer share the same visual weight');
+  /id="word-peek-retry"[\s\S]{0,240}stroke-width="2\.1"[\s\S]*?id="word-peek-more"[\s\S]{0,240}stroke-width="2\.1"/,
+  'Lookup retry and chevron icons no longer share the same visual weight');
+assert.match(index, /id="readback"[\s\S]{0,360}d="M14\.5 4\.5 7\.5 12l7 7\.5"/,
+  'Reader back no longer uses the approved chevron');
+assert.doesNotMatch(index, /id="readback"[\s\S]{0,280}stroke-width=/,
+  'Reader back stroke is owned by the Apple Music glass stylesheet');
 assert.match(dictionaryCss,
   /:is\(#word-peek,#sentence-peek\) \.word-peek-actions\{[\s\S]{0,360}:is\(#word-peek,#sentence-peek\) \.word-peek-actions::before[\s\S]{0,700}#word-peek-more::after/,
   'Retry and chevron no longer share one capsule with a subtle divider');

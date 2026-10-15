@@ -132,7 +132,7 @@
 
      위치와 크기는 Reader 조작에 맞춘 채, 재질은 낱말·문장 Lookup과 같은 Breeze
      Glass를 씁니다. 서로 다른 기능이라도 한 화면에서 같은 표면처럼 읽혀야 합니다. */
-  .control-dock,#readchrome{--control-side-size:48px;--control-row-height:48px;--control-slot-gap:8px;--control-row-width:min(83vw,512px,calc(100% - 28px));--control-bottom:max(8px,env(safe-area-inset-bottom));}
+  .control-dock,#readchrome{--control-side-size:44px;--control-row-height:44px;--control-slot-gap:8px;--control-row-width:min(83vw,512px,calc(100% - 28px));--control-bottom:max(8px,env(safe-area-inset-bottom));}
   .control-dock{position:fixed;inset:auto 0 0;height:calc(var(--control-bottom) + var(--control-row-height));z-index:70;pointer-events:none;}
   #readchrome, .control-bar{position:absolute; bottom:var(--control-bottom);left:0;right:0;margin-inline:auto;width:var(--control-row-width);height:var(--control-row-height);z-index:70;
     display:flex; align-items:center; justify-content:space-between;
@@ -155,21 +155,18 @@
     .control-glass{background:var(--control-glass-surface);
       backdrop-filter:blur(19px) saturate(122%); -webkit-backdrop-filter:blur(19px) saturate(122%);}
   }
-  /* Shared expanded circles and capsule use one aligned 48px row. */
+  /* Shared expanded circles and capsule use one aligned 44px row. */
   #readback,#aafab, .control-circle{position:relative; width:var(--control-side-size);height:var(--control-side-size);flex:none;border-radius:50%;padding:0;
     display:flex; align-items:center; justify-content:center; cursor:pointer;}
-  /* 그림은 상자 한가운데 놓여 있지만, 화살표의 **잉크**는 그렇지 않습니다.
-     `<` 는 24칸 중 8~14.2 만 차지해서 잉크의 한가운데가 11.1 — 상자 한가운데(12)
-     보다 0.9칸(19px 로 그리면 0.71px) 왼쪽입니다. 뾰족한 끝이 열린 쪽보다 가볍게
-     보이는 것까지 더해 1px 만 오른쪽으로 밉니다. 상자는 그대로입니다 — 옮기는
-     것은 그림 하나입니다. */
-  #readback svg{width:var(--control-back-icon-size);height:var(--control-back-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-back-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
+  /* The approved chevron is not viewBox-centered. header-controls.css draws it
+     at 26px / 3.6px with no extra translate. */
+  #readback svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-chevron);stroke-linecap:round;stroke-linejoin:round;transform:none;}
   /* 보이는 것은 작게, 누르는 자리는 넉넉하게. 그림을 키우면 종이 위에서 무거워
      지고, 자리를 줄이면 걸어가며 못 누릅니다 — 둘을 따로 정합니다. */
   #readback::after{content:''; position:absolute; inset:-6px;}
-  #aafab{font:600 15px var(--ui);}
+  #aafab{font:600 17px/1 var(--ui);letter-spacing:-.2px;}
   #readpill, .control-pill{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:calc(100% - 2 * var(--control-side-size) - 2 * var(--control-slot-gap));height:var(--control-row-height);border-radius:24px;
+    width:calc(100% - 2 * var(--control-side-size) - 2 * var(--control-slot-gap));height:var(--control-row-height);border-radius:22px;
     display:flex; align-items:center; justify-content:center; padding:4px 12px; overflow:hidden;}
   #readpill{--reader-chrome-duration:.26s;--reader-chrome-ease:cubic-bezier(.2,.75,.25,1);
     /* Center resizing geometry in layout. Percentage X transforms can lag the
@@ -569,7 +566,7 @@ body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
    button. Let status text use the capsule width above the unchanged mode hit
    target. Ordinary and wide controls retain their existing geometry. */
 @container(max-width:360px){
-  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])){top:auto;bottom:0;transform:none;height:auto;min-height:var(--control-row-height);padding:8px 12px 48px;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])){top:auto;bottom:0;transform:none;height:auto;min-height:var(--control-row-height);padding:8px 12px var(--control-row-height);}
   body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-pill-copy{display:block;flex:1 1 100%;}
   body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{position:static;inset:auto;transform:none;display:block;-webkit-line-clamp:unset;max-height:none;overflow:visible;}
   body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #readpill-title{position:absolute;inset:0;height:100%;}

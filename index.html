@@ -40,23 +40,21 @@
   <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=7b532ed7">
+  <link rel="stylesheet" href="styles/tokens.css?v=3e596563">
   <link rel="stylesheet" href="styles/base.css?v=bdb50d62">
-  <link rel="stylesheet" href="styles/home.css?v=07a20309">
-  <link rel="stylesheet" href="styles/article-preview.css?v=86bd1892">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=552ccfe3">
-  <link rel="stylesheet" href="styles/reader.css?v=d8d7ce52">
+  <link rel="stylesheet" href="styles/home.css?v=82a26571">
+  <link rel="stylesheet" href="styles/article-preview.css?v=bc8a3857">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=a9648e44">
+  <link rel="stylesheet" href="styles/reader.css?v=da6a4c18">
   <link rel="stylesheet" href="styles/dictionary.css?v=e8263cbe">
-  <link rel="stylesheet" href="styles/components.css?v=e514d5e1">
+  <link rel="stylesheet" href="styles/components.css?v=e01f9d18">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=d1190e78">
-  <link rel="stylesheet" href="styles/study-sets.css?v=06f1120f">
-  <link rel="stylesheet" href="styles/vocabulary-test.css?v=844a3652">
+  <link rel="stylesheet" href="styles/wordbook.css?v=1c58d7fe">
+  <link rel="stylesheet" href="styles/study-sets.css?v=b968515a">
+  <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=ff1c9643">
+  <link rel="stylesheet" href="styles/home-shell.css?v=5f65e9c0">
   <link rel="stylesheet" href="styles/onboarding.css?v=17f829a6">
-  <link rel="stylesheet" href="styles/header-controls.css?v=509167f0">
-
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -114,7 +112,7 @@
   <script defer src="scripts/ui/wordbook.js?v=6a635eaf"></script>
   <script defer src="scripts/core/study-sets.js?v=13c27671"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=4108636f"></script>
-  <script defer src="scripts/ui/study-sets.js?v=b4d166ad"></script>
+  <script defer src="scripts/ui/study-sets.js?v=adccaad3"></script>
   <script defer src="scripts/core/study-set-test.js?v=3b3ced09"></script>
   <script defer src="scripts/ui/study-set-test.js?v=1879f4ab"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
@@ -148,8 +146,9 @@
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=0c680478"></script>
-  <link rel="stylesheet" href="styles/study.css?v=da9a7021">
-  <link rel="stylesheet" href="styles/surfaces.css?v=349f7af7">
+  <link rel="stylesheet" href="styles/study.css?v=f34eaef2">
+  <link rel="stylesheet" href="styles/surfaces.css?v=d5da3fd3">
+  <link rel="stylesheet" href="styles/header-controls.css?v=0ccf33ef">
 </head>
 <body>
 <div id="app">
@@ -161,19 +160,19 @@
   </div>
   <nav id="primary-nav" aria-label="Main navigation">
     <button class="navbtn on" id="nav-home" type="button" onclick="show('home')">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M3 11.2 12 3.8l9 7.4"/><path d="M5.5 9.5v9.3a1.7 1.7 0 0 0 1.7 1.7H10v-5.3h4v5.3h2.8a1.7 1.7 0 0 0 1.7-1.7V9.5"/></svg>
       <span data-i18n="nav.home">Home</span>
     </button>
-    <button class="navbtn" id="nav-vocab" type="button" aria-label="Breeze Memory" title="Breeze Memory" onclick="show('vocab')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 4.5h10v15l-5-3.5-5 3.5z"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
+    <button class="navbtn" id="nav-vocab" type="button" aria-label="Breeze Memory" title="Breeze Memory" onclick="show('vocab')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 3.5h8a2 2 0 0 1 2 2v14.2c0 .6-.6.9-1.1.6L12 17l-4.9 3.3c-.5.3-1.1 0-1.1-.6V5.5a2 2 0 0 1 2-2z"/></svg><span data-i18n="nav.words">Breeze Memory</span></button>
     <button class="navbtn" id="nav-settings" type="button" onclick="openSettings()">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.1-.6-2.5 4.2 1.6 1.7v2.3L2.3 15.5l2.5 4.2 2.1-.6 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.6 2.5-4.2-1.6-1.7v-2.3l1.6-1.7-2.5-4.2-2.1.6-2-.9-.6-2.3z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M19.06 10.57 L21.22 10.79 L21.22 13.21 L19.06 13.43 L18.00 15.98 L19.37 17.67 L17.67 19.37 L15.98 18.00 L13.43 19.06 L13.21 21.22 L10.79 21.22 L10.57 19.06 L8.02 18.00 L6.33 19.37 L4.63 17.67 L6.00 15.98 L4.94 13.43 L2.78 13.21 L2.78 10.79 L4.94 10.57 L6.00 8.02 L4.63 6.33 L6.33 4.63 L8.02 6.00 L10.57 4.94 L10.79 2.78 L13.21 2.78 L13.43 4.94 L15.98 6.00 L17.67 4.63 L19.37 6.33 L18.00 8.02Z"/><circle cx="12" cy="12" r="3.1"/></svg>
       <span data-i18n="nav.settings">Settings</span>
     </button>
   </nav>
   <span id="login-nudge" role="img" aria-label="로그인 필요"></span>
 </div>
 
-  <div id="home-controls" class="control-dock"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">Welcome to Breeze</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
+  <div id="home-controls" class="control-dock"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">Welcome to Breeze</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="library-refresh" role="status" aria-live="polite" hidden><span class="refresh-spinner" aria-hidden="true"></span></div>
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
@@ -238,8 +237,8 @@
     <div id="readchrome">
       <div id="reader-navigation">
       <button class="control-glass" id="readback" type="button" title="서재로" aria-label="서재로" onclick="returnHomeFromReader()">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
-             stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5 7.5 12l7 7.5"/></svg>
       </button>
     <div id="pdf-page-control" class="control-glass" hidden>
     <button id="pdf-page-button" type="button" onclick="togglePdfNavigation()" aria-expanded="false" aria-controls="pdf-page-navigation" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2"/><path d="M9 3.5v17"/><circle cx="6" cy="8" r=".7"/><circle cx="6" cy="12" r=".7"/><circle cx="6" cy="16" r=".7"/></svg></button>
@@ -449,7 +448,7 @@
   <header class="memory-home-header"><h1 class="memory-home-wordmark">Breeze Memory</h1></header>
   <main id="study-sets-home-list" aria-label="학습 세트 목록"></main>
   <div id="memory-home-controls" class="control-dock"><nav class="control-bar" aria-label="Memory 메뉴">
-    <button class="control-glass control-circle" type="button" id="study-sets-directory-back" aria-label="단어장으로 돌아가기" onclick="closeStudySetsDirectory()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.2 5.8 8 12l6.2 6.2"/></svg></button>
+    <button class="control-glass control-circle" type="button" id="study-sets-directory-back" aria-label="단어장으로 돌아가기" onclick="closeStudySetsDirectory()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5 7.5 12l7 7.5"/></svg></button>
   </nav></div>
 </section>
 
@@ -475,14 +474,14 @@
   <div id="vtablewrap"></div>
   <p class="wordbook-hint">단어를 누르면 뜻·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
-    <button id="wordbook-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg></button>
+    <button id="wordbook-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M3 11.2 12 3.8l9 7.4"/><path d="M5.5 9.5v9.3a1.7 1.7 0 0 0 1.7 1.7H10v-5.3h4v5.3h2.8a1.7 1.7 0 0 0 1.7-1.7V9.5"/></svg></button>
     <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openStudySetsDirectory()">학습하기</button>
-    <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
+    <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   </nav></div>
 </div>
 <section id="v-vocabulary-test" class="view" aria-label="단어 테스트"></section>
 <section id="v-study" class="view"><main id="vocabulary-review-page" aria-label="단어 카드">
-  <button id="review-close" type="button" aria-label="단어장으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+  <button id="review-close" type="button" aria-label="단어장으로 돌아가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5 7.5 12l7 7.5"/></svg></button>
   <section id="review-journey" aria-label="오늘 학습 단계" hidden><div class="review-journey-meta"><span id="review-stage-label"></span><span id="review-day-count"></span></div><div id="review-stage-track" role="progressbar" aria-label="오늘 학습 진행도" aria-valuemin="0"></div></section>
   <p id="review-mode" class="review-recall-hint"></p>
   <div id="review-card">

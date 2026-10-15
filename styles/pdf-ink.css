@@ -21,8 +21,8 @@
   max-width:0;overflow:hidden;opacity:0;pointer-events:none;transition:max-width .24s cubic-bezier(.2,.75,.25,1),opacity .15s ease;}
 #readpill .ink-pill-toolbar .ink-pill-control{position:relative;display:flex;align-items:center;justify-content:center;
   flex:none;width:44px;height:44px;padding:0;border:0;border-radius:0;background:transparent;
-  color:var(--sentence-glass-secondary);cursor:pointer;}
-#readpill .ink-pill-toolbar .ink-pill-control svg{width:26px;height:26px;stroke-width:calc(var(--control-icon-stroke) * 20 / 26);}
+  color:var(--am-ink);cursor:pointer;}
+#readpill .ink-pill-toolbar .ink-pill-control svg{width:var(--am-icon-toolbar);height:var(--am-icon-toolbar);stroke-width:var(--am-stroke-complex);}
 #readpill .ink-pill-toolbar .ink-pill-control[aria-pressed="true"]{color:var(--brand-strong);}
 #readpill .ink-pill-toolbar .ink-pill-control:disabled{opacity:.64;cursor:default;}
 #readpill .ink-pill-separator{flex:none;width:1px;height:22px;margin-inline:4px;
@@ -48,7 +48,7 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 /* Writing never enters compact chrome; read-mode entry still collapses above. */
 @media(max-width:700px){
   #readpill .ink-pill-toolbar{gap:2px;}
-  #readpill .ink-pill-toolbar .ink-pill-control svg{width:26px;height:26px;stroke-width:calc(var(--control-icon-stroke) * 20 / 26);}
+  #readpill .ink-pill-toolbar .ink-pill-control svg{width:var(--am-icon-toolbar);height:var(--am-icon-toolbar);stroke-width:var(--am-stroke-complex);}
 }
 @media(prefers-reduced-motion:reduce){
   #readpill.ink-pill-ready,#readpill.ink-pill-ready :is(#modefab,#readpill-title),

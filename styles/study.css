@@ -16,12 +16,12 @@ body #readchrome:has(#pdf-page-control:not([hidden])) #readpill{--reader-pill-ma
 
 #readpill [hidden],#pdf-page-control[hidden],#pdf-page-button[hidden],#pdf-page-navigation[hidden],#aa-pdf-direction[hidden]{display:none!important;}
 /* One surface changes shape; thumbnail text and canvases are never scaled. */
-#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:var(--reader-navigation-group-width);height:var(--control-row-height);box-sizing:border-box;border:1px solid var(--control-line);border-radius:24px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
+#pdf-page-control{--pdf-navigation-height:100dvh;--pdf-navigation-width:clamp(144px,30vw,184px);position:absolute;z-index:75;bottom:0;left:0;width:var(--reader-navigation-group-width);height:var(--control-row-height);box-sizing:border-box;border:1px solid var(--control-line);border-radius:22px;color:var(--sentence-glass-ink);overflow:hidden;transition:opacity .2s ease,transform .3s ease,visibility 0s;}
 #pdf-page-control:not(:has(#pdf-page-button[aria-expanded=true])):not(.pdf-navigation-closing){overflow:visible;}
 /* Anchor the independent hit region to the outer edge, avoiding the border's
    former1px overlap with the back button. Drawer overflow stays contained. */
 #pdf-page-button{position:absolute;right:-1px;bottom:-1px;width:var(--reader-navigation-target);height:var(--control-row-height);display:flex;align-items:center;justify-content:center;gap:7px;padding:0 8px;border:0;background:transparent;color:inherit;font:500 12px var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;transition:opacity 120ms ease;}
-#pdf-page-button svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:var(--control-page-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+#pdf-page-button svg{width:var(--am-icon-toolbar);height:var(--am-icon-toolbar);flex:none;fill:none;stroke:currentColor;stroke-width:var(--am-stroke-complex);stroke-linecap:round;stroke-linejoin:round;}
 #pdf-page-button circle,#pdf-navigation-toggle circle{fill:currentColor;stroke:none;}
 #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){width:var(--pdf-navigation-width);height:var(--pdf-navigation-height);left:calc(-1 * var(--reader-dock-gutter));bottom:calc(-1 * var(--control-bottom));border:0;border-right:1px solid var(--sentence-glass-line);border-radius:0 18px 18px 0;background:var(--sentence-glass-solid);box-shadow:var(--sentence-glass-shadow-pill);}
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){background:var(--control-glass-surface);backdrop-filter:blur(19px) saturate(122%);-webkit-backdrop-filter:blur(19px) saturate(122%);}}
@@ -41,8 +41,8 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 @media(prefers-reduced-motion:reduce){#reader-navigation,#pdf-page-control,#pdf-page-button{transition:none;}#pdf-page-control:has(#pdf-page-button[aria-expanded=true]),#pdf-page-control.pdf-navigation-closing,#pdf-page-navigation{animation:none;}}
 .pdf-navigation-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:8px;padding-bottom:0;}
 .pdf-navigation-head button{min-height:44px;border:0;border-radius:50%;background:transparent;color:inherit;padding:0;cursor:pointer;}
-.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;background:var(--sentence-glass-action);}
-.pdf-navigation-head>button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:var(--control-page-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+.pdf-navigation-head>button{width:44px;padding:0;display:grid;place-items:center;background:transparent;color:var(--am-ink);}
+.pdf-navigation-head>button svg{width:var(--am-icon-toolbar);height:var(--am-icon-toolbar);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-complex);stroke-linecap:round;stroke-linejoin:round;}
 #pdf-navigation-toggle{margin-left:auto;}
 #pdf-bookmarks-only[aria-pressed=true]{color:var(--bookmark-ink);}
 #pdf-bookmarks-only[aria-pressed=true] svg{fill:currentColor;}
@@ -135,8 +135,9 @@ body:not(.chrome-hidden) #readchrome:has(#pdf-page-control:not([hidden])) #readp
 .library-folder-controls>.breeze-folder-picker{flex:0 1 240px;}
 .library-folder-controls>.breeze-folder-picker>summary{border:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-radius:14px;background-clip:padding-box;padding:0 10px;font-size:12px;}
 .library-folder-controls .breeze-folder-name{font-size:12px;}
-.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary{border:0;background:transparent;}
-.library-folder-controls :is(.library-folder-add,.library-folder-menu>summary) svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary{border:0;}
+.library-folder-controls .library-folder-add svg{width:var(--am-icon-plus);height:var(--am-icon-plus);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-plus);stroke-linecap:round;stroke-linejoin:round;}
+.library-folder-controls .library-folder-menu>summary svg{width:var(--am-icon-complex);height:var(--am-icon-complex);fill:currentColor;stroke:none;}
 .library-folder-controls .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
 .library-folder-controls .library-folder-menu>summary svg circle{r:var(--control-more-dot-radius);}
 .library-folder-controls .library-folder-actions button{font-size:12px;border:0;background:transparent;}
