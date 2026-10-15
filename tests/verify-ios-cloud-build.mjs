@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {applyCloudBuild, verifyRelease} from '../tools/verify-ios-release.mjs';
+import {applyCloudBuild, resolveCloudBuildNumber, verifyRelease, verifyResolvedCloudRelease} from '../tools/verify-ios-release.mjs';
 const project = readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url), 'utf8');
 // Cloud runs npm test after rewriting its checkout: restore the fixture baseline.
 const baseline = project.replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, 'CURRENT_PROJECT_VERSION = 273;');
@@ -15,6 +15,23 @@ for (const build of ['272', '273', '900', '999999999999999999']) {
 for (const build of [undefined, '', '1', '253', '264', '265', '266', '267', '268', '269', '270', '271', '0', '-1', '1.2', 'abc', ' 237', '237\n', '0237', '1234567890123456789']) {
   test(`reject invalid counter ${JSON.stringify(build)}`, () => assert.throws(() => applyCloudBuild(baseline, build)));
 }
+const now = new Date('2026-10-15T06:35:07Z');
+const stamp = '20261015063507';
+for (const build of ['272', '273', '900']) {
+  test(`repeated cloud counter ${build} resolves to an unused stamp`, () => {
+    assert.equal(resolveCloudBuildNumber(build, now), stamp);
+    const result = applyCloudBuild(baseline, stamp);
+    verifyResolvedCloudRelease(result, build);
+  });
+}
+test('a cloud counter already above the stamp is uploaded unchanged', () => {
+  const build = '999999999999999999';
+  assert.equal(resolveCloudBuildNumber(build, now), build);
+  verifyResolvedCloudRelease(applyCloudBuild(baseline, build), build);
+});
+test('a checked-in baseline below the cloud counter is not an uploaded build', () => {
+  assert.throws(() => verifyResolvedCloudRelease(baseline, '900'));
+});
 for (const [name, altered] of [
   ['missing build', baseline.replace('CURRENT_PROJECT_VERSION = 273;', '')],
   ['target mismatch', baseline.replace('CURRENT_PROJECT_VERSION = 273;', 'CURRENT_PROJECT_VERSION = 237;')],

@@ -47,8 +47,31 @@ Cloud counter and source after promotion; do not select or submit reported274.
 
 App Store Connect rejected main `14b04786` while preparing the archive upload.
 App and Share Debug/Release counters move together from272 to273. Marketing
-version stays1.9.3. The cloud bootstrap still replaces both with `CI_BUILD_NUMBER`
+version stays1.9.3. The cloud bootstrap still replaces both with a resolved counter
 before archive, and now requires the checked-in baseline to be273.
+
+## Unused upload counter (2026-10-15)
+
+The273 bump did not clear Archive - iOS. `ci_post_clone.sh` runs
+`verify-ios-release.mjs --apply-cloud-build` before the archive, so App Store
+Connect sees that resolved number, not the checked-in273. GitHub's last green
+Archive - iOS is main `18992a70` on2026-10-14, still checked in as272. Several
+archives after `37de137` passed the same prepare step on that baseline, so those
+uploads were `CI_BUILD_NUMBER` values. `14b04786` then failed prepare with the
+baseline unchanged, and `2eca96d` failed the same way after the273 bump.
+Copying `CI_BUILD_NUMBER` again can repeat a build App Store Connect has already
+accepted. That rejection is this prepare failure and does not send an ITMS mail.
+Raising the checked-in baseline cannot move the uploaded number.
+
+The resolver keeps `CI_BUILD_NUMBER` when it is already above a UTC
+`YYYYMMDDHHMMSS` stamp. Otherwise it writes the stamp. The stamp is greater than
+the1.9.3 TestFlight series and changes on every later second, including when the
+workflow counter does not. App and Share Extension still receive the same value.
+Marketing version stays1.9.3. Local archives and the checked-in preflight stay
+on baseline273. The post-apply test accepts the resolved number only when it is
+valid and at least the cloud counter. `SceneDelegate.swift` and the
+CapacitorHaptics package are unchanged here: the archive already compiled, and
+neither one is the CFBundleVersion App Store Connect checks.
 
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's

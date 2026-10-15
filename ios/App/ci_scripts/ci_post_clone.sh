@@ -54,7 +54,9 @@ fi
 breeze_node_ready || { echo 'Working Node 22/npm are required.' >&2; exit 1; }
 echo "Using $(command -v node): $(node --version), npm $(npm --version)"
 
-# Apply Apple's counter to both targets before tests and Capacitor sync.
+# The checked-in baseline is a preflight floor. App Store Connect sees the
+# number written here. A repeated CI_BUILD_NUMBER is replaced by a greater
+# unused UTC stamp; a cloud counter already above that stamp is kept.
 # Missing/invalid counters and checked-in release drift fail before npm install.
 node tools/verify-ios-release.mjs --apply-cloud-build
 npm ci --ignore-scripts --no-audit --no-fund
