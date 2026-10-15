@@ -570,6 +570,6 @@ body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
   body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-pill-copy{display:block;flex:1 1 100%;}
   body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #reader-notice{position:static;inset:auto;transform:none;display:block;-webkit-line-clamp:unset;max-height:none;overflow:visible;}
   body:not(.chrome-hidden).reader-notice-visible #readpill:has(#modefab:not([hidden])) #readpill-title{position:absolute;inset:0;height:100%;}
-  body:not(.chrome-hidden).reader-notice-visible #readpill #modefab{position:absolute;left:12px;bottom:4px;}
+  body:not(.chrome-hidden).reader-notice-visible #readpill #modefab{position:absolute;left:12px;bottom:3px;}
   body:not(.chrome-hidden).reader-notice-visible #readpill.ink-pill-ready #modefab{left:9px;}
 }
