@@ -75,7 +75,7 @@ body.dark #add-modal #am-card::before{background:linear-gradient(145deg,rgba(255
 #add-modal .sm-btn.primary{min-height:48px;border-radius:16px;font:600 15px var(--ui);}
 @media(prefers-reduced-motion:reduce){#add-modal,#add-modal #am-card{transition:none;}#add-modal .am-big{transition:none;}}
 
-#home-controls>#nav-home,#home-controls>#nav-vocab{display:none;}
+#home-controls>#nav-home.control-circle,#home-controls>#nav-vocab.control-circle{display:none;}
 #home-resume-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 #home-resume:disabled{cursor:default;}
 #v-home .sec-head h2{font:600 22px/30px var(--ui);letter-spacing:0;}

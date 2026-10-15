@@ -217,7 +217,7 @@ html body :is(
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
   .library-folder-add,.library-folder-menu>summary,#home-resume,#wordbook-review,#readpill
-):is(:focus,:focus-visible){outline:none;}
+):focus:not(:focus-visible){outline:none;}
 
 @media(prefers-reduced-transparency:reduce){
   html body :is(
