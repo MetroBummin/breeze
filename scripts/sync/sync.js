@@ -468,7 +468,7 @@ async function sbSendLink(){
     }
   }
 }
-function emailCodeBoxes(){ return [...document.querySelectorAll('.bz-otp-box')]; }
+function emailCodeBoxes(){ return /** @type {HTMLInputElement[]} */([...document.querySelectorAll('.bz-otp-box')]); }
 function emailCodeSync(digits){
   const input=syncInput('sm-code');
   if(input) input.value=digits;
@@ -553,7 +553,7 @@ async function sbPasswordLogin(){
 }
 document.addEventListener('keydown',event=>{
   if(event.key==='Backspace') emailCodeKey(event);
-  if(event.key==='Enter'&&event.target&&(event.target.id==='sm-code'||event.target.classList&&event.target.classList.contains('bz-otp-box'))){ event.preventDefault(); sbVerifyCode(); }
+  if(event.key==='Enter'&&event.target instanceof HTMLInputElement&&(event.target.id==='sm-code'||event.target.classList.contains('bz-otp-box'))){ event.preventDefault(); sbVerifyCode(); }
   if(event.key==='Enter'&&event.target===document.getElementById('sm-password')){ event.preventDefault(); sbPasswordLogin(); }
 });
 document.addEventListener('paste',emailCodePaste);
