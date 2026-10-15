@@ -69,12 +69,14 @@ Deno.serve(async (req) => {
     });
 
     if (upstream.status<200 || upstream.status>=300) {
+      // The social loader must stop on access limits and rate limits instead
+      // of treating them as an unavailable HTML body and trying oEmbed.
       return json({
         error: "upstream",
         message: upstream.status === 403 || upstream.status === 401
           ? "그 사이트가 접근을 막았어요. 본문을 복사해서 붙여넣어 주세요."
           : `기사를 열지 못했어요 (${upstream.status})`,
-      }, 502);
+      }, !asImage && [401,403,429].includes(upstream.status) ? upstream.status : 502);
     }
 
     const type = upstream.headers["content-type"] || "";
