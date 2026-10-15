@@ -74,6 +74,14 @@ function startOnboardingResolved(replay,pdfAvailable){
     const video=document.createElement('video');video.muted=true;video.loop=true;video.playsInline=true;video.preload='none';
     video.setAttribute('aria-hidden','true');video.tabIndex=-1;
     video.addEventListener('error',()=>video.classList.add('poster-only'),{signal:session.controller.signal});
+    // WebKit can leave paused false after pause() if play() was still pending.
+    // A later play/playing event has to honor reduced motion and an explicit pause.
+    const stopUnwantedPlayback=()=>{
+      if(onboardingSession!==session)return;
+      if(session.motion.matches||session.paused||document.hidden)video.pause();
+    };
+    video.addEventListener('play',stopUnwantedPlayback,{signal:session.controller.signal});
+    video.addEventListener('playing',stopUnwantedPlayback,{signal:session.controller.signal});
     const poster=document.createElement('img');poster.alt='';poster.className='onboard-poster';slide.append(video,poster);carousel.append(slide);
     const dot=document.createElement('i');dot.setAttribute('aria-hidden','true');pages.append(dot);
   }

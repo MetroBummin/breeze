@@ -162,11 +162,6 @@ function swapLearningWords(){
 }
 async function switchLearningAccount(userId){
   const old=captureLearningScope(),next=userId?'user:'+userId:learningGuestId();
-  if(userId&&old.id.startsWith('guest:')&&old.id!==next){
-    const claims=learningClaims();
-    if(!claims[old.id]){claims[old.id]={source:old.id,owner:next,complete:false};localStorage.setItem(LEARNING_CLAIMS_KEY,JSON.stringify(claims));}
-    if(localStorage.getItem(LEARNING_GUEST_KEY)===old.id)localStorage.setItem(LEARNING_GUEST_KEY,'guest:'+learningUuid());
-  }
   if(old.id!==next){
     if(typeof resetDictionaryLearningScope==='function')resetDictionaryLearningScope();
     learningScope={id:next,generation:old.generation+1};
@@ -175,19 +170,136 @@ async function switchLearningAccount(userId){
   }
   const target=captureLearningScope();
   if(!userId)return;
+  // Older builds recorded an exclusive in-progress claim. Finish that copy for
+  // its owner, but do not create a new one: device-local words stay put and
+  // are merged again for whichever account logs in next.
   const sources=[];
-  if(old.id.startsWith('guest:')&&old.id!==next){
-    // Rotate before any asynchronous work. Logging out cannot expose the source
-    // claimed for A as a new guest collection eligible for B.
-    sources.push(old);
-  }
   const durableClaims=await localTransaction(await learningClaimsDb(),'claims','readonly',(tx,done)=>{
     const request=tx.objectStore('claims').getAll();request.onsuccess=()=>done(request.result||[]);
   });assertLearningScope(target);
-  for(const claim of [...Object.values(learningClaims()),...durableClaims])if(claim.owner===target.id&&!claim.complete&&!sources.some(s=>s.id===claim.source))sources.push({id:claim.source,generation:target.generation});
-  const job=(async()=>{for(const source of sources){assertLearningScope(target);await importLearningSource(source,target);}})();
+  for(const claim of [...Object.values(learningClaims()),...durableClaims])if(claim&&claim.owner===target.id&&!claim.complete&&claim.source&&!claim.source.startsWith('user:')&&!sources.some(s=>s.id===claim.source))sources.push({id:claim.source,generation:target.generation});
+  const job=(async()=>{
+    for(const source of sources){assertLearningScope(target);await importLearningSource(source,target);}
+    assertLearningScope(target);
+    await mergeDeviceLocalLearning(target);
+  })();
   learningImportJob=job;
   try{await job;assertLearningScope(target);}finally{if(learningImportJob===job)learningImportJob=null;}
+}
+function deviceLocalMergeKey(target){return learningStorageKey('breeze.device-local-merge.v1',target);}
+function readDeviceLocalMerge(target){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(deviceLocalMergeKey(target))||'null');
+    if(parsed&&parsed.version===1&&parsed.sources&&typeof parsed.sources==='object')return parsed;
+  }catch{}
+  return {version:1,sources:{}};
+}
+function deviceLocalSources(){
+  const sources=[{id:'legacy',generation:0}];
+  const guest=learningGuestId();
+  if(guest.startsWith('guest:'))sources.push({id:guest,generation:0});
+  return sources;
+}
+function deviceLocalSourceOpen(source,entry){
+  const words=learningSourceWords(source),dead=learningSourceDead(source);
+  const conflicts=learningReadJson('breeze.word-conflicts',{},source);
+  const wordKeys=[...Object.keys(words),...Object.keys(dead)];
+  const knownWords=entry?.keyMap||{},knownConflicts=entry?.conflicts||{};
+  const newWords=!entry||!entry.done?wordKeys.length>0||!entry:wordKeys.some(key=>!Object.prototype.hasOwnProperty.call(knownWords,key));
+  const newConflicts=Object.keys(conflicts).some(id=>!Object.prototype.hasOwnProperty.call(knownConflicts,id));
+  return {words,dead,conflicts,open:newWords||newConflicts};
+}
+async function mergeOneDeviceLocalSource(source,target){
+  assertLearningScope(target);
+  if(!target.id.startsWith('user:')||!source||source.id.startsWith('user:'))return false;
+  const journal=readDeviceLocalMerge(target);
+  let entry=journal.sources[source.id];
+  if(!entry){
+    let prior=null;
+    try{
+      prior=await localTransaction(await learningClaimsDb(),'claims','readonly',(tx,done)=>{
+        const request=tx.objectStore('claims').get(source.id);request.onsuccess=()=>done(request.result||null);
+      });
+    }catch{}
+    if(prior&&prior.owner===target.id&&prior.keyMap)entry={id:prior.id,keyMap:prior.keyMap,conflicts:{},done:!!prior.complete};
+    else entry={id:'local:'+learningDeviceId()+':'+source.id,keyMap:{},conflicts:{},done:false};
+  }
+  const opened=deviceLocalSourceOpen(source,entry);
+  if(!opened.open){
+    if(entry.done)return false;
+    let hasStudy=false;
+    if(typeof exportLearningStorage==='function'){
+      const study=await exportLearningStorage(source,target);
+      assertLearningScope(target);
+      hasStudy=!!(study?.sets?.sets?.length||study?.simple?.active||study?.simple?.sessions?.length||Object.keys(study?.tests?.sets||{}).length);
+    }
+    if(!hasStudy){
+      journal.sources[source.id]={...entry,done:true};
+      localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(journal));
+      return false;
+    }
+  }
+  const originals=opened.words,sourceDead=opened.dead,keyMap={...entry.keyMap},seenConflicts={...(entry.conflicts||{})};
+  const exact=item=>JSON.stringify([String(item.word||'').normalize('NFC').trim().replace(/\s+/g,' '),String(item.ko||'').normalize('NFC').trim().replace(/\s+/g,' ')]);
+  const matches=new Map(Object.entries(words).filter(([,item])=>validWordMeaning(item)).map(([key,item])=>[exact(item),key]));
+  for(const [key,item] of Object.entries(originals)){
+    if(!validWordMeaning(item)||Object.prototype.hasOwnProperty.call(keyMap,key))continue;
+    const same=matches.get(exact(item));
+    const destination=same||(!words[key]&&!dead[key]?key:key+'~'+entry.id);
+    keyMap[key]=destination;if(!same)matches.set(exact(item),destination);
+  }
+  for(const key of Object.keys(sourceDead))if(!Object.prototype.hasOwnProperty.call(keyMap,key))keyMap[key]=!words[key]&&!dead[key]?key:key+'~'+entry.id;
+  entry={...entry,keyMap,conflicts:seenConflicts,done:false};
+  journal.sources[source.id]=entry;
+  localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(journal));
+  assertLearningScope(target);
+  const changed=[];
+  for(const [key,item] of Object.entries(originals)){
+    const destination=keyMap[key];if(!destination||words[destination]||dead[destination])continue;
+    if(sourceDead[key]&&sourceDead[key]>=Math.max(item.up||0,item.addedAt||0))continue;
+    words[destination]={...item,...(item.root?{root:keyMap[item.root]||item.root}:{})};changed.push(destination);
+  }
+  if(changed.length&&!saveWords(changed))throw new Error('가져온 단어를 이 기기에 저장하지 못했어요');
+  const deleted=[];
+  for(const [key,at] of Object.entries(sourceDead)){
+    const destination=keyMap[key];
+    if(!destination||words[destination]||dead[destination]>=at)continue;
+    dead[destination]=at;deleted.push(destination);
+  }
+  if(deleted.length&&!saveDead(deleted))throw new Error('가져온 삭제 기록을 이 기기에 저장하지 못했어요');
+  const sourceConflicts=opened.conflicts;
+  if(Object.keys(sourceConflicts).length){
+    const conflicts=load('breeze.word-conflicts',{});
+    let wrote=false;
+    for(const [id,row] of Object.entries(sourceConflicts)){
+      const importedId=JSON.stringify([entry.id,id]);
+      if(Object.prototype.hasOwnProperty.call(seenConflicts,id))continue;
+      seenConflicts[id]=importedId;
+      if(!Object.prototype.hasOwnProperty.call(conflicts,importedId)){conflicts[importedId]={...row,key:keyMap[row.key]||row.key};wrote=true;}
+    }
+    if(wrote&&!save('breeze.word-conflicts',conflicts))throw new Error('가져온 뜻 충돌 기록을 이 기기에 저장하지 못했어요');
+    entry={...entry,conflicts:seenConflicts};
+    journal.sources[source.id]=entry;
+    localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(journal));
+  }
+  assertLearningScope(target);
+  if(typeof importLearningStorage==='function')await importLearningStorage(source,target,entry.id,keyMap);
+  assertLearningScope(target);
+  const finished=readDeviceLocalMerge(target);
+  finished.sources[source.id]={...entry,done:true};
+  localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(finished));
+  if(typeof queueSync==='function')queueSync();
+  return true;
+}
+async function mergeDeviceLocalLearning(target=captureLearningScope()){
+  assertLearningScope(target);
+  if(!target.id.startsWith('user:'))return false;
+  let merged=false;
+  for(const source of deviceLocalSources()){
+    assertLearningScope(target);
+    if(await mergeOneDeviceLocalSource(source,target))merged=true;
+  }
+  return merged;
 }
 async function hasLegacyLearningData(){
   if(Object.keys(learningSourceWords({id:'legacy'})).length)return true;
@@ -196,18 +308,14 @@ async function hasLegacyLearningData(){
 }
 async function resolveLegacyLearningImport(confirmed,token=captureLearningScope()){
   assertLearningScope(token);if(!token.id.startsWith('user:'))return false;
-  // Declining leaves the originals accessible to recovery but never guest import.
-  if(!confirmed){localStorage.setItem('breeze.learning.legacy-decision.v1','retained');return false;}
-  const result=await importLearningSource({id:'legacy',generation:token.generation},token);
-  assertLearningScope(token);localStorage.setItem('breeze.learning.legacy-decision.v1','claimed');return result;
+  // There is no decline. A previous "retained" choice still merges, and the
+  // bare-key original stays on the device for the next account too.
+  return mergeDeviceLocalLearning(token);
 }
 async function confirmLegacyLearningImport(){
   const token=captureLearningScope();
-  if(!token.id.startsWith('user:')||localStorage.getItem('breeze.learning.legacy-decision.v1'))return;
-  if(!await hasLegacyLearningData()||!isLearningScopeCurrent(token))return;
-  if(typeof breezeTaskDialog!=='function'||(typeof taskDialog!=='undefined'&&taskDialog.open))return;
-  const answer=await breezeTaskDialog({title:'기존 학습 데이터 확인',description:'이전에 저장한 단어와 학습 기록의 계정을 확인할 수 없어요. 내 데이터가 맞으면 현재 로그인한 계정으로 가져옵니다. 원본은 이 기기에 그대로 보관합니다.',action:'내 데이터 가져오기'});
-  if(isLearningScopeCurrent(token))await resolveLegacyLearningImport(answer!==null,token);
+  if(!token.id.startsWith('user:')||!isLearningScopeCurrent(token))return false;
+  return mergeDeviceLocalLearning(token);
 }
 window.addEventListener('storage',event=>{
   if(event.key===LEARNING_GUEST_KEY&&learningScope.id.startsWith('guest:')&&event.newValue&&event.newValue!==learningScope.id){

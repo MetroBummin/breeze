@@ -180,7 +180,8 @@ function studyTestsMerge(left,right){
       // collapse; conflicting same-ID summaries are preserved in stable order.
       rows.set(studyStorageStableJson(row),row);
     }
-    sets[id]=[...rows.values()].sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id)||studyStorageStableJson(a).localeCompare(studyStorageStableJson(b)));
+    const settled=new Set([...rows.values()].filter(row=>row&&row.id&&!row.pending).map(row=>row.id));
+    sets[id]=[...rows.values()].filter(row=>!(row&&row.pending&&settled.has(row.id))).sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id)||studyStorageStableJson(a).localeCompare(studyStorageStableJson(b)));
   }
   return {version:1,sets};
 }

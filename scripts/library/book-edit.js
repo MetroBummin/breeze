@@ -30,6 +30,7 @@ function openEditSheet(book, step){
   source.hidden = !book.coverSourcePage;
   if(book.coverSourcePage) source.href = book.coverSourcePage;
   document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
+  if(typeof renderBookCloudToggle==='function')renderBookCloudToggle(book);
   /** @type {HTMLDialogElement} */(editModal()).showModal();
   editStep(step || 'edit');
 }

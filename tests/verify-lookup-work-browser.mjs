@@ -44,7 +44,10 @@ try{for(const engine of [chromium,webkit]){
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem(learningStorageKey('breeze.word-item.word0'))).ko),'수정한 뜻');
   assert.equal(await page.evaluate(()=>localStorage.getItem(learningStorageKey('breeze.word-item.word1'))===auditBeforeUnrelated),true,'edit rewrote unrelated word');
   await page.locator('.vgroup.open .rowdel').click();
-  assert.equal(await page.evaluate(()=>!!words.word0),false);assert.equal(await page.locator('.vgroup').count(),2099);
+  assert.equal(await page.evaluate(()=>!!words.word0),false);
+  assert.equal(await page.locator('.vgroup[data-g="word0"]').count(),0,'deleted word left the mounted window');
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 2099단어');
+  assert.ok(await page.locator('.vgroup').count()<100,'a long wordbook stays windowed after deletion');
   assert.deepEqual(errors,[]);
   console.log(engine.name()+': empty-session visible-only boot; 2100-word mouse/keyboard row identity, edit persistence and deletion passed');
  }finally{await browser.close();}

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import {chromium,webkit} from 'playwright';
-import {mkdirSync,writeFileSync} from 'node:fs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 
 // Local synthetic fixtures only: every non-fixture network request is blocked.
@@ -27,13 +26,19 @@ try{
   assert.equal(initial.wordCount,50);assert.equal(initial.learning.sets.sets.length,1);
   await page.evaluate(async()=>openStudySet((await loadStudySets()).sets[0].id));
   await page.waitForFunction(()=>studySetsUI.pageOpen&&!studySetsUI.mutating&&document.querySelectorAll('#study-sets-word-list>li').length===49);
+  await page.evaluate(()=>{words.aOnly={word:'A private',ko:'A 계정',up:400,status:1};saveWords('aOnly');});
   await page.evaluate(async()=>{await switchLearningAccount('synthetic-B');words.b={word:'B private',ko:'B 계정',up:500,status:1};saveWords('b');});
-  assert.deepEqual(await page.evaluate(()=>Object.keys(words)),['b']);
-  assert.equal(await page.evaluate(async()=>(await loadStudySets()).sets.length),0);
-  assert.equal(await page.locator('#study-sets-word-list>li').count(),0,'old set rows cleared on account change');
+  const bView=await page.evaluate(async()=>({keys:Object.keys(words),names:Object.values(words).map(item=>item&&item.word),sets:(await loadStudySets()).sets.map(set=>set.name)}));
+  assert.equal(bView.keys.includes('aOnly'),false,'A-only word stays off account B');
+  assert.equal(bView.names.includes('A private'),false);
+  assert.equal(bView.names.includes('B private'),true);
+  assert.equal(bView.keys.filter(key=>key.startsWith('guest')).length,50,'device guest words follow the active account');
+  assert.deepEqual(bView.sets,['Synthetic 50'],'the device study set is copied into B');
+  assert.equal(await page.locator('#study-sets-word-list>li').count(),0,'the open A view is cleared on account change');
   await page.evaluate(async()=>{await switchLearningAccount('synthetic-A');show('vocab');renderVocab();});
-  assert.equal(await page.evaluate(()=>Object.keys(words).length),50);
-  assert.equal(await page.evaluate(()=>words.b),undefined);
+  assert.equal(await page.evaluate(()=>Object.keys(words).length),51);
+  assert.equal(await page.evaluate(()=>words.b),undefined,'B-only word stays off account A');
+  assert.equal(await page.evaluate(()=>words.aOnly.word),'A private');
   const returned=await page.evaluate(()=>exportLearningStorage());
   assert.deepEqual(returned.tests,initial.learning.tests);assert.deepEqual(returned.sets,initial.learning.sets);
 
@@ -48,28 +53,26 @@ try{
     return {listed:BreezeStudySets.listedCards(set,words,false,{deletedKeys:dead}).length,queued:started.state.sets[0].session.queue.length,excluded:set.excludedIds.length};
   });
   assert.deepEqual(availability,{listed:49,queued:49,excluded:1});
-  const proof='/tmp/breeze-account-scope-proof';mkdirSync(proof,{recursive:true});
-  await page.evaluate(()=>{localStorage.setItem('breeze.words',JSON.stringify({legacy:{word:'legacy synthetic',ko:'귀속 확인',up:100}}));void confirmLegacyLearningImport();});
-  await page.locator('#task-dialog[open]').waitFor();
-  const layouts=[];
-  for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:900},{width:320,height:568},{width:844,height:390}]){
-    await page.setViewportSize(viewport);
-    for(const dark of [false,true]){
-      await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
-      const metrics=await page.locator('#task-dialog').evaluate(node=>{
-        const r=node.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height,clientWidth:node.clientWidth,scrollWidth:node.scrollWidth,text:node.innerText};
-      });
-      assert.ok(metrics.x>=0&&metrics.y>=0&&metrics.right<=viewport.width&&metrics.bottom<=viewport.height,'ownership confirmation fits viewport');
-      assert.ok(metrics.scrollWidth<=metrics.clientWidth+1,'confirmation has no horizontal overflow');
-      assert.match(metrics.text,/원본은 이 기기에 그대로 보관/);
-      const name=`${viewport.width}x${viewport.height}-${dark?'dark':'light'}`;
-      await page.screenshot({path:`${proof}/legacy-${name}.png`});layouts.push({name,...metrics});
-    }
-  }
-  await page.locator('#task-dialog .task-actions [data-task-cancel]').click();
-  await page.waitForFunction(()=>localStorage.getItem('breeze.learning.legacy-decision.v1')==='retained');
+  await page.evaluate(()=>{localStorage.setItem('breeze.words',JSON.stringify({legacy:{word:'legacy synthetic',ko:'귀속 확인',up:100,status:1,addedAt:100}}));localStorage.setItem('breeze.learning.legacy-decision.v1','retained');});
+  assert.equal(await page.locator('#task-dialog[open]').count(),0);
+  await page.evaluate(()=>confirmLegacyLearningImport());
+  await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
+  assert.equal(await page.locator('#task-dialog[open]').count(),0,'legacy data merges without a confirmation dialog');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
-  writeFileSync(`${proof}/layouts.json`,JSON.stringify(layouts,null,2));
+  const merged=await page.evaluate(()=>Object.values(words).filter(item=>item&&item.ko==='귀속 확인').length);
+  assert.equal(merged,1);
+  await page.evaluate(()=>switchLearningAccount(null));
+  assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인')),false,'logout does not keep the account copy in the device view');
+  assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&(item.word==='A private'||item.word==='B private'))),false,'logout drops both accounts’ private words');
+  assert.equal(await page.evaluate(()=>Object.keys(words).filter(key=>key.startsWith('guest')).length),50,'logout keeps the device guest words');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
+  await page.evaluate(()=>switchLearningAccount('synthetic-B'));
+  await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
+  const returnedB=await page.evaluate(()=>({privateB:Object.values(words).filter(item=>item&&item.word==='B private').length,privateA:Object.values(words).filter(item=>item&&item.word==='A private').length,guests:Object.keys(words).filter(key=>key.startsWith('guest')).length,legacy:Object.values(words).filter(item=>item&&item.ko==='귀속 확인').length}));
+  assert.equal(returnedB.privateB,1,'B keeps the word saved on B');
+  assert.equal(returnedB.privateA,0,'A-only word does not appear after logging into B');
+  assert.equal(returnedB.guests,50);
+  assert.equal(returnedB.legacy,1);
   assert.deepEqual(errors,[]);
-  console.log(`Account browser regression passed: guest50, A/B/A with open set, exact summary retention, set-before-words and missing book on second device; legacy confirmation ${layouts.length} layouts (${proof}).`);
+  console.log('Account browser regression passed: device words follow the active account, A-only and B-only words stay put, open set clears, and legacy merge stays silent.');
 }finally{await browser?.close();await server.close();}

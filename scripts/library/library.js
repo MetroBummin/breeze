@@ -63,6 +63,13 @@ async function purgeBookImages(b){
 /* 원문은 서버에 없으므로 삭제도 이 기기 하나만 다룹니다. 암호화 보관함의
    흐린 카드는 로컬 숨김 표시에 의해 이 기기에서 다시 나타나지 않습니다. */
 async function deleteBook(b){
+  if(typeof bookCloudEnabled==='function'&&bookCloudEnabled()&&typeof forgetBookCloud==='function'){
+    const removed=await forgetBookCloud(b);
+    if(removed===false){
+      toast('서버의 원본을 아직 지우지 못했어요. 책은 그대로 두었어요.');
+      return false;
+    }
+  }
   const remoteId=serverBookIdFor(b);
   try{await bookDeleteAssets(b);}catch(error){
     console.error('Book deletion failed:',error);
@@ -463,6 +470,7 @@ function renderHome(){
   const longform=longformBooks(),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
   for(const row of serverOnlyBooks())specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
+  if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
   for(const read of pendingLongReads())specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')});
   specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
@@ -510,10 +518,12 @@ function renderLongformLibrary(){
   longform.forEach(book => grid.appendChild(homeRegularTile(bookCard(book,null),book.title,book.author||'내 책',true)));
   const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id,'longform'));
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
+  if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())grid.appendChild(homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책'));
   const offered = currentLibraryFolder('longform')?[]:pendingLongReads();
   offered.forEach(read => grid.appendChild(homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')));
   grid.appendChild(homeAddTile(longformAddCard(),'파일 추가'));
-  empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0;
+  const linked=typeof bookCloudLibraryRows==='function'?bookCloudLibraryRows().length:0;
+  empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0 || linked>0;
   empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
 }
 
@@ -795,7 +805,8 @@ async function applyPreparedBook(target, prepared, file, options={}){
     prepared={...prepared,paras:target.paras,sourceMap:target.sourceMap,packedSignals:target.layoutSignals,
       formatting:target.formatting,textAvailable:target.textAvailable};
   }
-  const original=/^(pdf|epub)$/.test(prepared.kind)
+  const keepTextOriginal=prepared.kind==='txt'&&typeof bookCloudEnabled==='function'&&bookCloudEnabled();
+  const original=/^(pdf|epub)$/.test(prepared.kind)||keepTextOriginal
     ? {kind:prepared.kind,name:file.name,type:file.type||'',size:file.size,
        lastModified:file.lastModified||0,hash:prepared.hash,storedAt:Date.now()} : null;
   const next={...target,...options.extra,

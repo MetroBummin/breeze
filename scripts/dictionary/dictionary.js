@@ -2132,7 +2132,23 @@ function vocabGroupElement(groupKey,entries,index=null,total=0){
     group.setAttribute('aria-setsize',String(total));
   }
   bindMemoryVocabularyGroup(group);
-  return group;
+  return wordbookRemoval(group,entries);
+}
+function wordbookRemoval(group,entries){
+  if(typeof studySetsSwipe!=='function'||typeof studySetsButton!=='function'||typeof studySetsDeleteSavedGroup!=='function')return group;
+  const shell=document.createElement('div');
+  shell.className='wordbook-swipe study-sets-word-clip';
+  const word=entries[0][1]?.word||'';
+  const action=studySetsButton('',()=>studySetsDeleteSavedGroup(shell,entries),'study-sets-row-action');
+  action.append(studySetsIcon('remove'));
+  action.title='단어장에서 삭제';
+  action.setAttribute('aria-label',`${word} 단어장에서 삭제`);
+  const surface=document.createElement('div');
+  surface.className='study-sets-word-surface';
+  surface.append(group);
+  shell.append(action,surface);
+  studySetsSwipe(shell,surface,action);
+  return shell;
 }
 function mountVocabWindow(wrap,groups){
   const rows=new Map();
@@ -2156,13 +2172,28 @@ function mountVocabWindow(wrap,groups){
     if(!frame)frame=requestAnimationFrame(()=>{frame=0;const measureNow=pendingMeasure;pendingMeasure=false;refresh(null,measureNow);});
   };
   const observer=new ResizeObserver(()=>schedule(true));
+  // First contact with a real row records its height for the spacers. It must
+  // not move window.scrollY: a restored or just-requested position is already
+  // the reader's place. Only a later change to a known row (opening one card,
+  // or a width reflow) follows that row.
+  const rangeAround=corrected=>{
+    const limit=corrected+window.innerHeight*2;
+    let start=locate(Math.max(0,corrected-window.innerHeight));
+    let end=Math.min(groups.length,locate(limit)+1);
+    // Opening one card grows a single row by less than one estimated row.
+    // Keep a buffered row that is still within that slack so the tail of the
+    // window is not recycled and remounted.
+    if(paintedEnd>end){while(end<paintedEnd&&end<groups.length&&offset(end)<limit+estimate)end++;}
+    if(paintedStart>=0&&paintedStart<start){while(start>paintedStart&&offset(start)>corrected-window.innerHeight-estimate)start--;}
+    return {start,end};
+  };
   function refresh(requiredIndex=null,measure=true){
     if(disposed||!wrap.isConnected||!document.getElementById('v-vocab').classList.contains('on'))return;
     const nextWidth=wrap.clientWidth;
     const resized=width!==nextWidth;
     if(!measure&&!resized&&requiredIndex==null){
       const y=Math.max(0,window.scrollY-cachedOrigin),anchor=locate(y),within=y-offset(anchor),corrected=offset(anchor)+within;
-      const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
+      const {start,end}=rangeAround(corrected);
       const focused=document.activeElement?.closest('.vgroup');
       const focusIndex=focused instanceof HTMLElement&&wrap.contains(focused)?Number(focused.dataset.index):-1;
       if(start===paintedStart&&end===paintedEnd&&focusIndex===paintedFocus)return;
@@ -2171,15 +2202,17 @@ function mountVocabWindow(wrap,groups){
     const origin=top(),y=Math.max(0,window.scrollY-origin),anchor=locate(y),within=y-offset(anchor);
     width=nextWidth;
     if(resized){heights.clear();deltas.clear();}
-    let measured=false;
+    let geometryChanged=false;
     for(const [index,row] of rows){
       if(index>=groups.length)continue;
       const height=row.getBoundingClientRect().height;
-      if(height&&height!==heights.get(index)){setHeight(index,height);measured=true;}
+      const previous=heights.get(index);
+      if(height&&previous===undefined)setHeight(index,height);
+      else if(height&&height!==previous){setHeight(index,height);geometryChanged=true;}
       if(height)vocabWindowHeights.set(groups[index][0],{height,width,open:vocabOpen.has(groups[index][0])});
     }
     const corrected=offset(anchor)+within;
-    const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
+    const {start,end}=rangeAround(corrected);
     const indices=new Set(Array.from({length:Math.max(0,end-start)},(_,i)=>start+i));
     if(Number.isInteger(requiredIndex))indices.add(requiredIndex);
     const focused=document.activeElement?.closest('.vgroup');
@@ -2199,7 +2232,7 @@ function mountVocabWindow(wrap,groups){
     for(const node of nodes){if(node===next)next=next.nextSibling;else wrap.insertBefore(node,next);}
     while(next){const removed=next;next=next.nextSibling;removed.remove();}
     if(focused&&active instanceof HTMLElement&&document.activeElement!==active)active.focus({preventScroll:true});
-    if((measured||resized)&&anchor>0)window.scrollTo(window.scrollX,origin+corrected);
+    if((geometryChanged||resized)&&anchor>0)window.scrollTo(window.scrollX,origin+corrected);
     paintedStart=start;paintedEnd=end;
     paintedFocus=Number.isInteger(focusIndex)?focusIndex:-1;
     cachedOrigin=origin;
@@ -2250,13 +2283,7 @@ function renderVocab(){
   }
   if(groups.length<=vocabWindowLimit){
     wrap.style.overflowAnchor='';
-    wrap.innerHTML=groups.map(([groupKey,entries])=>{
-      orderVocabEntries(entries);
-      const open=vocabOpen.has(groupKey);
-      const [headKey,head]=vocabGroupHead(groupKey,entries);
-      return vocabGroupMarkup(groupKey,entries,open,headKey,head);
-    }).join('');
-    wrap.querySelectorAll('.vgroup').forEach(node=>bindMemoryVocabularyGroup(/** @type {HTMLElement} */(node)));
+    wrap.replaceChildren(...groups.map(([groupKey,entries])=>vocabGroupElement(groupKey,entries)));
     refreshVocabularyReviewEntry();return;
   }
   vocabFilteredReviewKeys=()=>groups.flatMap(([,entries])=>entries.map(([key])=>key));

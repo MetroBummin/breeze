@@ -117,6 +117,7 @@ function resetSyncSession(){
   legacyWordbookPending=false;
   wordbookRemote=null;
   if(typeof resetLearningSync==='function')resetLearningSync();
+  if(typeof resetBookCloudSession==='function')resetBookCloudSession();
 }
 /* Change the local owner before any network callback can run. A return to the
    same user gets a new epoch too, so an earlier A request cannot commit to A
@@ -525,6 +526,7 @@ function queueSync(changed=false){
 /* The reader still calls this hook; progress sync is dormant. */
 function queueReadingProgressSync(){
   // Reading locations are local until the broader sync feature returns.
+  if(typeof bookCloudEnabled==='function'&&bookCloudEnabled()&&typeof scheduleBookCloudPosition==='function')scheduleBookCloudPosition();
 }
 function sameProgressLocation(left,right){
   const clean=value=>{ const safe=safePosition(value); if(safe) delete safe.t; return safe; };
@@ -910,10 +912,16 @@ function doProgressSync(manual,checkRemote){
   return progressSyncPromise;
 }
 function syncRemoteChanges(manual){
-  if(!syncAccountReady){const epoch=syncSessionEpoch;return syncAccountReadyPromise.then(ready=>ready&&epoch===syncSessionEpoch?syncRemoteChanges(manual):false);}
+  // Publish the owner before activation finishes. A caller that treats
+  // "no promise" as idle (a reload, or WebKit aborting an intercepted REST
+  // read) must not slip through the gap while device words are still merging.
   if(remoteSyncPromise){ remoteSyncManual=remoteSyncManual||!!manual; return remoteSyncPromise; }
   const epoch=syncSessionEpoch;
   remoteSyncPromise=(async()=>{
+    if(!syncAccountReady){
+      const ready=await syncAccountReadyPromise;
+      if(!ready||epoch!==syncSessionEpoch)return false;
+    }
     let nextManual=!!manual,completed=true;
     do{
       remoteSyncManual=false;
@@ -922,6 +930,9 @@ function syncRemoteChanges(manual){
       if(typeof doLearningSync==='function'){
         const learningOk=await doLearningSync(nextManual);if(epoch!==syncSessionEpoch)return false;
         completed=completed&&!!learningOk;
+      }
+      if(typeof bookCloudEnabled==='function'&&bookCloudEnabled()&&typeof syncBookCloud==='function'){
+        try{await syncBookCloud();}catch(error){if(error&&error.syncCancelled)return false;}
       }
       nextManual=remoteSyncManual;
     }while(nextManual&&sb&&sbUser);
@@ -966,7 +977,7 @@ function attachSupabaseAuth(){
   const accept=(session,event)=>{
     /* 서버가 세션을 주지 않았어도 이 기기에 남아 있으면 그것이 지금의 사실입니다. */
     const next=event==='SIGNED_OUT'?null:session?session.user:storedAuthUser();
-    const ready=activateSyncAccount(next),epoch=syncSessionEpoch;
+    activateSyncAccount(next);
     syncBadge();
     if(sbUser&&isNativeShell()){
       const url=new URL(location.href);
@@ -976,7 +987,7 @@ function attachSupabaseAuth(){
       }
     }
     if(typeof selKey!=='undefined'&&selKey&&typeof renderPanel==='function') renderPanel();
-    ready.then(ok=>{if(ok&&epoch===syncSessionEpoch&&sbUser)syncRemoteChanges(false);});
+    if(next)syncRemoteChanges(false);
     if(document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
   };
   /* 부팅하는 그 자리에서 한 번. `getSession()` 이 오프라인에서 돌아오지 않아도
