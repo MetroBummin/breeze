@@ -25,7 +25,7 @@ const studySetsUI={
   swipeClose:/** @type {null|(()=>void)} */(null),
   releaseClickId:/** @type {number|null} */(null),
   pageOpen:false,transitioning:false,homeScroll:0,detailEditing:false,detailScroll:0,
-  editSlot:/** @type {HTMLElement|null} */(null),editSurface:/** @type {HTMLElement|null} */(null),editOpen:false,editButton:/** @type {HTMLButtonElement|null} */(null),editMenu:/** @type {HTMLElement|null} */(null),editAnimation:/** @type {Animation|null} */(null),editEpoch:0,
+  editSlot:/** @type {HTMLElement|null} */(null),editSurface:/** @type {HTMLElement|null} */(null),editOpen:false,editButton:/** @type {HTMLButtonElement|null} */(null),editMenu:/** @type {HTMLElement|null} */(null),editAnimation:/** @type {{cancel:()=>void}|null} */(null),editEpoch:0,
   directoryOrigin:false,directoryDepth:0,directoryScroll:0,vocabScroll:0,createdSetId:'',
   directoryList:/** @type {HTMLElement|null} */(null),
   state:null
@@ -190,10 +190,25 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
   const height=panel.offsetHeight?panel.offsetHeight+2:150;
   const circle={width:'44px',height:'44px',borderRadius:'22px'},expanded={width:width+'px',height:height+'px',borderRadius:'20px'};
   const target=open?expanded:circle;
-  const finish=()=>{if(epoch!==ui.editEpoch)return;ui.editAnimation?.cancel();ui.editAnimation=null;Object.assign(surface.style,target);panel.hidden=!open;panel.style.pointerEvents=open?'auto':'none';panel.style.opacity=open?'1':'0';if(focus){const targetControl=open?items[0]:button;targetControl?.focus({preventScroll:true});}};
+  const finish=()=>{if(epoch!==ui.editEpoch)return;ui.editAnimation?.cancel();ui.editAnimation=null;Object.assign(surface.style,target);panel.hidden=!open;panel.style.pointerEvents=open?'auto':'none';panel.style.opacity=open?'1':'0';button.style.transition='none';button.style.opacity=open?'0':'1';if(focus){const targetControl=open?items[0]:button;targetControl?.focus({preventScroll:true});}};
   if(immediate||typeof surface.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
-  const animation=surface.animate([from||(open?circle:expanded),target],{duration:open?280:220,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});
-  ui.editAnimation=animation;animation.finished.then(finish,()=>{});
+  const num=value=>Number.parseFloat(value)||0;
+  const origin=from||(open?circle:expanded);
+  const start={w:num(origin.width),h:num(origin.height),r:num(origin.borderRadius)};
+  const end={w:num(target.width),h:num(target.height),r:num(target.borderRadius)};
+  panel.style.transition='none';button.style.transition='none';
+  const paint=t=>{
+    const amount=Math.max(0,Math.min(1.08,t));
+    surface.style.width=(start.w+(end.w-start.w)*amount)+'px';
+    surface.style.height=(start.h+(end.h-start.h)*amount)+'px';
+    surface.style.borderRadius=(start.r+(end.r-start.r)*amount)+'px';
+    const menu=open?Math.max(0,Math.min(1,(amount-.32)/.68)):Math.max(0,1-amount*1.35);
+    panel.style.opacity=String(menu);
+    button.style.opacity=String(Math.max(0,1-menu));
+  };
+  const travel=Math.max(1,Math.abs(end.w-start.w));
+  const stop=studySpring(0,travel,0,px=>paint(px/travel),()=>{if(epoch===ui.editEpoch)finish();});
+  ui.editAnimation={cancel:stop};
 }
 function replaceStudySetsHistory(patch){
   const current=history.state||{};
@@ -458,8 +473,20 @@ function studySetsUndoNotice(message,restore){
   notice.append(studySetsNode('span','',message),button);return notice;
 }
 function studySetsPlaceWordUndo(){
-  if(studySetsUI.undo?.kind!=='word'||!studySetsUI.footer)return;
+  if(studySetsUI.undo?.kind!=='word')return;
   const undo=studySetsUI.undo,notice=studySetsUndoNotice(`“${undo.word}” 삭제됨`,undo.restore);
+  const vocabOn=document.getElementById('v-vocab')?.classList.contains('on');
+  const onAllWords=typeof studySetsIsOpen==='function'&&studySetsIsOpen()&&studySetsUI.screen==='all';
+  if(vocabOn&&!onAllWords){
+    let host=document.getElementById('wordbook-undo');
+    if(!host){
+      host=document.createElement('div');host.id='wordbook-undo';
+      document.querySelector('#v-vocab .wordbook-results')?.after(host);
+    }
+    host.replaceChildren(notice);
+    return;
+  }
+  if(!studySetsUI.footer)return;
   const existing=studySetsUI.footer.querySelector('.study-sets-undo');
   if(existing)existing.replaceWith(notice);else studySetsUI.footer.prepend(notice);
   studySetsUI.footer.hidden=false;
@@ -506,9 +533,13 @@ function studySetsAnimateExit(row){
   studySetsUI.swipeClose=null;row.classList.add('study-sets-exiting');row.setAttribute('aria-busy','true');
   const action=row.querySelector('.study-sets-row-action');if(action){action.disabled=true;action.style.width=Math.max(44,width-24)+'px';}
   // Undo owns the committed state immediately, including during row removal.
-  if(screen==='all')studySetsPlaceWordUndo();
+  if(row.classList.contains('wordbook-swipe')||screen==='all')studySetsPlaceWordUndo();
   else{const committed=studySetsUI.state?.sets.find(item=>item.id===setId);if(committed)renderStudySetsDetailFooter(committed);}
   const finish=()=>{
+    if(row.classList.contains('wordbook-swipe')){
+      if(row.isConnected&&document.getElementById('v-vocab')?.classList.contains('on')&&typeof renderVocab==='function')renderVocab();
+      return;
+    }
     if(!row.isConnected||!studySetsIsOpen()||studySetsUI.screen!==screen||studySetsUI.setId!==setId)return;
     if(screen==='detail'&&!studySetsUI.state?.sets.find(item=>item.id===setId))return;
     studySetsFinishRowExit(row);
@@ -942,6 +973,7 @@ function studySetsRememberWordUndo(snapshot,word){
     if(typeof queueSync==='function')queueSync(true);
     for(const snap of snapshot)if(typeof paintWord==='function')paintWord(snap.item.root||snap.id);
     if(current&&studySetsUI.screen==='all')renderStudySets(false);
+    if(document.getElementById('v-vocab')?.classList.contains('on')&&typeof renderVocab==='function')renderVocab();
   };
   if(studySetsUI.undoTimer)clearTimeout(studySetsUI.undoTimer);
   const undo={kind:'word',word,restore};
@@ -950,6 +982,7 @@ function studySetsRememberWordUndo(snapshot,word){
     if(studySetsUI.undo!==undo)return;
     studySetsClearUndo();
     studySetsUI.footer?.querySelector('.study-sets-undo')?.remove();
+    document.getElementById('wordbook-undo')?.replaceChildren();
   },5000);
   // The browser timer is a number. Node's test clock also has unref, which lets the suite exit.
   /** @type {{unref?:()=>void}} */(timer).unref?.();
@@ -988,6 +1021,10 @@ function studySetsDeleteSavedGroup(row,group){
   if(typeof paintWord==='function')paintWord(root);
   if(typeof refreshReaderWords==='function'&&snapshot.some(snap=>Array.isArray(snap.item?.phraseParts)))refreshReaderWords();
   studySetsRememberWordUndo(snapshot,group[0][1].word||'');
+  if(row.classList.contains('wordbook-swipe')){
+    if(!studySetsAnimateExit(row)&&typeof renderVocab==='function')renderVocab();
+    return;
+  }
   if(!studySetsAnimateExit(row))studySetsFinishRowExit(row);
 }
 function renderStudySetsDetail(set,excluded){
@@ -1073,7 +1110,7 @@ function studySetsSwipe(row,surface,action){
   row.addEventListener('pointerdown',event=>{
     if(studySetsQueuedRows.has(row)||row.classList.contains('study-sets-exiting')||event.button!==0||event.isPrimary===false||event.target instanceof Element&&event.target.closest('.study-sets-row-action'))return;
     if(studySetsUI.swipeClose!==close)studySetsUI.swipeClose?.();
-    stop?.();stop=null;rawOffset=offset;suppressClick=false;finger=false;start={x:event.clientX,y:event.clientY,id:event.pointerId,axis:'',base:rawOffset,samples:[{x:event.clientX,t:event.timeStamp}],control:event.target instanceof Element&&!!event.target.closest('.chip')};
+    stop?.();stop=null;rawOffset=offset;suppressClick=false;finger=false;start={x:event.clientX,y:event.clientY,id:event.pointerId,axis:'',base:rawOffset,samples:[{x:event.clientX,t:event.timeStamp}],control:event.target instanceof Element&&!!event.target.closest('.chip,[contenteditable],.rowdel,.vmore')};
   });
   row.addEventListener('pointermove',event=>{
     if(!start||start.id!==event.pointerId)return;
@@ -1113,7 +1150,7 @@ document.addEventListener('click',event=>{
 document.addEventListener('pointerdown',event=>{
   studySetsUI.releaseClickId=null;
   if(studySetsUI.editOpen&&event.target instanceof Node&&!studySetsUI.editMenu?.contains(event.target)&&!studySetsUI.editButton?.contains(event.target)&&!studySetsUI.back?.contains(event.target)){studySetsCloseEditMenu(false);studySetsUI.releaseClickId=event.pointerId;event.stopPropagation();}
-  const revealed=document.querySelector('.study-sets-word-row.study-sets-revealed:not(.study-sets-exiting)');
+  const revealed=document.querySelector(':is(.study-sets-word-row,.study-all-words-row,.wordbook-swipe).study-sets-revealed:not(.study-sets-exiting)');
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
 function studySetsStart(id,restart=false){

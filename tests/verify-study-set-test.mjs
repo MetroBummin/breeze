@@ -68,3 +68,24 @@ test('records append newest first, update the same id, and refuse a bad store',(
   assert.equal(api.save(saved.raw,'set-a',{...first,score:81}).ok,false);
   assert.equal(api.save(saved.raw,'',first).ok,false);
 });
+
+test('a pending grade is stored, resumed, and replaced by the same id',()=>{
+  const pending={id:'p',at:5,count:2,correct:1,score:null,pending:true,rows:[
+    {word:'apple',meanings:['사과'],answer:'배',status:'pending'},
+    {word:'book',meanings:['책'],answer:'책',status:'correct'}
+  ]};
+  const saved=api.save('','set',pending);
+  assert.equal(saved.ok,true);
+  const stored=api.records(saved.raw,'set')[0];
+  assert.equal(stored.pending,true);
+  assert.equal(stored.score,null);
+  assert.equal(stored.rows[0].answer,'배');
+  assert.deepEqual(JSON.parse(JSON.stringify(api.pending(saved.raw).map(job=>job.setId))),['set']);
+  const done={id:'p',at:5,count:2,correct:1,score:50};
+  const next=api.save(saved.raw,'set',done);
+  assert.equal(api.records(next.raw,'set')[0].pending,undefined);
+  assert.equal(api.records(next.raw,'set')[0].score,50);
+  assert.equal(api.pending(next.raw).length,0);
+  assert.equal(api.save(saved.raw,'set',{...pending,correct:0}).ok,false);
+  assert.equal(api.save(saved.raw,'set',{...pending,rows:pending.rows.map(row=>({...row,status:'correct'}))}).ok,false);
+});

@@ -1,6 +1,7 @@
 /* Saved-set recall test. The answer field stays mounted so the iOS keyboard
    does not dismiss between words. Grading never awaits before the next word. */
 let studySetTestRun=null;
+const studySetTestJobs=new Map();
 const studySetTestQueue=[];
 let studySetTestPumping=false,studySetTestKeyboardBound=false,studySetTestLeaveClosing=false;
 
@@ -81,43 +82,84 @@ function studySetTestPreset(slider,count,label){
   return chip;
 }
 function studySetTestBegin(set,cards){
-  studySetTestQueue.length=0;
   studySetTestRun={
     id:String(Date.now())+'-'+Math.random().toString(36).slice(2),
     setId:set.id,startedAt:Date.now(),questions:cards,index:0,rows:[]
   };
+  studySetTestJobs.set(studySetTestRun.id,studySetTestRun);
 }
-function studySetTestMaybeSave(){
-  const run=studySetTestRun;
-  if(!run||run.rows.length<run.questions.length||run.rows.some(row=>row.status==='pending'))return;
+function studySetTestPersist(run){
+  if(!run?.rows.length||run.rows.length<run.questions.length)return;
+  const pending=run.rows.some(row=>row.status==='pending');
   const correct=run.rows.filter(row=>row.status==='correct').length;
-  const record={id:run.id,at:run.startedAt,count:run.questions.length,correct,score:BreezeStudySetTest.score(correct,run.questions.length)};
+  const record=pending?{
+    id:run.id,at:run.startedAt,count:run.questions.length,correct,score:null,pending:true,
+    rows:run.rows.map(row=>({word:row.word,meanings:row.meanings.slice(),answer:row.answer,status:row.status}))
+  }:{id:run.id,at:run.startedAt,count:run.questions.length,correct,score:BreezeStudySetTest.score(correct,run.questions.length)};
   const saved=BreezeStudySetTest.save(localStorage.getItem(BreezeStudySetTest.KEY),run.setId,record);
   if(saved.ok)localStorage.setItem(BreezeStudySetTest.KEY,saved.raw);
+  if(!pending)studySetTestJobs.delete(run.id);
 }
+function studySetTestMaybeSave(){studySetTestPersist(studySetTestRun);}
 function studySetTestResultCopy(run){
   const pending=run.rows.some(row=>row.status==='pending');
   const correct=run.rows.filter(row=>row.status==='correct').length;
+  const graded=run.rows.filter(row=>row.status!=='pending').length;
   const total=run.questions.length;
   const points=BreezeStudySetTest.score(correct,total);
-  return {pending,correct,total,points,score:pending?'채점 중':total<1?'—':points+'/100',caption:pending?`${total}개 중 ${correct}개 확인됨`:total<1?'제출한 답이 없어요.':`${total}개 중 ${correct}개 맞음`};
+  return {pending,correct,graded,total,points,score:pending?'채점 중':total<1?'—':points+'점',caption:pending?`${total}개 중 ${graded}개 확인됨`:total<1?'제출한 답이 없어요.':`${total}개 중 ${correct}개 맞음`};
+}
+function studySetTestScoreLabel(record){return record?.pending?'채점 중':record?.score==null?'—':record.score+'점';}
+function studySetTestWrongRow(row){
+  const item=studySetsNode('li','study-set-test-wrong-row');
+  const pair=studySetsNode('span','study-set-test-answer-pair');
+  const wrote=studySetsNode('span','study-set-test-wrote',row.answer.trim()?row.answer:'—');
+  wrote.title='내가 쓴 답';
+  const right=studySetsNode('span','study-set-test-right',row.meanings.join(' · '));
+  pair.append(wrote,right);
+  item.append(studySetsNode('strong','',row.word),pair);
+  return item;
+}
+function studySetTestPaintScore(score,copy){
+  score.classList.toggle('is-grading',copy.pending);
+  score.replaceChildren();
+  if(!copy.pending){score.textContent=copy.score;score.removeAttribute('aria-label');return;}
+  const spinner=studySetsNode('span','study-set-test-spinner');
+  spinner.setAttribute('aria-hidden','true');
+  const label=studySetsNode('span','study-set-test-grading-label','채점 중');
+  const progress=document.createElement('progress');
+  progress.className='study-set-test-grade-progress';
+  progress.max=Math.max(1,copy.total);
+  progress.value=copy.graded;
+  progress.setAttribute('aria-label',`채점 중 ${copy.graded} / ${copy.total}`);
+  score.append(spinner,label,progress);
+  score.setAttribute('aria-label','채점 중');
+}
+function studySetTestRefreshHistory(){
+  if(studySetsUI.screen!=='test-setup')return;
+  const list=document.querySelector('.study-set-test-records');
+  if(!list)return;
+  const records=studySetTestStorage();
+  list.replaceChildren();
+  for(const record of records){
+    const row=studySetsNode('li','study-set-test-record');
+    if(record.pending)row.classList.add('is-pending');
+    row.append(studySetsNode('span','',studySetTestDate(record.at)),studySetsNode('span','',record.count+'개'),studySetsNode('b','',studySetTestScoreLabel(record)));
+    list.append(row);
+  }
 }
 function studySetTestRefreshResults(){
   if(studySetsUI.screen!=='test-result'||!studySetTestRun)return;
   const score=document.getElementById('study-set-test-score');
   if(!score){renderStudySets(false);return;}
   const run=studySetTestRun,copy=studySetTestResultCopy(run);
-  score.textContent=copy.score;
+  studySetTestPaintScore(score,copy);
   const caption=document.getElementById('study-set-test-caption');
   if(caption)caption.textContent=copy.caption;
   const list=document.getElementById('study-set-test-wrong');
   if(list){
     list.replaceChildren();
-    for(const row of run.rows)if(row.status==='incorrect'){
-      const item=studySetsNode('li','study-set-test-wrong-row');
-      item.append(studySetsNode('strong','',row.word),studySetsNode('span','',row.meanings.join(' · ')));
-      list.append(item);
-    }
+    for(const row of run.rows)if(row.status==='incorrect')list.append(studySetTestWrongRow(row));
   }
   const empty=document.getElementById('study-set-test-clear');
   const wrong=run.rows.filter(row=>row.status==='incorrect').length;
@@ -129,10 +171,11 @@ function studySetTestRefreshResults(){
   if(list)list.hidden=copy.pending||!wrong;
   studySetTestMaybeSave();
 }
-function studySetTestAfterBatch(){
-  studySetTestPaintTally();
-  studySetTestMaybeSave();
-  studySetTestRefreshResults();
+function studySetTestAfterBatch(run){
+  if(!run||studySetTestRun===run)studySetTestPaintTally();
+  studySetTestPersist(run||studySetTestRun);
+  if(run&&studySetTestRun===run)studySetTestRefreshResults();
+  studySetTestRefreshHistory();
 }
 function studySetTestTallyCounts(){
   const counts={correct:0,incorrect:0,pending:0};
@@ -193,29 +236,33 @@ function studySetTestVerdicts(results,count){
     throw new Error('bad grade');
   });
 }
-function studySetTestEnqueue(start,end){studySetTestQueue.push({start,end,attempts:0});void studySetTestPump();}
+function studySetTestEnqueue(run,start,end){
+  const indexes=[];
+  for(let i=start;i<end;i++)indexes.push(i);
+  if(indexes.length)studySetTestQueue.push({id:run.id,indexes,attempts:0});
+  void studySetTestPump();
+}
 async function studySetTestPump(){
   if(studySetTestPumping)return;
   studySetTestPumping=true;
   try{
     while(studySetTestQueue.length){
-      const job=studySetTestQueue[0],run=studySetTestRun;
+      const job=studySetTestQueue[0],run=studySetTestJobs.get(job.id);
       if(!run){studySetTestQueue.shift();continue;}
-      const pending=[];
-      for(let i=job.start;i<job.end;i++)if(run.rows[i]?.status==='pending')pending.push(i);
-      if(!pending.length){studySetTestQueue.shift();studySetTestAfterBatch();continue;}
+      const pending=job.indexes.filter(index=>run.rows[index]?.status==='pending');
+      if(!pending.length){studySetTestQueue.shift();studySetTestAfterBatch(run);continue;}
       try{
         const verdicts=await studySetTestGrade(pending.map(index=>run.rows[index]));
-        if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
+        if(!studySetTestJobs.has(run.id)){studySetTestQueue.shift();continue;}
         pending.forEach((index,number)=>{run.rows[index].status=verdicts[number]?'correct':'incorrect';run.rows[index].via='ai';});
-        studySetTestQueue.shift();studySetTestAfterBatch();
+        studySetTestQueue.shift();studySetTestAfterBatch(run);
       }catch(error){
-        if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
+        if(!studySetTestJobs.has(run.id)){studySetTestQueue.shift();continue;}
         job.attempts+=1;
         const offline=error instanceof Error&&error.name==='OfflineError',limit=offline?3:4;
         if(job.attempts<limit){await studySetTestWait(offline?400:[1200,3500,8000][job.attempts-1]||8000);continue;}
         for(const index of pending)if(run.rows[index].status==='pending'){run.rows[index].status='incorrect';run.rows[index].via='exact';}
-        studySetTestQueue.shift();studySetTestAfterBatch();
+        studySetTestQueue.shift();studySetTestAfterBatch(run);
       }
     }
   }finally{
@@ -242,10 +289,10 @@ function studySetTestSubmit(value){
   run.rows.push({id:card.id,word:card.word,meanings:card.meanings.slice(),answer,status:!answer.trim()?'incorrect':exact?'correct':'pending',via:exact||!answer.trim()?'exact':''});
   run.index++;
   const answered=run.rows.length;
-  if(answered%10===0)studySetTestEnqueue(answered-10,answered);
+  if(answered%10===0)studySetTestEnqueue(run,answered-10,answered);
   if(run.index>=run.questions.length){
     const tail=answered%10;
-    if(tail)studySetTestEnqueue(answered-tail,answered);
+    if(tail)studySetTestEnqueue(run,answered-tail,answered);
     studySetTestShowResults();
     return;
   }
@@ -265,7 +312,7 @@ function studySetTestFinishNow(){
   run.questions=run.questions.slice(0,answered);
   run.index=answered;
   const tail=answered%10;
-  if(tail)studySetTestEnqueue(answered-tail,answered);
+  if(tail)studySetTestEnqueue(run,answered-tail,answered);
   studySetTestShowResults();
 }
 function studySetTestCloseLeave(){
@@ -373,7 +420,8 @@ function renderStudySetTestSetup(set){
     const list=studySetsNode('ol','study-set-test-records');
     for(const record of records){
       const row=studySetsNode('li','study-set-test-record');
-      row.append(studySetsNode('span','',studySetTestDate(record.at)),studySetsNode('span','',record.count+'개'),studySetsNode('b','',record.score+'/100'));
+      if(record.pending)row.classList.add('is-pending');
+      row.append(studySetsNode('span','',studySetTestDate(record.at)),studySetsNode('span','',record.count+'개'),studySetsNode('b','',studySetTestScoreLabel(record)));
       list.append(row);
     }
     history.append(list);
@@ -441,18 +489,15 @@ function renderStudySetTestResult(set){
   const result=studySetsNode('div','study-set-test-result');
   const hero=studySetsNode('section','study-set-test-hero study-set-test-score-card');
   hero.append(studySetsNode('p','study-set-test-kicker','결과'));
-  const score=studySetsNode('p','study-set-test-score',copy.score);score.id='study-set-test-score';
+  const score=studySetsNode('p','study-set-test-score','');score.id='study-set-test-score';
+  studySetTestPaintScore(score,copy);
   const caption=studySetsNode('p','study-set-test-note',copy.caption);caption.id='study-set-test-caption';
   hero.append(score,caption);
   const wrong=run.rows.filter(row=>row.status==='incorrect');
   const section=studySetsNode('section','study-set-test-history');
   const title=studySetsNode('h3','','틀린 단어');title.id='study-set-test-wrong-title';title.hidden=pending||!wrong.length;
   const list=studySetsNode('ol','study-set-test-records study-set-test-wrongs');list.id='study-set-test-wrong';list.hidden=pending||!wrong.length;
-  for(const row of wrong){
-    const item=studySetsNode('li','study-set-test-wrong-row');
-    item.append(studySetsNode('strong','',row.word),studySetsNode('span','',row.meanings.join(' · ')));
-    list.append(item);
-  }
+  for(const row of wrong)list.append(studySetTestWrongRow(row));
   const clear=studySetsNode('p','study-set-test-empty','모두 맞았어요.');clear.id='study-set-test-clear';clear.hidden=pending||wrong.length>0||total<1;
   const retry=studySetsButton('틀린 단어만 다시',()=>studySetTestRetryWrong(),'study-sets-primary');
   retry.id='study-set-test-retry';retry.hidden=pending||!wrong.length;retry.disabled=pending||!wrong.length;
@@ -461,3 +506,17 @@ function renderStudySetTestResult(set){
   studySetTestMaybeSave();
 }
 window.addEventListener('online',()=>{if(studySetTestQueue.length)void studySetTestPump();});
+function studySetTestResumeStored(){
+  let raw='';
+  try{raw=localStorage.getItem(BreezeStudySetTest.KEY)||'';}catch{return;}
+  for(const job of BreezeStudySetTest.pending(raw)){
+    if(studySetTestJobs.has(job.record.id))continue;
+    const rows=job.record.rows.map(row=>({word:row.word,meanings:row.meanings.slice(),answer:row.answer,status:row.status,via:row.status==='pending'?'':'stored'}));
+    const run={id:job.record.id,setId:job.setId,startedAt:job.record.at,questions:rows.map((row,index)=>({id:job.record.id+':'+index,word:row.word,meanings:row.meanings})),index:rows.length,rows};
+    studySetTestJobs.set(run.id,run);
+    const indexes=rows.map((row,index)=>row.status==='pending'?index:-1).filter(index=>index>=0);
+    for(let i=0;i<indexes.length;i+=10)studySetTestQueue.push({id:run.id,indexes:indexes.slice(i,i+10),attempts:0});
+  }
+  if(studySetTestQueue.length)void studySetTestPump();
+}
+studySetTestResumeStored();
