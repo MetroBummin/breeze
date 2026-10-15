@@ -37,6 +37,9 @@ try{
  const wordRow=word=>rows().filter({has:page.locator('.vword',{hasText:new RegExp(`${word}$`)})});
  const assertDirectory=async()=>{
   await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog')?.open);
+  // Browser history opens the dialog before its IndexedDB read renders the
+  // directory. Wait for that content, then assert the complete visible surface.
+  await page.locator('#study-sets-all').waitFor({state:'visible'});
   assert.equal(await page.locator('dialog[open]').count(),1,'one directory sheet over the original vocabulary');
   assert.equal(await page.locator('#v-vocab').isVisible(),true);
   assert.equal(await page.locator('#study-sets-all').isVisible(),true);
