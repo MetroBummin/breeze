@@ -1,0 +1,44 @@
+name: Sentence spinner diagnostic
+on:
+  pull_request:
+    paths:
+      - tests/diagnose-sentence-spinner-browser.mjs
+      - tests/diagnose-sentence-wait-state.mjs
+      - .github/workflows/sentence-spinner-diagnostic.yml
+permissions:
+  contents: read
+concurrency:
+  group: sentence-spinner-diagnostic-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --test tests/diagnose-sentence-wait-state.mjs
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Separate animation, request and gesture state
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_SPINNER_PROOF: /tmp/breeze-sentence-spinner
+        run: timeout --kill-after=5s 600s node tests/diagnose-sentence-spinner-browser.mjs
+      - name: Animation clocks, frame cadence and painted snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentence-spinner-${{ matrix.engine }}
+          path: /tmp/breeze-sentence-spinner/
+          if-no-files-found: error
+          retention-days: 7
