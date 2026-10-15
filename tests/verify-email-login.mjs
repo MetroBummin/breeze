@@ -15,7 +15,7 @@ function device({native=false}={}){
     esc:value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),
     Date:class extends Date{static now(){return now;}},
     setTimeout:callback=>{const id=++sequence;timers.set(id,callback);return id;},clearTimeout:id=>timers.delete(id)});
-  vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,send:sbSendLink,password:openPasswordLogin,back:closePasswordLogin,changed:typeof emailLoginChanged==="function"?emailLoginChanged:()=>{},setClient:client=>sb=client,setUser:user=>sbUser=user,advanceEpoch:()=>syncSessionEpoch++};',context);
+  vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,send:sbSendLink,password:openPasswordLogin,back:closePasswordLogin,changed:typeof emailLoginChanged==="function"?emailLoginChanged:()=>{},code:typeof emailCodeChanged==="function"?emailCodeChanged:()=>{},verify:sbVerifyCode,setClient:client=>sb=client,setUser:user=>sbUser=user,advanceEpoch:()=>syncSessionEpoch++};',context);
   context.api.setClient({auth}); context.api.render();
   const get=id=>document.getElementById(id)||(id==='sm-send-link'?document.querySelector('button[onclick="sbSendLink()"]'):null);
   return {api:context.api,requests,document,get,timers,
@@ -25,7 +25,11 @@ function device({native=false}={}){
 async function sent(h){h.email('reader@example.com');const send=h.api.send();h.requests.at(-1).resolve({error:null});await send;}
 
 test('invalid email never requests an OTP',async()=>{
-  const h=device();h.email('invalid');await h.api.send();
+  const h=device();
+  assert.equal(h.get('sm-send-link').textContent,'인증 코드 받기');
+  assert.doesNotMatch(h.document.body.innerHTML,/링크|signin-ko|이메일 로그인</);
+  assert.match(h.document.body.innerHTML,/sm-google-login[\s\S]*sm-apple-login[\s\S]*또는/);
+  h.email('invalid');await h.api.send();
   assert.equal(h.requests.length,0);assert.match(h.get('sm-status').textContent,/이메일 형식/);
 });
 test('repeated send clicks coalesce while pending and during resend cooldown',async()=>{
@@ -40,7 +44,7 @@ test('repeated send clicks coalesce while pending and during resend cooldown',as
 test('settings dismissal and rerender retain email and the code step without retaining the OTP',async()=>{
   const h=device();await sent(h);h.get('sm-code').value='123456';h.api.render();
   assert.equal(h.get('sm-email').value,'reader@example.com');assert.equal(h.get('sm-codewrap').style.display,'block');
-  assert.equal(h.get('sm-code').value,'');assert.equal(h.requests.length,1);assert.match(h.get('sm-status').textContent,/메일을 보냈어요/);
+  assert.equal(h.get('sm-code').value,'');assert.equal(h.requests.length,1);assert.match(h.get('sm-status').textContent,/코드를 보냈어요: reader@example.com/);
 });
 test('password round trip preserves email and code availability',async()=>{
   const h=device();await sent(h);h.api.password();assert.equal(h.get('sm-password-email').value,'reader@example.com');
@@ -50,7 +54,7 @@ test('password round trip preserves email and code availability',async()=>{
 test('late email result does not overwrite the password screen and is available on return',async()=>{
   const h=device();h.email('reader@example.com');const send=h.api.send();h.api.password();h.get('sm-status').textContent='비밀번호 안내';
   h.requests[0].resolve({error:null});await send;assert.equal(h.get('sm-status').textContent,'비밀번호 안내');
-  h.api.back();assert.equal(h.get('sm-codewrap').style.display,'block');assert.match(h.get('sm-status').textContent,/메일을 보냈어요/);
+  h.api.back();assert.equal(h.get('sm-codewrap').style.display,'block');assert.match(h.get('sm-status').textContent,/코드를 보냈어요/);
 });
 test('server resend delay is shown in Korean and already received code remains usable',async()=>{
   const h=device();await sent(h);h.advance(60001);const again=h.api.send();
@@ -79,7 +83,7 @@ test('web and native email requests preserve existing redirect behavior',async()
 test('success after a changed auth session cannot restore old email state',async()=>{
   const h=device();h.email('reader@example.com');const send=h.api.send();h.api.advanceEpoch();h.get('sm-status').textContent='새 세션';
   h.requests[0].resolve({error:null});await send;assert.equal(h.get('sm-codewrap').style.display,'none');
-  assert.doesNotMatch(h.get('sm-status').textContent,/메일을 보냈어요/);
+  assert.doesNotMatch(h.get('sm-status').textContent,/코드를 보냈어요/);
 });
 test('signed-in render clears temporary email state and countdown',async()=>{
   const h=device();await sent(h);h.api.setUser({id:'signed-in',email:'reader@example.com'});h.api.render();assert.equal(h.timers.size,0);
@@ -106,4 +110,29 @@ test('an old send cannot unlock a newer request after sign-in and sign-out',asyn
   h.requests[1].resolve({error:null});await second;
   assert.equal(h.get('sm-email').disabled,false);assert.equal(h.get('sm-email').value,'second@example.com');
   assert.equal(h.get('sm-codewrap').style.display,'block');
+});
+
+test('six digits submit the existing code check once and keep the resend copy',async()=>{
+  const h=device();
+  const seen=[];
+  h.api.setClient({auth:{
+    signInWithOtp:args=>new Promise(resolve=>h.requests.push({args,resolve})),
+    verifyOtp:async args=>{seen.push(args);return {error:null};},
+  }});
+  await sent(h);
+  assert.equal(h.get('sm-code-sent').textContent,'코드를 보냈어요: reader@example.com');
+  assert.match(h.get('sm-send-link').textContent,/다시 보내기 \(60초\)/);
+  assert.equal(h.get('sm-change-email').textContent,'이메일 변경');
+  assert.equal(h.get('sm-code').getAttribute('autocomplete'),'one-time-code');
+  assert.equal(h.get('sm-code').getAttribute('inputmode'),'numeric');
+  h.get('sm-code').value='12-3456';
+  const first=h.api.code();
+  h.api.code();
+  await first;
+  assert.equal(h.get('sm-code').value,'123456');
+  assert.equal(seen.length,1);
+  assert.equal(seen[0].email,'reader@example.com');
+  assert.equal(seen[0].token,'123456');
+  assert.equal(seen[0].type,'email');
+  assert.doesNotMatch(h.document.body.innerHTML,/링크/);
 });

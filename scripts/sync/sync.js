@@ -32,6 +32,7 @@ let socialLoginOperation=null;
 // Keep the current email step across settings dismissal/auth rerenders. Never
 // persist a password or OTP; Supabase continues to own session verification.
 const emailLogin={email:'',sentTo:'',message:'',sending:false,request:0,retryAt:0,retryEmail:'',timer:null};
+let emailCodeBusy=false;
 function rememberLoginEmail(){
   const input=syncInput('sm-email')||syncInput('sm-password-email');
   if(!input) return;
@@ -46,16 +47,20 @@ function updateEmailLoginControls(showMessage=true){
   if(!input||!button||sbUser) return;
   const email=emailLogin.email.toLowerCase();
   const seconds=email===emailLogin.retryEmail?Math.max(0,Math.ceil((emailLogin.retryAt-Date.now())/1000)):0;
+  const sent=!!email&&email===emailLogin.sentTo;
   input.disabled=emailLogin.sending;
   button.disabled=emailLogin.sending||seconds>0;
-  button.textContent=emailLogin.sending?'메일 보내는 중…':seconds?`다시 보내기 (${seconds}초)`:'로그인 링크 보내기';
+  button.textContent=emailLogin.sending?'메일 보내는 중…':seconds?`다시 보내기 (${seconds}초)`:sent?'다시 보내기':'인증 코드 받기';
   const wrap=document.getElementById('sm-codewrap');
-  if(wrap) wrap.style.display=email&&email===emailLogin.sentTo?'block':'none';
+  if(wrap) wrap.style.display=sent?'block':'none';
+  const sentLine=document.getElementById('sm-code-sent');
+  if(sentLine) sentLine.textContent=sent?(emailLogin.message.startsWith('코드를 보냈어요:')?emailLogin.message:`코드를 보냈어요: ${emailLogin.email}`):'';
   if(showMessage&&!passwordLoginOpen) syncStatus(emailLogin.message);
   if(seconds) emailLogin.timer=setTimeout(()=>updateEmailLoginControls(false),1000);
 }
 function clearEmailLogin(){
   emailLogin.request++;
+  emailCodeBusy=false;
   clearTimeout(emailLogin.timer);
   Object.assign(emailLogin,{email:'',sentTo:'',message:'',sending:false,retryAt:0,retryEmail:'',timer:null});
 }
@@ -74,7 +79,13 @@ function initSupabase(){
   return sb;
 }
 
-function syncStatus(message){ const el=document.getElementById('sm-status'); if(el) el.textContent=message; }
+function syncStatus(message){
+  const el=document.getElementById('sm-status');
+  if(!el) return;
+  el.textContent=message||'';
+  const sent=document.getElementById('sm-code-sent');
+  el.hidden=!!(sent&&sent.textContent&&sent.textContent===el.textContent);
+}
 /* 상단바에는 이제 "설정"이 섭니다. 로그인해 두었다는 사실은 그 이름 옆의 ✓
    하나로만 알립니다 — 이름표를 쓰는 곳은 여기 한 곳뿐입니다(i18n 이 덮지 않게). */
 function syncBadge(){
@@ -301,24 +312,33 @@ function renderSyncModal(){
       <button class="sm-btn primary" onclick="sbPasswordLogin()">비밀번호로 로그인</button>
       <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
+    const appleMark='<svg class="bz-apple" viewBox="0 0 17 20" aria-hidden="true"><path fill="currentColor" d="M14.1 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.5 1.3 0 1.8-.8 3.3-.8s2 .8 3.4.8c1.4 0 2.3-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4zM11.6 3c.7-.9 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>';
     body.innerHTML=`<p class="settings-sync-note">로그인하면 단어장을 다른 기기에서도 볼 수 있어요.</p>
-      <div class="settings-signin-choices">
-        <details id="sm-email-login" ${emailLogin.email?'open':''}>
-          <summary>이메일 로그인</summary>
-          <div class="settings-email-form">
-            <label for="sm-email">이메일 주소</label>
-            <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email" oninput="emailLoginChanged()">
-            <button id="sm-send-link" class="sm-btn primary" onclick="sbSendLink()">로그인 링크 보내기</button>
-            <div id="sm-codewrap"><div class="hint">메일의 링크를 누르거나 <b>6자리 코드</b>를 입력하세요.</div>
-            <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······" aria-label="이메일 로그인 코드">
-            <button class="sm-btn ghost" onclick="sbVerifyCode()">코드로 로그인</button></div>
-          </div>
-        </details>
-        <button id="sm-apple-login" class="settings-apple-signin" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-apple-note" aria-label="Apple로 로그인"><img class="settings-apple-art light" src="assets/auth/signin-ko-black.png" width="250" height="48" alt="" aria-hidden="true"><img class="settings-apple-art dark" src="assets/auth/signin-ko-white.png" width="250" height="48" alt="" aria-hidden="true"></button>
+      <div class="settings-signin-choices bz-auth">
+        <button id="sm-google-login" class="bz-pill" type="button" onclick="sbGoogleLogin()" ${!socialLoginSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-google-note"><img class="settings-google-logo" src="assets/auth/google-g.png" width="18" height="18" alt="" aria-hidden="true"><span>Google로 로그인</span></button>
+        <button id="sm-apple-login" class="bz-pill" type="button" onclick="sbAppleLogin()" ${!appleLoginWebSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-apple-note" aria-label="Apple로 로그인">${appleMark}<span>Apple로 로그인</span></button>
         <span id="sm-apple-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Apple 로그인 연결은 아직 준비되지 않았어요.':''}</span>
-        <button id="sm-google-login" class="settings-google-signin ${isNativeShell()?'native':''}" type="button" onclick="sbGoogleLogin()" ${!socialLoginSupported()||socialLoginOperation?'disabled':''} aria-describedby="sm-google-note"><img class="settings-google-logo" src="assets/auth/google-g.png" width="20" height="20" alt="" aria-hidden="true"><span>Google로 로그인</span></button>
         <span id="sm-google-note" hidden>${isNativeShell()&&!socialNativeBridge()?'이 앱의 Google 로그인 연결은 아직 준비되지 않았어요.':''}</span>
-        <button id="sm-password-login" class="sm-linkish neutral settings-password-link" onclick="openPasswordLogin()">비밀번호 로그인</button>
+        <div class="bz-or" role="separator"><span>또는</span></div>
+        <div id="sm-email-login" class="bz-email">
+          <div class="settings-email-form">
+            <div class="bz-field">
+              <input id="sm-email" type="email" value="${esc(emailLogin.email)}" placeholder=" " autocomplete="email" inputmode="email" oninput="emailLoginChanged()">
+              <label for="sm-email">이메일 주소</label>
+            </div>
+            <div id="sm-codewrap">
+              <p class="bz-sent" id="sm-code-sent"></p>
+              <div class="bz-field bz-code">
+                <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder=" " aria-label="인증 코드" oninput="emailCodeChanged()">
+                <label for="sm-code">인증 코드</label>
+              </div>
+              <button type="button" id="sm-change-email" class="bz-text" onclick="changeLoginEmail()">이메일 변경</button>
+            </div>
+            <button id="sm-send-link" class="sm-btn primary" type="button" onclick="sbSendLink()">인증 코드 받기</button>
+          </div>
+        </div>
+        <button id="sm-password-login" class="sm-linkish neutral settings-password-link" type="button" onclick="openPasswordLogin()">비밀번호 로그인</button>
+        <div class="bz-legal"><a href="https://breeze.io.kr/docs/terms.html" target="_blank" rel="noopener">이용약관</a><i>|</i><a href="https://breeze.io.kr/docs/privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a></div>
       </div>`;
   }
   syncStatus('');
@@ -432,7 +452,7 @@ async function sbSendLink(){
     }
     emailLogin.sentTo=email.toLowerCase(); emailLogin.retryEmail=email.toLowerCase();
     emailLogin.retryAt=Date.now()+60000;
-    emailLogin.message=native?'메일로 6자리 코드를 보냈어요.':'메일을 보냈어요. 링크를 누르거나 코드를 입력하세요.';
+    emailLogin.message=`코드를 보냈어요: ${email}`;
     updateEmailLoginControls();
     // A response must not steal focus after the user leaves this form.
     if(syncInput('sm-email')===input&&document.getElementById('settings-modal')?.classList.contains('on')) syncInput('sm-code')?.focus();
@@ -448,13 +468,38 @@ async function sbSendLink(){
     }
   }
 }
+function emailCodeChanged(){
+  const input=syncInput('sm-code');
+  if(!input) return;
+  const digits=(input.value||'').replace(/\D/g,'').slice(0,6);
+  if(input.value!==digits) input.value=digits;
+  if(digits.length===6) return sbVerifyCode();
+}
+function changeLoginEmail(){
+  const input=syncInput('sm-email');
+  if(!input) return;
+  input.disabled=false;
+  input.focus();
+  if(typeof input.select==='function') input.select();
+}
 async function sbVerifyCode(){
-  const email=(syncInput('sm-email').value||'').trim();
-  const token=(syncInput('sm-code').value||'').replace(/[\s-]/g,'').trim();
+  const emailInput=syncInput('sm-email'),codeInput=syncInput('sm-code');
+  if(!emailInput||!codeInput||!sb||sbUser) return;
+  const email=(emailInput.value||'').trim();
+  const token=(codeInput.value||'').replace(/[\s-]/g,'').trim();
   if(!/^\d{6}$/.test(token)){ syncStatus('6자리 숫자 코드를 입력해 주세요'); return; }
+  if(emailCodeBusy) return;
+  emailCodeBusy=true;
   syncStatus('코드 확인 중…');
-  const result=await sb.auth.verifyOtp({email,token,type:'email'});
-  if(result.error) syncStatus('코드 확인 실패: '+result.error.message);
+  try{
+    const result=await sb.auth.verifyOtp({email,token,type:'email'});
+    if(sbUser) return;
+    if(result&&result.error) syncStatus('코드 확인 실패: '+result.error.message);
+  }catch(error){
+    if(!sbUser) syncStatus('코드 확인 실패: '+(error&&error.message||error));
+  }finally{
+    emailCodeBusy=false;
+  }
 }
 function openPasswordLogin(){ passwordLoginOpen=true; renderSyncModal(); syncInput('sm-password-email')?.focus(); }
 function closePasswordLogin(){ passwordLoginOpen=false; renderSyncModal(); syncInput('sm-email')?.focus(); }

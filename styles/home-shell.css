@@ -143,23 +143,52 @@ html:is(.home-resuming,.home-returning)::view-transition-image-pair(reader-contr
 #review-limit-form .review-limit-presets button{min-width:44px;min-height:44px;padding:8px 12px;border:0;border-radius:12px;background:var(--settings-group);color:var(--settings-ink);font:400 13px/1.5 var(--ui);cursor:pointer;}
 
 /* Settings sign-in choices. Web Apple checks the existing provider before consent.
-   Monochrome appearance and 48px height follow Apple's published button guidance. */
+   Outlined 58px pills follow the approved ChatGPT-style sign-in. The Apple
+   mark keeps the 17:20 logo proportion beside the 17px label. */
 .settings-signin-choices{display:grid;gap:12px;margin:20px 0;}
-#sm-email-login>summary{display:flex;align-items:center;justify-content:center;min-height:48px;border:1px solid var(--sentence-glass-line);border-radius:16px;background:var(--sentence-glass-action);color:var(--settings-ink);font:600 15px var(--ui);cursor:pointer;list-style:none;}
-#sm-email-login>summary::-webkit-details-marker{display:none;}
-#sm-email-login>summary:focus-visible,.settings-apple-signin:focus-visible,.settings-google-signin:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
-.settings-email-form{padding-top:20px;}
-.settings-email-form>label{display:block;font:500 12px var(--ui);color:var(--settings-muted);margin-bottom:8px;}
-.settings-apple-signin{display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;width:100%;min-width:140px;min-height:48px;border:0;border-radius:16px;background:#000;color:#fff;font:500 17px -apple-system,BlinkMacSystemFont,var(--ui);}
-body.dark .settings-apple-signin{background:#fff;border-color:#fff;color:#000;}
-.settings-apple-signin:disabled{cursor:default;}
-#settings-modal .settings-password-link{min-height:44px;font-size:12px;color:var(--settings-muted);padding:8px 0;text-decoration:none;}
-
-@font-face{font-family:"Breeze Google Sign-in";src:url('../assets/fonts/google-sans-signin-500.ttf') format('truetype');font-style:normal;font-weight:500;font-display:swap;}
-.settings-apple-art{display:block;width:250px;max-width:100%;height:auto;flex-shrink:1;}
-.settings-apple-art.dark,body.dark .settings-apple-art.light{display:none;}
-body.dark .settings-apple-art.dark{display:block;}
-.settings-google-signin{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 12px;width:100%;min-height:48px;border:1px solid #747775;border-radius:16px;background:#fff;color:#1f1f1f;font:500 14px/20px "Breeze Google Sign-in",var(--ui);}
-.settings-google-signin.native{gap:12px;padding-inline:16px;}
-.settings-google-logo{object-fit:contain;display:block;width:20px;height:20px;flex:none;}
-body.dark .settings-google-signin{background:#131314;border-color:#8e918f;color:#e3e3e3;}
+.bz-auth{--bz-bg:transparent;--bz-line:rgba(0,0,0,.16);--bz-text:#0d0d0d;--bz-press:rgba(0,0,0,.05);
+  --bz-pri-bg:#0d0d0d;--bz-pri-fg:#fff;--bz-muted:#5d5d5d;--bz-focus:#5b6cf0;
+  display:flex!important;flex-direction:column;gap:12px!important}
+body.dark .bz-auth,html.dark .bz-auth,.dark .bz-auth{--bz-line:rgba(255,255,255,.22);--bz-text:#fff;--bz-press:rgba(255,255,255,.06);
+  --bz-pri-bg:#fff;--bz-pri-fg:#0d0d0d;--bz-muted:#afafaf;--bz-focus:#8e9bff}
+.bz-auth .bz-pill{all:unset;box-sizing:border-box;width:100%;height:58px;border-radius:999px;
+  border:1px solid var(--bz-line)!important;background:var(--bz-bg)!important;color:var(--bz-text)!important;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  font:500 17px/1 -apple-system,"SF Pro Text","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif;letter-spacing:-.2px;cursor:pointer}
+.bz-auth .bz-pill:active{background:var(--bz-press)!important}
+.bz-auth .bz-pill:disabled{opacity:.45;cursor:default}
+.bz-auth .bz-pill:focus-visible,.bz-auth .bz-text:focus-visible,.bz-auth #sm-send-link:focus-visible{outline:2px solid var(--bz-focus);outline-offset:3px}
+.bz-auth .bz-pill img{width:18px;height:18px;flex:none;margin:0;object-fit:contain}
+.bz-auth .bz-apple{width:16px;height:19px;flex:none;margin:0 0 0 0;margin-top:-2px;display:block}
+.bz-auth .bz-or{display:flex;align-items:center;gap:16px;margin:10px 0;color:var(--bz-muted);font:500 13px/1 -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;letter-spacing:.5px}
+.bz-auth .bz-or::before,.bz-auth .bz-or::after{content:"";flex:1;height:1px;background:var(--bz-line)}
+.bz-auth .bz-email,.bz-auth .settings-email-form{border:0;background:none;padding:0;margin:0}
+.bz-auth .settings-email-form{display:flex;flex-direction:column;gap:20px}
+.bz-auth .bz-field{position:relative}
+.bz-auth .bz-field input{box-sizing:border-box;width:100%;height:58px;border-radius:999px!important;margin:0!important;
+  border:1px solid var(--bz-line)!important;background:transparent!important;color:var(--bz-text)!important;
+  padding:18px 24px 0!important;font:400 17px -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;outline:none;box-shadow:none!important;
+  letter-spacing:0;text-indent:0}
+.bz-auth .bz-field label{position:absolute;left:24px;top:50%;transform:translateY(-50%);pointer-events:none;
+  color:var(--bz-muted);font:400 17px -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;transition:.15s;padding:0 4px;margin:0!important}
+.bz-auth .bz-field input:focus{border-color:var(--bz-focus)!important}
+.bz-auth .bz-field input:focus+label,.bz-auth .bz-field input:not(:placeholder-shown)+label{
+  top:0;font-size:13px;color:var(--bz-focus);background:var(--settings-sheet-surface,#fff)}
+.bz-auth .bz-field input:not(:focus):not(:placeholder-shown)+label{color:var(--bz-muted)}
+.bz-auth #sm-code{text-align:center;font-weight:500;letter-spacing:.35em;text-indent:0;font-size:17px;margin:0}
+.bz-auth .bz-code label{left:50%;transform:translate(-50%,-50%)}
+.bz-auth .bz-code input:focus+label,.bz-auth .bz-code input:not(:placeholder-shown)+label{left:24px;transform:translateY(-50%)}
+.bz-auth #sm-codewrap{margin:0!important;padding:0!important;border:0!important}
+.bz-auth #sm-codewrap[style*="block"]{display:flex!important;flex-direction:column;gap:12px}
+.bz-auth .bz-sent{margin:0;text-align:center;color:var(--bz-text);font:400 15px/1.45 -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;overflow-wrap:anywhere}
+.bz-auth #sm-send-link,.bz-auth #sm-send-link:hover{height:58px;border-radius:999px!important;border:0!important;background:var(--bz-pri-bg)!important;
+  color:var(--bz-pri-fg)!important;font:500 17px/1 -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;margin:0!important;width:100%;box-shadow:none!important;padding:0}
+.bz-auth #sm-send-link:disabled{opacity:.4}
+.bz-auth .bz-text{all:unset;box-sizing:border-box;display:block;width:100%;min-height:44px;text-align:center;cursor:pointer;
+  color:var(--bz-muted);font:400 15px/44px -apple-system,"Noto Sans CJK KR",system-ui,sans-serif}
+#settings-modal .bz-auth .settings-password-link{min-height:44px;margin-top:4px;padding:8px 0;font-size:15px;color:var(--bz-muted);text-decoration:none}
+#settings-modal .bz-auth .settings-password-link:hover{color:var(--bz-muted)}
+.bz-auth .bz-legal{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:8px;font:400 14px -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;color:var(--bz-muted)}
+.bz-auth .bz-legal a{color:var(--bz-muted);text-decoration:underline;text-underline-offset:3px}
+.bz-auth .bz-legal i{font-style:normal;opacity:.6}
+.settings-google-logo{object-fit:contain;display:block;width:18px;height:18px;flex:none;}

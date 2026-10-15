@@ -27,6 +27,27 @@ Apple entitlement/capability. Provider setup, credentials, Developer-account
 settings and App Store review actions remain owned externally. See the precise
 device/signing/identity checks in [native QA](../qa/native-apple-191-20261009.md).
 
+### Settings sign-in appearance (2026-10-15)
+
+The signed-out settings sheet uses outlined pills. Google and Apple come first
+as full-width 58px buttons with a 1px outline and no fill. The logo sits to the
+left of a 17px medium label, and the pair is centered. The Apple control is an
+inline logo plus “Apple로 로그인”. The logo keeps the 17:20 artwork proportion
+at 16×19px. The packaged official Apple images stay in `assets/auth` as the
+provenance record and are not the settings control.
+
+Email sign-in is open on the sheet. There is no collapsible header. The address
+field uses a floating label, and the primary button says “인증 코드 받기”.
+That button is solid white with black text in dark mode and solid black with
+white text in light mode. The message is a six-digit code. After it is sent,
+the same sheet shows “코드를 보냈어요”, one outlined code field
+(`inputmode=numeric`, `autocomplete=one-time-code`), “다시 보내기” with the
+existing cooldown, and “이메일 변경”. Six digits submit through the existing
+`sbVerifyCode`. `sbSendLink` still calls `signInWithOtp`. The sheet does not
+tell the reader to open a mail link. “비밀번호 로그인” stays a muted link.
+이용약관 and 개인정보 처리방침 open `https://breeze.io.kr/docs/terms.html` and
+`https://breeze.io.kr/docs/privacy.html`.
+
 The original extraction record below describes the submitted 1.9 baseline.
 
 Settings adds Apple and Google alongside the existing email link/code and password
@@ -72,11 +93,10 @@ Foundation policy tests execute production Swift URL validation; the unsigned
 Simulator build checks compilation only. Live consent, physical devices and actual
 provider configuration require the checklist in [QA](../qa/social-auth-only.md).
 
-Provider choices package the official gradient Google G and official generated
-Korean Apple buttons locally. Google uses its prescribed Medium 14/20 type,
-light/dark colors, border and platform padding; Apple uses uncropped black/white
-artwork. Both have equal width and 48px targets with accessible names. Asset
-provenance and the scoped font license are in [assets](../../assets/auth/README.md).
+Provider choices package the official gradient Google G and the previously
+generated Korean Apple buttons locally. The settings control itself now follows
+the outlined-pill appearance above; the Apple images remain the provenance
+record. Asset provenance and the scoped font license are in [assets](../../assets/auth/README.md).
 Browser checks cover theme, dimensions, focus and zero external asset requests.
 Physical keyboard/safe-area behavior and provider approval remain release review
 items; browser geometry does not establish those outcomes.

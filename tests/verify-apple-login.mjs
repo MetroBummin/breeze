@@ -113,8 +113,10 @@ for(const provider of ['apple','google']){
   finish({data:{url:'https://project.supabase.co/auth/v1/authorize?provider='+provider},error:null});await work;assert.equal(h.redirects.length,0);
  });
 }
-test('Google button follows Apple and invokes the configured provider through the existing client',async()=>{
- const h=device();assert.match(h.document.getElementById('sm-body').innerHTML,/sm-apple-login[\s\S]*sm-google-login/);
+test('Google button precedes Apple and invokes the configured provider through the existing client',async()=>{
+ const h=device();assert.match(h.document.getElementById('sm-body').innerHTML,/sm-google-login[\s\S]*sm-apple-login/);
+ assert.match(h.document.getElementById('sm-apple-login').innerHTML,/Apple로 로그인/);
+ assert.doesNotMatch(h.document.getElementById('sm-apple-login').innerHTML,/signin-ko/);
  h.client.auth.signInWithOAuth=async args=>{h.oauth.push(args);return {data:{url:'https://project.supabase.co/auth/v1/authorize?provider=google'},error:null};};
  const work=h.api.google();h.resolve(true);await work;assert.equal(h.oauth[0].provider,'google');assert.equal(h.redirects.length,1);
 });
