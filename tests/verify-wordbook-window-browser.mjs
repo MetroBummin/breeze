@@ -31,7 +31,19 @@ try{
 
   await page.evaluate(data=>{words=data;dead={};vocabOpen.clear();saveWords();show('vocab');},savedWords(40));
   assert.equal(await page.locator('#vtablewrap .vgroup').count(),40,'Short Memory lists still mount every row');
+  assert.equal(await page.locator('#vtablewrap .wordbook-swipe .study-sets-row-action').count(),40,'The wordbook shown on entry can remove each word');
   assert.equal(await page.locator('.vocab-window-spacer').count(),0);
+  assert.equal(await page.locator('#vcnt').textContent(),'전체 40단어');
+  const removedWord=await page.evaluate(()=>{
+    const shell=document.querySelector('#vtablewrap .wordbook-swipe');
+    const word=shell.querySelector('.vword').textContent;
+    shell.querySelector('.study-sets-row-action').click();
+    return word;
+  });
+  await page.waitForFunction(word=>!Object.values(words).some(item=>item&&item.word===word),removedWord);
+  assert.match(await page.locator('#wordbook-undo').innerText(),/삭제됨/);
+  await page.locator('#wordbook-undo button').click();
+  await page.waitForFunction(word=>Object.values(words).some(item=>item&&item.word===word),removedWord);
   assert.equal(await page.locator('#vcnt').textContent(),'전체 40단어');
 
   await page.evaluate(data=>{words=data;dead={};vocabOpen.clear();saveWords();renderVocab();},savedWords(180));

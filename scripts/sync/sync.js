@@ -117,6 +117,7 @@ function resetSyncSession(){
   legacyWordbookPending=false;
   wordbookRemote=null;
   if(typeof resetLearningSync==='function')resetLearningSync();
+  if(typeof resetBookCloudSession==='function')resetBookCloudSession();
 }
 /* Change the local owner before any network callback can run. A return to the
    same user gets a new epoch too, so an earlier A request cannot commit to A
@@ -525,6 +526,7 @@ function queueSync(changed=false){
 /* The reader still calls this hook; progress sync is dormant. */
 function queueReadingProgressSync(){
   // Reading locations are local until the broader sync feature returns.
+  if(typeof bookCloudEnabled==='function'&&bookCloudEnabled()&&typeof scheduleBookCloudPosition==='function')scheduleBookCloudPosition();
 }
 function sameProgressLocation(left,right){
   const clean=value=>{ const safe=safePosition(value); if(safe) delete safe.t; return safe; };
@@ -922,6 +924,9 @@ function syncRemoteChanges(manual){
       if(typeof doLearningSync==='function'){
         const learningOk=await doLearningSync(nextManual);if(epoch!==syncSessionEpoch)return false;
         completed=completed&&!!learningOk;
+      }
+      if(typeof bookCloudEnabled==='function'&&bookCloudEnabled()&&typeof syncBookCloud==='function'){
+        try{await syncBookCloud();}catch(error){if(error&&error.syncCancelled)return false;}
       }
       nextManual=remoteSyncManual;
     }while(nextManual&&sb&&sbUser);

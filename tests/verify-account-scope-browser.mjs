@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import {chromium,webkit} from 'playwright';
-import {mkdirSync,writeFileSync} from 'node:fs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 
 // Local synthetic fixtures only: every non-fixture network request is blocked.
@@ -48,28 +47,20 @@ try{
     return {listed:BreezeStudySets.listedCards(set,words,false,{deletedKeys:dead}).length,queued:started.state.sets[0].session.queue.length,excluded:set.excludedIds.length};
   });
   assert.deepEqual(availability,{listed:49,queued:49,excluded:1});
-  const proof='/tmp/breeze-account-scope-proof';mkdirSync(proof,{recursive:true});
-  await page.evaluate(()=>{localStorage.setItem('breeze.words',JSON.stringify({legacy:{word:'legacy synthetic',ko:'귀속 확인',up:100}}));void confirmLegacyLearningImport();});
-  await page.locator('#task-dialog[open]').waitFor();
-  const layouts=[];
-  for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:900},{width:320,height:568},{width:844,height:390}]){
-    await page.setViewportSize(viewport);
-    for(const dark of [false,true]){
-      await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
-      const metrics=await page.locator('#task-dialog').evaluate(node=>{
-        const r=node.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height,clientWidth:node.clientWidth,scrollWidth:node.scrollWidth,text:node.innerText};
-      });
-      assert.ok(metrics.x>=0&&metrics.y>=0&&metrics.right<=viewport.width&&metrics.bottom<=viewport.height,'ownership confirmation fits viewport');
-      assert.ok(metrics.scrollWidth<=metrics.clientWidth+1,'confirmation has no horizontal overflow');
-      assert.match(metrics.text,/원본은 이 기기에 그대로 보관/);
-      const name=`${viewport.width}x${viewport.height}-${dark?'dark':'light'}`;
-      await page.screenshot({path:`${proof}/legacy-${name}.png`});layouts.push({name,...metrics});
-    }
-  }
-  await page.locator('#task-dialog .task-actions [data-task-cancel]').click();
-  await page.waitForFunction(()=>localStorage.getItem('breeze.learning.legacy-decision.v1')==='retained');
+  await page.evaluate(()=>{localStorage.setItem('breeze.words',JSON.stringify({legacy:{word:'legacy synthetic',ko:'귀속 확인',up:100,status:1,addedAt:100}}));localStorage.setItem('breeze.learning.legacy-decision.v1','retained');});
+  assert.equal(await page.locator('#task-dialog[open]').count(),0);
+  await page.evaluate(()=>confirmLegacyLearningImport());
+  await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
+  assert.equal(await page.locator('#task-dialog[open]').count(),0,'legacy data merges without a confirmation dialog');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
-  writeFileSync(`${proof}/layouts.json`,JSON.stringify(layouts,null,2));
+  const merged=await page.evaluate(()=>Object.values(words).filter(item=>item&&item.ko==='귀속 확인').length);
+  assert.equal(merged,1);
+  await page.evaluate(()=>switchLearningAccount(null));
+  assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인')),false,'logout does not keep the account copy in the device view');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
+  await page.evaluate(()=>switchLearningAccount('synthetic-B'));
+  await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
+  assert.equal(await page.evaluate(()=>Object.values(words).filter(item=>item&&item.word==='B private').length),0);
   assert.deepEqual(errors,[]);
-  console.log(`Account browser regression passed: guest50, A/B/A with open set, exact summary retention, set-before-words and missing book on second device; legacy confirmation ${layouts.length} layouts (${proof}).`);
+  console.log('Account browser regression passed: guest50, A/B/A with open set, exact summary retention, set-before-words, missing book, and silent legacy merge.');
 }finally{await browser?.close();await server.close();}

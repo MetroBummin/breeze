@@ -842,7 +842,7 @@ test('saved-set recall keeps one field, counts on the score row, and stores the 
       assert.equal(h.query('#study-set-test-tally [data-kind="pending"]').hidden,true);
     }
   }
-  assert.equal(h.query('#study-set-test-score').textContent,'83/100');
+  assert.equal(h.query('#study-set-test-score').textContent,'83점');
   assert.equal(h.document.querySelectorAll('#study-set-test-wrong li').length,2);
   assert.equal(h.query('#study-sets-title').textContent,'결과');
   const stored=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));
@@ -857,7 +857,7 @@ test('saved-set recall keeps one field, counts on the score row, and stores the 
   await afterAction(h.click('#study-sets-back'));
   assert.equal(h.document.querySelectorAll('.study-set-test-record').length,2);
   assert.match(h.document.querySelector('.study-set-test-record').textContent,/2개/);
-  assert.match(h.document.querySelector('.study-set-test-record').textContent,/0\/100/);
+  assert.match(h.document.querySelector('.study-set-test-record').textContent,/0점/);
 });
 
 test('lenient grading stays off the field, and a failed grade falls back without a toast',async()=>{
@@ -877,7 +877,7 @@ test('lenient grading stays off the field, and a failed grade falls back without
   assert.deepEqual(Object.keys(seen[0][0]).sort(),['answer','meanings','word']);
   assert.equal(seen[0][0].word,word);
   assert.equal(JSON.stringify(seen[0]).includes('example'),false);
-  assert.equal(h.query('#study-set-test-score').textContent,'100/100');
+  assert.equal(h.query('#study-set-test-score').textContent,'100점');
   assert.equal(h.document.querySelector('#study-set-test-toast'),null);
 
   const offline=harness();loadRecall(offline);
@@ -890,8 +890,10 @@ test('lenient grading stays off the field, and a failed grade falls back without
   await afterAction(offline.click('#study-set-test-start'));
   recallAnswer(offline,'전혀 다름');
   for(let n=0;n<8;n++)await afterAction();
-  assert.equal(offline.query('#study-set-test-score').textContent,'0/100');
+  assert.equal(offline.query('#study-set-test-score').textContent,'0점');
   assert.equal(offline.document.querySelectorAll('#study-set-test-wrong li').length,1);
+  assert.match(offline.query('#study-set-test-wrong').textContent,/전혀 다름/);
+  assert.match(offline.query('.study-set-test-right').textContent,/.+/);
   assert.equal(offline.document.querySelector('#study-set-test-retry').disabled,false);
   const raw=offline.storage.get('breeze.study-set-tests.v1');
   const record=JSON.parse(raw).sets[Object.keys(JSON.parse(raw).sets)[0]][0];
@@ -922,7 +924,7 @@ test('recall back asks before saving the answers so far',async()=>{
   assert.equal(h.storage.has('breeze.study-set-tests.v1'),false);
   await afterAction(h.click('#study-sets-back'));
   await afterAction(h.button('나가기'));
-  assert.equal(h.query('#study-set-test-score').textContent,'100/100');
+  assert.equal(h.query('#study-set-test-score').textContent,'100점');
   assert.equal(h.query('#study-set-test-caption').textContent,'1개 중 1개 맞음');
   const setId=h.run('studySetsUI.setId');
   assert.deepEqual(JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId].map(row=>({count:row.count,score:row.score})),[{count:1,score:100}]);
@@ -983,11 +985,19 @@ test('an old account grader cannot save its result or shift the new account queu
   assert.equal(waits.length,1);h.run(`testScope={id:'user:B',generation:2};`);h.window.dispatchEvent(new h.window.Event('breeze-learning-scope'));
   assert.equal(h.run('studySetTestRun'),null);
   h.run(`studySetTestBegin({id:'b-set'},[{id:'b-word',word:'new',meanings:['새로운']}]);studySetsUI.screen='test';studySetTestSubmit('new pending answer');`);
+  const pendingBefore=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));
+  const oldSetId=Object.keys(pendingBefore.sets)[0];
+  const pendingRow=pendingBefore.sets[oldSetId][0];
+  assert.equal(pendingRow.pending,true);assert.equal(pendingRow.score,null);
   waits[0]([{ok:true}]);for(let i=0;i<5;i++)await settle();
   assert.equal(waits.length,2,'new account batch must remain queued after old response');
-  assert.equal(h.storage.get('breeze.study-set-tests.v1'),undefined,'old account summary must not be written');
+  const afterOld=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));
+  assert.equal(afterOld.sets[oldSetId][0].pending,true,'a finished grade from the previous account must not replace 채점 중');
+  assert.equal(afterOld.sets[oldSetId][0].score,null);
   waits[1]([{ok:false}]);for(let i=0;i<5;i++)await settle();
-  const saved=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));assert.deepEqual(Object.keys(saved.sets),['b-set']);assert.equal(saved.sets['b-set'][0].correct,0);
+  const saved=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));
+  assert.equal(saved.sets['b-set'][0].correct,0);
+  assert.equal(saved.sets[oldSetId][0].pending,true);
 });
 
 test('queued duplicate restart replaces a completed round once and failed restart remains retryable',async()=>{
@@ -1005,4 +1015,60 @@ test('queued duplicate restart replaces a completed round once and failed restar
   await afterAction(h.click('#study-sets-restart'));assert.equal(h.storage.get('breeze.study-sets.v1'),before);assert.equal(h.query('#study-sets-error').hidden,false);
   h.context.localStorage.setItem=native;await afterAction(h.click('#study-sets-error button'));
   assert.notEqual(h.run('readStudySets().sets[0].session.id'),fresh);assert.equal(h.query('#study-sets-progress').textContent,'0 / 1');
+});
+
+test('a one-time storage conflict during a flashcard grade retries without the changed banner',async()=>{
+  const h=harness();
+  await afterAction(h.createSet());
+  await afterAction(h.click('#study-sets-start'));
+  await afterAction(h.click('#study-sets-reveal'));
+  const original=h.context.commitStudySets;
+  let thrown=false;
+  h.context.commitStudySets=function(next){
+    if(!thrown){thrown=true;throw new Error('Study storage changed. Reopen and retry.');}
+    return original(next);
+  };
+  await afterAction(h.click('#study-sets-grade-remembered'));
+  assert.equal(thrown,true);
+  assert.equal(h.query('#study-sets-error').hidden,true);
+  assert.equal(h.query('#study-sets-progress').textContent,'1 / 2');
+  assert.equal(JSON.parse(h.storage.get('breeze.study-sets.v1')).sets[0].session.answers.length,1);
+});
+
+test('leaving mid-grade keeps 채점 중, then the same history row becomes the score',async()=>{
+  const h=harness();loadRecall(h);
+  let release=()=>{};
+  const gate=new Promise(resolve=>{release=resolve;});
+  h.window.BreezeStudySetTestGrader={grade(items){return gate.then(()=>items.map(item=>({ok:item.answer==='사과'})));}};
+  await afterAction(h.createSet());
+  await afterAction(h.click('#study-sets-test'));
+  h.query('#study-set-test-count').value='1';
+  await afterAction(h.click('#study-set-test-start'));
+  const word=h.query('#study-set-test-word').textContent;
+  const meaning=Object.values(h.context.words).find(item=>item.word===word).ko;
+  recallAnswer(h,'배');
+  assert.ok(h.query('#study-set-test-score .study-set-test-spinner'));
+  assert.equal(h.query('#study-set-test-score progress').getAttribute('aria-label'),'채점 중 0 / 1');
+  const setId=h.run('studySetsUI.setId');
+  assert.equal(JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId][0].pending,true);
+  await afterAction(h.click('#study-sets-back'));
+  assert.match(h.query('.study-set-test-record').textContent,/채점 중/);
+  h.run('studySetTestRun=null');
+  release();
+  for(let n=0;n<8;n++)await afterAction();
+  assert.equal(h.query('.study-set-test-record b').textContent,'0점');
+  const settled=JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId][0];
+  assert.equal(settled.pending,undefined);
+  assert.equal(settled.score,0);
+  assert.equal(h.run('studySetTestJobs.size'),0);
+  const again=JSON.parse(h.storage.get('breeze.study-set-tests.v1'));
+  again.sets[setId][0]={id:'later',at:9,count:1,correct:0,score:null,pending:true,rows:[{word,meanings:[meaning],answer:'배',status:'pending'}]};
+  h.storage.set('breeze.study-set-tests.v1',JSON.stringify(again));
+  h.run('studySetTestJobs.clear();studySetTestQueue.length=0;studySetTestResumeStored()');
+  assert.equal(h.run('studySetTestJobs.size'),1);
+  for(let n=0;n<8;n++)await afterAction();
+  const resumed=JSON.parse(h.storage.get('breeze.study-set-tests.v1')).sets[setId][0];
+  assert.equal(resumed.pending,undefined);
+  assert.equal(resumed.score,0);
+  assert.match(h.query('.study-set-test-record').textContent,/0점/);
 });

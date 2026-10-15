@@ -92,22 +92,33 @@ test('guest 50-word import retries interrupted item persistence without duplicat
   const current=w.scope();assert.equal(JSON.stringify(await w.context.exportLearningStorage(guest,current)),sourceStudy,'original source study data retained');
 });
 
-test('interrupted guest study import remains claimed by A across a switch to B, then resumes for A',async()=>{
+test('an interrupted local merge stays on the device and the next account can merge it too',async()=>{
   const w=world();await seedLearning(w,{values:Object.fromEntries(Array.from({length:50},(_,i)=>['g'+i,entry('guest'+i)]))});
   const entered=deferred(),release=deferred(),original=w.context.importLearningStorage;
-  w.context.importLearningStorage=async(...args)=>{entered.resolve();await release.promise;return original(...args);};
+  let stalled=false;
+  w.context.importLearningStorage=async(...args)=>{
+    if(!stalled){
+      stalled=true;
+      const guard=w.run('captureLearningScope()');
+      entered.resolve();
+      await release.promise;
+      w.context.assertLearningScope(guard);
+    }
+    return original(...args);
+  };
   const transfer=w.switch('A');await entered.promise;
-  await w.switch('B');assert.equal(Object.keys(w.snapshot().words).length,0);
+  await w.switch('B');assert.equal(Object.keys(w.snapshot().words).length,50);
   release.resolve();await assert.rejects(transfer,/계정/);w.context.importLearningStorage=original;
-  assert.equal((await w.export()).sets.sets.length,0);
+  assert.equal((await w.export()).sets.sets.length,1);
   await w.switch('A');assert.equal(Object.keys(w.snapshot().words).length,50);assert.equal((await w.export()).sets.sets.length,1);
-  await w.switch(null);await w.switch('B');assert.equal(Object.keys(w.snapshot().words).length,0);assert.equal((await w.export()).sets.sets.length,0);
+  await w.switch(null);assert.equal(Object.keys(w.snapshot().words).length,50);
+  await w.switch('B');assert.equal(Object.keys(w.snapshot().words).length,50);
 });
 
-test('immediate A → B before the first import read preserves A ownership and all fifty guest words',async()=>{
+test('switching accounts before the first local read still gives both accounts the same device words',async()=>{
   const w=world();w.add(Object.fromEntries(Array.from({length:50},(_,i)=>['g'+i,entry('guest'+i)])));
   const transfer=w.switch('A'),rejected=assert.rejects(transfer,/계정/);
-  await w.switch('B');await rejected;assert.equal(Object.keys(w.snapshot().words).length,0);
+  await w.switch('B');await rejected;assert.equal(Object.keys(w.snapshot().words).length,50);
   await w.switch('A');assert.equal(Object.keys(w.snapshot().words).length,50);
 });
 
@@ -133,27 +144,29 @@ test('coalescing exact guest duplicates archives the original simple session his
   imported=await w.export();assert.equal(imported.simple.active.initial.length,1);assert.ok(imported.simple.sessions.some(session=>JSON.stringify(session)===JSON.stringify(original)));
 });
 
-test('unattributed old data is never silently imported; explicit one-time claim preserves exact original bytes',async()=>{
+test('legacy device words merge on login, survive a retained decision, and stay available for the next account',async()=>{
   const original=JSON.stringify({old:entry('old','기존 뜻')},null,2),pending=JSON.stringify({late:entry('late','기존 journal')});
   const conflict={key:'old',left:{ko:'기존 뜻'},right:{ko:'다른 뜻'},at:99},conflicts=JSON.stringify({exact:conflict},null,2);
-  const memory=new Map([['breeze.words',original],['breeze.word-write.pending',pending],['breeze.word-conflicts',conflicts]]);
-  const w=world({memory});assert.deepEqual(w.snapshot().words,{});await w.switch('A');assert.deepEqual(w.snapshot().words,{});
-  assert.equal(await w.context.hasLegacyLearningData(),true);
-  assert.equal(await w.context.resolveLegacyLearningImport(false),false);assert.equal(memory.get('breeze.words'),original);
-  assert.equal(await w.context.resolveLegacyLearningImport(true),true);assert.deepEqual(Object.keys(w.snapshot().words).sort(),['late','old']);
+  const memory=new Map([['breeze.words',original],['breeze.word-write.pending',pending],['breeze.word-conflicts',conflicts],['breeze.learning.legacy-decision.v1','retained']]);
+  const w=world({memory});assert.deepEqual(w.snapshot().words,{});
+  assert.equal(await w.context.confirmLegacyLearningImport(),false);
+  await w.switch('A');assert.deepEqual(Object.keys(w.snapshot().words).sort(),['late','old']);
   assert.deepEqual(clone(w.run('Object.values(load("breeze.word-conflicts",{}))')),[conflict]);
-  assert.equal(await w.context.resolveLegacyLearningImport(true),false);
+  assert.equal(await w.context.confirmLegacyLearningImport(),false);
   assert.equal(w.run('Object.keys(load("breeze.word-conflicts",{})).length'),1,'retry does not duplicate source conflict history');
-  await w.switch('B');assert.equal(await w.context.resolveLegacyLearningImport(true),false);assert.deepEqual(w.snapshot().words,{});
+  assert.equal(Object.keys(w.snapshot().words).length,2);
+  await w.switch(null);assert.deepEqual(w.snapshot().words,{});
+  await w.switch('B');assert.deepEqual(Object.keys(w.snapshot().words).sort(),['late','old']);
   assert.equal(memory.get('breeze.words'),original);assert.equal(memory.get('breeze.word-write.pending'),pending);assert.equal(memory.get('breeze.word-conflicts'),conflicts);
 });
 
-test('conflict-only unowned legacy data remains discoverable and requires explicit account attribution',async()=>{
+test('conflict-only legacy history merges into the logged-in account and the original stays put',async()=>{
   const conflict={key:'missing-old-word',left:{ko:'옛 뜻'},right:{ko:'보존할 뜻'},at:99},raw=JSON.stringify({historic:conflict},null,2);
   const w=world({memory:new Map([['breeze.word-conflicts',raw]])});await w.switch('A');
-  assert.equal(await w.context.hasLegacyLearningData(),true);assert.deepEqual(clone(w.run('load("breeze.word-conflicts",{})')),{});
-  await w.context.resolveLegacyLearningImport(true);assert.deepEqual(clone(w.run('Object.values(load("breeze.word-conflicts",{}))')),[conflict]);
-  assert.equal(w.memory.get('breeze.word-conflicts'),raw);await w.switch('B');assert.deepEqual(clone(w.run('load("breeze.word-conflicts",{})')),{});
+  assert.deepEqual(clone(w.run('Object.values(load("breeze.word-conflicts",{}))')),[conflict]);
+  assert.equal(w.memory.get('breeze.word-conflicts'),raw);
+  await w.switch(null);assert.deepEqual(clone(w.run('load("breeze.word-conflicts",{})')),{});
+  await w.switch('B');assert.deepEqual(clone(w.run('Object.values(load("breeze.word-conflicts",{}))')),[conflict]);
 });
 
 test('durable deletion wins after word removal persistence fails, including offline B → A return',async()=>{
@@ -176,26 +189,25 @@ test('large scoped vocabulary keeps single-word persistence bounded and never wr
   assert.equal(w.snapshot().words.word2500.ko,'edited');
 });
 
-test('failed ownership intent leaves guest intact, and a later A retry imports it',async()=>{
+test('a failed local merge leaves the device words in place and a later login imports them',async()=>{
   const w=world();w.add({guest:entry('guest','보존해야 함')});
   const guest=w.scope();
   let failed=false;
-  w.hooks.beforeWrite=key=>{if(key==='breeze.learning.claims.v1'&&!failed){failed=true;throw new DOMException('Synthetic quota','QuotaExceededError');}};
+  w.hooks.beforeWrite=key=>{if(String(key).includes('breeze.word-item.')&&!failed){failed=true;throw new DOMException('Synthetic quota','QuotaExceededError');}};
   await assert.rejects(w.switch('A'));
-  assert.equal(w.scope().id,guest.id);assert.equal(w.snapshot().words.guest.ko,'보존해야 함');
+  assert.equal(w.scope().id.startsWith('user:'),true);
   w.hooks.beforeWrite=null;
+  await w.switch(null);assert.equal(w.scope().id,guest.id);assert.equal(w.snapshot().words.guest.ko,'보존해야 함');
   await w.switch('A');assert.equal(w.snapshot().words.guest?.ko,'보존해야 함');
-  await w.switch('B');assert.deepEqual(w.snapshot().words,{});
+  await w.switch('B');assert.equal(w.snapshot().words.guest?.ko,'보존해야 함');
 });
 
-test('guest import recovers its durable IDB claim if the later local retry index write fails',async()=>{
-  const w=world();w.add({guest:entry('guest','보존해야 함')});let writes=0;
-  w.hooks.beforeWrite=key=>{if(key==='breeze.learning.claims.v1'&&++writes===2)throw new DOMException('Synthetic quota','QuotaExceededError');};
-  await assert.rejects(w.switch('A'));w.hooks.beforeWrite=null;
-  // Simulate an interrupted/corrupted convenience index; IDB remains authoritative.
-  w.memory.delete('breeze.learning.claims.v1');
-  await w.switch('B');assert.deepEqual(w.snapshot().words,{});
+test('an old exclusive claim does not stop the next account from merging the same device words',async()=>{
+  const w=world();w.add({guest:entry('guest','보존해야 함')});
   await w.switch('A');assert.equal(w.snapshot().words.guest?.ko,'보존해야 함');
+  w.memory.delete('breeze.learning.claims.v1');
+  await w.switch('B');assert.equal(w.snapshot().words.guest?.ko,'보존해야 함');
+  await w.switch('A');assert.equal(Object.keys(w.snapshot().words).length,1);
 });
 
 test('deleting an imported meaning during an interrupted transfer cannot resurrect it on retry',async()=>{
@@ -223,11 +235,33 @@ test('guest tombstones and frozen set references migrate without deleting A’s 
   await w.switch('B');await w.switch('A');assert.equal(w.snapshot().words.bank.ko,'은행');assert.equal(w.snapshot().dead[card.key],900);
 });
 
-test('competing tabs cannot claim one guest collection for different accounts',async()=>{
-  const a=world();a.add({guest:entry('guest','한 계정 소유')});
-  const b=world(a);assert.equal(a.scope().id,b.scope().id);
+test('the same logged-out words merge into A and, after logout, into B without taking A-only data',async()=>{
+  const w=world();
+  w.add(Object.fromEntries(Array.from({length:50},(_,i)=>['local'+i,entry('local'+i,'기기 '+i)])));
+  const local=Object.keys(w.snapshot().words).sort();
+  await w.switch('A');
+  assert.deepEqual(Object.keys(w.snapshot().words).sort(),local);
+  w.add({onlyA:entry('only-a','A만')});
+  assert.equal(Object.keys(w.snapshot().words).length,51);
+  await w.switch(null);
+  assert.deepEqual(Object.keys(w.snapshot().words).sort(),local,'logout keeps device words and drops the account-only word');
+  await w.switch('B');
+  assert.deepEqual(Object.keys(w.snapshot().words).sort(),local);
+  assert.equal(w.snapshot().words.onlyA,undefined);
+  await w.switch('A');
+  assert.equal(Object.keys(w.snapshot().words).length,51);
+  assert.equal(w.snapshot().words.onlyA.ko,'A만');
+  await w.switch('A');
+  assert.equal(Object.keys(w.snapshot().words).length,51,'logging into A again does not duplicate device words');
+  await w.switch('B');
+  assert.equal(Object.keys(w.snapshot().words).length,50);
+});
+
+test('two accounts can both receive one device collection',async()=>{
+  const a=world();a.add({guest:entry('guest','한 기기 단어')});
+  const b=world({memory:a.memory,indexedDB:a.indexedDB});assert.equal(a.scope().id,b.scope().id);
   await Promise.all([a.switch('A'),b.switch('B')]);
-  assert.equal(Number(!!a.snapshot().words.guest)+Number(!!b.snapshot().words.guest),1);
-  await a.switch('B');await b.switch('A');
-  assert.equal(Number(!!a.snapshot().words.guest)+Number(!!b.snapshot().words.guest),1);
+  assert.equal(a.snapshot().words.guest?.ko,'한 기기 단어');
+  assert.equal(b.snapshot().words.guest?.ko,'한 기기 단어');
+  await a.switch(null);assert.equal(a.snapshot().words.guest?.ko,'한 기기 단어');
 });

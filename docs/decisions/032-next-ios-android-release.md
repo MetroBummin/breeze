@@ -64,6 +64,14 @@ learning sync and the X import fix together. App and Share Debug/Release
 counters move to288. Marketing version stays1.9.4. The cloud bootstrap still
 replaces that baseline with `CI_BUILD_NUMBER`.
 
+## Silent counter 289 (2026-10-15)
+
+Build 289 adds selective book sync behind `BOOK_CLOUD: false`, the compact
+set-test grading UI, silent device-local learning merge, and a quiet retry when
+a study set save races itself. There is no release note and no announcement UI.
+App and Share Debug/Release counters move to289. Marketing version stays1.9.4.
+The cloud bootstrap still replaces that baseline with `CI_BUILD_NUMBER`.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports

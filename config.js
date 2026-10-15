@@ -5,6 +5,7 @@ window.BREEZE_CONFIG = {
   // Warmed WIRED pilot; all other built-ins retain their existing local feed cache.
   RSS_CATALOG: true,
   RSS_CATALOG_FEED_IDS: [7],
+  BOOK_CLOUD: false,
   SB_URL: 'https://hrtfhojbhqvaoiulspto.supabase.co',   // Supabase Project URL  (예: https://xxxx.supabase.co)
   SB_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydGZob2piaHF2YW9pdWxzcHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTM1MTEsImV4cCI6MjEwMDg4OTUxMX0.9LT_ly0fRXhWWFKK4o3ueREeOot8e_qUA9lI1IRANpQ'    // Supabase anon public key
 };

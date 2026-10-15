@@ -49,8 +49,8 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=e8263cbe">
   <link rel="stylesheet" href="styles/components.css?v=e514d5e1">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=78922ac9">
-  <link rel="stylesheet" href="styles/study-sets.css?v=08772146">
+  <link rel="stylesheet" href="styles/wordbook.css?v=d1190e78">
+  <link rel="stylesheet" href="styles/study-sets.css?v=06f1120f">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=844a3652">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=ff1c9643">
@@ -66,7 +66,7 @@
        담깁니다 (tools/fetch-libs.mjs · sw.js). -->
   <script defer src="assets/lib/supabase-2.112.3.min.js?v=ec004176"></script>
   <!-- 설정 변경 직후에도 이전 빈 config.js 캐시를 사용하지 않도록 버전을 붙입니다. -->
-  <script defer src="config.js?v=1ca8e0a5"></script>
+  <script defer src="config.js?v=0d535cee"></script>
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
   <script defer src="scripts/core/boot-safety.js?v=01738380"></script>
@@ -75,7 +75,7 @@
   <script defer src="scripts/importers/ligatures.js?v=c51d6d55"></script>
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=26df6591"></script>
-  <script defer src="scripts/core/account-scope.js?v=ad961c4c"></script>
+  <script defer src="scripts/core/account-scope.js?v=5bf138ef"></script>
   <script defer src="scripts/core/state.js?v=b7d537a3"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
@@ -89,10 +89,11 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=2e47e0f6"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=3f27e9ed"></script>
+  <script defer src="scripts/library/library.js?v=c8e47c67"></script>
   <script defer src="scripts/library/shared-links.js?v=9b5e1c4a"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
-  <script defer src="scripts/library/book-edit.js?v=14fe2693"></script>
+  <script defer src="scripts/library/book-edit.js?v=5670e589"></script>
+  <script defer src="scripts/library/book-cloud.js?v=586191d2"></script>
   <script defer src="scripts/library/longreads.js?v=902909ef"></script>
   <script defer src="scripts/library/holmes-layout.js?v=16ae497a"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=24ab4083"></script>
@@ -104,7 +105,7 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=ff8a87cd"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=2e25288c"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=fc76e90e"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/study-motion.js?v=9b1d7066"></script>
@@ -112,10 +113,10 @@
   <script defer src="scripts/ui/vocabulary-review.js?v=9c80dddb"></script>
   <script defer src="scripts/ui/wordbook.js?v=6a635eaf"></script>
   <script defer src="scripts/core/study-sets.js?v=13c27671"></script>
-  <script defer src="scripts/core/study-sets-storage.js?v=4c8438c2"></script>
-  <script defer src="scripts/ui/study-sets.js?v=477c7db8"></script>
-  <script defer src="scripts/core/study-set-test.js?v=8d041bd2"></script>
-  <script defer src="scripts/ui/study-set-test.js?v=b2b398a8"></script>
+  <script defer src="scripts/core/study-sets-storage.js?v=4108636f"></script>
+  <script defer src="scripts/ui/study-sets.js?v=b4d166ad"></script>
+  <script defer src="scripts/core/study-set-test.js?v=3b3ced09"></script>
+  <script defer src="scripts/ui/study-set-test.js?v=1879f4ab"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
   <script defer src="scripts/core/vocabulary-test-storage.js?v=a2969347"></script>
   <script defer src="scripts/dictionary/vocabulary-test-grading.js?v=83c32b98"></script>
@@ -138,7 +139,7 @@
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
-  <script defer src="scripts/sync/sync.js?v=96ad75e4"></script>
+  <script defer src="scripts/sync/sync.js?v=df71cf92"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=89f4b588"></script>
   <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
@@ -148,7 +149,7 @@
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=0c680478"></script>
   <link rel="stylesheet" href="styles/study.css?v=da9a7021">
-  <link rel="stylesheet" href="styles/surfaces.css?v=a1d19656">
+  <link rel="stylesheet" href="styles/surfaces.css?v=349f7af7">
 </head>
 <body>
 <div id="app">

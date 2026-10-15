@@ -2132,7 +2132,23 @@ function vocabGroupElement(groupKey,entries,index=null,total=0){
     group.setAttribute('aria-setsize',String(total));
   }
   bindMemoryVocabularyGroup(group);
-  return group;
+  return wordbookRemoval(group,entries);
+}
+function wordbookRemoval(group,entries){
+  if(typeof studySetsSwipe!=='function'||typeof studySetsButton!=='function'||typeof studySetsDeleteSavedGroup!=='function')return group;
+  const shell=document.createElement('div');
+  shell.className='wordbook-swipe study-sets-word-clip';
+  const word=entries[0][1]?.word||'';
+  const action=studySetsButton('',()=>studySetsDeleteSavedGroup(shell,entries),'study-sets-row-action');
+  action.append(studySetsIcon('remove'));
+  action.title='단어장에서 삭제';
+  action.setAttribute('aria-label',`${word} 단어장에서 삭제`);
+  const surface=document.createElement('div');
+  surface.className='study-sets-word-surface';
+  surface.append(group);
+  shell.append(action,surface);
+  studySetsSwipe(shell,surface,action);
+  return shell;
 }
 function mountVocabWindow(wrap,groups){
   const rows=new Map();
@@ -2250,13 +2266,7 @@ function renderVocab(){
   }
   if(groups.length<=vocabWindowLimit){
     wrap.style.overflowAnchor='';
-    wrap.innerHTML=groups.map(([groupKey,entries])=>{
-      orderVocabEntries(entries);
-      const open=vocabOpen.has(groupKey);
-      const [headKey,head]=vocabGroupHead(groupKey,entries);
-      return vocabGroupMarkup(groupKey,entries,open,headKey,head);
-    }).join('');
-    wrap.querySelectorAll('.vgroup').forEach(node=>bindMemoryVocabularyGroup(/** @type {HTMLElement} */(node)));
+    wrap.replaceChildren(...groups.map(([groupKey,entries])=>vocabGroupElement(groupKey,entries)));
     refreshVocabularyReviewEntry();return;
   }
   vocabFilteredReviewKeys=()=>groups.flatMap(([,entries])=>entries.map(([key])=>key));

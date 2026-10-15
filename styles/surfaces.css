@@ -21,6 +21,16 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #ed-card .ed-acts .danger,.task-actions .danger{color:var(--danger);background:var(--danger-tint2);border-color:var(--danger-line);}
 .task-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;}
 #ed-card #ed-pick-file{min-height:44px;font-size:14px;}
+#ed-cloud{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;margin:4px 0 16px;}
+#ed-cloud .ed-cloud-copy{display:grid;gap:2px;min-width:0;}
+#ed-cloud .ed-cloud-title{font:600 15px/1.3 var(--ui);}
+#ed-cloud .ed-cloud-note{font:400 13px/1.45 var(--ui);color:var(--sentence-glass-secondary);}
+#ed-cloud .aa-toggle{width:46px;height:44px;border:none;background:transparent;position:relative;flex:none;padding:0;cursor:pointer;}
+#ed-cloud .aa-toggle::before{content:'';position:absolute;left:0;right:0;top:9px;height:26px;border-radius:13px;background:var(--toggle-off);}
+#ed-cloud .aa-toggle.on::before{background:var(--brand);}
+#ed-cloud .aa-toggle i{position:absolute;top:12px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s ease;}
+#ed-cloud .aa-toggle.on i{left:23px;}
+#ed-cloud .aa-toggle:disabled{opacity:.45;cursor:default;}
 #am-card .am-back,#ed-card .am-back{min-height:44px;padding:8px 0;}
 #am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;float:none;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--sentence-glass-line-soft);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);cursor:pointer;}
 #pdf-page-navigation .task-close{position:static;}

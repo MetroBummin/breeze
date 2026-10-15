@@ -13,24 +13,21 @@ usable before words arrive and on devices without their source books.
 transitions invalidate both the synchronization epoch and the local generation;
 the old dictionary and study UI are cleared before exposing the next account.
 Every asynchronous read/write/response captures its owner. A late A operation
-cannot modify B or the subsequent A session. A logout selects a fresh guest
-namespace, not the departing account's records.
+cannot modify B or the subsequent A session. A logout returns to the same device
+guest namespace. It shows that device collection, not the departing account's records.
 
-Fresh guest data is claimed once for the signing-in account. A durable intent
-precedes guest rotation; an IndexedDB transaction arbitrates claims between tabs.
-Stable import IDs and word/set/session address maps make retries idempotent. A
-partial import is resumed only by its owner, including after account changes.
-The source remains intact. Failed ownership persistence leaves the source guest
-unchanged and prevents account activation. Exact normalized expression/meaning
-pairs can share a destination; different meanings survive, and set memberships
-and records retain their references. An imported word deleted before retry is
-not recreated under a new ID.
+Device-local words and history stay on the device. Logging in copies them into
+the active account. Logging out shows that same device collection again, not the
+account's private words. A later account receives the same device collection.
+Nothing in this copy is reserved for the first account, and there is no
+confirmation prompt. A previous "retained" choice does not block the copy.
 
-Unscoped existing records have unknown ownership. They are never relabeled as
-guest or uploaded automatically. A one-time in-app confirmation claims them for
-the current account, or retains them without import. Original localStorage and
-IndexedDB values are preserved. Declining does not delete anything. Reinstalling
-or clearing site storage is not a migration or recovery procedure.
+The device original is not deleted. Account-only words are not written back into
+the device collection. Data already stored under a different `user:` id is not
+read. Exact normalized expression/meaning pairs are not duplicated; a meaning
+deleted in one account is not recreated there on the next login. Stable import
+ids keep set and session addresses idempotent. An older in-progress exclusive
+claim is finished only for the account that already owns that claim.
 
 ## Synchronization and compatibility
 
