@@ -190,14 +190,28 @@ function renderBookBody(b){
       img.alt=illustration.alt;
       img.width=illustration.width||1536; img.height=illustration.height||1024;
       img.loading='lazy'; img.decoding='async';
+      // Unloaded art keeps its width/height box, then WebKit can drop that box
+      // before `error`. Sampling the viewport at that point locks the shifted
+      // paragraph on engines with no scroll anchoring. Remember the intact box
+      // and restore the place recorded while it was still there.
+      let seenHeight=0;
+      const noteBox=()=>{const height=img.getBoundingClientRect().height;if(height>seenHeight)seenHeight=height;};
       img.onerror=()=>{
-        // Offline artwork failure changes layout, not the saved source location.
-        // Preserve it explicitly: browser scroll anchoring differs by platform.
         const active=imageGeneration===readerBodyImageGeneration&&curBook===b&&currentReaderMode==='text';
-        const anchor=active?(readerPositionPending()?posOf(b.id):captureAnchor()):null;
+        if(!active){fig.remove();return;}
+        const height=img.getBoundingClientRect().height;
+        const collapsed=seenHeight>48&&height<seenHeight*0.5;
+        const saved=posOf(b.id);
+        const remembered=lastAnchor&&lastAnchor.pi!=null?lastAnchor:null;
+        const anchor=readerPositionPending()?saved
+          :(collapsed?(remembered||saved):(captureAnchor()||remembered||saved));
         fig.remove();
-        if(anchor){restoreAnchor(anchor);lastAnchor=captureAnchor();}
+        if(!anchor||anchor.pi==null)return;
+        restoreAnchor(anchor);
+        const landed=captureAnchor();
+        lastAnchor=landed&&Math.abs(landed.pi-anchor.pi)<=1?landed:anchor;
       };
+      requestAnimationFrame(noteBox);
       fig.appendChild(img);
       page.appendChild(fig);
       pageChars+=400;
