@@ -50,6 +50,13 @@ App and Share Debug/Release counters move together from272 to273. Marketing
 version stays1.9.3. The cloud bootstrap still replaces both with `CI_BUILD_NUMBER`
 before archive, and now requires the checked-in baseline to be273.
 
+## Marketing version 1.9.4 (2026-10-15)
+
+1.9.3 is already approved, so App Store Connect will not take another 1.9.3
+binary. App and Share Debug/Release `MARKETING_VERSION` move to1.9.4. The
+checked-in build counter stays273, and the cloud bootstrap still replaces it
+with `CI_BUILD_NUMBER`. Android `versionName` follows the same release.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports
