@@ -478,7 +478,7 @@ function studySetsFinishRowExit(row){
   const selector=all?'.study-all-words-row':'.study-sets-word-row';
   const empty=()=>{
     studySetsUI.body.replaceChildren(studySetsEmpty(all?'저장된 단어가 없어요':'세트에 학습할 단어가 없어요',all?'읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.':''));
-    if(all){const start=document.getElementById('study-all-words-start');if(start)start.disabled=true;const test=document.getElementById('study-all-words-test');if(test)test.disabled=true;}
+    if(all){const start=/** @type {HTMLButtonElement|null} */(document.getElementById('study-all-words-start'));if(start)start.disabled=true;const test=/** @type {HTMLButtonElement|null} */(document.getElementById('study-all-words-test'));if(test)test.disabled=true;}
   };
   // A windowed list owns indexes and spacers. Drop this row there so offscreen
   // words are not rebuilt, and reuse cached heights instead of remeasuring.
@@ -951,7 +951,8 @@ function studySetsRememberWordUndo(snapshot,word){
     studySetsClearUndo();
     studySetsUI.footer?.querySelector('.study-sets-undo')?.remove();
   },5000);
-  timer.unref?.();
+  // The browser timer is a number. Node's test clock also has unref, which lets the suite exit.
+  /** @type {{unref?:()=>void}} */(timer).unref?.();
   studySetsUI.undoTimer=timer;
   studySetsPlaceWordUndo();
 }
