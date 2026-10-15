@@ -200,9 +200,132 @@ function deviceLocalSources(){
   if(guest.startsWith('guest:'))sources.push({id:guest,generation:0});
   return sources;
 }
-function deviceLocalSourceOpen(source,entry){
-  const words=learningSourceWords(source),dead=learningSourceDead(source);
-  const conflicts=learningReadJson('breeze.word-conflicts',{},source);
+const learningArchiveDb=openDb('breeze-learning-archive',1,db=>{
+  if(!db.objectStoreNames.contains('sources'))db.createObjectStore('sources');
+});
+function learningStableValue(value){
+  return JSON.stringify(value,(_key,item)=>{
+    if(!item||typeof item!=='object'||Array.isArray(item))return item;
+    return Object.keys(item).sort().reduce((sorted,key)=>{sorted[key]=item[key];return sorted;},{});
+  });
+}
+function learningSourcePayload(source){
+  return {version:1,words:learningSourceWords(source),dead:learningSourceDead(source),conflicts:learningReadJson('breeze.word-conflicts',{},source)};
+}
+async function readLearningArchive(sourceId){
+  try{
+    const db=await learningArchiveDb();
+    return await localTransaction(db,'sources','readonly',(tx,done)=>{
+      const request=tx.objectStore('sources').get(sourceId);
+      request.onsuccess=()=>done(request.result||null);
+    });
+  }catch{return null;}
+}
+async function deviceLocalSourceMaterial(source){
+  const live=learningSourcePayload(source);
+  if(Object.keys(live.words).length||Object.keys(live.dead).length||Object.keys(live.conflicts).length)return live;
+  const archived=await readLearningArchive(source.id);
+  if(archived&&archived.version===1)return {version:1,words:archived.words||{},dead:archived.dead||{},conflicts:archived.conflicts||{}};
+  return {version:1,words:{},dead:{},conflicts:{}};
+}
+function learningWordKeysFor(token){
+  const prefix=token.id==='legacy'?'':'breeze.account.v1.'+encodeURIComponent(token.id)+'.';
+  const bases=['breeze.words','breeze.dead','breeze.word-write.pending','breeze.dead-write.pending','breeze.word-conflicts'];
+  const drop=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(!key)continue;
+    const rest=prefix?key.startsWith(prefix)?key.slice(prefix.length):'':key.startsWith('breeze.account.v1.')?'':key;
+    if(!rest)continue;
+    if(bases.includes(rest)||rest.startsWith('breeze.word-item.')||rest.startsWith('breeze.dead-item.'))drop.push(key);
+  }
+  return drop;
+}
+function learningSnapshotKeys(source){
+  return new Map(learningWordKeysFor(source).map(key=>[key,localStorage.getItem(key)]));
+}
+function learningNullDrops(source,snapshots){
+  const wordPrefix=learningStorageKey('breeze.word-item.',source);
+  const deadPrefix=learningStorageKey('breeze.dead-item.',source);
+  const words=new Set(),dead=new Set();
+  const take=(raw,into)=>{
+    const parsed=JSON.parse(raw);
+    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))return;
+    for(const [key,value] of Object.entries(parsed))if(value===null)into.add(key);
+  };
+  for(const [key,raw] of snapshots){
+    if(raw==='null'&&key.startsWith(wordPrefix))words.add(key.slice(wordPrefix.length));
+    if(raw==='null'&&key.startsWith(deadPrefix))dead.add(key.slice(deadPrefix.length));
+  }
+  const pendingWords=learningStorageKey('breeze.word-write.pending',source);
+  const pendingDead=learningStorageKey('breeze.dead-write.pending',source);
+  if(snapshots.has(pendingWords))take(snapshots.get(pendingWords),words);
+  if(snapshots.has(pendingDead))take(snapshots.get(pendingDead),dead);
+  return {words,dead};
+}
+function learningArchiveUnion(archived,live){
+  const base=archived&&archived.version===1?archived:{};
+  return {version:1,words:{...(base.words||{}),...(live.words||{})},dead:{...(base.dead||{}),...(live.dead||{})},conflicts:{...(base.conflicts||{}),...(live.conflicts||{})}};
+}
+function learningArchiveSame(saved,payload){
+  return !!saved&&saved.version===1
+    &&learningStableValue(saved.words||{})===learningStableValue(payload.words)
+    &&learningStableValue(saved.dead||{})===learningStableValue(payload.dead)
+    &&learningStableValue(saved.conflicts||{})===learningStableValue(payload.conflicts);
+}
+async function readLearningArchiveStrict(sourceId){
+  const db=await learningArchiveDb();
+  const saved=await localTransaction(db,'sources','readonly',(tx,done)=>{
+    const request=tx.objectStore('sources').get(sourceId);
+    request.onsuccess=()=>done(request.result===undefined?null:request.result);
+  });
+  return saved||null;
+}
+async function releaseDuplicatedDeviceSource(source){
+  const lock=typeof withDurableMigrationLock==='function'?withDurableMigrationLock:run=>run();
+  return lock(()=>releaseDuplicatedDeviceSourceLocked(source));
+}
+async function releaseDuplicatedDeviceSourceLocked(source){
+  // The live guest collection is what logout shows. It stays in localStorage,
+  // as do the active account's word records. The unscoped original is copied
+  // to IndexedDB and removed only after that copy reads back equal. A launch
+  // killed while deleting keeps the archive and the keys still here; the next
+  // launch unions them and never replaces a complete archive with a fragment.
+  if(!source||source.id===learningGuestId()||String(source.id).startsWith('user:'))return;
+  const snapshots=learningSnapshotKeys(source);
+  if(!snapshots.size)return;
+  let live,drops;
+  try{live=learningSourcePayload(source);drops=learningNullDrops(source,snapshots);}catch{return;}
+  let payload=null;
+  try{
+    const db=await learningArchiveDb();
+    payload=await localTransaction(db,'sources','readwrite',(tx,done)=>{
+      const store=tx.objectStore('sources'),request=store.get(source.id);
+      request.onsuccess=()=>{
+        try{
+          const next=learningArchiveUnion(request.result||null,live);
+          for(const key of drops.words)delete next.words[key];
+          for(const key of drops.dead)delete next.dead[key];
+          const empty=!Object.keys(next.words).length&&!Object.keys(next.dead).length&&!Object.keys(next.conflicts).length;
+          if(empty){done(null);return;}
+          if(!learningArchiveSame(request.result||null,next))store.put(next,source.id);
+          done(next);
+        }catch{try{tx.abort();}catch{}}
+      };
+    });
+  }catch{return;}
+  if(!payload)return;
+  let saved;
+  try{saved=await readLearningArchiveStrict(source.id);}catch{return;}
+  if(!learningArchiveSame(saved,payload))return;
+  for(const [key,value] of snapshots){
+    if(localStorage.getItem(key)!==value)continue;
+    localStorage.removeItem(key);
+  }
+}
+async function deviceLocalSourceOpen(source,entry){
+  const material=await deviceLocalSourceMaterial(source);
+  const words=material.words,dead=material.dead,conflicts=material.conflicts;
   const wordKeys=[...Object.keys(words),...Object.keys(dead)];
   const knownWords=entry?.keyMap||{},knownConflicts=entry?.conflicts||{};
   const newWords=!entry||!entry.done?wordKeys.length>0||!entry:wordKeys.some(key=>!Object.prototype.hasOwnProperty.call(knownWords,key));
@@ -224,9 +347,9 @@ async function mergeOneDeviceLocalSource(source,target){
     if(prior&&prior.owner===target.id&&prior.keyMap)entry={id:prior.id,keyMap:prior.keyMap,conflicts:{},done:!!prior.complete};
     else entry={id:'local:'+learningDeviceId()+':'+source.id,keyMap:{},conflicts:{},done:false};
   }
-  const opened=deviceLocalSourceOpen(source,entry);
+  const opened=await deviceLocalSourceOpen(source,entry);
   if(!opened.open){
-    if(entry.done)return false;
+    if(entry.done){await releaseDuplicatedDeviceSource(source);return false;}
     let hasStudy=false;
     if(typeof exportLearningStorage==='function'){
       const study=await exportLearningStorage(source,target);
@@ -236,6 +359,7 @@ async function mergeOneDeviceLocalSource(source,target){
     if(!hasStudy){
       journal.sources[source.id]={...entry,done:true};
       localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(journal));
+      await releaseDuplicatedDeviceSource(source);
       return false;
     }
   }
@@ -288,6 +412,7 @@ async function mergeOneDeviceLocalSource(source,target){
   const finished=readDeviceLocalMerge(target);
   finished.sources[source.id]={...entry,done:true};
   localStorage.setItem(deviceLocalMergeKey(target),JSON.stringify(finished));
+  await releaseDuplicatedDeviceSource(source);
   if(typeof queueSync==='function')queueSync();
   return true;
 }

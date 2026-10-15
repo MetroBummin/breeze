@@ -26,6 +26,19 @@ function world(){
 const words=Object.fromEntries(Array.from({length:50},(_,i)=>['key-'+i,{word:'word '+i,ko:'뜻 '+i,book:'Book',addedAt:i}]));
 async function seed(w,name='Set',source=words){const result=w.context.model.create(await w.context.loadStudySets(),{name,bookTitles:['Book']},source,100);await w.context.commitStudySets(result.state);return result;}
 
+test('older test summaries leave localStorage and stay in the exported history',async()=>{
+  const w=world(),set=await seed(w,'Cap');
+  for(let i=0;i<50;i++)w.context.saveStudySetTestRecord(set.set.id,{id:'s'+i,at:i+1,count:1,correct:1,score:100});
+  const key='breeze.account.v1.'+encodeURIComponent('user:A')+'.breeze.study-set-tests.v1';
+  const local=JSON.parse(w.storage.get(key));
+  assert.equal(local.sets[set.set.id].length,40);
+  assert.equal(local.sets[set.set.id][0].id,'s49');
+  const all=await w.context.exportLearningStorage();
+  assert.equal(all.tests.sets[set.set.id].length,50);
+  assert.equal(all.tests.sets[set.set.id][0].id,'s49');
+  assert.equal(all.tests.sets[set.set.id][49].id,'s0');
+});
+
 test('A → B → A isolates sets, summary history and all-word sessions',async()=>{
   const w=world(),set=await seed(w,'A');
   w.context.saveStudySetTestRecord(set.set.id,{id:'test-a',at:20,count:2,correct:1,score:50});

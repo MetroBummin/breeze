@@ -171,28 +171,93 @@ function studyTestsDecode(raw){
   return result.data;
 }
 function studyStorageStableJson(value){return JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])):item);}
+function studyTestStoredRow(row){
+  // A finished summary is a score, not the answer sheet. Pending rows stay so
+  // an interrupted grade can resume.
+  if(!row||typeof row!=='object'||Array.isArray(row)||row.pending||!Object.prototype.hasOwnProperty.call(row,'rows'))return row;
+  const copy={...row};delete copy.rows;return copy;
+}
 function studyTestsMerge(left,right){
   const sets={};
-  for(const id of [...new Set([...Object.keys(left.sets),...Object.keys(right.sets)])].sort()){
+  for(const id of [...new Set([...Object.keys(left.sets||{}),...Object.keys(right.sets||{})])].sort()){
     const rows=new Map();
-    for(const row of [...left.sets[id]||[],...right.sets[id]||[]]){
+    for(const row of [...left.sets?.[id]||[],...right.sets?.[id]||[]]){
+      const stored=studyTestStoredRow(row);
       // The complete existing summary is the conflict identity. Exact retries
       // collapse; conflicting same-ID summaries are preserved in stable order.
-      rows.set(studyStorageStableJson(row),row);
+      rows.set(studyStorageStableJson(stored),stored);
     }
     const settled=new Set([...rows.values()].filter(row=>row&&row.id&&!row.pending).map(row=>row.id));
     sets[id]=[...rows.values()].filter(row=>!(row&&row.pending&&settled.has(row.id))).sort((a,b)=>b.at-a.at||a.id.localeCompare(b.id)||studyStorageStableJson(a).localeCompare(studyStorageStableJson(b)));
   }
   return {version:1,sets};
 }
+function studyTestsPartition(data){
+  const local={version:1,sets:{}},overflow={version:1,sets:{}};
+  const cap=BreezeStudySetTest.MAX_RECORDS;
+  for(const [id,rows] of Object.entries(data.sets||{})){
+    const pending=[],done=[];
+    for(const row of rows||[]){if(row&&row.pending)pending.push(row);else done.push(row);}
+    local.sets[id]=pending.concat(done.slice(0,cap));
+    if(done.length>cap)overflow.sets[id]=done.slice(cap);
+  }
+  return {local,overflow};
+}
+const studyTestOverflowWrites=new Map();
+async function studyTestsOverflowRead(key){
+  const db=await studyStorageDb();
+  const record=await localTransaction(db,'records','readonly',(tx,done)=>{
+    const request=tx.objectStore('records').get(key+'.test-overflow');
+    request.onsuccess=()=>done(request.result||null);
+  });
+  if(!record||typeof record.value!=='string')return {version:1,sets:{}};
+  return studyTestsDecode(record.value);
+}
+async function studyTestsReadMerged(scope=studyScopeCapture()){
+  if(globalThis.__breezeTestOverflowChain)await globalThis.__breezeTestOverflowChain.catch(()=>{});
+  const key=studyTestsKey(scope);
+  await studyTestOverflowWrites.get(key)?.catch(()=>{});
+  return studyTestsMerge(studyTestsDecode(localStorage.getItem(key)),await studyTestsOverflowRead(key));
+}
+function writeStudyTestOverflow(key,overflow,complete){
+  const task=async()=>{
+    const next=complete?overflow:studyTestsMerge(await studyTestsOverflowRead(key),overflow);
+    const empty=!Object.values(next.sets||{}).some(rows=>Array.isArray(rows)&&rows.length);
+    const db=await studyStorageDb();
+    await localTransaction(db,'records','readwrite',tx=>{
+      const store=tx.objectStore('records');
+      if(empty)store.delete(key+'.test-overflow');
+      else store.put({value:JSON.stringify(next)},key+'.test-overflow');
+    });
+  };
+  const previous=studyTestOverflowWrites.get(key)||Promise.resolve();
+  const job=previous.catch(()=>{}).then(task);
+  studyTestOverflowWrites.set(key,job);
+  return job;
+}
+function persistStudyTests(scope,data,complete=false){
+  const key=studyTestsKey(scope),parts=studyTestsPartition(data);
+  localStorage.setItem(key,JSON.stringify(parts.local));
+  const queueOverflow=globalThis.breezeQueueTestOverflow;
+  const job=typeof queueOverflow==='function'
+    ?queueOverflow(key,parts.overflow,complete)
+    :writeStudyTestOverflow(key,parts.overflow,complete);
+  studyTestOverflowWrites.set(key,job);
+  return job;
+}
 function saveStudySetTestRecord(setId,record,scope=studyScopeCapture()){
-  studyScopeAssert(scope);const key=studyTestsKey(scope),raw=localStorage.getItem(key);
-  const previous=studyTestsDecode(raw),saved=BreezeStudySetTest.save(raw,setId,record);
-  if(!saved.ok)return false;
-  // Import and device merges can bring more than forty extant summaries. Keep
-  // those summaries instead of silently clipping another device's history.
-  const next=studyTestsMerge(previous,studyTestsDecode(saved.raw));
-  localStorage.setItem(key,JSON.stringify(next));studyStorageNotify(BreezeStudySetTest.KEY,scope);return true;
+  try{
+    studyScopeAssert(scope);const key=studyTestsKey(scope),raw=localStorage.getItem(key);
+    const previous=studyTestsDecode(raw),saved=BreezeStudySetTest.save(raw,setId,record);
+    if(!saved.ok)return false;
+    // The hot local document keeps forty summaries per set. Older summaries
+    // move to IndexedDB so another device's history is still exported.
+    const next=studyTestsMerge(previous,studyTestsDecode(saved.raw));
+    persistStudyTests(scope,next,false);studyStorageNotify(BreezeStudySetTest.KEY,scope);return true;
+  }catch(error){
+    if(error&&(error.name==='QuotaExceededError'||error.code===22||error.code===1014))return false;
+    throw error;
+  }
 }
 function studySimpleArchiveDecode(raw){
   if(raw===null)return {version:1,sessions:[]};
@@ -236,7 +301,7 @@ async function exportLearningStorage(scope=studyScopeCapture(),guard=studyScopeC
     readLearningSource(STUDY_SIMPLE_ARCHIVE,studySimpleArchiveDecode,scope,guard)
   ]);
   studyScopeAssert(guard);
-  const result={version:1,sets:typeof setsRaw==='object'&&setsRaw!==null?setsRaw.state:BreezeStudySets.decode(setsRaw),simple:{version:1,active:decodeSimpleStudySession(simpleRaw),sessions:studySimpleArchiveDecode(archiveRaw).sessions},tests:studyTestsDecode(localStorage.getItem(studyTestsKey(scope)))};
+  const result={version:1,sets:typeof setsRaw==='object'&&setsRaw!==null?setsRaw.state:BreezeStudySets.decode(setsRaw),simple:{version:1,active:decodeSimpleStudySession(simpleRaw),sessions:studySimpleArchiveDecode(archiveRaw).sessions},tests:await studyTestsReadMerged(scope)};
   Object.defineProperty(result,'localRevision',{value:setsRaw?.revision||0});return result;
 }
 function validateLearningPayload(payload){
@@ -286,8 +351,8 @@ async function mergeLearningStorage(remote,scope=studyScopeCapture(),guard=study
       studyScopeAssert(guard);
       // Read summaries again after IDB awaits; their synchronous local writer
       // can have added a completed test while the transaction was running.
-      merged.tests=studyTestsMerge(studyTestsDecode(localStorage.getItem(studyTestsKey(scope))),merged.tests);
-      localStorage.setItem(studyTestsKey(scope),JSON.stringify(merged.tests));
+      merged.tests=studyTestsMerge(await studyTestsReadMerged(scope),merged.tests);
+      persistStudyTests(scope,merged.tests,true);
       if(!scope||typeof isLearningScopeCurrent!=='function'||isLearningScopeCurrent(scope))studyScopeChanged();
       studyStorageNotify(STUDY_SETS_STORAGE,scope,false);
       if(typeof window.dispatchEvent==='function')window.dispatchEvent(new CustomEvent('breeze-study-storage',{detail:studyScopeKey(STUDY_SETS_STORAGE,scope)}));
@@ -338,6 +403,177 @@ async function hasLegacyLearningStorage(){
     for(const key of keys){const request=tx.objectStore('records').get(key);request.onsuccess=()=>{found ||= request.result?.value!=null;if(--pending===0)done(found);};}
   });
   studyScopeAssert(guard);return found;
+}
+const STUDY_MIGRATION_BASES=['breeze.study-sets.v1','breeze.simple-study-session.v1','breeze.simple-study-archives.v1'];
+function studyMigrationIdentity(name){
+  const at=name.lastIndexOf('.breeze.');
+  const base=at<0?name:name.slice(at+1);
+  const stripped=base.replace(/\.backup(?:\.\d+)?$/,'');
+  if(!STUDY_MIGRATION_BASES.includes(stripped))return null;
+  const decode=stripped===STUDY_SETS_STORAGE?BreezeStudySets.decode:stripped==='breeze.simple-study-session.v1'?decodeSimpleStudySession:studySimpleArchiveDecode;
+  if(typeof decode!=='function')return null;
+  return {storageKey:name.slice(0,name.length-base.length)+stripped,decode};
+}
+function studyMigrationGroups(){
+  const names=[],groups=new Map();
+  for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name)names.push(name);}
+  for(const name of names){
+    const parsed=studyMigrationIdentity(name);
+    if(parsed&&!groups.has(parsed.storageKey))groups.set(parsed.storageKey,parsed.decode);
+  }
+  return groups;
+}
+function studyTestMigrationKeys(){
+  const names=[],keys=[];
+  for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name)names.push(name);}
+  for(const name of names){
+    const at=name.lastIndexOf('.breeze.');
+    if((at<0?name:name.slice(at+1))==='breeze.study-set-tests.v1')keys.push(name);
+  }
+  return keys;
+}
+async function studyTestOverflowOrigins(){
+  const db=await studyStorageDb();
+  return localTransaction(db,'records','readonly',(tx,done)=>{
+    const keys=[],request=tx.objectStore('records').openCursor();
+    request.onsuccess=()=>{
+      const row=request.result;
+      if(!row){done(keys);return;}
+      const name=String(row.key);
+      if(name.endsWith('.test-overflow'))keys.push(name.slice(0,-'.test-overflow'.length));
+      row.continue();
+    };
+  });
+}
+async function studyMigrationRead(key){
+  const db=await studyStorageDb();
+  return localTransaction(db,'records','readonly',(tx,done)=>{
+    const request=tx.objectStore('records').get(key);
+    request.onsuccess=()=>done(request.result);
+  });
+}
+function studyMigrationRelease(storageKey,record,legacy){
+  if(!record||record.version!==1)return;
+  for(const [name,bytes] of Object.entries(legacy)){
+    if(localStorage.getItem(name)!==bytes)continue;
+    const stored=record.legacy&&record.legacy[name]===bytes||(name===storageKey&&record.value===bytes);
+    if(stored)localStorage.removeItem(name);
+  }
+}
+async function migrateOneStudyRecord(storageKey,decode){
+  const legacy=studyStorageLegacy(storageKey);
+  if(!Object.prototype.hasOwnProperty.call(legacy,storageKey))return;
+  const value=legacy[storageKey];
+  try{decode(value);}catch{return;}
+  let existing;
+  try{existing=await studyMigrationRead(storageKey);}catch{return;}
+  if(existing!==undefined){
+    try{studyStorageRecord(existing,decode);}catch{return;}
+    studyMigrationRelease(storageKey,existing,legacy);
+    return;
+  }
+  const db=await studyStorageDb();
+  await localTransaction(db,'records','readwrite',tx=>{
+    const store=tx.objectStore('records'),request=store.get(storageKey);
+    request.onsuccess=()=>{
+      try{if(request.result===undefined)store.add({version:1,value,legacy},storageKey);}
+      catch{try{tx.abort();}catch{}}
+    };
+  });
+  const saved=await studyMigrationRead(storageKey);
+  if(!saved||saved.version!==1||saved.value!==value)return;
+  try{decode(saved.value);}catch{return;}
+  for(const [name,bytes] of Object.entries(legacy))if(!saved.legacy||saved.legacy[name]!==bytes)return;
+  studyMigrationRelease(storageKey,saved,legacy);
+}
+function studyTestsEmpty(data){
+  return !Object.values(data?.sets||{}).some(rows=>Array.isArray(rows)&&rows.length);
+}
+async function settleOverflowChain(){
+  if(globalThis.__breezeTestOverflowChain)await globalThis.__breezeTestOverflowChain.catch(()=>{});
+}
+async function commitVerifiedOverflow(key,data){
+  await settleOverflowChain();
+  const empty=studyTestsEmpty(data),value=JSON.stringify(data),db=await studyStorageDb();
+  await localTransaction(db,'records','readwrite',tx=>{
+    const store=tx.objectStore('records');
+    if(empty)store.delete(key+'.test-overflow');
+    else store.put({value},key+'.test-overflow');
+  });
+  const saved=await studyTestsOverflowRead(key);
+  return studyStorageStableJson(saved)===studyStorageStableJson(empty?{version:1,sets:{}}:data);
+}
+function writeVerifiedTestSlim(key,slim,original){
+  const landed=()=>localStorage.getItem(key)===slim;
+  try{localStorage.setItem(key,slim);return landed();}
+  catch(error){
+    if(!(error&&(error.name==='QuotaExceededError'||error.code===22||error.code===1014)))throw error;
+    localStorage.removeItem(key);
+    try{localStorage.setItem(key,slim);return landed();}
+    catch{
+      if(localStorage.getItem(key)===null&&original!==null){try{localStorage.setItem(key,original);}catch{}}
+      return false;
+    }
+  }
+}
+async function migrateOneStudyTestHistory(key){
+  const raw=localStorage.getItem(key);
+  let local;
+  if(raw===null)local={version:1,sets:{}};
+  else{try{local=studyTestsDecode(raw);}catch{return;}}
+  await settleOverflowChain();
+  await studyTestOverflowWrites.get(key)?.catch(()=>{});
+  const overflow=await studyTestsOverflowRead(key);
+  if(raw===null&&studyTestsEmpty(overflow))return;
+  const merged=studyTestsMerge(local,overflow),parts=studyTestsPartition(merged);
+  const settled=studyStorageStableJson(local)===studyStorageStableJson(parts.local)
+    &&studyStorageStableJson(overflow)===studyStorageStableJson(parts.overflow)
+    &&!(raw===null&&!studyTestsEmpty(parts.local));
+  if(settled)return;
+  if(!await commitVerifiedOverflow(key,merged))return;
+  if(studyStorageStableJson(local)!==studyStorageStableJson(parts.local)){
+    if(!writeVerifiedTestSlim(key,JSON.stringify(parts.local),raw))return;
+  }
+  await settleOverflowChain();
+  if(!await commitVerifiedOverflow(key,parts.overflow))await commitVerifiedOverflow(key,merged);
+}
+function durableLearningPresent(){
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i)||'';
+    if(key==='breeze.words'||key.includes('breeze.word-item.')||key.includes('breeze.dead-item.')||key.includes('breeze.word-conflicts')
+      ||key.includes('breeze.study-sets.v1')||key.includes('breeze.study-set-tests.v1')||key.includes('breeze.simple-study')) return true;
+  }
+  return false;
+}
+async function migrateDurableLocalStorage(){
+  // First launch after an update. Each step copies, reads the copy back, and
+  // only then removes localStorage. One failure leaves that record in place
+  // and does not skip the others. Running again finishes a move the last
+  // launch did not. One tab holds the move until it finishes or closes.
+  const lock=typeof withDurableMigrationLock==='function'?withDurableMigrationLock:run=>run();
+  try{await lock(()=>migrateDurableLocalStorageLocked());}
+  catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+}
+async function migrateDurableLocalStorageLocked(){
+  if(durableLearningPresent()){
+    try{if(typeof requestDurableLocalStorage==='function')void requestDurableLocalStorage();}catch{}
+  }
+  try{
+    if(typeof releaseDuplicatedDeviceSource==='function')await releaseDuplicatedDeviceSource({id:'legacy',generation:0});
+  }catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  let groups;
+  try{groups=studyMigrationGroups();}catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);groups=new Map();}
+  for(const [storageKey,decode] of groups){
+    try{await migrateOneStudyRecord(storageKey,decode);}
+    catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  }
+  const tests=new Set();
+  try{for(const key of studyTestMigrationKeys())tests.add(key);}catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  try{for(const key of await studyTestOverflowOrigins())tests.add(key);}catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  for(const key of tests){
+    try{await migrateOneStudyTestHistory(key);}
+    catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  }
 }
 async function archiveSimpleStudySession(session,scope=studyScopeCapture()){
   for(let attempt=0;attempt<3;attempt++){

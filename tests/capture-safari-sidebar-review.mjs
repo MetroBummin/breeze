@@ -18,7 +18,7 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad-portrait',820,1
   const styles=await page.locator('.pdf-navigation-head>button').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n),r=n.getBoundingClientRect(),svg=n.querySelector('svg'),v=getComputedStyle(svg),b=svg.getBoundingClientRect();return {id:n.id,width:r.width,height:r.height,radius:s.borderRadius,background:s.backgroundColor,iconWidth:b.width,iconHeight:b.height,stroke:v.strokeWidth};}));
   assert.equal(styles.length,2);for(const s of styles){assert.equal(s.width,44);assert.equal(s.height,44);assert.equal(s.radius,'50%');}const [{id:first,...a},{id:second,...b}]=styles;
   if(before){assert.equal(a.iconWidth,22);assert.equal(a.stroke,'2px');assert.equal(b.iconWidth,24);assert.match(b.stroke,/3\.06667/);}
-  else{assert.deepEqual(a,b,'sidebar peers retain identical geometry/material/icon weight');assert.equal(a.iconWidth,24);assert.match(a.stroke,/3\.06667/);}
+  else{assert.deepEqual(a,b,'sidebar peers retain identical geometry/material/icon weight');assert.equal(a.iconWidth,23);assert.equal(a.stroke,'2.6px');}
   await page.screenshot({path:`${out}/${device}-${theme}-sidebar.png`});const header=await page.locator('.pdf-navigation-head').boundingBox();await page.screenshot({path:`${out}/${device}-${theme}-header-crop.png`,clip:{x:0,y:Math.max(0,header.y-8),width:Math.ceil(header.x+header.width+8),height:Math.ceil(header.height+16)},scale:'device'});
   cases.push({device,theme,viewport:{width,height,dpr:2},scroll:await page.evaluate(()=>readerScrollTop()),styles});await page.locator('#pdf-navigation-toggle').tap();await page.waitForFunction(()=>!document.getElementById('pdf-page-control').classList.contains('pdf-navigation-closing'));
  }

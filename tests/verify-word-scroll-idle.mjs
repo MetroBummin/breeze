@@ -91,6 +91,26 @@ console.log('word scroll-idle presentation: passed');
   }
 }
 
+// Seen time follows the scroll event. A handler that runs after 750ms must not
+// treat its own delay as reading time, and a scroll that actually lands after
+// 750ms still dismisses.
+{
+  const f=fixture(),c=f.context;
+  c.loading=false;c.renderWordPeek();f.frame();
+  assert.equal(f.pill.hidden,false);
+  const shown=c.performance.now();
+  f.advance(800);
+  c.rememberLookupScrollEventAt(shown+20);
+  c.wordPeekUserScrolled();
+  assert.equal(f.closed,0,'late handler dismissed a scroll inside the 750ms window');
+  f.advance(250);f.frame();
+  assert.equal(f.pill.hidden,false);
+  const revealed=c.performance.now();
+  f.advance(750);
+  c.rememberLookupScrollEventAt(revealed+750);
+  c.wordPeekUserScrolled();
+  assert.equal(f.closed,1,'a scroll after 750ms of visibility still dismisses');
+}
 // An immediate saved result needs no protected reading window or resurrection.
 {
   const f=fixture(false),c=f.context;c.loading=false;c.renderWordPeek();f.frame();

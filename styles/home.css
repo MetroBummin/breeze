@@ -3,7 +3,7 @@
   #v-home, #v-casuals, #v-longform{max-width:960px; margin:0 auto; padding:28px 26px 90px;}
   /* Home only changes placement; Reader owns the shared control surfaces/geometry. */
   #primary-nav svg{display:none;}
-  #home-controls #primary-nav svg{display:block; width:var(--control-icon-size); height:var(--control-icon-size); fill:none; stroke:currentColor; stroke-width:var(--control-icon-stroke); stroke-linecap:round; stroke-linejoin:round;}
+  #home-controls #primary-nav svg{display:block; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round;}
   #home-controls .control-circle span{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;}
   #home-controls .control-pill{cursor:pointer; font:600 13px var(--ui);}
   #v-home{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
@@ -210,8 +210,6 @@
   #am-card h2{font-size:20px; font-weight:600; margin-bottom:6px;}
   #am-card .desc{font-size:13.5px; color:var(--soft); line-height:1.65; margin-bottom:16px;}
   #am-card .desc b{color:var(--ink); font-weight:600;}
-  #am-close{float:right; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
-    font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #am-card .am-step{display:none;} #am-card .am-step.on{display:block;}
   .am-choices{display:flex; flex-direction:column; gap:12px; margin-top:18px;}
   .am-big{display:flex; align-items:center; gap:16px; text-align:left; width:100%; cursor:pointer;
@@ -250,8 +248,6 @@
   #ed-card h2{font-size:20px; font-weight:600; margin-bottom:14px;}
   #ed-card .desc{font-size:13px; color:var(--sentence-glass-secondary); line-height:1.6; margin-bottom:4px;}
   #ed-card .desc b{color:var(--ink); font-weight:600;}
-  #ed-close{float:right; border:none; background:var(--quiet); width:30px; height:30px; border-radius:50%;
-    font-size:14px; cursor:pointer; color:var(--quiet-ink);}
   #ed-card .ed-step{display:none;} #ed-card .ed-step.on{display:block;}
   .ed-lbl{display:block;font-size:12px;color:var(--sentence-glass-secondary);margin:16px 0 7px;letter-spacing:.3px;}
   #ed-title{width:100%; border:1px solid var(--field-line); border-radius:14px; padding:12px 14px; font-size:15px;

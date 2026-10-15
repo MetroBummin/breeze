@@ -155,16 +155,20 @@ test('legacy device words merge on login, survive a retained decision, and stay 
   assert.equal(await w.context.confirmLegacyLearningImport(),false);
   assert.equal(w.run('Object.keys(load("breeze.word-conflicts",{})).length'),1,'retry does not duplicate source conflict history');
   assert.equal(Object.keys(w.snapshot().words).length,2);
+  const archived=await w.context.readLearningArchive('legacy');
+  assert.equal(archived.words.old.ko,'기존 뜻');assert.equal(archived.words.late.ko,'기존 journal');
+  assert.deepEqual(archived.conflicts.exact,conflict);
+  assert.equal(memory.get('breeze.words'),undefined);assert.equal(memory.get('breeze.word-write.pending'),undefined);assert.equal(memory.get('breeze.word-conflicts'),undefined);
   await w.switch(null);assert.deepEqual(w.snapshot().words,{});
   await w.switch('B');assert.deepEqual(Object.keys(w.snapshot().words).sort(),['late','old']);
-  assert.equal(memory.get('breeze.words'),original);assert.equal(memory.get('breeze.word-write.pending'),pending);assert.equal(memory.get('breeze.word-conflicts'),conflicts);
 });
 
 test('conflict-only legacy history merges into the logged-in account and the original stays put',async()=>{
   const conflict={key:'missing-old-word',left:{ko:'옛 뜻'},right:{ko:'보존할 뜻'},at:99},raw=JSON.stringify({historic:conflict},null,2);
   const w=world({memory:new Map([['breeze.word-conflicts',raw]])});await w.switch('A');
   assert.deepEqual(clone(w.run('Object.values(load("breeze.word-conflicts",{}))')),[conflict]);
-  assert.equal(w.memory.get('breeze.word-conflicts'),raw);
+  assert.deepEqual((await w.context.readLearningArchive('legacy')).conflicts.historic,conflict);
+  assert.equal(w.memory.get('breeze.word-conflicts'),undefined);
   await w.switch(null);assert.deepEqual(clone(w.run('load("breeze.word-conflicts",{})')),{});
   await w.switch('B');assert.deepEqual(clone(w.run('Object.values(load("breeze.word-conflicts",{}))')),[conflict]);
 });

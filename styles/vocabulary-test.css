@@ -12,8 +12,8 @@ body:has(#v-vocabulary-test.on)::before,body:has(#v-vocabulary-test.on) #topbar{
 .vocabulary-test-button:active{opacity:.72;}
 .vocabulary-test-button:disabled{opacity:.45;cursor:default;}
 .vocabulary-test-button:focus-visible,.vocabulary-test-options label:has(:focus-visible),#vocabulary-test-answer:focus-visible,.vocabulary-test-batches summary:focus-visible{outline:2px solid var(--brand-strong);outline-offset:3px;}
-.vocabulary-test-back{flex:none;width:44px;height:44px;padding:11px;border-radius:50%;}
-.vocabulary-test-back svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;}
+.vocabulary-test-back{flex:none;width:44px;height:44px;padding:0;border-radius:50%;}
+.vocabulary-test-back svg{display:block;width:var(--am-icon-chevron);height:var(--am-icon-chevron);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-chevron);stroke-linecap:round;stroke-linejoin:round;}
 .vocabulary-test-primary{display:block;width:100%;min-height:48px;border-radius:16px;font-weight:600;margin-top:24px;}
 .vocabulary-test-note{font:400 14px/1.65 var(--ui);color:var(--settings-muted);margin:12px 0 20px;}
 .vocabulary-test-options{border:0;padding:0;margin:32px 0 16px;display:flex;flex-wrap:wrap;gap:12px;}

@@ -37,8 +37,8 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 :is(#v-vocab,.vocabulary-rows) .chip{min-width:38px;min-height:32px;border-radius:13px;padding:5px 10px;font:600 14px var(--ui);}
 :is(#v-vocab,.vocabulary-rows) .vgroup.open .vrow{align-items:start;}
 .wordbook-hint{margin:12px 0;color:var(--settings-muted);font:400 12px/18px var(--ui);}
-#wordbook-controls svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
-#wordbook-controls .control-pill{font:600 13px var(--ui);cursor:pointer;}
+#wordbook-controls svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}
+#wordbook-controls .control-pill{font:600 15px var(--ui);cursor:pointer;}
 #wordbook-add-dialog{width:min(420px,calc(100vw - 32px));margin:auto;padding:24px;border:1px solid var(--settings-line);border-radius:24px;background:var(--home-background);color:var(--settings-ink);}
 #wordbook-add-dialog::backdrop{background:var(--settings-scrim);}
 #wordbook-add-form{display:grid;gap:18px;}
@@ -118,7 +118,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 /* Actions use existing dock slots; selection is optional, per Meaning. */
 .wordbook-brand #btn-export{margin-left:auto;flex:none;width:44px;height:44px;position:relative;display:grid;place-items:center;border-radius:50%;cursor:pointer;}
 .wordbook-brand #btn-export:focus-visible{outline:2px solid var(--selection-ink);outline-offset:4px;}
-.wordbook-brand #btn-export svg{width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+.wordbook-brand #btn-export svg{width:var(--am-icon-complex);height:var(--am-icon-complex);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-complex);stroke-linecap:round;stroke-linejoin:round;}
 .wordbook-review-entry button{min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--settings-ink);font:500 12px/1.5 var(--ui);cursor:pointer;}
 .wordbook-review-entry [hidden]{display:none!important;}
 .review-recall-hint{font:400 12px/1.6 var(--ui);color:var(--sentence-glass-secondary);margin:0 0 16px;}
@@ -126,8 +126,8 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 /* Study is a real navigable page, with no modal backdrop or hidden Memory below. */
 #v-study{max-width:760px;min-height:100svh;box-sizing:border-box;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));color:var(--settings-ink);}
 #vocabulary-review-page{min-height:calc(100svh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column;}
-#review-close{display:grid;place-items:center;align-self:flex-start;flex:none;width:44px;height:44px;margin:0 0 12px -10px;padding:0;border:0;background:transparent;color:var(--settings-ink);cursor:pointer;}
-#review-close svg{width:var(--control-back-icon-size);height:var(--control-back-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-back-icon-stroke);stroke-linecap:round;stroke-linejoin:round;transform:translateX(1px);}
+#review-close{display:grid;place-items:center;align-self:flex-start;flex:none;width:44px;height:44px;margin:0 0 12px;padding:0;border:0;cursor:pointer;}
+#review-close svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-chevron);stroke-linecap:round;stroke-linejoin:round;transform:none;}
 #review-card{display:flex;flex-direction:column;flex:1;padding:24px 0;border:0;background:transparent;}
 #vocabulary-review-page #review-expression{font-size:27px;}
 #vocabulary-review-page #review-sentence{font-size:21px;}

@@ -58,14 +58,16 @@ try{
   await page.evaluate(()=>confirmLegacyLearningImport());
   await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
   assert.equal(await page.locator('#task-dialog[open]').count(),0,'legacy data merges without a confirmation dialog');
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
+  assert.equal(await page.evaluate(async()=>(await readLearningArchive('legacy')).words.legacy.ko),'귀속 확인');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.words')),null);
   const merged=await page.evaluate(()=>Object.values(words).filter(item=>item&&item.ko==='귀속 확인').length);
   assert.equal(merged,1);
   await page.evaluate(()=>switchLearningAccount(null));
   assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인')),false,'logout does not keep the account copy in the device view');
   assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&(item.word==='A private'||item.word==='B private'))),false,'logout drops both accounts’ private words');
   assert.equal(await page.evaluate(()=>Object.keys(words).filter(key=>key.startsWith('guest')).length),50,'logout keeps the device guest words');
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
+  assert.equal(await page.evaluate(async()=>(await readLearningArchive('legacy')).words.legacy.ko),'귀속 확인');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.words')),null);
   await page.evaluate(()=>switchLearningAccount('synthetic-B'));
   await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
   const returnedB=await page.evaluate(()=>({privateB:Object.values(words).filter(item=>item&&item.word==='B private').length,privateA:Object.values(words).filter(item=>item&&item.word==='A private').length,guests:Object.keys(words).filter(key=>key.startsWith('guest')).length,legacy:Object.values(words).filter(item=>item&&item.ko==='귀속 확인').length}));

@@ -8,7 +8,7 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #wordbook-add-dialog::backdrop,#task-dialog::backdrop{background:var(--sentence-glass-scrim);}
 #add-modal #am-card::before{display:none;}
 @supports (backdrop-filter:blur(1px)){#add-modal #am-card,#edit-modal #ed-card,#wordbook-add-dialog,#task-dialog{background:var(--sentence-glass-sheet);backdrop-filter:blur(18px) saturate(112%);-webkit-backdrop-filter:blur(18px) saturate(112%);}}
-#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{padding-right:36px;font:650 22px/1.4 var(--ui);letter-spacing:-.35px;overflow-wrap:anywhere;}
+#am-card h2,#ed-card h2,#wordbook-add-form h2,#task-title{padding-right:48px;font:650 22px/1.4 var(--ui);letter-spacing:-.35px;overflow-wrap:anywhere;}
 #task-form{display:grid;gap:18px;}
 #task-description{font:400 14px/1.65 var(--ui);color:var(--sentence-glass-secondary);overflow-wrap:anywhere;margin:0;}
 #task-input-label{display:grid;gap:8px;font:500 14px var(--ui);}
@@ -32,10 +32,9 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #ed-cloud .aa-toggle.on i{left:23px;}
 #ed-cloud .aa-toggle:disabled{opacity:.45;cursor:default;}
 #am-card .am-back,#ed-card .am-back{min-height:44px;padding:8px 0;}
-#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;float:none;width:44px;height:44px;min-height:44px;padding:0;border:1px solid var(--sentence-glass-line-soft);border-radius:50%;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);cursor:pointer;}
+#am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close{position:absolute;z-index:2;top:16px;right:16px;display:grid;place-items:center;float:none;cursor:pointer;}
 #pdf-page-navigation .task-close{position:static;}
-.task-close svg{display:block;width:var(--control-icon-size);height:var(--control-icon-size);fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
-.task-close:hover{background:var(--sentence-glass-action-hover);}
+.task-close svg{display:block;width:var(--am-icon-close);height:var(--am-icon-close);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-close);stroke-linecap:round;stroke-linejoin:round;}
 .task-surface button:focus-visible,#set-close:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:2px;}
 #wordbook-add-form>.task-close,#task-form>.task-close{margin:0;}
 /* Settings keeps opaque content groups and a blue sign-in primary exception. */
@@ -90,9 +89,7 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #wordbook-add-form input,#task-input{min-height:44px;padding:9px 10px;border-radius:10px;}
 #wordbook-add-form>div,.task-actions{gap:8px;}
 #wordbook-add-form>div button,.task-actions button{min-height:44px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:500;}
-#wordbook-add-form .task-close,#task-form .task-close{top:12px;right:12px;border:0;background:transparent;}
-#wordbook-add-form .task-close{border:1px solid var(--sentence-glass-line-soft);background:var(--sentence-glass-action);}
-#wordbook-add-form .task-close:hover,#task-form .task-close:hover{background:var(--sentence-glass-action-hover);}
+#wordbook-add-form .task-close,#task-form .task-close{top:16px;right:16px;}
 /* Match the lookup and Reader star proportions, with separate 44px touch targets. */
 #vstars{padding:4px 0;gap:8px;}
 #vstars .stbtn{position:relative;min-width:44px;min-height:36px;height:36px;padding:4px;border-radius:12px;}

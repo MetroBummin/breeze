@@ -9,7 +9,8 @@ function studySetTestPool(set){
   const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
   return BreezeStudySets.groupedCards(listed);
 }
-function studySetTestStorage(){return BreezeStudySetTest.records(localStorage.getItem(typeof studyTestsKey==='function'?studyTestsKey():BreezeStudySetTest.KEY),studySetsUI.setId);}
+function studySetTestHistoryKey(){return typeof studyTestsKey==='function'?studyTestsKey():BreezeStudySetTest.KEY;}
+function studySetTestStorage(){return BreezeStudySetTest.records(localStorage.getItem(studySetTestHistoryKey()),studySetsUI.setId);}
 function studySetTestDate(at){
   const date=new Date(at);
   if(Number.isNaN(date.getTime()))return '';
@@ -89,21 +90,27 @@ function studySetTestBegin(set,cards){
   studySetTestJobs.set(studySetTestRun.id,studySetTestRun);
 }
 function studySetTestPersist(run){
-  if(!run||!run.rows.length||run.rows.length<run.questions.length)return;
-  if(run.scope&&typeof isLearningScopeCurrent==='function'&&!isLearningScopeCurrent(run.scope))return;
-  const pending=run.rows.some(row=>row.status==='pending');
-  const correct=run.rows.filter(row=>row.status==='correct').length;
-  const record=pending?{
-    id:run.id,at:run.startedAt,count:run.questions.length,correct,score:null,pending:true,
-    rows:run.rows.map(row=>({word:row.word,meanings:row.meanings.slice(),answer:row.answer,status:row.status}))
-  }:{id:run.id,at:run.startedAt,count:run.questions.length,correct,score:BreezeStudySetTest.score(correct,run.questions.length)};
-  if(typeof saveStudySetTestRecord==='function'){
-    if(saveStudySetTestRecord(run.setId,record,run.scope)&&!pending)studySetTestJobs.delete(run.id);
-    return;
+  try{
+    if(!run||!run.rows.length||run.rows.length<run.questions.length)return;
+    if(run.scope&&typeof isLearningScopeCurrent==='function'&&!isLearningScopeCurrent(run.scope))return;
+    const pending=run.rows.some(row=>row.status==='pending');
+    const correct=run.rows.filter(row=>row.status==='correct').length;
+    const record=pending?{
+      id:run.id,at:run.startedAt,count:run.questions.length,correct,score:null,pending:true,
+      rows:run.rows.map(row=>({word:row.word,meanings:row.meanings.slice(),answer:row.answer,status:row.status}))
+    }:{id:run.id,at:run.startedAt,count:run.questions.length,correct,score:BreezeStudySetTest.score(correct,run.questions.length)};
+    if(typeof saveStudySetTestRecord==='function'){
+      if(saveStudySetTestRecord(run.setId,record,run.scope)&&!pending)studySetTestJobs.delete(run.id);
+      return;
+    }
+    const saved=BreezeStudySetTest.save(localStorage.getItem(BreezeStudySetTest.KEY),run.setId,record);
+    if(saved.ok)localStorage.setItem(BreezeStudySetTest.KEY,saved.raw);
+    if(!pending)studySetTestJobs.delete(run.id);
+  }catch(error){
+    // The score is already on screen. A full disk must not become the boot banner.
+    if(error&&(error.name==='QuotaExceededError'||error.code===22||error.code===1014))return;
+    throw error;
   }
-  const saved=BreezeStudySetTest.save(localStorage.getItem(BreezeStudySetTest.KEY),run.setId,record);
-  if(saved.ok)localStorage.setItem(BreezeStudySetTest.KEY,saved.raw);
-  if(!pending)studySetTestJobs.delete(run.id);
 }
 function studySetTestMaybeSave(){studySetTestPersist(studySetTestRun);}
 function studySetTestResultCopy(run){
@@ -524,7 +531,7 @@ window.addEventListener('breeze-learning-scope',()=>{
 });
 function studySetTestResumeStored(){
   let raw='';
-  try{raw=localStorage.getItem(BreezeStudySetTest.KEY)||'';}catch{return;}
+  try{raw=localStorage.getItem(studySetTestHistoryKey())||'';}catch{return;}
   for(const job of BreezeStudySetTest.pending(raw)){
     if(studySetTestJobs.has(job.record.id))continue;
     const rows=job.record.rows.map(row=>({word:row.word,meanings:row.meanings.slice(),answer:row.answer,status:row.status,via:row.status==='pending'?'':'stored'}));

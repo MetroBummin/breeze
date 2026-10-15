@@ -604,3 +604,32 @@ schema change or delayed Home repaint is added. Controlled deferred viewport
 reset reproduces100%→0% before the fix; regression checks preserve100/50/19%
 and exact durable original anchors, including backward reading. The real browser
 transition assertions remain, with actual WebKit CI required.
+
+## Apple Music glass controls (build 290)
+
+Circular dock, header, folder and sheet controls share one 44px Apple Music
+glass treatment in `styles/header-controls.css`, loaded last. Light glass is
+white at 62% with a 14px blur, 1.6 saturation, inset rim and highlights, a
+0.5px 7% outline and `0 2px 10px rgba(0,0,0,.08)`. Dark glass is white at 14%
+with top and bottom inset highlights and a 1px dark ring. Icon ink is secondary:
+`rgba(60,60,67,.6)` light and `rgba(235,235,245,.6)` dark. Center pills
+(`#home-resume`, `#wordbook-review`, `#readpill`) use the same glass at 44px
+tall with a 22px radius, 15px semibold type and primary ink (`#1C1C1E` /
+`#fff`). `#wordbook-add` uses a stronger fill, white 74% light and 18% dark.
+
+Strokes are painted pixels via `vector-effect: non-scaling-stroke` with round
+caps and joins. The back chevron is 3.6px on a 26px frame, the close X is
+4.1px on a 27.8px frame, plus is 2.8px on a 26px frame, and complex glyphs
+(gear, bookmark, house, export, sidebar, pen tools, more) are 2.6px. Gear,
+bookmark, plus, back and house use the approved SF-style paths. The chevron
+path is intentionally left of the viewBox center. Sheet closes sit 16px from
+the top-right, hide their decorative `::before`/`::after`, and drop the focus
+ring while open. `#readback` stays transparent inside the PDF page capsule.
+PDF toolbar and sidebar buttons keep a 44px hit area without a glass circle.
+
+This replaces the 48px dock row, 32px/1.5 back frames and 24px/2 dense header
+icons recorded above. `--control-side-size` and `--control-row-height` are both
+44px; gaps stay 8px and the PDF navigation group stays 88px. Star chips, red
+destructive buttons, Apple/Google sign-in, the lookup panel and form text
+buttons keep their existing materials. Reduced transparency uses the solid
+fallbacks `#f4f4f6` and `#3a3a3c`.

@@ -552,6 +552,14 @@ let wordPeekHadPending=false;
 let wordPeekLastScroll=-Infinity,wordPeekRevealTimer=null;
 let wordPeekPresentation='LOOKING_UP',wordPeekShownAt=null,wordPeekPresentationEnded=false;
 let wordPeekScrollPosition=null;
+// A scroll listener can run long after the scroll event. Seen-time and idle
+// belong to that event, or a late handler treats its own delay as reading.
+let lookupScrollEventAt=null;
+function rememberLookupScrollEventAt(at){lookupScrollEventAt=at;}
+function consumeLookupScrollEventAt(){
+  const at=lookupScrollEventAt;lookupScrollEventAt=null;
+  return at==null?performance.now():at;
+}
 function wordPeekMotionPosition(){
   const box=typeof readerScroller==='function'?readerScroller():null;
   return box?{top:box.scrollTop,left:box.scrollLeft}:null;
@@ -562,9 +570,9 @@ function cancelWordPeekReveal(){
 function lookupPeekScrollRemaining(lastScroll){
   return Math.max(0,WORD_PEEK_SCROLL_IDLE_MS-(performance.now()-lastScroll));
 }
-function lookupPeekScrollDismiss(offscreen,userScroll,shownAt,hadPending){
+function lookupPeekScrollDismiss(offscreen,userScroll,shownAt,hadPending,at=performance.now()){
   return offscreen || (userScroll&&shownAt!==null
-    &&(!hadPending||performance.now()-shownAt>=WORD_PEEK_SEEN_MS));
+    &&(!hadPending||at-shownAt>=WORD_PEEK_SEEN_MS));
 }
 function wordPeekScrollRemaining(){ return lookupPeekScrollRemaining(wordPeekLastScroll); }
 function deferWordPeekReveal(){
@@ -577,15 +585,16 @@ function deferWordPeekReveal(){
 }
 // Scroll changes presentation, not the result or the lookup's ownership.
 function wordPeekUserScrolled(userScroll=true){
+  const at=consumeLookupScrollEventAt();
   const position=wordPeekMotionPosition();
   if(position&&wordPeekScrollPosition&&position.top===wordPeekScrollPosition.top
       &&position.left===wordPeekScrollPosition.left)return wordPeekActive;
   wordPeekScrollPosition=position;
-  wordPeekLastScroll=performance.now();
+  wordPeekLastScroll=at;
   if(!wordPeekActive)return false;
   const offscreen=activeSelectedWordNode&&!wordPeekTargetVisible(activeSelectedWordNode);
   const dismiss=lookupPeekScrollDismiss(offscreen,userScroll,
-    wordPeekPresentation==='SHOWN'?wordPeekShownAt:null,wordPeekHadPending);
+    wordPeekPresentation==='SHOWN'?wordPeekShownAt:null,wordPeekHadPending,at);
   document.getElementById('word-peek').hidden=true;
   cancelWordPeekReveal();
   if(dismiss){
@@ -599,6 +608,12 @@ function wordPeekUserScrolled(userScroll=true){
   return true;
 }
 function wordPeekOpen(){ return wordPeekActive; }
+document.addEventListener('scroll',event=>{
+  const scroller=typeof readerScroller==='function'?readerScroller():null;
+  if(!scroller||event.target!==scroller)return;
+  const at=event.timeStamp;
+  rememberLookupScrollEventAt(Number.isFinite(at)&&at>0?at:performance.now());
+},true);
 /* Request readiness and presentation readiness are separate. A mini lookup
    survives scrolling and pending PDF pinch; another word/mode/page/exit ends it. */
 function wordPeekPending(){

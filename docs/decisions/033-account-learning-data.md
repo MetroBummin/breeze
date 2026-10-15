@@ -29,6 +29,40 @@ deleted in one account is not recreated there on the next login. Stable import
 ids keep set and session addresses idempotent. An older in-progress exclusive
 claim is finished only for the account that already owns that claim.
 
+WebKit allows about 5MB of localStorage for the whole origin. After a logged-in
+account has its copy, the unscoped device original moves into IndexedDB
+(`breeze-learning-archive`) so the same vocabulary is not stored twice in that
+5MB. The live guest collection and the active account's word records stay in
+localStorage, because logout and ordinary saves read them synchronously. A
+failed archive write leaves the original keys where they are. The next account
+still receives that device collection.
+
+Saved-set test summaries stay complete. The newest 40 per set stay in
+localStorage; older summaries move to IndexedDB. Disposable caches (discovery,
+article previews, crop hints, debug pads) are the first thing removed when a
+write hits the quota. The write is retried. Word records are not deleted to
+make room, and a quota failure is not reported as a failure to boot.
+
+The first launch after an update copies leftover localStorage records into
+IndexedDB, reads each copy back, and removes the localStorage bytes only when
+they still match. Saved sets, card sessions and test summaries already kept in
+IndexedDB are left in place when the local leftover differs. A launch killed
+during the move leaves the remaining localStorage copies until the next launch
+repeats the same steps. Words, saved sets, study progress and account records
+are not removed unless that read-back matches. The move does not write a new
+localStorage receipt, so a device that is already full can still finish it.
+
+The browser site is this same tree. GitHub Pages serves the repository root at
+breeze.io.kr, so Chrome, Safari, Firefox and mobile Safari run the same move
+as the iOS shell. A private window whose IndexedDB is missing or refuses writes
+keeps the localStorage copies and still opens the app; that failure is not a
+boot error. When learning records are already on the device,
+`navigator.storage.persist()` is requested once where the browser offers it, so
+the browser is less free to evict them. An empty first visit does not ask. Two
+open tabs take one Web Locks turn for the move. The archive write also unions
+with the record already in IndexedDB inside a single transaction, so a second
+tab cannot replace a complete copy with a fragment.
+
 ## Synchronization and compatibility
 
 The existing `public.words` conditional-write wordbook is retained. Conflicting

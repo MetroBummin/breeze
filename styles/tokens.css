@@ -555,6 +555,37 @@ html.dark,body.dark{--settings-sheet-surface:#2C2C2E;--home-background:#2C2C2E;-
   --control-light-progress-edge:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(77,174,214,.12);
 }
 
+/* Apple Music (iOS 26) glass. header-controls.css owns the controls that use it. */
+:root{
+  --am-control-size:44px;
+  --am-glass:rgba(255,255,255,.62);
+  --am-glass-strong:rgba(255,255,255,.74);
+  --am-glass-solid:#f4f4f6;
+  --am-glass-shadow:inset 0 0 0 .5px rgba(255,255,255,.95),inset 0 1px 1px rgba(255,255,255,.9),inset 0 -1px 1.5px rgba(255,255,255,.55),0 0 0 .5px rgba(0,0,0,.07),0 2px 10px rgba(0,0,0,.08);
+  --am-ink:rgba(60,60,67,.6);
+  --am-ink-primary:#1C1C1E;
+  --am-blur:blur(14px) saturate(1.6);
+  --am-stroke-chevron:3.6px;
+  --am-stroke-close:4.1px;
+  --am-stroke-plus:2.8px;
+  --am-stroke-complex:2.6px;
+  --am-icon-chevron:26px;
+  --am-icon-plus:26px;
+  --am-icon-close:27.8px;
+  --am-icon-gear:23px;
+  --am-icon-mark:25px;
+  --am-icon-complex:24px;
+  --am-icon-toolbar:23px;
+}
+html.dark,body.dark{
+  --am-glass:rgba(255,255,255,.14);
+  --am-glass-strong:rgba(255,255,255,.18);
+  --am-glass-solid:#3a3a3c;
+  --am-glass-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1.2px 0 rgba(255,255,255,.30),0 0 0 1px rgba(0,0,0,.35);
+  --am-ink:rgba(235,235,245,.6);
+  --am-ink-primary:#fff;
+}
+
 :root{--wordbook-field:#fff;--wordbook-star:#fff0c7;--wordbook-star-ink:#8d5a00;}
 body.dark{--wordbook-field:#3a3a3c;--wordbook-star:#4a3a20;--wordbook-star-ink:#ffd778;}
 

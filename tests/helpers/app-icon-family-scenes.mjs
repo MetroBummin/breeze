@@ -50,12 +50,12 @@ export async function captureAppFamilyStudy(page,capture){
  await page.locator('#wordbook-review').tap();await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('.study-sets-home-card[data-set-id]').first().tap();
  await page.waitForFunction(()=>studySetsUI.screen==='detail'&&studySetsUI.pageOpen);
- await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:32,stroke:'1.5px'},'#study-sets-edit':{size:24,stroke:'2px',dots:'1.15px'}});
+ await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:26,stroke:'3.6px'},'#study-sets-edit':{size:24,stroke:'2.6px',dots:'1.15px'}});
  await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');
  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
  assert.equal(await page.evaluate(()=>document.activeElement===studySetsUI.editMenu.querySelector('button')),true,'keyboard opens menu on its first action');
  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0');
- await capture('study-more',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
+ await capture('study-more',['#study-sets-back'],{'#study-sets-back':{size:26,stroke:'3.6px'}});
  await page.keyboard.press('End');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'세트 삭제');
  await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
  await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'책 추가');
@@ -69,10 +69,10 @@ export async function captureAppFamilyStudy(page,capture){
  // Restart via the domain action: captures never depend on the progress label
  // contract, future drag thresholds, or the other worker's learning-card UI.
  await page.evaluate(()=>studySetsStart(studySetsUI.setId,true));
- await capture('study-front',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
+ await capture('study-front',['#study-sets-back'],{'#study-sets-back':{size:26,stroke:'3.6px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'front focuses the tap/reveal card');
  await studyAction(page.keyboard.press('Enter'),page);
- await capture('study-revealed',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
+ await capture('study-revealed',['#study-sets-back'],{'#study-sets-back':{size:26,stroke:'3.6px'}});
  assert.equal(await page.locator('#study-sets-flashcard').evaluate(n=>n===document.activeElement),true,'revealed card keeps keyboard action ownership');
  assert.equal(await page.locator('.study-session-accessible-actions').evaluate(n=>getComputedStyle(n).clipPath),'none','approved revealed directions remain visible');
  for(const selector of ['#study-sets-grade-repeat','#study-sets-grade-remembered']){const box=await page.locator(selector).boundingBox();assert.ok(box&&box.width>=44&&box.height>=44,'visible direction remains a touch target: '+selector);}
@@ -83,7 +83,7 @@ export async function captureAppFamilyStudy(page,capture){
   await studyAction(page.locator('#study-sets-flashcard').press('Enter'),page);assert.equal(await page.locator('#study-sets-answer').isVisible(),true,'grade follows a durably revealed answer');await studyAction(page.locator('#study-sets-flashcard').press('ArrowRight'),page);await page.waitForFunction(()=>document.getElementById('study-sets-answer')?.hidden||document.querySelector('.study-sets-complete'));
  }
  assert.equal(await page.locator('.study-sets-complete').isVisible(),true,'real actions complete this four-card fixture');
- await capture('study-completion',['#study-sets-back'],{'#study-sets-back':{size:32,stroke:'1.5px'}});
+ await capture('study-completion',['#study-sets-back'],{'#study-sets-back':{size:26,stroke:'3.6px'}});
  await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='detail');
  await page.locator('#study-sets-back').click();await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('#study-sets-close').click();await page.waitForFunction(()=>!studySetsIsOpen()&&!studySetsUI.pendingClose);

@@ -66,7 +66,7 @@ async function expandedPdfAnchor(page,viewportWidth){
     return {nav:nav.toJSON(),settings:settings.toJSON()};
   });
   assert.equal(slots.nav.width,88,'PDF has two independent44px navigation slots');
-  assert.equal(slots.settings.width,48,'Reader settings keeps its 48px slot');
+  assert.equal(slots.settings.width,44,'Reader settings keeps its 44px slot');
   assert.ok(Math.abs((slots.nav.x+slots.settings.right)/2-viewportWidth/2)<.6,'PDF control row stays centered');
   return (slots.nav.right+slots.settings.x)/2;
 }
