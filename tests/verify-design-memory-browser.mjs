@@ -68,7 +68,7 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   // The approved header now paints its shared gradient. A transparent base
   // color does not imply no surface; require visible paint in every stop.
   assert.equal(style.backgroundImage,'none','export uses the flat Apple Music glass fill');
-  assert.equal(style.background,dark?'rgba(255, 255, 255, 0.14)':'rgba(255, 255, 255, 0.62)');
+  assert.equal(style.background,dark?'rgba(40, 40, 42, 0.55)':'rgba(255, 255, 255, 0.72)');
   assert.equal(style.border,'0px');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {id:node.id,x:r.x,y:r.y,width:r.width,height:r.height};}));

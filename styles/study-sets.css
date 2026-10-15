@@ -20,7 +20,7 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-home-add .study-sets-home-copy{flex:none;order:1;}
 .study-sets-home-menu-trigger{position:absolute;right:36px;top:10px;width:44px;height:44px;padding:12px;border:0;border-radius:12px;background:var(--wordbook-field);color:var(--settings-ink);opacity:0;pointer-events:none;}
 .study-sets-home-menu-trigger:focus-visible{opacity:1;pointer-events:auto;}
-.study-sets-home-card{-webkit-touch-callout:none;user-select:none;touch-action:pan-y;}
+.study-sets-home-card{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y;}
 .study-sets-home-card:active{background:var(--wordbook-row-hover);}
 .study-sets-home-card:disabled{opacity:.48;cursor:default;}
 .study-sets-home-error{padding:20px;border:1px solid var(--danger-line);border-radius:16px;background:var(--danger-tint2);font:400 13px/1.6 var(--ui);}
@@ -144,7 +144,8 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set .study-sets-sheet{position:relative;}
 .study-sets-edit-slot{width:44px;height:44px;flex:none;}
 .study-sets-edit-surface,#v-memory-set #study-sets-back,#study-sets-dialog #study-sets-back{width:44px;height:44px;border:0;border-radius:50%;background:var(--am-glass);box-shadow:var(--am-glass-shadow);backdrop-filter:var(--am-blur);-webkit-backdrop-filter:var(--am-blur);color:var(--am-ink);}
-.study-sets-edit-surface{position:absolute;z-index:7;top:16px;right:16px;overflow:hidden;}
+.study-sets-edit-surface{position:absolute;z-index:7;top:16px;right:16px;overflow:hidden;transform-origin:100% 0;}
+.study-sets-edit-surface.is-morphing{backdrop-filter:none;-webkit-backdrop-filter:none;}
 #v-memory-set #study-sets-edit{position:absolute;z-index:2;top:0;right:0;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:inherit;box-shadow:none;transition:opacity .1s ease;}
 #v-memory-set #study-sets-edit:active{background:transparent;}
 .study-sets-edit-menu{position:absolute;z-index:1;top:0;right:0;width:236px;padding:8px;border:0;background:transparent;color:inherit;opacity:0;}
@@ -158,12 +159,12 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set :is(#study-sets-back,#study-sets-edit)>svg{width:var(--am-icon-complex);height:var(--am-icon-complex);stroke-width:var(--am-stroke-complex);stroke-linecap:round;stroke-linejoin:round;}
 #v-memory-set #study-sets-back>svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);stroke-width:var(--am-stroke-chevron);}
 #v-memory-set #study-sets-edit>svg circle{fill:currentColor;stroke:none;}
-:is(#study-sets-dialog,#v-memory-set) .study-session-body{display:flex;flex-direction:column;flex:1;min-height:0;gap:12px;overflow-x:clip;}
+:is(#study-sets-dialog,#v-memory-set) .study-session-body{display:flex;flex-direction:column;flex:1;min-height:0;gap:12px;overflow-x:clip;overscroll-behavior:none;}
 .study-session-body .study-sets-progress{justify-content:center;flex:none;}
 .study-session-body progress{flex:none;margin:0;}
 .study-session-stack{position:relative;flex:1;min-height:280px;width:100%;max-width:680px;align-self:center;display:flex;}
 .study-session-stack .study-sets-flashcard,.study-session-next{box-sizing:border-box;border:1px solid var(--sentence-glass-line-soft);border-radius:28px;background:var(--settings-sheet-surface);padding:clamp(24px,5vh,56px) clamp(20px,5vw,64px);width:100%;text-align:center;overflow-wrap:anywhere;}
-.study-session-stack .study-sets-flashcard{position:relative;z-index:1;flex:1;min-height:100%;justify-content:center;gap:20px;touch-action:pan-y;user-select:none;cursor:pointer;transition:background .18s;}
+.study-session-stack .study-sets-flashcard{position:relative;z-index:1;flex:1;min-height:100%;justify-content:center;gap:20px;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer;transition:background .18s;}
 .study-session-stack .study-sets-flashcard[data-dragging]{transition:none;}
 .study-session-next{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--settings-sheet-surface);font:600 clamp(30px,5vw,46px) var(--ui);}
 .study-session-stack #study-sets-expression{font-size:clamp(30px,5vw,46px)!important;margin:0;}

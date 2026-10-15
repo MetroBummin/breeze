@@ -86,6 +86,12 @@ html body #study-sets-edit{
   color:inherit;
 }
 html body #study-sets-edit:is(:hover,:active){background:transparent;}
+/* The shared :is() glass rule carries an id, so it outranks a class. Drop the
+   blur only while the surface scales; iPhone re-blurs every frame otherwise. */
+html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface.is-morphing{
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
 
 /* Center pills. Height stays with the dock row so compact chrome and reader
    notices can still shrink or grow the capsule. */
@@ -219,6 +225,32 @@ html body :is(
   .library-folder-add,.library-folder-menu>summary,#home-resume,#wordbook-review,#readpill
 ):focus:not(:focus-visible){outline:none;}
 
+/* Reader page controls share the same glass as every other Apple Music control.
+   The collapsed PDF capsule used a separate gray material; the sidebar did too. */
+html body #pdf-page-control.control-glass{
+  border:0;
+  background:var(--am-glass);
+  box-shadow:var(--am-glass-shadow);
+  backdrop-filter:var(--am-blur);
+  -webkit-backdrop-filter:var(--am-blur);
+  color:var(--am-ink);
+}
+html body #pdf-page-control.control-glass::before{display:none;}
+html body #pdf-page-button{right:0;bottom:0;}
+html body #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){
+  background:var(--am-glass);
+  box-shadow:none;
+  backdrop-filter:var(--am-blur);
+  -webkit-backdrop-filter:var(--am-blur);
+  border-right:0;
+}
+html body :is(.pdf-thumbnail-actions,.pdf-thumbnail-more)::before{
+  background:var(--am-glass);
+  box-shadow:var(--am-glass-shadow);
+  backdrop-filter:var(--am-blur);
+  -webkit-backdrop-filter:var(--am-blur);
+}
+
 @media(prefers-reduced-transparency:reduce){
   html body :is(
     #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#readback,#aafab,#btn-export,
@@ -226,7 +258,7 @@ html body :is(
     #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
     #set-close,#am-close,#ed-close,.task-close,.ap-close,
     .study-sets-edit-surface,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
-    #home-resume,#wordbook-review,#readpill,#wordbook-add
+    #home-resume,#wordbook-review,#readpill,#wordbook-add,#pdf-page-control
   ){
     background:var(--am-glass-solid);
     backdrop-filter:none;

@@ -30,6 +30,9 @@ function studyReleaseVelocity(samples,now){
   }
   return last.t>first.t?(last.x-first.x)/(last.t-first.t):0;
 }
+function studyCardScroller(card){
+  return card.closest('.study-sets-body')||card.closest('#vocabulary-review-page');
+}
 function studyCardMotion(card,{ready,reveal,grade,enabled=()=>true}){
   let x=0,drag=null,stop=null,flight=null,suppress=false;
   const paint=value=>{x=value;card.style.transform=`translateX(${x}px) rotate(${Math.max(-12,Math.min(12,x/35))}deg)`;card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(x)/120)));};
@@ -49,19 +52,51 @@ function studyCardMotion(card,{ready,reveal,grade,enabled=()=>true}){
     flight=card.animate([{transform:card.style.transform||'none'},{transform:`translateX(${target}px) rotate(${direction*12}deg)`}],{duration,easing:'cubic-bezier(.18,.65,.35,1)',fill:'forwards'});
     return flight.finished.catch(()=>{});
   };
+  const track=(clientX,clientY,time)=>{
+    const dx=clientX-drag.x,dy=clientY-drag.y;
+    drag.samples.push({x:clientX,t:time});drag.samples=drag.samples.filter(p=>time-p.t<=120);
+    if(!drag.axis&&Math.max(Math.abs(dx),Math.abs(dy))>=10){
+      drag.axis=Math.abs(dx)>Math.abs(dy)*1.2?'x':'y';
+      suppress=true;
+    }
+    return {dx,dy};
+  };
+  const followScroll=(dy)=>{
+    const scroller=studyCardScroller(card);if(!scroller)return;
+    // touch-action stays none for the whole gesture. A mid-gesture change to
+    // pan-x or pan-y is ignored by the browser, so the lock is preventDefault
+    // plus this scroll owner: horizontal freezes the page, vertical scrolls
+    // only when the card actually overflows.
+    if(drag.axis==='x')scroller.scrollTop=drag.scrollBase;
+    else if(drag.axis==='y'&&scroller.scrollHeight>scroller.clientHeight+1){
+      if(scroller.style.overflowY==='hidden')scroller.style.overflowY='auto';
+      scroller.scrollTop=drag.scrollBase-dy;
+    }
+  };
   card.addEventListener('pointerdown',event=>{
     if(!enabled()||event.button!==0||event.isPrimary===false)return;
-    cancel();suppress=false;drag={id:event.pointerId,x:event.clientX,y:event.clientY,base:x,dx:0,axis:'',samples:[{x:event.clientX,t:event.timeStamp}]};
+    cancel();suppress=false;
+    const scroller=studyCardScroller(card);
+    drag={id:event.pointerId,x:event.clientX,y:event.clientY,base:x,dx:0,axis:'',scrollBase:scroller?scroller.scrollTop:0,samples:[{x:event.clientX,t:event.timeStamp}]};
   });
   card.addEventListener('pointermove',event=>{
     if(!drag||drag.id!==event.pointerId)return;
-    const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
-    drag.samples.push({x:event.clientX,t:event.timeStamp});drag.samples=drag.samples.filter(p=>event.timeStamp-p.t<=120);
-    if(!drag.axis){if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;drag.axis=Math.abs(dx)>Math.abs(dy)*1.2?'x':'y';suppress=true;}
+    const {dx,dy}=track(event.clientX,event.clientY,event.timeStamp);
+    if(!drag.axis)return;
+    followScroll(dy);
     if(drag.axis!=='x'||!ready())return;
     drag.dx=dx;card.setAttribute('data-dragging','');try{card.setPointerCapture(event.pointerId);}catch{}
-    const amount=drag.base+dx;card.dataset.direction=amount>0?'remembered':'repeat';paint(amount);event.preventDefault();
+    const amount=drag.base+dx;card.dataset.direction=amount>0?'remembered':'repeat';paint(amount);if(event.cancelable)event.preventDefault();
   });
+  card.addEventListener('touchmove',event=>{
+    if(!drag)return;
+    const point=[...event.touches].find(touch=>touch.identifier===drag.id)||event.touches[0];
+    if(!point)return;
+    const {dy}=track(point.clientX,point.clientY,event.timeStamp);
+    if(!drag.axis)return;
+    followScroll(dy);
+    if(event.cancelable)event.preventDefault();
+  },{passive:false});
   const finish=(event,canceled)=>{
     if(!drag||drag.id!==event.pointerId)return;
     const current=drag;drag=null;

@@ -199,8 +199,12 @@ function scenario(setup){
     'Dictionary textarea lost native editing selection');
   assert.equal(fire(world, 'selectstart', world.nodes['p-edit'], 120, 320).prevented, false,
     'Dictionary contenteditable lost native editing selection');
-  assert.equal(fire(world, 'selectstart', world.nodes.topbar, 120, 320).prevented, false,
-    'Reading selection policy leaks into normal app UI');
+  assert.equal(fire(world, 'selectstart', world.nodes.topbar, 120, 320).prevented, true,
+    'App chrome still starts a native selection');
+  assert.equal(fire(world, 'contextmenu', world.nodes.topbar, 120, 320).prevented, true,
+    'App chrome still opens the system callout');
+  assert.equal(fire(world, 'pointerdown', world.nodes.topbar, 120, 320).prevented, false,
+    'Clearing a chrome selection cancels the pointerdown');
   world.selection.isCollapsed = false;
   world.selection.anchorNode = world.nodes['p-body'];
   const recovery = fire(world, 'pointerdown', world.nodes.word, 120, 320);

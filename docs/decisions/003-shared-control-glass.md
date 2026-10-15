@@ -633,3 +633,12 @@ icons recorded above. `--control-side-size` and `--control-row-height` are both
 destructive buttons, Apple/Google sign-in, the lookup panel and form text
 buttons keep their existing materials. Reduced transparency uses the solid
 fallbacks `#f4f4f6` and `#3a3a3c`.
+
+## Slightly denser glass (build 291)
+
+The same tokens are a little more frosted everywhere, in both themes. Light
+fill is white at 72% (strong 82%) with an 18px blur. Dark fill is a neutral
+`rgba(40,40,42,.55)` (strong `.68`) instead of a 14% white veil, so the same
+controls stay readable on a white PDF page and on a dark screen. The collapsed
+PDF capsule and the expanded sidebar use this glass too; their buttons stay
+uncircled. Lookup, sign-in, stars, and destructive actions are unchanged.
