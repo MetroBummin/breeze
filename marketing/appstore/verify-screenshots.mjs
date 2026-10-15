@@ -22,11 +22,14 @@ function chunks(buf) {
 }
 
 let count = 0;
-for (const [device, size] of Object.entries(expected)) {
-  const dir = new URL(device + '/', root);
+const groups = Object.entries(expected).map(([device, size]) => [device + '/', size, null]);
+groups.push(['v2/', null, name => name.startsWith('ipad') ? expected.ipad : expected.iphone]);
+for (const [dirName, fixed, pick] of groups) {
+  const dir = new URL(dirName, root);
   const files = readdirSync(dir).filter(name => name.endsWith('.png')).sort();
-  if (!files.length) throw new Error(`${device} has no screenshots`);
+  if (!files.length) throw new Error(`${dirName} has no screenshots`);
   for (const name of files) {
+    const size = pick ? pick(name) : fixed;
     const buf = readFileSync(join(dir.pathname, name));
     const types = chunks(buf);
     if (types[0] !== 'IHDR') throw new Error(`${name} missing IHDR`);
@@ -35,12 +38,12 @@ for (const [device, size] of Object.entries(expected)) {
     const depth = buf[24];
     const color = buf[25];
     if (width !== size.width || height !== size.height) {
-      throw new Error(`${device}/${name} is ${width}x${height}, expected ${size.width}x${size.height}`);
+      throw new Error(`${dirName}${name} is ${width}x${height}, expected ${size.width}x${size.height}`);
     }
-    if (depth !== 8 || color !== 2) throw new Error(`${device}/${name} is depth ${depth} color type ${color}, expected 8-bit RGB`);
-    if (types.includes('tRNS')) throw new Error(`${device}/${name} has a transparency chunk`);
+    if (depth !== 8 || color !== 2) throw new Error(`${dirName}${name} is depth ${depth} color type ${color}, expected 8-bit RGB`);
+    if (types.includes('tRNS')) throw new Error(`${dirName}${name} has a transparency chunk`);
     count += 1;
-    console.log(`${device}/${name} ${width}x${height} RGB`);
+    console.log(`${dirName}${name} ${width}x${height} RGB`);
   }
 }
 console.log(`ok ${count}`);
