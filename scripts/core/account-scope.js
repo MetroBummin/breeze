@@ -282,6 +282,10 @@ async function readLearningArchiveStrict(sourceId){
   return saved||null;
 }
 async function releaseDuplicatedDeviceSource(source){
+  const lock=typeof withDurableMigrationLock==='function'?withDurableMigrationLock:run=>run();
+  return lock(()=>releaseDuplicatedDeviceSourceLocked(source));
+}
+async function releaseDuplicatedDeviceSourceLocked(source){
   // The live guest collection is what logout shows. It stays in localStorage,
   // as do the active account's word records. The unscoped original is copied
   // to IndexedDB and removed only after that copy reads back equal. A launch
@@ -292,21 +296,28 @@ async function releaseDuplicatedDeviceSource(source){
   if(!snapshots.size)return;
   let live,drops;
   try{live=learningSourcePayload(source);drops=learningNullDrops(source,snapshots);}catch{return;}
-  let archived;
-  try{archived=await readLearningArchiveStrict(source.id);}catch{return;}
-  const payload=learningArchiveUnion(archived,live);
-  for(const key of drops.words)delete payload.words[key];
-  for(const key of drops.dead)delete payload.dead[key];
-  if(!Object.keys(payload.words).length&&!Object.keys(payload.dead).length&&!Object.keys(payload.conflicts).length)return;
-  if(!learningArchiveSame(archived,payload)){
-    try{
-      const db=await learningArchiveDb();
-      await localTransaction(db,'sources','readwrite',tx=>tx.objectStore('sources').put(payload,source.id));
-    }catch{return;}
-    let saved;
-    try{saved=await readLearningArchiveStrict(source.id);}catch{return;}
-    if(!learningArchiveSame(saved,payload))return;
-  }
+  let payload=null;
+  try{
+    const db=await learningArchiveDb();
+    payload=await localTransaction(db,'sources','readwrite',(tx,done)=>{
+      const store=tx.objectStore('sources'),request=store.get(source.id);
+      request.onsuccess=()=>{
+        try{
+          const next=learningArchiveUnion(request.result||null,live);
+          for(const key of drops.words)delete next.words[key];
+          for(const key of drops.dead)delete next.dead[key];
+          const empty=!Object.keys(next.words).length&&!Object.keys(next.dead).length&&!Object.keys(next.conflicts).length;
+          if(empty){done(null);return;}
+          if(!learningArchiveSame(request.result||null,next))store.put(next,source.id);
+          done(next);
+        }catch{try{tx.abort();}catch{}}
+      };
+    });
+  }catch{return;}
+  if(!payload)return;
+  let saved;
+  try{saved=await readLearningArchiveStrict(source.id);}catch{return;}
+  if(!learningArchiveSame(saved,payload))return;
   for(const [key,value] of snapshots){
     if(localStorage.getItem(key)!==value)continue;
     localStorage.removeItem(key);

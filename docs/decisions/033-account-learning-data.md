@@ -52,6 +52,17 @@ repeats the same steps. Words, saved sets, study progress and account records
 are not removed unless that read-back matches. The move does not write a new
 localStorage receipt, so a device that is already full can still finish it.
 
+The browser site is this same tree. GitHub Pages serves the repository root at
+breeze.io.kr, so Chrome, Safari, Firefox and mobile Safari run the same move
+as the iOS shell. A private window whose IndexedDB is missing or refuses writes
+keeps the localStorage copies and still opens the app; that failure is not a
+boot error. When learning records are already on the device,
+`navigator.storage.persist()` is requested once where the browser offers it, so
+the browser is less free to evict them. An empty first visit does not ask. Two
+open tabs take one Web Locks turn for the move. The archive write also unions
+with the record already in IndexedDB inside a single transaction, so a second
+tab cannot replace a complete copy with a fragment.
+
 ## Synchronization and compatibility
 
 The existing `public.words` conditional-write wordbook is retained. Conflicting

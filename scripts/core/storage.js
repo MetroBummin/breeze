@@ -10,7 +10,9 @@ function openDb(name, version, upgrade){
   return function(){
     if(job) return job;
     job = new Promise((res, rej)=>{
-      const r = indexedDB.open(name, version);let settled=false;
+      if(typeof indexedDB==='undefined'||!indexedDB){rej(new DOMException('IndexedDB is unavailable','SecurityError'));return;}
+      let r;try{r=indexedDB.open(name, version);}catch(error){rej(error);return;}
+      let settled=false;
       const timer=setTimeout(()=>{settled=true;rej(new Error('Local storage open timed out'));},10000);
       r.onblocked=()=>{settled=true;clearTimeout(timer);rej(new Error('Local storage is blocked by another tab'));};
       r.onupgradeneeded = ()=>upgrade(r.result);
@@ -43,14 +45,31 @@ const idb = openDb('breeze-img', 4, db => {
    예전에는 PDF·EPUB 파일을 반입할 때만 불렀습니다. 기사만 붙여넣는 사람과 내장
    고전만 읽는 사람은 — 첫 사용자 대부분이 그쪽인데 — 한 번도 부탁하지 않았습니다.
 
-   부팅하자마자 부르지는 않습니다. 파이어폭스는 이걸 물어보는데, 아무것도 저장한
-   적 없는 첫 방문자에게 뜨는 권한 창은 답할 근거가 없는 질문입니다. 대신 잃을
-   것이 처음 생기는 순간 — 책이 들어오거나 단어를 처음 담을 때 — 부릅니다. */
+   빈 첫 방문에서 부르지는 않습니다. 파이어폭스는 이걸 물어볼 수 있어서, 지킬
+   기록이 생기기 전에 뜨는 권한 창은 답할 근거가 없습니다. 책이 들어오거나, 단어를
+   담거나, 이미 있는 학습 기록을 옮길 때 한 번 부릅니다. */
 async function requestDurableLocalStorage(){
-  if(!navigator.storage || !navigator.storage.persist) return;
-  if(load('breeze.storage-persist-asked', false)) return;
-  save('breeze.storage-persist-asked', true);
-  try{ await navigator.storage.persist(); }catch(e){}
+  if(!navigator.storage||!navigator.storage.persist) return;
+  let asked=false;
+  try{asked=JSON.parse(localStorage.getItem('breeze.storage-persist-asked')||'false')===true;}catch{asked=false;}
+  if(asked) return;
+  try{localStorage.setItem('breeze.storage-persist-asked','true');}catch{}
+  try{await navigator.storage.persist();}catch{}
+}
+/* One tab moves localStorage into IndexedDB at a time. The lock is released if
+   that tab closes, so another tab can finish the same move. Nested calls in
+   the tab that already holds it run immediately. */
+async function withDurableMigrationLock(run){
+  if(globalThis.__breezeMigrationLockHeld) return run();
+  const locks=globalThis.navigator&&navigator.locks;
+  if(!locks||typeof locks.request!=='function') return run();
+  try{
+    return await locks.request('breeze-durable-migration',{mode:'exclusive'},async()=>{
+      globalThis.__breezeMigrationLockHeld=true;
+      try{return await run();}
+      finally{globalThis.__breezeMigrationLockHeld=false;}
+    });
+  }catch{return run();}
 }
 
 /* Local records are not caches: failures must remain observable. */

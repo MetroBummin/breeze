@@ -475,7 +475,10 @@ async function migrateOneStudyRecord(storageKey,decode){
   const db=await studyStorageDb();
   await localTransaction(db,'records','readwrite',tx=>{
     const store=tx.objectStore('records'),request=store.get(storageKey);
-    request.onsuccess=()=>{if(request.result===undefined)store.add({version:1,value,legacy},storageKey);};
+    request.onsuccess=()=>{
+      try{if(request.result===undefined)store.add({version:1,value,legacy},storageKey);}
+      catch{try{tx.abort();}catch{}}
+    };
   });
   const saved=await studyMigrationRead(storageKey);
   if(!saved||saved.version!==1||saved.value!==value)return;
@@ -534,11 +537,27 @@ async function migrateOneStudyTestHistory(key){
   await settleOverflowChain();
   if(!await commitVerifiedOverflow(key,parts.overflow))await commitVerifiedOverflow(key,merged);
 }
+function durableLearningPresent(){
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i)||'';
+    if(key==='breeze.words'||key.includes('breeze.word-item.')||key.includes('breeze.dead-item.')||key.includes('breeze.word-conflicts')
+      ||key.includes('breeze.study-sets.v1')||key.includes('breeze.study-set-tests.v1')||key.includes('breeze.simple-study')) return true;
+  }
+  return false;
+}
 async function migrateDurableLocalStorage(){
   // First launch after an update. Each step copies, reads the copy back, and
   // only then removes localStorage. One failure leaves that record in place
   // and does not skip the others. Running again finishes a move the last
-  // launch did not.
+  // launch did not. One tab holds the move until it finishes or closes.
+  const lock=typeof withDurableMigrationLock==='function'?withDurableMigrationLock:run=>run();
+  try{await lock(()=>migrateDurableLocalStorageLocked());}
+  catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+}
+async function migrateDurableLocalStorageLocked(){
+  if(durableLearningPresent()){
+    try{if(typeof requestDurableLocalStorage==='function')void requestDurableLocalStorage();}catch{}
+  }
   try{
     if(typeof releaseDuplicatedDeviceSource==='function')await releaseDuplicatedDeviceSource({id:'legacy',generation:0});
   }catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}

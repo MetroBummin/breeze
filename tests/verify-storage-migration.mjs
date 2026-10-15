@@ -165,7 +165,7 @@ test('a read-back that does not match leaves the localStorage copies in place',a
   let calls=0;
   w.context.readLearningArchiveStrict=async id=>{
     const saved=await read(id);
-    if(++calls===2)return {version:1,words:{},dead:{},conflicts:{}};
+    if(++calls===1)return {version:1,words:{},dead:{},conflicts:{}};
     return saved;
   };
   await w.context.migrateDurableLocalStorage();
@@ -206,6 +206,58 @@ test('a different IndexedDB study set is not replaced or deleted from localStora
   await w.context.migrateDurableLocalStorage();
   assert.equal(w.memory.get(setKey),local);
   assert.equal((await w.context.studyMigrationRead(setKey)).value,stored);
+});
+
+test('two overlapping moves keep the legacy words, the guest word and the account word',async()=>{
+  const w=world(),keys=seedWords(w);
+  let held=0,max=0,tail=Promise.resolve();
+  w.context.navigator.locks={request(_name,options,callback){
+    const run=typeof options==='function'?options:callback;
+    const job=tail.then(async()=>{held++;max=Math.max(max,held);try{return await run();}finally{held--;}});
+    tail=job.catch(()=>{});
+    return job;
+  }};
+  await Promise.all([w.context.migrateDurableLocalStorage(),w.context.migrateDurableLocalStorage()]);
+  assert.equal(max,1);
+  const archived=await w.context.readLearningArchive('legacy');
+  assert.equal(archived.words.legacy.ko,'옛 항목');
+  assert.equal(archived.words.only.ko,'오직');
+  assert.equal(w.memory.has('breeze.words'),false);
+  assert.equal(JSON.parse(w.memory.get(keys.guestKey)).ko,'보존');
+  assert.equal(JSON.parse(w.memory.get(keys.accountKey)).ko,'내 것');
+});
+
+test('a denied or tiny IndexedDB keeps every local copy',async()=>{
+  const denied=world();seedWords(denied);
+  denied.context.indexedDB.open=()=>{throw new DOMException('access to the Indexed Database API is denied in this context.','SecurityError');};
+  await denied.context.migrateDurableLocalStorage();
+  assert.equal(JSON.parse(denied.memory.get('breeze.words')).only.ko,'오직');
+  assert.equal(denied.memory.has('breeze.word-item.legacy'),true);
+  const tiny=world(),keys=seedWords(tiny);
+  const put=IDBObjectStore.prototype.put,add=IDBObjectStore.prototype.add;
+  const fail=function(){throw new DOMException('The quota has been exceeded.','QuotaExceededError');};
+  IDBObjectStore.prototype.put=fail;IDBObjectStore.prototype.add=fail;
+  try{await tiny.context.migrateDurableLocalStorage();}
+  finally{IDBObjectStore.prototype.put=put;IDBObjectStore.prototype.add=add;}
+  assert.equal(JSON.parse(tiny.memory.get('breeze.words')).only.ko,'오직');
+  assert.equal(tiny.memory.has('breeze.word-item.legacy'),true);
+  assert.equal(JSON.parse(tiny.memory.get(keys.guestKey)).ko,'보존');
+  assert.equal(JSON.parse(tiny.memory.get(keys.accountKey)).ko,'내 것');
+});
+
+test('persistence is requested when learning records exist and an empty device does not ask',async()=>{
+  let calls=0;
+  const empty=world();
+  empty.context.navigator.storage={persist(){calls++;return Promise.resolve(true);}};
+  await empty.context.migrateDurableLocalStorage();
+  assert.equal(calls,0);
+  const w=world();seedWords(w);
+  w.context.navigator.storage={persist(){calls++;return Promise.resolve(true);}};
+  await w.context.migrateDurableLocalStorage();
+  assert.equal(calls,1);
+  assert.equal(w.memory.get('breeze.storage-persist-asked'),'true');
+  await w.context.migrateDurableLocalStorage();
+  assert.equal(calls,1);
 });
 
 test('a full localStorage migrates without a new receipt and still accepts a small write',async()=>{
