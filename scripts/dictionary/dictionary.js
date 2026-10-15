@@ -316,7 +316,7 @@ function createMeaning(root, text, source){
   const base=words[root]; if(!meaning || !base) return '';
   const from=source||{};
   const already=findSenseByMeaning(root,meaning);
-  if(already){applyWordCanonical(base,from);applyWordCanonical(words[already],from);touchMeaning(already);dropSuggestion(root,meaning);saveWords();queueSync();return already;}
+  if(already){applyWordCanonical(base,from);applyWordCanonical(words[already],from);touchMeaning(already);dropSuggestion(root,meaning);saveWords();queueSync(true);return already;}
   const buriedMeaning=dead[senseCardKey(root,meaning)]||0;
   if(from.automatic&&buriedMeaning)return '';
   applyWordCanonical(base,from);
@@ -332,7 +332,7 @@ function createMeaning(root, text, source){
     if(from.example) base.example=from.example;
     if(from.book) base.book=from.book;
     base.pickedAt=Date.now(); base.up=Math.max(Date.now(),(base.up||0)+1,buriedMeaning+1);
-    dropSuggestion(root,meaning); saveWords(); queueSync(); return root;
+    dropSuggestion(root,meaning); saveWords(); queueSync(true); return root;
   }
   /* 뜻 카드의 주소는 뜻 글자에서 나옵니다. 그래서 지웠던 뜻을 똑같이 다시 적으면
      주소도 똑같고, 그 주소에는 "지웠다"는 표(`dead`)가 아직 붙어 있습니다. 표를
@@ -349,7 +349,7 @@ function createMeaning(root, text, source){
     ko:meaning, ai, alts:Array.isArray(from.alts)?from.alts:[],
     defs:[], addedAt:previous?previous.addedAt:Date.now(),
     pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
-  dropSuggestion(root,meaning); saveWords(); queueSync();
+  dropSuggestion(root,meaning); saveWords(); queueSync(true);
   return id;
 }
 /* Keep one replaceable retry slot. During a new word's first lookup, update its
@@ -366,7 +366,7 @@ function saveRetriedMeaning(root, text, source){
     if(from.example)base.example=from.example;
     if(from.book)base.book=from.book;
     base.up=Date.now();base.pickedAt=base.up;
-    saveWords();queueSync();return root;
+    saveWords();queueSync(true);return root;
   }
   const retry=Object.entries(words).find(([id,item])=>id!==root&&item&&item.retryCandidate
     &&(item.retryOwner||item.root)===root);
@@ -375,11 +375,11 @@ function saveRetriedMeaning(root, text, source){
     if(retry&&retry[0]!==existing)discardRetryCandidate(retry[0]);
     const item=words[existing];
     if(item){applyWordCanonical(item,from);if(!retry||retry[0]!==existing)delete item.retryCandidate;touchMeaning(existing);}
-    saveWords();queueSync();return existing;
+    saveWords();queueSync(true);return existing;
   }
   if(retry&&meaningKey(words[retry[0]].ko)!==meaningKey(meaning))discardRetryCandidate(retry[0]);
   const id=createMeaning(root,meaning,{...from,ai});
-  if(id&&id!==root){words[id].retryCandidate=true;saveWords();queueSync();}
+  if(id&&id!==root){words[id].retryCandidate=true;saveWords();queueSync(true);}
   return id;
 }
 function discardRetryCandidate(id){
@@ -387,7 +387,7 @@ function discardRetryCandidate(id){
   const root=item.retryOwner||item.root||id;
   const key=item.root?senseCardKey(root,item.ko):id;
   dead[key]=Math.max(Date.now(),(item.up||item.addedAt||0)+1,(dead[key]||0)+1);
-  delete words[id];save(LS_DEAD,dead);saveWords();queueSync();
+  delete words[id];save(LS_DEAD,dead);saveWords();queueSync(true);
 }
 /* 저장한 뜻은 더 이상 추천이 아닙니다. 같은 말이 두 줄에 동시에 있으면
    "칩을 누르면 이 뜻을 본다"는 규칙이 흔들립니다. */
@@ -988,7 +988,7 @@ function setStatus(k, st){
   if(!words[resolved]) return;
   selKey=resolved;
   words[resolved].status = st; words[resolved].up = Date.now();
-  saveWords(resolved); paintWord(resolved); queueSync();
+  saveWords(resolved); paintWord(resolved); queueSync(true);
   renderWordLookup();
 }
 function renderPanel(){
@@ -1201,7 +1201,7 @@ document.getElementById('p-mark').onclick=()=>{
   const key=selected.root||selKey,w=words[key]||selected;
   if(typeof starVisible==='function'&&!starVisible(w.status))return;
   w.mark = w.mark === false;
-  w.up=Date.now(); saveWords(key); paintWord(key); queueSync(); renderPanel();
+  w.up=Date.now(); saveWords(key); paintWord(key); queueSync(true); renderPanel();
 };
 
 document.getElementById('p-know').onclick = ()=>{
@@ -1578,7 +1578,7 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   // Carry its cooldown so an immediate recheck is not a new learning event.
   recentWordOpens.set(id,Math.max(recentWordOpens.get(id)||0,recentWordOpens.get(base.root||k)||0,Date.now()));
   selKey=active;contextView=null;
-  saveWords();queueSync();refreshReaderWords();renderIfAlive(life);return active;
+  saveWords();queueSync(true);refreshReaderWords();renderIfAlive(life);return active;
 }
 
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
@@ -1941,65 +1941,213 @@ function createVocabularyGroup(entries,options={}){
   chip.onclick=()=>options.onStatus?.((head.status||1)%3+1);
   return group;
 }
-function renderVocab(){
-  if(typeof refreshStudySetsEntry==='function')refreshStudySetsEntry();
-  const list = Object.entries(words).filter(([,item])=>validWordMeaning(item))
+/* 같은 저장본을 검색·정렬·다시 열 때마다 전부 다시 정렬하지 않습니다.
+   단어가 바뀌거나 단어 수가 바뀌면 저장본을 버리고 다시 묶습니다. */
+let vocabCatalogCache=null;
+function vocabCatalog(){
+  const revision=typeof wordPaintRevision==='number'?wordPaintRevision:0;
+  const count=Object.keys(words).length;
+  if(vocabCatalogCache&&vocabCatalogCache.revision===revision&&vocabCatalogCache.count===count&&vocabCatalogCache.words===words)return vocabCatalogCache;
+  const list=Object.entries(words).filter(([,item])=>validWordMeaning(item))
     .sort((a,b)=>b[1].addedAt-a[1].addedAt);
-  const q = document.getElementById('vsearch').value.trim().toLowerCase();
   const grouped=new Map();
   list.forEach(([k,w])=>{
     const groupKey=w.root||k;
-    if(!grouped.has(groupKey)) grouped.set(groupKey,[]);
+    if(!grouped.has(groupKey))grouped.set(groupKey,[]);
     grouped.get(groupKey).push([k,w]);
   });
-  const groups=filterWordbookGroups([...grouped.entries()],q);
-  renderWordbookBookOptions(list);
-  document.getElementById('vcnt').textContent = groups.length===grouped.size ? `전체 ${grouped.size}단어` : `전체 ${grouped.size}단어 · ${groups.length}개 표시`;
-  syncWordbookFilterLabels();
-  const wrap = document.getElementById('vtablewrap');
-  if(!groups.length){ wrap.innerHTML = list.length ? '<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>' : '<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>'; refreshVocabularyReviewEntry(); return; }
-  const stName = {1:'★',2:'★★',3:'★★★'};
-  wrap.innerHTML = groups.map(([groupKey,entries])=>{
-    /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 단어 한 칸 아래로 묶습니다.
-       학습 데이터는 분리된 채라 별·삭제·예문은 각각 독립입니다. */
-    entries.sort((a,b)=>(a[0]===((a[1].root)||a[0])?-1:0)-(b[0]===((b[1].root)||b[0])?-1:0)
-      || (b[1].addedAt||0)-(a[1].addedAt||0));
-    const first=entries[0][1], open=vocabOpen.has(groupKey);
-    /* 별은 낱말 하나에 하나입니다. 그 하나가 어느 레코드에 사는지는 이미 정해져
-       있습니다 — 본문 색칠이 그 값을 씁니다. reader.js 는 낱말 조각에
-       `data-w="keyOf(단어)"` 를 붙이고(뜻 카드의 주소는 본문에 나오지 않습니다),
-       `paintWord` 는 그 주소로 색을 칠합니다. 그러니 표제어의 "모르는 정도"는
-       언제나 대표 레코드(`w.root||k`)의 것입니다. 여기서 새로 정하는 규칙은
-       없고, 그 값을 그대로 보여 주고 그대로 바꿉니다.
-       대표 레코드가 없을 수 있는 경우는 하나뿐입니다 — 아래 ✕ 로 대표 뜻만
-       지우고 딸린 뜻이 남았을 때. 그때는 남은 첫 뜻이 화면의 표제어이므로
-       별도 그 레코드의 것을 씁니다(정렬이 이미 그 뜻을 맨 앞에 둡니다). */
-    const headKey = words[groupKey] ? groupKey : entries[0][0];
-    const head = words[headKey];
-    return vocabGroupMarkup(groupKey,entries,open,headKey,head);
-  }).join('');
-  wrap.querySelectorAll('.vgroup').forEach(node=>{
-    const group = /** @type {HTMLElement} */(node);
-    bindVocabularyGroupToggle(group,key=>words[key],vocabOpen);
-    const headKey = group.dataset.head;
-    /** @type {HTMLElement} */(group.querySelector('.chip')).onclick = ()=>{
-      setStatus(headKey, words[headKey].status%3+1); renderVocab();
-    };
-    group.querySelectorAll('.vsense').forEach(row=>{
-      const sense = /** @type {HTMLElement} */(row);
-      const k = sense.dataset.k;
-      const del = /** @type {HTMLElement} */(sense.querySelector('.rowdel'));
-      if(del) del.onclick = ()=>deleteMeaning(k);
-      sense.querySelector('.vko').addEventListener('blur', event=>{
-        if(!words[k]) return;
-        const value=(/** @type {HTMLElement} */(event.target)).textContent.trim();
-        if(!value){ deleteMeaning(k); return; }
-        if(words[k].ko===value)return;
-        words[k].ko=value; words[k].koEdited=true; words[k].up=Date.now();
-        saveWords(k); queueSync(true);
-      });
+  vocabCatalogCache={revision,count,words,list,groups:[...grouped.entries()]};
+  return vocabCatalogCache;
+}
+function bindMemoryVocabularyGroup(group){
+  bindVocabularyGroupToggle(group,key=>words[key],vocabOpen);
+  const headKey=group.dataset.head;
+  /** @type {HTMLElement} */(group.querySelector('.chip')).onclick=()=>{
+    setStatus(headKey,words[headKey].status%3+1);renderVocab();
+  };
+  group.querySelectorAll('.vsense').forEach(row=>{
+    const sense=/** @type {HTMLElement} */(row);
+    const k=sense.dataset.k;
+    const del=/** @type {HTMLElement} */(sense.querySelector('.rowdel'));
+    if(del)del.onclick=()=>deleteMeaning(k);
+    sense.querySelector('.vko').addEventListener('blur',event=>{
+      if(!words[k])return;
+      const value=(/** @type {HTMLElement} */(event.target)).textContent.trim();
+      if(!value){deleteMeaning(k);return;}
+      if(words[k].ko===value)return;
+      words[k].ko=value;words[k].koEdited=true;words[k].up=Date.now();
+      saveWords(k);queueSync(true);
     });
   });
+}
+/* 100개 이하는 예전처럼 줄을 모두 그립니다. 그보다 길면 문서 스크롤에서
+   보이는 줄만 두고, 나머지는 높이만 남깁니다. */
+const vocabWindowLimit=100;
+const vocabWindowHeights=new Map();
+let vocabWindow=null;
+let vocabFilteredReviewKeys=null;
+function disposeVocabWindow(){
+  vocabWindow?.dispose();
+  vocabWindow=null;
+  vocabFilteredReviewKeys=null;
+}
+function vocabGroupHead(groupKey,entries){
+  /* 별은 낱말 하나에 하나입니다. 그 하나가 어느 레코드에 사는지는 이미 정해져
+     있습니다 — 본문 색칠이 그 값을 씁니다. 대표 레코드가 없을 수 있는 경우는
+     하나뿐입니다. 대표 뜻만 지우고 딸린 뜻이 남았을 때, 정렬이 맨 앞에 둔
+     남은 뜻의 별을 보여 줍니다. */
+  const headKey=words[groupKey]?groupKey:entries[0][0];
+  return [headKey,words[headKey]];
+}
+function orderVocabEntries(entries){
+  /* 대표 뜻을 먼저 두되, 같은 표제어의 문맥 카드들은 단어 한 칸 아래로 묶습니다.
+     학습 데이터는 분리된 채라 별·삭제·예문은 각각 독립입니다. */
+  entries.sort((a,b)=>(a[0]===(a[1].root||a[0])?-1:0)-(b[0]===(b[1].root||b[0])?-1:0)
+    ||(b[1].addedAt||0)-(a[1].addedAt||0));
+  return entries;
+}
+function vocabGroupElement(groupKey,entries,index=null,total=0){
+  orderVocabEntries(entries);
+  const open=vocabOpen.has(groupKey);
+  const [headKey,head]=vocabGroupHead(groupKey,entries);
+  const host=document.createElement('div');
+  host.innerHTML=vocabGroupMarkup(groupKey,entries,open,headKey,head);
+  const group=/** @type {HTMLElement} */(host.firstElementChild);
+  if(index!=null){
+    group.dataset.index=String(index);
+    group.setAttribute('aria-posinset',String(index+1));
+    group.setAttribute('aria-setsize',String(total));
+  }
+  bindMemoryVocabularyGroup(group);
+  return group;
+}
+function mountVocabWindow(wrap,groups){
+  const rows=new Map();
+  let frame=0,disposed=false,width=0;
+  const estimate=63;
+  const heights=groups.map(([groupKey])=>{
+    const cached=vocabWindowHeights.get(groupKey);
+    return cached&&cached.width===wrap.clientWidth&&cached.open===vocabOpen.has(groupKey)?cached.height:estimate;
+  });
+  let offsets=new Float64Array(groups.length+1);
+  const sum=()=>{offsets[0]=0;for(let i=0;i<heights.length;i++)offsets[i+1]=offsets[i]+heights[i];};sum();
+  const locate=y=>{let lo=0,hi=groups.length;while(lo<hi){const mid=(lo+hi)>>1;if(offsets[mid+1]<=y)lo=mid+1;else hi=mid;}return groups.length?Math.min(lo,groups.length-1):0;};
+  const top=()=>wrap.getBoundingClientRect().top+window.scrollY;
+  const spacer=height=>{const node=document.createElement('div');node.className='vocab-window-spacer';node.setAttribute('aria-hidden','true');node.style.height=height+'px';return node;};
+  let paintedStart=-1,paintedEnd=-1,paintedFocus=-1,cachedOrigin=0,pendingMeasure=false;
+  const schedule=measure=>{
+    if(disposed)return;
+    if(measure)pendingMeasure=true;
+    if(!frame)frame=requestAnimationFrame(()=>{frame=0;const measureNow=pendingMeasure;pendingMeasure=false;refresh(null,measureNow);});
+  };
+  const observer=new ResizeObserver(()=>schedule(true));
+  function refresh(requiredIndex=null,measure=true){
+    if(disposed||!wrap.isConnected||!document.getElementById('v-vocab').classList.contains('on'))return;
+    const nextWidth=wrap.clientWidth;
+    const resized=width!==nextWidth;
+    if(!measure&&!resized&&requiredIndex==null){
+      const y=Math.max(0,window.scrollY-cachedOrigin),anchor=locate(y),within=y-offsets[anchor],corrected=offsets[anchor]+within;
+      const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
+      const focused=document.activeElement?.closest('.vgroup');
+      const focusIndex=focused instanceof HTMLElement&&wrap.contains(focused)?Number(focused.dataset.index):-1;
+      if(start===paintedStart&&end===paintedEnd&&focusIndex===paintedFocus)return;
+    }
+    if(!groups.length){wrap.replaceChildren();rows.clear();return;}
+    const origin=top(),y=Math.max(0,window.scrollY-origin),anchor=locate(y),within=y-offsets[anchor];
+    width=nextWidth;
+    if(resized){heights.fill(estimate);sum();}
+    let measured=false;
+    for(const [index,row] of rows){
+      if(index>=groups.length)continue;
+      const height=row.getBoundingClientRect().height;
+      if(height&&height!==heights[index]){heights[index]=height;measured=true;}
+      if(height)vocabWindowHeights.set(groups[index][0],{height,width,open:vocabOpen.has(groups[index][0])});
+    }
+    if(measured)sum();
+    const corrected=offsets[anchor]+within;
+    const start=locate(Math.max(0,corrected-window.innerHeight)),end=Math.min(groups.length,locate(corrected+window.innerHeight*2)+1);
+    const indices=new Set(Array.from({length:Math.max(0,end-start)},(_,i)=>start+i));
+    if(Number.isInteger(requiredIndex))indices.add(requiredIndex);
+    const focused=document.activeElement?.closest('.vgroup');
+    const active=document.activeElement;
+    const focusIndex=focused instanceof HTMLElement&&wrap.contains(focused)?Number(focused.dataset.index):NaN;
+    if(Number.isInteger(focusIndex))indices.add(focusIndex);
+    for(const [index,row] of rows)if(!indices.has(index)){observer.unobserve(row);row.remove();rows.delete(index);}
+    const nodes=[];let cursor=0;
+    for(const index of [...indices].sort((a,b)=>a-b)){
+      if(index>cursor)nodes.push(spacer(offsets[index]-offsets[cursor]));
+      let row=rows.get(index);
+      if(!row){row=vocabGroupElement(groups[index][0],groups[index][1],index,groups.length);rows.set(index,row);observer.observe(row);}
+      nodes.push(row);cursor=index+1;
+    }
+    if(cursor<groups.length)nodes.push(spacer(offsets[groups.length]-offsets[cursor]));
+    let next=wrap.firstChild;
+    for(const node of nodes){if(node===next)next=next.nextSibling;else wrap.insertBefore(node,next);}
+    while(next){const removed=next;next=next.nextSibling;removed.remove();}
+    if(focused&&active instanceof HTMLElement&&document.activeElement!==active)active.focus({preventScroll:true});
+    if((measured||resized)&&anchor>0)window.scrollTo(window.scrollX,origin+corrected);
+    paintedStart=start;paintedEnd=end;
+    paintedFocus=Number.isInteger(focusIndex)?focusIndex:-1;
+    cachedOrigin=origin;
+  }
+  const focusRow=index=>{
+    refresh(null,true);window.scrollTo(window.scrollX,top()+offsets[index]);refresh(index,true);return rows.get(index);
+  };
+  const keyboard=event=>{
+    if(event.key!=='Tab')return;
+    const group=event.target.closest?.('.vgroup');
+    if(!group||!wrap.contains(group))return;
+    const focusables=[...group.querySelectorAll('button,.vword,[contenteditable="true"]')].filter(node=>!node.disabled&&node.tabIndex>=0);
+    if(!focusables.length)return;
+    const edge=event.shiftKey?focusables[0]:focusables[focusables.length-1];
+    if(event.target!==edge)return;
+    const index=Number(group.dataset.index)+(event.shiftKey?-1:1);
+    if(index<0||index>=groups.length||rows.has(index))return;
+    event.preventDefault();
+    const nextRow=focusRow(index);
+    const nextFocusables=nextRow?[...nextRow.querySelectorAll('button,.vword,[contenteditable="true"]')].filter(node=>!node.disabled&&node.tabIndex>=0):[];
+    (event.shiftKey?nextFocusables[nextFocusables.length-1]:nextFocusables[0])?.focus({preventScroll:true});
+  };
+  const onScroll=()=>{if(document.getElementById('v-vocab').classList.contains('on'))schedule(false);};
+  const onResize=()=>schedule(true);
+  wrap.style.overflowAnchor='none';
+  wrap.replaceChildren();
+  window.addEventListener('scroll',onScroll,{passive:true});
+  window.addEventListener('resize',onResize,{passive:true});
+  wrap.addEventListener('keydown',keyboard);
+  observer.observe(wrap);
+  refresh(null,true);
+  return {dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener('scroll',onScroll);window.removeEventListener('resize',onResize);wrap.removeEventListener('keydown',keyboard);rows.clear();if(wrap.isConnected)wrap.style.overflowAnchor='';}};
+}
+function renderVocab(){
+  if(typeof refreshStudySetsEntry==='function')refreshStudySetsEntry();
+  disposeVocabWindow();
+  const catalog=vocabCatalog();
+  const q=document.getElementById('vsearch').value.trim().toLowerCase();
+  const groups=filterWordbookGroups(catalog.groups,q);
+  renderWordbookBookOptions(catalog.list);
+  document.getElementById('vcnt').textContent=groups.length===catalog.groups.length?`전체 ${catalog.groups.length}단어`:`전체 ${catalog.groups.length}단어 · ${groups.length}개 표시`;
+  syncWordbookFilterLabels();
+  const wrap=document.getElementById('vtablewrap');
+  if(!groups.length){
+    wrap.style.overflowAnchor='';
+    wrap.innerHTML=catalog.list.length?'<div id="vempty">검색·필터에 맞는 단어가 없어요.</div>':'<div id="vempty">아직 저장된 단어가 없어요.<br>책을 읽다가 모르는 단어를 누르거나 +로 추가해 보세요.</div>';
+    refreshVocabularyReviewEntry();return;
+  }
+  if(groups.length<=vocabWindowLimit){
+    wrap.style.overflowAnchor='';
+    wrap.innerHTML=groups.map(([groupKey,entries])=>{
+      orderVocabEntries(entries);
+      const open=vocabOpen.has(groupKey);
+      const [headKey,head]=vocabGroupHead(groupKey,entries);
+      return vocabGroupMarkup(groupKey,entries,open,headKey,head);
+    }).join('');
+    wrap.querySelectorAll('.vgroup').forEach(node=>bindMemoryVocabularyGroup(/** @type {HTMLElement} */(node)));
+    refreshVocabularyReviewEntry();return;
+  }
+  groups.forEach(([,entries])=>orderVocabEntries(entries));
+  vocabFilteredReviewKeys=groups.flatMap(([,entries])=>entries.map(([key])=>key));
+  vocabWindow=mountVocabWindow(wrap,groups);
   refreshVocabularyReviewEntry();
 }
 document.getElementById('vsearch').addEventListener('input', renderVocab);

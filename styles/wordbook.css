@@ -24,6 +24,7 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #vbook-options label{display:flex;align-items:center;gap:8px;min-height:38px;overflow-wrap:anywhere;}
 #vbook-options input{flex:none;}
 #v-vocab #vtablewrap,:is(#v-vocab,.vocabulary-rows) .vgroup{border-color:var(--settings-line);}
+.vocab-window-spacer{margin:0;padding:0;border:0;pointer-events:none;}
 :is(#v-vocab,.vocabulary-rows) .vrow{grid-template-columns:minmax(0,clamp(90px,30%,220px)) minmax(0,1fr) auto;gap:16px;align-items:center;min-height:62px;padding:14px 0;}
 :is(#v-vocab,.vocabulary-rows) .vword{font:600 17px/23px var(--ui);color:var(--settings-ink);}
 :is(#v-vocab,.vocabulary-rows) .vko{font:400 14px/22px var(--ui);color:var(--settings-muted);}

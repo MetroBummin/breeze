@@ -104,6 +104,9 @@ function vocabularyReviewError(cause=null){
   error.hidden=false;
 }
 function visibleVocabularyReviewKeys(){
+  // A windowed Memory list keeps every filtered meaning in scope. Mounted rows
+  // are only the viewport, so the DOM is not the whole practice set.
+  if(Array.isArray(vocabFilteredReviewKeys))return vocabFilteredReviewKeys.filter(key=>validWordMeaning(words[key]));
   return Array.from(document.querySelectorAll('#vtablewrap .vsense')).map(node=>/** @type {HTMLElement} */(node).dataset.k).filter(key=>validWordMeaning(words[key]));
 }
 function vocabularyReviewScope(){
