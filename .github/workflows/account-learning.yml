@@ -14,6 +14,10 @@ jobs:
   account-contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
@@ -23,12 +27,14 @@ jobs:
       - run: npm run test:account
       - run: npm run test:sync
       - run: npm run typecheck
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
       - run: npm run test:account:browser
+        env:
+          BROWSER: ${{ matrix.engine }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: account-learning-proof
+          name: account-learning-proof-${{ matrix.engine }}
           path: /tmp/breeze-account-scope-proof
           if-no-files-found: ignore
           retention-days: 7

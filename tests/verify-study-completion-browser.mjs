@@ -52,7 +52,7 @@ try{
     await writeVocabularyTestAnswer(test,{index:0,text:'남겨 둔 답안',submitted:false,verdict:null,at:100});
     return made.state.sets[0].id;
    },fixtures);
-   const savedWords=await page.evaluate(()=>JSON.stringify(words));
+   const savedWords=await page.evaluate(()=>words);
    const savedTest=await page.evaluate(async()=>{const s=await readVocabularyTest();return JSON.stringify({...s,answers:[...s.answers],batches:[...s.batches]});});
    assert.equal(await page.evaluate(()=>BreezeVocabularyTest.ENABLED),false);
    assert.equal(await page.locator('#wordbook-test').isVisible(),false);
@@ -99,14 +99,14 @@ try{
    const restartId=scope==='set'?'study-sets-restart':'simple-study-restart';
    await page.evaluate(({restartId,scope})=>{
     window.qaRestartWrites=0;const put=IDBObjectStore.prototype.put;
-    IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===(scope==='set'?STUDY_SETS_STORAGE:SIMPLE_STUDY_STORAGE))qaRestartWrites++;return put.call(this,value,key);};
+    IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===studyScopeKey(scope==='set'?STUDY_SETS_STORAGE:SIMPLE_STUDY_STORAGE))qaRestartWrites++;return put.call(this,value,key);};
     window.qaRestartButton=document.getElementById(restartId);qaRestartButton.click();qaRestartButton.click();
    },{restartId,scope});
    await page.waitForFunction(()=>!studySetsUI.mutating&&!simpleStudyBusy);
    assert.equal(await progress.innerText(),'0 / 2');assert.equal(await page.evaluate(()=>qaRestartWrites),1);
    const fresh=await raw(page,scope);await page.evaluate(()=>qaRestartButton.click());await page.waitForTimeout(50);
    assert.equal(await raw(page,scope),fresh);assert.equal(await page.evaluate(()=>qaRestartWrites),1);
-   assert.equal(await page.evaluate(()=>JSON.stringify(words)),savedWords,'word data and all meanings retained');
+   assert.deepEqual(await page.evaluate(()=>words),savedWords,'word data and all meanings retained independently of storage-key enumeration order');
    assert.equal(await page.evaluate(async()=>{const s=await readVocabularyTest();return JSON.stringify({...s,answers:[...s.answers],batches:[...s.batches]});}),savedTest,'disabled prototype answers retained');
    assert.deepEqual(errors,[]);assert.deepEqual(egress,[]);results.push({scope,layouts,partialPreserved:true,completePreservedOnReentry:true,restartWrites:1,prototypeDataRetained:true});
    console.log(`${engine.name()} ${scope}: interrupted resume, terminal actions, completed reentry/reload, explicit restart and retained data passed`);

@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {chromium,webkit} from 'playwright';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 
 // Local synthetic fixtures only: every non-fixture network request is blocked.
 const server=await serveStudyFixture();
+const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 let browser;
 try{
-  browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+  browser=await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
   await prepareStudyPage(page,server.url);

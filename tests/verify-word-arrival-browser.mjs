@@ -40,14 +40,18 @@ try{
   const pill=page.locator('#word-peek'),requests=[];
   let failures=1,responseGate=null,releaseResponse=null;
   await page.route(url+'functions/v1/dict',async route=>{
+    assert.equal(route.request().headers().authorization,'Bearer synthetic-qa-user');
     const payload=route.request().postDataJSON();requests.push(payload);
     if(failures>0){failures--;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
     if(responseGate)await responseGate;
     const canonical=({selfies:'selfie',brownies:'brownie'})[String(payload.clicked||'').toLowerCase()]||payload.word;
     return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical,lemma:canonical,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
   });
-  await page.evaluate(url=>{
-    sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-user'};SB_URL=url;SB_KEY='qa';
+  await page.evaluate(async url=>{
+    sbUser={id:'qa-user'};
+    window.qaAuthSession={data:{session:{user:{id:'qa-user'},access_token:'synthetic-qa-user'}}};
+    sb={auth:{getSession:async()=>qaAuthSession}};SB_URL=url;SB_KEY='qa';
+    await switchLearningAccount(sbUser.id);
     dictGet=async()=>null;fillDictionaryMetadata=async()=>{};
     const bounds=readerScroller().getBoundingClientRect();
     const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()==='patient'&&n.getBoundingClientRect().top>bounds.top+80&&n.getBoundingClientRect().bottom<bounds.bottom-80);
@@ -59,6 +63,7 @@ try{
     window.qaPromise=resolveCurrentLookup(key,input,wordLookupLife,node);
   },url);
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
+  assert.equal(await page.evaluate(()=>captureLearningScope().id),'user:qa-user');
   assert.equal(requests.length,2);assert.equal(requests[0].op,'look_v2');
   assert.equal(requests[0].lookupId,requests[1].lookupId);
   assert.equal(await page.evaluate(()=>words[selKey].ko),'참을성 있는');
@@ -165,7 +170,7 @@ try{
       if(!entry)throw Error('Missing auth deadline '+ms);
       const [id,item]=entry;clearTimeout(id);item.fn(...item.args);
     };
-    sb.auth.getSession=()=>qaAuthReady?Promise.resolve({data:{session:null}}):new Promise(resolve=>qaAuthPending.push(resolve));
+    sb.auth.getSession=()=>qaAuthReady?Promise.resolve(qaAuthSession):new Promise(resolve=>qaAuthPending.push(resolve));
     window.qaOpenUnresolved=surface=>{
       closePanel();
       const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
@@ -191,13 +196,13 @@ try{
       await page.waitForFunction(()=>!wordPeekPending()&&!document.getElementById('word-peek').hidden&&document.getElementById('word-peek-meaning').textContent==='참을성 있는');
     }
     assert.equal(requests.length,before+1,'manual auth recovery did not send exactly one request');
-    await page.evaluate(()=>qaAuthPending.forEach(resolve=>resolve({data:{session:null}})));
+    await page.evaluate(()=>qaAuthPending.forEach(resolve=>resolve(qaAuthSession)));
     await page.waitForTimeout(50);assert.equal(requests.length,before+1,'late auth dispatched an expired attempt');
   }
   const beforeClose=requests.length;
   await page.evaluate(()=>qaOpenUnresolved('resilient'));await page.waitForFunction(()=>qaAuthPending.length===1);
   await page.evaluate(()=>closePanel());await page.waitForFunction(()=>!qaAuthWord.aiLoading);
-  await page.evaluate(()=>qaAuthPending.forEach(resolve=>resolve({data:{session:null}})));
+  await page.evaluate(()=>qaAuthPending.forEach(resolve=>resolve(qaAuthSession)));
   await page.waitForTimeout(50);assert.equal(requests.length,beforeClose,'closed word dispatched after late auth');
   // Sentence translation has the shared transport's 30s total deadline.
   await page.evaluate(()=>{qaAuthReady=false;qaAuthPending=[];void openSentence('A patient reader.',{peekTarget:qaAuthNode,owner:qaAuthNode});});
@@ -210,9 +215,9 @@ try{
   await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden&&document.getElementById('ps-ko').textContent==='참을성 있는');
   assert.equal(requests.length,beforeClose+1);
   await page.evaluate(()=>{
-    qaAuthPending.forEach(resolve=>resolve({data:{session:null}}));
+    qaAuthPending.forEach(resolve=>resolve(qaAuthSession));
     window.setTimeout=qaNativeSetTimeout;window.clearTimeout=qaNativeClearTimeout;
-    sb.auth.getSession=async()=>({data:{session:null}});closeSentence();
+    sb.auth.getSession=async()=>qaAuthSession;closeSentence();
   });
   await page.waitForTimeout(50);assert.equal(requests.length,beforeClose+1);
   console.log(`${process.env.BROWSER||'chromium'} word recovery + auth deadlines + neutral arrival browser: passed`);

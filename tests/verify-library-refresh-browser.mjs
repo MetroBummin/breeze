@@ -80,7 +80,7 @@ try{
  await page.evaluate(()=>show('home'));
  await page.locator('#home-casuals .section-link').click();assert.equal(await page.locator('#v-casuals').isVisible(),true);
  await page.evaluate(()=>show('home'));await page.locator('#longform .section-link').click();assert.equal(await page.locator('#v-longform').isVisible(),true);
- await page.evaluate(()=>{sbUser={email:'fixture@example.test'};syncLoginNudge()});
+ await page.evaluate(async()=>{sbUser={id:'fixture-library-account',email:'fixture@example.test'};await switchLearningAccount(sbUser.id);syncLoginNudge()});
  assert.equal(await page.locator('#login-nudge').isVisible(),false,'Signed-in account still has dot');
  await page.evaluate(()=>{
    show('home');

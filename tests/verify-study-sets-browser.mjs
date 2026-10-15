@@ -121,7 +121,7 @@ try{
  assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable],#study-all-words-list button.chip').count(),0);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').count(),5);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');
- const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE));
+ const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode));
  const removedWord=await page.locator('#study-all-words-list > li').first().locator('.vword').innerText();
  const allRow=page.locator('#study-all-words-list > li').first(),allBox=await allRow.boundingBox();await page.mouse.move(allBox.x+allBox.width*.8,allBox.y+allBox.height/2);await page.mouse.down();await page.mouse.move(allBox.x+10,allBox.y+allBox.height/2,{steps:10});await page.mouse.up();
  await page.waitForFunction(()=>document.querySelectorAll('#study-all-words-list > li').length===4);
@@ -135,7 +135,7 @@ try{
   const button=await page.locator('#study-all-words-start').boundingBox();assert.ok(button&&button.x>=0&&button.y>=0&&button.x+button.width<=width+1&&button.y+button.height<=height+1,'All Words start remains inside safe viewport '+JSON.stringify(button));
   assert.equal(await page.locator('#v-memory-set').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);await page.screenshot({path:`${proof}/all-detail-${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`});
  }
- assert.equal(await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allWordsBytes);assert.equal(await page.evaluate(()=>localStorage.getItem(STUDY_SETS_STORAGE)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
+ assert.equal(await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allWordsBytes);assert.equal(await page.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)),allSetBytes);await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{darkMode=false;applyDark();});
 
  await studyAction(page.locator('#study-all-words-start').click(),page);await page.waitForFunction(()=>activeAppView()==='study');
  await page.locator('#review-flip').click();assert.equal(await page.locator('#review-meaning').isVisible(),true);
@@ -272,7 +272,10 @@ try{
  assert.ok(overlapDelay>=0&&overlapDelay<140,`second pointer must start during first exit, got ${overlapDelay}ms`);
  await page.mouse.move(continuousX-continuousDistance/2,continuousY,{steps:3});
  await page.mouse.move(continuousX-continuousDistance,continuousY,{steps:3});
- await page.waitForTimeout(400);
+ // Keep the second pointer held until the first spring and collapse really
+ // finish. WebKit can leave WAAPI pending beyond a wall-clock timer; observing
+ // the actual removal still requires the original second node and capture.
+ await page.waitForFunction(()=>document.querySelectorAll('#study-sets-word-list > li').length===1,null,{timeout:3000});
  const held=await page.evaluate(()=>({connected:window.qaContinuousRow.isConnected,captured:window.qaContinuousRow.hasPointerCapture(window.qaSecondPointerId),rows:document.querySelectorAll('#study-sets-word-list > li').length}));
  assert.deepEqual(held,{connected:true,captured:true,rows:1},'first exit must not replace or cancel the second held gesture');
  await page.mouse.up();await waitRows(0);

@@ -80,17 +80,17 @@ try{
  await page.waitForFunction(()=>!sentenceEasyState.loading);assert.equal(await page.locator('#ps-easy-text b').count(),0);
  for(const change of ['close','account','document','scroll']){
   await page.evaluate(()=>{closeSentence();sentenceEasyCache.clear();});await open();await page.locator('#ps-easy-button').click();
-  await page.evaluate(change=>{
+  await page.evaluate(async change=>{
    window.qaOld=qaPending.at(-1);window.qaBook=curBook;
    if(change==='close')closeSentence();
-   if(change==='account'){resetSyncSession();sbUser={id:'different'};}
+   if(change==='account'){resetSyncSession();sbUser={id:'different'};await switchLearningAccount(sbUser.id);}
    if(change==='document')show('home');
    if(change==='scroll'){readerScroller().scrollTop+=20;scrollGesture();}
    qaOld.resolve({explanation:'이 오래된 설명은 닫힌 화면을 다시 열면 안 됩니다.'});sentenceGestureReleased();
   },change);
   await page.waitForTimeout(30);assert.equal(await page.evaluate(()=>qaOld.signal.aborted),true);await closed();
   assert.equal(await page.evaluate(()=>sentenceEasyCache.size),0);
-  await page.evaluate(async()=>{sbUser=null;if(activeAppView()!=='read')await openBook(qaBook);});
+  await page.evaluate(async()=>{sbUser=null;await switchLearningAccount(null);if(activeAppView()!=='read')await openBook(qaBook);});
  }
  await open();await page.locator('#ps-easy-button').click();await page.evaluate(()=>qaPending.at(-1).resolve({error:'bad_op'}));
  await page.waitForFunction(()=>!sentenceEasyState.loading);assert.match(await page.locator('#ps-easy-text').innerText(),/준비 중/);assert.equal(await page.locator('#ps-easy-retry').isVisible(),false);

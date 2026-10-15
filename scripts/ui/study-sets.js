@@ -1139,8 +1139,14 @@ document.addEventListener('pointerdown',event=>{
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
 function studySetsStart(id,restart=false){
+  const expectedSession=restart?studySetsUI.state?.sets.find(set=>set.id===id)?.session?.id:null;
   return studySetsMutate(state=>{
-    const replacing=restart||BreezeStudySets.view(state,id).status==='complete';
+    const current=BreezeStudySets.view(state,id);
+    // A second click can enter the write queue before the first marks the UI
+    // busy. Only the rendered completed round may be replaced; a failed commit
+    // retains that same identity and can still be retried.
+    if(restart&&current.set?.session?.id!==expectedSession)return {...current,accepted:false};
+    const replacing=restart||current.status==='complete';
     return BreezeStudySets.start(state,id,Date.now(),{restart:replacing,words:replacing?words:undefined});
   },()=>{
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;

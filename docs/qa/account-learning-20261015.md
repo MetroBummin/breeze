@@ -24,7 +24,7 @@ production database, user data, deployment, merge or real-data transfer was used
   when the set arrives before words, and original-data confirmation in ten
   light/dark phone/tablet/desktop/short layouts. Local artifacts:
   `/tmp/breeze-account-scope-proof`. CI uploads the same proof directory.
-  After final asset stamping, worker34e1bfe7 also passed cold-offline install,
+  After final asset stamping, worker54f6f2f7 also passed cold-offline install,
   new-page study, completion persistence across reload and explicit restart
   (`/tmp/breeze-study-cold-final.log`). Intermediate mixed-hash worker failures
   during concurrent editing were resolved by the final stamp.
@@ -97,6 +97,9 @@ PR does not claim to reproduce or cure the exact build 287 startup incident.
   fails its “row identities changed” assertion on both untouched `fd67f0a` and
   this branch. It is a separately reproduced baseline browser failure; the
   baseline default `npm test` itself passed.
+- The existing picker-scroll browser assertion reports `489 !== 450` on both
+  untouched `fd67f0a` and this branch. Its scroll-restoration assertion remains
+  unchanged; this is a separate baseline failure, not an account-import result.
 - Live Supabase permissions/RPC installation, Apple build 287 identity and
   native quota behavior remain unverified. Use the staged rollout/rollback in
   [decision 033](../decisions/033-account-learning-data.md).
@@ -106,3 +109,22 @@ source hashes on fetched main (outside the default npm suite). Its current
 boundary is now frozen against `fd67f0a` plus this exact feature file list; native
 release files remain pinned. The original historical export guard still runs on
 its original commit and all negative/tamper cases remain active.
+
+## PR CI follow-up
+
+PR #185's initial commit passed the new account-learning job, full Integrity
+contracts (including native asset sync), Android build, unsigned iOS compile,
+and multiple existing Chromium/WebKit workflows. Browser failures exposed
+fixtures that bypassed account activation, watched the old unscoped storage key,
+or mutated words without the save API. Their setup now follows the real paths;
+the assertions are retained, including exact outbound synthetic auth ownership.
+The new account-learning workflow now runs on both Chromium and WebKit.
+
+The corrected durable-write counter also exposed a real duplicate-restart race.
+Queued restarts now bind to the rendered session identity, so rapid double
+clicks create one session and a failed write remains retryable. A dedicated unit
+regression covers duplicate clicks, detached controls and failed-save retry.
+The book-linked motion fixture uses a dedicated eight-word source book (its
+original `19 !== 8` failure also reproduced on untouched main), and
+the held-gesture check waits for actual first-row removal instead of assuming
+WebKit finishes its spring and collapse animation within a fixed 400ms.

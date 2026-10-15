@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {chromium,webkit} from 'playwright';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 
 const server=await serveStudyFixture();
-const browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
+const engine=process.env.BROWSER==='webkit'?webkit:chromium;
+const browser=await engine.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE});
 const results=[],errors=[];
 try{
   const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block',reducedMotion:'reduce'});

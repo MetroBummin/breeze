@@ -262,8 +262,10 @@ try{
    if(cdp){
      // The offline fixture must return a translation: unauthenticated errors
      // now use an error pill and intentionally never open the success surface.
-     await page.evaluate(()=>{
-       sb={auth:{getSession:async()=>({data:{session:null}})}};sbUser={id:'qa-pinch'};
+     await page.evaluate(async()=>{
+       sbUser={id:'qa-pinch'};
+       sb={auth:{getSession:async()=>({data:{session:{user:{id:'qa-pinch'},access_token:'synthetic-qa-pinch'}}})}};
+       await switchLearningAccount(sbUser.id);
        dictCall=async()=>({ko:'테스트 번역'});
      });
      await touch('touchStart',[{id:1,...word}]);
