@@ -30,7 +30,7 @@ const expected={
   "docs/decisions/023-vocabulary-study-sets.md": "ae96d2e712e178b8264cb4652967680dc28bb0bc65d63355ae3329554119ef34",
   "docs/decisions/031-apple-272-screenshot-preflight.md": "cebf316dc9f8761597ecebc58f4e84a59808a3b99502aa67cb035a51e9c6ad65",
   "docs/decisions/031-vocabulary-test.md": "d4d41f85d7d65478511e97dc6565cd0182470b9c9442587da32b3b7d0a4e3366",
-  "docs/decisions/032-next-ios-android-release.md": "77ee548db98de82e7f413a4dd4ab12065255b86d1336818838c29e95b5497e5a",
+  "docs/decisions/032-next-ios-android-release.md": "9a9ca4512a0635b4891c984a81a458ab0f18204888a937dd46864e2f5601c987",
   "docs/qa/vocabulary-test/README.md": "573e4e532614d7bf145953786088c3a82128f74fc47243178bf22d799509497f",
   "docs/qa/vocabulary-test/breeze-study-directions.mp4": "ad729d4658f9059b652dece7483afbcf42782d3f27a2ac46ebf7713344140c85",
   "docs/qa/vocabulary-test/breeze-study-meanings-iphone.png": "2e7d83b276b326deb3d356f7071e4538dc6192aa39e8967a2e9f31cbb3710b78",
