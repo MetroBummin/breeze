@@ -40,7 +40,7 @@ Email sign-in is open on the sheet. There is no collapsible header. The address
 field uses a floating label, and the primary button says “인증 코드 받기”.
 That button is solid white with black text in dark mode and solid black with
 white text in light mode. The message is a six-digit code. After it is sent,
-the same sheet shows “코드를 보냈어요”, one outlined code field
+the same sheet shows “코드를 보냈어요”, six outlined code boxes
 (`inputmode=numeric`, `autocomplete=one-time-code`), “다시 보내기” with the
 existing cooldown, and “이메일 변경”. Six digits submit through the existing
 `sbVerifyCode`. `sbSendLink` still calls `signInWithOtp`. The sheet does not

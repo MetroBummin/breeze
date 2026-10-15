@@ -328,9 +328,9 @@ function renderSyncModal(){
             </div>
             <div id="sm-codewrap">
               <p class="bz-sent" id="sm-code-sent"></p>
-              <div class="bz-field bz-code">
-                <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder=" " aria-label="인증 코드" oninput="emailCodeChanged()">
-                <label for="sm-code">인증 코드</label>
+              <div class="bz-otp">
+                <input id="sm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-hidden="true" tabindex="-1" oninput="emailCodeChanged()">
+                ${[0,1,2,3,4,5].map(i=>`<input class="bz-otp-box" id="sm-code-${i}" inputmode="numeric" autocomplete="one-time-code" maxlength="6" enterkeyhint="done" aria-label="인증 코드 ${i+1}번째 자리" oninput="emailCodeBox(this)">`).join('')}
               </div>
               <button type="button" id="sm-change-email" class="bz-text" onclick="changeLoginEmail()">이메일 변경</button>
             </div>
@@ -455,7 +455,7 @@ async function sbSendLink(){
     emailLogin.message=`코드를 보냈어요: ${email}`;
     updateEmailLoginControls();
     // A response must not steal focus after the user leaves this form.
-    if(syncInput('sm-email')===input&&document.getElementById('settings-modal')?.classList.contains('on')) syncInput('sm-code')?.focus();
+    if(syncInput('sm-email')===input&&document.getElementById('settings-modal')?.classList.contains('on')) syncInput('sm-code-0')?.focus();
   }catch(error){
     if(!sbUser&&epoch===syncSessionEpoch&&request===emailLogin.request) emailLogin.message='메일을 보내지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
   }finally{
@@ -468,12 +468,51 @@ async function sbSendLink(){
     }
   }
 }
+function emailCodeBoxes(){ return [...document.querySelectorAll('.bz-otp-box')]; }
+function emailCodeSync(digits){
+  const input=syncInput('sm-code');
+  if(input) input.value=digits;
+  emailCodeBoxes().forEach((box,index)=>{ box.value=digits[index]||''; });
+}
 function emailCodeChanged(){
   const input=syncInput('sm-code');
   if(!input) return;
   const digits=(input.value||'').replace(/\D/g,'').slice(0,6);
-  if(input.value!==digits) input.value=digits;
+  emailCodeSync(digits);
   if(digits.length===6) return sbVerifyCode();
+}
+function emailCodeBox(box){
+  const boxes=emailCodeBoxes();
+  const index=boxes.indexOf(box);
+  if(index<0) return;
+  const raw=(box.value||'').replace(/\D/g,'');
+  const current=boxes.map((item,itemIndex)=>itemIndex===index?'':(item.value||'').replace(/\D/g,'')).join('');
+  const digits=(raw.length>=6?raw:current.slice(0,index)+raw).replace(/\D/g,'').slice(0,6);
+  emailCodeSync(digits);
+  if(digits.length===6) return sbVerifyCode();
+  if(raw) boxes[Math.min(digits.length,boxes.length-1)]?.focus();
+}
+function emailCodeKey(event){
+  if(event.key!=='Backspace'||!event.target.classList||!event.target.classList.contains('bz-otp-box')||event.target.value) return;
+  const boxes=emailCodeBoxes();
+  const index=boxes.indexOf(event.target);
+  if(index<=0) return;
+  event.preventDefault();
+  boxes[index-1].value='';
+  boxes[index-1].focus();
+  emailCodeSync(boxes.map(box=>(box.value||'').replace(/\D/g,'')).join(''));
+}
+function emailCodePaste(event){
+  if(!event.target.classList||!event.target.classList.contains('bz-otp-box')) return;
+  const raw=((event.clipboardData&&event.clipboardData.getData('text'))||'').replace(/\D/g,'');
+  if(!raw) return;
+  event.preventDefault();
+  const boxes=emailCodeBoxes();
+  const index=Math.max(0,boxes.indexOf(event.target));
+  const digits=(raw.length>=6?raw:boxes.slice(0,index).map(box=>(box.value||'').replace(/\D/g,'')).join('')+raw).slice(0,6);
+  emailCodeSync(digits);
+  if(digits.length===6) return sbVerifyCode();
+  boxes[digits.length]?.focus();
 }
 function changeLoginEmail(){
   const input=syncInput('sm-email');
@@ -513,9 +552,11 @@ async function sbPasswordLogin(){
   if(result.error) syncStatus('로그인 실패: 이메일 또는 비밀번호를 확인해 주세요');
 }
 document.addEventListener('keydown',event=>{
-  if(event.key==='Enter'&&event.target===document.getElementById('sm-code')){ event.preventDefault(); sbVerifyCode(); }
+  if(event.key==='Backspace') emailCodeKey(event);
+  if(event.key==='Enter'&&event.target&&(event.target.id==='sm-code'||event.target.classList&&event.target.classList.contains('bz-otp-box'))){ event.preventDefault(); sbVerifyCode(); }
   if(event.key==='Enter'&&event.target===document.getElementById('sm-password')){ event.preventDefault(); sbPasswordLogin(); }
 });
+document.addEventListener('paste',emailCodePaste);
 async function sbLogout(){
   const previous=sbUser&&sbUser.id,epoch=syncSessionEpoch;
   await sb.auth.signOut({scope:'local'});

@@ -65,17 +65,18 @@ try{
       await page.locator('#sm-email').fill('reader@example.com');await page.locator('#sm-send-link').click();
       assert.equal(await page.locator('#sm-send-link').isDisabled(),true);
       await page.evaluate(()=>requests[0].resolve({error:null}));
-      await page.locator('#sm-code').waitFor({state:'visible'});assert.equal(await page.locator('#sm-email').inputValue(),'reader@example.com');
+      await page.locator('#sm-code-0').waitFor({state:'visible'});assert.equal(await page.locator('#sm-email').inputValue(),'reader@example.com');
       await page.locator('#set-close').click();await page.locator('#reopen').click();
-      await page.locator('#sm-code').waitFor({state:'visible'});assert.equal(await page.locator('#sm-email').inputValue(),'reader@example.com');
+      await page.locator('#sm-code-0').waitFor({state:'visible'});assert.equal(await page.locator('#sm-email').inputValue(),'reader@example.com');
       await page.getByRole('button',{name:'비밀번호 로그인',exact:true}).click();
       assert.equal(await page.locator('#sm-password-email').inputValue(),'reader@example.com');
       await page.getByRole('button',{name:'이메일 코드 로그인으로 돌아가기',exact:true}).click();
-      await page.locator('#sm-code').waitFor({state:'visible'});
+      await page.locator('#sm-code-0').waitFor({state:'visible'});
       assert.match(await page.locator('#sm-code-sent').innerText(),/코드를 보냈어요: reader@example.com/);
       assert.match(await page.locator('#sm-send-link').innerText(),/다시 보내기/);
+      assert.equal(await page.locator('.bz-otp-box').count(),6);
       assert.equal(await page.locator('#sm-body').innerText().then(text=>text.includes('링크')),false);
-      await page.locator('#sm-code').fill('123456');
+      await page.locator('#sm-code-0').fill('123456');
       await page.waitForFunction(()=>window.verified.length===1);
       assert.deepEqual(await page.evaluate(()=>window.verified[0]),{email:'reader@example.com',token:'123456',type:'email'});
       await page.getByRole('button',{name:'이메일 변경',exact:true}).click();
@@ -131,18 +132,40 @@ async function webBuild(browser,proof){
       assert.equal(await page.locator('.bz-or').innerText(),'또는');
       assert.equal(await page.locator('#sm-email-login summary').count(),0);
       const sheet=page.locator('.bz-auth');
-      await sheet.screenshot({path:`${proof}/web-${dark?'dark':'light'}.png`});
+      const theme=dark?'dark':'light';
+      const align=await page.evaluate(()=>{
+        const input=document.getElementById('sm-email'),label=input.nextElementSibling,box=input.getBoundingClientRect(),text=label.getBoundingClientRect();
+        const inputStyle=getComputedStyle(input),labelStyle=getComputedStyle(label);
+        return {padTop:parseFloat(inputStyle.paddingTop),padBottom:parseFloat(inputStyle.paddingBottom),
+          textLeft:box.left+parseFloat(inputStyle.paddingLeft),labelLeft:text.left+parseFloat(labelStyle.paddingLeft),
+          inputMid:box.top+box.height/2,labelMid:text.top+text.height/2,inputTop:box.top};
+      });
+      assert.equal(align.padTop,align.padBottom);
+      assert.ok(Math.abs(align.textLeft-align.labelLeft)<2,JSON.stringify(align));
+      assert.ok(Math.abs(align.inputMid-align.labelMid)<2,JSON.stringify(align));
+      await sheet.screenshot({path:`${proof}/email-empty-${theme}.png`});
       await page.locator('#sm-email').fill('reader@example.com');
+      const filled=await page.evaluate(()=>{
+        const input=document.getElementById('sm-email'),label=input.nextElementSibling,box=input.getBoundingClientRect(),text=label.getBoundingClientRect();
+        const inputStyle=getComputedStyle(input),labelStyle=getComputedStyle(label);
+        return {textLeft:box.left+parseFloat(inputStyle.paddingLeft),labelLeft:text.left+parseFloat(labelStyle.paddingLeft),inputTop:box.top,labelMid:text.top+text.height/2};
+      });
+      assert.ok(Math.abs(filled.textLeft-filled.labelLeft)<2,JSON.stringify(filled));
+      assert.ok(Math.abs(filled.labelMid-filled.inputTop)<3,JSON.stringify(filled));
+      await sheet.screenshot({path:`${proof}/email-filled-${theme}.png`});
       await page.locator('#sm-send-link').click();
       await page.evaluate(()=>__otpDone({error:null}));
-      await page.locator('#sm-code').waitFor({state:'visible'});
+      await page.locator('#sm-code-0').waitFor({state:'visible'});
       assert.match(await page.locator('#sm-code-sent').innerText(),/코드를 보냈어요: reader@example.com/);
       assert.match(await page.locator('#sm-send-link').innerText(),/다시 보내기/);
-      await page.locator('#sm-code').fill('123456');
+      for(const [index,digit] of ['1','2','3'].entries()) await page.locator('#sm-code-'+index).fill(digit);
+      assert.equal(await page.locator('.bz-otp-box').evaluateAll(nodes=>nodes.map(node=>node.value).join('')),'123');
+      await sheet.screenshot({path:`${proof}/code-partial-${theme}.png`});
+      await page.locator('#sm-code-0').fill('123456');
       await page.waitForFunction(()=>window.__verified&&window.__verified.length===1);
       assert.equal(await page.evaluate(()=>__verified[0].token),'123456');
       assert.equal(await page.evaluate(()=>__verified[0].type),'email');
-      await sheet.screenshot({path:`${proof}/web-code-${dark?'dark':'light'}.png`});
+      await sheet.screenshot({path:`${proof}/code-full-${theme}.png`});
       await page.getByRole('button',{name:'이메일 변경',exact:true}).click();
       assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.id),'sm-email');
       assert.equal((await page.locator('#sm-body').innerText()).includes('링크'),false);

@@ -125,11 +125,13 @@ test('six digits submit the existing code check once and keep the resend copy',a
   assert.equal(h.get('sm-change-email').textContent,'이메일 변경');
   assert.equal(h.get('sm-code').getAttribute('autocomplete'),'one-time-code');
   assert.equal(h.get('sm-code').getAttribute('inputmode'),'numeric');
+  assert.equal(h.document.querySelectorAll('.bz-otp-box').length,6);
   h.get('sm-code').value='12-3456';
   const first=h.api.code();
   h.api.code();
   await first;
   assert.equal(h.get('sm-code').value,'123456');
+  assert.equal([...h.document.querySelectorAll('.bz-otp-box')].map(box=>box.value).join(''),'123456');
   assert.equal(seen.length,1);
   assert.equal(seen[0].email,'reader@example.com');
   assert.equal(seen[0].token,'123456');
