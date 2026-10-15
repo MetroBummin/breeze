@@ -26,13 +26,19 @@ try{
   assert.equal(initial.wordCount,50);assert.equal(initial.learning.sets.sets.length,1);
   await page.evaluate(async()=>openStudySet((await loadStudySets()).sets[0].id));
   await page.waitForFunction(()=>studySetsUI.pageOpen&&!studySetsUI.mutating&&document.querySelectorAll('#study-sets-word-list>li').length===49);
+  await page.evaluate(()=>{words.aOnly={word:'A private',ko:'A 계정',up:400,status:1};saveWords('aOnly');});
   await page.evaluate(async()=>{await switchLearningAccount('synthetic-B');words.b={word:'B private',ko:'B 계정',up:500,status:1};saveWords('b');});
-  assert.deepEqual(await page.evaluate(()=>Object.keys(words)),['b']);
-  assert.equal(await page.evaluate(async()=>(await loadStudySets()).sets.length),0);
-  assert.equal(await page.locator('#study-sets-word-list>li').count(),0,'old set rows cleared on account change');
+  const bView=await page.evaluate(async()=>({keys:Object.keys(words),names:Object.values(words).map(item=>item&&item.word),sets:(await loadStudySets()).sets.map(set=>set.name)}));
+  assert.equal(bView.keys.includes('aOnly'),false,'A-only word stays off account B');
+  assert.equal(bView.names.includes('A private'),false);
+  assert.equal(bView.names.includes('B private'),true);
+  assert.equal(bView.keys.filter(key=>key.startsWith('guest')).length,50,'device guest words follow the active account');
+  assert.deepEqual(bView.sets,['Synthetic 50'],'the device study set is copied into B');
+  assert.equal(await page.locator('#study-sets-word-list>li').count(),0,'the open A view is cleared on account change');
   await page.evaluate(async()=>{await switchLearningAccount('synthetic-A');show('vocab');renderVocab();});
-  assert.equal(await page.evaluate(()=>Object.keys(words).length),50);
-  assert.equal(await page.evaluate(()=>words.b),undefined);
+  assert.equal(await page.evaluate(()=>Object.keys(words).length),51);
+  assert.equal(await page.evaluate(()=>words.b),undefined,'B-only word stays off account A');
+  assert.equal(await page.evaluate(()=>words.aOnly.word),'A private');
   const returned=await page.evaluate(()=>exportLearningStorage());
   assert.deepEqual(returned.tests,initial.learning.tests);assert.deepEqual(returned.sets,initial.learning.sets);
 
@@ -57,10 +63,16 @@ try{
   assert.equal(merged,1);
   await page.evaluate(()=>switchLearningAccount(null));
   assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인')),false,'logout does not keep the account copy in the device view');
+  assert.equal(await page.evaluate(()=>Object.values(words).some(item=>item&&(item.word==='A private'||item.word==='B private'))),false,'logout drops both accounts’ private words');
+  assert.equal(await page.evaluate(()=>Object.keys(words).filter(key=>key.startsWith('guest')).length),50,'logout keeps the device guest words');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.words')).legacy.ko),'귀속 확인');
   await page.evaluate(()=>switchLearningAccount('synthetic-B'));
   await page.waitForFunction(()=>Object.values(words).some(item=>item&&item.ko==='귀속 확인'));
-  assert.equal(await page.evaluate(()=>Object.values(words).filter(item=>item&&item.word==='B private').length),0);
+  const returnedB=await page.evaluate(()=>({privateB:Object.values(words).filter(item=>item&&item.word==='B private').length,privateA:Object.values(words).filter(item=>item&&item.word==='A private').length,guests:Object.keys(words).filter(key=>key.startsWith('guest')).length,legacy:Object.values(words).filter(item=>item&&item.ko==='귀속 확인').length}));
+  assert.equal(returnedB.privateB,1,'B keeps the word saved on B');
+  assert.equal(returnedB.privateA,0,'A-only word does not appear after logging into B');
+  assert.equal(returnedB.guests,50);
+  assert.equal(returnedB.legacy,1);
   assert.deepEqual(errors,[]);
-  console.log('Account browser regression passed: guest50, A/B/A with open set, exact summary retention, set-before-words, missing book, and silent legacy merge.');
+  console.log('Account browser regression passed: device words follow the active account, A-only and B-only words stay put, open set clears, and legacy merge stays silent.');
 }finally{await browser?.close();await server.close();}
