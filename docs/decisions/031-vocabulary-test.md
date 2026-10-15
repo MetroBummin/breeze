@@ -182,3 +182,15 @@ Saved sets now have their own recall test, described in
 this prototype on. `BreezeVocabularyTest.ENABLED`,
 `VOCABULARY_TEST_REMOTE_ENABLED`, and `VOCABULARY_TEST_GRADING_ENABLED` stay
 false. The IndexedDB one-session store and the jev receipt path are unchanged.
+
+## Account isolation while disabled (2026-10-15)
+
+The prototype stays disabled and local-only. When an account scope is available,
+its independent database name uses that scope; the old unscoped database remains
+an untouched, unowned archive and is not imported or uploaded. Session and cursor
+objects carry an in-memory owner/generation token. Answers, replacement sessions
+and batches reject old tokens, including A → B → A, and scope-change events abort
+in-flight write transactions. Late database opens cannot return another account's
+session. No store schema, feature gate, grader registration or remote sync path
+changes. Existing isolated tests without the account manager retain their original
+unscoped fixture database.

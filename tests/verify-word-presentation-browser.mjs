@@ -376,6 +376,7 @@ try{
   /* Whole-group removal remains exclusive to the explicit #p-know control. */
   await page.evaluate(()=>{
     words['poly::E']={...words.poly,root:'poly',sense:true,ko:'E',up:Date.now()+1};
+    saveWords('poly::E');
     selectWord('poly',null);
   });
   await page.locator('#p-know').click();

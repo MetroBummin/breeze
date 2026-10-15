@@ -8,7 +8,7 @@ function studySetTestPool(set){
   const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
   return BreezeStudySets.groupedCards(listed);
 }
-function studySetTestStorage(){return BreezeStudySetTest.records(localStorage.getItem(BreezeStudySetTest.KEY),studySetsUI.setId);}
+function studySetTestStorage(){return BreezeStudySetTest.records(localStorage.getItem(typeof studyTestsKey==='function'?studyTestsKey():BreezeStudySetTest.KEY),studySetsUI.setId);}
 function studySetTestDate(at){
   const date=new Date(at);
   if(Number.isNaN(date.getTime()))return '';
@@ -84,14 +84,15 @@ function studySetTestBegin(set,cards){
   studySetTestQueue.length=0;
   studySetTestRun={
     id:String(Date.now())+'-'+Math.random().toString(36).slice(2),
-    setId:set.id,startedAt:Date.now(),questions:cards,index:0,rows:[]
+    setId:set.id,startedAt:Date.now(),questions:cards,index:0,rows:[],scope:typeof studyScopeCapture==='function'?studyScopeCapture():null
   };
 }
 function studySetTestMaybeSave(){
   const run=studySetTestRun;
-  if(!run||run.rows.length<run.questions.length||run.rows.some(row=>row.status==='pending'))return;
+  if(!run||(run.scope&&!isLearningScopeCurrent(run.scope))||run.rows.length<run.questions.length||run.rows.some(row=>row.status==='pending'))return;
   const correct=run.rows.filter(row=>row.status==='correct').length;
   const record={id:run.id,at:run.startedAt,count:run.questions.length,correct,score:BreezeStudySetTest.score(correct,run.questions.length)};
+  if(typeof saveStudySetTestRecord==='function'){saveStudySetTestRecord(run.setId,record,run.scope);return;}
   const saved=BreezeStudySetTest.save(localStorage.getItem(BreezeStudySetTest.KEY),run.setId,record);
   if(saved.ok)localStorage.setItem(BreezeStudySetTest.KEY,saved.raw);
 }
@@ -206,11 +207,11 @@ async function studySetTestPump(){
       if(!pending.length){studySetTestQueue.shift();studySetTestAfterBatch();continue;}
       try{
         const verdicts=await studySetTestGrade(pending.map(index=>run.rows[index]));
-        if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
+        if(studySetTestRun!==run||(run.scope&&!isLearningScopeCurrent(run.scope))){if(studySetTestQueue[0]===job)studySetTestQueue.shift();continue;}
         pending.forEach((index,number)=>{run.rows[index].status=verdicts[number]?'correct':'incorrect';run.rows[index].via='ai';});
         studySetTestQueue.shift();studySetTestAfterBatch();
       }catch(error){
-        if(studySetTestRun!==run){studySetTestQueue.shift();continue;}
+        if(studySetTestRun!==run||(run.scope&&!isLearningScopeCurrent(run.scope))){if(studySetTestQueue[0]===job)studySetTestQueue.shift();continue;}
         job.attempts+=1;
         const offline=error instanceof Error&&error.name==='OfflineError',limit=offline?3:4;
         if(job.attempts<limit){await studySetTestWait(offline?400:[1200,3500,8000][job.attempts-1]||8000);continue;}
@@ -461,3 +462,8 @@ function renderStudySetTestResult(set){
   studySetTestMaybeSave();
 }
 window.addEventListener('online',()=>{if(studySetTestQueue.length)void studySetTestPump();});
+
+window.addEventListener('breeze-learning-scope',()=>{
+  studySetTestRun=null;studySetTestQueue.length=0;
+  studySetTestCloseLeave();studySetTestReleaseKeyboard();studySetTestSyncSystemBack();
+});

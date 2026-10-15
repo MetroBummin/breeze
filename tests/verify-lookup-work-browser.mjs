@@ -31,7 +31,7 @@ try{for(const engine of [chromium,webkit]){
    show('vocab');window.auditRows=[...document.querySelectorAll('.vgroup')];
    window.auditVocabRenders=0;const render=renderVocab;
    renderVocab=(...args)=>{auditVocabRenders++;return render(...args);};
-   window.auditBeforeUnrelated=localStorage.getItem('breeze.word-item.word1');
+   window.auditBeforeUnrelated=localStorage.getItem(learningStorageKey('breeze.word-item.word1'));
   });
   const first=page.locator('.vword').first();
   await first.click();assert.equal(await first.getAttribute('aria-expanded'),'true');
@@ -41,8 +41,8 @@ try{for(const engine of [chromium,webkit]){
   assert.equal(await page.evaluate(()=>auditRows.every((row,i)=>row===document.querySelectorAll('.vgroup')[i])),true,'row identities changed');
   await page.locator('.vgroup.open .vko').fill('수정한 뜻');await page.locator('#vsearch').focus();
   assert.equal(await page.evaluate(()=>words.word0.ko),'수정한 뜻');
-  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('breeze.word-item.word0')).ko),'수정한 뜻');
-  assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.word-item.word1')===auditBeforeUnrelated),true,'edit rewrote unrelated word');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem(learningStorageKey('breeze.word-item.word0'))).ko),'수정한 뜻');
+  assert.equal(await page.evaluate(()=>localStorage.getItem(learningStorageKey('breeze.word-item.word1'))===auditBeforeUnrelated),true,'edit rewrote unrelated word');
   await page.locator('.vgroup.open .rowdel').click();
   assert.equal(await page.evaluate(()=>!!words.word0),false);assert.equal(await page.locator('.vgroup').count(),2099);
   assert.deepEqual(errors,[]);

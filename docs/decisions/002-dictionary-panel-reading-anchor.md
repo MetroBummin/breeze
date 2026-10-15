@@ -232,3 +232,31 @@ then presented after release using the existing live-anchor, visibility and
 scroll-idle rules. Already-ready mini/detail/morph surfaces still close when
 pinch starts. Explicit close, different lookup, navigation, mode and exit keep
 their cancellation and stale-reply guards. No automatic request/retry is added.
+
+## Account ownership for lookup and Memory (2026-10-15)
+
+Account changes retire word/sentence lookup ownership before switching the local
+learning namespace. Transient explanation caches, recovery IDs, pending cards,
+recent openings and Memory view caches are reset together. Pending-card cleanup
+still runs against the outgoing account. An account generation accompanies every
+async vocabulary writer and deferred opening, so A → B → A does not give an old
+response authority over A's newly restored records. Removed Memory editors and
+buttons also retain their original generation; a late blur cannot edit the next
+account's same-key word.
+
+Same-account dismissal retains the existing usable-answer cache contract. Account
+changes cannot write vocabulary or quota from a late auth, response, cache read,
+metadata completion or presentation delay. The dictionary transport also checks
+that the auth session's user matches the actor who started the request, including
+when the auth SDK has changed before the account-change event arrives. Local
+meaning edits and lookup results still do not await a remote sync acknowledgement.
+
+Meaning creation, retry replacement, expression promotion, deletion and accepted
+explanation suggestions persist the known changed keys. Tombstones use per-key
+storage as well. Related meanings whose suggestions or occurrence hashes change
+are included in those writes; the interaction no longer serializes every unrelated
+word or tombstone.
+
+`verify-dictionary-account-scope.mjs` exercises these boundaries using synthetic
+accounts and deterministic auth/network/cache delays. Existing lookup lifecycle,
+auth deadline, recovery and performance suites retain their same-account checks.

@@ -534,3 +534,15 @@ Setup offers a slider from 1 to the set's grouped word count, defaulting to ever
 The test draws that many grouped words in random order. The card shows the English word only. The answer field sits directly under that card, in the upper part of the page. There is no on-screen submit control. Return on the system keyboard submits the current answer (`enterkeyhint=done`). The same text field stays mounted so the keyboard can remain up. While the keyboard is open, the test page follows `visualViewport` and keeps the field in the visible area without scrolling the page. The page back button and the system back gesture, only while a test is in progress, ask **정말 제출하고 나가시겠습니까?** with **취소** and **나가기**. Cancel stays on the same card. Leave grades and saves the answers already submitted, then shows that result. During the test, iOS enables the web view's back gesture and turns it off again on any other screen. Setup shows the chosen count over the set total, a thick accent slider, and shortcuts for 10, 20, 50, and the full set when those counts are smaller than the set. A blank answer is incorrect at once. An exact normalized match against any saved meaning is correct at once. Anything else is graded leniently in the background, ten submitted answers at a time, without blocking typing. Under the small progress count, a compact row shows a green dot with the number correct and a red dot with the number wrong. A gray dot, softly pulsing, shows how many answers are still being graded and disappears at zero. When a batch resolves, those counts ease into the green and red numbers. The score row replaces any top toast; the test does not show one. A trailing remainder under ten updates the same row and the result. Offline or failed grading retries, then treats a non-exact answer as incorrect. The result shows the score out of 100, the missed words with their saved meanings, and **틀린 단어만 다시**.
 
 This path does not enable the separate self-check vocabulary test, its IndexedDB session, or the jev receipt grader. Those gates stay false.
+
+
+## Account ownership and incremental persistence (2026-10-15)
+
+[Account learning ownership](033-account-learning-data.md) supersedes the earlier
+local-only boundary. Original unscoped records stay quarantined and unchanged
+until explicit ownership confirmation. Scoped IndexedDB stores a checkpoint,
+per-set overrides and a small CAS revision; word changes update related sets
+only. Existing score summaries are preserved across devices, including unions
+with more than forty extant summaries; no missing answers are reconstructed.
+Concurrent frozen sessions remain intact in archives. Cloud session projection
+is deterministic while the local current session stays on its original branch.

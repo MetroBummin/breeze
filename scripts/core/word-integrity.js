@@ -7,7 +7,9 @@ function validWordMeaning(item){ return !!(item && typeof item.ko === 'string' &
    whole-word delete. */
 function savedMeaningRecords(root, items){
   const source=items || (typeof words!=='undefined' ? words : {});
-  return Object.entries(source).filter(([key,item])=>item&&(key===root||item.root===root)
+  const entries=typeof wordEntriesForRoot==='function'&&typeof words!=='undefined'&&source===words
+    ?wordEntriesForRoot(root):Object.entries(source);
+  return entries.filter(([key,item])=>item&&(key===root||item.root===root)
     && validWordMeaning(item));
 }
 /* Promote a meaning into the stable Reader/root address. Meaning-specific fields

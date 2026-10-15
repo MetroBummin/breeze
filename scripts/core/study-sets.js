@@ -1,12 +1,13 @@
-/* Local-only snapshot study sets. All state, vocabulary and time are explicit
+/* Snapshot study sets. All state, vocabulary and time are explicit
    inputs. No storage, vocabulary writes, scheduling, network or AI calls. */
 const BreezeStudySets = (() => {
   const VERSION=2;
   /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number,status:number,root?:string,group?:string,acceptedMeanings?:string[],senses?:Card[]}} Card */
   /** @typedef {{id:string,outcome:string,at:number}} Answer */
   /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean,format:number,serial:number}} Session */
-  /** @typedef {{id:string,name:string,bookTitles:string[],createdAt:number,updatedAt:number,cards:Card[],excludedIds:string[],session:Session|null}} StudySet */
-  /** @typedef {{version:number,sequence:number,sets:StudySet[]}} State */
+  /** @typedef {{at:number,id:string}} Change */
+  /** @typedef {{id:string,name:string,bookTitles:string[],createdAt:number,updatedAt:number,cards:Card[],excludedIds:string[],session:Session|null,archivedSessions?:Session[],nameChange?:Change,cardChanges?:Object<string,Change & {present:boolean}>,exclusionChanges?:Object<string,Change & {excluded:boolean}>,statusChanges?:Object<string,Change & {status:number}>}} StudySet */
+  /** @typedef {{version:number,sequence:number,sets:StudySet[],deletedSetIds?:string[]}} State */
   const record=value=>!!value && typeof value==='object' && !Array.isArray(value);
   const text=value=>typeof value==='string';
   const nonblank=value=>text(value) && !!value.trim();
@@ -91,10 +92,35 @@ const BreezeStudySets = (() => {
       // Excluded cards remain stored and are not pruned from an active round.
       const ids=new Set(cards.map(card=>card.id));
       if(excludedIds.some(id=>!ids.has(id))||(session&&session.queue.some(card=>!ids.has(card.id)||card.senses?.some(sense=>!ids.has(sense.id)))))fail();
-      return {id:item.id,name:item.name,bookTitles,createdAt:item.createdAt,updatedAt:item.updatedAt,cards,excludedIds,session};
+      const set={id:item.id,name:item.name,bookTitles,createdAt:item.createdAt,updatedAt:item.updatedAt,cards,excludedIds,session};
+      const exclusionChanges=copyChanges(item.exclusionChanges,'excluded'),cardChanges=copyChanges(item.cardChanges,'present');
+      if(exclusionChanges)set.exclusionChanges=exclusionChanges;
+      if(cardChanges)set.cardChanges=cardChanges;
+      if(item.nameChange!==undefined){
+        if(!record(item.nameChange)||!count(item.nameChange.at)||!nonblank(item.nameChange.id))fail();
+        set.nameChange={at:item.nameChange.at,id:item.nameChange.id};
+      }
+      if(item.statusChanges!==undefined){
+        if(!record(item.statusChanges))fail();
+        set.statusChanges={};
+        for(const [id,change] of Object.entries(item.statusChanges)){
+          if(!nonblank(id)||!record(change)||!count(change.at)||!nonblank(change.id)||![1,2,3].includes(change.status))fail();
+          set.statusChanges[id]={at:change.at,id:change.id,status:change.status};
+        }
+      }
+      if(item.archivedSessions!==undefined){
+        if(!Array.isArray(item.archivedSessions)||item.archivedSessions.some(value=>value===null))fail();
+        set.archivedSessions=item.archivedSessions.map(copySession);
+      }
+      return set;
     });
     if(new Set(sets.map(item=>item.id)).size!==sets.length)fail();
-    return {version:VERSION,sequence:raw.sequence,sets};
+    const state={version:VERSION,sequence:raw.sequence,sets};
+    if(raw.deletedSetIds!==undefined){
+      state.deletedSetIds=strings(raw.deletedSetIds);
+      if(state.deletedSetIds.some(id=>sets.some(set=>set.id===id)))fail();
+    }
+    return state;
   }
   /** Only an absent storage value means a new collection. JSON null is damage. */
   function decode(serialized){
@@ -135,7 +161,7 @@ const BreezeStudySets = (() => {
     return counts;
   }
   function get(state,id){return state.sets.find(item=>item.id===id)||null;}
-  function activeCards(set){const excluded=new Set(set.excludedIds);return set.cards.filter(card=>!excluded.has(card.id));}
+  function activeCards(set){const excluded=new Set(set.excludedIds);return set.cards.filter(card=>!excluded.has(card.id)&&present(set,card.id));}
   /** Preserve every saved sense while projecting one card per word for a new
       session. Old snapshots use exact case-preserving expression identity. */
   function groupIdentity(card,roots){
@@ -153,10 +179,34 @@ const BreezeStudySets = (() => {
     return [...groups].map(([group,senses])=>({...senses[0],group,senses,acceptedMeanings:[...new Set(senses.map(card=>card.ko))]}));
   }
 
+  function uniqueId(){
+    if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')return crypto.randomUUID();
+    if(typeof crypto!=='undefined'&&typeof crypto.getRandomValues==='function')return [...crypto.getRandomValues(new Uint32Array(4))].map(value=>value.toString(16).padStart(8,'0')).join('');
+    // The fallback serves older WebViews and isolated test realms. New records
+    // never rely on a device-local counter for their distributed identity.
+    return Array.from({length:4},()=>Math.floor(Math.random()*0x100000000).toString(16).padStart(8,'0')).join('');
+  }
+  function stamp(at,value){return {...value,at,id:uniqueId()};}
+  function copyChanges(raw,field){
+    if(raw===undefined)return undefined;
+    if(!record(raw))fail();
+    const output={};
+    for(const [key,value] of Object.entries(raw)){
+      if(!nonblank(key)||!record(value)||typeof value[field]!=='boolean'||!count(value.at)||!nonblank(value.id))fail();
+      output[key]={[field]:value[field],at:value.at,id:value.id};
+    }
+    return output;
+  }
+  function present(set,id){return set.cardChanges?.[id]?.present!==false;}
+  function markCards(set,items,at,presentValue){
+    if(!items.length)return;
+    if(!set.cardChanges)set.cardChanges={};
+    for(const card of items)set.cardChanges[card.id]=stamp(Math.max(at,(set.cardChanges[card.id]?.at??-1)+1),{present:presentValue});
+  }
   function allocate(state,prefix){
     if(state.sequence>=Number.MAX_SAFE_INTEGER)throw new RangeError('Study set sequence exhausted');
     state.sequence++;
-    return `${prefix}-${state.sequence}`;
+    return `${prefix}-${uniqueId()}`;
   }
   function result(state,id,accepted,added=0){return {state,set:get(state,id),accepted,added};}
   function create(raw,options,words,now){
@@ -174,19 +224,22 @@ const BreezeStudySets = (() => {
   function rename(raw,id,name,now){
     const state=normalize(raw),set=get(state,id),at=time(now);
     if(!set||!nonblank(name)||name.trim()===set.name)return result(state,id,false);
-    set.name=name.trim();set.updatedAt=Math.max(set.updatedAt,at);
+    set.name=name.trim();set.nameChange=stamp(Math.max(at,(set.nameChange?.at??set.createdAt)+1),{});set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true);
   }
   function remove(raw,id){
     const state=normalize(raw),set=get(state,id);
     if(!set)return result(state,id,false);
     state.sets=state.sets.filter(item=>item.id!==id);
+    state.deletedSetIds=[...new Set([...(state.deletedSetIds||[]),id])];
     return result(state,id,true);
   }
   function setExcluded(raw,id,cardId,excluded,now){
     const state=normalize(raw),set=get(state,id),at=time(now);
     if(!set||!set.cards.some(card=>card.id===cardId)||set.excludedIds.includes(cardId)===excluded)return result(state,id,false);
     set.excludedIds=excluded?[...set.excludedIds,cardId]:set.excludedIds.filter(value=>value!==cardId);
+    if(!set.exclusionChanges)set.exclusionChanges={};
+    set.exclusionChanges[cardId]=stamp(Math.max(at,(set.exclusionChanges[cardId]?.at??-1)+1),{excluded});
     set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true);
   }
@@ -194,14 +247,16 @@ const BreezeStudySets = (() => {
     if(![1,2,3].includes(status))throw new TypeError('Invalid study card status');
     const state=normalize(raw),set=get(state,id),at=time(now),card=set?.cards.find(item=>item.id===cardId);
     if(!card||card.status===status)return result(state,id,false);
-    card.status=status;set.updatedAt=Math.max(set.updatedAt,at);
+    card.status=status;if(!set.statusChanges)set.statusChanges={};
+    set.statusChanges[cardId]=stamp(Math.max(at,(set.statusChanges[cardId]?.at??set.createdAt)+1),{status});set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true);
   }
   function exclude(raw,id,cardId,now){return setExcluded(raw,id,cardId,true,now);}
   function restore(raw,id,cardId,now){return setExcluded(raw,id,cardId,false,now);}
   function newCards(set,words){
-    const known=new Set([...set.cards.map(card=>card.id),...set.excludedIds]);
-    const knownKeys=new Set(set.cards.map(card=>card.key));
+    const current=set.cards.filter(card=>present(set,card.id));
+    const known=new Set([...current.map(card=>card.id),...set.excludedIds]);
+    const knownKeys=new Set(current.map(card=>card.key));
     // An edited meaning keeps the captured card. Only a new save is added.
     return cards(words,set.bookTitles).filter(card=>!known.has(card.id)&&!knownKeys.has(card.key));
   }
@@ -217,7 +272,7 @@ const BreezeStudySets = (() => {
     // Capture only the explicitly added sources. Existing snapshots, exclusions
     // and the current frozen learning queue keep their identities and contents.
     const pending=newCards({...set,bookTitles:additions},words);
-    set.bookTitles.push(...additions);set.cards.push(...pending);set.updatedAt=Math.max(set.updatedAt,at);
+    set.bookTitles.push(...additions);appendCards(set,pending,at);set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true,pending.length);
   }
   function importNew(raw,id,words,now){
@@ -225,13 +280,27 @@ const BreezeStudySets = (() => {
     if(!set)return result(state,id,false);
     const pending=newCards(set,words);
     if(!pending.length)return result(state,id,false);
-    set.cards.push(...pending);set.updatedAt=Math.max(set.updatedAt,at);
+    appendCards(set,pending,at);set.updatedAt=Math.max(set.updatedAt,at);
     return result(state,id,true,pending.length);
+  }
+  function appendCards(set,pending,at){
+    const known=new Set(set.cards.map(card=>card.id));
+    set.cards.push(...pending.filter(card=>!known.has(card.id)));
+    markCards(set,pending,at,true);
+  }
+  function deletedKeys(options){
+    const values=options?.deletedKeys;
+    return values instanceof Set?values:new Set(Array.isArray(values)?values:record(values)?Object.keys(values):[]);
+  }
+  function deletionLookup(options){
+    const values=options?.deletedKeys;
+    return {has:key=>values instanceof Set?values.has(key):Array.isArray(values)?values.includes(key):record(values)?own(values,key):false};
   }
   function liveIdentities(vocabulary){return new Set(cards(vocabulary).map(card=>card.id));}
   // An in-place meaning edit keeps its snapshot. A record is gone only when its
   // key is absent and no remaining save still has the same word and meaning.
-  function meaningGone(card,vocabulary,live){
+  function meaningGone(card,vocabulary,live,deleted){
+    if(!deleted.has(card.key))return false;
     const current=vocabulary[card.key];
     if(record(current)&&nonblank(current.word)&&nonblank(current.ko))return false;
     return !live.has(card.id);
@@ -250,40 +319,123 @@ const BreezeStudySets = (() => {
     }
     return pending.length>0;
   }
-  function dropMissingCards(set,vocabulary){
-    const live=liveIdentities(vocabulary),gone=new Set();
-    for(const card of set.cards)if(meaningGone(card,vocabulary,live))gone.add(card.id);
-    if(!gone.size)return 0;
-    set.cards=set.cards.filter(card=>!gone.has(card.id));
-    set.excludedIds=set.excludedIds.filter(id=>!gone.has(id));
-    return gone.size;
+  function dropMissingCards(set,vocabulary,options,at){
+    const live=liveIdentities(vocabulary),deleted=deletedKeys(options),gone=[];
+    for(const card of set.cards)if(present(set,card.id)&&meaningGone(card,vocabulary,live,deleted))gone.push(card);
+    if(!gone.length)return 0;
+    markCards(set,gone,at,false);
+    const excluded=new Set(set.excludedIds);
+    set.cards=set.cards.filter(card=>present(set,card.id)||excluded.has(card.id));
+    return gone.length;
   }
   /** Cards the set list should show. An active round keeps a deleted word until
       that round ends; a finished round hides it without breaking Undo. */
-  function listedCards(set,vocabulary,excludedSide=false){
+  function listedCards(set,vocabulary,excludedSide=false,options={}){
     const excluded=new Set(set.excludedIds),protect=sessionIsActive(set.session)?sessionReferences(set.session):new Set();
-    const live=record(vocabulary)?liveIdentities(vocabulary):null;
+    const deleted=deletionLookup(options);
+    // Most renders have no missing, explicitly deleted source. They need only
+    // this set's snapshots, never an enumeration of the whole wordbook.
+    const needsLive=!excludedSide&&record(vocabulary)&&set.cards.some(card=>{
+      const current=vocabulary[card.key];
+      return !protect.has(card.id)&&deleted.has(card.key)&&!(record(current)&&nonblank(current.word)&&nonblank(current.ko));
+    });
+    const live=needsLive?(options.index?.identities||liveIdentities(vocabulary)):null;
     return set.cards.filter(card=>{
       if(excluded.has(card.id)!==!!excludedSide)return false;
-      if(!live||protect.has(card.id))return true;
-      return !meaningGone(card,vocabulary,live);
+      if(excludedSide||protect.has(card.id))return true;
+      if(!present(set,card.id))return false;
+      return !live||!meaningGone(card,vocabulary,live,deleted);
     });
   }
   // Book sets follow later saves from their books. Exclusions stay out. An
   // active or finished round keeps every card it still references.
-  function syncVocabulary(raw,vocabulary,now){
+  function syncVocabulary(raw,vocabulary,now,options={}){
     const state=normalize(raw),at=time(now);
     if(!record(vocabulary))return {state,accepted:false,added:0,removed:0};
-    const live=liveIdentities(vocabulary);let added=0,removed=0;
+    const live=liveIdentities(vocabulary),deleted=deletedKeys(options);let added=0,removed=0,reactivated=0;
     for(const set of state.sets){
       const pending=newCards(set,vocabulary),protect=sessionReferences(set.session),gone=new Set();
-      for(const card of set.cards)if(meaningGone(card,vocabulary,live)&&!protect.has(card.id))gone.add(card.id);
-      if(!pending.length&&!gone.size)continue;
-      if(pending.length){set.cards.push(...pending);added+=pending.length;}
-      if(gone.size){set.cards=set.cards.filter(card=>!gone.has(card.id));set.excludedIds=set.excludedIds.filter(id=>!gone.has(id));removed+=gone.size;}
+      const returning=set.cards.filter(card=>!present(set,card.id)&&live.has(card.id));
+      for(const card of set.cards)if(present(set,card.id)&&meaningGone(card,vocabulary,live,deleted)&&!protect.has(card.id))gone.add(card.id);
+      if(!pending.length&&!gone.size&&!returning.length)continue;
+      if(returning.length){markCards(set,returning,at,true);reactivated+=returning.length;}
+      if(pending.length){appendCards(set,pending,at);added+=pending.length;}
+      if(gone.size){
+        markCards(set,set.cards.filter(card=>gone.has(card.id)),at,false);
+        // Keep excluded snapshots as durable evidence even while their source
+        // is deleted. A later return cannot erase the user's exclusion choice.
+        const excluded=new Set(set.excludedIds);
+        set.cards=set.cards.filter(card=>!gone.has(card.id)||excluded.has(card.id));removed+=gone.size;
+      }
       set.updatedAt=Math.max(set.updatedAt,at);
     }
-    return {state,accepted:added+removed>0,added,removed};
+    return {state,accepted:added+removed+reactivated>0,added,removed};
+  }
+  function indexAdd(map,key,value){
+    let values=map.get(key);if(!values){values=new Set();map.set(key,values);}values.add(value);
+  }
+  function indexRemove(map,key,value){
+    const values=map.get(key);if(!values)return;values.delete(value);if(!values.size)map.delete(key);
+  }
+  function indexedWord(key,item){
+    if(!nonblank(key)||!record(item)||!own(item,'word')||!own(item,'ko')||!nonblank(item.word)||!nonblank(item.ko))return null;
+    return {id:identity(item.word,item.ko),book:text(item.book)?item.book:''};
+  }
+  /** Build once after account hydration or a full remote vocabulary replacement.
+      The UI discards this index on account changes and structural set edits. */
+  function createVocabularySyncIndex(raw,vocabulary){
+    const index={records:new Map(),identities:new Map(),books:new Map(),sources:new Map(),meanings:new Map(),positions:new Map(),setCount:raw.sets.length};
+    for(const [key,item] of Object.entries(vocabulary||{})){
+      const entry=indexedWord(key,item);if(!entry)continue;
+      index.records.set(key,entry);indexAdd(index.identities,entry.id,key);
+    }
+    raw.sets.forEach((set,position)=>{
+      index.positions.set(set.id,position);
+      for(const book of set.bookTitles)indexAdd(index.books,book,set.id);
+      for(const card of set.cards){indexAdd(index.sources,card.key,set.id);indexAdd(index.meanings,card.id,set.id);}
+    });
+    return index;
+  }
+  /** Apply keyed local changes only to their related sets. The input collection
+      was validated when hydrated; unrelated sets retain their object identity.
+      A full sync is still required after external collection replacement. */
+  function syncVocabularyChanges(raw,vocabulary,changedKeys,now,index,options={}){
+    const at=time(now);
+    if(!index||index.setCount!==raw.sets.length||!Array.isArray(changedKeys))throw new TypeError('A current study vocabulary index and changed keys are required');
+    const keys=[...new Set(changedKeys.filter(nonblank))],related=new Set(),changed={},affectedIdentities=new Set(),returnedIdentities=new Set();
+    for(const key of keys){
+      const previous=index.records.get(key),next=indexedWord(key,vocabulary[key]);
+      for(const setId of index.sources.get(key)||[])related.add(setId);
+      for(const identity of [previous?.id,next?.id])if(identity!==undefined)for(const setId of index.meanings.get(identity)||[])related.add(setId);
+      for(const book of [previous?.book,next?.book])if(book!==undefined)for(const setId of index.books.get(book)||[])related.add(setId);
+      if(previous){affectedIdentities.add(previous.id);indexRemove(index.identities,previous.id,key);index.records.delete(key);}
+      if(next){affectedIdentities.add(next.id);returnedIdentities.add(next.id);index.records.set(key,next);indexAdd(index.identities,next.id,key);changed[key]=vocabulary[key];}
+    }
+    const deleted=deletionLookup(options);
+    const live={has:id=>index.identities.has(id)},keySet=new Set(keys),replacements=new Map();let added=0,removed=0,reactivated=0;
+    for(const id of related){
+      const position=index.positions.get(id),original=raw.sets[position];
+      if(!original||original.id!==id)throw new TypeError('The study vocabulary index is stale');
+      const set=normalize({version:raw.version,sequence:raw.sequence,sets:[original]}).sets[0];
+      const pending=newCards(set,changed),protect=sessionReferences(set.session),gone=new Set();
+      const returning=set.cards.filter(card=>!present(set,card.id)&&returnedIdentities.has(card.id));
+      for(const card of set.cards)if((keySet.has(card.key)||affectedIdentities.has(card.id))&&present(set,card.id)&&meaningGone(card,vocabulary,live,deleted)&&!protect.has(card.id))gone.add(card.id);
+      if(!pending.length&&!gone.size&&!returning.length)continue;
+      if(returning.length){markCards(set,returning,at,true);reactivated+=returning.length;}
+      if(pending.length){appendCards(set,pending,at);added+=pending.length;}
+      if(gone.size){
+        markCards(set,set.cards.filter(card=>gone.has(card.id)),at,false);
+        const excluded=new Set(set.excludedIds);
+        set.cards=set.cards.filter(card=>!gone.has(card.id)||excluded.has(card.id));removed+=gone.size;
+      }
+      set.updatedAt=Math.max(set.updatedAt,at);replacements.set(position,set);
+      for(const card of original.cards){indexRemove(index.sources,card.key,id);indexRemove(index.meanings,card.id,id);}
+      for(const card of set.cards){indexAdd(index.sources,card.key,id);indexAdd(index.meanings,card.id,id);}
+    }
+    if(!replacements.size)return {state:raw,accepted:false,added:0,removed:0,touched:related.size,changedSetIds:[]};
+    const state={...raw,sets:raw.sets.slice()};
+    for(const [position,set] of replacements)state.sets[position]=set;
+    return {state,accepted:added+removed+reactivated>0,added,removed,touched:related.size,changedSetIds:[...replacements.values()].map(set=>set.id)};
   }
   function snapshot(state,id){
     const set=get(state,id),session=set?.session||null;
@@ -313,7 +465,7 @@ const BreezeStudySets = (() => {
       return {...snapshot(state,id),accepted:true};
     }
     // The round being replaced kept deleted words so its own queue stayed valid.
-    if(record(options.words))dropMissingCards(set,options.words);
+    if(record(options.words))dropMissingCards(set,options.words,options,at);
     const queue=groupedCards(set);
     if(!queue.length){
       // Explicit restart of an all-excluded set ends the old completed/active
@@ -347,8 +499,98 @@ const BreezeStudySets = (() => {
     session.serial++;session.revealed=false;current.set.updatedAt=Math.max(current.set.updatedAt,at);
     return {...snapshot(current.state,id),accepted:true};
   }
+  function canonical(value){
+    if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';
+    if(record(value))return '{'+Object.keys(value).sort(compare).map(key=>JSON.stringify(key)+':'+canonical(value[key])).join(',')+'}';
+    return JSON.stringify(value);
+  }
+  function newerChange(left,right){
+    return !left?right:!right?left:left.at!==right.at?(left.at>right.at?left:right):compare(left.id,right.id)>=0?left:right;
+  }
+  function mergeChanges(left,right){
+    const result={};
+    for(const id of [...new Set([...Object.keys(left||{}),...Object.keys(right||{})])].sort(compare))
+      result[id]=newerChange(left?.[id],right?.[id]);
+    return result;
+  }
+  function sessionAncestor(left,right){
+    return left.id===right.id&&left.serial<=right.serial&&canonical(left.queue)===canonical(right.queue)
+      &&left.answers.length<=right.answers.length&&left.answers.every((answer,index)=>canonical(answer)===canonical(right.answers[index]));
+  }
+  function mergeSet(left,right){
+    const leftName=left.nameChange||{at:left.createdAt,id:'legacy-name:'+left.name},rightName=right.nameChange||{at:right.createdAt,id:'legacy-name:'+right.name};
+    const nameChange=newerChange(leftName,rightName),latest=nameChange===leftName?left:right;
+    const merged={...latest,createdAt:Math.min(left.createdAt,right.createdAt),updatedAt:Math.max(left.updatedAt,right.updatedAt),
+      nameChange,bookTitles:[...new Set([...left.bookTitles,...right.bookTitles])].sort(compare)};
+    const exclusions=set=>{
+      const changes={...set.exclusionChanges};
+      for(const id of set.excludedIds)if(!changes[id])changes[id]={excluded:true,at:set.createdAt,id:'legacy-exclusion'};
+      return changes;
+    };
+    merged.exclusionChanges=mergeChanges(exclusions(left),exclusions(right));
+    merged.cardChanges=mergeChanges(left.cardChanges,right.cardChanges);
+    merged.statusChanges=mergeChanges(left.statusChanges,right.statusChanges);
+    const captured=new Map();
+    for(const card of [...left.cards,...right.cards]){
+      const previous=captured.get(card.id);
+      const chosen=!previous||compare(canonical({...card,status:0}),canonical({...previous,status:0}))<0?card:previous;
+      captured.set(card.id,{...chosen,status:merged.statusChanges[card.id]?.status||Math.max(card.status,previous?.status||1)});
+    }
+    const sessions=new Map();
+    for(const session of [...(left.archivedSessions||[]),...(right.archivedSessions||[]),left.session,right.session])
+      if(session)sessions.set(canonical(session),session);
+    const candidates=[...sessions.values()].sort((a,b)=>a.startedAt-b.startedAt||a.serial-b.serial||compare(canonical(a),canonical(b)));
+    merged.session=candidates.at(-1)||null;
+    merged.archivedSessions=candidates.filter(candidate=>candidate!==merged.session&&!candidates.some(other=>other!==candidate
+      &&sessionAncestor(candidate,other)&&(candidate.serial<other.serial||candidate.answers.length<other.answers.length||compare(canonical(candidate),canonical(other))<0)));
+    // A frozen queue remains independently playable even if the remote writer
+    // has removed a source or excluded its captured meaning in the meantime.
+    for(const card of merged.session?.queue||[])for(const sense of card.senses||[card])if(!captured.has(sense.id))captured.set(sense.id,sense);
+    const protectedIds=sessionReferences(merged.session),excluded=new Set(Object.entries(merged.exclusionChanges).filter(([,change])=>change.excluded).map(([id])=>id));
+    merged.cards=[...captured.values()].filter(card=>present(merged,card.id)||excluded.has(card.id)||protectedIds.has(card.id))
+      .sort((a,b)=>a.addedAt-b.addedAt||compare(a.id,b.id));
+    const available=new Set(merged.cards.map(card=>card.id));
+    merged.excludedIds=[...excluded].filter(id=>available.has(id)).sort(compare);
+    return merged;
+  }
+  /** A set deletion is permanent for its unique ID. Concurrent sessions are
+      retained whole; answering two different frozen queues is never combined. */
+  function mergeStates(local,remote){
+    const left=normalize(local),right=normalize(remote),deleted=[...new Set([...(left.deletedSetIds||[]),...(right.deletedSetIds||[])])].sort(compare);
+    const tombstones=new Set(deleted),merged=new Map(left.sets.filter(set=>!tombstones.has(set.id)).map(set=>[set.id,set]));
+    for(const set of right.sets)if(!tombstones.has(set.id))merged.set(set.id,merged.has(set.id)?mergeSet(merged.get(set.id),set):set);
+    const state={version:VERSION,sequence:Math.max(left.sequence,right.sequence),sets:[...merged.values()].sort((a,b)=>a.createdAt-b.createdAt||compare(a.id,b.id))};
+    if(deleted.length)state.deletedSetIds=deleted;
+    return normalize(state);
+  }
+  /** The caller persists namespace with the source backup/import journal before
+      publishing this state. Reusing it makes retry after interruption idempotent.
+      Semantic card IDs already encode the full exact word/meaning tuple. */
+  function migrateIds(raw,namespace,options={}){
+    if(!nonblank(namespace))throw new TypeError('A stable study import namespace is required');
+    const state=normalize(raw),setIds={},sessionIds={},wordKeys=record(options.wordKeys)?options.wordKeys:{};
+    const mapped=(id,prefix,table)=>{
+      const next=new RegExp('^'+prefix+'-[0-9]+$').test(id)?prefix+'-import-'+encodeURIComponent(namespace)+'-'+id:id;
+      table[id]=next;return next;
+    };
+    const cardKeys=card=>{
+      if(own(wordKeys,card.key))card.key=wordKeys[card.key];
+      if(card.root&&own(wordKeys,card.root))card.root=wordKeys[card.root];
+      if(card.senses){
+        card.senses.forEach(cardKeys);
+        const roots=new Set(card.senses.map(sense=>sense.root).filter(nonblank));
+        card.group=groupIdentity(card.senses[0],roots);
+      }
+    };
+    for(const set of state.sets){
+      set.id=mapped(set.id,'set',setIds);set.cards.forEach(cardKeys);
+      for(const session of [set.session,...(set.archivedSessions||[])])if(session){session.id=mapped(session.id,'session',sessionIds);session.queue.forEach(cardKeys);}
+    }
+    if(state.deletedSetIds)state.deletedSetIds=state.deletedSetIds.map(id=>mapped(id,'set',setIds));
+    return {state:normalize(state),setIds,sessionIds};
+  }
   // Compatibility entry: repeats stay in the current session, not a completed round.
   function nextRound(raw,id,now){time(now);return {...view(raw,id),accepted:false};}
   return Object.freeze({VERSION,normalize,decode,cards,countsByBook,create,rename,remove,exclude,restore,setStatus,
-    importPreview,importNew,addBooks,groupedCards,listedCards,syncVocabulary,view,start,reveal,grade,nextRound,undo});
+    importPreview,importNew,addBooks,groupedCards,listedCards,syncVocabulary,createVocabularySyncIndex,syncVocabularyChanges,view,start,reveal,grade,nextRound,undo,mergeStates,migrateIds});
 })();

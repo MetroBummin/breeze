@@ -249,7 +249,7 @@ try{
  assert.equal(await rows().count(),2,'outside touch dismisses action without excluding');
  // A failed durable write never starts the exit/collapse or loses the row.
  const beforeSwipeFailure=await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)));
- await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===STUDY_SETS_STORAGE)throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,value,key);};});
+ await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===studyScopeKey(STUDY_SETS_STORAGE))throw Error('Synthetic swipe quota');return window.qaSetItem.call(this,value,key);};});
  await fullSwipe(quiet(),{inspect:true,inspectAction:true});
  assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await quiet().isVisible(),true);
  assert.equal(await rows().count(),2);assert.equal(await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode))),beforeSwipeFailure);
@@ -279,7 +279,7 @@ try{
  await studyAction(page.getByRole('button',{name:'실행 취소',exact:true}).click(),page);await waitRows(1);
  assert.equal(await quiet().count(),0,'undo of second swipe does not silently restore first');
  assert.equal(await page.evaluate(()=>JSON.stringify(words)),sourceBefore,'all gesture and undo paths preserve source vocabulary');
- await page.evaluate(async ()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};await studySetsReadAndRender();});
+ await page.evaluate(async ()=>{words.q2={word:'quiet',ko:'조용한',book:'B',addedAt:10};words.swift={word:'swift',ko:'빠른',book:'A',addedAt:11};words.other={word:'wind',ko:'바람의 기운',book:'B',addedAt:12};saveWords(['q2','swift','other']);await studySetsReadAndRender();});
  assert.equal(await page.locator('#study-sets-import').count(),0,'a later save joins the set without 새 단어 가져오기');
  assert.equal(await page.locator('#study-sets-word-list li').count(),2);
  await openHomeMenu('keyboard');
@@ -290,9 +290,9 @@ try{
  await openHomeMenu('keyboard');await studyAction(page.getByRole('menuitem',{name:'세트 삭제',exact:true}).click(),page);await studyAction(page.getByRole('button',{name:'취소',exact:true}).click(),page);
  await closeSheet();await studyAction(page.locator('.study-sets-home-card[data-set-id]').first().click(),page);assert.equal(await page.locator('#study-sets-title').innerText(),'중간고사 단어');
  const vocabularySnapshot=await page.evaluate(()=>JSON.parse(JSON.stringify(words)));
- await page.evaluate(()=>{const key=Object.keys(words).find(item=>words[item].word==='swift');delete words[key];saveWords();});
+ await page.evaluate(()=>{const key=Object.keys(words).find(item=>words[item].word==='swift');window.qaRemovedStudyKey=key;dead[key]=Date.now();saveDead([key]);delete words[key];saveWords([key]);});
  await page.waitForFunction(()=>![...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='swift'));
- await page.evaluate(snapshot=>{words=snapshot;saveWords();},vocabularySnapshot);
+ await page.evaluate(snapshot=>{words=snapshot;delete dead[window.qaRemovedStudyKey];saveDead([window.qaRemovedStudyKey]);saveWords([window.qaRemovedStudyKey]);},vocabularySnapshot);
  await page.waitForFunction(()=>[...document.querySelectorAll('#study-sets-word-list .vword')].some(node=>node.textContent==='swift'));
  console.log(`${engine.name()}: snapshot study starts`);await studyAction(page.locator('#study-sets-start').click(),page);assert.equal(await page.locator('#study-sets-progress').innerText(),'0 / 3');
  assert.equal(await page.locator('#study-sets-answer').isVisible(),false);assert.equal(await page.locator('.study-sets-card-example').count(),0,'multi-meaning representatives show only the word');assert.doesNotMatch(await page.locator('#study-sets-flashcard').getAttribute('aria-label'),/바람|감다/);
@@ -300,7 +300,7 @@ try{
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-flashcard');
  // Failure must leave the revealed answer and the exact durable value retryable.
  const rawBefore=await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode)));
- await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===STUDY_SETS_STORAGE)throw Error('Synthetic quota');return window.qaSetItem.call(this,value,key);};});
+ await page.evaluate(()=>{window.qaSetItem=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='records'&&key===studyScopeKey(STUDY_SETS_STORAGE))throw Error('Synthetic quota');return window.qaSetItem.call(this,value,key);};});
  await studyAction(page.locator('#study-sets-flashcard').press('ArrowLeft'),page);await page.waitForSelector('#study-sets-error:not([hidden])');assert.equal(await page.locator('#study-sets-error').isVisible(),true);assert.equal(await page.locator('#study-sets-answer').isVisible(),true);
  assert.equal(await page.evaluate(async ()=>(await readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode))),rawBefore);
  await page.evaluate(()=>{IDBObjectStore.prototype.put=window.qaSetItem;});await studyAction(page.locator('#study-sets-error').getByRole('button',{name:'다시 시도'}).click(),page);

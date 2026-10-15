@@ -193,15 +193,16 @@ function applyEasyMeaning(){
   // An explicitly accepted sense owns this occurrence even if a previous AI
   // lookup associated the same occurrence with another meaning.
   const hash='v2:'+sentenceHash(state.sourceSentence)+':'+state.clickedIndex;
-  let reassigned=false;
-  for(const [otherId,other] of Object.entries(words)){
+  const changed=[id];
+  const entries=typeof wordEntriesForRoot==='function'?wordEntriesForRoot(root):Object.entries(words);
+  for(const [otherId,other] of entries){
     if(otherId===id||(otherId!==root&&other.root!==root)||!other.contextHashes?.includes(hash))continue;
     other.contextHashes=other.contextHashes.filter(value=>value!==hash);
-    other.up=Math.max(Date.now(),(other.up||0)+1);reassigned=true;
+    other.up=Math.max(Date.now(),(other.up||0)+1);changed.push(otherId);
   }
   rememberSenseContext(id,state.sourceSentence,state.clickedIndex);
   words[id].up=Math.max(Date.now(),(words[id].up||0)+1);
-  saveWords(reassigned?undefined:id);queueSync(true);selKey=id;contextView=null;
+  saveWords(changed);queueSync(true);selKey=id;contextView=null;
   state.applied=true;state.suggestion='';
   const next=easyExplanationInput();
   easyExplanationCache.delete(state.key);
