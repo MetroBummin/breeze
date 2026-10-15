@@ -363,9 +363,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         // reader is an inner web scroller, so restoring the native setting
         // brings the same edge bounce to Text, EPUB, and PDF without JS.
         guard let webView else { return }
-        // The saved-set recall test focuses the same field for the next word.
-        // Without this, WKWebView ignores that focus and the keyboard stays down.
-        webView.keyboardDisplayRequiresUserAction = false
+        // The recall test keeps one answer field mounted so the keyboard can stay
+        // up between words. WKWebView has no public keyboardDisplayRequiresUserAction;
+        // that flag belonged to UIWebView and is not on this view's configuration.
         // The saved-set test turns this on only while a card is open, so the
         // system edge swipe can ask before leaving. Other screens keep it off.
         webView.allowsBackForwardNavigationGestures = false
