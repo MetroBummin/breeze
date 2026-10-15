@@ -241,20 +241,76 @@ function learningWordKeysFor(token){
   }
   return drop;
 }
-async function releaseDuplicatedDeviceSource(source){
-  // The live guest collection is what logout shows. It stays in localStorage.
-  // The unscoped original stays available, in IndexedDB, after an account has
-  // its own copy. A failed archive write leaves the localStorage keys in place.
-  if(!source||source.id===learningGuestId()||source.id.startsWith('user:'))return;
-  const payload=learningSourcePayload(source);
-  if(!Object.keys(payload.words).length&&!Object.keys(payload.dead).length&&!Object.keys(payload.conflicts).length)return;
+function learningSnapshotKeys(source){
+  return new Map(learningWordKeysFor(source).map(key=>[key,localStorage.getItem(key)]));
+}
+function learningNullDrops(source,snapshots){
+  const wordPrefix=learningStorageKey('breeze.word-item.',source);
+  const deadPrefix=learningStorageKey('breeze.dead-item.',source);
+  const words=new Set(),dead=new Set();
+  const take=(raw,into)=>{
+    const parsed=JSON.parse(raw);
+    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))return;
+    for(const [key,value] of Object.entries(parsed))if(value===null)into.add(key);
+  };
+  for(const [key,raw] of snapshots){
+    if(raw==='null'&&key.startsWith(wordPrefix))words.add(key.slice(wordPrefix.length));
+    if(raw==='null'&&key.startsWith(deadPrefix))dead.add(key.slice(deadPrefix.length));
+  }
+  const pendingWords=learningStorageKey('breeze.word-write.pending',source);
+  const pendingDead=learningStorageKey('breeze.dead-write.pending',source);
+  if(snapshots.has(pendingWords))take(snapshots.get(pendingWords),words);
+  if(snapshots.has(pendingDead))take(snapshots.get(pendingDead),dead);
+  return {words,dead};
+}
+function learningArchiveUnion(archived,live){
+  const base=archived&&archived.version===1?archived:{};
+  return {version:1,words:{...(base.words||{}),...(live.words||{})},dead:{...(base.dead||{}),...(live.dead||{})},conflicts:{...(base.conflicts||{}),...(live.conflicts||{})}};
+}
+function learningArchiveSame(saved,payload){
+  return !!saved&&saved.version===1
+    &&learningStableValue(saved.words||{})===learningStableValue(payload.words)
+    &&learningStableValue(saved.dead||{})===learningStableValue(payload.dead)
+    &&learningStableValue(saved.conflicts||{})===learningStableValue(payload.conflicts);
+}
+async function readLearningArchiveStrict(sourceId){
   const db=await learningArchiveDb();
-  await localTransaction(db,'sources','readwrite',tx=>tx.objectStore('sources').put(payload,source.id));
-  const saved=await readLearningArchive(source.id);
-  if(!saved||learningStableValue(saved.words)!==learningStableValue(payload.words)
-    ||learningStableValue(saved.dead)!==learningStableValue(payload.dead)
-    ||learningStableValue(saved.conflicts)!==learningStableValue(payload.conflicts))return;
-  for(const key of learningWordKeysFor(source))localStorage.removeItem(key);
+  const saved=await localTransaction(db,'sources','readonly',(tx,done)=>{
+    const request=tx.objectStore('sources').get(sourceId);
+    request.onsuccess=()=>done(request.result===undefined?null:request.result);
+  });
+  return saved||null;
+}
+async function releaseDuplicatedDeviceSource(source){
+  // The live guest collection is what logout shows. It stays in localStorage,
+  // as do the active account's word records. The unscoped original is copied
+  // to IndexedDB and removed only after that copy reads back equal. A launch
+  // killed while deleting keeps the archive and the keys still here; the next
+  // launch unions them and never replaces a complete archive with a fragment.
+  if(!source||source.id===learningGuestId()||String(source.id).startsWith('user:'))return;
+  const snapshots=learningSnapshotKeys(source);
+  if(!snapshots.size)return;
+  let live,drops;
+  try{live=learningSourcePayload(source);drops=learningNullDrops(source,snapshots);}catch{return;}
+  let archived;
+  try{archived=await readLearningArchiveStrict(source.id);}catch{return;}
+  const payload=learningArchiveUnion(archived,live);
+  for(const key of drops.words)delete payload.words[key];
+  for(const key of drops.dead)delete payload.dead[key];
+  if(!Object.keys(payload.words).length&&!Object.keys(payload.dead).length&&!Object.keys(payload.conflicts).length)return;
+  if(!learningArchiveSame(archived,payload)){
+    try{
+      const db=await learningArchiveDb();
+      await localTransaction(db,'sources','readwrite',tx=>tx.objectStore('sources').put(payload,source.id));
+    }catch{return;}
+    let saved;
+    try{saved=await readLearningArchiveStrict(source.id);}catch{return;}
+    if(!learningArchiveSame(saved,payload))return;
+  }
+  for(const [key,value] of snapshots){
+    if(localStorage.getItem(key)!==value)continue;
+    localStorage.removeItem(key);
+  }
 }
 async function deviceLocalSourceOpen(source,entry){
   const material=await deviceLocalSourceMaterial(source);

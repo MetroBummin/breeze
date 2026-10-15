@@ -1,14 +1,23 @@
 syncHomeNavigation();
 /* Choose the initial surface before revealing the app; first-time readers never
    paint Home between the launch screen and the tutorial. */
+async function bootDurableMigration(){
+  try{
+    if(typeof migrateDurableLocalStorage==='function')await migrateDurableLocalStorage();
+  }catch(error){
+    console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);
+  }
+}
 const homeReady=loadBooks().then(async()=>{
+  await bootDurableMigration();
   migrateLibraryFolders();
   await maybeShowOnboarding();
   // The first-time guide owns the visible overlay. Do not build hidden Home
   // recommendation cards or start their image/feed work behind the guide.
   if(!onboardingSession)renderHome();
-}).catch(error=>{
+}).catch(async error=>{
   console.error('첫 화면을 준비하지 못했습니다:',error);
+  await bootDurableMigration();
   if(onboardingSession) endOnboarding(false);
   renderHome();
 }).finally(()=>document.documentElement.classList.remove('boot-pending'));

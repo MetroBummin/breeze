@@ -43,6 +43,15 @@ article previews, crop hints, debug pads) are the first thing removed when a
 write hits the quota. The write is retried. Word records are not deleted to
 make room, and a quota failure is not reported as a failure to boot.
 
+The first launch after an update copies leftover localStorage records into
+IndexedDB, reads each copy back, and removes the localStorage bytes only when
+they still match. Saved sets, card sessions and test summaries already kept in
+IndexedDB are left in place when the local leftover differs. A launch killed
+during the move leaves the remaining localStorage copies until the next launch
+repeats the same steps. Words, saved sets, study progress and account records
+are not removed unless that read-back matches. The move does not write a new
+localStorage receipt, so a device that is already full can still finish it.
+
 ## Synchronization and compatibility
 
 The existing `public.words` conditional-write wordbook is retained. Conflicting

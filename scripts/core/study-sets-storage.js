@@ -404,6 +404,158 @@ async function hasLegacyLearningStorage(){
   });
   studyScopeAssert(guard);return found;
 }
+const STUDY_MIGRATION_BASES=['breeze.study-sets.v1','breeze.simple-study-session.v1','breeze.simple-study-archives.v1'];
+function studyMigrationIdentity(name){
+  const at=name.lastIndexOf('.breeze.');
+  const base=at<0?name:name.slice(at+1);
+  const stripped=base.replace(/\.backup(?:\.\d+)?$/,'');
+  if(!STUDY_MIGRATION_BASES.includes(stripped))return null;
+  const decode=stripped===STUDY_SETS_STORAGE?BreezeStudySets.decode:stripped==='breeze.simple-study-session.v1'?decodeSimpleStudySession:studySimpleArchiveDecode;
+  if(typeof decode!=='function')return null;
+  return {storageKey:name.slice(0,name.length-base.length)+stripped,decode};
+}
+function studyMigrationGroups(){
+  const names=[],groups=new Map();
+  for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name)names.push(name);}
+  for(const name of names){
+    const parsed=studyMigrationIdentity(name);
+    if(parsed&&!groups.has(parsed.storageKey))groups.set(parsed.storageKey,parsed.decode);
+  }
+  return groups;
+}
+function studyTestMigrationKeys(){
+  const names=[],keys=[];
+  for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name)names.push(name);}
+  for(const name of names){
+    const at=name.lastIndexOf('.breeze.');
+    if((at<0?name:name.slice(at+1))==='breeze.study-set-tests.v1')keys.push(name);
+  }
+  return keys;
+}
+async function studyTestOverflowOrigins(){
+  const db=await studyStorageDb();
+  return localTransaction(db,'records','readonly',(tx,done)=>{
+    const keys=[],request=tx.objectStore('records').openCursor();
+    request.onsuccess=()=>{
+      const row=request.result;
+      if(!row){done(keys);return;}
+      const name=String(row.key);
+      if(name.endsWith('.test-overflow'))keys.push(name.slice(0,-'.test-overflow'.length));
+      row.continue();
+    };
+  });
+}
+async function studyMigrationRead(key){
+  const db=await studyStorageDb();
+  return localTransaction(db,'records','readonly',(tx,done)=>{
+    const request=tx.objectStore('records').get(key);
+    request.onsuccess=()=>done(request.result);
+  });
+}
+function studyMigrationRelease(storageKey,record,legacy){
+  if(!record||record.version!==1)return;
+  for(const [name,bytes] of Object.entries(legacy)){
+    if(localStorage.getItem(name)!==bytes)continue;
+    const stored=record.legacy&&record.legacy[name]===bytes||(name===storageKey&&record.value===bytes);
+    if(stored)localStorage.removeItem(name);
+  }
+}
+async function migrateOneStudyRecord(storageKey,decode){
+  const legacy=studyStorageLegacy(storageKey);
+  if(!Object.prototype.hasOwnProperty.call(legacy,storageKey))return;
+  const value=legacy[storageKey];
+  try{decode(value);}catch{return;}
+  let existing;
+  try{existing=await studyMigrationRead(storageKey);}catch{return;}
+  if(existing!==undefined){
+    try{studyStorageRecord(existing,decode);}catch{return;}
+    studyMigrationRelease(storageKey,existing,legacy);
+    return;
+  }
+  const db=await studyStorageDb();
+  await localTransaction(db,'records','readwrite',tx=>{
+    const store=tx.objectStore('records'),request=store.get(storageKey);
+    request.onsuccess=()=>{if(request.result===undefined)store.add({version:1,value,legacy},storageKey);};
+  });
+  const saved=await studyMigrationRead(storageKey);
+  if(!saved||saved.version!==1||saved.value!==value)return;
+  try{decode(saved.value);}catch{return;}
+  for(const [name,bytes] of Object.entries(legacy))if(!saved.legacy||saved.legacy[name]!==bytes)return;
+  studyMigrationRelease(storageKey,saved,legacy);
+}
+function studyTestsEmpty(data){
+  return !Object.values(data?.sets||{}).some(rows=>Array.isArray(rows)&&rows.length);
+}
+async function settleOverflowChain(){
+  if(globalThis.__breezeTestOverflowChain)await globalThis.__breezeTestOverflowChain.catch(()=>{});
+}
+async function commitVerifiedOverflow(key,data){
+  await settleOverflowChain();
+  const empty=studyTestsEmpty(data),value=JSON.stringify(data),db=await studyStorageDb();
+  await localTransaction(db,'records','readwrite',tx=>{
+    const store=tx.objectStore('records');
+    if(empty)store.delete(key+'.test-overflow');
+    else store.put({value},key+'.test-overflow');
+  });
+  const saved=await studyTestsOverflowRead(key);
+  return studyStorageStableJson(saved)===studyStorageStableJson(empty?{version:1,sets:{}}:data);
+}
+function writeVerifiedTestSlim(key,slim,original){
+  const landed=()=>localStorage.getItem(key)===slim;
+  try{localStorage.setItem(key,slim);return landed();}
+  catch(error){
+    if(!(error&&(error.name==='QuotaExceededError'||error.code===22||error.code===1014)))throw error;
+    localStorage.removeItem(key);
+    try{localStorage.setItem(key,slim);return landed();}
+    catch{
+      if(localStorage.getItem(key)===null&&original!==null){try{localStorage.setItem(key,original);}catch{}}
+      return false;
+    }
+  }
+}
+async function migrateOneStudyTestHistory(key){
+  const raw=localStorage.getItem(key);
+  let local;
+  if(raw===null)local={version:1,sets:{}};
+  else{try{local=studyTestsDecode(raw);}catch{return;}}
+  await settleOverflowChain();
+  await studyTestOverflowWrites.get(key)?.catch(()=>{});
+  const overflow=await studyTestsOverflowRead(key);
+  if(raw===null&&studyTestsEmpty(overflow))return;
+  const merged=studyTestsMerge(local,overflow),parts=studyTestsPartition(merged);
+  const settled=studyStorageStableJson(local)===studyStorageStableJson(parts.local)
+    &&studyStorageStableJson(overflow)===studyStorageStableJson(parts.overflow)
+    &&!(raw===null&&!studyTestsEmpty(parts.local));
+  if(settled)return;
+  if(!await commitVerifiedOverflow(key,merged))return;
+  if(studyStorageStableJson(local)!==studyStorageStableJson(parts.local)){
+    if(!writeVerifiedTestSlim(key,JSON.stringify(parts.local),raw))return;
+  }
+  await settleOverflowChain();
+  if(!await commitVerifiedOverflow(key,parts.overflow))await commitVerifiedOverflow(key,merged);
+}
+async function migrateDurableLocalStorage(){
+  // First launch after an update. Each step copies, reads the copy back, and
+  // only then removes localStorage. One failure leaves that record in place
+  // and does not skip the others. Running again finishes a move the last
+  // launch did not.
+  try{
+    if(typeof releaseDuplicatedDeviceSource==='function')await releaseDuplicatedDeviceSource({id:'legacy',generation:0});
+  }catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  let groups;
+  try{groups=studyMigrationGroups();}catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);groups=new Map();}
+  for(const [storageKey,decode] of groups){
+    try{await migrateOneStudyRecord(storageKey,decode);}
+    catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  }
+  const tests=new Set();
+  try{for(const key of studyTestMigrationKeys())tests.add(key);}catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  try{for(const key of await studyTestOverflowOrigins())tests.add(key);}catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  for(const key of tests){
+    try{await migrateOneStudyTestHistory(key);}
+    catch(error){console.warn('저장소 옮기기를 마치지 못했어요. 원래 기록은 그대로예요.',error&&error.name);}
+  }
+}
 async function archiveSimpleStudySession(session,scope=studyScopeCapture()){
   for(let attempt=0;attempt<3;attempt++){
     const raw=await readStudyStorage(STUDY_SIMPLE_ARCHIVE,studySimpleArchiveDecode,scope),archive=studySimpleArchiveDecode(raw),encoded=JSON.stringify(session);
