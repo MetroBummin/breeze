@@ -94,7 +94,7 @@ html.study-sets-modal-open body{position:fixed;top:var(--study-sets-scroll-top);
 .study-sets-dragging .study-sets-word-surface{transition:none;}
 .study-sets-exiting{overflow:hidden;pointer-events:none;}
 .study-sets-word-surface>.vgroup{width:100%;border-bottom:0;}
-:is(#study-sets-dialog,#v-memory-set) .study-sets-row-action{position:absolute;right:12px;top:50%;transform:translateY(-50%);transform-origin:right center;display:flex;align-items:center;justify-content:center;min-width:44px;width:44px;height:44px;min-height:44px;max-width:calc(100% - 24px);padding:0;border:0;border-radius:999px;background:var(--danger-tint2);color:var(--danger);opacity:0;pointer-events:none;transition:width .2s ease,opacity .15s ease;}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-row-action{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;min-width:44px;width:44px;height:44px;min-height:44px;max-width:calc(100% - 24px);padding:0;border:0;border-radius:999px;background:var(--danger-tint2);color:var(--danger);opacity:0;pointer-events:none;transition:width .2s ease,opacity .15s ease;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-revealed .study-sets-row-action{pointer-events:auto;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-dragging .study-sets-row-action{transition:none;}
 :is(#study-sets-dialog,#v-memory-set) .study-sets-row-action:focus-visible{opacity:1!important;pointer-events:auto;z-index:1;}

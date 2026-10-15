@@ -321,7 +321,7 @@ test('reference swipe parks its circular action, grows a capsule, and closes on 
   await afterAction(pointer(rows[1],'pointerdown',280));assert.equal(surface.style.transform,'');await afterAction(pointer(rows[1],'pointercancel',280));
   await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',220));await afterAction(pointer(row,'pointerup',220));
   await afterAction(pointer(document.body,'pointerdown',0));assert.equal(surface.style.transform,'');
-  await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',180));assert.match(action.style.transform,/scaleX\(1\.636/);assert.equal(action.style.width,'');
+  await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',180));assert.equal(action.style.width,'72px');assert.equal(action.style.transform,'');
   await afterAction(pointer(row,'pointercancel',180));assert.equal(surface.style.transform,'');
   await afterAction(pointer(row,'pointerdown',280));await afterAction(pointer(row,'pointermove',220));await afterAction(pointer(row,'pointerup',220));await afterAction(action.click());
   assert.equal(document.querySelectorAll('.study-sets-word-row').length,1);await afterAction(query('.study-sets-undo button').click());assert.equal(document.querySelectorAll('.study-sets-word-row').length,2);

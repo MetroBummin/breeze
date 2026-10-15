@@ -513,11 +513,12 @@ still mounts the set list. Cloud vocabulary sync is unchanged.
 A saved set's left swipe still excludes only that set. The finger now meets
 resistance after the commit line instead of a hard edge. Releasing uses the
 existing spring, so a committed row carries its speed and settles past the
-edge before the row below closes the gap. While the finger is down, the row
-and its action move by position only; the action's real width is set when the
-row parks. Crossing the commit line taps once, and the removal taps once more,
-through the iPhone haptic plugin when it is present. A right swipe still does
-not act. The same left swipe on 전체 단어 deletes that saved word, tombstone
+edge before the row below closes the gap. The remove control keeps the existing
+pill: a muted rounded button and a small red minus, growing by its own width
+from a circle into a capsule. The same control is used on 전체 단어. Crossing
+the commit line taps once, and the removal taps once more, through the iPhone
+haptic plugin when it is present. A right swipe still does not act. The same
+left swipe on 전체 단어 deletes that saved word, tombstone
 included, so a book-linked set drops it and does not take it back. That screen
 reuses the set's existing undo notice and 실행 취소 button, and hides the
 notice after a few seconds. Meanings stay read-only and stars do not write.

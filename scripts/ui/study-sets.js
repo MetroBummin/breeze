@@ -1014,13 +1014,13 @@ function studySetsSwipe(row,surface,action){
   const paintVisual=visual=>{
     offset=Math.max(0,visual);
     surface.style.transform=offset?`translate3d(${-offset}px,0,0)`:'';
-    const grow=Math.max(44,offset-28),past=offset>=threshold();
-    // Drag and spring move the action with a transform. Width is written once
-    // the row parks, so the finger never forces layout on every sample.
-    action.style.width='';
-    action.style.opacity=offset?String(Math.min(1,offset/32)):'';
-    action.style.transformOrigin=offset?'right center':'';
-    action.style.transform=offset?`translateY(-50%) scaleX(${grow/44})`:'';
+    const past=offset>=threshold();
+    // The remove control stays the existing pill. Width grows the capsule;
+    // the minus is not scaled.
+    action.style.width=Math.max(44,offset-28)+'px';
+    action.style.opacity=String(Math.min(1,offset/32));
+    action.style.transform='';
+    action.style.transformOrigin='';
     if(finger&&past&&hapticArmed){hapticArmed=false;studySetsHaptic('LIGHT');}
     if(!past)hapticArmed=true;
     row.classList.toggle('study-sets-revealed',offset>0);
