@@ -174,10 +174,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    const previewSize=await previewHandle.jsonValue();await previewHandle.dispose();
    assert.ok(Math.abs(previewSize.height/previewSize.width-Math.SQRT2)<.02&&previewSize.width/previewSize.strip>.9,`EPUB page proportions at ${width} dark=${dark}: ${JSON.stringify(previewSize)}`);
    assert.ok(await page.evaluate(()=>{
-     const thumb=document.getElementById('pdf-navigation-scrollbar');if(thumb.hidden)return true;
-     const left=thumb.getBoundingClientRect().left;
-     return [...document.querySelectorAll('.pdf-thumbnail-paper,.pdf-thumbnail-bookmark')].every(node=>node.getBoundingClientRect().right<=left);
-   }),'Scrollbar grip never overlaps a page or bookmark hit target');
+     const panel=document.getElementById('pdf-page-control').getBoundingClientRect();
+     const paper=document.querySelector('.pdf-thumbnail-paper');if(!paper)return true;
+     const box=paper.getBoundingClientRect(),left=box.left-panel.left,right=panel.right-box.right;
+     const grip=document.getElementById('pdf-navigation-scrollbar'),glyph=paper.closest('.pdf-thumbnail')?.querySelector('.pdf-thumbnail-bookmark svg');
+     const clear=!grip||grip.hidden||!glyph||glyph.getBoundingClientRect().right<=grip.getBoundingClientRect().left+1;
+     return Math.abs(left-right)<=2&&clear;
+   }),'Thumbnail side insets match and the bookmark glyph stays clear of the scroll grip');
    const box=await page.locator('#pdf-page-navigation').boundingBox();
    assert.ok(box&&box.x>=-.5&&box.y>=-.5&&box.x+box.width<=width+.5&&box.y+box.height<=height+.5,`EPUB page sidebar stays inside the viewport: ${JSON.stringify({width,height,dark,box})}`);
    await page.screenshot({path:`/tmp/breeze209-epub-${engine.name()}-${width}-${dark?'dark':'light'}.png`});
@@ -194,7 +197,14 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.waitForFunction(()=>pdfNavigation&&!pdfNavigation.rendering&&document.querySelectorAll('#pdf-thumbnail-strip canvas').length>0);
   const pdfThumb=await page.locator('#pdf-navigation-scrollbar').boundingBox();
   const pdfTop=await page.evaluate(()=>readerScrollTop());
-  assert.ok(await page.evaluate(()=>{const left=document.getElementById('pdf-navigation-scrollbar').getBoundingClientRect().left;return [...document.querySelectorAll('.pdf-thumbnail-paper,.pdf-thumbnail-bookmark')].every(node=>node.getBoundingClientRect().right<=left);}), 'PDF scrollbar grip does not overlap thumbnails or bookmarks');
+  assert.ok(await page.evaluate(()=>{
+    const panel=document.getElementById('pdf-page-control').getBoundingClientRect();
+    const paper=document.querySelector('.pdf-thumbnail-paper').getBoundingClientRect();
+    const left=paper.left-panel.left,right=panel.right-paper.right;
+    const grip=document.getElementById('pdf-navigation-scrollbar').getBoundingClientRect();
+    const glyph=document.querySelector('.pdf-thumbnail-bookmark svg').getBoundingClientRect();
+    return Math.abs(left-right)<=2&&glyph.right<=grip.left+1;
+  }), 'PDF thumbnail side insets match and the bookmark glyph stays clear of the scroll grip');
   await page.mouse.move(pdfThumb.x+pdfThumb.width/2,pdfThumb.y+10);await page.mouse.down();
   await page.mouse.move(pdfThumb.x+pdfThumb.width/2,pdfThumb.y+150,{steps:10});await page.mouse.up();
   assert.ok(await page.evaluate(()=>pdfNavigation.strip.scrollTop>100),'Scrollbar dragging moves the PDF list');
