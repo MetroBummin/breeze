@@ -147,6 +147,7 @@ async function bookCloudSetLink(book,on){
     bookCloudWriteOutbox(userId,box);
     bookCloudQueuePosition(book);
     bookCloudLinkedNote(book);renderBookCloudToggle(book);
+    if(typeof resumeBookInk==='function')resumeBookInk(bookCloudHash(book));
     toast('다른 기기와 이 책을 연동해요');
     return syncBookCloud();
   }
@@ -372,6 +373,7 @@ async function syncBookCloud(){
       if(box.removes[bookId])continue;
       if(await bookCloudSendUpload(bookId,box.uploads[bookId],session))delete box.uploads[bookId];
     }
+    if(typeof flushBookInkSoon==='function')flushBookInkSoon();
     for(const bookId of Object.keys(box.positions)){
       if(!bookCloudCurrent(session))return false;
       const sent=await bookCloudSendPosition(bookId,box.positions[bookId],session);
@@ -412,7 +414,11 @@ async function forgetBookCloud(book){
   const session=bookCloudSession();
   const removed=await bookCloudSendRemove(bookId,session);
   if(!bookCloudCurrent(session))return false;
-  if(removed){delete box.removes[bookId];bookCloudWriteOutbox(userId,box);return true;}
+  if(removed){
+    delete box.removes[bookId];bookCloudWriteOutbox(userId,box);
+    if(typeof forgetBookInk==='function')void forgetBookInk(bookId);
+    return true;
+  }
   delete box.removes[bookId];
   if(upload)box.uploads[bookId]=upload;
   bookCloudWriteOutbox(userId,box);

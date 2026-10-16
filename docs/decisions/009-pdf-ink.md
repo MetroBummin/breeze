@@ -44,7 +44,8 @@ proof of the student's unexplained whole-screen freeze or device behavior.
 asset in a dedicated worker. The worker reads the existing v1 record; transient
 numeric stroke IDs refer to its immutable copies. On commit the page sends the
 ordered ID list and only new/reintroduced strokes. The worker constructs and
-stores the unchanged `{version:1,strokes}` record. IDs never enter disk data.
+stores the unchanged `{version:1,strokes}` record. Those transport IDs never enter disk data.
+A later stable `stroke.id` is part of the stroke object itself and may be stored; see `035-book-ink-sync.md`.
 Unrelated SVG paths, geometry, eraser history and original PDFs are unchanged.
 
 The ink engine retains its one writer per page and newest-revision loop. An
@@ -175,8 +176,10 @@ integration first and does not replace PDF.js or build a general drawing engine.
 Dedicated local IndexedDB `breeze-pdf-ink` v1, store `pages`, key
 `JSON.stringify([originalSHA256, pageNumber])`. Same titles never share records;
 identical original bytes intentionally do. No original-byte mutation, book-record
-mutation, export or sync integration. Existing book deletion does not erase ink
-in this MVP; cleanup semantics are deferred to avoid implicit data loss.
+mutation, or export. Existing book deletion does not erase local ink;
+cleanup semantics stay deferred to avoid implicit data loss. An optional
+`stroke.id` UUID may be stored on the stroke. Cross-device merge for a linked
+PDF is `035-book-ink-sync.md` and does not change this database or its worker.
 
 Writes happen after each completed stroke and each erasure. A page owns one
 serialized writer. Revision comparison writes the newest snapshot again when

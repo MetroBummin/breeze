@@ -129,6 +129,7 @@ function resetSyncSession(){
   wordbookRemote=null;
   if(typeof resetLearningSync==='function')resetLearningSync();
   if(typeof resetBookCloudSession==='function')resetBookCloudSession();
+  if(typeof resetInkSyncSession==='function')resetInkSyncSession();
 }
 /* Change the local owner before any network callback can run. A return to the
    same user gets a new epoch too, so an earlier A request cannot commit to A
