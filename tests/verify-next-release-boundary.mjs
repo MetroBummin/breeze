@@ -125,6 +125,7 @@ const expected={
     "tests/verify-article-preview-server.mjs": "a884099b71a59730db52699f61459f7b449f98c535dd40c6cd5d31950077efc9",
     "tests/verify-article-preview-summary.mjs": "055d31d2defa1b12ee5c9ff4b0f868e43ae81c99dd7cd374bdbf9d645b996a58",
     "tests/verify-audit-hardening.mjs": "e205f1578ece6c6016e75fc51c259b737ddfd87a7c784e26e2936fbf2ee0e121",
+    "tests/verify-bohemia-progress-browser.mjs": "55456b5309711b68cb005f641d2915e7b5c27bad97bb2376d7616964aef61a03",
     "tests/verify-book-cloud-download-browser.mjs": "d89a0b555faa9bb1ee3172430ad771d2bf08b74cb53b7ec64237303e681d26a3",
     "tests/verify-book-cloud-edge.mjs": "3b3dadc38e654a5c006440fbf7a974781dd40f5aceeb6e0f167e01ad10dfa7ad",
     "tests/verify-book-cloud-position-browser.mjs": "46c1495d693e21925b1c5b2ec969ae1aa38a33219e0446ceeee2e15441466685",
