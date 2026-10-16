@@ -18,6 +18,8 @@ interface Window {
   supabase?: any;
   BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean; RSS_CATALOG_FEED_IDS?: number[]; BOOK_CLOUD?: boolean; READING_CACHE_URL?: string; INK_SYNC?: boolean };
   /* Kill switches read at runtime. Absent means the new timing stays on. */
+  /* `fill` paints download progress on the book card. Anything else leaves the card unchanged. */
+  BREEZE_CARD_ACTIVITY?: string;
   BREEZE_PDF_OCR_YIELD?: boolean;
   BREEZE_EPUB_PROGRESSIVE?: boolean;
   BREEZE_EPUB_DEFER_HIGHLIGHTS?: boolean;

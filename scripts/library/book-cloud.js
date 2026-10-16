@@ -587,9 +587,10 @@ function bookCloudPaintActivity(){
   if(!bookCloudActivityVariant())bookCloudActivity.clear();
   if(typeof document==='undefined'||typeof document.querySelectorAll!=='function')return;
   const cards=document.querySelectorAll('.bookcard.cloud[data-book-cloud]');
-  for(const card of cards){
+  for(const item of cards){
+    const card=/** @type {HTMLElement} */(item);
     const state=bookCloudActivity.get(card.dataset.bookCloud);
-    let node=card.querySelector(':scope > .card-activity');
+    let node=/** @type {HTMLElement|null} */(card.querySelector(':scope > .card-activity'));
     if(!state){
       if(node)node.remove();
       card.classList.remove('is-receiving');
