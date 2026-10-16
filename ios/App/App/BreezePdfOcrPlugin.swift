@@ -55,15 +55,21 @@ public final class BreezePdfOcrPlugin: CAPPlugin, CAPBridgedPlugin {
                     try VNImageRequestHandler(cgImage: image, orientation: .up).perform([request])
                     let pattern = try NSRegularExpression(pattern: "[A-Za-z](?:[A-Za-z'’\\-]*[A-Za-z])?")
                     var words: [[String: Any]] = []
-                    for (line, observation) in (request.results ?? []).enumerated() {
+                    outer: for (line, observation) in (request.results ?? []).enumerated() {
+                        guard words.count < 3000 else { break }
                         guard let candidate = observation.topCandidates(1).first,
                               candidate.confidence >= 0.3 else { continue }
                         let text = candidate.string
                         for match in pattern.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
-                            guard words.count < 3000 else { break }
-                            guard let range = Range(match.range, in: text),
-                                  let observation = try candidate.boundingBox(for: range) else { continue }
-                            let rect = observation.boundingBox
+                            guard words.count < 3000 else { break outer }
+                            guard let range = Range(match.range, in: text) else { continue }
+                            // One bad box must not fail the page or keep walking past the cap.
+                            let box: VNRectangleObservation
+                            do {
+                                guard let found = try candidate.boundingBox(for: range) else { continue }
+                                box = found
+                            } catch { continue }
+                            let rect = box.boundingBox
                             words.append(["word": String(text[range]), "line": line,
                                           "confidence": candidate.confidence,
                                           "x": rect.minX, "y": 1 - rect.maxY,

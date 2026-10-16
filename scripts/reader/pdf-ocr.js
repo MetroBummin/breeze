@@ -18,6 +18,70 @@ const BreezePdfOcr=(()=>{
     // the optional @capacitor/core web runtime, which this app does not bundle.
     return cap.Plugins?.BreezePdfOcr || cap.registerPlugin?.('BreezePdfOcr') || null;
   }
+  function laneOn(){
+    // Kill switch for the idle lane, async encode, and reader-document reuse.
+    // Absent or any value other than off keeps the fixed behavior.
+    try{
+      const search=typeof location!=='undefined'&&location&&typeof location.search==='string'?location.search:'';
+      const query=/[?&]ocrLane=([a-z]+)/i.exec(search);
+      let stored='';
+      try{stored=typeof localStorage!=='undefined'&&localStorage?localStorage.getItem('breeze.ocr-lane')||'':'';}
+      catch{stored='';}
+      return String((query&&query[1])||stored||'on').toLowerCase()!=='off';
+    }catch{return true;}
+  }
+  let encoder=null;
+  function pngEncoder(){
+    if(encoder)return encoder;
+    if(typeof Worker==='undefined'||typeof OffscreenCanvas==='undefined'||typeof createImageBitmap!=='function')return null;
+    try{
+      const source='self.onmessage=async(event)=>{'+
+        'const bitmap=event.data.bitmap;try{'+
+        'const canvas=new OffscreenCanvas(bitmap.width,bitmap.height);'+
+        'canvas.getContext("2d",{alpha:false}).drawImage(bitmap,0,0);bitmap.close();'+
+        'const bytes=new Uint8Array(await(await canvas.convertToBlob({type:"image/png"})).arrayBuffer());'+
+        'let binary="";for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));'+
+        'self.postMessage({id:event.data.id,image:btoa(binary)});'+
+        '}catch(error){try{bitmap.close();}catch(e){}self.postMessage({id:event.data.id,error:String(error)});}};';
+      const worker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));
+      const pending=new Map();let seq=0;
+      worker.onmessage=event=>{
+        const job=pending.get(event.data.id);if(!job)return;pending.delete(event.data.id);
+        if(event.data.error)job.reject(new Error(event.data.error));else job.resolve(event.data.image);
+      };
+      worker.onerror=()=>{encoder=null;for(const job of pending.values())job.reject(new Error('encoder'));pending.clear();};
+      encoder={worker,pending,next(){return ++seq;}};
+      return encoder;
+    }catch{return null;}
+  }
+  async function blobToBase64(blob){
+    const bytes=new Uint8Array(await blob.arrayBuffer());
+    let binary='';
+    for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(bytes.length,i+8192)));
+    return btoa(binary);
+  }
+  async function encodePng(canvas){
+    if(!laneOn())return canvas.toDataURL('image/png').split(',')[1];
+    try{
+      const tool=pngEncoder();
+      if(tool){
+        const bitmap=await createImageBitmap(canvas);
+        const id=tool.next();
+        return await new Promise((resolve,reject)=>{
+          tool.pending.set(id,{resolve,reject});
+          try{tool.worker.postMessage({id,bitmap},[bitmap]);}
+          catch(error){tool.pending.delete(id);reject(error);}
+        });
+      }
+    }catch{/* The canvas is still readable for the fallbacks below. */}
+    if(typeof canvas.toBlob==='function'){
+      try{
+        const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        if(blob)return await blobToBase64(blob);
+      }catch{/* Sync encode remains the last resort. */}
+    }
+    return canvas.toDataURL('image/png').split(',')[1];
+  }
   function key(session,n){
     // No durable cache without original-byte identity. Never key by title/page alone.
     return session.hash?JSON.stringify([REVISION,window.Capacitor?.getPlatform?.(),session.bookId,session.hash,n]):null;
@@ -107,10 +171,13 @@ const BreezePdfOcr=(()=>{
       await task.promise;
       if(!valid())return null;
       // Only this raster crosses the in-process bridge. It is never persisted.
-      return canvas.toDataURL('image/png').split(',')[1];
+      // Encoding happens off the UI thread when a worker or toBlob is available.
+      const image=await encodePng(canvas);
+      return valid()?image:null;
     }finally{canvas.width=0;canvas.height=0;page.cleanup();if(active)active.cancel=null;}
   }
   function schedule(session=originalSession){
+    if(typeof BreezePdfOcrLibrary!=='undefined')BreezePdfOcrLibrary.wake?.();
     if(!currentPdfSession(session)||!states.has(session)||state(session).closed||!state(session).pages.size)return;
     wanted=session;clearTimeout(timer);timer=setTimeout(()=>{timer=0;void drain();},200);
   }
@@ -155,6 +222,17 @@ const BreezePdfOcr=(()=>{
       return nativeWork!==job;
     }).finally(()=>{job.probe=null;});
     return job.probe;
+  }
+  function nativeHold(){
+    if(!nativeWork)return null;
+    return {id:nativeWork.id,expired:!!nativeWork.expired};
+  }
+  async function nativeSettled(id){
+    const job=nativeWork;
+    if(!job||job.id!==id)return true;
+    if(!job.expired)return false;
+    await reconcileNative(job);
+    return nativeWork!==job;
   }
   async function retry(session,n,entry){
     if(entry.retrying)return;
@@ -298,5 +376,5 @@ const BreezePdfOcr=(()=>{
     });
   }
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
-  return {inspect,schedule,release,close,tap,forget,boxesFromWords,background,completed,available:()=>!!plugin()};
+  return {inspect,schedule,release,close,tap,forget,boxesFromWords,background,completed,available:()=>!!plugin(),laneOn,nativeHold,nativeSettled};
 })();
