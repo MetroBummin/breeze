@@ -76,9 +76,15 @@ card or metadata photo. Only the missing Korean introduction uses the existing
 reduced-motion-aware shimmer, shaped as text lines. Failed photo decode keeps
 artwork; body failure keeps metadata and offers manual retry in the same sheet.
 Generation checks prevent an old completion/error from changing another article
-or reopening a dismissed preview. The body is fetched/parsed first, then its
-actual paragraphs supply the introduction request. Read becomes available when
-the body is ready, independently of the optional introduction. First-visible
+or reopening a dismissed preview. The feed summary can request the Korean invitation as soon as Preview opens.
+A later body must not clear an invitation already loading or shown for that
+article. The summary qualifies when at least 40 characters remain after
+whitespace is collapsed and trimmed. A missing summary, or one shorter than
+that, does not start an invitation; the article body's excerpt, beginning
+with its first paragraph, does. The invitation service accepts the same
+40-character minimum, so a summary that qualifies on the client is not
+rejected as too short. Read stays independent: body failure keeps a ready invitation, and a
+failed Read still paints an invitation that arrived while opening. First-visible
 shell, body/Read-ready and introduction-ready latency are distinct measurements.
 
 The 238 device follow-up identified a first-screen regression: 236/PR97 fetched
@@ -391,14 +397,18 @@ Photo readiness does not establish article readability. The current client fixes
 these avoidable failures without resuming per-candidate background fetching.
 
 Legacy feed responses retain supplied explicit article bodies and feed-only
-social text in a separate memory-only cache: at most 200,000 serialized UTF-8 bytes per
-source and 1,000,000 in total (including identity and provenance), expiring after ten minutes. Successful source
+social text outside discovery metadata: at most 200,000 serialized UTF-8 bytes per
+source and 1,000,000 in total (including identity and provenance). Built-in public
+feeds also keep that evidence on device for the same twenty-four-hour window as
+the metadata still shown, so a restart or a failed refresh can open the body
+that was already transferred. Custom feeds stay in memory only. Successful source
 refresh replaces that source's evidence; a transient failure does not invent an
 empty successful feed. Cache budget eviction can remove old bodies. No body is
-added to discovery metadata, localStorage, the shared catalog, or a saved book.
+added to the shared catalog or a saved book. Discovery metadata stays body-free
+unless `READING_CACHE_URL` is set.
 Readability and access/truncation checks still run only after selection. Reuse
-requires matching source provenance and canonical article identity. A cold
-restart with only persisted metadata cannot reconstruct these bodies.
+requires matching source provenance and canonical article identity. Metadata
+without a stored body still cannot invent one.
 
 Medium owner-feed jobs continue to coalesce while in flight and after success.
 Transport or parsing failures remove only their own job, so a manual retry can
@@ -406,6 +416,8 @@ make one fresh request. A stale rejected job cannot erase a replacement job.
 Successful empty or missing-story results remain distinct from transient error.
 There are no automatic retry loops, new requests during Home loading, paid
 provider calls, server changes or access-restriction workarounds.
+
+When `BREEZE_CONFIG.READING_CACHE_URL` is an https origin, those same reads come from the public reading cache in Decision 035 instead of the Supabase relay. Discovery metadata keeps a supplied `contentHtml`, Medium owner feeds are resolved before a card is shown, and cover lookup uses the full cached document without the two-request budget or the 128 KiB prefix. Removing the key restores this section's relay path, body-free metadata, the two-request cover budget, and the 128 KiB prefix on the next check. The wordbook revision check stays.
 
 This is a partial reliability correction, not a new readability-admission gate.
 An article can still have a photo while its public body is unavailable. A shared

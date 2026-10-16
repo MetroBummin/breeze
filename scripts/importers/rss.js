@@ -36,6 +36,10 @@ const RSS_PHOTO_MS = 4000;
 const RSS_PUBLIC_CACHE_KEY='breeze.rss-public.v1';
 const RSS_PUBLIC_CACHE_BYTES=1000000;
 const RSS_PUBLIC_FEED_BYTES=64000;
+// While the reading cache serves the bytes, one feed may keep its article HTML
+// and the catalog may hold several of those feeds. The metadata caps return
+// the moment READING_CACHE_URL is unset.
+const RSS_PUBLIC_CACHE_BYTES_ON=4000000;
 const RSS_PUBLIC_STALE_MS=86400000;
 const RSS_CATALOG_CACHE_KEY='breeze.rss-catalog.v1';
 const RSS_CATALOG_BYTES=200000;
@@ -62,11 +66,21 @@ let rssLoadedOffline=false;
 let rssPublicCache=null;
 const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
-// Keep only public bodies already paid for by a legacy feed response. Discovery
-// and its persistent cache remain metadata-only; parsing still waits for a tap.
+// Keep public bodies already transferred with a legacy feed. Discovery cards stay
+// metadata-only. The body store survives a restart for the same window as the
+// metadata we still show, so a warm card can open without another origin fetch.
 const rssSuppliedBodies = new Map();
 const RSS_SUPPLIED_BODY_BYTES=1000000;
 const RSS_SUPPLIED_FEED_BYTES=200000;
+const RSS_SUPPLIED_STORE_KEY='breeze.rss-supplied.v1';
+let rssSuppliedHydrated=false;
+function rssBuiltinFeed(url){return RSS_FEEDS.some(source=>source.url===url);}
+function rssReadingCacheOn(){return typeof readingCacheEnabled==='function'&&readingCacheEnabled();}
+function rssPublicFeedLimit(){return rssReadingCacheOn()?RSS_PUBLIC_CACHE_BYTES:RSS_PUBLIC_FEED_BYTES;}
+function rssPublicCacheLimit(){return rssReadingCacheOn()?RSS_PUBLIC_CACHE_BYTES_ON:RSS_PUBLIC_CACHE_BYTES;}
+function rssCoverBudgetOpen(owner){
+  return !!owner&&!owner.cancelled&&(rssReadingCacheOn()||owner.remaining>0&&rssCoverRemaining>0);
+}
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
@@ -248,6 +262,15 @@ function rssCoverPhoto(html,base,complete=true){
   return '';
 }
 async function rssCoverFetch(url,signal){
+  // A serving reading cache is the full article, so the two-request budget and
+  // the 128 KiB relay prefix do not apply. Unset the flag and this is the relay.
+  if(rssReadingCacheOn()){
+    try{
+      const html=await fetchReadingDocument(url,{},signal);
+      const photo=rssCoverPhoto(html,rssCoverPublicUrl(url)||url,true);
+      return {photo};
+    }catch{return null;}
+  }
   const endpoint=articleProxyUrl(url);if(!endpoint)return null;
   const response=await fetch(endpoint,{credentials:'omit',signal,
     headers:{Authorization:'Bearer '+SB_KEY,apikey:SB_KEY}});
@@ -381,14 +404,17 @@ async function rssCoverPump(owner){
   if(owner.running||owner.cancelled)return;
   owner.running=true;let repaint=false;
   try{
-    while(rssOnline()&&owner.remaining>0&&rssCoverRemaining>0&&!owner.cancelled){
+    while(rssOnline()&&rssCoverBudgetOpen(owner)){
       const pair=[...owner.entries].find(([card,entry])=>entry&&rssCoverEligible(entry)
         &&!owner.attempted.has(entry.url)&&!rssCoverCached(rssCoverPublicUrl(entry.url))&&rssCoverVisible(owner,card));
       if(!pair)break;
       const [card,entry]=pair,consumer={owner,card,entry,job:null};
-      owner.attempted.add(entry.url);owner.remaining--;owner.consumer=consumer;
+      owner.attempted.add(entry.url);owner.consumer=consumer;
       const url=rssCoverPublicUrl(entry.url),existing=rssCoverJobs.get(url);
-      if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
+      if(!rssReadingCacheOn()){
+        owner.remaining--;
+        if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
+      }
       rssCardCoverWork.set(card,consumer);rssCardPending(card);
       const result=await rssCoverLookup(url,consumer),currentEntry=consumer.entry;
       if(result?.photo&&rssCoverCurrent(consumer)){
@@ -440,22 +466,31 @@ function rssCacheEntry(entry){
   value.publishedAt=value.publishedAt.slice(0,100);value.date=value.date.slice(0,100);
   value.source=value.source.slice(0,256);value.category=rssCategory(value.category);
   value.kind=['x','reddit'].includes(value.kind)?value.kind:'';
-  return {...value,contentHtml:'',bodyProvided:false,discoveryFiltered:true};
+  // Full feed bodies stay in discovery metadata only while the public reading
+  // cache is serving them. With the flag unset, metadata stays body-free.
+  const html=rssReadingCacheOn()&&typeof entry.contentHtml==='string'&&entry.contentHtml.length<=200000?entry.contentHtml:'';
+  return {...value,contentHtml:html,bodyProvided:!!entry.bodyProvided&&!!html,discoveryFiltered:true};
 }
 function rssPublicCacheEntries(){
   if(rssPublicCache)return rssPublicCache;
   rssPublicCache={};
   try{
     const raw=localStorage.getItem(RSS_PUBLIC_CACHE_KEY);
-    if(!raw||raw.length>RSS_PUBLIC_CACHE_BYTES)return rssPublicCache;
+    // Read the larger flag-on catalog even after the key is removed, then let
+    // rssCacheEntry drop bodies so the metadata cache still opens.
+    if(!raw||raw.length>RSS_PUBLIC_CACHE_BYTES_ON)return rssPublicCache;
     const stored=JSON.parse(raw),now=Date.now();
-    if(rssCacheBytes(stored)>RSS_PUBLIC_CACHE_BYTES)return rssPublicCache;
+    if(rssCacheBytes(stored)>RSS_PUBLIC_CACHE_BYTES_ON)return rssPublicCache;
     for(const feed of RSS_FEEDS){
       const record=stored?.[feed.url];
       if(!record||!Number.isFinite(record.at)||record.at>now||now-record.at>RSS_PUBLIC_STALE_MS
         ||!Array.isArray(record.entries)||record.entries.length>100)continue;
-      const entries=record.entries.map(rssCacheEntry);
-      if(entries.some(entry=>!entry)||rssCacheBytes({at:record.at,entries})>RSS_PUBLIC_FEED_BYTES)continue;
+      let entries=record.entries.map(rssCacheEntry);
+      if(entries.some(entry=>!entry))continue;
+      if(rssCacheBytes({at:record.at,entries})>rssPublicFeedLimit()){
+        entries=record.entries.map(entry=>rssCacheEntry({...entry,contentHtml:'',bodyProvided:false}));
+        if(entries.some(entry=>!entry)||rssCacheBytes({at:record.at,entries})>RSS_PUBLIC_FEED_BYTES)continue;
+      }
       rssPublicCache[feed.url]={at:record.at,entries};
     }
   }catch{/* Cache corruption or denied storage cannot block public discovery. */}
@@ -467,50 +502,95 @@ function rssStorePublicFeed(feed,entries,at){
   const kept=[];
   for(const entry of entries.slice(0,100)){
     let value=rssCacheEntry(entry);if(!value)continue;
-    if(rssCacheBytes({at,entries:[...kept,value]})>RSS_PUBLIC_FEED_BYTES){
+    if(rssCacheBytes({at,entries:[...kept,value]})>rssPublicFeedLimit()){
       value={...value,contentHtml:'',bodyProvided:false};
-      if(rssCacheBytes({at,entries:[...kept,value]})>RSS_PUBLIC_FEED_BYTES)break;
+      if(rssCacheBytes({at,entries:[...kept,value]})>rssPublicFeedLimit())break;
     }
     kept.push(value);
   }
   const cache=rssPublicCacheEntries();cache[feed.url]={at,entries:kept};
   const oldest=Object.keys(cache).sort((a,b)=>cache[a].at-cache[b].at);
-  while(rssCacheBytes(cache)>RSS_PUBLIC_CACHE_BYTES&&oldest.length)delete cache[oldest.shift()];
+  while(rssCacheBytes(cache)>rssPublicCacheLimit()&&oldest.length)delete cache[oldest.shift()];
   try{localStorage.setItem(RSS_PUBLIC_CACHE_KEY,JSON.stringify(cache));}
   catch{/* Memory still reuses valid entries when persistent storage is unavailable. */}
 }
 function rssForgetSuppliedBodies(feedUrl){
   for(const [key,record] of rssSuppliedBodies)if(record.feedUrl===feedUrl)rssSuppliedBodies.delete(key);
 }
+function rssPersistSuppliedBodies(){
+  if(typeof localStorage==='undefined')return;
+  try{
+    const now=Date.now(),kept=[];
+    let total=0;
+    for(const [key,record] of rssSuppliedBodies){
+      if(!rssBuiltinFeed(record.feedUrl)||!Number.isFinite(record.at)||record.at>now||now-record.at>=RSS_PUBLIC_STALE_MS)continue;
+      const html=record.body?.contentHtml;
+      if(typeof html!=='string'||!html||html.length>200000)continue;
+      if(total+record.bytes>RSS_SUPPLIED_BODY_BYTES)continue;
+      total+=record.bytes;
+      kept.push([key,{feedUrl:record.feedUrl,at:record.at,bytes:record.bytes,body:{contentHtml:html,bodyProvided:!!record.body.bodyProvided}}]);
+    }
+    localStorage.setItem(RSS_SUPPLIED_STORE_KEY,JSON.stringify(kept));
+  }catch{/* Private mode and quota denial keep this document's in-memory copy. */}
+}
+function rssRehydrateSuppliedBodies(){
+  if(rssSuppliedHydrated||typeof localStorage==='undefined'){rssSuppliedHydrated=true;return;}
+  rssSuppliedHydrated=true;
+  try{
+    const raw=localStorage.getItem(RSS_SUPPLIED_STORE_KEY);
+    if(!raw||raw.length>RSS_SUPPLIED_BODY_BYTES+65536)return;
+    const rows=JSON.parse(raw);
+    if(!Array.isArray(rows))return;
+    const now=Date.now();
+    let total=0;
+    for(const row of rows){
+      if(!Array.isArray(row)||row.length!==2)continue;
+      const [key,record]=row;
+      if(typeof key!=='string'||key.length>12000||!record||typeof record!=='object')continue;
+      if(!rssBuiltinFeed(record.feedUrl)||!Number.isFinite(record.at)||record.at>now||now-record.at>=RSS_PUBLIC_STALE_MS)continue;
+      const html=record.body?.contentHtml;
+      if(typeof html!=='string'||!html||html.length>200000||rssSuppliedBodies.has(key))continue;
+      const stored={feedUrl:record.feedUrl,at:record.at,body:{contentHtml:html,bodyProvided:!!record.body.bodyProvided}};
+      const bytes=rssCacheBytes([key,stored]);
+      if(bytes>RSS_SUPPLIED_FEED_BYTES||total+bytes>RSS_SUPPLIED_BODY_BYTES)continue;
+      total+=bytes;
+      rssSuppliedBodies.set(key,{...stored,bytes});
+    }
+  }catch{/* Corrupt or denied storage cannot block a body that is still in memory. */}
+}
 function rssRememberSuppliedBodies(feed,entries,at){
+  rssRehydrateSuppliedBodies();
   rssForgetSuppliedBodies(feed.url);
   const now=Date.now();
-  if(at>now || now-at>=RSS_CACHE_MS || typeof feed.url!=='string' || feed.url.length>4096)return;
-  let feedBytes=0;
-  for(const entry of entries){
-    if(!entry.contentHtml || !(entry.bodyProvided || entry.kind&&!entry.readUrl) || !rssCacheEntry(entry))continue;
-    const body={contentHtml:entry.contentHtml,bodyProvided:!!entry.bodyProvided};
-    const key=feed.url+'\n'+articleUrlKey(entry.url),record={feedUrl:feed.url,at,body};
-    const bytes=rssCacheBytes([key,record]);
-    if(bytes>RSS_SUPPLIED_FEED_BYTES-feedBytes)continue;
-    feedBytes+=bytes;
-    rssSuppliedBodies.delete(key);
-    rssSuppliedBodies.set(key,{...record,bytes});
+  if(!(at>now || now-at>=RSS_PUBLIC_STALE_MS || typeof feed.url!=='string' || feed.url.length>4096)){
+    let feedBytes=0;
+    for(const entry of entries){
+      if(!entry.contentHtml || !(entry.bodyProvided || entry.kind&&!entry.readUrl) || !rssCacheEntry(entry))continue;
+      const body={contentHtml:entry.contentHtml,bodyProvided:!!entry.bodyProvided};
+      const key=feed.url+'\n'+articleUrlKey(entry.url),record={feedUrl:feed.url,at,body};
+      const bytes=rssCacheBytes([key,record]);
+      if(bytes>RSS_SUPPLIED_FEED_BYTES-feedBytes)continue;
+      feedBytes+=bytes;
+      rssSuppliedBodies.delete(key);
+      rssSuppliedBodies.set(key,{...record,bytes});
+    }
   }
   let total=0;
   for(const [key,record] of rssSuppliedBodies){
-    if(record.at>now || now-record.at>=RSS_CACHE_MS)rssSuppliedBodies.delete(key);
+    if(record.at>now || now-record.at>=RSS_PUBLIC_STALE_MS)rssSuppliedBodies.delete(key);
     else total+=record.bytes;
   }
   for(const [key,record] of rssSuppliedBodies){
     if(total<=RSS_SUPPLIED_BODY_BYTES)break;
     rssSuppliedBodies.delete(key);total-=record.bytes;
   }
+  rssPersistSuppliedBodies();
 }
 function rssSuppliedEntry(entry){
+  rssRehydrateSuppliedBodies();
   const key=(entry.feedSourceUrl||entry.feedUrl)+'\n'+articleUrlKey(entry.url),record=rssSuppliedBodies.get(key),now=Date.now();
   if(!record)return entry;
-  if(record.at>now || now-record.at>=RSS_CACHE_MS){rssSuppliedBodies.delete(key);return entry;}
+  if(record.at>now || now-record.at>=RSS_PUBLIC_STALE_MS){rssSuppliedBodies.delete(key);return entry;}
   return record.feedUrl===(entry.feedSourceUrl||entry.feedUrl)?{...entry,...record.body}:entry;
 }
 async function rssFeedEntries(feed,force){
@@ -725,6 +805,18 @@ async function rssPublicArticle(entry){
   return {...entry,bodyProvided:true,contentHtml:match.contentHtml,
     author:match.author || entry.author,photo:entry.photo || match.photo};
 }
+async function rssPreparePublicArticles(entries, publish){
+  const ready=[];let cursor=0;
+  const candidates=entries.filter(entry=>!rssAlreadySaved(entry)).slice(0,RSS_PER_FEED);
+  await Promise.all([0,1].map(async()=>{
+    while(cursor<candidates.length && ready.length<RSS_PER_FEED){
+      const entry=candidates[cursor++];
+      const resolved=await rssPublicArticle(entry);
+      if(resolved && ready.length<RSS_PER_FEED){ready.push(resolved);publish([...ready]);}
+    }
+  }));
+  return ready;
+}
 async function rssResolveSelectedEntry(entry){
   entry=rssSuppliedEntry(entry);
   if(rssMediumSource({url:entry.feedSourceUrl||entry.feedUrl||entry.url}))return await rssPublicArticle(entry)||entry;
@@ -911,7 +1003,11 @@ async function loadRssLegacy(force){
     const start = entries.length ? (rssPage * RSS_PER_FEED) % entries.length : 0;
     const ordered=entries.map((_, step) => entries[(start + step) % entries.length]);
     const publish=entries=>{rssCands[index]=entries;rssListeners.forEach(notify=>notify(rssCands));};
-    publish(ordered.map(rssDiscoveryEntry));
+    if(rssReadingCacheOn()&&rssMediumSource(feed)&&ordered.length){
+      const ready=await rssPreparePublicArticles(ordered.filter(entry=>!rssAlreadySaved(entry)),next=>publish(next.map(rssDiscoveryEntry)));
+      if(ready.length)rssRememberSuppliedBodies(feed,ready,result.at);
+      publish((ready.length?ready:ordered).map(rssDiscoveryEntry));
+    }else publish(ordered.map(rssDiscoveryEntry));
     return rssCands[index];
     }catch(error){
       // Public stale fallback belongs to rssFeedEntries, which checks its age.
@@ -944,8 +1040,13 @@ async function loadRss(force){
       const result=await rssQualityFeed(feed);pending=pending || result.pending;
       const start=result.entries.length ? (rssPage*RSS_PER_FEED)%result.entries.length : 0;
       const ordered=result.entries.map((_,step)=>result.entries[(start+step)%result.entries.length]);
-      // Eligibility stays owned by Jev; article bodies wait for selection.
-      publish(ordered.filter(entry=>!rssAlreadySaved(entry)).map(entry=>rssDiscoveryEntry({...entry,contentHtml:'',bodyProvided:false})));
+      // Eligibility stays owned by Jev. Owner bodies are resolved before a card
+      // appears only while the reading cache, not the Supabase relay, carries them.
+      if(rssReadingCacheOn()&&rssMediumSource(feed)&&ordered.length){
+        const unsaved=ordered.filter(entry=>!rssAlreadySaved(entry));
+        const ready=await rssPreparePublicArticles(unsaved,next=>publish(next.map(rssDiscoveryEntry)));
+        publish((ready.length?ready:unsaved).map(rssDiscoveryEntry));
+      }else publish(ordered.filter(entry=>!rssAlreadySaved(entry)).map(entry=>rssDiscoveryEntry({...entry,contentHtml:'',bodyProvided:false})));
     }catch{pending=true;/* Retain last-good approved cards through service outages. */}
     return rssCands[index];
   })).then(groups=>{rssCands=groups;rssQualityPending=pending;rssLoadedAt=Date.now();return groups;}).finally(()=>{

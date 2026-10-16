@@ -17,14 +17,16 @@ const image=readFileSync(resolve(root,'assets/favicon/icon-512.png'));
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
 const marker='HYBRID_SELECTED_BODY_ONLY',excerptMarker='HYBRID_SELECTED_PREVIEW_EVIDENCE';
 const prose='The story explains how people learn by reading evidence and comparing ideas. They discuss the world around them and consider how different choices affect their lives. ';
+const summaryFeed=0,fallbackFeed=1,shortSummary='Brief.';
 const title=id=>'The public English story about learning '+id;
 const story=id=>[9,11,12].includes(id)?`https://medium.com/@hybrid/story-${(id+1).toString(16).padStart(12,'0')}`:`https://stories.fixture/f${id}/story`;
 const photo=id=>`https://images.fixture/supplied-f${id}.png`;
+const summaryFor=id=>id===fallbackFeed?shortSummary:prose;
 function entry(id){return {title:title(id),url:story(id),source:FEEDS[id].name,category:FEEDS[id].category,
-  feedUrl:FEEDS[id].url,feedSourceUrl:FEEDS[id].url,author:'Fixture author',publishedAt:'',summary:prose,photo:photo(id),kind:'',readUrl:''};}
+  feedUrl:FEEDS[id].url,feedSourceUrl:FEEDS[id].url,author:'Fixture author',publishedAt:'',summary:summaryFor(id),photo:photo(id),kind:'',readUrl:''};}
 function catalog(){return {version:1,feeds:FEEDS.map((_,id)=>({id,at:Date.now()-1000,
   status:managed.includes(id)?'ready':'disabled',entries:managed.includes(id)?[entry(id)]:[]}))};}
-function feedXml(id){return `<rss><channel><item><title>${title(id)}</title><link>${story(id)}</link><description><![CDATA[<p>${prose}</p>]]></description><enclosure type="image/png" url="${photo(id)}"/></item></channel></rss>`;}
+function feedXml(id){return `<rss><channel><item><title>${title(id)}</title><link>${story(id)}</link><description><![CDATA[<p>${summaryFor(id)}</p>]]></description><enclosure type="image/png" url="${photo(id)}"/></item></channel></rss>`;}
 // The existing introduction cache legitimately keys a bounded source excerpt.
 // Put the full-body sentinel beyond that excerpt, and test both boundaries.
 function articleHtml(id){return `<!doctype html><html><head><title>${title(id)}</title><meta property="og:image" content="${photo(id)}"></head><body><article><h1>${title(id)}</h1>${Array.from({length:15},(_,i)=>`<p>${i===0?excerptMarker:i>=8?marker:''} ${i}. ${prose.repeat(2)}</p>`).join('')}</article></body></html>`;}
@@ -189,35 +191,50 @@ try{
   await warm.page.waitForFunction(()=>!rssLoading&&rssCands.length===13&&rssCands.every(group=>group.length===1));
   await readyCards(warm.page);await emptyPersistence(warm.page);
   assert.equal(warm.calls.length,0,'Warm relaunch should reuse both discovery caches');assert.equal(warm.direct.length,0);
-  const card=warm.page.locator('#casual-rail .rss-card:not([hidden])[data-rss-url^="https://stories.fixture/"]').first();
-  await card.locator('.thumb.has-cover').waitFor({state:'visible'});const selected=await card.getAttribute('data-rss-url');
-  warm.selectedReadUrl=selected;
-  await card.click();
-  await warm.page.waitForFunction(()=>document.querySelector('#article-preview').open&&document.querySelector('.ap-start').disabled);
+  const summaryUrl=story(summaryFeed),fallbackUrl=story(fallbackFeed);
+  async function openPreview(url){
+    const card=warm.page.locator(`#casual-rail .rss-card:not([hidden])[data-rss-url="${url}"]`);
+    await card.locator('.thumb.has-cover').waitFor({state:'visible'});
+    await card.click();
+    await warm.page.waitForFunction(target=>articlePreviewDialog.open&&articlePreviewBook?.sourceUrl===target,url);
+  }
+  await openPreview(summaryUrl);
+  await warm.page.waitForFunction(()=>document.querySelector('.ap-start').disabled);
   await warm.page.waitForFunction(()=>articlePreviewDialog.dataset.preparing==='true');
   await bounded(warm.bodyStarted.promise,'Selected body request was never issued');
   await emptyPersistence(warm.page);
   // The pending body request must be selected intent; all discovery used photos.
   assert.equal(warm.calls.filter(c=>c.kind==='articleBody').length,1);
-  assert.equal(warm.calls.find(c=>c.kind==='articleBody').target,selected);
+  assert.equal(warm.calls.find(c=>c.kind==='articleBody').target,summaryUrl);
   warm.bodyGate.release();
   await warm.page.waitForFunction(()=>articlePreviewDialog.open&&articlePreviewDialog.dataset.preparing==='false'&&!document.querySelector('.ap-start').disabled);
   await emptyPersistence(warm.page);
   assert.equal(await warm.page.evaluate(value=>JSON.stringify(articlePreviewBook?.paras).includes(value),marker),true,'Selected body did not reach the transient Preview');
   await warm.page.waitForFunction(()=>articlePreviewDialog.dataset.metadata==='ready');
   await emptyPersistence(warm.page);
-  const persistence=await warm.page.evaluate(({marker,excerptMarker,selected})=>{
+  await warm.page.evaluate(()=>articlePreviewClose());
+  await warm.page.waitForFunction(()=>!articlePreviewDialog.open);
+  await openPreview(fallbackUrl);
+  await warm.page.waitForFunction(url=>articlePreviewDialog.open&&articlePreviewBook?.sourceUrl===url&&articlePreviewDialog.dataset.preparing==='false'&&articlePreviewDialog.dataset.metadata==='ready',fallbackUrl);
+  await emptyPersistence(warm.page);
+  const selected=fallbackUrl;
+  warm.selectedReadUrl=selected;
+  const persistence=await warm.page.evaluate(({marker,excerptMarker,summaryUrl,fallbackUrl})=>{
     const storage=Object.fromEntries(Object.entries(localStorage));
-    const key=Object.keys(JSON.parse(storage[ARTICLE_PREVIEW_CACHE]||'{}')).map(key=>JSON.parse(key)).find(parts=>parts[0]===selected);
+    const keys=Object.keys(JSON.parse(storage[ARTICLE_PREVIEW_CACHE]||'{}')).map(key=>JSON.parse(key));
     return {fullBodyStored:JSON.stringify(storage).includes(marker),
       discoveryEvidenceStored:[RSS_PUBLIC_CACHE_KEY,RSS_CATALOG_CACHE_KEY,RSS_COVER_CACHE_KEY].some(key=>
         (storage[key]||'').includes(marker)||(storage[key]||'').includes(excerptMarker)),
-      excerpt:key?.[2]||''};
-  },{marker,excerptMarker,selected});
+      summaryExcerpt:keys.find(parts=>parts[0]===summaryUrl)?.[2]||'',
+      fallbackExcerpt:keys.find(parts=>parts[0]===fallbackUrl)?.[2]||''};
+  },{marker,excerptMarker,summaryUrl,fallbackUrl});
   assert.equal(persistence.fullBodyStored,false,'Preview persisted the full-body sentinel');
   assert.equal(persistence.discoveryEvidenceStored,false,'Selected body evidence leaked into a discovery cache');
-  assert(persistence.excerpt.includes(excerptMarker),'The fixture must exercise the existing selected-preview evidence cache');
-  assert(persistence.excerpt.length<=544,'Preview evidence exceeds 540 characters plus paragraph separators');
+  assert.equal(persistence.summaryExcerpt,prose.replace(/\s+/g,' ').trim(),'A long feed summary stays the invitation after the body arrives');
+  assert.equal(persistence.summaryExcerpt.includes(excerptMarker),false);
+  assert(persistence.fallbackExcerpt.includes(excerptMarker),'A short feed summary must fall back to the body paragraph that carries the preview evidence');
+  assert.equal(persistence.fallbackExcerpt.includes(marker),false,'The fallback excerpt stored the full-body sentinel');
+  assert(persistence.summaryExcerpt.length<=544&&persistence.fallbackExcerpt.length<=544,'Preview evidence exceeds 540 characters plus paragraph separators');
   const beforeRead={requests:warm.dictRequests.length,events:await warm.page.evaluate(()=>window.hybridReadIntents)};
   assert.deepEqual(beforeRead,{requests:0,events:[]},'Discovery and Preview must not warm or query the dictionary');
   assert(sessions.every(h=>h.dictRequests.length===0),'An earlier discovery session called the dictionary');
@@ -228,7 +245,7 @@ try{
   await bounded(warm.dictReady.promise,'Saved Reader did not issue its existing dictionary warm request');
   assert.equal(warm.dictRequests.length,1);assert.equal(warm.dictRequests[0].accepted,true);
   assert.deepEqual(warm.dictRequests[0].payload,{op:'warm'});
-  assert.equal(warm.calls.filter(c=>c.kind==='articleBody').length,1);
+  assert.deepEqual(warm.calls.filter(c=>c.kind==='articleBody').map(c=>c.target),[summaryUrl,fallbackUrl]);
   assert.equal(warm.calls.filter(c=>c.kind==='feed'||c.kind==='catalog').length,0);
   await warm.page.screenshot({path:proof+'/selected-only-read.png'});
   result.phases.push({name:'warm-preview-read',zeroWarmDiscoveryRequests:true,selected,saved,

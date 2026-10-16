@@ -202,6 +202,53 @@ function articleProxyUrl(url, as){
   return SB_URL.replace(/\/+$/,'') + '/functions/v1/article?url=' + encodeURIComponent(url)
     + (as ? '&as=' + as : '');
 }
+/* Unset READING_CACHE_URL is the kill switch: the next call uses the relay.
+   A value is accepted only as an https origin or path with no userinfo or query. */
+function readingCacheBase(){
+  try{
+    const raw=window.BREEZE_CONFIG&&window.BREEZE_CONFIG.READING_CACHE_URL;
+    if(typeof raw!=='string'||!raw)return '';
+    const url=new URL(raw);
+    if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)return '';
+    if(!/^(?:[a-z0-9-]+\.)+[a-z]{2,}$/i.test(url.hostname))return '';
+    return url.origin+url.pathname.replace(/\/+$/,'');
+  }catch{return '';}
+}
+function readingCacheEnabled(){return !!readingCacheBase();}
+function readingCanonicalUrl(raw){
+  const url=new URL(raw);
+  url.hash='';
+  for(const key of [...url.searchParams.keys()])if(/^utm_|^(fbclid|gclid)$/i.test(key))url.searchParams.delete(key);
+  if(url.username||url.password||url.href.length>4096)throw new Error('bad_url');
+  return url.href;
+}
+async function readingSha256(text){
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
+  return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+async function fetchReadingDocument(url, location, signal){
+  const base=readingCacheBase();
+  const feedId=typeof RSS_FEEDS!=='undefined'?RSS_FEEDS.findIndex(feed=>feed.url===url):-1;
+  const custom=feedId<0&&typeof rssSources==='function'&&rssSources().some(feed=>feed&&feed.url===url);
+  if(custom)throw new Error('기사를 가져오지 못했어요. 인터넷 연결을 확인하거나 원문을 열어 주세요.');
+  let target=base+'/feeds/v1/'+feedId+'.xml';
+  if(feedId<0){
+    const canonical=readingCanonicalUrl(url);
+    target=base+'/articles/v1/'+await readingSha256(canonical)+'.html?url='+encodeURIComponent(canonical);
+  }
+  let response;
+  const deadline=AbortSignal.timeout(15000);
+  try{response=await fetch(target,{credentials:'omit',signal:signal?AbortSignal.any([deadline,signal]):deadline});}
+  catch{throw new Error('기사를 가져오지 못했어요. 인터넷 연결을 확인하거나 원문을 열어 주세요.');}
+  if(!response.ok)throw new Error(response.status===404
+    ?'지금은 기사를 가져올 수 없어요. 원문을 열어 주세요.'
+    :`기사를 열지 못했어요 (${response.status})`);
+  const text=await response.text();
+  if(!text||text.length>3000000)throw new Error('페이지가 너무 커요');
+  const finalUrl=response.headers.get('x-reading-url');
+  location.url=/^https?:\/\//i.test(finalUrl||'')?finalUrl:url;
+  return text;
+}
 /* `new URL()`은 "notaurl!!" 같은 것도 통과시킵니다. 진짜 호스트처럼 생겼는지
    여기서 한 번 더 봅니다 — 아니면 사용자는 오탈자 대신 서버 오류를 봅니다. */
 const ARTICLE_HOST = /^(?:[a-z0-9-]+\.)+[a-z]{2,}$|^\d{1,3}(?:\.\d{1,3}){3}$/i;
@@ -227,6 +274,7 @@ async function fetchArticleHtml(url, location = {}){
     }
   }catch(e){}
 
+  if(readingCacheEnabled())return fetchReadingDocument(url, location);
   const endpoint = articleProxyUrl(url);
   if(!endpoint) throw new Error('설정에 Supabase 주소가 없어 기사를 가져올 수 없어요');
   let response;
@@ -266,6 +314,14 @@ async function fetchArticleImage(url){
   };
   const direct=await attempt(url,{credentials:'omit',signal:AbortSignal.timeout(2000)});
   if(direct)return direct;
+  if(readingCacheEnabled()){
+    try{
+      const canonical=readingCanonicalUrl(url);
+      const hash=await readingSha256(canonical);
+      return await attempt(readingCacheBase()+'/images/v1/'+hash+'?url='+encodeURIComponent(canonical),{
+        credentials:'omit',signal:AbortSignal.timeout(4000)});
+    }catch{return null;}
+  }
   const endpoint=articleProxyUrl(url,'image');
   return endpoint?attempt(endpoint,{
     signal:AbortSignal.timeout(4000),headers:{'Authorization':'Bearer '+SB_KEY,'apikey':SB_KEY}

@@ -39,15 +39,32 @@ test('custom source bodies remain memory-only and cannot be claimed by another s
   const h=supplied({custom});await h.load(false);const entry=h.entries()[13][0];
   assert.equal((await h.context.rssResolveSelectedEntry(entry)).contentHtml,body);
   assert(!h.storage.get(cacheKey).includes('Custom'));
+  assert(!String(h.storage.get('breeze.rss-supplied.v1')||'').includes('custom.example'));
   assert.equal(h.context.rssSuppliedEntry({...entry,feedSourceUrl:'https://other.example/feed'}).contentHtml,'');
 });
-test('metadata-only restart does not invent a body, and expired/backward-clock memory is discarded',async()=>{
+test('a restarted document reopens a downloaded body without a new request or an invented one',async()=>{
   const h=supplied();await h.load(false);const entry=h.entries()[0][0];
+  const store=h.storage.get('breeze.rss-supplied.v1');
+  assert.match(store,new RegExp(entry.url.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.doesNotMatch(h.storage.get(cacheKey),/contentHtml":"<p>/);
   const restart=supplied({storage:h.storage});await restart.load(false);
-  assert.equal(restart.calls.length,0);assert.equal((await restart.context.rssResolveSelectedEntry(restart.entries()[0][0])).contentHtml,'');
-  h.advance(600000);assert.equal(h.context.rssSuppliedEntry(entry).contentHtml,'');
+  assert.equal(restart.calls.length,0);
+  const selected=await restart.context.rssResolveSelectedEntry(restart.entries()[0][0]);
+  assert.equal(selected.contentHtml,body);
+  restart.context.fetchArticleHtml=async()=>{throw Error('The original web page is unavailable');};
+  restart.context.readerOpenIntent=0;
+  const book=await restart.context.ingestArticle(selected.url,{...selected,preview:true,present:false,deferSave:true});
+  assert.equal(book.paras[0].t,'Public article text');assert.equal(restart.calls.length,0);
+  const stripped=supplied({storage:new Map([[cacheKey,h.storage.get(cacheKey)]])});await stripped.load(false);
+  assert.equal(stripped.calls.length,0);
+  assert.equal((await stripped.context.rssResolveSelectedEntry(stripped.entries()[0][0])).contentHtml,'');
+  h.advance(600000);assert.equal(h.context.rssSuppliedEntry(entry).contentHtml,body);
+  h.state.fail=true;await h.load(false);assert.equal(h.context.rssSuppliedEntry(entry).contentHtml,body);
+  h.advance(86400001);assert.equal(h.context.rssSuppliedEntry(entry).contentHtml,'');
   const backward=supplied();await backward.load(false);backward.advance(-1);
   assert.equal(backward.context.rssSuppliedEntry(backward.entries()[0][0]).contentHtml,'');
+  const denied=supplied({denyStorage:true});await denied.load(false);
+  assert.equal((await denied.context.rssResolveSelectedEntry(denied.entries()[0][0])).contentHtml,body);
 });
 test('successful source refresh revokes old supplied bodies; failure retains only still-fresh evidence',async()=>{
   const h=supplied();await h.load(false);const entry=h.entries()[0][0];

@@ -100,7 +100,17 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   // Observe the first scroll paint, rather than assuming a timing window from
   // the host's speed. The app's scroll listener schedules its target before us.
   await page.evaluate(()=>{
-   window.bohemiaFirstPaint=new Promise(resolve=>readerScroller().addEventListener('scroll',()=>requestAnimationFrame(()=>resolve({raw:readerPillRawProgress,visual:readerPillVisualProgress,fill:document.querySelector('#readpill-progress').style.transform,saved:posOf(curBook.id).p})),{once:true}));
+   window.bohemiaFirstPaint=new Promise(resolve=>{
+    const started=performance.now();
+    const sample=()=>requestAnimationFrame(()=>{
+     const paint={raw:readerPillRawProgress,visual:readerPillVisualProgress,fill:document.querySelector('#readpill-progress').style.transform,saved:posOf(curBook.id).p};
+     // scheduleProgressUpdate writes the canonical target on the frame after scroll.
+     // The first scroll event can be sampled before that write; keep reading this gesture.
+     if(paint.raw>0||performance.now()-started>1000)resolve(paint);
+     else sample();
+    });
+    readerScroller().addEventListener('scroll',sample,{once:true});
+   });
   });
   const target=await page.evaluate(()=>{const el=document.querySelector('#rtext [data-pi="45"]');return readerScrollTop()+el.getBoundingClientRect().top-topInset()-5;});
   await page.mouse.wheel(0,target);

@@ -22,7 +22,9 @@ function setup(options={}){
       state.writes++;if(state.writeThrows)throw Error('db transport');
       if(!state.writeError)state.rows.set(row.cache_key,row);return {error:state.writeError || null};
     }})};
-  const context=vm.createContext({createClient:()=>db,Deno:{env:{get:()=>''},serve:fn=>handler=fn},
+  const context=vm.createContext({createClient:()=>db,Deno:{env:{get:key=>state.env?.[key]||''},serve:fn=>handler=fn},
+    fetch:async(url,init)=>{state.puts=(state.puts||[]).concat([{url,init}]);if(state.putStatus==='throw')throw new Error('cache down');return new Response(null,{status:state.putStatus||204});},
+    AbortSignal,
     generateArticlePreview:async()=>{state.calls++;if(state.gate)await state.gate;if(state.fail)throw Error('model_failed');return {meta:state.meta || meta,model:'fixture',latencyMs:1};},
     Request,Response,TextEncoder,TextDecoder,URL,Uint8Array,crypto,console:{info(){},error(){}}});
   vm.runInContext(executable,context);
@@ -36,9 +38,14 @@ test('valid miss generates and persists, then hit avoids AI and quota',async()=>
   const hit=await send();const cached=await hit.json();assert.equal(cached.cached,true);assert.equal(cached.promptVersion,5);assert.equal(state.calls,1);assert.equal(state.quota,1);
 });
 test('malformed inputs fail before cache/auth/model',async()=>{
-  for(const input of [null,[],{}, {...body,title:4},{...body,excerpt:'short'}, {...body,url:'javascript:bad'}, {...body,url:'https://user:password@example.test'}, {...body,extra:'x'.repeat(17000)}]){
+  for(const input of [null,[],{}, {...body,title:4},{...body,excerpt:'short'}, {...body,excerpt:'x'.repeat(39)}, {...body,url:'javascript:bad'}, {...body,url:'https://user:password@example.test'}, {...body,extra:'x'.repeat(17000)}]){
     const {send,state}=setup();assert.equal((await send(input)).status,400);assert.equal(state.calls,0);assert.equal(state.quota,0);
   }
+});
+test('forty characters of excerpt is enough evidence',async()=>{
+  const {send,state}=setup();
+  assert.equal((await send({...body,excerpt:'x'.repeat(40)})).status,200);
+  assert.equal(state.calls,1);
 });
 test('preflight/method guard and private HTTP cache policy',async()=>{
   const {send}=setup();assert.equal((await send(body,'OPTIONS')).status,200);assert.equal((await send(body,'GET')).status,405);
@@ -92,6 +99,22 @@ test('versioned evidence key normalizes tracking but not changed evidence',async
   assert.equal(state.calls,1);await send({...body,title:'Updated title'});assert.equal(state.calls,2);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v5\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
   assert.equal(state.keys[0],Buffer.from(digest).toString('hex'));
+});
+test('a configured reading cache receives the invitation and a failed write still returns it',async()=>{
+  const env={READING_CACHE_PUT_URL:'https://cache.test/root/',READING_CACHE_WRITE_TOKEN:'writer-token'};
+  const {send,state}=setup({env});
+  const generated=await (await send()).json();
+  assert.equal(generated.summaryKo,meta.summaryKo);
+  assert.equal(state.puts.length,1);
+  assert.equal(state.puts[0].url,'https://cache.test/root/previews/v5/'+state.keys[0]+'.json');
+  assert.equal(state.puts[0].init.method,'PUT');
+  assert.equal(state.puts[0].init.headers.authorization,'Bearer writer-token');
+  assert.equal(JSON.parse(state.puts[0].init.body).summaryKo,meta.summaryKo);
+  const hit=await send();
+  assert.equal((await hit.json()).cached,true);
+  assert.equal(state.puts.length,2);
+  const broken=setup({env,putStatus:'throw'});
+  assert.equal((await broken.send()).status,200);
 });
 test('source month and written counts may be rendered as Korean numerals',async()=>{
   const title='Council approves a library pilot after a divided vote';

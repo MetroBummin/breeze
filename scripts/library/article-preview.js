@@ -1,6 +1,7 @@
 /* Preview never owns reading progress. Optional metadata must not block Reader. */
 const ARTICLE_PREVIEW_CACHE = 'breeze.article-preview.v5';
 const ARTICLE_PREVIEW_PROMPT_VERSION = 5;
+const ARTICLE_PREVIEW_SUMMARY_MIN = 40;
 const ARTICLE_PREVIEW_TIMEOUT = 15000;
 const ARTICLE_PREVIEW_CACHE_AGE = 30 * 86400000;
 const articlePreviewJobs = new Map();
@@ -9,6 +10,8 @@ let articlePreviewImageUrl = '';
 let articlePreviewGeneration = 0;
 let articlePreviewOpening = null;
 let articlePreviewOpenController=null;
+let articlePreviewSummaryUrl='';
+let articlePreviewSummaryPending=null;
 
 function articlePreviewExcerpt(book){
   const blocks=Array.isArray(book.formatting?.blocks) ? book.formatting.blocks : book.blocks;
@@ -26,7 +29,7 @@ function articlePreviewInput(book){
     const url=new URL(articleUrlKey(book.sourceUrl));
     if(!['http:','https:'].includes(url.protocol) || url.username || url.password || url.href.length>2048)return null;
     const title=String(book.title || '').trim().slice(0,250),excerpt=articlePreviewExcerpt(book).join('\n\n');
-    return title && excerpt.length>=60 ? {url:url.href,title,excerpt} : null;
+    return title && excerpt.length>=ARTICLE_PREVIEW_SUMMARY_MIN ? {url:url.href,title,excerpt} : null;
   }catch{return null;}
 }
 function articlePreviewKey(book){
@@ -74,6 +77,19 @@ function articlePreviewUntil(value,signal){
     Promise.resolve(value).then(resolve,reject).finally(()=>signal.removeEventListener('abort',abort));
   });
 }
+function articlePreviewReadingBase(){
+  try{return typeof readingCacheBase==='function'?readingCacheBase():'';}catch{return '';}
+}
+async function articlePreviewReadCache(input, signal){
+  const base=articlePreviewReadingBase();
+  if(!base)return {reason:'off'};
+  const hash=await readingSha256('article-preview-v5\n'+input.url+'\n'+input.title+'\n'+input.excerpt);
+  const response=await fetch(base+'/previews/v5/'+hash+'.json',{credentials:'omit',signal});
+  if(response.status===404)return {reason:'miss'};
+  if(!response.ok)return {reason:'network'};
+  const meta=articlePreviewValid(await response.json());
+  return meta?{meta}:{reason:'network'};
+}
 async function articlePreviewMetadata(book){
   const input=articlePreviewInput(book),key=articlePreviewKey(book);
   const failed=reason=>({meta:null,reason});
@@ -81,11 +97,20 @@ async function articlePreviewMetadata(book){
   const cached=articlePreviewCached(key);if(cached)return {meta:cached,reason:''};
   if(articlePreviewJobs.has(key))return articlePreviewJobs.get(key);
   if(navigator.onLine===false)return failed('offline');
-  if(!SB_URL || !SB_KEY)return failed('unavailable');
+  const reading=!!articlePreviewReadingBase();
+  if(!reading && (!SB_URL || !SB_KEY))return failed('unavailable');
   if(articlePreviewJobs.size>=4)return failed('busy');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),ARTICLE_PREVIEW_TIMEOUT);
   const job=(async()=>{
     try{
+      if(reading){
+        let found;
+        try{found=await articlePreviewUntil(articlePreviewReadCache(input,controller.signal),controller.signal);}
+        catch{return failed(controller.signal.aborted?'timeout':'network');}
+        if(found.meta){articlePreviewSave(key,found.meta);return {meta:found.meta,reason:''};}
+        if(found.reason==='network')return failed('network');
+        if(!SB_URL || !SB_KEY)return failed('unavailable');
+      }
       let token=SB_KEY;
       try{
         const auth=await articlePreviewUntil(sb.auth.getSession(),controller.signal);
@@ -125,6 +150,12 @@ const articlePreviewDialog=/** @type {HTMLDialogElement} */(document.getElementB
 function articlePreviewActive(generation){
   return generation===articlePreviewGeneration && articlePreviewDialog.open;
 }
+function articlePreviewUrl(book){
+  try{return book?.sourceUrl?articleUrlKey(book.sourceUrl):'';}catch{return '';}
+}
+function articlePreviewApply(meta,reason){
+  articlePreviewPaint(meta);articlePreviewMetadataState(meta?'ready':'fallback',reason);
+}
 function articlePreviewStatus(text){
   articlePreviewDialog.querySelector('.ap-status').textContent=text;
 }
@@ -135,6 +166,8 @@ function articlePreviewClose(cancelOpening=true){
   articlePreviewDialog.dataset.kind='article';
   articlePreviewGeneration++;
   articlePreviewBook=null;
+  articlePreviewSummaryUrl='';
+  articlePreviewSummaryPending=null;
   const image=/** @type {HTMLImageElement} */(articlePreviewDialog.querySelector('.ap-hero img'));
   image.hidden=true;image.removeAttribute('src');
   if(articlePreviewImageUrl){URL.revokeObjectURL(articlePreviewImageUrl);articlePreviewImageUrl='';}
@@ -162,14 +195,29 @@ function articlePreviewMetadataState(state,reason=''){
   articlePreviewRetry.hidden=state!=='fallback'||['source','preparing_failed',''].includes(reason);
 }
 function articlePreviewRequest(book,generation){
+  const url=articlePreviewUrl(book);
+  articlePreviewSummaryUrl=url;
+  articlePreviewSummaryPending=null;
   articlePreviewMetadataState('loading');
   articlePreviewRetry.onclick=()=>{
-    if(articlePreviewActive(generation)&&!articlePreviewOpening)articlePreviewRequest(book,generation);
+    const current=articlePreviewBook;
+    if(articlePreviewDialog.open&&current&&articlePreviewUrl(current)===url&&!articlePreviewOpening)
+      articlePreviewRequest(current,articlePreviewGeneration);
   };
   void articlePreviewMetadata(book).then(({meta,reason})=>{
-    if(!articlePreviewActive(generation)||articlePreviewOpening)return;
-    articlePreviewPaint(meta);articlePreviewMetadataState(meta?'ready':'fallback',reason);
+    // A body replacement increments the generation for the same article.
+    // Read can also be in flight. Neither may drop an invitation for this URL.
+    if(!articlePreviewDialog.open||articlePreviewUrl(articlePreviewBook)!==url)return;
+    if(articlePreviewOpening){articlePreviewSummaryPending={meta,reason,url};return;}
+    if(generation!==articlePreviewGeneration&&articlePreviewDialog.dataset.metadata==='ready')return;
+    articlePreviewApply(meta,reason);
   });
+}
+function articlePreviewPaintPending(){
+  const pending=articlePreviewSummaryPending;
+  if(!pending||articlePreviewUrl(articlePreviewBook)!==pending.url){articlePreviewSummaryPending=null;return;}
+  articlePreviewSummaryPending=null;
+  articlePreviewApply(pending.meta,pending.reason);
 }
 function openCasualPreviewOrReader(book,options={}){
   const bundled=book.longReadId&&LONG_READS.find(read=>read.id===book.longReadId);
@@ -191,9 +239,15 @@ function openCasualPreviewOrReader(book,options={}){
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(book.id);
   dialog.querySelector('.ap-source').textContent=book.site || '';
   dialog.querySelector('.ap-title').textContent=book.title;
+  // Body arrival replaces the provisional sheet. Keep an invitation that already
+  // started from the feed summary; a second excerpt must not erase it.
+  const summaryLive=!!articlePreviewSummaryUrl&&articlePreviewSummaryUrl===articlePreviewUrl(book)
+    &&(articlePreviewDialog.dataset.metadata==='ready'||articlePreviewDialog.dataset.metadata==='loading');
   const cached=articlePreviewCached(articlePreviewKey(book));
-  articlePreviewPaint(cached);
-  articlePreviewMetadataState(cached?'ready':'fallback',articlePreviewInput(book)?'':'source');
+  if(!summaryLive){
+    articlePreviewPaint(cached);
+    articlePreviewMetadataState(cached?'ready':'fallback',articlePreviewInput(book)?'':'source');
+  }
   articlePreviewStatus('');
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
   start.onclick=articlePreviewStart;start.disabled=false;start.textContent='읽기 시작';start.removeAttribute('aria-busy');
@@ -227,7 +281,7 @@ function openCasualPreviewOrReader(book,options={}){
   })();
   // A bounded in-flight request may finish into cache after dismissal. It can
   // never paint another article or reopen the dialog; reopening shares the job.
-  if(!cached&&articlePreviewInput(book))articlePreviewRequest(book,generation);
+  if(!summaryLive&&!cached&&articlePreviewInput(book))articlePreviewRequest(book,generation);
   return book;
 }
 /* RSS preparation stays in memory after dismissal; neither books nor images
@@ -236,19 +290,27 @@ function articlePreviewPrepare(entry,card){
   const url=entry.readUrl||entry.url;
   const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===articleUrlKey(url));
   if(existing)return null;
-  const provisional={id:'preparing:'+url,kind:'article',title:entry.title,site:entry.source,sourceUrl:url,paras:[]};
+  const lead=String(entry.summary||'').replace(/\s+/g,' ').trim();
+  // Forty characters of collapsed summary is enough to invite, and that invitation
+  // stays when the body arrives. A missing or shorter summary waits for the body's
+  // first paragraph instead of starting from a headline-sized fragment.
+  const provisional={id:'preparing:'+url,kind:'article',title:entry.title,site:entry.source,sourceUrl:url,
+    paras:lead.length>=ARTICLE_PREVIEW_SUMMARY_MIN?[lead]:[]};
   const cover=card?.querySelector('img.cover');
   const src=cover?.currentSrc||cover?.getAttribute('src')||entry.photo||'';
-  // Paint known discovery metadata synchronously; only the missing body/intro
-  // waits. Reuse the open sheet for selection/retry and its generation guards.
+  // Paint known discovery metadata synchronously. The feed summary can invite
+  // reading before the body arrives; a missing body must not hide that invitation.
   openCasualPreviewOrReader(provisional,{replace:true,photo:src});
   const generation=articlePreviewGeneration,start=/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start'));
-  articlePreviewDialog.dataset.preparing='true';articlePreviewMetadataState('loading','preparing');
+  articlePreviewDialog.dataset.preparing='true';
+  if(articlePreviewDialog.dataset.metadata!=='ready'&&articlePreviewDialog.dataset.metadata!=='loading')
+    articlePreviewMetadataState('loading','preparing');
   articlePreviewStatus('');start.disabled=true;start.textContent='본문 준비 중…';
   return {
     finish(book){if(articlePreviewActive(generation))openCasualPreviewOrReader(book,{replace:true,photo:src});},
     fail(retry){if(!articlePreviewActive(generation))return;
-      articlePreviewMetadataState('fallback','preparing_failed');articlePreviewStatus('본문을 준비하지 못했어요. 다시 시도할 수 있어요.');
+      if(articlePreviewDialog.dataset.metadata!=='ready')articlePreviewMetadataState('fallback','preparing_failed');
+      articlePreviewStatus('본문을 준비하지 못했어요. 다시 시도할 수 있어요.');
       start.disabled=false;start.textContent='다시 시도';start.onclick=()=>{if(articlePreviewActive(generation))retry();};
     }
   };
@@ -283,6 +345,7 @@ async function articlePreviewStart(){
     clearTimeout(deadline);if(articlePreviewOpenController===controller)articlePreviewOpenController=null;
     if(articlePreviewOpening===job)articlePreviewOpening=null;
     if(articlePreviewActive(generation)){
+      articlePreviewPaintPending();
       start.disabled=false;start.textContent=book.bundledRead?longReadPreviewAction(book.bundledRead):'읽기 시작';start.removeAttribute('aria-busy');
     }
   }
