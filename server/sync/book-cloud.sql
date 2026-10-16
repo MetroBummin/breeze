@@ -26,6 +26,11 @@ create policy book_cloud_owner_read on public.book_cloud
   using ((select auth.uid()) = user_id);
 revoke all on public.book_cloud from public, anon, authenticated;
 grant select on public.book_cloud to authenticated;
+-- service_role bypasses RLS but still needs GRANT. This project's default
+-- table ACL leaves service_role with only TRUNCATE, REFERENCES, TRIGGER, and
+-- MAINTAIN, so the book-cloud function's catalog read was permission denied
+-- and the handler returned 500 before any pending row existed.
+grant select, insert, update, delete on public.book_cloud to service_role;
 
 create schema if not exists private;
 create or replace function private.enforce_book_cloud_cap()
@@ -55,6 +60,8 @@ begin
 end;
 $$;
 revoke all on function private.enforce_book_cloud_cap() from public, anon, authenticated;
+grant usage on schema private to service_role;
+grant execute on function private.enforce_book_cloud_cap() to service_role;
 
 drop trigger if exists book_cloud_cap on public.book_cloud;
 create trigger book_cloud_cap

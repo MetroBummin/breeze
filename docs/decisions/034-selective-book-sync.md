@@ -36,11 +36,25 @@ outside the repo before `BOOK_CLOUD` was set to true:
    Access key values stay outside the repo.
 2. Browser PUT and GET are allowed on the bucket from the app origins
    (`https://breeze.io.kr`, Capacitor, and localhost).
-3. `server/sync/book-cloud.sql` is applied.
+3. `server/sync/book-cloud.sql` is applied. `authenticated` can select its own
+   rows. `service_role` can select, insert, update, and delete, and can execute
+   `private.enforce_book_cloud_cap`. This project's default table ACL does not
+   include those grants for `service_role`. The role bypasses RLS, but Postgres
+   still checks GRANT. Without them the function's first read is
+   `permission denied for table book_cloud`, the handler returns 500, and no
+   pending row is stored. The web shelf lists only `ready` rows from that
+   table, so it stays empty while word sync (the signed-in `authenticated`
+   role) continues.
 4. `server/books` is deployed as the `book-cloud` edge function, and `dict` is
    redeployed so account deletion can remove R2 objects. Missing R2 secrets
    return 503 `{ok:false,error:"r2_not_configured",message:"R2 설정이 없습니다."}`
    before auth and before any R2 call.
+
+Browser PUT and GET preflight on `breeze-books` allows `https://breeze.io.kr`,
+`breeze://localhost`, `capacitor://localhost`, and localhost, for GET, PUT, and
+HEAD, with request header `content-type`. `https://www.breeze.io.kr` redirects
+to the apex host before the app runs. The shelf itself is the catalog query
+held in memory. IndexedDB is used only when a ready book is downloaded.
 
 Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
 as an automatic rollback.

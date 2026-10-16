@@ -10,15 +10,18 @@ const book='ab'.repeat(32);
 test('book cloud rows stay owner-readable, capped, and position writes are conditional',async()=>{
   const db=new PGlite();
   try{
-    await db.exec(`create role authenticated;create role anon;create schema auth;
+    await db.exec(`create role authenticated;create role anon;create role service_role bypassrls;create schema auth;
       create table auth.users(id uuid primary key);
       create function auth.uid() returns uuid language sql stable as $$
         select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
       grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;
       insert into auth.users values ('${a}'),('${b}');`);
     await db.exec(readFileSync(new URL('../server/sync/book-cloud.sql',import.meta.url),'utf8'));
+    await db.exec('set role service_role');
     await db.exec(`insert into public.book_cloud (user_id,book_id,kind,byte_size,object_key,status)
       values ('${a}','${book}','epub',10,'${a}/${book}','ready')`);
+    assert.equal((await db.query('select book_id from public.book_cloud')).rows.length,1);
+    await db.exec('reset role');
     await db.exec('set role authenticated');
     await db.query("select set_config('request.jwt.claim.sub',$1,false)",[a]);
     assert.equal((await db.query('select book_id from public.book_cloud')).rows.length,1);
