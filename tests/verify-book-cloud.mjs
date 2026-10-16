@@ -130,6 +130,135 @@ test('a position conflict keeps the server head and does not rewrite the open re
   assert.equal(box.positions[hash],undefined);
 });
 
+function readyCloud(bytes){
+  return {book_id:hash,title:'Sample',author:'Author',kind:'epub',status:'ready',tombstone:'',byte_size:bytes.byteLength};
+}
+function armCloud(context,{type='wifi',quota=20*1024*1024*1024,usage=0,bytes=new Uint8Array([1,2,3,4,5]),saveData=false,effectiveType='4g'}={}){
+  context.indexedDB={};
+  context.navigator.connection={type,saveData,effectiveType,addEventListener(){}};
+  context.navigator.storage={estimate:async()=>({quota,usage})};
+  context.bookCloudCatalog=[readyCloud(bytes)];
+  context.sb.from=table=>({select:async()=>table==='book_cloud'?{data:[readyCloud(bytes)]}:{data:[]}});
+  const calls=[];
+  context.bookCloudPost=async op=>{calls.push(op);return op==='download'?{ok:true,url:'https://signed.example/get'}:{ok:true};};
+  context.fetch=async(url,init)=>{calls.push(init&&init.headers||{});return {ok:true,status:200,arrayBuffer:async()=>bytes.slice().buffer};};
+  context.rawFileHash=async()=>hash;
+  context.prepareImportedFile=async()=>({id:'saved-book',title:'Sample',kind:'epub',hash});
+  context.applyPreparedBook=async book=>{context.applied=book;};
+  context.openBook=async book=>{context.opened=book;};
+  context.books=[];
+  return calls;
+}
+
+test('an unmetered link downloads a ready book without opening it',async()=>{
+  const {context}=boot({flag:true});
+  const calls=armCloud(context);
+  assert.equal(await context.bookCloudPullReady(),true);
+  assert.equal(calls.includes('download'),true);
+  assert.equal(context.opened,undefined);
+  assert.equal(context.applied.bookCloudLink.on,true);
+  assert.equal(context.bookCloudLibraryRows().length,0);
+});
+
+test('sync returns before a background download finishes',async()=>{
+  const {context}=boot({flag:true});
+  armCloud(context);
+  let release=()=>{};
+  const gate=new Promise(resolve=>{release=resolve;});
+  context.fetch=()=>gate.then(()=>({ok:true,status:200,arrayBuffer:async()=>new Uint8Array([1,2,3,4,5]).buffer}));
+  const raced=await Promise.race([
+    context.syncBookCloud().then(()=>'sync'),
+    new Promise(resolve=>setTimeout(()=>resolve('blocked'),100))
+  ]);
+  assert.equal(raced,'sync');
+  release();
+  await context.bookCloudPullReady();
+  assert.equal(context.applied.bookCloudLink.on,true);
+});
+
+test('cellular, data saver, native cellular, and a missing connection keep the card',async()=>{
+  for(const connection of [{type:'cellular'},{type:'wifi',saveData:true},{type:'',effectiveType:'2g'}]){
+    const {context}=boot({flag:true});
+    const calls=armCloud(context,connection);
+    await context.bookCloudPullReady();
+    assert.equal(calls.includes('download'),false,JSON.stringify(connection));
+    assert.equal(context.bookCloudLibraryRows().length,1);
+  }
+  const native=boot({flag:true});
+  const calls=armCloud(native.context,{type:'wifi'});
+  native.context.window.Capacitor={Plugins:{Network:{getStatus:async()=>({connectionType:'cellular'})}}};
+  await native.context.bookCloudPullReady();
+  assert.equal(calls.includes('download'),false);
+  const missing=boot({flag:true});
+  armCloud(missing.context);
+  delete missing.context.navigator.connection;
+  await missing.context.bookCloudPullReady();
+  assert.equal(missing.context.applied,undefined);
+});
+
+test('native wifi downloads even when the browser reports cellular',async()=>{
+  const {context}=boot({flag:true});
+  const calls=armCloud(context,{type:'cellular'});
+  context.window.Capacitor={Plugins:{Network:{getStatus:async()=>({connectionType:'wifi'})}}};
+  await context.bookCloudPullReady();
+  assert.equal(calls.includes('download'),true);
+  assert.equal(context.opened,undefined);
+});
+
+test('private headroom and a tight quota do not auto-download',async()=>{
+  const gib=1024*1024*1024;
+  for(const quota of [9*gib,1024*1024]){
+    const {context}=boot({flag:true});
+    const calls=armCloud(context,{quota,usage:0});
+    await context.bookCloudPullReady();
+    assert.equal(calls.includes('download'),false,String(quota));
+  }
+  const blocked=boot({flag:true});
+  armCloud(blocked.context);
+  blocked.context.navigator.storage.getDirectory=async()=>{throw new Error('private');};
+  await blocked.context.bookCloudPullReady();
+  assert.equal(blocked.context.applied,undefined);
+});
+
+test('opening the card downloads on cellular and in a private session',async()=>{
+  const {context,toasts}=boot({flag:true});
+  const calls=armCloud(context,{type:'cellular',quota:1024*1024});
+  await context.bookCloudDownload({bookId:hash,title:'Sample',kind:'epub',size:5});
+  assert.equal(calls.includes('download'),true);
+  assert.equal(context.opened&&context.opened.id,'saved-book');
+  assert.equal(toasts.length,0);
+});
+
+test('a partial download resumes with Range and stays resumable when the link drops',async()=>{
+  const {context}=boot({flag:true});
+  const calls=armCloud(context);
+  const part=new Uint8Array([1,2]);
+  const stored=[];
+  context.bookCloudReadPart=async()=>part;
+  context.bookCloudWritePart=async(key,bytes)=>{stored.push(bytes.byteLength);};
+  context.bookCloudDropPart=async()=>{};
+  let reads=0;
+  context.fetch=async(url,init)=>{
+    calls.push(init&&init.headers||{});
+    return {ok:true,status:206,headers:{get:name=>name.toLowerCase()==='content-range'?'bytes 2-4/5':''},body:{getReader(){return {async read(){reads++;if(reads===1)return {done:false,value:new Uint8Array([3])};if(reads===2){context.navigator.connection.type='cellular';return {done:false,value:new Uint8Array(1048576)};}return {done:true};}}}}};
+  };
+  await context.bookCloudPullReady();
+  assert.equal(calls.some(call=>call&&call.Range==='bytes=2-'),true);
+  assert.equal(stored.some(size=>size>=1048578),true);
+  assert.equal(context.applied,undefined);
+  context.navigator.connection.type='wifi';
+  reads=0;
+  context.bookCloudReadPart=async()=>new Uint8Array(1048578);
+  context.fetch=async(url,init)=>{
+    calls.push(init&&init.headers||{});
+    return {ok:true,status:206,headers:{get:()=>'bytes 1048578-1048582/1048583'},arrayBuffer:async()=>new Uint8Array([4,5,6,7,8]).buffer};
+  };
+  context.bookCloudCatalog=[{book_id:hash,title:'Sample',author:'Author',kind:'epub',status:'ready',byte_size:1048583}];
+  context.rawFileHash=async()=>hash;
+  await context.bookCloudPullReady();
+  assert.equal(context.applied.bookCloudLink.on,true);
+});
+
 test('each account keeps its own outbox',()=>{
   const {context}=boot({flag:true});
   context.bookCloudWriteOutbox(user,{version:1,uploads:{[hash]:{kind:'epub'}},positions:{},removes:{}});

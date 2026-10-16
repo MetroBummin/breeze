@@ -56,5 +56,27 @@ HEAD, with request header `content-type`. `https://www.breeze.io.kr` redirects
 to the apex host before the app runs. The shelf itself is the catalog query
 held in memory. IndexedDB is used only when a ready book is downloaded.
 
+## Background download
+
+A ready book that is not already on this device downloads on its own when the
+link is unmetered. The native shell uses Capacitor Network `connectionType`
+when that plugin is present: `wifi` downloads, and `cellular`, `none`, and
+`unknown` keep the "받아서 이어 읽기" card. Otherwise the page uses
+`navigator.connection` when it exists. `cellular` and `saveData` keep the card.
+A desktop browser that exposes the API without a metered type is treated as
+unmetered. Firefox and Safari often omit the API; the card stays until the
+reader opens it.
+
+The download stays off the sync return path, runs one book at a time, and
+stops when the link becomes metered. Bytes already received are kept in a
+separate IndexedDB database and the next attempt sends `Range`. A book larger
+than 2 GiB is not fetched. `navigator.storage.estimate` must leave the book
+size plus 32 MiB free. Chrome's incognito headroom, about 9 GiB, does not
+qualify, and a rejected `navigator.storage.getDirectory()` (private Firefox
+and Safari) does not either. Opening the card still downloads on cellular, in
+private mode, and when the quota is tight. An automatic download does not open
+the reader. The card is the same control it was; it disappears after the book
+is stored.
+
 Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
 as an automatic rollback.
