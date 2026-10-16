@@ -444,7 +444,10 @@
 /* Card replacement must not anchor the rail to an outgoing skeleton/card. */
 #v-home #casual-rail{overflow-anchor:none;}
 
-/* OCR preparation is device-local and separate from reading progress. */
+/* OCR preparation is device-local and separate from reading progress.
+   The bar is the approved default. Cover variants are absolute on the card
+   so they do not change the shelf footprint, and they paint only when the
+   library already updates a job. */
 .book-ocr-progress{margin-top:5px;display:grid;gap:5px;color:var(--settings-muted);font-size:11px;line-height:1.4;min-width:0;}
 .book-ocr-progress[hidden]{display:none;}
 .book-ocr-progress progress{appearance:none;-webkit-appearance:none;width:100%;height:2px;border:0;border-radius:2px;overflow:hidden;background:var(--sentence-glass-line);}
@@ -452,3 +455,43 @@
 .book-ocr-progress progress::-webkit-progress-value{background:var(--settings-muted);}
 .book-ocr-progress progress::-moz-progress-bar{background:var(--settings-muted);}
 .book-ocr-progress button{justify-self:start;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;}
+.book-ocr-cover{position:absolute;z-index:4;right:8px;bottom:8px;width:44px;height:44px;pointer-events:none;}
+.book-ocr-cover[hidden]{display:none;}
+.book-ocr-cover .book-ocr-hit{pointer-events:auto;position:relative;display:grid;place-items:center;box-sizing:border-box;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:22px;background:transparent;color:var(--settings-ink);font:600 11px/1 var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.book-ocr-cover .book-ocr-hit:focus{outline:none;}
+.book-ocr-cover .book-ocr-hit:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.book-ocr-cover .book-ocr-hit:active{transform:scale(.98);}
+.book-ocr-cover .book-ocr-ring{width:36px;height:36px;border-radius:50%;background:var(--sentence-glass-solid);box-shadow:0 1px 3px rgba(0,0,0,.16);}
+.book-ocr-cover .book-ocr-ring .track{fill:none;stroke:var(--sentence-glass-line);stroke-width:2.5;}
+.book-ocr-cover .book-ocr-ring .value{fill:none;stroke:var(--blue);stroke-width:2.5;stroke-linecap:round;transform:rotate(-90deg);transform-origin:18px 18px;transition:stroke-dashoffset .2s linear;}
+.book-ocr-cover .book-ocr-fill i{transition:width .2s linear;}
+.book-ocr-cover .book-ocr-count{position:absolute;inset:0;display:grid;place-items:center;letter-spacing:-.03em;}
+.book-ocr-cover[data-ocr-variant="ring"] .book-ocr-count{font-size:9px;}
+.book-ocr-cover .book-ocr-fill{display:none;}
+.book-ocr-cover[data-ocr-variant="chip"]:not([hidden]){width:auto;height:44px;}
+.book-ocr-cover[data-ocr-variant="chip"] .book-ocr-ring{display:none;}
+.book-ocr-cover[data-ocr-variant="chip"] .book-ocr-hit{width:auto;min-width:44px;height:44px;padding:0 12px;border-radius:14px;background:var(--sentence-glass-solid);box-shadow:0 1px 3px rgba(0,0,0,.16);}
+.book-ocr-cover[data-ocr-variant="chip"] .book-ocr-count{position:static;}
+.book-ocr-cover[data-ocr-variant="fill"]:not([hidden]){left:12px;right:12px;bottom:8px;display:flex;align-items:flex-end;justify-content:flex-end;width:auto;height:44px;}
+.book-ocr-cover[data-ocr-variant="fill"] .book-ocr-ring{display:none;}
+.book-ocr-cover[data-ocr-variant="fill"] .book-ocr-fill{position:absolute;left:0;right:0;bottom:6px;display:block;height:4px;border-radius:2px;background:var(--sentence-glass-solid);overflow:hidden;}
+.book-ocr-cover[data-ocr-variant="fill"] .book-ocr-fill i{display:block;height:100%;width:0;background:var(--blue);}
+.book-ocr-cover[data-ocr-variant="fill"] .book-ocr-hit{width:auto;min-width:44px;height:44px;padding:0 12px;border-radius:14px;background:var(--sentence-glass-solid);box-shadow:0 1px 3px rgba(0,0,0,.16);}
+.book-ocr-cover[data-ocr-variant="fill"] .book-ocr-count{position:static;}
+.book-ocr-cover[data-ocr-state="paused"] .value{stroke:var(--settings-muted);}
+.book-ocr-cover[data-ocr-state="paused"] .book-ocr-fill i{background:var(--settings-muted);}
+.book-ocr-detail{position:fixed;z-index:65;box-sizing:border-box;width:min(240px,calc(100vw - 16px));margin:0;padding:16px;border:1px solid var(--sentence-glass-line);border-radius:16px;background:var(--sentence-glass-solid);color:var(--sentence-glass-ink);box-shadow:var(--sentence-glass-shadow);font:400 14px/1.4 var(--ui);}
+.book-ocr-detail[hidden]{display:none;}
+.book-ocr-detail:focus{outline:none;}
+.book-ocr-detail:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.book-ocr-detail p{margin:0;}
+.book-ocr-detail-count{margin-top:4px;font-weight:600;}
+.book-ocr-detail-actions{display:flex;align-items:center;gap:8px;margin-top:12px;}
+.book-ocr-detail-retry{min-height:44px;padding:0 12px;border:0;border-radius:12px;background:var(--sentence-glass-action);color:inherit;font:inherit;cursor:pointer;}
+.book-ocr-detail-retry[hidden]{display:none;}
+.book-ocr-detail-retry:focus-visible,.book-ocr-detail-close:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.book-ocr-detail-close{display:grid;place-items:center;width:44px;height:44px;margin-left:auto;padding:0;border:0;border-radius:12px;background:transparent;color:inherit;cursor:pointer;}
+@media (prefers-reduced-motion:reduce){
+  .book-ocr-cover .value,.book-ocr-cover .book-ocr-fill i,.book-ocr-cover .book-ocr-hit{transition:none;}
+  .book-ocr-cover .book-ocr-hit:active{transform:none;}
+}

@@ -90,6 +90,19 @@ test('the yield kill flag leaves background preparation on the old schedule',asy
  await f.finish();
  assert.equal(f.calls.length,1);
 });
+test('cover flag stays off unless ring, fill, or chip is selected',()=>{
+ const f=fixture();
+ assert.equal(f.api.coverMode(),'off');
+ f.context.location={search:'?ocrCover=RING'};
+ f.context.localStorage={getItem:()=>'chip'};
+ assert.equal(f.api.coverMode(),'ring');
+ f.context.location={search:''};
+ assert.equal(f.api.coverMode(),'chip');
+ f.context.localStorage.getItem=()=>'shimmer';
+ assert.equal(f.api.coverMode(),'off');
+ f.context.localStorage.getItem=()=>{throw new Error('private');};
+ assert.equal(f.api.coverMode(),'off');
+});
 test('successful same-hash reconnect explicitly restarts missing original work',async()=>{
  const f=fixture({pages:2}),original=f.context.originalGetForBook;
  f.context.originalGetForBook=async()=>null;const job=f.api.track(f.book);await f.finish();assert.equal(job.state,'missing');
