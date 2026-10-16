@@ -57,7 +57,7 @@ Deno.serve(async request=>{
   try{
     const url=body.url.trim(),title=body.title.trim().slice(0,250),excerpt=body.excerpt.trim().slice(0,2000);
     let parsed:URL;try{parsed=new URL(url);}catch{return reply({error:"url"},400);}
-    if(!["https:","http:"].includes(parsed.protocol) || parsed.username || parsed.password || !title || excerpt.length<60 || url.length>2048)return reply({error:"input"},400);
+    if(!["https:","http:"].includes(parsed.protocol) || parsed.username || parsed.password || !title || excerpt.length<40 || url.length>2048)return reply({error:"input"},400);
     parsed.hash="";
     for(const key of [...parsed.searchParams.keys()])if(/^utm_|^(fbclid|gclid)$/i.test(key))parsed.searchParams.delete(key);
     // New prompt/validation generations must not reuse older shared metadata.

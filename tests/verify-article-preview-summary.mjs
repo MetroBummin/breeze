@@ -79,7 +79,7 @@ function mount(){
     importLongRead:async()=>{throw Error('unused');},
     toast(){},
     sb:{auth:{getSession:async()=>({data:{session:null}})}},
-    fetch:()=>new Promise(resolve=>{requests.push(resolve);release=resolve;})
+    fetch:(_url,init)=>new Promise(resolve=>{requests.push({resolve,body:init?.body||''});release=resolve;})
   });
   new Script(readFileSync(new URL('../scripts/library/article-preview.js',import.meta.url),'utf8')).runInContext(context);
   return {context,dialog,summary,requests,respond(){
@@ -128,6 +128,36 @@ test('a failed Read still shows an invitation that arrived while opening',async(
   assert.equal(preview.dialog.open,true);
   assert.equal(preview.summary.hidden,false);
   assert.equal(preview.dialog.dataset.metadata,'ready');
+});
+
+test('forty characters of feed summary stay, and a shorter summary yields to the body',async()=>{
+  const enough='x'.repeat(40);
+  const kept=mount();
+  const preparation=kept.context.articlePreviewPrepare({
+    title:'Public story',source:'Example',url:'https://stories.example/enough',summary:`\n\n${enough}  `
+  },{querySelector:()=>null});
+  await flush();
+  assert.equal(kept.requests.length,1);
+  assert.equal(JSON.parse(kept.requests[0].body).excerpt,enough);
+  preparation.finish({id:'preview:enough',kind:'article',title:'Public story',site:'Example',
+    sourceUrl:'https://stories.example/enough',
+    paras:['The parsed body adds a grounded paragraph that must not replace a sufficient feed summary.']});
+  assert.equal(kept.requests.length,1,'A sufficient feed summary stays when the body arrives');
+
+  const paragraph='HYBRID body paragraph. The parsed article now supplies the first paragraph a reader can judge.';
+  for(const summary of ['Brief.','',`  ${'y'.repeat(39)}\n`]){
+    const preview=mount();
+    const pending=preview.context.articlePreviewPrepare({
+      title:'Public story',source:'Example',url:'https://stories.example/short',summary
+    },{querySelector:()=>null});
+    await flush();
+    assert.equal(preview.requests.length,0,'A missing or short summary must not request an invitation');
+    pending.finish({id:'preview:short',kind:'article',title:'Public story',site:'Example',
+      sourceUrl:'https://stories.example/short',paras:[paragraph,'A later paragraph stays out of the first invitation.']});
+    await flush();
+    assert.equal(preview.requests.length,1);
+    assert.equal(JSON.parse(preview.requests[0].body).excerpt.startsWith(paragraph),true);
+  }
 });
 
 test('body failure keeps a ready invitation visible',async()=>{

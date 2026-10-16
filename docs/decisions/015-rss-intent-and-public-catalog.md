@@ -78,7 +78,12 @@ artwork; body failure keeps metadata and offers manual retry in the same sheet.
 Generation checks prevent an old completion/error from changing another article
 or reopening a dismissed preview. The feed summary can request the Korean invitation as soon as Preview opens.
 A later body must not clear an invitation already loading or shown for that
-article. Read stays independent: body failure keeps a ready invitation, and a
+article. The summary qualifies when at least 40 characters remain after
+whitespace is collapsed and trimmed. A missing summary, or one shorter than
+that, does not start an invitation; the article body's excerpt, beginning
+with its first paragraph, does. The invitation service accepts the same
+40-character minimum, so a summary that qualifies on the client is not
+rejected as too short. Read stays independent: body failure keeps a ready invitation, and a
 failed Read still paints an invitation that arrived while opening. First-visible
 shell, body/Read-ready and introduction-ready latency are distinct measurements.
 

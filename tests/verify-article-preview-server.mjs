@@ -38,9 +38,14 @@ test('valid miss generates and persists, then hit avoids AI and quota',async()=>
   const hit=await send();const cached=await hit.json();assert.equal(cached.cached,true);assert.equal(cached.promptVersion,5);assert.equal(state.calls,1);assert.equal(state.quota,1);
 });
 test('malformed inputs fail before cache/auth/model',async()=>{
-  for(const input of [null,[],{}, {...body,title:4},{...body,excerpt:'short'}, {...body,url:'javascript:bad'}, {...body,url:'https://user:password@example.test'}, {...body,extra:'x'.repeat(17000)}]){
+  for(const input of [null,[],{}, {...body,title:4},{...body,excerpt:'short'}, {...body,excerpt:'x'.repeat(39)}, {...body,url:'javascript:bad'}, {...body,url:'https://user:password@example.test'}, {...body,extra:'x'.repeat(17000)}]){
     const {send,state}=setup();assert.equal((await send(input)).status,400);assert.equal(state.calls,0);assert.equal(state.quota,0);
   }
+});
+test('forty characters of excerpt is enough evidence',async()=>{
+  const {send,state}=setup();
+  assert.equal((await send({...body,excerpt:'x'.repeat(40)})).status,200);
+  assert.equal(state.calls,1);
 });
 test('preflight/method guard and private HTTP cache policy',async()=>{
   const {send}=setup();assert.equal((await send(body,'OPTIONS')).status,200);assert.equal((await send(body,'GET')).status,405);

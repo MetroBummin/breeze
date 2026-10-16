@@ -1,6 +1,7 @@
 /* Preview never owns reading progress. Optional metadata must not block Reader. */
 const ARTICLE_PREVIEW_CACHE = 'breeze.article-preview.v5';
 const ARTICLE_PREVIEW_PROMPT_VERSION = 5;
+const ARTICLE_PREVIEW_SUMMARY_MIN = 40;
 const ARTICLE_PREVIEW_TIMEOUT = 15000;
 const ARTICLE_PREVIEW_CACHE_AGE = 30 * 86400000;
 const articlePreviewJobs = new Map();
@@ -28,7 +29,7 @@ function articlePreviewInput(book){
     const url=new URL(articleUrlKey(book.sourceUrl));
     if(!['http:','https:'].includes(url.protocol) || url.username || url.password || url.href.length>2048)return null;
     const title=String(book.title || '').trim().slice(0,250),excerpt=articlePreviewExcerpt(book).join('\n\n');
-    return title && excerpt.length>=60 ? {url:url.href,title,excerpt} : null;
+    return title && excerpt.length>=ARTICLE_PREVIEW_SUMMARY_MIN ? {url:url.href,title,excerpt} : null;
   }catch{return null;}
 }
 function articlePreviewKey(book){
@@ -290,8 +291,11 @@ function articlePreviewPrepare(entry,card){
   const existing=books.find(book=>book.sourceUrl&&articleUrlKey(book.sourceUrl)===articleUrlKey(url));
   if(existing)return null;
   const lead=String(entry.summary||'').replace(/\s+/g,' ').trim();
+  // Forty characters of collapsed summary is enough to invite, and that invitation
+  // stays when the body arrives. A missing or shorter summary waits for the body's
+  // first paragraph instead of starting from a headline-sized fragment.
   const provisional={id:'preparing:'+url,kind:'article',title:entry.title,site:entry.source,sourceUrl:url,
-    paras:lead.length>=60?[lead]:[]};
+    paras:lead.length>=ARTICLE_PREVIEW_SUMMARY_MIN?[lead]:[]};
   const cover=card?.querySelector('img.cover');
   const src=cover?.currentSrc||cover?.getAttribute('src')||entry.photo||'';
   // Paint known discovery metadata synchronously. The feed summary can invite
