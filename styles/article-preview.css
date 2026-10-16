@@ -33,13 +33,11 @@ body:has(#article-preview[open]){overflow:hidden;}
   border:0;border-radius:50%;cursor:pointer;}
 .ap-close{display:grid;place-items:center;padding:0;}
 .ap-close svg{display:block;width:var(--am-icon-close);height:var(--am-icon-close);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-close);stroke-linecap:round;stroke-linejoin:round;}
-/* 8px above the button is the gap to the summary. Match it below. The sheet is
-   already centered in the viewport, so only safe area past that outer margin
-   belongs under the button — a full home-indicator inset would leave the
-   button high inside a card that already clears the screen edge. */
+/* Equal room above and below the button. The sheet is already centered, so
+   only safe area past that outer margin belongs under the button. */
 .ap-actions{--ap-outer-bottom:calc((100dvh - min(720px, calc(100dvh - 32px))) / 2);
-  flex:none;padding:8px 22px 8px;
-  padding-bottom:max(8px,calc(env(safe-area-inset-bottom) - var(--ap-outer-bottom)));}
+  flex:none;padding:16px 22px 16px;
+  padding-bottom:max(16px,calc(env(safe-area-inset-bottom) - var(--ap-outer-bottom)));}
 .ap-status{margin:0 0 8px;min-height:1.4em;color:var(--sentence-glass-muted);font:400 12px/1.4 var(--ui);}
 .ap-start{width:100%;min-height:48px;border:1px solid var(--sentence-glass-line);border-radius:16px;
   background:var(--sentence-glass-action);
