@@ -412,7 +412,7 @@ Successful empty or missing-story results remain distinct from transient error.
 There are no automatic retry loops, new requests during Home loading, paid
 provider calls, server changes or access-restriction workarounds.
 
-When `BREEZE_CONFIG.READING_CACHE_URL` is an https origin, those same reads come from the public reading cache in Decision 035 instead of the Supabase relay. Discovery metadata may keep a supplied `contentHtml` that fits the existing per-feed byte budget, and Medium owner feeds are resolved before a card is shown. Removing the key restores this section's relay path and body-free metadata on the next load. The wordbook revision check, cover budget, and cover prefix stay as they are.
+When `BREEZE_CONFIG.READING_CACHE_URL` is an https origin, those same reads come from the public reading cache in Decision 035 instead of the Supabase relay. Discovery metadata keeps a supplied `contentHtml`, Medium owner feeds are resolved before a card is shown, and cover lookup uses the full cached document without the two-request budget or the 128 KiB prefix. Removing the key restores this section's relay path, body-free metadata, the two-request cover budget, and the 128 KiB prefix on the next check. The wordbook revision check stays.
 
 This is a partial reliability correction, not a new readability-admission gate.
 An article can still have a photo while its public body is unavailable. A shared

@@ -64,6 +64,40 @@ test("storage denial still serves the cache response", async () => {
   assert.equal(harness.calls.every((call) => call.credentials === "omit"), true);
 });
 
+test("full contentHtml stays in the public cache only while the reading cache is on", () => {
+  const storage = new Map();
+  const on = rssDevice({ candidates: 1, readingCache: true, storage, now: 1000000 });
+  const feed = { name: "Dexerto · Entertainment", url: "https://www.dexerto.com/feed/category/entertainment/", category: "entertainment" };
+  const html = "<p>" + "x".repeat(70000) + "</p>";
+  on.context.rssStorePublicFeed(feed, [{
+    title: "A long public story", url: "https://stories.example/long-body", source: feed.name,
+    category: feed.category, feedUrl: feed.url, feedSourceUrl: feed.url,
+    contentHtml: html, bodyProvided: true, summary: "Public summary", author: "Synthetic author",
+    publishedAt: "", date: "", kind: "", readUrl: "", photo: "",
+  }], on.state.now);
+  const stored = JSON.parse(storage.get(cacheKey));
+  assert.equal(stored[feed.url].entries[0].contentHtml.length > 64000, true);
+  const off = rssDevice({ candidates: 1, storage, now: on.state.now });
+  const entries = off.context.rssPublicCacheEntries();
+  assert.equal(entries[feed.url].entries[0].contentHtml, "");
+  assert.equal(entries[feed.url].entries[0].title, "A long public story");
+});
+
+test("cover lookups use the full cache document and the two-request budget returns with the flag", async () => {
+  const harness = rssDevice({ readingCache: true });
+  assert.equal(harness.context.rssCoverBudgetOpen({ remaining: 0, cancelled: false }), true);
+  const photo = await harness.context.rssCoverFetch("https://stories.example/cover-article");
+  assert.equal(photo, null);
+  const call = harness.calls.at(-1);
+  assert.equal(call.target.startsWith("/articles/v1/"), true);
+  assert.equal(call.credentials, "omit");
+  assert.equal(call.authorization, "");
+  assert.equal(harness.calls.some((item) => String(item.target).includes("relay.example") || String(item.request).includes("functions/v1")), false);
+  delete harness.context.window.BREEZE_CONFIG.READING_CACHE_URL;
+  assert.equal(harness.context.rssCoverBudgetOpen({ remaining: 0, cancelled: false }), false);
+  assert.equal(harness.context.rssCoverBudgetOpen({ remaining: 2, cancelled: false }), true);
+});
+
 test("image misses use the cache and omit credentials", async () => {
   const harness = rssDevice({ readingCache: true });
   const blob = await harness.context.fetchArticleImage("https://images.example/cover.png");

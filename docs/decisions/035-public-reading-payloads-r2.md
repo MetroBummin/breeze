@@ -59,17 +59,21 @@ is required to stop clients. Unset the article-preview secrets
 `READING_CACHE_PUT_URL` and `READING_CACHE_WRITE_TOKEN` to stop invitation
 writes. The cron can stay; it only writes the public feeds.
 
-While the flag is on, discovery metadata may keep a supplied `contentHtml` that
-fits the existing per-feed byte budget, and Medium owner feeds are resolved
-before a card is shown. Those reads go to this Worker. The wordbook revision
-check, the two-request cover budget, and the 128 KiB cover prefix stay.
+While the flag is on, discovery metadata keeps a supplied `contentHtml` (up to
+the per-entry 200,000-character cap and a 1 MB feed record), Medium owner feeds
+are resolved before a card is shown, and cover lookup drops the two-request
+budget and the 128 KiB relay prefix. Those article reads go to this Worker.
+Removing the key restores body-free metadata, selection-time Medium resolution,
+the two-request cover budget, and the 128 KiB prefix on the next check. The
+wordbook revision check stays.
 
 ## Deploy
 
-Run these from a checkout that contains `server/reading-cache/wrangler.jsonc`,
-in the Cloudflare account that already owns `breeze-books`
-(`dc26cb1d2297ca2206a0434ff88e24b4`). Wrangler must be logged in as a member who
-can create R2 buckets and Workers. This repository does not run them.
+Run these from a checkout that contains `server/reading-cache/wrangler.toml`.
+That file sets `account_id` to `dc26cb1d2297ca2206a0434ff88e24b4`, the account
+that already owns `breeze-books`. Wrangler must be logged in as a member of
+that account who can create R2 buckets and Workers. This repository does not
+run them.
 
 1. Create the bucket. Do not enable a public r2.dev URL; the Worker is the only
    reader and writer clients use.
@@ -82,13 +86,13 @@ can create R2 buckets and Workers. This repository does not run them.
    Supabase secret in step 5. Do not commit it.
 
    ```sh
-   npx wrangler secret put PREVIEW_WRITE_TOKEN --config server/reading-cache/wrangler.jsonc
+   npx wrangler secret put PREVIEW_WRITE_TOKEN --config server/reading-cache/wrangler.toml
    ```
 
 3. Deploy the Worker. The config’s cron is `*/10 * * * *`.
 
    ```sh
-   npx wrangler deploy --config server/reading-cache/wrangler.jsonc
+   npx wrangler deploy --config server/reading-cache/wrangler.toml
    ```
 
 4. Prime the feeds before pointing clients at the Worker. Replace the origin

@@ -117,14 +117,13 @@ test("preview writes require the operator token", async () => {
   assert.equal(extra.status, 200);
 });
 
-test("wrangler config names the public bucket and the ten minute cron", () => {
-  const text = readFileSync(new URL("../server/reading-cache/wrangler.jsonc", import.meta.url), "utf8");
-  const json = JSON.parse(text.replace(/^\s*\/\/.*$/gm, ""));
-  assert.equal(json.name, "breeze-reading-cache");
-  assert.equal(json.r2_buckets[0].bucket_name, "breeze-public-reading");
-  assert.equal(json.r2_buckets[0].binding, "READING");
-  assert.deepEqual(json.triggers.crons, ["*/10 * * * *"]);
-  assert.equal(json.observability.enabled, true);
-  assert.equal(json.observability.traces.enabled, true);
-  assert.equal(json.main, "src/index.mjs");
+test("wrangler config names the account, public bucket, and ten minute cron", () => {
+  const text = readFileSync(new URL("../server/reading-cache/wrangler.toml", import.meta.url), "utf8");
+  assert.match(text, /^name = "breeze-reading-cache"$/m);
+  assert.match(text, /^main = "src\/index\.mjs"$/m);
+  assert.match(text, /^account_id = "dc26cb1d2297ca2206a0434ff88e24b4"$/m);
+  assert.match(text, /^binding = "READING"$/m);
+  assert.match(text, /^bucket_name = "breeze-public-reading"$/m);
+  assert.match(text, /^crons = \["\*\/10 \* \* \* \*"\]$/m);
+  assert.match(text, /^enabled = true$/m);
 });

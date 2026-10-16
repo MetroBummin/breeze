@@ -36,6 +36,10 @@ const RSS_PHOTO_MS = 4000;
 const RSS_PUBLIC_CACHE_KEY='breeze.rss-public.v1';
 const RSS_PUBLIC_CACHE_BYTES=1000000;
 const RSS_PUBLIC_FEED_BYTES=64000;
+// While the reading cache serves the bytes, one feed may keep its article HTML
+// and the catalog may hold several of those feeds. The metadata caps return
+// the moment READING_CACHE_URL is unset.
+const RSS_PUBLIC_CACHE_BYTES_ON=4000000;
 const RSS_PUBLIC_STALE_MS=86400000;
 const RSS_CATALOG_CACHE_KEY='breeze.rss-catalog.v1';
 const RSS_CATALOG_BYTES=200000;
@@ -72,6 +76,11 @@ const RSS_SUPPLIED_STORE_KEY='breeze.rss-supplied.v1';
 let rssSuppliedHydrated=false;
 function rssBuiltinFeed(url){return RSS_FEEDS.some(source=>source.url===url);}
 function rssReadingCacheOn(){return typeof readingCacheEnabled==='function'&&readingCacheEnabled();}
+function rssPublicFeedLimit(){return rssReadingCacheOn()?RSS_PUBLIC_CACHE_BYTES:RSS_PUBLIC_FEED_BYTES;}
+function rssPublicCacheLimit(){return rssReadingCacheOn()?RSS_PUBLIC_CACHE_BYTES_ON:RSS_PUBLIC_CACHE_BYTES;}
+function rssCoverBudgetOpen(owner){
+  return !!owner&&!owner.cancelled&&(rssReadingCacheOn()||owner.remaining>0&&rssCoverRemaining>0);
+}
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
@@ -253,6 +262,15 @@ function rssCoverPhoto(html,base,complete=true){
   return '';
 }
 async function rssCoverFetch(url,signal){
+  // A serving reading cache is the full article, so the two-request budget and
+  // the 128 KiB relay prefix do not apply. Unset the flag and this is the relay.
+  if(rssReadingCacheOn()){
+    try{
+      const html=await fetchReadingDocument(url,{},signal);
+      const photo=rssCoverPhoto(html,rssCoverPublicUrl(url)||url,true);
+      return {photo};
+    }catch{return null;}
+  }
   const endpoint=articleProxyUrl(url);if(!endpoint)return null;
   const response=await fetch(endpoint,{credentials:'omit',signal,
     headers:{Authorization:'Bearer '+SB_KEY,apikey:SB_KEY}});
@@ -386,14 +404,17 @@ async function rssCoverPump(owner){
   if(owner.running||owner.cancelled)return;
   owner.running=true;let repaint=false;
   try{
-    while(rssOnline()&&owner.remaining>0&&rssCoverRemaining>0&&!owner.cancelled){
+    while(rssOnline()&&rssCoverBudgetOpen(owner)){
       const pair=[...owner.entries].find(([card,entry])=>entry&&rssCoverEligible(entry)
         &&!owner.attempted.has(entry.url)&&!rssCoverCached(rssCoverPublicUrl(entry.url))&&rssCoverVisible(owner,card));
       if(!pair)break;
       const [card,entry]=pair,consumer={owner,card,entry,job:null};
-      owner.attempted.add(entry.url);owner.remaining--;owner.consumer=consumer;
+      owner.attempted.add(entry.url);owner.consumer=consumer;
       const url=rssCoverPublicUrl(entry.url),existing=rssCoverJobs.get(url);
-      if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
+      if(!rssReadingCacheOn()){
+        owner.remaining--;
+        if(!existing||existing.controller.signal.aborted)rssCoverRemaining--;
+      }
       rssCardCoverWork.set(card,consumer);rssCardPending(card);
       const result=await rssCoverLookup(url,consumer),currentEntry=consumer.entry;
       if(result?.photo&&rssCoverCurrent(consumer)){
@@ -446,8 +467,7 @@ function rssCacheEntry(entry){
   value.source=value.source.slice(0,256);value.category=rssCategory(value.category);
   value.kind=['x','reddit'].includes(value.kind)?value.kind:'';
   // Full feed bodies stay in discovery metadata only while the public reading
-  // cache is serving them. The byte budget below still drops a body that does
-  // not fit. With the flag unset, metadata stays body-free.
+  // cache is serving them. With the flag unset, metadata stays body-free.
   const html=rssReadingCacheOn()&&typeof entry.contentHtml==='string'&&entry.contentHtml.length<=200000?entry.contentHtml:'';
   return {...value,contentHtml:html,bodyProvided:!!entry.bodyProvided&&!!html,discoveryFiltered:true};
 }
@@ -456,15 +476,21 @@ function rssPublicCacheEntries(){
   rssPublicCache={};
   try{
     const raw=localStorage.getItem(RSS_PUBLIC_CACHE_KEY);
-    if(!raw||raw.length>RSS_PUBLIC_CACHE_BYTES)return rssPublicCache;
+    // Read the larger flag-on catalog even after the key is removed, then let
+    // rssCacheEntry drop bodies so the metadata cache still opens.
+    if(!raw||raw.length>RSS_PUBLIC_CACHE_BYTES_ON)return rssPublicCache;
     const stored=JSON.parse(raw),now=Date.now();
-    if(rssCacheBytes(stored)>RSS_PUBLIC_CACHE_BYTES)return rssPublicCache;
+    if(rssCacheBytes(stored)>RSS_PUBLIC_CACHE_BYTES_ON)return rssPublicCache;
     for(const feed of RSS_FEEDS){
       const record=stored?.[feed.url];
       if(!record||!Number.isFinite(record.at)||record.at>now||now-record.at>RSS_PUBLIC_STALE_MS
         ||!Array.isArray(record.entries)||record.entries.length>100)continue;
-      const entries=record.entries.map(rssCacheEntry);
-      if(entries.some(entry=>!entry)||rssCacheBytes({at:record.at,entries})>RSS_PUBLIC_FEED_BYTES)continue;
+      let entries=record.entries.map(rssCacheEntry);
+      if(entries.some(entry=>!entry))continue;
+      if(rssCacheBytes({at:record.at,entries})>rssPublicFeedLimit()){
+        entries=record.entries.map(entry=>rssCacheEntry({...entry,contentHtml:'',bodyProvided:false}));
+        if(entries.some(entry=>!entry)||rssCacheBytes({at:record.at,entries})>RSS_PUBLIC_FEED_BYTES)continue;
+      }
       rssPublicCache[feed.url]={at:record.at,entries};
     }
   }catch{/* Cache corruption or denied storage cannot block public discovery. */}
@@ -476,15 +502,15 @@ function rssStorePublicFeed(feed,entries,at){
   const kept=[];
   for(const entry of entries.slice(0,100)){
     let value=rssCacheEntry(entry);if(!value)continue;
-    if(rssCacheBytes({at,entries:[...kept,value]})>RSS_PUBLIC_FEED_BYTES){
+    if(rssCacheBytes({at,entries:[...kept,value]})>rssPublicFeedLimit()){
       value={...value,contentHtml:'',bodyProvided:false};
-      if(rssCacheBytes({at,entries:[...kept,value]})>RSS_PUBLIC_FEED_BYTES)break;
+      if(rssCacheBytes({at,entries:[...kept,value]})>rssPublicFeedLimit())break;
     }
     kept.push(value);
   }
   const cache=rssPublicCacheEntries();cache[feed.url]={at,entries:kept};
   const oldest=Object.keys(cache).sort((a,b)=>cache[a].at-cache[b].at);
-  while(rssCacheBytes(cache)>RSS_PUBLIC_CACHE_BYTES&&oldest.length)delete cache[oldest.shift()];
+  while(rssCacheBytes(cache)>rssPublicCacheLimit()&&oldest.length)delete cache[oldest.shift()];
   try{localStorage.setItem(RSS_PUBLIC_CACHE_KEY,JSON.stringify(cache));}
   catch{/* Memory still reuses valid entries when persistent storage is unavailable. */}
 }

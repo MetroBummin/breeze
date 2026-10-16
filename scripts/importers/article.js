@@ -226,7 +226,7 @@ async function readingSha256(text){
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
   return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
 }
-async function fetchReadingDocument(url, location){
+async function fetchReadingDocument(url, location, signal){
   const base=readingCacheBase();
   const feedId=typeof RSS_FEEDS!=='undefined'?RSS_FEEDS.findIndex(feed=>feed.url===url):-1;
   const custom=feedId<0&&typeof rssSources==='function'&&rssSources().some(feed=>feed&&feed.url===url);
@@ -237,7 +237,8 @@ async function fetchReadingDocument(url, location){
     target=base+'/articles/v1/'+await readingSha256(canonical)+'.html?url='+encodeURIComponent(canonical);
   }
   let response;
-  try{response=await fetch(target,{credentials:'omit',signal:AbortSignal.timeout(15000)});}
+  const deadline=AbortSignal.timeout(15000);
+  try{response=await fetch(target,{credentials:'omit',signal:signal?AbortSignal.any([deadline,signal]):deadline});}
   catch{throw new Error('기사를 가져오지 못했어요. 인터넷 연결을 확인하거나 원문을 열어 주세요.');}
   if(!response.ok)throw new Error(response.status===404
     ?'지금은 기사를 가져올 수 없어요. 원문을 열어 주세요.'
