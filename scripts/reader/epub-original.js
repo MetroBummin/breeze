@@ -356,21 +356,13 @@ function reapplyEpubAnchorIfPending(session,index){
   const pending=session&&session.pendingAnchor;
   if(!pending||originalSession!==session) return;
   if(typeof currentReaderMode!=='undefined'&&currentReaderMode!=='original') return;
-  /* 앵커 아래에서 자란 것은 읽던 자리를 밀지 않습니다. */
-  if(index>pending.spine){
-    if(epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
-    return;
-  }
-  /* 우리가 놓아둔 자리에서 손이 이미 움직였으면 여기서 손을 뗍니다. */
-  if(Math.abs(readerScrollTop()-pending.appliedTop)>2){ session.pendingAnchor=null; return; }
+  /* 레이아웃이 스크롤을 밀어도 읽던 자리가 아닙니다. 손의 입력만 앵커를 놓습니다. */
+  if(session.anchorMoved){ session.pendingAnchor=null; return; }
   const frame=session.frames[pending.spine];
-  const element=frame ? epubElementAt(pending.spine,pending.source.element) : null;
-  if(frame&&element){
-    readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top
-      +element.getBoundingClientRect().top-pending.inset);
-    pending.appliedTop=readerScrollTop();
-  }
-  if(epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
+  const placed=frame?epubPlaceAnchor(frame,pending.source,pending.inset):false;
+  if(placed)pending.appliedTop=readerScrollTop();
+  /* 아래 장이 먼저 끝나도, 글자가 놓이기 전의 화면은 읽던 자리가 아닙니다. */
+  if(placed&&epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
 }
 
 async function waitForEpubAnchorGeometry(source){
@@ -896,37 +888,89 @@ function epubElementAt(spine,elementIndex){
   const doc=frame&&frame.contentDocument;
   return doc ? doc.querySelector(`[data-breeze-ei="${Math.max(0,Number(elementIndex)||0)}"]`) : null;
 }
+function epubSpineForSource(source){
+  const frames=originalSession&&originalSession.frames||[];
+  const href=String(source&&source.href||'');
+  if(href&&typeof document!=='undefined'&&typeof document.querySelectorAll==='function'){
+    for(const section of document.querySelectorAll('.epub-source-chapter')){
+      if(!section.dataset||section.dataset.href!==href)continue;
+      const index=Number(section.dataset.spine);
+      if(frames[index])return index;
+    }
+  }
+  const spine=Number(source&&source.spine);
+  if(Number.isInteger(spine)&&spine>=0&&spine<frames.length&&frames[spine])return spine;
+  return Math.max(0,Math.min(Math.max(frames.length-1,0),Number.isFinite(spine)?spine:0));
+}
+function epubAnchorScrollOffset(frame,source){
+  const element=frame&&frame.contentDocument
+    ? frame.contentDocument.querySelector(`[data-breeze-ei="${Math.max(0,Number(source&&source.element)||0)}"]`)
+    : null;
+  if(!element)return null;
+  const elementRect=element.getBoundingClientRect();
+  if(!elementRect||!(elementRect.height>0))return null;
+  let offset=elementRect.top;
+  if(source&&source.char!=null&&typeof domRangeForOffsets==='function'){
+    try{
+      const length=element.textContent?element.textContent.length:0;
+      const at=Math.max(0,Math.min(length,Number(source.char)||0));
+      const range=domRangeForOffsets(element,at,Math.min(length,at+1));
+      const rect=range&&range.getClientRects&&range.getClientRects()[0];
+      if(rect&&rect.height>0)offset=rect.top;
+    }catch(error){}
+  }
+  return offset;
+}
+function epubPlaceAnchor(frame,source,inset){
+  const offset=epubAnchorScrollOffset(frame,source);
+  if(offset==null||!frame)return false;
+  readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
+  return true;
+}
+function epubWatchAnchorInput(session){
+  if(!session||session.anchorWatch)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  if(!box||typeof box.addEventListener!=='function')return;
+  session.anchorWatch=true;
+  const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
+  box.addEventListener('pointerdown',moved);
+  box.addEventListener('wheel',moved,{passive:true});
+  box.addEventListener('touchmove',moved,{passive:true});
+  box.addEventListener('keydown',moved);
+}
+function epubRestoreOwnsPosition(){
+  return currentReaderMode==='original'
+    && !!(originalSession&&originalSession.kind==='epub'&&originalSession.pendingAnchor&&!originalSession.anchorMoved);
+}
 
 async function restoreEpubAnchor(source,inset,_changeToken,isCurrent){
-  const spine=Math.max(0,Math.min(originalSession.frames.length-1,Number(source.spine)||0));
+  if(!originalSession)return false;
+  const spine=epubSpineForSource(source);
   const frame=originalSession.frames[spine];
   if(!frame) return false;
   /* 크기를 기다리는 동안 화면은 아직 책 앞쪽에 있습니다. 그 자리가 "읽던 자리"로
      적히면 다음 번에도 표지에서 시작합니다 — 기다림이 길어질수록 확실해집니다.
      기다리는 동안에만 적기를 미루고, 끝나면 곧 풀립니다. */
+  originalSession.anchorMoved=false;
+  epubWatchAnchorInput(originalSession);
+  const located={...source,spine};
+  originalSession.pendingAnchor={source:located,inset,spine,appliedTop:null};
   const holdSave=setInterval(()=>{
     if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
   },300);
   if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
-  try{ await waitForEpubAnchorGeometry(source); }
+  try{ await waitForEpubAnchorGeometry(located); }
   finally{ clearInterval(holdSave); }
-  if(isCurrent&&!isCurrent()) return false;
-  const element=epubElementAt(spine,source.element);
-  let offset=element ? element.getBoundingClientRect().top : 0;
-  if(element&&source.char!=null&&typeof domRangeForOffsets==='function'){
-    try{
-      const at=Math.max(0,Math.min(element.textContent.length,Number(source.char)||0));
-      const range=domRangeForOffsets(element,at,Math.min(element.textContent.length,at+1));
-      const rect=range&&range.getClientRects()[0];
-      if(rect) offset=rect.top;
-    }catch(error){}
+  if(!originalSession||(isCurrent&&!isCurrent())||originalSession.anchorMoved){
+    if(originalSession)originalSession.pendingAnchor=null;
+    return false;
   }
-  readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
+  const placed=epubPlaceAnchor(frame,located,inset);
   /* 아직 크기가 확정되지 않은 장이 위에 있으면, 그 장이 자리를 잡을 때 이 앵커를
-     다시 앉힙니다(`reapplyEpubAnchorIfPending`). 전부 확정돼 있으면 들고 있을
-     이유가 없습니다. */
-  originalSession.pendingAnchor=epubAnchorSettled(originalSession,spine) ? null
-    : {source,inset,spine,appliedTop:readerScrollTop()};
+     다시 앉힙니다(`reapplyEpubAnchorIfPending`). 글자 오프셋은 그 때도 유지합니다.
+     레이아웃 전의 화면 맨 앞은 읽던 자리가 아니므로 저장하지 않습니다. */
+  if(epubAnchorSettled(originalSession,spine)&&placed) originalSession.pendingAnchor=null;
+  else originalSession.pendingAnchor={source:located,inset,spine,appliedTop:placed?readerScrollTop():null};
   return true;
 }
 

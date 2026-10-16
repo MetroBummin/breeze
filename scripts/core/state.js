@@ -324,6 +324,7 @@ function saveReadingState(){
       &&homeReturnReadingOwner?.book===curBook&&homeReturnReadingOwner.entry===history.state)return;
   if(!curBook || curBook.transient) return;
   if(typeof readerPositionPending==='function' && readerPositionPending())return;
+  if(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition())return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);
