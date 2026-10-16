@@ -78,18 +78,25 @@ try{
   const bar=page.locator('#v-home .book-ocr-progress');
   assert.equal(await bar.evaluate(node=>getComputedStyle(node).display),'none','cover mode hides the under-card bar');
   assert.equal(await cover.locator('.book-ocr-hit').evaluate(node=>{const r=node.getBoundingClientRect();return r.width>=44&&r.height>=44;}),true);
-  for(const size of [{name:'phone',width:390,height:844},{name:'tablet',width:820,height:1180},{name:'web',width:1440,height:1000},{name:'short',width:320,height:568}]){
+  for(const size of [{name:'phone',width:390,height:844},{name:'tablet',width:820,height:1180},{name:'web',width:1440,height:1000},{name:'short',width:320,height:568},{name:'landscape',width:844,height:390}]){
    await page.setViewportSize(size);
    for(const dark of [false,true]){
     await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
     await cover.scrollIntoViewIfNeeded();
+    await cover.evaluate(node=>{
+     const dock=document.querySelector('.control-dock');
+     const limit=dock?dock.getBoundingClientRect().top:innerHeight;
+     const bottom=node.getBoundingClientRect().bottom;
+     if(bottom>limit-8)window.scrollBy(0,bottom-(limit-8));
+    });
     const box=await cover.evaluate(node=>{
      const r=node.getBoundingClientRect();
      const hit=node.querySelector('.book-ocr-hit').getBoundingClientRect();
      const card=node.closest('.bookcard').getBoundingClientRect();
-     return {x:r.left,y:r.top,w:r.width,h:r.height,hit:hit.width>=44&&hit.height>=44,inside:r.left>=card.left-1&&r.right<=card.right+1&&r.top>=card.top-1&&r.bottom<=card.bottom+1,viewport:innerWidth};
+     const top=document.elementFromPoint(hit.left+hit.width/2,hit.top+hit.height/2);
+     return {x:r.left,y:r.top,w:r.width,h:r.height,hit:hit.width>=44&&hit.height>=44,inside:r.left>=card.left-1&&r.right<=card.right+1&&r.top>=card.top-1&&r.bottom<=card.bottom+1,viewport:innerWidth,open:!!top&&(top===node.querySelector('.book-ocr-hit')||node.contains(top))};
     });
-    assert.ok(box.hit&&box.inside&&box.w>0&&box.x>=0&&box.x+box.w<=box.viewport+1,JSON.stringify(box));
+    assert.ok(box.hit&&box.inside&&box.open&&box.w>0&&box.x>=0&&box.x+box.w<=box.viewport+1,JSON.stringify(box));
     await capture(`${mode}-${size.name}-${dark?'dark':'light'}`,page.locator('#v-home #shelf'));
    }
   }
@@ -125,7 +132,7 @@ try{
  await page.evaluate(()=>{darkMode=true;applyDark();});
  await capture('off-phone-dark',page.locator('#v-home #shelf'));
  await boot('ring');
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-count')?.textContent==='1/10');
+ await page.waitForFunction(()=>qaCoverOcr.calls.length>=1&&document.querySelector('#v-home .book-ocr-count')?.textContent==='1/10');
  const pending=await page.evaluate(()=>qaCoverOcr.calls.length-1);
  await page.evaluate(i=>qaCoverOcr.calls[i].reject(new Error('stopped')),pending);
  await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover')?.dataset.ocrState==='paused');
