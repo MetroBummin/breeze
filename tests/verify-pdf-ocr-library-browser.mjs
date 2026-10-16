@@ -47,8 +47,13 @@ try{
  await page.waitForTimeout(700);
  assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),0,'an unopened shelf does not start recognition');
  await page.evaluate(()=>{
-  qaDocs=0;const original=pdfjsLib.getDocument.bind(pdfjsLib);
-  pdfjsLib.getDocument=function(...args){qaDocs++;return original(...args);};
+  // pdfjsLib.getDocument is a non-configurable getter. Each document still
+  // starts its own PDF.js worker, which is the second copy we must not load.
+  qaDocs=0;const Native=window.Worker;
+  window.Worker=function(url,options){
+   if(String(url).includes('pdf-3.11.174.worker'))qaDocs++;
+   return new Native(url,options);
+  };
  });
  await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
  await page.waitForFunction(()=>originalSession?.pdf&&qaLibraryOcr.calls.length>=1,null,{timeout:60000});
