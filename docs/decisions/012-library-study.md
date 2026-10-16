@@ -167,6 +167,10 @@ Both formats expose the same draggable scrollbar: a 4px visual thumb with a
 PageUp/PageDown and arrow-key support. The thumbnail's left and right insets
 match. The visual thumb sits in that right inset instead of a second 14px rail.
 The grip may cross the paper's outer margin; the bookmark glyph stays outside it.
+On viewports up to 560px the thumbnail fills that inset, so the visual thumb
+would sit on the paper. There the 4px bar moves to the sidebar's right edge,
+just inside it, leaving a gap beside the page. The 24px grip, the matched
+left and right thumbnail insets, and the wider inset placement stay.
 This scrollbar is
 intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
 scroll position; paper reading position and gestures remain independent.
