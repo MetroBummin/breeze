@@ -45,7 +45,7 @@ const expected={
     "docs/qa/account-learning-20261015.md": "9df0549e17ffa6abb32666207cd7ee6d7287811a4fa0aec2392ba8fd0840874c",
     "docs/sync.html": "5ae428c9ba03d580539924422eec65525a1a37973653f24c68061827aeb2f8cf",
     "index.html": "0aabf73dabd0351a6672f0f60727a42e385612dca4afbf791ad0984318cef5e8",
-    "ios/App/App.xcodeproj/project.pbxproj": "a665561dc74f1d885c394bc7a5053f189806e65d4d943867dc128e937561af2d",
+    "ios/App/App.xcodeproj/project.pbxproj": "a2cde15a356cc00113aa8c343ab07148b460a4df4d63e984d17418a84b977e9b",
     "ios/App/App/BreezePdfOcrPlugin.swift": "a7b590bde55e61ef37f7dde5cc6aeeeb8a6a4b0e40867df951bdfdde13c0a31e",
     "ios/App/App/SceneDelegate.swift": "212790b5b8b59f734f4294c25b99a00e60ad13fd9cbac34bb2363003c6ca5ce4",
     "landing/index.html": "f86275e62114db5ad3366a2b9f1d22eb35f77e3aea3493f5a8aefd236c058073",
@@ -157,7 +157,7 @@ const expected={
     "tests/verify-ink-sync-browser.mjs": "919c221f31991e003a205f4aa77ddda5f5fbe32b9e7e0aa339ff4bc1dbfe23be",
     "tests/verify-ink-sync-sql.mjs": "c8acfea0c0a587f3b9cfe803a021e3f124531b5624b74760068fad4bd38bd8a7",
     "tests/verify-ink-sync.mjs": "a6efe28d15bc3610e2ec11d535b7940fb0db96391d22682c0e0796a912cda1c4",
-    "tests/verify-ios-cloud-build.mjs": "3803b56c6aaad9c7af726474f546bf6c5b5adf8413a1690a633c306903f14ba1",
+    "tests/verify-ios-cloud-build.mjs": "b98c6b819b01d391d4dd681d9bfe5fa0648b08046371eb8b260a417a2d3ab87b",
     "tests/verify-learning-sync-sql.mjs": "2e872df5f9364dff26e1263469826663c2c90f1bace91ceade4c79efee5098b7",
     "tests/verify-learning-sync.mjs": "8eea53b910fd3a5948eb295fa2db17f48489a9243d0c415d607ba49812be54f4",
     "tests/verify-library-refresh-browser.mjs": "4f20734fe2e58d227a8af20760234d2f59fd0d32bf06821ef96c487e9d7ba903",
@@ -218,7 +218,7 @@ const expected={
     "tests/verify-wordbook-patch-sql.mjs": "1c491c30a20e39e616c4877109a53e6339ca4e586cfeb1ce94e6ca71a5dad551",
     "tests/verify-wordbook-window-browser.mjs": "e646141b3b1a4c1748663af41775d5937b20bcbfa7abc2eb21c86f81cf3ad194",
     "tools/ios-testflight.sh": "a4c2fea8bcfaf63f1306e37a1c4491d8ee50197401aab4003b8d93f8c36c1b7d",
-    "tools/verify-ios-release.mjs": "e8bf334125eb2fe653e35a339b1569985ad90a72df4d1f0d3c4fce4f343fbd3a",
+    "tools/verify-ios-release.mjs": "302bf670341e977b2aa2140c069c8ec227ec89a4f05ecd2e4d473a710a7ada6c",
     "types/globals.d.ts": "0c5a66571dc17dce9639c78486f1be1f879d7bfdfe765f45a9f9cec084d2b657"
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
