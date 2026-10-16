@@ -179,3 +179,13 @@ request finished. iOS stops at 3,000 words and skips one bad box instead of
 failing the page. `localStorage['breeze.ocr-lane']=off` or `?ocrLane=off`
 restores the previous shelf-wide queue, synchronous PNG encode, and separate
 document. The default is the idle lane. The approved under-card bar stays.
+
+### Hosted ML Kit runner (2026-10-16)
+
+The native ML Kit job stays on the hosted Ubuntu runner and is not skipped.
+That runner already has `/dev/kvm`, but the job user cannot read or write it,
+so the emulator never started. Before the harness, the job applies the
+android-emulator-runner KVM udev rule (`MODE="0666"`) and requires the node to
+be readable and writable. The harness still exits when KVM is missing or
+acceleration is not usable, and it still does not fall back to software
+emulation.

@@ -16,6 +16,7 @@ const historicalBase='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
     ".github/workflows/account-learning.yml": "2ccb4333a9bd32286dac7d08149b1779caeb1d0651ea4c4780f5503e30450d3c",
+    ".github/workflows/pdf-ocr-native-stress.yml": "89fff87f69323391aec38c997516a0e4e26853c3e1cc5576ae6289c541936102",
     ".github/workflows/pdf-pointer-ink.yml": "0995ff0bbdbb117291cf89c34c8592b15217f29527e2d611ceb42bc9d91640ea",
     ".github/workflows/preview-intent-check.yml": "d3c51892b973779530516ba725b239d47354054bd7fd3c384276041393654153",
     ".github/workflows/social-import.yml": "b5a749685790947297724b74a44e4b2e3ae827c20826cb6935be90ef34dc4111",
@@ -32,7 +33,7 @@ const expected={
     "docs/decisions/012-library-study.md": "7fb9ba41f53ee1e21a27336233e49086d725360192a2bc4d62212d383b6750ea",
     "docs/decisions/015-rss-intent-and-public-catalog.md": "f8296533f8328726a459cd79b7dfab02b96718b193c06d9b3d1a763558f32b7d",
     "docs/decisions/016-social-auth.md": "d1fdd1cb5b23818300b27cf75bd80a114a0d54c0af4aad273b34223ac5bd71ab",
-    "docs/decisions/021-scanned-pdf-ocr.md": "dab5fcfa7402e0d106ec560295d006bc4fe5aa47b0ee3733d0bebbe527244f57",
+    "docs/decisions/021-scanned-pdf-ocr.md": "45d5f185a34a9568325ec42d93127b17dbeb1fc3f720cd316c839f503026206e",
     "docs/decisions/023-vocabulary-study-sets.md": "26d30d3e58245e97d8d593648629916f0b40269147e6c23b984cc86bbc6454ab",
     "docs/decisions/031-vocabulary-test.md": "f9a6a46151df7a40a941c502d6d18504e4a627f1ed80f91193cd5c0f66cd1434",
     "docs/decisions/032-next-ios-android-release.md": "d54ca9ea39e2a842a3a9f85f65aee4ce4d41d017965edc494bc5344a29e4a6b6",
