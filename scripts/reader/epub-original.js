@@ -352,25 +352,36 @@ function epubAnchorSettled(session,spine){
   return (session.frameMeta||[]).slice(0,spine+1)
     .every(meta=>!meta||meta.stable);
 }
+function epubInitialSpine(book,session){
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const source=position&&position.original;
+  if(!source||source.kind!=='epub'||!session)return 0;
+  const href=String(source.href||'');
+  if(href&&typeof document!=='undefined'&&typeof document.querySelectorAll==='function'){
+    for(const section of document.querySelectorAll('.epub-source-chapter')){
+      const node=/** @type {HTMLElement} */(section);
+      if(!node.dataset||node.dataset.href!==href)continue;
+      const index=Number(node.dataset.spine);
+      if(session.frames[index])return index;
+    }
+  }
+  const spine=Number(source.spine);
+  if(Number.isInteger(spine)&&spine>=0&&spine<session.frames.length&&session.frames[spine])return spine;
+  return 0;
+}
 function reapplyEpubAnchorIfPending(session,index){
   const pending=session&&session.pendingAnchor;
   if(!pending||originalSession!==session) return;
   if(typeof currentReaderMode!=='undefined'&&currentReaderMode!=='original') return;
-  /* 앵커 아래에서 자란 것은 읽던 자리를 밀지 않습니다. */
-  if(index>pending.spine){
-    if(epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
-    return;
-  }
-  /* 우리가 놓아둔 자리에서 손이 이미 움직였으면 여기서 손을 뗍니다. */
-  if(Math.abs(readerScrollTop()-pending.appliedTop)>2){ session.pendingAnchor=null; return; }
+  /* 레이아웃이 스크롤을 밀어도 읽던 자리가 아닙니다. 손의 입력만 앵커를 놓습니다.
+     가림막을 걷기로 한 뒤의 재배치도 마찬가지입니다 — 보이는 점프가 됩니다. */
+  if(session.anchorMoved){ session.pendingAnchor=null; session.revealFrozen=false; return; }
+  if(session.revealFrozen)return;
   const frame=session.frames[pending.spine];
-  const element=frame ? epubElementAt(pending.spine,pending.source.element) : null;
-  if(frame&&element){
-    readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top
-      +element.getBoundingClientRect().top-pending.inset);
-    pending.appliedTop=readerScrollTop();
-  }
-  if(epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
+  const placed=frame?epubPlaceAnchor(frame,pending.source,pending.inset):false;
+  if(placed)pending.appliedTop=readerScrollTop();
+  /* 아래 장이 먼저 끝나도, 글자가 놓이기 전의 화면은 읽던 자리가 아닙니다. */
+  if(placed&&epubAnchorSettled(session,pending.spine)) session.pendingAnchor=null;
 }
 
 async function waitForEpubAnchorGeometry(source){
@@ -395,6 +406,19 @@ async function waitForEpubAnchorGeometry(source){
   await Promise.all(waits);
 }
 
+function epubOpenSpine(book,archive){
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const source=position&&position.original;
+  const total=archive&&archive.spine?archive.spine.length:0;
+  if(!source||source.kind!=='epub'||!total)return 0;
+  const href=String(source.href||'');
+  if(href){
+    const found=archive.spine.findIndex(chapter=>chapter&&(chapter.path===href||chapter.href===href));
+    if(found>=0)return found;
+  }
+  const spine=Number(source.spine);
+  return Number.isInteger(spine)&&spine>=0&&spine<total?spine:0;
+}
 async function openOriginalEpub(book,record,token){
   const archive=await openEpubArchive(record.blob);
   if(token!==originalLoadToken) return;
@@ -410,13 +434,37 @@ async function openOriginalEpub(book,record,token){
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const resources=await buildEpubResources(archive,session);
-  for(let index=0; index<archive.spine.length; index++){
-    if(token!==originalLoadToken) return;
-    const chapter=archive.spine[index];
-    const chapterDoc=await sanitiseEpubChapter(archive,chapter,resources,session.viewport);
-    if(!chapterDoc||!chapterDoc.html) continue;
+  /* Chapters below the saved place do not move it. They are added after the
+     saved chapter can be shown. `BREEZE_EPUB_PROGRESSIVE=false` builds the
+     whole spine first, which is the previous timing. */
+  const progressive=typeof window==='undefined'||window.BREEZE_EPUB_PROGRESSIVE!==false;
+  const predicted=epubOpenSpine(book,archive);
+  const blockingEnd=progressive?predicted:archive.spine.length-1;
+  const slots=[];
+  for(let index=0; index<=blockingEnd; index++){
     const section=document.createElement('section');
-    section.className='epub-source-chapter'; section.dataset.spine=String(index); section.dataset.href=chapter.path;
+    section.className='epub-source-chapter';
+    section.dataset.spine=String(index);
+    section.dataset.href=archive.spine[index].path;
+    content.appendChild(section);
+    slots[index]=section;
+  }
+  const filled=new Set();
+  async function appendEpubChapter(index){
+    if(token!==originalLoadToken||filled.has(index)||index<0||index>=archive.spine.length)return;
+    filled.add(index);
+    const chapter=archive.spine[index];
+    let section=slots[index];
+    if(!section){
+      section=document.createElement('section');
+      section.className='epub-source-chapter';
+      section.dataset.spine=String(index);
+      section.dataset.href=chapter.path;
+      content.appendChild(section);
+      slots[index]=section;
+    }
+    const chapterDoc=await sanitiseEpubChapter(archive,chapter,resources,session.viewport);
+    if(!chapterDoc||!chapterDoc.html){section.remove();return;}
     /* ---- 손가락을 받는 것은 틀이 아니라 그 위의 살갗입니다 ----
        까닭은 아래 `registerReaderSurface` 위에 적어 두었습니다. 장마다 하나씩,
        틀과 정확히 같은 자리에 덮습니다(`styles/reader.css`). */
@@ -455,18 +503,45 @@ async function openOriginalEpub(book,record,token){
           });observer.observe(frameDoc.documentElement);
           session.resizeObservers.push(observer);
         }
-        if(frameDoc) installEpubWordTap(frameDoc);
+        /* Highlights walk every word. Doing that before the frame is ready
+           holds the saved chapter, and a failure waits out the 8s timeout.
+           `BREEZE_EPUB_DEFER_HIGHLIGHTS=false` restores the old order. */
+        const paintWords=()=>{ try{ if(frameDoc) installEpubWordTap(frameDoc); }catch(error){} };
         finish();
+        if(typeof window!=='undefined'&&window.BREEZE_EPUB_DEFER_HIGHLIGHTS===false)paintWords();
+        else (typeof queueMicrotask==='function'?queueMicrotask:fn=>setTimeout(fn,0))(paintWords);
         settleEpubFrameGeometry(session,index).then(finishGeometry,finishGeometry);
       };
       frame.onerror=()=>{ finish(); finishGeometry(); };
       setTimeout(()=>{ finish(); finishGeometry(); },EPUB_FRAME_TIMEOUT);
     });
-    frame.srcdoc=chapterDoc.html; section.appendChild(frame); section.appendChild(skin); content.appendChild(section);
+    frame.srcdoc=chapterDoc.html; section.appendChild(frame); section.appendChild(skin);
     session.frames[index]=frame; session.frameReady[index]=ready; session.frameGeometryReady[index]=geometryReady;
   }
-  await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
+  const opening=[predicted];
+  for(let index=0; index<=blockingEnd; index++) if(index!==predicted)opening.push(index);
+  for(const index of opening){
+    if(token!==originalLoadToken) return;
+    await appendEpubChapter(index);
+  }
+  const spine=epubInitialSpine(book,session);
+  for(let index=blockingEnd+1; index<=spine; index++){
+    if(token!==originalLoadToken) return;
+    await appendEpubChapter(index);
+  }
+  const ready=session.frameReady.filter(Boolean).slice(0,2);
+  if(spine>1&&session.frameReady[spine])ready.push(session.frameReady[spine]);
+  await Promise.all(ready);
   if(originalSession===session)updatePdfNavigationControls();
+  if(!progressive)return;
+  const tailFrom=Math.max(spine,blockingEnd)+1;
+  void (async()=>{
+    for(let index=tailFrom; index<archive.spine.length; index++){
+      if(token!==originalLoadToken||originalSession!==session)return;
+      try{await appendEpubChapter(index);}catch(error){return;}
+    }
+    if(originalSession===session&&typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
+  })();
 }
 
 /* ================= saved vocabulary ================= */
@@ -489,7 +564,10 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
     for(const key of new Set([...cached.snapshot.keys(),...snapshot.keys()])){
       const before=cached.snapshot.get(key),after=snapshot.get(key);
       if(!before||!after||before.shape!==after.shape){
-        if(cached.byKey.has(key)||cached.candidates.has(before?.first)||cached.candidates.has(after?.first)){
+        /* An empty vocabulary pass does not walk the chapter. The next saved
+           word is not in that empty candidate set, so the chapter has to be
+           walked once words exist again. */
+        if(cached.unscanned||cached.byKey.has(key)||cached.candidates.has(before?.first)||cached.candidates.has(after?.first)){
           rebuild=true;break;
         }
       }else if(before.bucket!==after.bucket)changed.push({key,before,after});
@@ -509,16 +587,22 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
      있었지만 아무도 고르지 않는 설정이었습니다. */
   if(typeof applyEpubStarPreferences==='function')applyEpubStarPreferences(doc);
   const ranges=[[],[],[]],byKey=new Map(),byNode=new WeakMap(),candidates=new Set();
+  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+  // One index per highlight pass; vocabulary is unchanged during this walk.
+  const starts=typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'
+    ? savedPhraseStarts() : null;
+  if((!snapshot||snapshot.size===0)&&!(starts&&starts.size)){
+    const highlights=ranges.map(()=>new view.Highlight());
+    highlights.forEach((highlight,index)=>view.CSS.highlights.set(`breeze-saved-${index+1}`,highlight));
+    epubSavedHighlightCache.set(doc,{snapshot,byKey,byNode,candidates,highlights,unscanned:true});
+    return;
+  }
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
     if(!parent || !node.data || !/[A-Za-z]/.test(node.data)
         || parent.closest('script,style,noscript,textarea,.breeze-original-word')) return NodeFilter.FILTER_REJECT;
     return NodeFilter.FILTER_ACCEPT;
   }});
-  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
-  // One index per highlight pass; vocabulary is unchanged during this walk.
-  const starts=typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'
-    ? savedPhraseStarts() : null;
   let node;
   while((node=walker.nextNode())){
     pattern.lastIndex=0;const matches=[];let match;
@@ -896,37 +980,93 @@ function epubElementAt(spine,elementIndex){
   const doc=frame&&frame.contentDocument;
   return doc ? doc.querySelector(`[data-breeze-ei="${Math.max(0,Number(elementIndex)||0)}"]`) : null;
 }
+function epubSpineForSource(source){
+  const frames=originalSession&&originalSession.frames||[];
+  const href=String(source&&source.href||'');
+  if(href&&typeof document!=='undefined'&&typeof document.querySelectorAll==='function'){
+    for(const section of document.querySelectorAll('.epub-source-chapter')){
+      const node=/** @type {HTMLElement} */(section);
+      if(!node.dataset||node.dataset.href!==href)continue;
+      const index=Number(node.dataset.spine);
+      if(frames[index])return index;
+    }
+  }
+  const spine=Number(source&&source.spine);
+  if(Number.isInteger(spine)&&spine>=0&&spine<frames.length&&frames[spine])return spine;
+  return Math.max(0,Math.min(Math.max(frames.length-1,0),Number.isFinite(spine)?spine:0));
+}
+function epubAnchorScrollOffset(frame,source){
+  const element=frame&&frame.contentDocument
+    ? frame.contentDocument.querySelector(`[data-breeze-ei="${Math.max(0,Number(source&&source.element)||0)}"]`)
+    : null;
+  if(!element)return null;
+  const elementRect=element.getBoundingClientRect();
+  if(!elementRect||!(elementRect.height>0))return null;
+  let offset=elementRect.top;
+  if(source&&source.char!=null&&typeof domRangeForOffsets==='function'){
+    try{
+      const length=element.textContent?element.textContent.length:0;
+      const at=Math.max(0,Math.min(length,Number(source.char)||0));
+      const range=domRangeForOffsets(element,at,Math.min(length,at+1));
+      const rect=range&&range.getClientRects&&range.getClientRects()[0];
+      if(rect&&rect.height>0)offset=rect.top;
+    }catch(error){}
+  }
+  return offset;
+}
+function epubPlaceAnchor(frame,source,inset){
+  const offset=epubAnchorScrollOffset(frame,source);
+  if(offset==null||!frame)return false;
+  readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
+  return true;
+}
+function epubWatchAnchorInput(session){
+  if(!session||session.anchorWatch)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  if(!box||typeof box.addEventListener!=='function')return;
+  session.anchorWatch=true;
+  const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
+  box.addEventListener('wheel',moved,{passive:true});
+  box.addEventListener('touchmove',moved,{passive:true});
+  box.addEventListener('keydown',moved);
+}
+function epubRestoreOwnsPosition(){
+  const pending=originalSession&&originalSession.pendingAnchor;
+  /* A placed chapter may still be reapplied when a chapter above it grows.
+     That reapply is the same anchor. Only an anchor that has not been placed
+     is still the cover, and only that one must not be saved. */
+  return currentReaderMode==='original'
+    && !!(originalSession&&originalSession.kind==='epub'&&pending&&!originalSession.anchorMoved&&pending.appliedTop==null);
+}
 
 async function restoreEpubAnchor(source,inset,_changeToken,isCurrent){
-  const spine=Math.max(0,Math.min(originalSession.frames.length-1,Number(source.spine)||0));
+  if(!originalSession)return false;
+  const spine=epubSpineForSource(source);
   const frame=originalSession.frames[spine];
   if(!frame) return false;
   /* 크기를 기다리는 동안 화면은 아직 책 앞쪽에 있습니다. 그 자리가 "읽던 자리"로
      적히면 다음 번에도 표지에서 시작합니다 — 기다림이 길어질수록 확실해집니다.
      기다리는 동안에만 적기를 미루고, 끝나면 곧 풀립니다. */
+  originalSession.anchorMoved=false;
+  epubWatchAnchorInput(originalSession);
+  const located={...source,spine};
+  originalSession.pendingAnchor={source:located,inset,spine,appliedTop:null};
   const holdSave=setInterval(()=>{
     if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
   },300);
   if(typeof suspendReaderScrollSave==='function') suspendReaderScrollSave(600);
-  try{ await waitForEpubAnchorGeometry(source); }
+  try{ await waitForEpubAnchorGeometry(located); }
   finally{ clearInterval(holdSave); }
-  if(isCurrent&&!isCurrent()) return false;
-  const element=epubElementAt(spine,source.element);
-  let offset=element ? element.getBoundingClientRect().top : 0;
-  if(element&&source.char!=null&&typeof domRangeForOffsets==='function'){
-    try{
-      const at=Math.max(0,Math.min(element.textContent.length,Number(source.char)||0));
-      const range=domRangeForOffsets(element,at,Math.min(element.textContent.length,at+1));
-      const rect=range&&range.getClientRects()[0];
-      if(rect) offset=rect.top;
-    }catch(error){}
+  if(!originalSession||(isCurrent&&!isCurrent())||originalSession.anchorMoved){
+    if(originalSession)originalSession.pendingAnchor=null;
+    return false;
   }
-  readerScrollTo(readerScrollTop()+frame.getBoundingClientRect().top+offset-inset);
+  const placed=epubPlaceAnchor(frame,located,inset);
   /* 아직 크기가 확정되지 않은 장이 위에 있으면, 그 장이 자리를 잡을 때 이 앵커를
-     다시 앉힙니다(`reapplyEpubAnchorIfPending`). 전부 확정돼 있으면 들고 있을
-     이유가 없습니다. */
-  originalSession.pendingAnchor=epubAnchorSettled(originalSession,spine) ? null
-    : {source,inset,spine,appliedTop:readerScrollTop()};
+     다시 앉힙니다(`reapplyEpubAnchorIfPending`). 글자 오프셋은 그 때도 유지합니다.
+     레이아웃 전의 화면 맨 앞은 읽던 자리가 아니므로 저장하지 않습니다. */
+  if(epubAnchorSettled(originalSession,spine)&&placed) originalSession.pendingAnchor=null;
+  else originalSession.pendingAnchor={source:located,inset,spine,appliedTop:placed?readerScrollTop():null};
   return true;
 }
 

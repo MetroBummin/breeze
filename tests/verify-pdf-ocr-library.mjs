@@ -54,6 +54,42 @@ test('missing local original does not download or loop',async()=>{
  const f=fixture();f.context.originalGetForBook=async()=>null;const job=f.api.track(f.book);await f.finish();
  assert.equal(job.state,'missing');assert.equal(f.calls.length,0);
 });
+test('an open reader keeps background parsing off this book until resume',async()=>{
+ const f=fixture({pages:3}),job=f.api.track(f.book);
+ f.api.yieldToReader('A');
+ await f.tick();
+ assert.equal(f.calls.length,0);
+ assert.equal(job.state,'queued');
+ f.api.resumeReader('A');
+ await f.finish();
+ assert.equal(f.calls.length,3);
+ assert.equal(f.api.summary(job).complete,true);
+});
+test('the reader adopts a document background recognition already parsed',async()=>{
+ const f=fixture({pages:2});
+ let opens=0;
+ const inner=f.context.pdfjsLib.getDocument;
+ f.context.pdfjsLib.getDocument=()=>{opens++;return inner();};
+ f.api.track(f.book);
+ await f.tick();
+ const pdf=f.api.adoptForReader('A');
+ assert.ok(pdf);
+ assert.equal(opens,1);
+ await f.tick();
+ assert.equal(f.calls.length,1);
+ f.api.resumeReader('A');
+ await f.finish();
+ assert.equal(f.api.summary(f.api.track(f.book)).complete,true);
+});
+test('the yield kill flag leaves background preparation on the old schedule',async()=>{
+ const f=fixture({pages:1});
+ f.context.window={BREEZE_PDF_OCR_YIELD:false};
+ f.api.track(f.book);
+ f.api.yieldToReader('A');
+ assert.equal(f.api.adoptForReader('A'),null);
+ await f.finish();
+ assert.equal(f.calls.length,1);
+});
 test('successful same-hash reconnect explicitly restarts missing original work',async()=>{
  const f=fixture({pages:2}),original=f.context.originalGetForBook;
  f.context.originalGetForBook=async()=>null;const job=f.api.track(f.book);await f.finish();assert.equal(job.state,'missing');

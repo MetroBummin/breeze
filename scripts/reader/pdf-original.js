@@ -219,11 +219,22 @@ function releaseOriginalPdfPage(session,pageNumber){
 
 async function openOriginalPdf(book,record,token){
   const alive=()=>token===originalLoadToken && curBook?.id===book.id;
+  const resume=()=>{
+    if(typeof BreezePdfOcrLibrary!=='undefined'&&typeof BreezePdfOcrLibrary.resumeReader==='function')
+      BreezePdfOcrLibrary.resumeReader(book.id);
+  };
+  try{
   await ensurePdfLib();
   if(!alive())return;
-  const data=await record.blob.arrayBuffer();
-  if(!alive())return;
-  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data}).promise;
+  let pdf=typeof BreezePdfOcrLibrary!=='undefined'&&typeof BreezePdfOcrLibrary.adoptForReader==='function'
+    ? BreezePdfOcrLibrary.adoptForReader(book.id) : null;
+  if(!pdf){
+    if(typeof BreezePdfOcrLibrary!=='undefined'&&typeof BreezePdfOcrLibrary.yieldToReader==='function')
+      BreezePdfOcrLibrary.yieldToReader(book.id);
+    const data=await record.blob.arrayBuffer();
+    if(!alive())return;
+    pdf = await pdfjsLib.getDocument({isEvalSupported:false,data}).promise;
+  }
   if(!alive()){ void pdf.destroy(); return; }
   let first;
   try{first=await pdf.getPage(1);}catch(error){void pdf.destroy();if(alive())throw error;return;}
@@ -257,12 +268,16 @@ async function openOriginalPdf(book,record,token){
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
+  /* 첫 화면은 저장한 쪽입니다. 1쪽을 먼저 그리면, 가림막이 걷힌 뒤에 그 쪽으로
+     건너뛰는 모습이 됩니다. 관찰기도 그 스크롤 다음에 켜야 1쪽부터 그리지 않습니다. */
+  const savedPage=await pdfPlaceBeforePaint(session,book);
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,Number(entry.target.getAttribute('data-page')),{prefetch:true}); });
   },{root:readerScroller(),rootMargin:'1300px 0px'});
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
-  await renderOriginalPdfPage(session,session.availablePages?.[0]||1);
+  await renderOriginalPdfPage(session,savedPage||session.availablePages?.[0]||1);
+  }finally{resume();}
 }
 
 async function prepareOriginalPdfPage(session,pageNumber,options){
@@ -662,22 +677,153 @@ function capturePdfAnchor(inset){
   return anchor;
 }
 
+async function pdfOwnPageRatio(session,pageNumber){
+  const element=session.pages[pageNumber-1];
+  if(!element||element.dataset.breezeRatio==='own'||!session.pdf||typeof session.pdf.getPage!=='function')return;
+  const page=await session.pdf.getPage(pageNumber);
+  try{
+    const base=page&&page.getViewport?page.getViewport({scale:1}):null;
+    if(base&&base.width>0&&base.height>0){
+      element.style.aspectRatio=`${base.width}/${base.height}`;
+      element.dataset.breezeRatio='own';
+    }
+  }finally{ if(page&&typeof page.cleanup==='function')page.cleanup(); }
+}
+function noteOriginalAnchorInput(event){
+  const session=originalSession;
+  if(!session||!session.pendingAnchor)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  const target=event&&event.target;
+  if(!box||!target||typeof box.contains!=='function'||!box.contains(target))return;
+  session.anchorMoved=true;
+}
+function pdfWatchAnchorInput(session){
+  if(!session||session.anchorWatch)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  if(!box||typeof box.addEventListener!=='function')return;
+  session.anchorWatch=true;
+  const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
+  box.addEventListener('wheel',moved,{passive:true});
+  box.addEventListener('touchmove',moved,{passive:true});
+  box.addEventListener('keydown',moved);
+}
+function pdfScheduleAnchor(session){
+  if(!session||session.anchorTimer||typeof requestAnimationFrame!=='function')return;
+  session.anchorTimer=requestAnimationFrame(()=>{
+    session.anchorTimer=0;
+    if(originalSession!==session||!session.pendingAnchor)return;
+    if(session.anchorMoved){session.pendingAnchor=null;session.revealFrozen=false;return;}
+    /* 가림막을 걷기로 한 뒤에는 더 이상 옮기지 않습니다. 늦게 맞추면 보이는 점프가 됩니다. */
+    if(session.revealFrozen)return;
+    session.anchorTries=(session.anchorTries||0)+1;
+    if(session.anchorTries>30){session.revealFrozen=true;return;}
+    void restorePdfAnchor(session.pendingAnchor.source,session.pendingAnchor.inset);
+  });
+}
+function pdfInitialPage(book,pageCount){
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const original=position&&position.original;
+  const total=Math.max(1,pageCount||1);
+  if(!original||original.kind!=='pdf')return 0;
+  return Math.max(1,Math.min(total,Number(original.page)||1));
+}
+async function pdfPlaceBeforePaint(session,book){
+  const pageNumber=pdfInitialPage(book,session&&session.pages&&session.pages.length);
+  if(!pageNumber||!session)return 0;
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const source=position&&position.original&&position.original.kind==='pdf'?position.original:null;
+  if(!source||(pageNumber<=1&&(Number(source.y)||0)<=0.02))return pageNumber;
+  for(let index=1;index<=pageNumber;index++){
+    if(originalSession!==session)return pageNumber;
+    try{await pdfOwnPageRatio(session,index);}catch(error){}
+  }
+  if(typeof invalidatePdfPageLayout==='function')invalidatePdfPageLayout(session);
+  const page=session.pages[pageNumber-1];
+  const rect=page&&typeof page.getBoundingClientRect==='function'?page.getBoundingClientRect():null;
+  if(rect&&rect.height>0&&typeof readerScrollTo==='function'&&typeof readerScrollTop==='function'){
+    const inset=typeof topInset==='function'?topInset()+10:0;
+    readerScrollTo(readerScrollTop()+rect.top-inset+Math.max(0,Math.min(1,Number(source.y)||0))*rect.height);
+  }
+  return pageNumber;
+}
+function readerRestorePending(){
+  if(typeof originalSession!=='undefined'&&originalSession&&originalSession.revealFrozen
+      &&!(typeof currentReaderMode!=='undefined'&&currentReaderMode==='text'))return false;
+  if(typeof currentReaderMode!=='undefined'&&currentReaderMode==='text')
+    return typeof textRestoreOwnsPosition==='function'&&textRestoreOwnsPosition();
+  return (typeof pdfRestoreOwnsPosition==='function'&&pdfRestoreOwnsPosition())
+    ||(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition());
+}
+function freezeReaderRestore(){
+  if(typeof currentReaderMode!=='undefined'&&currentReaderMode==='text'){
+    if(typeof textFreezePendingAnchor==='function')textFreezePendingAnchor();
+    return;
+  }
+  if(typeof originalSession!=='undefined'&&originalSession)originalSession.revealFrozen=true;
+}
+function releaseReaderPreparing(wrap){
+  if(!wrap)return;
+  const token=typeof readerModeChangeToken!=='undefined'?readerModeChangeToken:0;
+  const book=typeof curBook!=='undefined'?curBook:null;
+  const started=Date.now();
+  const step=()=>{
+    if(typeof readerModeChangeToken!=='undefined'&&readerModeChangeToken!==token)return;
+    if(typeof curBook!=='undefined'&&curBook!==book)return;
+    if(readerRestorePending()&&Date.now()-started<2000){
+      if(typeof requestAnimationFrame==='function')requestAnimationFrame(step);
+      else freezeReaderRestore();
+      if(readerRestorePending()&&Date.now()-started<2000)return;
+    }
+    if(readerRestorePending())freezeReaderRestore();
+    delete wrap.dataset.readerPreparing;
+    if(typeof wrap.removeAttribute==='function')wrap.removeAttribute('aria-busy');
+  };
+  step();
+}
+function pdfRestoreOwnsPosition(){
+  return currentReaderMode==='original'
+    && !!(originalSession&&originalSession.kind==='pdf'&&originalSession.pendingAnchor&&!originalSession.anchorMoved);
+}
 async function restorePdfAnchor(source,inset,changeToken,isCurrent){
   const session=originalSession;
   if(!currentPdfSession(session))return false;
   const pageNumber=typeof pdfNearestPage==='function'?pdfNearestPage(session,Number(source.page)||1):Math.max(1,Math.min(session.pages.length,Number(source.page)||1));
-  const page=originalSession.pages[pageNumber-1];
+  const page=session.pages[pageNumber-1];
   if(!page) return false;
-  if(session?.readDirection==='horizontal')applyPdfDirection(session,pageNumber);
+  /* 자리 표시는 모두 첫 쪽의 비율입니다. 그 높이로 스크롤하면 다른 비율의 쪽이
+     화면의 다른 쪽이 되고, 그 자리가 읽던 곳으로 적힙니다. 목표 쪽까지의 실제
+     비율을 그린 뒤에만 옮기고, 높이가 생기기 전에는 저장하지 않습니다. */
+  if(!(session.pendingAnchor&&session.pendingAnchor.source===source))session.anchorMoved=false;
+  if(session.anchorMoved){session.pendingAnchor=null;return false;}
+  pdfWatchAnchorInput(session);
+  session.pendingAnchor={source,inset,page:pageNumber};
+  for(let index=1;index<=pageNumber;index++){
+    if(originalSession!==session||session.anchorMoved)break;
+    try{ await pdfOwnPageRatio(session,index); }catch(error){}
+  }
+  if(typeof invalidatePdfPageLayout==='function')invalidatePdfPageLayout(session);
+  const left=originalSession!==session||session.anchorMoved
+    || (changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
+    || (isCurrent&&!isCurrent());
+  if(left){ if(originalSession===session)session.pendingAnchor=null; return false; }
+  if(session.readDirection==='horizontal'&&typeof applyPdfDirection==='function')applyPdfDirection(session,pageNumber);
   /* 화면 좌표(`getBoundingClientRect`)는 벌린 배율을 이미 담고 있고, 읽는 칸의
      `scrollTop` 도 같은 단위입니다. 그래서 이 셈은 배율이 얼마든 그대로입니다. */
-  readerScrollTo(readerScrollTop()+page.getBoundingClientRect().top-inset);
-  await renderOriginalPdfPage(originalSession,pageNumber);
+  const before=page.getBoundingClientRect();
+  if(!(before.height>0)){ pdfScheduleAnchor(session); return true; }
+  readerScrollTo(readerScrollTop()+before.top-inset);
+  await renderOriginalPdfPage(session,pageNumber);
   if(!ownsPdfPage(page,session) || (changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
-      || (isCurrent&&!isCurrent())) return false;
+      || (isCurrent&&!isCurrent()) || session.anchorMoved){
+    if(originalSession===session)session.pendingAnchor=null;
+    return false;
+  }
   const rect=page.getBoundingClientRect();
+  if(!(rect.height>0)||page.dataset.breezeRatio!=='own'){ pdfScheduleAnchor(session); return true; }
   readerScrollTo(readerScrollTop()+rect.top-inset
     +Math.max(0,Math.min(1,Number(source.y)||0))*rect.height);
+  session.pendingAnchor=null;
+  session.anchorTries=0;
   return true;
 }
 

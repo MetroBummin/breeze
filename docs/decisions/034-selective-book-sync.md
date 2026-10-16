@@ -36,11 +36,85 @@ outside the repo before `BOOK_CLOUD` was set to true:
    Access key values stay outside the repo.
 2. Browser PUT and GET are allowed on the bucket from the app origins
    (`https://breeze.io.kr`, Capacitor, and localhost).
-3. `server/sync/book-cloud.sql` is applied.
+3. `server/sync/book-cloud.sql` is applied. `authenticated` can select its own
+   rows. `service_role` can select, insert, update, and delete, and can execute
+   `private.enforce_book_cloud_cap`. This project's default table ACL does not
+   include those grants for `service_role`. The role bypasses RLS, but Postgres
+   still checks GRANT. Without them the function's first read is
+   `permission denied for table book_cloud`, the handler returns 500, and no
+   pending row is stored. The web shelf lists only `ready` rows from that
+   table, so it stays empty while word sync (the signed-in `authenticated`
+   role) continues.
 4. `server/books` is deployed as the `book-cloud` edge function, and `dict` is
    redeployed so account deletion can remove R2 objects. Missing R2 secrets
    return 503 `{ok:false,error:"r2_not_configured",message:"R2 설정이 없습니다."}`
    before auth and before any R2 call.
+
+Browser PUT and GET preflight on `breeze-books` allows `https://breeze.io.kr`,
+`breeze://localhost`, `capacitor://localhost`, and localhost, for GET, PUT, and
+HEAD, with request header `content-type`. `https://www.breeze.io.kr` redirects
+to the apex host before the app runs. The shelf itself is the catalog query
+held in memory. IndexedDB is used only when a ready book is downloaded.
+
+## Background download
+
+A ready book that is not already on this device downloads on its own on every
+platform. The link type, a data-saver flag, and `navigator.storage.estimate`
+do not choose. The native shell does not consult Capacitor Network for this
+decision.
+
+The saved place is the `public.positions` row whose `book_id` is the file
+SHA-256, not the local book id. Turning the link on publishes the place
+already stored on this device, and a later sync publishes it even when the
+reader has not moved again. The other device copies that locator onto its
+local book id before the reader opens. PDF, EPUB, and TXT each wait until
+their own layout can place that anchor. A PDF place is the page and the
+position on that page. Restore gives every page up through that page its own
+aspect ratio before it scrolls, and a page with no height is not saved. An
+EPUB place is the spine, the chapter href, the element, and the character
+offset. Restore resolves the chapter by href, then holds that anchor until
+the element has height and the character can be placed. Once that character
+has been placed, leaving the reader records the place. A chapter above it
+may still reapply the same anchor; that reapply does not keep the cover.
+A TXT place is the paragraph and its offset. Restore holds that paragraph
+until it has height. An image above it holds the paragraph only while that
+image has no layout box yet. An image that already occupies its box does not
+hold the paragraph; if the box later collapses, the image-error path restores
+the place. A cover or a first paragraph shown before layout is not saved over
+the remote place. A hand scroll releases the hold.
+Opening a downloaded book at the start does not count as a newer place, so
+that stamp cannot replace the remote locator or be written back over it. A
+newer place that is no longer the start still wins on the device where it
+was made.
+
+The reader does not paint that start and then jump. A linked book whose
+local place is still the start copies a locator this device already has, or
+waits one short read, before the first paint. If the read is slow, the book
+opens at the local place and a late reply is kept for the next open. It does
+not move the page already on screen. PDF paints the saved page, with that
+page's aspect ratio, instead of painting page 1 first. The preparing surface
+stays up until the saved page, chapter, or paragraph has been scrolled into
+place. If that layout does not arrive in time, the surface is shown where it
+is and is not scrolled afterward.
+
+The first open after a download does not parse the PDF a second time while
+background word recognition is still parsing it. If recognition already holds
+that file, the reader uses it. Recognition then waits until the saved page
+has been drawn. EPUB chapters after the saved chapter are added after that
+chapter can be shown, and saved-word highlights do not hold the chapter
+closed. A cloud file already in memory is hashed and parsed from those bytes.
+`BREEZE_PDF_OCR_YIELD`, `BREEZE_EPUB_PROGRESSIVE`, or
+`BREEZE_EPUB_DEFER_HIGHLIGHTS` set to false restores the previous timing.
+
+The download stays off the sync return path and runs one book at a time.
+Bytes already received are kept in a separate IndexedDB database and the next
+attempt sends `Range`. A book larger than 2 GiB is not fetched. While the
+device is offline the card stays, and the next sync tries again. If storing
+the file fails, including a private-mode quota or an IndexedDB rejection, the
+book is not added and nothing is reported. The "받아서 이어 읽기" card remains,
+and opening it downloads and opens the book. An automatic download does not
+open the reader. The card is the same control it was; it disappears after the
+book is stored.
 
 Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
 as an automatic rollback.

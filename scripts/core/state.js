@@ -298,15 +298,94 @@ function readerFrameAnchor(){
   if(!frameAnchorValid){ frameAnchorValue = captureAnchor(); frameAnchorValid = true; }
   return frameAnchorValue;
 }
+let textPendingAnchor=null,textAnchorMoved=false,textAnchorWatch=false,textAnchorTimer=0,textImageWatch=false,textRevealFrozen=false,textFrozenBook=null;
+function textImagesAbove(el){
+  if(!el||typeof document==='undefined'||typeof document.querySelectorAll!=='function'||typeof el.compareDocumentPosition!=='function')return false;
+  for(const img of document.querySelectorAll('#rtext img')){
+    const image=/** @type {HTMLImageElement} */(img);
+    if(!image||typeof image.complete!=='boolean'||image.complete)continue;
+    if(!(image.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING))continue;
+    /* A lazy image that already keeps its width and height box is in the
+       layout. Waiting for it to decode never starts the fetch when the
+       paragraph is still below the fold, so the saved place cannot land.
+       An image with no box yet can still shift the paragraph. */
+    const box=typeof image.getBoundingClientRect==='function'?image.getBoundingClientRect():null;
+    if(box&&box.height>0)continue;
+    return true;
+  }
+  return false;
+}
+function textFontsLoading(){
+  return typeof document!=='undefined'&&document.fonts&&document.fonts.status==='loading';
+}
+function textWatchAnchorInput(){
+  if(textAnchorWatch)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  if(!box||typeof box.addEventListener!=='function')return;
+  textAnchorWatch=true;
+  const moved=()=>{ if(textPendingAnchor)textAnchorMoved=true; };
+  box.addEventListener('pointerdown',moved);
+  box.addEventListener('wheel',moved,{passive:true});
+  box.addEventListener('touchmove',moved,{passive:true});
+  box.addEventListener('keydown',moved);
+}
+function textWatchImages(){
+  if(textImageWatch||typeof document==='undefined'||typeof document.addEventListener!=='function')return;
+  textImageWatch=true;
+  const retry=event=>{
+    const target=event&&event.target;
+    if(textRevealFrozen)return;
+    if(textPendingAnchor&&target&&target.tagName==='IMG')restoreAnchor(textPendingAnchor);
+  };
+  document.addEventListener('load',retry,true);
+  document.addEventListener('error',retry,true);
+}
+function textScheduleAnchor(){
+  if(textAnchorTimer)return;
+  const retry=()=>{
+    textAnchorTimer=0;
+    if(!textPendingAnchor)return;
+    if(textAnchorMoved){textPendingAnchor=null;textRevealFrozen=false;return;}
+    if(textRevealFrozen)return;
+    restoreAnchor(textPendingAnchor);
+  };
+  if(typeof requestAnimationFrame==='function')textAnchorTimer=requestAnimationFrame(retry);
+  if(typeof document!=='undefined'&&document.fonts&&document.fonts.ready&&typeof document.fonts.ready.then==='function')
+    document.fonts.ready.then(()=>{ if(textPendingAnchor&&!textAnchorTimer)retry(); });
+  textWatchImages();
+}
+function textRestoreOwnsPosition(){
+  return (typeof currentReaderMode==='undefined'||currentReaderMode==='text')&&!!textPendingAnchor&&!textAnchorMoved;
+}
+function textFreezePendingAnchor(){
+  textRevealFrozen=true;
+  textFrozenBook=typeof curBook!=='undefined'&&curBook?curBook.id:null;
+}
 function restoreAnchor(a){
   if(!a || a.pi == null) return false;
+  const bookId=typeof curBook!=='undefined'&&curBook?curBook.id:null;
+  if(textRevealFrozen&&textFrozenBook===bookId&&textPendingAnchor&&textPendingAnchor.pi===a.pi)return true;
+  textRevealFrozen=false;
   const el = document.querySelector(`#rtext [data-pi="${a.pi}"]`);
   if(!el) return false;
+  if(!(textPendingAnchor&&textPendingAnchor.pi===a.pi))textAnchorMoved=false;
+  if(textAnchorMoved){ textPendingAnchor=null; return false; }
+  textWatchAnchorInput();
+  const rect=el.getBoundingClientRect();
+  const waiting=(rect&&rect.height===0)||textImagesAbove(el)||textFontsLoading();
+  const tries=textPendingAnchor&&textPendingAnchor.pi===a.pi?textPendingAnchor.tries||0:0;
+  if(waiting&&(tries<8||textImagesAbove(el)||textFontsLoading())){
+    textPendingAnchor={pi:a.pi,dy:a.dy||0,tries:tries+1};
+    if(tries<8||textFontsLoading())textScheduleAnchor();
+    else textWatchImages();
+    return true;
+  }
   /* 스크롤하는 것은 문서가 아니라 읽는 칸입니다 — scripts/reader/reader-scroll.js */
   // Saved dy is an integer. Use the nearest integer scroll target as well:
   // truncating a fractional target can recapture dy+1 on every restoration.
-  readerScrollTo(Math.round(readerScrollTop() + el.getBoundingClientRect().top - (a.dy||0)));
+  readerScrollTo(Math.round(readerScrollTop() + rect.top - (a.dy||0)));
   updatePfill(true);
+  textPendingAnchor=null;
   return true;
 }
 /* 레이아웃을 바꾸는 동작을 이 함수로 감싸면 보던 문장이 제자리에 남습니다 */
@@ -324,6 +403,9 @@ function saveReadingState(){
       &&homeReturnReadingOwner?.book===curBook&&homeReturnReadingOwner.entry===history.state)return;
   if(!curBook || curBook.transient) return;
   if(typeof readerPositionPending==='function' && readerPositionPending())return;
+  if(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition())return;
+  if(typeof pdfRestoreOwnsPosition==='function'&&pdfRestoreOwnsPosition())return;
+  if(textRestoreOwnsPosition())return;
   if(currentReaderMode === 'original'){
     const original = captureOriginalAnchor();
     const previous = posOf(curBook.id);

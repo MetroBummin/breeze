@@ -248,6 +248,7 @@ function finishGesture(gesture, decision, completed){
 /* ================= 손짓의 한살이 ================= */
 
 function beginGesture(event){
+  if(typeof noteOriginalAnchorInput==='function')noteOriginalAnchorInput(event);
   clearChromeCalloutSelection(event);
   if(typeof readerManipulationConsumes === 'function' && readerManipulationConsumes(event)) return;
   /* 앞의 손짓이 아직 살아 있다면 그것은 끝난 것입니다 — 손가락 하나가

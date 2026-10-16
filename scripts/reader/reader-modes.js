@@ -579,11 +579,17 @@ async function switchReaderMode(mode,options){
         if(!restoreAnchor(resumeTextPosition))readerScrollTo(resumeTextPosition.y||0);
       }else if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
-        if(!element)throw new Error('읽던 문단을 찾지 못했어요.');
-        readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
-        /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
-        element.classList.add('reader-mode-cue-block');
-        readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
+        /* A source-map index can point at a heading the text view does not
+           render. That is not a failed landing: the saved text place is. */
+        if(element){
+          readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
+          /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
+          element.classList.add('reader-mode-cue-block');
+          readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
+        }else{
+          const position = posOf(curBook.id);
+          if(!restoreAnchor(position)) readerScrollTo(position.y||0);
+        }
       }else if(!sentenceFound){
         const position = posOf(curBook.id);
         if(!restoreAnchor(position)) readerScrollTo(position.y||0);
@@ -659,7 +665,10 @@ async function switchReaderMode(mode,options){
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     suspendReaderScrollSave(500);
     originalSession.presented=true;originalSession.lastScrollTop=readerScrollTop();
-    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
+    /* 자리를 옮기기 전에 가림막을 걷으면 책 앞이 보였다가 읽던 곳으로 건너뜁니다.
+       스크롤이 끝난 뒤에만 걷고, 레이아웃이 너무 늦으면 그 자리에서 걷되 다시 옮기지 않습니다. */
+    if(typeof releaseReaderPreparing==='function')releaseReaderPreparing(originalWrap);
+    else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
     return commitPosition();
   }catch(error){
     if(!ownsPosition())return false;

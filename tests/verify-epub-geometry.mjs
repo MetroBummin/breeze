@@ -14,10 +14,10 @@ const context=createContext({
   readerViewHeight:()=>720,
   registerReaderSurface(){},
 });
-new Script(source+'\n;globalThis.__epubGeometryTest={stabiliseEpubViewportCss,waitForEpubAnchorGeometry};',
+new Script(source+'\n;globalThis.__epubGeometryTest={stabiliseEpubViewportCss,waitForEpubAnchorGeometry,epubSpineForSource,reapplyEpubAnchorIfPending,epubRestoreOwnsPosition,restoreEpubAnchor};',
   {filename:'epub-original.js'}).runInContext(context);
 
-const {stabiliseEpubViewportCss,waitForEpubAnchorGeometry}=context.__epubGeometryTest;
+const {stabiliseEpubViewportCss,waitForEpubAnchorGeometry,epubSpineForSource,reapplyEpubAnchorIfPending,epubRestoreOwnsPosition,restoreEpubAnchor}=context.__epubGeometryTest;
 
 {
   const state={viewportDependent:false};
@@ -82,6 +82,84 @@ const {stabiliseEpubViewportCss,waitForEpubAnchorGeometry}=context.__epubGeometr
   assert.equal(restored,true,
     '안 열린 장 하나가 되찾기를 붙들었습니다 — 그 사이 화면은 책 맨 앞에 남습니다');
   assert.deepEqual(order,['target','opened']);
+}
+
+{
+  context.currentReaderMode='original';
+  context.document.querySelectorAll=selector=>selector==='.epub-source-chapter'
+    ? [{dataset:{href:'cover.xhtml',spine:'0'}},{dataset:{href:'ch3.xhtml',spine:'4'}}]
+    : [];
+  const cover={contentDocument:{querySelector:()=>null},getBoundingClientRect:()=>({top:0})};
+  const chapter={contentDocument:{querySelector:()=>null},getBoundingClientRect:()=>({top:4000})};
+  context.originalSession={kind:'epub',frames:[cover,,,,chapter]};
+  assert.equal(epubSpineForSource({kind:'epub',href:'ch3.xhtml',spine:0,element:4,char:12}),4,
+    'href locates the chapter when the saved spine index is stale');
+}
+
+{
+  let top=20;
+  const element={textContent:'abcdefghijklmnopqrstuvwxyz',getBoundingClientRect:()=>({top:0,height:0})};
+  const frame={contentDocument:{querySelector:()=>element},getBoundingClientRect:()=>({top:4000})};
+  context.readerScrollTop=()=>top;
+  context.readerScrollTo=value=>{top=value;};
+  context.domRangeForOffsets=()=>({getClientRects:()=>[{top:240,height:16}]});
+  context.currentReaderMode='original';
+  const source={kind:'epub',href:'ch3.xhtml',spine:4,element:4,char:12};
+  context.originalSession={kind:'epub',frames:[,,,,frame],frameMeta:[{stable:true},{stable:true},{stable:true},{stable:true},{stable:false}],
+    pendingAnchor:{source,inset:40,spine:4,appliedTop:null},anchorMoved:false};
+  reapplyEpubAnchorIfPending(context.originalSession,4);
+  assert.equal(top,20,'unlaid-out chapter does not count as the start of the book');
+  assert.ok(context.originalSession.pendingAnchor,'layout still owns the saved anchor');
+  assert.equal(epubRestoreOwnsPosition(),true,'a local start must not be written while the anchor is pending');
+  element.getBoundingClientRect=()=>({top:180,height:40});
+  context.originalSession.frameMeta[4].stable=true;
+  top=900;
+  reapplyEpubAnchorIfPending(context.originalSession,4);
+  assert.equal(top,900+4000+240-40,'character offset is restored after pagination');
+  assert.equal(context.originalSession.pendingAnchor,null);
+  element.getBoundingClientRect=()=>({top:0,height:0});
+  context.originalSession.pendingAnchor={source,inset:40,spine:4,appliedTop:null};
+  context.originalSession.frameMeta[4].stable=true;
+  top=20;
+  reapplyEpubAnchorIfPending(context.originalSession,5);
+  assert.equal(top,20,'a later chapter does not turn the cover into the saved place');
+  assert.ok(context.originalSession.pendingAnchor,'an unplaced anchor stays until the character has height');
+  assert.equal(epubRestoreOwnsPosition(),true);
+  context.originalSession.pendingAnchor={...context.originalSession.pendingAnchor,appliedTop:120};
+  assert.equal(epubRestoreOwnsPosition(),false,'a placed chapter can be saved while a later reapply still holds the same anchor');
+}
+
+{
+  let top=50;
+  context.readerScrollTop=()=>top;
+  context.readerScrollTo=value=>{top=value;};
+  const element={textContent:'hello',getBoundingClientRect:()=>({top:80,height:20})};
+  const frame={contentDocument:{querySelector:()=>element},getBoundingClientRect:()=>({top:1000})};
+  context.originalSession={kind:'epub',frames:[frame],frameMeta:[{stable:true}],
+    pendingAnchor:{source:{kind:'epub',spine:0,element:1,char:0},inset:10,spine:0,appliedTop:50},anchorMoved:true};
+  context.currentReaderMode='original';
+  reapplyEpubAnchorIfPending(context.originalSession,0);
+  assert.equal(top,50,'a real scroll keeps the reader where their hand is');
+  assert.equal(context.originalSession.pendingAnchor,null);
+  assert.equal(epubRestoreOwnsPosition(),false);
+}
+
+{
+  const state=readFileSync(resolve(root,'scripts/core/state.js'),'utf8');
+  const slice=state.slice(state.indexOf('function saveReadingState(){'),state.indexOf('let appHistoryReady'));
+  const saved={id:'book',p:0.27,mode:'original',original:{kind:'epub',href:'ch3.xhtml',spine:4,element:4,char:12}};
+  const positions={book:{...saved}};
+  const saveContext=createContext({
+    curBook:{id:'book'},positions,
+    epubRestoreOwnsPosition:()=>true,
+    readerPositionPending:()=>false,
+    captureOriginalAnchor(){ throw new Error('captured the cover'); },
+    save(){ throw new Error('wrote the local start'); }
+  });
+  new Script(slice,{filename:'state.js'}).runInContext(saveContext);
+  saveContext.saveReadingState();
+  assert.equal(positions.book.original.spine,4,'pending EPUB layout does not overwrite the remote anchor');
+  assert.equal(positions.book.original.char,12);
 }
 
 console.log('EPUB geometry contract verified');
