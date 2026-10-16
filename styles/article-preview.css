@@ -23,7 +23,7 @@ body:has(#article-preview[open]){overflow:hidden;}
 .ap-art{position:absolute;inset:0;display:grid;place-items:center;color:var(--sentence-glass-muted);}
 .ap-art svg{width:min(46%,190px);height:min(70%,190px);}
 .ap-hero:has(img:not([hidden])) .ap-art{display:none;}
-.ap-content{padding:20px 24px 24px;overflow-wrap:anywhere;}
+.ap-content{padding:20px 24px 0;overflow-wrap:anywhere;}
 .ap-source{margin:0 0 14px;color:var(--sentence-glass-muted);font:600 12px/1.4 var(--ui);
   white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
 .ap-title{font:600 clamp(22px,3.8vw,29px)/1.3 var(--display);color:var(--sentence-glass-ink);margin:0 0 18px;}
@@ -33,7 +33,11 @@ body:has(#article-preview[open]){overflow:hidden;}
   border:0;border-radius:50%;cursor:pointer;}
 .ap-close{display:grid;place-items:center;padding:0;}
 .ap-close svg{display:block;width:var(--am-icon-close);height:var(--am-icon-close);fill:none;stroke:currentColor;stroke-width:var(--am-stroke-close);stroke-linecap:round;stroke-linejoin:round;}
-.ap-actions{flex:none;padding:8px 22px max(16px,env(safe-area-inset-bottom));}
+/* Equal room above and below the button. The sheet is already centered, so
+   only safe area past that outer margin belongs under the button. */
+.ap-actions{--ap-outer-bottom:calc((100dvh - min(720px, calc(100dvh - 32px))) / 2);
+  flex:none;padding:16px 22px 16px;
+  padding-bottom:max(16px,calc(env(safe-area-inset-bottom) - var(--ap-outer-bottom)));}
 .ap-status{margin:0 0 8px;min-height:1.4em;color:var(--sentence-glass-muted);font:400 12px/1.4 var(--ui);}
 .ap-start{width:100%;min-height:48px;border:1px solid var(--sentence-glass-line);border-radius:16px;
   background:var(--sentence-glass-action);
