@@ -1,10 +1,9 @@
 /* Local, resumable PDF preparation. Cards observe this owner; they never wait
    for it. Recognition itself is admitted only by BreezePdfOcr's global lane.
-   The cover control is another view of the same job. It does not raster,
+   The cover label is another view of the same job. It does not raster,
    schedule, or keep a timer of its own. */
 const BreezePdfOcrLibrary=(()=>{
   const jobs=new Map();
-  const RING=2*Math.PI*15;
   let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0,detail=null,detailOpener=null,detailJobId='',detailRelease=null;
   /* Opening the book that just finished downloading must not share the PDF
      parser with background recognition. `BREEZE_PDF_OCR_YIELD=false` keeps
@@ -18,7 +17,7 @@ const BreezePdfOcrLibrary=(()=>{
     return Array.from({length:job.total||0},(_,i)=>i+1).filter(n=>!deleted.has(n));
   };
   function coverMode(){
-    const allowed={ring:1,fill:1,chip:1};
+    // Fill is the chosen cover. Absent, off, and any other value keep the bar.
     try{
       const search=typeof location!=='undefined'&&location&&typeof location.search==='string'?location.search:'';
       const query=/[?&]ocrCover=([a-z]+)/i.exec(search);
@@ -26,8 +25,13 @@ const BreezePdfOcrLibrary=(()=>{
       try{stored=typeof localStorage!=='undefined'&&localStorage?localStorage.getItem('breeze.ocr-cover')||'':'';}
       catch{stored='';}
       const value=String((query&&query[1])||stored||'off').toLowerCase();
-      return allowed[value]?value:'off';
+      return value==='fill'||value==='on'?'fill':'off';
     }catch{return 'off';}
+  }
+  function statusCopy(job){
+    if(job.state==='paused'&&job.notice==='failed')return '글자 스캔 실패';
+    if(job.state==='paused')return '글자 스캔 일시 중지';
+    return '글자 스캔 중';
   }
   function summary(job){
     const pages=activePages(job),done=pages.filter(n=>job.done.has(n)).length;
@@ -44,16 +48,14 @@ const BreezePdfOcrLibrary=(()=>{
     node.setAttribute('aria-label',text.textContent);
   }
   function paintCover(node,job,s){
-    const button=node.querySelector('button'),count=node.querySelector('.book-ocr-count');
-    const ring=node.querySelector('.value'),fill=node.querySelector('.book-ocr-fill i');
-    if(!button||!count)return;
+    const button=node.querySelector('button'),label=node.querySelector('.book-ocr-label'),fill=node.querySelector('.book-ocr-fill i');
+    if(!button||!label||!fill)return;
     const ratio=s.total?s.done/s.total:0;
-    count.textContent=s.total?s.done+'/'+s.total:'…';
-    if(ring){ring.style.strokeDasharray=String(RING);ring.style.strokeDashoffset=String(RING*(1-ratio));}
-    if(fill)fill.style.width=Math.round(ratio*100)+'%';
-    node.dataset.ocrState=job.state==='paused'?'paused':'active';
-    const label=(job.state==='paused'?'글자 인식 일시 중지':'글자 인식 중')+(s.total?' '+s.done+'/'+s.total+'쪽':'');
-    button.setAttribute('aria-label',label+' 자세히');
+    label.textContent=statusCopy(job);
+    fill.style.width=Math.round(ratio*100)+'%';
+    node.dataset.ocrState=job.state==='paused'?(job.notice==='failed'?'failed':'paused'):'active';
+    const count=s.total?s.done+'/'+s.total+'쪽':'';
+    button.setAttribute('aria-label',statusCopy(job)+(count?' '+count:'')+' 자세히');
   }
   function apply(node,job){
     const s=summary(job),mode=coverMode(),surface=node.dataset.ocrSurface||'bar';
@@ -82,7 +84,7 @@ const BreezePdfOcrLibrary=(()=>{
   function fillDetail(job){
     if(!detail||detail.hidden||detailJobId!==job.id)return;
     const s=summary(job),paused=job.state==='paused';
-    detail.querySelector('.book-ocr-detail-status').textContent=paused?'글자 인식 일시 중지':'글자 인식 중';
+    detail.querySelector('.book-ocr-detail-status').textContent=statusCopy(job);
     detail.querySelector('.book-ocr-detail-count').textContent=s.total?s.done+'/'+s.total+'쪽':'쪽수를 확인하는 중';
     detail.querySelector('.book-ocr-detail-retry').hidden=!paused;
   }
@@ -114,7 +116,7 @@ const BreezePdfOcrLibrary=(()=>{
       detail.querySelector('.book-ocr-detail-close').onclick=()=>closeDetail(true);
       detail.querySelector('.book-ocr-detail-retry').onclick=()=>{
         const latest=jobs.get(detailJobId);if(!latest)return;
-        latest.state='queued';paint(latest);schedule();
+        latest.state='queued';latest.notice='';paint(latest);schedule();
       };
       document.body.append(detail);
     }
@@ -207,11 +209,12 @@ const BreezePdfOcrLibrary=(()=>{
       const result=await BreezePdfOcr.background(book,n,pdf,()=>current(job));
       if(!current(job))return;
       if(result==='done')job.done.add(n);
-      else if(['failed','storage','blocked'].includes(result))job.state='paused';
+      else if(result==='failed'){job.state='paused';job.notice='failed';}
+      else if(result==='storage'||result==='blocked'){job.state='paused';job.notice='paused';}
       paint(job);
       if(summary(job).complete||job.state==='paused')await release();
     }catch{
-      if(!(yielded&&job.id===yielded)&&current(job)){job.state='paused';paint(job);}
+      if(!(yielded&&job.id===yielded)&&current(job)){job.state='paused';job.notice='failed';paint(job);}
       await release();
     }finally{busy=false;if(!yielded&&[...jobs.values()].some(j=>current(j)&&j.state==='queued'&&!summary(j).complete))schedule();}
   }
@@ -219,23 +222,17 @@ const BreezePdfOcrLibrary=(()=>{
     if(book?.kind!=='pdf'||!hash(book)||!BreezePdfOcr.available())return null;
     let job=jobs.get(book.id);
     if(job&&job.hash!==hash(book)){forget(book.id);job=null;}
-    if(!job){job={id:book.id,hash:hash(book),done:new Set(),total:0,state:'queued'};jobs.set(book.id,job);}
-    if(restart&&['missing','paused'].includes(job.state))job.state='queued';
+    if(!job){job={id:book.id,hash:hash(book),done:new Set(),total:0,state:'queued',notice:''};jobs.set(book.id,job);}
+    if(restart&&['missing','paused'].includes(job.state)){job.state='queued';job.notice='';}
     schedule();return job;
   }
   function coverButton(book){
     const button=document.createElement('button');
     button.type='button';button.className='book-ocr-hit';
-    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-    svg.setAttribute('viewBox','0 0 36 36');svg.setAttribute('class','book-ocr-ring');svg.setAttribute('aria-hidden','true');
-    const track=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    track.setAttribute('class','track');track.setAttribute('cx','18');track.setAttribute('cy','18');track.setAttribute('r','15');
-    const value=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    value.setAttribute('class','value');value.setAttribute('cx','18');value.setAttribute('cy','18');value.setAttribute('r','15');
-    value.setAttribute('stroke-dasharray',String(RING));value.setAttribute('stroke-dashoffset',String(RING));
-    svg.append(track,value);
-    const count=document.createElement('span');count.className='book-ocr-count';
-    button.append(svg,count);
+    const label=document.createElement('span');label.className='book-ocr-label';
+    const fill=document.createElement('span');fill.className='book-ocr-fill';fill.setAttribute('aria-hidden','true');
+    fill.append(document.createElement('i'));
+    button.append(label,fill);
     const stop=event=>event.stopPropagation();
     for(const type of ['pointerdown','mousedown','touchstart','click'])button.addEventListener(type,stop,type==='touchstart'?{passive:true}:undefined);
     button.addEventListener('click',()=>{
@@ -252,9 +249,7 @@ const BreezePdfOcrLibrary=(()=>{
     existing?.remove();
     const node=document.createElement('div');
     node.className='book-ocr-cover';node.dataset.ocrBook=book.id;node.dataset.ocrSurface='cover';node.dataset.ocrVariant=mode;
-    const fill=document.createElement('span');fill.className='book-ocr-fill';fill.setAttribute('aria-hidden','true');
-    fill.append(document.createElement('i'));
-    node.append(fill,coverButton(book));card.append(node);
+    node.append(coverButton(book));card.append(node);
     return node;
   }
   function mount(tile,book){
@@ -264,7 +259,7 @@ const BreezePdfOcrLibrary=(()=>{
       bar=document.createElement('div');bar.className='book-ocr-progress';bar.dataset.ocrBook=book.id;bar.dataset.ocrSurface='bar';
       const text=document.createElement('span'),progress=document.createElement('progress'),retry=document.createElement('button');
       progress.setAttribute('aria-label','글자 인식 진행');retry.type='button';retry.textContent='다시 시도';
-      retry.onclick=event=>{event.stopPropagation();const latest=jobs.get(book.id);if(latest){latest.state='queued';paint(latest);schedule();}};
+      retry.onclick=event=>{event.stopPropagation();const latest=jobs.get(book.id);if(latest){latest.state='queued';latest.notice='';paint(latest);schedule();}};
       bar.append(text,progress,retry);tile.append(bar);
     }
     const cover=ensureCover(tile,book);

@@ -90,15 +90,20 @@ test('the yield kill flag leaves background preparation on the old schedule',asy
  await f.finish();
  assert.equal(f.calls.length,1);
 });
-test('cover flag stays off unless ring, fill, or chip is selected',()=>{
+test('cover kill switch stays off unless fill is selected',()=>{
  const f=fixture();
  assert.equal(f.api.coverMode(),'off');
- f.context.location={search:'?ocrCover=RING'};
- f.context.localStorage={getItem:()=>'chip'};
- assert.equal(f.api.coverMode(),'ring');
+ f.context.location={search:'?ocrCover=FILL'};
+ f.context.localStorage={getItem:()=>'off'};
+ assert.equal(f.api.coverMode(),'fill');
+ f.context.location={search:'?ocrCover=on'};
+ assert.equal(f.api.coverMode(),'fill');
  f.context.location={search:''};
- assert.equal(f.api.coverMode(),'chip');
- f.context.localStorage.getItem=()=>'shimmer';
+ f.context.localStorage.getItem=()=>'fill';
+ assert.equal(f.api.coverMode(),'fill');
+ f.context.localStorage.getItem=()=>'ring';
+ assert.equal(f.api.coverMode(),'off');
+ f.context.localStorage.getItem=()=>'chip';
  assert.equal(f.api.coverMode(),'off');
  f.context.localStorage.getItem=()=>{throw new Error('private');};
  assert.equal(f.api.coverMode(),'off');

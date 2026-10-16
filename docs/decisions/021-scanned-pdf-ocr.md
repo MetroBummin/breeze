@@ -153,15 +153,16 @@ failures pause with a retry action, not false completion. The former global
 Only metadata/recognized text persists; raster images and live reader maps
 remain bounded and released. Device-local state never enters book sync.
 
-### Cover progress proposal (2026-10-16)
+### Cover progress (2026-10-16)
 
-A flagged alternative draws that same preparation state on the book cover.
-`localStorage['breeze.ocr-cover']` or the `ocrCover` query selects `ring`,
-`fill`, or `chip`. The query wins. Anything else, including an absent value,
-stays `off`. Off keeps the approved bookshelf label and thin bar. A cover
-mode hides that bar and does not change card size. The control is a 44px
-target on the cover; a tap opens a small opaque detail with the page count,
-the same retry, and a 44px close. Escape and an outside tap close it. It
-updates only when the library already paints a job: no animation loop, no
-second raster, and no change to the recognition lane. This proposal is not
-the approved default.
+Fill is the chosen cover treatment. `localStorage['breeze.ocr-cover']` or the
+`ocrCover` query set to `fill` or `on` draws it. The query wins. Absent, `off`,
+and any other value keep the approved under-card label and thin bar. That is
+the kill switch, and it remains the default.
+
+The cover shows a small label above a thin bar: `글자 스캔 중`, `글자 스캔 일시 중지`,
+or `글자 스캔 실패`. The page count is not drawn on the cover. A 44px target
+opens a small opaque detail with the count, the same retry, and a 44px close.
+Escape and an outside tap close it. The label updates only when the library
+already paints a job: no animation loop, no second raster, and no change to
+the recognition lane. The card size stays the same.
