@@ -17,11 +17,21 @@ declare var qrcode: any;
 interface Window {
   supabase?: any;
   BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean; RSS_CATALOG_FEED_IDS?: number[]; BOOK_CLOUD?: boolean };
+  /* Kill switches read at runtime. Absent means the new timing stays on. */
+  BREEZE_PDF_OCR_YIELD?: boolean;
+  BREEZE_EPUB_PROGRESSIVE?: boolean;
+  BREEZE_EPUB_DEFER_HIGHLIGHTS?: boolean;
   Capacitor?: any;
   breezeExportDict?: () => Promise<any>;
   Readability?: any;
   breezeFrameSummary?: (...args: any[]) => any;
   showSaveFilePicker?: (options?: any) => Promise<any>;
+}
+
+/* Importers hash and parse bytes already in memory. The File is still the
+   import handle; these bytes are that same buffer, not a second copy. */
+interface File {
+  breezeBytes?: Uint8Array;
 }
 
 /* ── 문단 배열에 얹혀 다니는 것들 ──

@@ -359,8 +359,9 @@ function epubInitialSpine(book,session){
   const href=String(source.href||'');
   if(href&&typeof document!=='undefined'&&typeof document.querySelectorAll==='function'){
     for(const section of document.querySelectorAll('.epub-source-chapter')){
-      if(!section.dataset||section.dataset.href!==href)continue;
-      const index=Number(section.dataset.spine);
+      const node=/** @type {HTMLElement} */(section);
+      if(!node.dataset||node.dataset.href!==href)continue;
+      const index=Number(node.dataset.spine);
       if(session.frames[index])return index;
     }
   }
@@ -563,7 +564,10 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
     for(const key of new Set([...cached.snapshot.keys(),...snapshot.keys()])){
       const before=cached.snapshot.get(key),after=snapshot.get(key);
       if(!before||!after||before.shape!==after.shape){
-        if(cached.byKey.has(key)||cached.candidates.has(before?.first)||cached.candidates.has(after?.first)){
+        /* An empty vocabulary pass does not walk the chapter. The next saved
+           word is not in that empty candidate set, so the chapter has to be
+           walked once words exist again. */
+        if(cached.unscanned||cached.byKey.has(key)||cached.candidates.has(before?.first)||cached.candidates.has(after?.first)){
           rebuild=true;break;
         }
       }else if(before.bucket!==after.bucket)changed.push({key,before,after});
@@ -590,7 +594,7 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
   if((!snapshot||snapshot.size===0)&&!(starts&&starts.size)){
     const highlights=ranges.map(()=>new view.Highlight());
     highlights.forEach((highlight,index)=>view.CSS.highlights.set(`breeze-saved-${index+1}`,highlight));
-    epubSavedHighlightCache.set(doc,{snapshot,byKey,byNode,candidates,highlights});
+    epubSavedHighlightCache.set(doc,{snapshot,byKey,byNode,candidates,highlights,unscanned:true});
     return;
   }
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
@@ -981,8 +985,9 @@ function epubSpineForSource(source){
   const href=String(source&&source.href||'');
   if(href&&typeof document!=='undefined'&&typeof document.querySelectorAll==='function'){
     for(const section of document.querySelectorAll('.epub-source-chapter')){
-      if(!section.dataset||section.dataset.href!==href)continue;
-      const index=Number(section.dataset.spine);
+      const node=/** @type {HTMLElement} */(section);
+      if(!node.dataset||node.dataset.href!==href)continue;
+      const index=Number(node.dataset.spine);
       if(frames[index])return index;
     }
   }
@@ -1027,8 +1032,12 @@ function epubWatchAnchorInput(session){
   box.addEventListener('keydown',moved);
 }
 function epubRestoreOwnsPosition(){
+  const pending=originalSession&&originalSession.pendingAnchor;
+  /* A placed chapter may still be reapplied when a chapter above it grows.
+     That reapply is the same anchor. Only an anchor that has not been placed
+     is still the cover, and only that one must not be saved. */
   return currentReaderMode==='original'
-    && !!(originalSession&&originalSession.kind==='epub'&&originalSession.pendingAnchor&&!originalSession.anchorMoved);
+    && !!(originalSession&&originalSession.kind==='epub'&&pending&&!originalSession.anchorMoved&&pending.appliedTop==null);
 }
 
 async function restoreEpubAnchor(source,inset,_changeToken,isCurrent){

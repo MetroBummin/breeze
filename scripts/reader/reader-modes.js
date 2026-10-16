@@ -579,11 +579,17 @@ async function switchReaderMode(mode,options){
         if(!restoreAnchor(resumeTextPosition))readerScrollTo(resumeTextPosition.y||0);
       }else if(!sentenceFound && targetPi!=null){
         const element = document.querySelector(`#rtext [data-pi="${targetPi}"]`);
-        if(!element)throw new Error('읽던 문단을 찾지 못했어요.');
-        readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
-        /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
-        element.classList.add('reader-mode-cue-block');
-        readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
+        /* A source-map index can point at a heading the text view does not
+           render. That is not a failed landing: the saved text place is. */
+        if(element){
+          readerScrollTo(readerScrollTop()+element.getBoundingClientRect().top-(topInset()+readerViewHeight()*.24));
+          /* PDF 문장 검색이 실패해도 sourceMap이 가리킨 문단은 확실한 목적지입니다. */
+          element.classList.add('reader-mode-cue-block');
+          readerModeCueTimer=setTimeout(clearReaderModeCue,6000);
+        }else{
+          const position = posOf(curBook.id);
+          if(!restoreAnchor(position)) readerScrollTo(position.y||0);
+        }
       }else if(!sentenceFound){
         const position = posOf(curBook.id);
         if(!restoreAnchor(position)) readerScrollTo(position.y||0);
@@ -598,6 +604,7 @@ async function switchReaderMode(mode,options){
     }catch(error){
       if(ownsPosition()){
         console.error(error);
+        readerPositionRestoration=null;
         releaseReaderPillProgress(true);
         toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
       }

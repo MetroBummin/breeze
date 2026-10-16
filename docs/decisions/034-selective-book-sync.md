@@ -73,10 +73,15 @@ position on that page. Restore gives every page up through that page its own
 aspect ratio before it scrolls, and a page with no height is not saved. An
 EPUB place is the spine, the chapter href, the element, and the character
 offset. Restore resolves the chapter by href, then holds that anchor until
-the element has height and the character can be placed. A TXT place is the
-paragraph and its offset. Restore holds that paragraph until it has height
-and images above it have finished. A cover or a first paragraph shown before
-layout is not saved over the remote place. A hand scroll releases the hold.
+the element has height and the character can be placed. Once that character
+has been placed, leaving the reader records the place. A chapter above it
+may still reapply the same anchor; that reapply does not keep the cover.
+A TXT place is the paragraph and its offset. Restore holds that paragraph
+until it has height. An image above it holds the paragraph only while that
+image has no layout box yet. An image that already occupies its box does not
+hold the paragraph; if the box later collapses, the image-error path restores
+the place. A cover or a first paragraph shown before layout is not saved over
+the remote place. A hand scroll releases the hold.
 Opening a downloaded book at the start does not count as a newer place, so
 that stamp cannot replace the remote locator or be written back over it. A
 newer place that is no longer the start still wins on the device where it

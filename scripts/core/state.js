@@ -302,8 +302,16 @@ let textPendingAnchor=null,textAnchorMoved=false,textAnchorWatch=false,textAncho
 function textImagesAbove(el){
   if(!el||typeof document==='undefined'||typeof document.querySelectorAll!=='function'||typeof el.compareDocumentPosition!=='function')return false;
   for(const img of document.querySelectorAll('#rtext img')){
-    if(!img||img.complete)continue;
-    if(img.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING)return true;
+    const image=/** @type {HTMLImageElement} */(img);
+    if(!image||typeof image.complete!=='boolean'||image.complete)continue;
+    if(!(image.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING))continue;
+    /* A lazy image that already keeps its width and height box is in the
+       layout. Waiting for it to decode never starts the fetch when the
+       paragraph is still below the fold, so the saved place cannot land.
+       An image with no box yet can still shift the paragraph. */
+    const box=typeof image.getBoundingClientRect==='function'?image.getBoundingClientRect():null;
+    if(box&&box.height>0)continue;
+    return true;
   }
   return false;
 }

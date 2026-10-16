@@ -115,6 +115,13 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(top,Math.round(15+480-12),'the saved paragraph is placed after the image loads');
   assert.equal(context.textRestoreOwnsPosition(),false);
   assert.equal(positions.book.pi,18);
+  image.complete=false;
+  image.getBoundingClientRect=()=>({top:-200,height:100});
+  paragraph.getBoundingClientRect=()=>({top:480,height:36});
+  top=15;
+  assert.equal(context.restoreAnchor({pi:18,dy:12}),true);
+  assert.equal(top,Math.round(15+480-12),'a reserved image box does not hold the saved paragraph');
+  assert.equal(context.textRestoreOwnsPosition(),false);
 }
 
 {

@@ -418,6 +418,9 @@ async function forgetBookCloud(book){
   bookCloudWriteOutbox(userId,box);
   return false;
 }
+/* `navigator.onLine` can change during an awaited download. A direct second
+   comparison in the same turn is narrowed to the literal `true` by checkJs. */
+function bookCloudOffline(){return navigator.onLine===false;}
 function bookCloudStorageFault(error){
   if(!error)return false;
   const name=String(error.name||'');
@@ -454,7 +457,7 @@ async function bookCloudAutoPull(session,epoch){
   if(navigator.onLine===false)return;
   for(const row of bookCloudLibraryRows()){
     if(epoch!==bookCloudPullEpoch||!bookCloudCurrent(session))return;
-    if(navigator.onLine===false)return;
+    if(bookCloudOffline())return;
     if(Number(row.size)>BOOK_CLOUD_BYTE_CAP)continue;
     await bookCloudRunJob(row.bookId,()=>bookCloudImportRemote(row,session,{auto:true}));
     if(epoch!==bookCloudPullEpoch)return;

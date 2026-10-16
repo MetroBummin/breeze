@@ -125,6 +125,8 @@ const {stabiliseEpubViewportCss,waitForEpubAnchorGeometry,epubSpineForSource,rea
   assert.equal(top,20,'a later chapter does not turn the cover into the saved place');
   assert.ok(context.originalSession.pendingAnchor,'an unplaced anchor stays until the character has height');
   assert.equal(epubRestoreOwnsPosition(),true);
+  context.originalSession.pendingAnchor={...context.originalSession.pendingAnchor,appliedTop:120};
+  assert.equal(epubRestoreOwnsPosition(),false,'a placed chapter can be saved while a later reapply still holds the same anchor');
 }
 
 {
