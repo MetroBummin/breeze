@@ -412,3 +412,149 @@ test('each account keeps its own outbox',()=>{
   assert.equal(JSON.stringify(other.uploads),'{}');
   assert.ok(context.bookCloudReadOutbox(user).uploads[hash]);
 });
+
+function activityDocument(context,cards){
+  const element=tag=>{
+    const node={
+      tag,className:'',children:[],
+      attrs:new Map(),
+      dataset:{},
+      style:{
+        values:new Map(),
+        setProperty(name,value){this.values.set(name,String(value));},
+        getPropertyValue(name){return this.values.get(name)||'';}
+      },
+      setAttribute(name,value){this.attrs.set(name,String(value));},
+      getAttribute(name){return this.attrs.has(name)?this.attrs.get(name):null;},
+      removeAttribute(name){this.attrs.delete(name);},
+      appendChild(child){this.children.push(child);return child;},
+      remove(){for(const card of cards){const index=card.children.indexOf(node);if(index>=0)card.children.splice(index,1);}}
+    };
+    Object.defineProperty(node,'textContent',{get(){return this._text||'';},set(value){this._text=String(value);}});
+    Object.defineProperty(node,'innerHTML',{set(value){
+      node.children=[];
+      const html=String(value);
+      if(html.includes('card-activity-label')){
+        const label=element('span');
+        label.className='card-activity-label';
+        node.children.push(label);
+      }
+      if(html.includes('class="getbtn"')){
+        for(const name of ['author','bt','getbtn']){
+          const child=element(name==='getbtn'?'button':'div');
+          child.className=name;
+          node.children.push(child);
+        }
+      }
+    }});
+    const classes=new Set(String(node.className||'').split(/\s+/).filter(Boolean));
+    node.classList={add:name=>classes.add(name),remove:name=>classes.delete(name),contains:name=>classes.has(name)};
+    node.querySelector=sel=>{
+      const want=sel.includes('card-activity-label')?'card-activity-label':sel.includes('card-activity')?'card-activity':sel.startsWith('.')?sel.slice(1):sel;
+      const walk=nodes=>{
+        for(const child of nodes){
+          if(String(child.className).split(/\s+/).includes(want))return child;
+          const found=walk(child.children||[]);
+          if(found)return found;
+        }
+        return null;
+      };
+      return walk(node.children);
+    };
+    return node;
+  };
+  for(const card of cards){
+    card.children=[];
+    card.dataset=card.dataset||{};
+    const classes=new Set(String(card.className||'').split(/\s+/).filter(Boolean));
+    card.classList={add:name=>classes.add(name),remove:name=>classes.delete(name),contains:name=>classes.has(name)};
+    card.appendChild=child=>{card.children.push(child);return child;};
+    card.querySelector=sel=>{
+      if(String(sel).includes('card-activity-label'))return null;
+      if(String(sel).includes('card-activity'))return card.children.find(child=>String(child.className).split(/\s+/).includes('card-activity'))||null;
+      const want=sel.startsWith('.')?sel.slice(1):sel;
+      return card.children.find(child=>String(child.className).split(/\s+/).includes(want))||null;
+    };
+  }
+  context.document={
+    createElement:tag=>element(tag),
+    querySelectorAll:sel=>sel==='.bookcard.cloud[data-book-cloud]'?cards:[],
+    querySelector:()=>null,
+    getElementById:()=>null
+  };
+  return element;
+}
+
+test('card activity stays off and does not schedule a frame unless a variant is chosen',()=>{
+  const {context}=boot({flag:true});
+  let frames=0;
+  context.requestAnimationFrame=()=>{frames++;return 1;};
+  context.bookCloudNoteActivity(hash,42000000,100000000);
+  assert.equal(context.bookCloudActivityVariant(),'');
+  assert.equal(frames,0);
+  assert.equal(context.bookCloudActivity.size,0);
+});
+
+test('one frame paints the chosen variant and a recreated card keeps it',async()=>{
+  const {context}=boot({flag:true});
+  const card={className:'bookcard cloud',dataset:{bookCloud:hash}};
+  const cards=[card];
+  activityDocument(context,cards);
+  let frame=null;
+  context.requestAnimationFrame=fn=>{assert.equal(frame,null);frame=fn;return 1;};
+  context.window.BREEZE_CARD_ACTIVITY='ring';
+  context.bookCloudNoteActivity(hash,42000000,100000000);
+  context.bookCloudNoteActivity(hash,42000000,100000000);
+  assert.equal(typeof frame,'function');
+  frame();
+  frame=null;
+  const node=card.querySelector(':scope > .card-activity');
+  assert.ok(node);
+  assert.equal(card.classList.contains('is-receiving'),true);
+  assert.equal(card.dataset.activity,'ring');
+  assert.equal(node.style.getPropertyValue('--p'),'0.42');
+  assert.equal(node.getAttribute('aria-label'),'받는 중 42%');
+  assert.equal(node.querySelector('.card-activity-label').textContent,'42%');
+  context.window.BREEZE_CARD_ACTIVITY='wash';
+  context.bookCloudNoteActivity(hash,42000000,100000000);
+  frame();
+  frame=null;
+  assert.equal(node.querySelector('.card-activity-label').textContent,'42% · 40MB');
+  context.window.BREEZE_CARD_ACTIVITY='edge';
+  context.bookCloudNoteActivity(hash,42000000,100000000);
+  frame();
+  frame=null;
+  assert.equal(node.querySelector('.card-activity-label').textContent,'40MB / 95MB');
+  context.window.BREEZE_CARD_ACTIVITY='ring';
+  context.bookCloudNoteActivity(hash,10,0);
+  frame();
+  frame=null;
+  assert.equal(node.getAttribute('aria-label'),'받는 중');
+  assert.equal(node.getAttribute('data-unknown'),'1');
+  assert.equal(node.style.getPropertyValue('--p'),'0');
+  context.el=(tag,cls)=>{const node=context.document.createElement(tag);node.className=cls||'';return node;};
+  context.fillCard=(host,map)=>{for(const [sel,text] of Object.entries(map)){const child=host.querySelector(sel);child.textContent=text;}};
+  const rebuilt=context.bookCloudCard({bookId:hash,title:'오디세이아',author:'호메로스'});
+  cards.push(rebuilt);
+  assert.equal(rebuilt.dataset.bookCloud,hash);
+  await new Promise(resolve=>queueMicrotask(resolve));
+  const again=rebuilt.querySelector('.card-activity');
+  assert.equal(again.querySelector('.card-activity-label').textContent,'받는 중');
+  context.bookCloudClearActivity(hash);
+  assert.equal(rebuilt.querySelector('.card-activity'),null);
+  assert.equal(rebuilt.classList.contains('is-receiving'),false);
+  assert.equal(context.bookCloudActivity.size,0);
+});
+
+test('download progress is reported without checkpointing more often than 1 MiB',async()=>{
+  const {context}=boot({flag:true});
+  const chunks=[new Uint8Array(600000),new Uint8Array(600000)];
+  let index=0;
+  const response={body:{getReader:()=>({read:async()=>index<chunks.length?{done:false,value:chunks[index++]}:{done:true}})}};
+  const marks=[];
+  const checks=[];
+  const bytes=await context.bookCloudReadBody(response,new Uint8Array(100),async merged=>{checks.push(merged.byteLength);return true;},total=>marks.push(total));
+  assert.deepEqual(marks,[600100,1200100]);
+  assert.deepEqual(checks,[1200100]);
+  assert.equal(bytes.byteLength,1200100);
+});

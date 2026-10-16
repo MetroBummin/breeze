@@ -11,6 +11,8 @@ var bookCloudPullTask=null;
 var bookCloudPullAgain=false;
 var bookCloudPullEpoch=0;
 var bookCloudJobs=new Map();
+var bookCloudActivity=new Map();
+var bookCloudActivityFrame=0;
 var bookCloudPartsPromise=null;
 function bookCloudResetNotes(){
   const note=document.getElementById('ed-del-note');
@@ -22,7 +24,7 @@ var bookCloudRevealQuiet=null;
 function resetBookCloudSession(){
   bookCloudPullEpoch++;bookCloudPullAgain=false;
   clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudCatalog=[];bookCloudHeads={};
-  bookCloudRevealQuiet=null;
+  bookCloudRevealQuiet=null;bookCloudActivity.clear();
 }
 function bookCloudHash(book){
   const hash=String(book&&(book.sourceHash||(book.original&&book.original.hash))||'');
@@ -539,16 +541,104 @@ async function bookCloudWritePart(key,bytes){
 async function bookCloudDropPart(key){
   try{await bookCloudPartOp('readwrite',store=>{store.delete(key);});}catch{}
 }
-async function bookCloudReadBody(response,prefix,checkpoint){
+function bookCloudActivityVariant(){
+  if(typeof window==='undefined')return '';
+  const value=window.BREEZE_CARD_ACTIVITY;
+  return value==='ring'||value==='wash'||value==='edge'?value:'';
+}
+function bookCloudFormatBytes(bytes){
+  const n=Math.max(0,Number(bytes)||0);
+  const text=value=>value>=10?String(Math.round(value)):String(Math.round(value*10)/10);
+  if(n>=1073741824)return text(n/1073741824)+'GB';
+  if(n>=1048576)return text(n/1048576)+'MB';
+  if(n>=1024)return Math.round(n/1024)+'KB';
+  return Math.round(n)+'B';
+}
+function bookCloudActivityCopy(state){
+  if(!state.total)return {pct:0,label:'받는 중',aria:'받는 중'};
+  const pct=Math.round(state.ratio*100);
+  const aria='받는 중 '+pct+'%';
+  if(state.variant==='ring')return {pct,label:pct+'%',aria};
+  if(state.variant==='edge')return {pct,label:bookCloudFormatBytes(state.received)+' / '+bookCloudFormatBytes(state.total),aria};
+  return {pct,label:pct+'% · '+bookCloudFormatBytes(state.received),aria};
+}
+function bookCloudScheduleActivity(){
+  if(bookCloudActivityFrame)return;
+  const pump=()=>{bookCloudActivityFrame=0;bookCloudPaintActivity();};
+  if(typeof requestAnimationFrame==='function')bookCloudActivityFrame=requestAnimationFrame(pump)||1;
+  else bookCloudActivityFrame=setTimeout(pump,16);
+}
+function bookCloudNoteActivity(bookId,received,total){
+  const variant=bookCloudActivityVariant();
+  if(!variant||!bookId){
+    if(bookCloudActivity.size){bookCloudActivity.clear();bookCloudPaintActivity();}
+    return;
+  }
+  received=Math.max(0,Number(received)||0);
+  total=Math.max(0,Number(total)||0);
+  if(total&&received>total)received=total;
+  const ratio=total?Math.round(received/total*1000)/1000:0;
+  const prev=bookCloudActivity.get(bookId);
+  if(prev&&prev.received===received&&prev.total===total&&prev.ratio===ratio&&prev.variant===variant)return;
+  bookCloudActivity.set(bookId,{received,total,ratio,variant});
+  bookCloudScheduleActivity();
+}
+function bookCloudClearActivity(bookId){
+  if(bookId)bookCloudActivity.delete(bookId);
+  bookCloudPaintActivity();
+}
+function bookCloudActivityNode(){
+  const node=document.createElement('div');
+  node.className='card-activity';
+  node.setAttribute('role','progressbar');
+  node.setAttribute('aria-valuemin','0');
+  node.setAttribute('aria-valuemax','100');
+  node.innerHTML='<svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="14" pathLength="100"></circle><circle class="value" cx="18" cy="18" r="14" pathLength="100"></circle></svg><span class="card-activity-wash"></span><span class="card-activity-edge"></span><span class="card-activity-label"></span>';
+  return node;
+}
+function bookCloudPaintActivity(){
+  if(!bookCloudActivityVariant())bookCloudActivity.clear();
+  if(typeof document==='undefined'||typeof document.querySelectorAll!=='function')return;
+  const cards=document.querySelectorAll('.bookcard.cloud[data-book-cloud]');
+  for(const card of cards){
+    const state=bookCloudActivity.get(card.dataset.bookCloud);
+    let node=card.querySelector(':scope > .card-activity');
+    if(!state){
+      if(node)node.remove();
+      card.classList.remove('is-receiving');
+      delete card.dataset.activity;
+      continue;
+    }
+    const copy=bookCloudActivityCopy(state);
+    card.classList.add('is-receiving');
+    card.dataset.activity=state.variant;
+    if(!node){node=bookCloudActivityNode();card.appendChild(node);}
+    const ratio=String(state.ratio);
+    if(node.style.getPropertyValue('--p')!==ratio)node.style.setProperty('--p',ratio);
+    node.dataset.kind='download';
+    node.dataset.variant=state.variant;
+    if(state.total)node.removeAttribute('data-unknown');
+    else node.setAttribute('data-unknown','1');
+    if(node.getAttribute('aria-valuenow')!==String(copy.pct))node.setAttribute('aria-valuenow',String(copy.pct));
+    if(node.getAttribute('aria-label')!==copy.aria)node.setAttribute('aria-label',copy.aria);
+    const label=node.querySelector('.card-activity-label');
+    if(label&&label.textContent!==copy.label)label.textContent=copy.label;
+  }
+}
+async function bookCloudReadBody(response,prefix,checkpoint,onBytes){
   const chunks=prefix&&prefix.byteLength?[prefix]:[];
   let since=0;
+  let held=prefix&&prefix.byteLength?prefix.byteLength:0;
   const take=async chunk=>{
     if(!chunk||!chunk.byteLength)return true;
     chunks.push(chunk);
     since+=chunk.byteLength;
+    held+=chunk.byteLength;
+    if(typeof onBytes==='function')onBytes(held);
     if(since<1048576)return true;
     const merged=bookCloudJoin(chunks);
     chunks.length=0;chunks.push(merged);since=0;
+    held=merged.byteLength;
     if(checkpoint&&await checkpoint(merged)===false)return false;
     return true;
   };
@@ -585,6 +675,8 @@ async function bookCloudImportRemote(row,session,options){
   let received=prefix&&prefix.byteLength<size?prefix.byteLength:0;
   let bytes=prefix&&size&&prefix.byteLength===size?prefix:null;
   if(!received)prefix=null;
+  let tracked=false;
+  try{
   if(!bytes){
     const granted=await bookCloudPost('download',{bookId:row.bookId},session);
     if(!granted||!granted.url||!bookCloudCurrent(session))return null;
@@ -608,12 +700,14 @@ async function bookCloudImportRemote(row,session,options){
       await bookCloudDropPart(key);
       return null;
     }
+    const watch=bookCloudActivityVariant();
+    if(watch){tracked=true;bookCloudNoteActivity(row.bookId,received,declared||size);}
     try{
       bytes=await bookCloudReadBody(response,prefix,async merged=>{
         await bookCloudWritePart(key,merged);
         if(!bookCloudCurrent(session))return false;
         return true;
-      });
+      },watch?total=>bookCloudNoteActivity(row.bookId,total,declared||size):null);
     }catch(error){
       console.error('book_cloud_failed',error&&error.name||'Error');
       note('오프라인에서는 이 책을 받을 수 없어요.');
@@ -660,6 +754,9 @@ async function bookCloudImportRemote(row,session,options){
     if(typeof save==='function')save(LS_POS,positions);
   }
   return target;
+  }finally{
+    if(tracked)bookCloudClearActivity(row.bookId);
+  }
 }
 function bookCloudCard(row){
   const card=el('div','bookcard cloud');
@@ -669,8 +766,14 @@ function bookCloudCard(row){
   fillCard(card,{'.author':row.author||'내 책','.bt':row.title||'(제목 없음)'});
   const button=card.querySelector('.getbtn');
   button.textContent=label;
+  if(row.bookId)card.dataset.bookCloud=row.bookId;
   const open=event=>{event.stopPropagation();void bookCloudDownload(row,card);};
   button.onclick=open;card.onclick=open;
+  if(row.bookId&&bookCloudActivity.has(row.bookId)){
+    const paint=()=>bookCloudPaintActivity();
+    if(typeof queueMicrotask==='function')queueMicrotask(paint);
+    else Promise.resolve().then(paint);
+  }
   return card;
 }
 async function bookCloudDownload(row,card){
