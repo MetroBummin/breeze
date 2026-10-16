@@ -179,8 +179,6 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
   if(!panel||!button||!surface||open&&(ui.screen!=='detail'||!ui.pageOpen||button.hidden))return;
   if(!open&&panel.hidden&&!ui.editAnimation)return;
   const epoch=++ui.editEpoch;
-  const previous=getComputedStyle(surface).transform;
-  const matrix=previous==='none'?null:new DOMMatrix(previous);
   const layoutWidth=surface.offsetWidth;
   ui.editAnimation?.cancel();ui.editAnimation=null;ui.editOpen=open;
   button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'편집 메뉴 닫기':'세트 편집');button.tabIndex=open?-1:0;
@@ -194,9 +192,6 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
   // until the shape settles.
   surface.style.width=width+'px';surface.style.height=height+'px';surface.style.borderRadius='22px';
   surface.style.transformOrigin='100% 0';
-  let start=matrix?{x:matrix.a,y:matrix.d}:{x:1,y:1};
-  if(!matrix&&layoutWidth<=46)start={x:44/width,y:44/height};
-  const end=open?{x:1,y:1}:{x:44/width,y:44/height};
   const finish=()=>{
     if(epoch!==ui.editEpoch)return;
     ui.editAnimation?.cancel();ui.editAnimation=null;surface.classList.remove('is-morphing');
@@ -206,7 +201,12 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
     button.style.transition='';
     if(focus){const targetControl=open?items[0]:button;targetControl?.focus({preventScroll:true});}
   };
-  if(immediate||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
+  if(immediate||window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches||typeof getComputedStyle!=='function'){finish();return;}
+  const previous=getComputedStyle(surface).transform;
+  const matrix=previous==='none'?null:new DOMMatrix(previous);
+  let start=matrix?{x:matrix.a,y:matrix.d}:{x:1,y:1};
+  if(!matrix&&layoutWidth<=46)start={x:44/width,y:44/height};
+  const end=open?{x:1,y:1}:{x:44/width,y:44/height};
   surface.classList.add('is-morphing');surface.style.willChange='transform, opacity';
   panel.style.transition='none';button.style.transition='none';
   const paint=t=>{
