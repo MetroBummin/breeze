@@ -689,13 +689,20 @@ async function pdfOwnPageRatio(session,pageNumber){
     }
   }finally{ if(page&&typeof page.cleanup==='function')page.cleanup(); }
 }
+function noteOriginalAnchorInput(event){
+  const session=originalSession;
+  if(!session||!session.pendingAnchor)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  const target=event&&event.target;
+  if(!box||!target||typeof box.contains!=='function'||!box.contains(target))return;
+  session.anchorMoved=true;
+}
 function pdfWatchAnchorInput(session){
   if(!session||session.anchorWatch)return;
   const box=typeof readerScroller==='function'?readerScroller():null;
   if(!box||typeof box.addEventListener!=='function')return;
   session.anchorWatch=true;
   const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
-  box.addEventListener('pointerdown',moved);
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',moved);

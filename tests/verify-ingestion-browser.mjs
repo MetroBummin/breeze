@@ -181,7 +181,7 @@ try{
    await page.waitForFunction(()=>[...document.querySelectorAll('#rtext img')].some(img=>img.naturalWidth>0));
    assert.equal(await page.locator('#rtext script,#rtext style,#rtext iframe').count(),0);
    assert.equal(await page.locator('#rtext .article-links a').first().getAttribute('href'),'https://content.example/reference');
-   assert(await page.locator('#rtext .w[style*="font-weight"]').count()>0);
+   await page.waitForFunction(()=>document.querySelector('#rtext .w[style*="font-weight"]'));
    const before=await page.evaluate(()=>books.length);await page.evaluate(()=>ingestArticle('https://content.example/article?utm_source=test#fragment'));assert.equal(await page.evaluate(()=>books.length),before);
    await page.locator('#rtext .w').first().click();
    await page.locator('#word-peek').waitFor({state:'visible'});

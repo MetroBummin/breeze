@@ -1026,7 +1026,6 @@ function epubWatchAnchorInput(session){
   if(!box||typeof box.addEventListener!=='function')return;
   session.anchorWatch=true;
   const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
-  box.addEventListener('pointerdown',moved);
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',moved);
