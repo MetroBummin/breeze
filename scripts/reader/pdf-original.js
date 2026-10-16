@@ -219,11 +219,22 @@ function releaseOriginalPdfPage(session,pageNumber){
 
 async function openOriginalPdf(book,record,token){
   const alive=()=>token===originalLoadToken && curBook?.id===book.id;
+  const resume=()=>{
+    if(typeof BreezePdfOcrLibrary!=='undefined'&&typeof BreezePdfOcrLibrary.resumeReader==='function')
+      BreezePdfOcrLibrary.resumeReader(book.id);
+  };
+  try{
   await ensurePdfLib();
   if(!alive())return;
-  const data=await record.blob.arrayBuffer();
-  if(!alive())return;
-  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data}).promise;
+  let pdf=typeof BreezePdfOcrLibrary!=='undefined'&&typeof BreezePdfOcrLibrary.adoptForReader==='function'
+    ? BreezePdfOcrLibrary.adoptForReader(book.id) : null;
+  if(!pdf){
+    if(typeof BreezePdfOcrLibrary!=='undefined'&&typeof BreezePdfOcrLibrary.yieldToReader==='function')
+      BreezePdfOcrLibrary.yieldToReader(book.id);
+    const data=await record.blob.arrayBuffer();
+    if(!alive())return;
+    pdf = await pdfjsLib.getDocument({isEvalSupported:false,data}).promise;
+  }
   if(!alive()){ void pdf.destroy(); return; }
   let first;
   try{first=await pdf.getPage(1);}catch(error){void pdf.destroy();if(alive())throw error;return;}
@@ -266,6 +277,7 @@ async function openOriginalPdf(book,record,token){
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
   await renderOriginalPdfPage(session,savedPage||session.availablePages?.[0]||1);
+  }finally{resume();}
 }
 
 async function prepareOriginalPdfPage(session,pageNumber,options){

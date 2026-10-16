@@ -405,6 +405,19 @@ async function waitForEpubAnchorGeometry(source){
   await Promise.all(waits);
 }
 
+function epubOpenSpine(book,archive){
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const source=position&&position.original;
+  const total=archive&&archive.spine?archive.spine.length:0;
+  if(!source||source.kind!=='epub'||!total)return 0;
+  const href=String(source.href||'');
+  if(href){
+    const found=archive.spine.findIndex(chapter=>chapter&&(chapter.path===href||chapter.href===href));
+    if(found>=0)return found;
+  }
+  const spine=Number(source.spine);
+  return Number.isInteger(spine)&&spine>=0&&spine<total?spine:0;
+}
 async function openOriginalEpub(book,record,token){
   const archive=await openEpubArchive(record.blob);
   if(token!==originalLoadToken) return;
@@ -420,13 +433,37 @@ async function openOriginalEpub(book,record,token){
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
   const resources=await buildEpubResources(archive,session);
-  for(let index=0; index<archive.spine.length; index++){
-    if(token!==originalLoadToken) return;
-    const chapter=archive.spine[index];
-    const chapterDoc=await sanitiseEpubChapter(archive,chapter,resources,session.viewport);
-    if(!chapterDoc||!chapterDoc.html) continue;
+  /* Chapters below the saved place do not move it. They are added after the
+     saved chapter can be shown. `BREEZE_EPUB_PROGRESSIVE=false` builds the
+     whole spine first, which is the previous timing. */
+  const progressive=typeof window==='undefined'||window.BREEZE_EPUB_PROGRESSIVE!==false;
+  const predicted=epubOpenSpine(book,archive);
+  const blockingEnd=progressive?predicted:archive.spine.length-1;
+  const slots=[];
+  for(let index=0; index<=blockingEnd; index++){
     const section=document.createElement('section');
-    section.className='epub-source-chapter'; section.dataset.spine=String(index); section.dataset.href=chapter.path;
+    section.className='epub-source-chapter';
+    section.dataset.spine=String(index);
+    section.dataset.href=archive.spine[index].path;
+    content.appendChild(section);
+    slots[index]=section;
+  }
+  const filled=new Set();
+  async function appendEpubChapter(index){
+    if(token!==originalLoadToken||filled.has(index)||index<0||index>=archive.spine.length)return;
+    filled.add(index);
+    const chapter=archive.spine[index];
+    let section=slots[index];
+    if(!section){
+      section=document.createElement('section');
+      section.className='epub-source-chapter';
+      section.dataset.spine=String(index);
+      section.dataset.href=chapter.path;
+      content.appendChild(section);
+      slots[index]=section;
+    }
+    const chapterDoc=await sanitiseEpubChapter(archive,chapter,resources,session.viewport);
+    if(!chapterDoc||!chapterDoc.html){section.remove();return;}
     /* ---- 손가락을 받는 것은 틀이 아니라 그 위의 살갗입니다 ----
        까닭은 아래 `registerReaderSurface` 위에 적어 두었습니다. 장마다 하나씩,
        틀과 정확히 같은 자리에 덮습니다(`styles/reader.css`). */
@@ -465,21 +502,45 @@ async function openOriginalEpub(book,record,token){
           });observer.observe(frameDoc.documentElement);
           session.resizeObservers.push(observer);
         }
-        if(frameDoc) installEpubWordTap(frameDoc);
+        /* Highlights walk every word. Doing that before the frame is ready
+           holds the saved chapter, and a failure waits out the 8s timeout.
+           `BREEZE_EPUB_DEFER_HIGHLIGHTS=false` restores the old order. */
+        const paintWords=()=>{ try{ if(frameDoc) installEpubWordTap(frameDoc); }catch(error){} };
         finish();
+        if(typeof window!=='undefined'&&window.BREEZE_EPUB_DEFER_HIGHLIGHTS===false)paintWords();
+        else (typeof queueMicrotask==='function'?queueMicrotask:fn=>setTimeout(fn,0))(paintWords);
         settleEpubFrameGeometry(session,index).then(finishGeometry,finishGeometry);
       };
       frame.onerror=()=>{ finish(); finishGeometry(); };
       setTimeout(()=>{ finish(); finishGeometry(); },EPUB_FRAME_TIMEOUT);
     });
-    frame.srcdoc=chapterDoc.html; section.appendChild(frame); section.appendChild(skin); content.appendChild(section);
+    frame.srcdoc=chapterDoc.html; section.appendChild(frame); section.appendChild(skin);
     session.frames[index]=frame; session.frameReady[index]=ready; session.frameGeometryReady[index]=geometryReady;
   }
+  const opening=[predicted];
+  for(let index=0; index<=blockingEnd; index++) if(index!==predicted)opening.push(index);
+  for(const index of opening){
+    if(token!==originalLoadToken) return;
+    await appendEpubChapter(index);
+  }
   const spine=epubInitialSpine(book,session);
+  for(let index=blockingEnd+1; index<=spine; index++){
+    if(token!==originalLoadToken) return;
+    await appendEpubChapter(index);
+  }
   const ready=session.frameReady.filter(Boolean).slice(0,2);
   if(spine>1&&session.frameReady[spine])ready.push(session.frameReady[spine]);
   await Promise.all(ready);
   if(originalSession===session)updatePdfNavigationControls();
+  if(!progressive)return;
+  const tailFrom=Math.max(spine,blockingEnd)+1;
+  void (async()=>{
+    for(let index=tailFrom; index<archive.spine.length; index++){
+      if(token!==originalLoadToken||originalSession!==session)return;
+      try{await appendEpubChapter(index);}catch(error){return;}
+    }
+    if(originalSession===session&&typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
+  })();
 }
 
 /* ================= saved vocabulary ================= */
@@ -522,16 +583,22 @@ function renderEpubSavedWordHighlights(doc,snapshot=epubSavedWordSnapshot()){
      있었지만 아무도 고르지 않는 설정이었습니다. */
   if(typeof applyEpubStarPreferences==='function')applyEpubStarPreferences(doc);
   const ranges=[[],[],[]],byKey=new Map(),byNode=new WeakMap(),candidates=new Set();
+  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
+  // One index per highlight pass; vocabulary is unchanged during this walk.
+  const starts=typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'
+    ? savedPhraseStarts() : null;
+  if((!snapshot||snapshot.size===0)&&!(starts&&starts.size)){
+    const highlights=ranges.map(()=>new view.Highlight());
+    highlights.forEach((highlight,index)=>view.CSS.highlights.set(`breeze-saved-${index+1}`,highlight));
+    epubSavedHighlightCache.set(doc,{snapshot,byKey,byNode,candidates,highlights});
+    return;
+  }
   const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT,{acceptNode(node){
     const parent=node.parentElement;
     if(!parent || !node.data || !/[A-Za-z]/.test(node.data)
         || parent.closest('script,style,noscript,textarea,.breeze-original-word')) return NodeFilter.FILTER_REJECT;
     return NodeFilter.FILTER_ACCEPT;
   }});
-  const pattern=/[A-Za-z](?:[A-Za-z'’\-]*[A-Za-z])?/g;
-  // One index per highlight pass; vocabulary is unchanged during this walk.
-  const starts=typeof savedPhraseStarts==='function'&&typeof savedPhraseMatch==='function'
-    ? savedPhraseStarts() : null;
   let node;
   while((node=walker.nextNode())){
     pattern.lastIndex=0;const matches=[];let match;

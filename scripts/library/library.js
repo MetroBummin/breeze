@@ -728,7 +728,7 @@ function importKind(file){
   return match ? match[1] : '';
 }
 async function rawFileHash(file){
-  const buffer = await file.arrayBuffer();
+  const buffer = file instanceof Uint8Array ? file : await file.arrayBuffer();
   if(!window.crypto||!crypto.subtle) throw new Error('이 기기에서는 안전한 파일 확인 기능을 사용할 수 없어요');
   const digest = await crypto.subtle.digest('SHA-256', buffer);
   return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('');
@@ -755,7 +755,7 @@ async function prepareImportedFile(file, options={}, knownHash=null){
     let parsed;
     if(kind === 'pdf') parsed = await parsePDF(file,options.onProgress);
     else if(kind === 'epub') parsed = await parseEPUB(file, tmpId);
-    else parsed = parseTXT(await file.text(), options);
+    else parsed = parseTXT(file.breezeBytes instanceof Uint8Array ? new TextDecoder().decode(file.breezeBytes) : await file.text(), options);
 
     const sig0 = parsed.sig || null;
     const keep = [];
@@ -811,7 +811,7 @@ async function applyPreparedBook(target, prepared, file, options={}){
   // so the bytes themselves are the stored original.
   const bundledText=!!(target.longReadId||options.extra?.longReadId);
   const keepTextOriginal=prepared.kind==='txt'&&!bundledText&&typeof bookCloudEnabled==='function'&&bookCloudEnabled();
-  const textBytes=keepTextOriginal?new Uint8Array(await file.arrayBuffer()):null;
+  const textBytes=keepTextOriginal?(options.bytes instanceof Uint8Array?options.bytes:new Uint8Array(await file.arrayBuffer())):null;
   const original=/^(pdf|epub)$/.test(prepared.kind)||keepTextOriginal
     ? {kind:prepared.kind,name:file.name,type:file.type||(textBytes?'text/plain':''),size:textBytes?textBytes.byteLength:(file.size||0),
        lastModified:file.lastModified||0,hash:prepared.hash,storedAt:Date.now()} : null;

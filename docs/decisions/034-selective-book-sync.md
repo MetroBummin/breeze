@@ -92,6 +92,15 @@ stays up until the saved page, chapter, or paragraph has been scrolled into
 place. If that layout does not arrive in time, the surface is shown where it
 is and is not scrolled afterward.
 
+The first open after a download does not parse the PDF a second time while
+background word recognition is still parsing it. If recognition already holds
+that file, the reader uses it. Recognition then waits until the saved page
+has been drawn. EPUB chapters after the saved chapter are added after that
+chapter can be shown, and saved-word highlights do not hold the chapter
+closed. A cloud file already in memory is hashed and parsed from those bytes.
+`BREEZE_PDF_OCR_YIELD`, `BREEZE_EPUB_PROGRESSIVE`, or
+`BREEZE_EPUB_DEFER_HIGHLIGHTS` set to false restores the previous timing.
+
 The download stays off the sync return path and runs one book at a time.
 Bytes already received are kept in a separate IndexedDB database and the next
 attempt sends `Range`. A book larger than 2 GiB is not fetched. While the

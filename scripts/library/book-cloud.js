@@ -621,8 +621,9 @@ async function bookCloudImportRemote(row,session,options){
     return null;
   }
   const name=(row.title||'book')+'.'+(row.kind||'epub');
+  const hash=typeof rawFileHash==='function'?await rawFileHash(bytes):'';
   const file=new File([bytes],name,{type:row.kind==='pdf'?'application/pdf':row.kind==='txt'?'text/plain':'application/epub+zip'});
-  const hash=typeof rawFileHash==='function'?await rawFileHash(file):'';
+  file.breezeBytes=bytes;
   if(hash!==row.bookId){
     await bookCloudDropPart(key);
     note('받은 파일이 원본과 달라 열지 않았어요.');
@@ -635,7 +636,7 @@ async function bookCloudImportRemote(row,session,options){
     const prepared=await prepareImportedFile(file,{},hash);
     target={id:prepared.id,title:row.title||prepared.title,author:row.author||'',addedAt:Date.now(),sourceHash:row.bookId,bookCloudLink:{on:true,tombstone:''}};
     if(typeof books!=='undefined'&&!books.some(item=>item.id===target.id)){books.push(target);inserted=true;}
-    await applyPreparedBook(target,prepared,file);
+    await applyPreparedBook(target,prepared,file,{bytes});
   }catch(error){
     if(inserted&&target&&typeof books!=='undefined'){
       const index=books.indexOf(target);

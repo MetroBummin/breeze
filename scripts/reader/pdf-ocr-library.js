@@ -2,7 +2,11 @@
    for it. Recognition itself is admitted only by BreezePdfOcr's global lane. */
 const BreezePdfOcrLibrary=(()=>{
   const jobs=new Map();
-  let timer=0,busy=false,held=null;
+  let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0;
+  /* Opening the book that just finished downloading must not share the PDF
+     parser with background recognition. `BREEZE_PDF_OCR_YIELD=false` keeps
+     the old overlap. */
+  const yieldEnabled=()=>typeof window==='undefined'||window.BREEZE_PDF_OCR_YIELD!==false;
   const hash=book=>book?.original?.hash||book?.sourceHash||'';
   const current=job=>jobs.get(job.id)===job&&books.some(b=>b.id===job.id&&hash(b)===job.hash);
   const bookOf=job=>books.find(b=>b.id===job.id&&hash(b)===job.hash);
@@ -32,22 +36,42 @@ const BreezePdfOcrLibrary=(()=>{
     }
   }
   function schedule(delay=350){
-    if(timer||document.hidden)return;
+    if(timer||document.hidden||yielded)return;
     timer=setTimeout(()=>{timer=0;void drain();},delay);
+  }
+  function abortLoading(bookId){
+    if(!loading||loading.job.id!==bookId)return;
+    const task=loading.task;
+    loading=null;
+    try{
+      const gone=task&&typeof task.destroy==='function'?task.destroy():null;
+      if(gone&&typeof gone.then==='function')gone.then(()=>{},()=>{});
+    }catch{}
   }
   async function release(){
     const old=held;held=null;
     if(old)try{await old.pdf.destroy();}catch{}
   }
   async function prepare(job){
+    if(yielded&&job.id===yielded)return null;
     if(held?.job===job)return held.pdf;
     await release();
     const book=bookOf(job),original=await originalGetForBook(book);
-    if(!current(job))return null;
+    if(!current(job)||(yielded&&job.id===yielded))return null;
     if(!original?.blob||original.hash!==job.hash){job.state='missing';paint(job);return null;}
     await ensurePdfLib();
-    const pdf=await pdfjsLib.getDocument({data:await original.blob.arrayBuffer(),isEvalSupported:false}).promise;
-    if(!current(job)){await pdf.destroy();return null;}
+    if(yielded&&job.id===yielded)return null;
+    const task=pdfjsLib.getDocument({data:await original.blob.arrayBuffer(),isEvalSupported:false});
+    loading={job,task};
+    let pdf;
+    try{pdf=await task.promise;}
+    catch(error){
+      if(loading&&loading.task===task)loading=null;
+      if(yielded&&job.id===yielded)return null;
+      throw error;
+    }
+    if(loading&&loading.task===task)loading=null;
+    if(!current(job)||(yielded&&job.id===yielded)){await pdf.destroy();return null;}
     held={job,pdf};job.total=pdf.numPages;
     job.done=await BreezePdfOcr.completed(book);paint(job);
     return pdf;
@@ -56,7 +80,7 @@ const BreezePdfOcrLibrary=(()=>{
     if(busy||document.hidden||!BreezePdfOcr.available())return;
     const candidates=[...jobs.values()].filter(j=>current(j)&&j.state==='queued'&&!summary(j).complete);
     const job=candidates.find(j=>j.id===curBook?.id)||candidates[0];
-    if(!job)return;
+    if(!job||(yielded&&job.id===yielded))return;
     busy=true;
     try{
       const pdf=await prepare(job);if(!pdf||!current(job))return;
@@ -74,9 +98,9 @@ const BreezePdfOcrLibrary=(()=>{
       paint(job);
       if(summary(job).complete||job.state==='paused')await release();
     }catch{
-      if(current(job)){job.state='paused';paint(job);}
+      if(!(yielded&&job.id===yielded)&&current(job)){job.state='paused';paint(job);}
       await release();
-    }finally{busy=false;if([...jobs.values()].some(j=>current(j)&&j.state==='queued'&&!summary(j).complete))schedule();}
+    }finally{busy=false;if(!yielded&&[...jobs.values()].some(j=>current(j)&&j.state==='queued'&&!summary(j).complete))schedule();}
   }
   function track(book,{restart=false}={}){
     if(book?.kind!=='pdf'||!hash(book)||!BreezePdfOcr.available())return null;
@@ -108,10 +132,38 @@ const BreezePdfOcrLibrary=(()=>{
     const job=jobs.get(id);jobs.delete(id);
     if(held?.job===job)void release();
   }
+  function yieldToReader(bookId){
+    if(!yieldEnabled()||!bookId)return;
+    yielded=bookId;
+    yieldGeneration++;
+    if(timer){clearTimeout(timer);timer=0;}
+    abortLoading(bookId);
+  }
+  /* The reader uses the document background recognition already parsed, so
+     the open does not parse the same file again. A busy page keeps it. */
+  function adoptForReader(bookId){
+    if(!yieldEnabled()||!bookId)return null;
+    yieldToReader(bookId);
+    if(busy||!held||held.job.id!==bookId)return null;
+    const pdf=held.pdf;
+    held=null;
+    return pdf;
+  }
+  function resumeReader(bookId){
+    if(!bookId||yielded!==bookId)return;
+    const generation=yieldGeneration;
+    if(timer){clearTimeout(timer);timer=0;}
+    timer=setTimeout(()=>{
+      timer=0;
+      if(generation!==yieldGeneration)return;
+      if(yielded===bookId)yielded='';
+      void drain();
+    },1200);
+  }
   function restore(){
     if(typeof books==='undefined')return;
     for(const book of books)track(book);
   }
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){restore();schedule();}});
-  return {mount,track,restore,forget,summary};
+  return {mount,track,restore,forget,summary,yieldToReader,adoptForReader,resumeReader};
 })();

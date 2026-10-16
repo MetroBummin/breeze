@@ -769,7 +769,8 @@ function assembleParagraphs(pages){
 
 async function parsePDF(f, onProgress=toast){
   await ensurePdfLib();
-  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data: await f.arrayBuffer()}).promise;
+  const stored=f&&f.breezeBytes;
+  const pdf = await pdfjsLib.getDocument({isEvalSupported:false,data: stored instanceof Uint8Array ? stored : await f.arrayBuffer()}).promise;
   try{return await extractPdfParagraphs(pdf,new Set(),onProgress);}
   finally{try{await pdf.destroy();}catch(error){}}
 }
@@ -848,7 +849,8 @@ async function epubProtection(zip){
 
 async function openEpubArchive(file){
   await ensureZipLib();
-  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const stored=file&&file.breezeBytes;
+  const zip = await JSZip.loadAsync(stored instanceof Uint8Array ? stored : await file.arrayBuffer());
   const protection = await epubProtection(zip);
   if(protection){
     const locked = new Error('저작권 보호(DRM)가 걸린 책이에요');
