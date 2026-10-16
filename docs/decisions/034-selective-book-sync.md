@@ -19,6 +19,12 @@ open it with the existing importers. Caps are 40 books and 2 GiB
 account removes that account's server original. There is no end-to-end
 encryption, no cross-account sharing, and no DRM removal in this phase.
 
+A bundled catalog story (`longReadId`) stays text without a stored original
+file. It is already on every device, so the link row stays unavailable. A
+user-imported TXT keeps its bytes. Those bytes are stored directly. WebKit
+cannot prepare a Blob for IndexedDB after the picker releases the file, and
+that failed write never published the book. Readers still receive a Blob.
+
 ## Flag on for build 292
 
 The private bucket and S3 endpoint already existed. These steps were completed

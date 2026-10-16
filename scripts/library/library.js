@@ -805,9 +805,15 @@ async function applyPreparedBook(target, prepared, file, options={}){
     prepared={...prepared,paras:target.paras,sourceMap:target.sourceMap,packedSignals:target.layoutSignals,
       formatting:target.formatting,textAvailable:target.textAvailable};
   }
-  const keepTextOriginal=prepared.kind==='txt'&&typeof bookCloudEnabled==='function'&&bookCloudEnabled();
+  // A bundled story is already on every device. Storing its file again made it
+  // look like a user upload. User TXT still keeps bytes for opt-in sync. WebKit
+  // cannot prepare a Blob for IndexedDB once the picker has released the file,
+  // so the bytes themselves are the stored original.
+  const bundledText=!!(target.longReadId||options.extra?.longReadId);
+  const keepTextOriginal=prepared.kind==='txt'&&!bundledText&&typeof bookCloudEnabled==='function'&&bookCloudEnabled();
+  const textBytes=keepTextOriginal?new Uint8Array(await file.arrayBuffer()):null;
   const original=/^(pdf|epub)$/.test(prepared.kind)||keepTextOriginal
-    ? {kind:prepared.kind,name:file.name,type:file.type||'',size:file.size,
+    ? {kind:prepared.kind,name:file.name,type:file.type||(textBytes?'text/plain':''),size:textBytes?textBytes.byteLength:(file.size||0),
        lastModified:file.lastModified||0,hash:prepared.hash,storedAt:Date.now()} : null;
   const next={...target,...options.extra,
     paras:remapImportedImages(prepared.paras,prepared.tmpId,target.id),
@@ -817,7 +823,8 @@ async function applyPreparedBook(target, prepared, file, options={}){
     textAvailable:prepared.textAvailable,sourceMap:prepared.sourceMap,glyphs:prepared.glyphs||null,
     layoutSignals:prepared.packedSignals||null,formatting:prepared.formatting||null,
     original,localSourceAt:original ? original.storedAt : Date.now()};
-  const record=original ? {...original,blob:file.slice(0,file.size,file.type||'application/octet-stream')} : null;
+  const record=original ? (textBytes ? {...original,bytes:textBytes}
+    : {...original,blob:file.slice(0,file.size,file.type||'application/octet-stream')}) : null;
   const committed=await commitImportedBook(next,record,prepared.kind==='epub'?prepared.tmpId:null,options.signal);
   // Live Reader/library state only changes after the complete durable commit.
   Object.assign(target,committed);

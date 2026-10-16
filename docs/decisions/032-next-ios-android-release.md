@@ -98,7 +98,8 @@ in the gap beside the page, about 10px from the page and 9px from the panel,
 including on a short sidebar where the thumbnail strip is padded 10px each side.
 The Preview start button has 16px above and 16px below. Selective book sync is
 on: `BOOK_CLOUD` is true after the R2 secrets, bucket CORS, `book_cloud`
-migration, `book-cloud` function, and `dict` redeploy. There is no release note
+migration, `book-cloud` function, and `dict` redeploy. Bundled long reads stay
+without an original file. There is no release note
 and no announcement UI. App and Share Debug/Release counters move to 292.
 Marketing version stays 1.9.4. The cloud bootstrap still replaces that baseline
 with `CI_BUILD_NUMBER`.

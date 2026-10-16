@@ -400,6 +400,8 @@ Reader/Home mismatch, which was not reproduced in ordinary Bohemia navigation.
 Regression: `tests/verify-bohemia-progress-browser.mjs` uses the actual bundled
 261-paragraph story, delayed assets, immediate Home, backward reading, completion,
 real database reopening, signed-out lifecycle saves and delayed-image offsets.
+Build 292 leaves that story without original bytes. User-imported TXT files
+keep originals while book sync is on; the catalog import does not.
 
 ## Cold illustration reservation and Bohemia CI follow-up (234)
 
