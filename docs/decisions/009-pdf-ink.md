@@ -1,5 +1,12 @@
 # iPad PDF Pencil annotation
 
+## Read and handwriting glyphs (build 291)
+
+The pill toggle uses two outline glyphs at the toolbar weight, 23px with a 2.6
+stroke. Reading mode shows the pencil. Handwriting mode shows an open book with
+two pages and a vertical spine. The pen tool and the compact mini use the same
+pencil. The original/text mode button is unchanged.
+
 ## Recover an absent Touch owner without an expiry timer (2026-10-12)
 
 The investigation reproduced a conditional iPad-route input lock by deliberately

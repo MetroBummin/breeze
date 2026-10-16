@@ -13,7 +13,7 @@
 #readpill .ink-pill-entry{overflow:hidden;opacity:1;visibility:visible;
   transition:width var(--reader-chrome-duration) var(--reader-chrome-ease),opacity .18s ease,visibility 0s;}
 #readpill .ink-pill-entry>span{position:absolute;display:grid;place-items:center;transition:opacity .2s ease,transform .32s cubic-bezier(.2,.75,.25,1);}
-#readpill .ink-pill-entry svg{width:22px;height:22px;stroke-width:calc(var(--control-icon-stroke) * 20 / 22);}
+#readpill .ink-pill-entry svg{width:var(--am-icon-toolbar);height:var(--am-icon-toolbar);stroke-width:var(--am-stroke-complex);}
 #readpill .ink-entry-read{opacity:0;transform:rotate(-25deg) scale(.8);}
 #readpill .ink-pill-entry.ink-pill-exiting .ink-entry-pen{opacity:0;transform:rotate(25deg) scale(.8);}
 #readpill .ink-pill-entry.ink-pill-exiting .ink-entry-read{opacity:1;transform:none;}

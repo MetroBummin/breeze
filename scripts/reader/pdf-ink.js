@@ -247,14 +247,16 @@ const BreezePdfInk = (()=>{
   }
   function controls(){
     if(inkEntry)return;
+    const pencil='M15.15 3.9 20.05 8.8M13.85 5.2 8.35 10.7 5.55 16.75 7.25 18.45 13.3 15.55 18.8 10.05M9.7 12.05l2.45 2.45M6.35 17.55 4.25 19.65';
+    const readBook='M10.7 7.3 5.6 6.1A1.35 1.35 0 0 0 4.3 7.4v9.2a1.35 1.35 0 0 0 1.3 1.3l5.1-1.2M13.3 7.3l5.1-1.2a1.35 1.35 0 0 1 1.3 1.3v9.2a1.35 1.35 0 0 1-1.3 1.3l-5.1-1.2M12 5.1v13.8';
     const pill=document.getElementById('readpill');
-    inkEntry=inkControl('필기 모드로 전환','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z','ink-pill-entry');
-    inkEntry.innerHTML=`<span class="ink-entry-pen">${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}</span><span class="ink-entry-read">${icon('M12 7v14M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1h-4a4 4 0 0 0-4 2 4 4 0 0 0-4-2H4a1 1 0 0 1-1-1zM6 8h1m-1 4h2m9-4h1m-2 4h2')}</span>`;
+    inkEntry=inkControl('필기 모드로 전환',pencil,'ink-pill-entry');
+    inkEntry.innerHTML=`<span class="ink-entry-pen">${icon(pencil)}</span><span class="ink-entry-read">${icon(readBook)}</span>`;
     inkEntry.dataset.inkToggle='';
     inkEntry.onclick=()=>setMode(mode==='read'?lastTool:'read');
     inkTools=document.createElement('div');inkTools.id='pdf-ink-tools';inkTools.className='ink-pill-toolbar';inkTools.setAttribute('role','group');inkTools.setAttribute('aria-label','PDF 필기 도구');
     for(const [tool,label,path] of [
-      ['pen','펜','M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z'],
+      ['pen','펜',pencil],
       ['highlighter','형광펜','m9 14 7-10 5 4-8 9-4-3Zm0 0-4 5 4 1 4-3M3 22h13']
     ]){
       const button=inkControl(label,path);button.dataset.inkMode=tool;
@@ -275,7 +277,7 @@ const BreezePdfInk = (()=>{
     inkReadSeparator=inkSeparator();inkReadSeparator.classList.add('ink-pill-mode-separator');
     inkMini=document.createElement('button');inkMini.type='button';inkMini.className='ink-pill-mini';
     inkMini.setAttribute('aria-label','필기 도구 펼치기');inkMini.title='필기 도구 펼치기';
-    inkMini.innerHTML=`${icon('M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z')}<i class="ink-pill-mini-color" aria-hidden="true"></i>`;
+    inkMini.innerHTML=`${icon(pencil)}<i class="ink-pill-mini-color" aria-hidden="true"></i>`;
     inkMini.onclick=()=>expandReaderChrome();
     pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
     settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
