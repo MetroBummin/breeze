@@ -194,6 +194,16 @@ html body :is(#pdf-page-button,#pdf-navigation-toggle,#study-sets-edit,.library-
   stroke:none;
   vector-effect:none;
 }
+/* Original house and page drawings. The 60% is on the svg, so a crossing
+   stays one weight instead of two translucent strokes stacking darker. */
+html body :is(#nav-home,#wordbook-home,#pdf-page-button,#pdf-navigation-toggle) svg{
+  color:rgb(60,60,67);
+  opacity:.6;
+}
+html.dark body :is(#nav-home,#wordbook-home,#pdf-page-button,#pdf-navigation-toggle) svg,
+html body.dark :is(#nav-home,#wordbook-home,#pdf-page-button,#pdf-navigation-toggle) svg{
+  color:rgb(235,235,245);
+}
 html body :is(#v-memory-set #study-sets-edit,.library-folder-menu>summary) svg circle{r:1.15px;}
 html body .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
 
