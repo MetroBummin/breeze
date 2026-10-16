@@ -76,7 +76,8 @@ async function scenario(page,mode){
       opened:window.__opened,
       linked:!!(window.__applied&&window.__applied.bookCloudLink&&window.__applied.bookCloudLink.on),
       rows:bookCloudLibraryRows().length,
-      label:card.querySelector('.getbtn').textContent
+      label:card.querySelector('.getbtn').textContent,
+      shown:card.querySelector('.getbtn').hidden===false
     };
   },{mode,hash});
   return {...result,errors};
@@ -105,6 +106,7 @@ try{
           assert.equal(result.linked,false,name+' storage failure should not keep the book');
           assert.equal(result.rows,1,name+' storage failure should keep the card');
           assert.equal(result.label,'받아서 이어 읽기');
+          assert.equal(result.shown,true,name+' storage failure should show the fallback button');
         }else if(mode==='manual'){
           assert.equal(result.fetched,1,name+' manual should fetch');
           assert.equal(result.opened,'saved',name+' manual should open the book');
@@ -114,6 +116,7 @@ try{
           assert.equal(result.opened,'',name+' '+mode+' should stay in the background');
           assert.equal(result.linked,true,name+' '+mode+' should link the saved book');
           assert.equal(result.rows,0,name+' '+mode+' should leave the shelf without a download card');
+          assert.equal(result.shown,false,name+' '+mode+' should keep the fallback button hidden');
         }
         await page.context().close();
       }

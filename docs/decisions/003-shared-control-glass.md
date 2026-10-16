@@ -117,9 +117,10 @@ remain required; simulated browsers do not establish physical iPhone frame rate.
 ## Covers without photos
 
 Local long-form and shared-link cards use deterministic local SVG line ornaments
-when no cover is available. Casuals use the title (three lines), not a long body
-excerpt. The full title remains available in card metadata; stored article
-content is unchanged. Existing palette tokens supply both themes, and real covers
+when no cover is available. The book title stays under the card. It is not also
+drawn inside the ornament, because that line sat on top of the author. Casuals
+use the title (three lines), not a long body excerpt. The full title remains
+available in card metadata; stored article content is unchanged. Existing palette tokens supply both themes, and real covers
 hide the ornament. RSS discovery cards require a working cover image. Home reserves their footprint
 with a graphite glass skeleton while loading; content and interaction appear only
 after the photo succeeds. Absent or failed covers are still excluded. Add/loading/cloud-recovery

@@ -86,6 +86,19 @@ try{
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
       assert.equal(await page.locator('#home-casual-rail .home-regular-title').filter({hasText:'Saved story'}).count(),1);
       assert.equal(await page.locator('#shelf .home-cover-meta').filter({hasText:'Author'}).count(),1);
+      assert.equal(await page.locator('#shelf .bookcard.editorial-cover .cover-art').count(),1);
+      assert.equal(await page.locator('#shelf .bookcard .bt').evaluate(node=>getComputedStyle(node).display),'none');
+      const coverText=await page.locator('#shelf .bookcard').evaluate(card=>{
+        const title=card.querySelector('.bt').getBoundingClientRect();
+        const author=card.querySelector('.home-cover-meta').getBoundingClientRect();
+        const under=card.parentElement.querySelector('.home-regular-title').getBoundingClientRect();
+        const box=card.getBoundingClientRect();
+        const hit=!(author.right<title.left||author.left>title.right||author.bottom<title.top||author.top>title.bottom);
+        return {hit,titleHidden:getComputedStyle(card.querySelector('.bt')).display==='none',under:under.top>=box.bottom-1};
+      });
+      assert.equal(coverText.titleHidden,true);
+      assert.equal(coverText.hit,false);
+      assert.equal(coverText.under,true);
       assert.equal(await page.locator('#home-casual-rail .home-cover-meta').count(),1);
       assert.equal(await page.locator('#shelf .home-regular-meta,#home-casual-rail .home-regular-meta').count(),0);
       const addSizes=await page.evaluate(()=>[

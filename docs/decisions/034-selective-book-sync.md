@@ -109,12 +109,13 @@ closed. A cloud file already in memory is hashed and parsed from those bytes.
 The download stays off the sync return path and runs one book at a time.
 Bytes already received are kept in a separate IndexedDB database and the next
 attempt sends `Range`. A book larger than 2 GiB is not fetched. While the
-device is offline the card stays, and the next sync tries again. If storing
-the file fails, including a private-mode quota or an IndexedDB rejection, the
-book is not added and nothing is reported. The "받아서 이어 읽기" card remains,
-and opening it downloads and opens the book. An automatic download does not
-open the reader. The card is the same control it was; it disappears after the
-book is stored.
+device is offline the card stays, and the next sync tries again. While an
+automatic download is in progress or has stored the book, the card does not
+show "받아서 이어 읽기". If storing the file fails, including a private-mode
+quota or an IndexedDB rejection, the book is not added and nothing is
+reported. That button then appears on the card as the quiet fallback, and
+opening it downloads and opens the book. An automatic download does not open
+the reader. The card disappears after the book is stored.
 
 While that download is in progress, the same card can show it.
 `window.BREEZE_CARD_ACTIVITY` set to `fill` paints a 4px track along the bottom
