@@ -248,6 +248,7 @@ function finishGesture(gesture, decision, completed){
 /* ================= 손짓의 한살이 ================= */
 
 function beginGesture(event){
+  clearChromeCalloutSelection(event);
   if(typeof readerManipulationConsumes === 'function' && readerManipulationConsumes(event)) return;
   /* 앞의 손짓이 아직 살아 있다면 그것은 끝난 것입니다 — 손가락 하나가
      기준이므로 새 pointerdown 은 곧 앞것의 끝입니다. */
@@ -727,7 +728,7 @@ suppressReaderSelection(document, nonEditableReadingElement);
 
 /* Chrome long-press must not open the system Copy / Look Up / Translate menu.
    Reader paper and text fields keep their own selection. A leftover range is
-   cleared on the next pointerdown so it cannot swallow the following tap. */
+   cleared from the one pointerdown listener so it cannot swallow the next tap. */
 function chromeCalloutElement(target){
   const element=target&&(target.nodeType===1?target:target.parentElement);
   if(!element?.closest)return null;
@@ -737,10 +738,10 @@ function chromeCalloutElement(target){
 }
 document.addEventListener('contextmenu',event=>{if(chromeCalloutElement(event.target))event.preventDefault();},true);
 document.addEventListener('selectstart',event=>{if(chromeCalloutElement(event.target))event.preventDefault();},true);
-document.addEventListener('pointerdown',event=>{
+function clearChromeCalloutSelection(event){
   if(!chromeCalloutElement(event.target))return;
   let selection=null;
   try{selection=document.getSelection();}catch(error){return;}
   if(!selection||selection.isCollapsed||!chromeCalloutElement(selection.anchorNode))return;
   try{selection.removeAllRanges();}catch(error){}
-},true);
+}
