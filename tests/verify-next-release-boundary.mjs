@@ -192,7 +192,7 @@ const expected={
     "tests/verify-study-sets-ui.mjs": "32aa3e3814d8198fcd2548b118c359710cb7a6cdaf8c0ef39764880d48a64bb2",
     "tests/verify-study-sets.mjs": "31d03b9465c7a10ea4adf713c75342157702eb325562733cbfff1b27265bc116",
     "tests/verify-vocabulary-review-browser.mjs": "26a437ae74d1e115cf836351a78f25b37f3c712284dfac635ffa620543d55253",
-    "tests/verify-vocabulary-test-browser.mjs": "de4665a46c8358e7aeaaf8579f79540ad017f7749d43f147ad16c6e55a1133e1",
+    "tests/verify-vocabulary-test-browser.mjs": "bf9a4fa3f04c4dd63d16d4ad3b5c8aa27de0900767597443d1047bd8d55e4769",
     "tests/verify-vocabulary-test-storage.mjs": "cd33119fe82eea784c4216ddaf3ef43a44eb7083e6fe452c9ba0c4aca34a019f",
     "tests/verify-word-arrival-browser.mjs": "6087b609226fe314e1973eb6797f0a3ec4fe8d286299f7ad93d1a29744a60b7d",
     "tests/verify-word-lifecycle.mjs": "80247cad86b4b7b8ad7c9fb478191d12a17479930e88d8c1730f49e416719517",
