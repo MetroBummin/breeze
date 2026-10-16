@@ -16,6 +16,7 @@ const historicalBase='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
     ".github/workflows/account-learning.yml": "2ccb4333a9bd32286dac7d08149b1779caeb1d0651ea4c4780f5503e30450d3c",
+    ".github/workflows/preview-intent-check.yml": "d3c51892b973779530516ba725b239d47354054bd7fd3c384276041393654153",
     ".github/workflows/social-import.yml": "b5a749685790947297724b74a44e4b2e3ae827c20826cb6935be90ef34dc4111",
     "DESIGN.md": "3c7f1466c1f9c2b215555d82e434e4979f24721820f43df9c7dd84eb6d6a3e50",
     "PRIVACY.md": "bdee7e68a9aa3eb4570fdec496c8cf3088dd4a41b38e7b4603f59db31db5025f",
