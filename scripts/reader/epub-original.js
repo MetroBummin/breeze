@@ -352,12 +352,30 @@ function epubAnchorSettled(session,spine){
   return (session.frameMeta||[]).slice(0,spine+1)
     .every(meta=>!meta||meta.stable);
 }
+function epubInitialSpine(book,session){
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const source=position&&position.original;
+  if(!source||source.kind!=='epub'||!session)return 0;
+  const href=String(source.href||'');
+  if(href&&typeof document!=='undefined'&&typeof document.querySelectorAll==='function'){
+    for(const section of document.querySelectorAll('.epub-source-chapter')){
+      if(!section.dataset||section.dataset.href!==href)continue;
+      const index=Number(section.dataset.spine);
+      if(session.frames[index])return index;
+    }
+  }
+  const spine=Number(source.spine);
+  if(Number.isInteger(spine)&&spine>=0&&spine<session.frames.length&&session.frames[spine])return spine;
+  return 0;
+}
 function reapplyEpubAnchorIfPending(session,index){
   const pending=session&&session.pendingAnchor;
   if(!pending||originalSession!==session) return;
   if(typeof currentReaderMode!=='undefined'&&currentReaderMode!=='original') return;
-  /* 레이아웃이 스크롤을 밀어도 읽던 자리가 아닙니다. 손의 입력만 앵커를 놓습니다. */
-  if(session.anchorMoved){ session.pendingAnchor=null; return; }
+  /* 레이아웃이 스크롤을 밀어도 읽던 자리가 아닙니다. 손의 입력만 앵커를 놓습니다.
+     가림막을 걷기로 한 뒤의 재배치도 마찬가지입니다 — 보이는 점프가 됩니다. */
+  if(session.anchorMoved){ session.pendingAnchor=null; session.revealFrozen=false; return; }
+  if(session.revealFrozen)return;
   const frame=session.frames[pending.spine];
   const placed=frame?epubPlaceAnchor(frame,pending.source,pending.inset):false;
   if(placed)pending.appliedTop=readerScrollTop();
@@ -457,7 +475,10 @@ async function openOriginalEpub(book,record,token){
     frame.srcdoc=chapterDoc.html; section.appendChild(frame); section.appendChild(skin); content.appendChild(section);
     session.frames[index]=frame; session.frameReady[index]=ready; session.frameGeometryReady[index]=geometryReady;
   }
-  await Promise.all(session.frameReady.filter(Boolean).slice(0,2));
+  const spine=epubInitialSpine(book,session);
+  const ready=session.frameReady.filter(Boolean).slice(0,2);
+  if(spine>1&&session.frameReady[spine])ready.push(session.frameReady[spine]);
+  await Promise.all(ready);
   if(originalSession===session)updatePdfNavigationControls();
 }
 

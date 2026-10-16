@@ -659,7 +659,10 @@ async function switchReaderMode(mode,options){
     stabilizePdfModeTarget(record,target,sentenceBridge,changeToken,bookAtStart);
     suspendReaderScrollSave(500);
     originalSession.presented=true;originalSession.lastScrollTop=readerScrollTop();
-    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
+    /* 자리를 옮기기 전에 가림막을 걷으면 책 앞이 보였다가 읽던 곳으로 건너뜁니다.
+       스크롤이 끝난 뒤에만 걷고, 레이아웃이 너무 늦으면 그 자리에서 걷되 다시 옮기지 않습니다. */
+    if(typeof releaseReaderPreparing==='function')releaseReaderPreparing(originalWrap);
+    else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
     return commitPosition();
   }catch(error){
     if(!ownsPosition())return false;

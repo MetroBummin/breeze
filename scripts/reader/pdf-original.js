@@ -257,12 +257,15 @@ async function openOriginalPdf(book,record,token){
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   const hint=document.getElementById('original-selection-hint');
   if(hint) hint.textContent='단어를 한 번 눌러 뜻을 봐요';
+  /* 첫 화면은 저장한 쪽입니다. 1쪽을 먼저 그리면, 가림막이 걷힌 뒤에 그 쪽으로
+     건너뛰는 모습이 됩니다. 관찰기도 그 스크롤 다음에 켜야 1쪽부터 그리지 않습니다. */
+  const savedPage=await pdfPlaceBeforePaint(session,book);
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{ if(entry.isIntersecting) renderOriginalPdfPage(session,Number(entry.target.getAttribute('data-page')),{prefetch:true}); });
   },{root:readerScroller(),rootMargin:'1300px 0px'});
   session.observer=observer;
   pages.forEach(page=>observer.observe(page));
-  await renderOriginalPdfPage(session,session.availablePages?.[0]||1);
+  await renderOriginalPdfPage(session,savedPage||session.availablePages?.[0]||1);
 }
 
 async function prepareOriginalPdfPage(session,pageNumber,options){
@@ -690,11 +693,73 @@ function pdfScheduleAnchor(session){
   session.anchorTimer=requestAnimationFrame(()=>{
     session.anchorTimer=0;
     if(originalSession!==session||!session.pendingAnchor)return;
-    if(session.anchorMoved){session.pendingAnchor=null;return;}
+    if(session.anchorMoved){session.pendingAnchor=null;session.revealFrozen=false;return;}
+    /* 가림막을 걷기로 한 뒤에는 더 이상 옮기지 않습니다. 늦게 맞추면 보이는 점프가 됩니다. */
+    if(session.revealFrozen)return;
     session.anchorTries=(session.anchorTries||0)+1;
-    if(session.anchorTries>30)return;
+    if(session.anchorTries>30){session.revealFrozen=true;return;}
     void restorePdfAnchor(session.pendingAnchor.source,session.pendingAnchor.inset);
   });
+}
+function pdfInitialPage(book,pageCount){
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const original=position&&position.original;
+  const total=Math.max(1,pageCount||1);
+  if(!original||original.kind!=='pdf')return 0;
+  return Math.max(1,Math.min(total,Number(original.page)||1));
+}
+async function pdfPlaceBeforePaint(session,book){
+  const pageNumber=pdfInitialPage(book,session&&session.pages&&session.pages.length);
+  if(!pageNumber||!session)return 0;
+  const position=typeof posOf==='function'?posOf(book&&book.id):null;
+  const source=position&&position.original&&position.original.kind==='pdf'?position.original:null;
+  if(!source||(pageNumber<=1&&(Number(source.y)||0)<=0.02))return pageNumber;
+  for(let index=1;index<=pageNumber;index++){
+    if(originalSession!==session)return pageNumber;
+    try{await pdfOwnPageRatio(session,index);}catch(error){}
+  }
+  if(typeof invalidatePdfPageLayout==='function')invalidatePdfPageLayout(session);
+  const page=session.pages[pageNumber-1];
+  const rect=page&&typeof page.getBoundingClientRect==='function'?page.getBoundingClientRect():null;
+  if(rect&&rect.height>0&&typeof readerScrollTo==='function'&&typeof readerScrollTop==='function'){
+    const inset=typeof topInset==='function'?topInset()+10:0;
+    readerScrollTo(readerScrollTop()+rect.top-inset+Math.max(0,Math.min(1,Number(source.y)||0))*rect.height);
+  }
+  return pageNumber;
+}
+function readerRestorePending(){
+  if(typeof originalSession!=='undefined'&&originalSession&&originalSession.revealFrozen
+      &&!(typeof currentReaderMode!=='undefined'&&currentReaderMode==='text'))return false;
+  if(typeof currentReaderMode!=='undefined'&&currentReaderMode==='text')
+    return typeof textRestoreOwnsPosition==='function'&&textRestoreOwnsPosition();
+  return (typeof pdfRestoreOwnsPosition==='function'&&pdfRestoreOwnsPosition())
+    ||(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition());
+}
+function freezeReaderRestore(){
+  if(typeof currentReaderMode!=='undefined'&&currentReaderMode==='text'){
+    if(typeof textFreezePendingAnchor==='function')textFreezePendingAnchor();
+    return;
+  }
+  if(typeof originalSession!=='undefined'&&originalSession)originalSession.revealFrozen=true;
+}
+function releaseReaderPreparing(wrap){
+  if(!wrap)return;
+  const token=typeof readerModeChangeToken!=='undefined'?readerModeChangeToken:0;
+  const book=typeof curBook!=='undefined'?curBook:null;
+  const started=Date.now();
+  const step=()=>{
+    if(typeof readerModeChangeToken!=='undefined'&&readerModeChangeToken!==token)return;
+    if(typeof curBook!=='undefined'&&curBook!==book)return;
+    if(readerRestorePending()&&Date.now()-started<2000){
+      if(typeof requestAnimationFrame==='function')requestAnimationFrame(step);
+      else freezeReaderRestore();
+      if(readerRestorePending()&&Date.now()-started<2000)return;
+    }
+    if(readerRestorePending())freezeReaderRestore();
+    delete wrap.dataset.readerPreparing;
+    if(typeof wrap.removeAttribute==='function')wrap.removeAttribute('aria-busy');
+  };
+  step();
 }
 function pdfRestoreOwnsPosition(){
   return currentReaderMode==='original'

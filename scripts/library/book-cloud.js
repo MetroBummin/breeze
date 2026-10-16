@@ -18,9 +18,11 @@ function bookCloudResetNotes(){
   if(note)note.textContent='단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   if(choice)choice.textContent='다른 기기의 읽기자료는 건드리지 않아요';
 }
+var bookCloudRevealQuiet=null;
 function resetBookCloudSession(){
   bookCloudPullEpoch++;bookCloudPullAgain=false;
   clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudCatalog=[];bookCloudHeads={};
+  bookCloudRevealQuiet=null;
 }
 function bookCloudHash(book){
   const hash=String(book&&(book.sourceHash||(book.original&&book.original.hash))||'');
@@ -244,14 +246,18 @@ async function bookCloudRefresh(session){
 function bookCloudAdoptPosition(hash,locator){
   if(!locator||typeof books==='undefined'||typeof positions==='undefined')return;
   const book=books.find(item=>bookCloudHash(item)===hash);
-  if(!book||!bookCloudPreferRemote(positions[book.id],locator))return;
+  if(!book||book.id===bookCloudRevealQuiet||!bookCloudPreferRemote(positions[book.id],locator))return;
   positions[book.id]={...bookCloudLocator(locator)};
   if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
   bookCloudShowAdopted(book);
 }
 function bookCloudShowAdopted(book){
+  if(!book||book.id===bookCloudRevealQuiet)return;
   if(typeof curBook==='undefined'||curBook!==book)return;
   if(typeof readerPositionPending==='function'&&readerPositionPending())return;
+  if(typeof pdfRestoreOwnsPosition==='function'&&pdfRestoreOwnsPosition())return;
+  if(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition())return;
+  if(typeof textRestoreOwnsPosition==='function'&&textRestoreOwnsPosition())return;
   const position=positions[book.id];
   if(!position)return;
   if(position.mode==='original'&&position.original&&typeof switchReaderMode==='function'){
@@ -260,6 +266,75 @@ function bookCloudShowAdopted(book){
   }
   if(typeof restoreAnchor==='function'&&restoreAnchor(position))return;
   if(typeof readerScrollTo==='function')readerScrollTo(position.y||0);
+}
+/* The open path paints the place already stored on this device. A linked book
+   that still has only the start adopts a locator this device already fetched,
+   or waits one short read. If that read is slow, the book opens at the local
+   place and the late reply is kept for the next open — it does not move the
+   page that is already visible. */
+function bookCloudRememberHead(row){
+  if(!row||!row.book_id)return null;
+  const data=row.data||{};
+  bookCloudHeads[row.book_id]={revision:data.revision||'',locator:data.locator||null};
+  return data.locator||null;
+}
+async function bookCloudReadPositionRows(){
+  if(!sb||typeof sb.from!=='function')return null;
+  try{
+    const query=sb.from('positions');
+    if(query&&typeof query.select==='function')return await query.select('book_id,data');
+    if(query&&typeof query.then==='function')return await query;
+  }catch(error){}
+  return null;
+}
+function bookCloudWriteLocator(book,locator){
+  if(!book||typeof positions==='undefined'||!bookCloudPreferRemote(positions[book.id],locator))return false;
+  positions[book.id]={...bookCloudLocator(locator)};
+  if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
+  return true;
+}
+async function bookCloudPositionBeforeOpen(book){
+  if(!bookCloudEnabled()||typeof positions==='undefined'||!book)return;
+  const local=positions[book.id];
+  if(local&&!bookCloudAtStart(local)){
+    if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
+    return;
+  }
+  const hash=bookCloudHash(book);
+  if(!hash||!(book.bookCloudLink&&book.bookCloudLink.on))return;
+  const head=bookCloudHeads[hash];
+  if(head){
+    bookCloudWriteLocator(book,head.locator);
+    if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
+    return;
+  }
+  if(!bookCloudUserId())return;
+  const session=bookCloudSession();
+  let timer=0;
+  const read=bookCloudReadPositionRows();
+  const winner=await Promise.race([
+    Promise.resolve(read).then(value=>({value})).catch(()=>({value:null})),
+    new Promise(resolve=>{timer=setTimeout(()=>resolve({timeout:true}),400);})
+  ]);
+  clearTimeout(timer);
+  if(!bookCloudCurrent(session))return;
+  const locatorFor=rows=>{
+    const list=rows&&rows.data||[];
+    for(const row of list){
+      if(row&&row.book_id===hash)return bookCloudRememberHead(row);
+    }
+    return null;
+  };
+  if(winner.timeout){
+    bookCloudRevealQuiet=book.id;
+    void Promise.resolve(read).then(rows=>{
+      if(bookCloudCurrent(session))locatorFor(rows);
+    }).catch(()=>{});
+    return;
+  }
+  const locator=locatorFor(winner.value);
+  if(locator)bookCloudWriteLocator(book,locator);
+  if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
 }
 function bookCloudQueuePosition(book){
   if(!bookCloudEnabled())return;

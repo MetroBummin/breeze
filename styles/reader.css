@@ -394,6 +394,7 @@
   #originalwrap{padding:calc(env(safe-area-inset-top) + 24px) 0 45vh;}
   /* A first open stays on its loading surface until the reading anchor is ready.
      Repeated switches reuse live paper and restore scroll in the same task. */
+  #readwrap[data-reader-preparing]{visibility:hidden;}
   #originalwrap[data-reader-preparing] #original-stage{visibility:hidden;}
   #originalwrap[data-reader-preparing]:has(.original-loading) #original-stage{visibility:visible;}
   #originalwrap[data-reader-preparing]:has(.original-loading)::before{display:none;}

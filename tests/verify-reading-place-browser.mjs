@@ -127,7 +127,124 @@ async function scenario(page){
       if(textRestoreOwnsPosition())restoreAnchor({pi:18,dy:12});
       return {held,heldTop,owns,top:readerScrollTop(),pending:textRestoreOwnsPosition()};
     })();
-    return {pdf,epub,txt};
+    const visible=await (async()=>{
+      const settle=async()=>{
+        for(let i=0;i<4;i++)await new Promise(resolve=>requestAnimationFrame(resolve));
+      };
+      await settle();
+      const watch=async(wrap,place,retry)=>{
+        place();
+        releaseReaderPreparing(wrap);
+        const samples=[{preparing:!!wrap.dataset.readerPreparing,top:readerScrollTop()}];
+        for(let frame=0;frame<24&&wrap.dataset.readerPreparing;frame++){
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          if(retry)retry();
+          samples.push({preparing:!!wrap.dataset.readerPreparing,top:readerScrollTop()});
+        }
+        const shown=samples.find(sample=>!sample.preparing);
+        return {
+          shownTop:shown?shown.top:null,
+          top:readerScrollTop(),
+          preparing:wrap.dataset.readerPreparing||'',
+          jumped:!shown||samples.some(sample=>!sample.preparing&&sample.top!==shown.top)
+        };
+      };
+      const pdfVisible=await (async()=>{
+        window.renderOriginalPdfPage=async()=>{};
+        const content=document.getElementById('original-content');
+        content.replaceChildren();
+        const wrap=document.createElement('div');
+        wrap.dataset.readerPreparing='true';
+        document.body.appendChild(wrap);
+        const make=number=>{
+          const article=document.createElement('article');
+          article.dataset.page=String(number);
+          article.style.display='block';
+          content.appendChild(article);
+          return article;
+        };
+        const cover=make(1),chapter=make(2);
+        const rect=element=>{
+          const at=element===cover?0:800;
+          const height=element===cover?600:800;
+          return {top:at-readerScrollTop(),height,width:400,bottom:at-readerScrollTop()+height,left:0,right:0,x:0,y:0};
+        };
+        cover.getBoundingClientRect=()=>rect(cover);
+        chapter.getBoundingClientRect=()=>({top:0,height:0,width:0,bottom:0,left:0,right:0,x:0,y:0});
+        const session={
+          kind:'pdf',bookId:'book',hash:'h',loadToken:1,pages:[cover,chapter],
+          settled:new Set([1,2]),rendering:new Map(),wordBoxes:new Map(),deletedPages:new Set(),
+          pdf:{async getPage(number){
+            const size=number===1?{width:600,height:600}:{width:400,height:800};
+            return {getViewport:()=>size,cleanup(){}};
+          }}
+        };
+        curBook={id:'book',original:{hash:'h'}};
+        currentReaderMode='original';
+        originalLoadToken=1;
+        readerModeChangeToken=1;
+        originalSession=session;
+        readerScrollTo(0);
+        const held=await restorePdfAnchor({kind:'pdf',page:2,y:0.25},40);
+        const heldTop=readerScrollTop();
+        chapter.getBoundingClientRect=()=>rect(chapter);
+        const result=await watch(wrap,()=>{});
+        wrap.remove();
+        return {held,heldTop,shownTop:result.shownTop,top:result.top,preparing:result.preparing,jumped:result.jumped||(result.shownTop===0)};
+      })();
+      const epubVisible=await (async()=>{
+        currentReaderMode='original';
+        readerModeChangeToken=1;
+        const wrap=document.createElement('div');
+        wrap.dataset.readerPreparing='true';
+        document.body.appendChild(wrap);
+        const element={textContent:'abcdefghijklmnopqrstuvwxyz',getBoundingClientRect:()=>({top:0,height:0})};
+        const frame={contentDocument:{querySelector:()=>element},getBoundingClientRect:()=>({top:500})};
+        originalSession={kind:'epub',frames:[,,,,frame],frameMeta:[{stable:true},{stable:true},{stable:true},{stable:true},{stable:true}],
+          pendingAnchor:{source:{kind:'epub',href:'ch3.xhtml',spine:4,element:4,char:12},inset:40,spine:4,appliedTop:null},anchorMoved:false};
+        window.domRangeForOffsets=()=>({getClientRects:()=>[{top:240,height:16}]});
+        readerScrollTo(20);
+        reapplyEpubAnchorIfPending(originalSession,4);
+        const heldTop=readerScrollTop();
+        const result=await watch(wrap,()=>{
+          element.getBoundingClientRect=()=>({top:180,height:40});
+          readerScrollTo(100);
+          reapplyEpubAnchorIfPending(originalSession,4);
+        });
+        wrap.remove();
+        return {heldTop,shownTop:result.shownTop,top:result.top,preparing:result.preparing,jumped:result.jumped||result.shownTop===20};
+      })();
+      const txtVisible=await (async()=>{
+        currentReaderMode='text';
+        readerModeChangeToken=1;
+        const wrap=document.createElement('div');
+        wrap.dataset.readerPreparing='true';
+        document.body.appendChild(wrap);
+        const host=document.getElementById('rtext');
+        host.replaceChildren();
+        const image=document.createElement('img');
+        image.alt='';
+        image.src='/hang';
+        const paragraph=document.createElement('p');
+        paragraph.dataset.pi='18';
+        paragraph.style.margin='0';
+        paragraph.style.height='0';
+        paragraph.style.overflow='hidden';
+        host.append(image,paragraph);
+        readerScrollTo(15);
+        const held=restoreAnchor({pi:18,dy:12});
+        const heldTop=readerScrollTop();
+        const result=await watch(wrap,()=>{
+          paragraph.style.height='36px';
+          paragraph.textContent='A saved paragraph.';
+          image.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+        },()=>{if(textRestoreOwnsPosition())restoreAnchor({pi:18,dy:12});});
+        wrap.remove();
+        return {held,heldTop,shownTop:result.shownTop,top:result.top,preparing:result.preparing,jumped:result.jumped||result.top===heldTop};
+      })();
+      return {pdf:pdfVisible,epub:epubVisible,txt:txtVisible};
+    })();
+    return {pdf,epub,txt,visible};
   });
   return {...result,errors};
 }
@@ -147,7 +264,7 @@ try{
     try{
       const page=await (await browser.newContext(options)).newPage();
       const result=await scenario(page);
-      results.push({engine:name,pdf:result.pdf,epub:result.epub,txt:result.txt,errors:result.errors});
+      results.push({engine:name,pdf:result.pdf,epub:result.epub,txt:result.txt,visible:result.visible,errors:result.errors});
       assert.deepEqual(result.errors,[],name+' should stay quiet');
       assert.equal(result.pdf.held,true,name+' pdf');
       assert.equal(result.pdf.heldTop,0,name+' pdf must not treat an unlaid page as the start');
@@ -165,6 +282,20 @@ try{
       assert.equal(result.txt.owns,true,name+' txt');
       assert.equal(result.txt.pending,false,name+' txt');
       assert.ok(result.txt.top!==15,name+' txt should move to the saved paragraph, top='+result.txt.top);
+      assert.equal(result.visible.pdf.held,true,name+' pdf visible');
+      assert.equal(result.visible.pdf.heldTop,0,name+' pdf stays hidden at the start');
+      assert.equal(result.visible.pdf.preparing,'',name+' pdf reveals');
+      assert.ok(result.visible.pdf.shownTop>40,name+' pdf first visible scroll '+result.visible.pdf.shownTop);
+      assert.equal(result.visible.pdf.jumped,false,name+' pdf must not show the start and then jump');
+      assert.equal(result.visible.epub.heldTop,20,name+' epub stays hidden on the cover');
+      assert.equal(result.visible.epub.preparing,'',name+' epub reveals');
+      assert.equal(result.visible.epub.shownTop,100+500+240-40,name+' epub first visible scroll');
+      assert.equal(result.visible.epub.jumped,false,name+' epub must not show the cover and then jump');
+      assert.equal(result.visible.txt.held,true,name+' txt visible');
+      assert.equal(result.visible.txt.heldTop,15,name+' txt stays hidden on the first line');
+      assert.equal(result.visible.txt.preparing,'',name+' txt reveals');
+      assert.ok(result.visible.txt.top!==15,name+' txt first visible scroll '+result.visible.txt.top);
+      assert.equal(result.visible.txt.jumped,false,name+' txt must not show the start and then jump');
       await page.context().close();
     }finally{await browser.close();}
   }

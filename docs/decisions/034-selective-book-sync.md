@@ -82,6 +82,16 @@ that stamp cannot replace the remote locator or be written back over it. A
 newer place that is no longer the start still wins on the device where it
 was made.
 
+The reader does not paint that start and then jump. A linked book whose
+local place is still the start copies a locator this device already has, or
+waits one short read, before the first paint. If the read is slow, the book
+opens at the local place and a late reply is kept for the next open. It does
+not move the page already on screen. PDF paints the saved page, with that
+page's aspect ratio, instead of painting page 1 first. The preparing surface
+stays up until the saved page, chapter, or paragraph has been scrolled into
+place. If that layout does not arrive in time, the surface is shown where it
+is and is not scrolled afterward.
+
 The download stays off the sync return path and runs one book at a time.
 Bytes already received are kept in a separate IndexedDB database and the next
 attempt sends `Range`. A book larger than 2 GiB is not fetched. While the

@@ -298,7 +298,7 @@ function readerFrameAnchor(){
   if(!frameAnchorValid){ frameAnchorValue = captureAnchor(); frameAnchorValid = true; }
   return frameAnchorValue;
 }
-let textPendingAnchor=null,textAnchorMoved=false,textAnchorWatch=false,textAnchorTimer=0,textImageWatch=false;
+let textPendingAnchor=null,textAnchorMoved=false,textAnchorWatch=false,textAnchorTimer=0,textImageWatch=false,textRevealFrozen=false,textFrozenBook=null;
 function textImagesAbove(el){
   if(!el||typeof document==='undefined'||typeof document.querySelectorAll!=='function'||typeof el.compareDocumentPosition!=='function')return false;
   for(const img of document.querySelectorAll('#rtext img')){
@@ -326,6 +326,7 @@ function textWatchImages(){
   textImageWatch=true;
   const retry=event=>{
     const target=event&&event.target;
+    if(textRevealFrozen)return;
     if(textPendingAnchor&&target&&target.tagName==='IMG')restoreAnchor(textPendingAnchor);
   };
   document.addEventListener('load',retry,true);
@@ -336,7 +337,8 @@ function textScheduleAnchor(){
   const retry=()=>{
     textAnchorTimer=0;
     if(!textPendingAnchor)return;
-    if(textAnchorMoved){textPendingAnchor=null;return;}
+    if(textAnchorMoved){textPendingAnchor=null;textRevealFrozen=false;return;}
+    if(textRevealFrozen)return;
     restoreAnchor(textPendingAnchor);
   };
   if(typeof requestAnimationFrame==='function')textAnchorTimer=requestAnimationFrame(retry);
@@ -347,8 +349,15 @@ function textScheduleAnchor(){
 function textRestoreOwnsPosition(){
   return (typeof currentReaderMode==='undefined'||currentReaderMode==='text')&&!!textPendingAnchor&&!textAnchorMoved;
 }
+function textFreezePendingAnchor(){
+  textRevealFrozen=true;
+  textFrozenBook=typeof curBook!=='undefined'&&curBook?curBook.id:null;
+}
 function restoreAnchor(a){
   if(!a || a.pi == null) return false;
+  const bookId=typeof curBook!=='undefined'&&curBook?curBook.id:null;
+  if(textRevealFrozen&&textFrozenBook===bookId&&textPendingAnchor&&textPendingAnchor.pi===a.pi)return true;
+  textRevealFrozen=false;
   const el = document.querySelector(`#rtext [data-pi="${a.pi}"]`);
   if(!el) return false;
   if(!(textPendingAnchor&&textPendingAnchor.pi===a.pi))textAnchorMoved=false;

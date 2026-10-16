@@ -117,4 +117,54 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(positions.book.pi,18);
 }
 
+{
+  const pdf=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
+  const open=pdf.slice(pdf.indexOf('async function openOriginalPdf'),pdf.indexOf('async function prepareOriginalPdfPage'));
+  const placeAt=open.indexOf('pdfPlaceBeforePaint');
+  const observeAt=open.indexOf('new IntersectionObserver');
+  const renderAt=open.lastIndexOf('renderOriginalPdfPage');
+  assert.ok(placeAt>0&&placeAt<observeAt&&placeAt<renderAt,'the saved page is placed before page 1 can be observed or painted');
+  const epub=readFileSync(resolve(root,'scripts/reader/epub-original.js'),'utf8');
+  const epubOpen=epub.slice(epub.indexOf('async function openOriginalEpub'),epub.indexOf('/* ================= saved vocabulary'));
+  assert.ok(epubOpen.indexOf('epubInitialSpine')<epubOpen.indexOf('await Promise.all'),'the saved chapter is waited on before the cover is the only ready frame');
+  let top=0;
+  const cover={dataset:{page:'1'},classList:{contains:()=>false},style:{},isConnected:true};
+  const page={dataset:{page:'2'},classList:{contains:()=>false},style:{},isConnected:true};
+  const rect=element=>{
+    const height=element===cover?600:800;
+    const at=element===cover?0:600;
+    return {top:at-top,height,width:400,bottom:at-top+height};
+  };
+  cover.getBoundingClientRect=()=>rect(cover);
+  page.getBoundingClientRect=()=>rect(page);
+  const session={
+    kind:'pdf',bookId:'book',hash:'h',loadToken:1,pages:[cover,page],
+    settled:new Set([1,2]),rendering:new Map(),wordBoxes:new Map([[1,[]],[2,[]]]),
+    pdf:{async getPage(number){
+      const size=number===1?{width:600,height:600}:{width:400,height:800};
+      return {getViewport:()=>size,cleanup(){}};
+    }}
+  };
+  const positions={book:{mode:'original',original:{kind:'pdf',page:2,y:0.25}}};
+  const context=createContext({
+    console,Promise,Map,Set,WeakMap,Math,Number,Date,document:{getElementById:()=>null},
+    registerReaderSurface(){},
+    posOf:id=>positions[id],
+    readerScrollTop:()=>top,
+    readerScrollTo(value){top=value;},
+    topInset:()=>30,
+    requestAnimationFrame:fn=>fn,
+    curBook:{id:'book',original:{hash:'h'}},
+    currentReaderMode:'original',
+    originalLoadToken:1,
+    originalSession:session
+  });
+  new Script(pdf,{filename:'pdf-original.js'}).runInContext(context);
+  const painted=await context.pdfPlaceBeforePaint(session,{id:'book'});
+  assert.equal(painted,2);
+  assert.equal(top,600-(30+10)+0.25*800,'the saved page is the first scroll, before page 1 is shown');
+  assert.equal(page.dataset.breezeRatio,'own');
+  assert.equal(cover.dataset.breezeRatio,'own');
+}
+
 console.log('Reading place contract verified');

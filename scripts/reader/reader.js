@@ -436,6 +436,10 @@ async function openBook(b,options={}){
   const prepared=options.prepared && options.prepared.book===b ? options.prepared : null;
   if(!b.transient && !prepared && !reuse) await repairBookLigatures(b);
   if(!alive())return;
+  if(typeof bookCloudPositionBeforeOpen==='function'){
+    try{await bookCloudPositionBeforeOpen(b);}catch(error){}
+  }
+  if(!alive())return;
   /* The width observer below fires as the reader appears. It must not aim at
      wherever the previous book was being read. */
   lastAnchor = null;
@@ -475,13 +479,26 @@ async function openBook(b,options={}){
      읽는 칸 바깥이 함께 흔들립니다 (styles/reader.css 의 "읽는 동안의 셸"). */
   document.body.classList.add('reading');
   document.documentElement.classList.add('reading');
-  document.body.classList.remove('reader-original');
   showReaderChrome();                 // 상단바가 다시 서는 날을 위한 배선입니다
-  document.getElementById('readwrap').hidden=false;
-  document.getElementById('originalwrap').hidden=true;
-  if(!reuse)renderBookBody(b);
   const initialPosition = posOf(b.id);
   const firstOpen = !initialPosition.t;
+  const readwrap=document.getElementById('readwrap');
+  const originalWrap=document.getElementById('originalwrap');
+  /* 원본으로 열 책은 글자 화면의 맨 앞을 먼저 그리지 않습니다. 그 한 프레임이
+     읽던 곳으로 건너뛰는 점프가 됩니다. */
+  const openingOriginal=typeof bookSupportsOriginal==='function'&&bookSupportsOriginal(b)
+    &&(initialPosition.mode==='original'||firstOpen);
+  document.body.classList.toggle('reader-original',openingOriginal);
+  readwrap.hidden=openingOriginal;
+  originalWrap.hidden=!openingOriginal;
+  if(openingOriginal){originalWrap.dataset.readerPreparing='true';originalWrap.setAttribute('aria-busy','true');}
+  else{
+    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
+    /* 글자 위치는 원본 파일을 확인한 뒤에 앉습니다. 그 사이에 맨 앞이 보이면
+       확인이 끝나는 순간 읽던 문단으로 건너뜁니다. */
+    if(typeof bookSupportsOriginal==='function'&&bookSupportsOriginal(b))readwrap.dataset.readerPreparing='true';
+  }
+  if(!reuse)renderBookBody(b);
   /* Progress freshness belongs to location changes. A first-open marker is
      created only after the document and its saved location are ready. */
   positionOpening.onRestored=()=>{
@@ -504,17 +521,31 @@ async function openBook(b,options={}){
     if(alive()&&curBook===b&&reuse&&(!reusedWords||reusedMode!=='original'))refreshOriginalSavedWords();
   }
   else{
+    document.body.classList.remove('reader-original');
+    readwrap.hidden=false;
+    originalWrap.hidden=true;
+    delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
     if(reuse&&(!reusedWords||reusedMode!=='text'))refreshReaderWords();
+    const pos=posOf(b.id);
+    if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
+    if(typeof textRestoreOwnsPosition==='function'&&textRestoreOwnsPosition())readwrap.dataset.readerPreparing='true';
+    if(readwrap.dataset.readerPreparing&&!(typeof textRestoreOwnsPosition==='function'&&textRestoreOwnsPosition())
+        &&typeof releaseReaderPreparing==='function')releaseReaderPreparing(readwrap);
     presented();
-    await new Promise(resolve=>requestAnimationFrame(()=>{
-      if(alive()&&curBook===b&&readerPositionRestoration===positionOpening){
-        const pos=posOf(b.id);
-        if(!restoreAnchor(pos)) readerScrollTo(pos.y||0);
-        lastAnchor=captureAnchor(); updatePfill(true);
-        positionOpening.onRestored();
-      }
-      resolve();
-    }));
+    if(readwrap.dataset.readerPreparing&&typeof releaseReaderPreparing==='function'){
+      releaseReaderPreparing(readwrap);
+      await new Promise(resolve=>{
+        const wait=()=>{
+          if(!alive()||curBook!==b||!readwrap.dataset.readerPreparing){resolve();return;}
+          requestAnimationFrame(wait);
+        };
+        wait();
+      });
+    }
+    if(alive()&&curBook===b&&readerPositionRestoration===positionOpening){
+      lastAnchor=captureAnchor(); updatePfill(true);
+      positionOpening.onRestored();
+    }
   }
   }finally{
     if(readerPositionRestoration===positionOpening)readerPositionRestoration=null;

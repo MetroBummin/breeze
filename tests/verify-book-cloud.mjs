@@ -322,6 +322,88 @@ test('a downloaded book restores the remote place and a local start does not rep
   }
 });
 
+test('the saved place is local before the reader opens',async()=>{
+  const places={
+    pdf:{p:0.42,t:1000,mode:'original',original:{kind:'pdf',page:12,y:0.35}},
+    epub:{p:0.27,t:1000,mode:'original',original:{kind:'epub',href:'ch3.xhtml',spine:3,element:4,char:12}},
+    txt:{p:0.61,t:1000,mode:'text',pi:18,dy:4,y:900}
+  };
+  for(const [kind,place] of Object.entries(places)){
+    const {context}=boot({flag:true});
+    const id='file-'+hash.slice(0,32);
+    const book={id,kind,sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+    context.books=[book];
+    context.curBook=book;
+    let moved=0;
+    context.switchReaderMode=()=>{moved++;};
+    context.restoreAnchor=()=>{moved++;return true;};
+    context.readerScrollTo=()=>{moved++;};
+    let selects=0;
+    context.positions[id]=place;
+    context.sb.from=()=>({select:async()=>{selects++;return {data:[]};}});
+    await context.bookCloudPositionBeforeOpen(book);
+    assert.equal(selects,0,kind+' already stored');
+    assert.equal(moved,0,kind);
+    context.positions[id]={p:0,t:1,mode:kind==='txt'?'text':'original'};
+    context.bookCloudHeads[hash]={revision:'rev-1',locator:place};
+    await context.bookCloudPositionBeforeOpen(book);
+    assert.equal(selects,0,kind+' remembered');
+    assert.equal(context.positions[id].p,place.p,kind);
+    assert.equal(moved,0,kind);
+    context.positions[id]={p:0,t:1,mode:kind==='txt'?'text':'original'};
+    context.bookCloudHeads={};
+    context.sb.from=table=>({select:async()=>{
+      selects++;
+      return table==='positions'?{data:[{book_id:hash,data:{revision:'rev-1',locator:place}}]}:{data:[]};
+    }});
+    await context.bookCloudPositionBeforeOpen(book);
+    assert.equal(context.positions[id].p,place.p,kind+' fetched');
+    assert.equal(moved,0,kind+' fetched');
+    if(place.original)assert.equal(context.positions[id].original.page||context.positions[id].original.spine,place.original.page||place.original.spine);
+    else assert.equal(context.positions[id].pi,18);
+  }
+});
+
+test('a slow position read opens at the local place and does not jump later',async()=>{
+  const places={
+    pdf:{p:0.42,t:1000,mode:'original',original:{kind:'pdf',page:12,y:0.35}},
+    epub:{p:0.27,t:1000,mode:'original',original:{kind:'epub',href:'ch3.xhtml',spine:3,element:4,char:12}},
+    txt:{p:0.61,t:1000,mode:'text',pi:18,dy:4,y:900}
+  };
+  await Promise.all(Object.entries(places).map(async([kind,place])=>{
+    const {context}=boot({flag:true});
+    const id='file-'+hash.slice(0,32);
+    const book={id,kind,sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+    context.books=[book];
+    context.curBook=book;
+    context.positions[id]={p:0,t:1,mode:kind==='txt'?'text':'original'};
+    let moved=0;
+    context.switchReaderMode=()=>{moved++;};
+    context.restoreAnchor=()=>{moved++;return false;};
+    context.readerScrollTo=()=>{moved++;};
+    let release;
+    const pending=new Promise(resolve=>{release=resolve;});
+    context.sb.from=table=>({select:()=>table==='positions'?pending:Promise.resolve({data:[]})});
+    const started=Date.now();
+    await context.bookCloudPositionBeforeOpen(book);
+    const elapsed=Date.now()-started;
+    assert.ok(elapsed>=300&&elapsed<1000,kind+' '+elapsed);
+    assert.equal(context.positions[id].p,0,kind);
+    assert.equal(moved,0,kind);
+    release({data:[{book_id:hash,data:{revision:'rev-1',locator:place}}]});
+    await pending;
+    await new Promise(resolve=>setTimeout(resolve,20));
+    assert.equal(moved,0,kind+' late');
+    assert.equal(context.positions[id].p,0,kind+' late');
+    assert.equal(context.bookCloudHeads[hash].locator.p,place.p,kind+' late');
+    context.bookCloudRevealQuiet=null;
+    context.positions[id]={p:0,t:1,mode:kind==='txt'?'text':'original'};
+    await context.bookCloudPositionBeforeOpen(book);
+    assert.equal(context.positions[id].p,place.p,kind+' next open');
+    assert.equal(moved,0,kind+' next open');
+  }));
+});
+
 test('each account keeps its own outbox',()=>{
   const {context}=boot({flag:true});
   context.bookCloudWriteOutbox(user,{version:1,uploads:{[hash]:{kind:'epub'}},positions:{},removes:{}});
