@@ -22,7 +22,9 @@ function setup(options={}){
       state.writes++;if(state.writeThrows)throw Error('db transport');
       if(!state.writeError)state.rows.set(row.cache_key,row);return {error:state.writeError || null};
     }})};
-  const context=vm.createContext({createClient:()=>db,Deno:{env:{get:()=>''},serve:fn=>handler=fn},
+  const context=vm.createContext({createClient:()=>db,Deno:{env:{get:key=>state.env?.[key]||''},serve:fn=>handler=fn},
+    fetch:async(url,init)=>{state.puts=(state.puts||[]).concat([{url,init}]);if(state.putStatus==='throw')throw new Error('cache down');return new Response(null,{status:state.putStatus||204});},
+    AbortSignal,
     generateArticlePreview:async()=>{state.calls++;if(state.gate)await state.gate;if(state.fail)throw Error('model_failed');return {meta:state.meta || meta,model:'fixture',latencyMs:1};},
     Request,Response,TextEncoder,TextDecoder,URL,Uint8Array,crypto,console:{info(){},error(){}}});
   vm.runInContext(executable,context);
@@ -92,6 +94,22 @@ test('versioned evidence key normalizes tracking but not changed evidence',async
   assert.equal(state.calls,1);await send({...body,title:'Updated title'});assert.equal(state.calls,2);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('article-preview-v5\n'+body.url+'\n'+body.title+'\n'+body.excerpt));
   assert.equal(state.keys[0],Buffer.from(digest).toString('hex'));
+});
+test('a configured reading cache receives the invitation and a failed write still returns it',async()=>{
+  const env={READING_CACHE_PUT_URL:'https://cache.test/root/',READING_CACHE_WRITE_TOKEN:'writer-token'};
+  const {send,state}=setup({env});
+  const generated=await (await send()).json();
+  assert.equal(generated.summaryKo,meta.summaryKo);
+  assert.equal(state.puts.length,1);
+  assert.equal(state.puts[0].url,'https://cache.test/root/previews/v5/'+state.keys[0]+'.json');
+  assert.equal(state.puts[0].init.method,'PUT');
+  assert.equal(state.puts[0].init.headers.authorization,'Bearer writer-token');
+  assert.equal(JSON.parse(state.puts[0].init.body).summaryKo,meta.summaryKo);
+  const hit=await send();
+  assert.equal((await hit.json()).cached,true);
+  assert.equal(state.puts.length,2);
+  const broken=setup({env,putStatus:'throw'});
+  assert.equal((await broken.send()).status,200);
 });
 test('source month and written counts may be rendered as Korean numerals',async()=>{
   const title='Council approves a library pilot after a divided vote';

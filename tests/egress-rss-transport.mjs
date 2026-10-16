@@ -6,18 +6,27 @@ const article=readFileSync(new URL('../scripts/importers/article.js',import.meta
 const current=readFileSync(new URL('../scripts/importers/rss.js',import.meta.url),'utf8');
 export const cacheKey='breeze.rss-public.v1';
 export function rssDevice({source=current,storage=new Map(),now=1000000,offline=false,
-  missingCovers=false,mediumUnusable=false,mediumResolve=false,candidates=20,custom=[],denyStorage=false,catalog=false}={}){
+  missingCovers=false,mediumUnusable=false,mediumResolve=false,candidates=20,custom=[],denyStorage=false,catalog=false,readingCache=false}={}){
   const calls=[],state={now,offline,fail:false,catalogPayload:null,catalogStatus:200};
   let feedAt=[];
   class Clock extends Date{static now(){return state.now;}}
-  const context=createContext({URL,Date:Clock,TextEncoder,TextDecoder,Uint8Array,Response,AbortSignal,window:{BREEZE_CONFIG:{RSS_CATALOG:catalog}},console:{warn(){},error(){}},
+  const context=createContext({URL,Date:Clock,TextEncoder,TextDecoder,Uint8Array,Response,AbortSignal,crypto,window:{BREEZE_CONFIG:{RSS_CATALOG:catalog,...(readingCache?{READING_CACHE_URL:'https://cache.test'}:{})}},console:{warn(){},error(){}},
     setTimeout,clearTimeout,ensureReadabilityLib:async()=>{},books:[],positions:{},SB_URL:'https://relay.example',SB_KEY:'synthetic-public-key',
     navigator:{get onLine(){return !state.offline;}},
     localStorage:{getItem:key=>{if(denyStorage)throw Error('storage denied');return storage.get(key)||null;},
       setItem:(key,value)=>{if(denyStorage)throw Error('storage denied');storage.set(key,value);}},
     load:(key,fallback)=>key==='breeze.feed-sources'?custom:fallback,
     fetch:async (raw,options)=>{
-      const url=new URL(raw),proxy=url.origin==='https://relay.example';
+      const url=new URL(raw);
+      if(url.origin==='https://cache.test'){
+        calls.push({target:url.pathname+url.search,request:String(raw),bytes:0,status:state.cacheStatus||200,credentials:options?.credentials||'',authorization:options?.headers?.Authorization||options?.headers?.authorization||''});
+        if(state.offline)throw Error('offline');
+        if(state.cacheStatus)return new Response('',{status:state.cacheStatus});
+        if(url.pathname.startsWith('/images/'))return new Response(Uint8Array.from([137,80,78,71]),{status:200,headers:{'content-type':'image/png'}});
+        const final=url.searchParams.get('url');
+        return new Response('<rss version="2.0"></rss>',{status:200,headers:{'content-type':'application/rss+xml',...(final?{'x-reading-url':final}:{})}});
+      }
+      const proxy=url.origin==='https://relay.example';
       if(!proxy)throw new TypeError('Synthetic publisher CORS rejection');
       if(state.offline)throw Error('offline');
       if(url.pathname.endsWith('/rss-catalog')){
@@ -30,7 +39,7 @@ export function rssDevice({source=current,storage=new Map(),now=1000000,offline=
       if(state.fail){calls.push({target,bytes:0,status:503});return {ok:false,status:503,json:async()=>null};}
       const isFeed=/feed|\.xml|\.rss|\.atom/.test(target);
       const html=target+' '+'x'.repeat(isFeed?100000:200000);
-      const payload={url:target,html};calls.push({target,bytes:Buffer.byteLength(JSON.stringify(payload)),status:200});
+      const payload={url:target,html};calls.push({target,request:String(raw),bytes:Buffer.byteLength(JSON.stringify(payload)),status:200});
       return {ok:true,status:200,json:async()=>payload};
     }});
   new Script(article+'\n'+source).runInContext(context);

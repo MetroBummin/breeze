@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "breeze-reading-cache",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-16",
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "triggers": {
+    "crons": ["*/10 * * * *"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "READING",
+      "bucket_name": "breeze-public-reading"
+    }
+  ]
+}

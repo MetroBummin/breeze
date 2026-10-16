@@ -399,7 +399,8 @@ the metadata still shown, so a restart or a failed refresh can open the body
 that was already transferred. Custom feeds stay in memory only. Successful source
 refresh replaces that source's evidence; a transient failure does not invent an
 empty successful feed. Cache budget eviction can remove old bodies. No body is
-added to discovery metadata, the shared catalog, or a saved book.
+added to the shared catalog or a saved book. Discovery metadata stays body-free
+unless `READING_CACHE_URL` is set.
 Readability and access/truncation checks still run only after selection. Reuse
 requires matching source provenance and canonical article identity. Metadata
 without a stored body still cannot invent one.
@@ -410,6 +411,8 @@ make one fresh request. A stale rejected job cannot erase a replacement job.
 Successful empty or missing-story results remain distinct from transient error.
 There are no automatic retry loops, new requests during Home loading, paid
 provider calls, server changes or access-restriction workarounds.
+
+When `BREEZE_CONFIG.READING_CACHE_URL` is an https origin, those same reads come from the public reading cache in Decision 035 instead of the Supabase relay. Discovery metadata may keep a supplied `contentHtml` that fits the existing per-feed byte budget, and Medium owner feeds are resolved before a card is shown. Removing the key restores this section's relay path and body-free metadata on the next load. The wordbook revision check, cover budget, and cover prefix stay as they are.
 
 This is a partial reliability correction, not a new readability-admission gate.
 An article can still have a photo while its public body is unavailable. A shared

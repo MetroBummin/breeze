@@ -71,6 +71,7 @@ const RSS_SUPPLIED_FEED_BYTES=200000;
 const RSS_SUPPLIED_STORE_KEY='breeze.rss-supplied.v1';
 let rssSuppliedHydrated=false;
 function rssBuiltinFeed(url){return RSS_FEEDS.some(source=>source.url===url);}
+function rssReadingCacheOn(){return typeof readingCacheEnabled==='function'&&readingCacheEnabled();}
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
@@ -444,7 +445,11 @@ function rssCacheEntry(entry){
   value.publishedAt=value.publishedAt.slice(0,100);value.date=value.date.slice(0,100);
   value.source=value.source.slice(0,256);value.category=rssCategory(value.category);
   value.kind=['x','reddit'].includes(value.kind)?value.kind:'';
-  return {...value,contentHtml:'',bodyProvided:false,discoveryFiltered:true};
+  // Full feed bodies stay in discovery metadata only while the public reading
+  // cache is serving them. The byte budget below still drops a body that does
+  // not fit. With the flag unset, metadata stays body-free.
+  const html=rssReadingCacheOn()&&typeof entry.contentHtml==='string'&&entry.contentHtml.length<=200000?entry.contentHtml:'';
+  return {...value,contentHtml:html,bodyProvided:!!entry.bodyProvided&&!!html,discoveryFiltered:true};
 }
 function rssPublicCacheEntries(){
   if(rssPublicCache)return rssPublicCache;
@@ -774,6 +779,18 @@ async function rssPublicArticle(entry){
   return {...entry,bodyProvided:true,contentHtml:match.contentHtml,
     author:match.author || entry.author,photo:entry.photo || match.photo};
 }
+async function rssPreparePublicArticles(entries, publish){
+  const ready=[];let cursor=0;
+  const candidates=entries.filter(entry=>!rssAlreadySaved(entry)).slice(0,RSS_PER_FEED);
+  await Promise.all([0,1].map(async()=>{
+    while(cursor<candidates.length && ready.length<RSS_PER_FEED){
+      const entry=candidates[cursor++];
+      const resolved=await rssPublicArticle(entry);
+      if(resolved && ready.length<RSS_PER_FEED){ready.push(resolved);publish([...ready]);}
+    }
+  }));
+  return ready;
+}
 async function rssResolveSelectedEntry(entry){
   entry=rssSuppliedEntry(entry);
   if(rssMediumSource({url:entry.feedSourceUrl||entry.feedUrl||entry.url}))return await rssPublicArticle(entry)||entry;
@@ -960,7 +977,11 @@ async function loadRssLegacy(force){
     const start = entries.length ? (rssPage * RSS_PER_FEED) % entries.length : 0;
     const ordered=entries.map((_, step) => entries[(start + step) % entries.length]);
     const publish=entries=>{rssCands[index]=entries;rssListeners.forEach(notify=>notify(rssCands));};
-    publish(ordered.map(rssDiscoveryEntry));
+    if(rssReadingCacheOn()&&rssMediumSource(feed)&&ordered.length){
+      const ready=await rssPreparePublicArticles(ordered.filter(entry=>!rssAlreadySaved(entry)),next=>publish(next.map(rssDiscoveryEntry)));
+      if(ready.length)rssRememberSuppliedBodies(feed,ready,result.at);
+      publish((ready.length?ready:ordered).map(rssDiscoveryEntry));
+    }else publish(ordered.map(rssDiscoveryEntry));
     return rssCands[index];
     }catch(error){
       // Public stale fallback belongs to rssFeedEntries, which checks its age.
@@ -993,8 +1014,13 @@ async function loadRss(force){
       const result=await rssQualityFeed(feed);pending=pending || result.pending;
       const start=result.entries.length ? (rssPage*RSS_PER_FEED)%result.entries.length : 0;
       const ordered=result.entries.map((_,step)=>result.entries[(start+step)%result.entries.length]);
-      // Eligibility stays owned by Jev; article bodies wait for selection.
-      publish(ordered.filter(entry=>!rssAlreadySaved(entry)).map(entry=>rssDiscoveryEntry({...entry,contentHtml:'',bodyProvided:false})));
+      // Eligibility stays owned by Jev. Owner bodies are resolved before a card
+      // appears only while the reading cache, not the Supabase relay, carries them.
+      if(rssReadingCacheOn()&&rssMediumSource(feed)&&ordered.length){
+        const unsaved=ordered.filter(entry=>!rssAlreadySaved(entry));
+        const ready=await rssPreparePublicArticles(unsaved,next=>publish(next.map(rssDiscoveryEntry)));
+        publish((ready.length?ready:unsaved).map(rssDiscoveryEntry));
+      }else publish(ordered.filter(entry=>!rssAlreadySaved(entry)).map(entry=>rssDiscoveryEntry({...entry,contentHtml:'',bodyProvided:false})));
     }catch{pending=true;/* Retain last-good approved cards through service outages. */}
     return rssCands[index];
   })).then(groups=>{rssCands=groups;rssQualityPending=pending;rssLoadedAt=Date.now();return groups;}).finally(()=>{

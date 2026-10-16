@@ -1,102 +1,125 @@
 # Public reading payloads on Cloudflare R2
 
-2026-10-16. Plan only. Do not create the bucket, deploy a Worker, change
-`BREEZE_CONFIG`, or point clients at R2 in this change. Private book bytes stay
-on the separate `breeze-books` bucket from Decision 034.
+2026-10-16. The Worker, bucket binding, and client read path are in the tree.
+`BREEZE_CONFIG.READING_CACHE_URL` stays unset, so the app still uses the
+Supabase relay. Do not treat a missing key as a failed deploy. Private book
+bytes stay on `breeze-books` from Decision 034. This change does not create the
+bucket or deploy the Worker.
 
 ## What is served today
 
 Home discovery loads the thirteen built-in feeds. `fetchArticleHtml` tries the
 publisher for three seconds, then `GET /functions/v1/article?url=…` on Supabase.
 The function returns the feed or article as JSON (`{url,html}`, up to 3 MB) with
-`Cache-Control: no-store`. A warm `breeze.rss-public.v1` entry skips that fetch
-for ten minutes, but the stored entry has had `contentHtml` removed since
-`24fc7673`. Images try the publisher first; failures use `?as=image` (up to 2 MB,
-also `no-store`). The Preview invitation is `POST /functions/v1/article-preview`.
-A hit reads `article_preview_cache` through the Edge Function and returns a few
-hundred bytes of `summaryKo`. A miss calls OpenRouter and inserts one row.
-Lookup “쉬운 설명” is not this payload: it is an on-demand dict call with no
-content cache.
+`Cache-Control: no-store`. Images try the publisher first; failures use
+`?as=image` (up to 2 MB, also `no-store`). The Preview invitation is
+`POST /functions/v1/article-preview`. A hit reads `article_preview_cache` and
+returns `summaryKo`. A miss calls OpenRouter and inserts one row. Lookup
+“쉬운 설명” is a separate on-demand dict call.
+
+With `READING_CACHE_URL` set to the Worker origin, built-in feeds, articles, and
+images are read from this bucket instead. A 404 or network failure uses the
+on-device last-good copy and does not call `/functions/v1/article`. Custom feed
+URLs stay on the device: they are not written to the bucket and, while the flag
+is on, they are not sent to the relay either. Invitations are read from
+`previews/v5/` first. A 404 still calls `article-preview`, which generates the
+text and, when its write secret is set, PUTs the JSON. A network failure of the
+preview object uses the on-device invitation and does not start a second
+generation through the relay.
 
 The bytes that make Supabase egress matter are the relayed feed XML, article
-HTML, and images. The invitation text is small, but it still leaves through the
-same project and is cached in Postgres. Decision 015 records an unattributed
-historical 4.791 GB figure; this plan does not claim that number as a current
-bill. A rough current shape, not a measurement: one cold Home load is thirteen
-feed bodies (often a few hundred KB each). Each selected article that no longer
-has its feed body adds another HTML body. Image misses add more. Multiplied by
-daily opens, feed XML dominates. R2 egress is free; the bill is storage plus
-Class A writes and Class B reads.
+HTML, and images. Decision 015 records an unattributed historical 4.791 GB
+figure; this decision does not claim that number as a current bill.
 
 ## Bucket and keys
 
-Use a new public bucket `breeze-public-reading`, not `breeze-books`. Serve it
-from a dedicated hostname once the Worker is verified. Objects:
+Public bucket `breeze-public-reading`, served by Worker `breeze-reading-cache`.
+Not `breeze-books`. Objects:
 
 | Payload | Key | Cache-Control | Written by |
 | --- | --- | --- | --- |
-| Feed XML | `feeds/v1/{feedId}.xml` | `public, max-age=600` | cron Worker |
+| Feed XML | `feeds/v1/{feedId}.xml` | `public, max-age=600` | cron, every 10 minutes |
 | Feed stamp | `feeds/v1/{feedId}.json` | same, plus `fetchedAt` and final URL | same write |
 | Article HTML | `articles/v1/{sha256(canonicalUrl)}.html` | `public, max-age=86400` | on first selected miss |
 | Article stamp | `articles/v1/{sha256}.json` | final URL, status, `fetchedAt` | same write |
 | Image | `images/v1/{sha256(url)}` | `public, max-age=86400`, stored content-type | on image miss |
 | Invitation | `previews/v5/{sha256("article-preview-v5\\n"+url+"\\n"+title+"\\n"+excerpt)}.json` | `public, max-age=2592000` | article-preview after a valid `summaryKo` |
 
-`feedId` is the existing fixed index 0–12. The preview hash is the Edge
-Function’s current cache key, so a title or excerpt change does not reuse an
-older invitation. Do not put account ids, cookies, or custom-feed URLs in this
-bucket. Custom feeds stay on the device.
+`feedId` is the fixed index 0–12 in `server/reading-cache/src/feeds.mjs`, the
+same order as `RSS_FEEDS`. The preview hash is the Edge Function’s cache key.
+No account ids, cookies, or custom-feed URLs go in this bucket. Clients have no
+write credentials. Preview PUT and `POST /feeds/refresh` require
+`PREVIEW_WRITE_TOKEN`.
 
-## Writer and client read
+## Kill switch
 
-One Worker, `breeze-reading-cache`, cron-fetches the thirteen publisher feeds
-and writes the XML plus stamp. It does not run Readability. On a cache miss the
-same Worker may fetch one public article or image, with the existing size and
-type limits, and write the object. The article-preview function keeps calling
-OpenRouter on a miss, then PUTs the validated JSON. Clients do not get write
-credentials.
+Leave `READING_CACHE_URL` unset, or remove it, and the next call uses the relay
+again. The check reads `window.BREEZE_CONFIG` on each request. No Worker deploy
+is required to stop clients. Unset the article-preview secrets
+`READING_CACHE_PUT_URL` and `READING_CACHE_WRITE_TOKEN` to stop invitation
+writes. The cron can stay; it only writes the public feeds.
 
-Client read, behind an unset `BREEZE_CONFIG.READING_CACHE_URL`: `GET` the object
-with `credentials: 'omit'`. A 404 or network failure uses the on-device last-good
-copy. It does not silently fall back to the Supabase relay once the flag is on;
-that fallback is how a broken cache would put the egress back. Until the flag is
-set, the current relay stays in place.
+While the flag is on, discovery metadata may keep a supplied `contentHtml` that
+fits the existing per-feed byte budget, and Medium owner feeds are resolved
+before a card is shown. Those reads go to this Worker. The wordbook revision
+check, the two-request cover budget, and the 128 KiB cover prefix stay.
+
+## Deploy
+
+Run these from a checkout that contains `server/reading-cache/wrangler.jsonc`,
+in the Cloudflare account that already owns `breeze-books`
+(`dc26cb1d2297ca2206a0434ff88e24b4`). Wrangler must be logged in as a member who
+can create R2 buckets and Workers. This repository does not run them.
+
+1. Create the bucket. Do not enable a public r2.dev URL; the Worker is the only
+   reader and writer clients use.
+
+   ```sh
+   npx wrangler r2 bucket create breeze-public-reading
+   ```
+
+2. Set the preview write token. Use a long random value. The same value is the
+   Supabase secret in step 5. Do not commit it.
+
+   ```sh
+   npx wrangler secret put PREVIEW_WRITE_TOKEN --config server/reading-cache/wrangler.jsonc
+   ```
+
+3. Deploy the Worker. The config’s cron is `*/10 * * * *`.
+
+   ```sh
+   npx wrangler deploy --config server/reading-cache/wrangler.jsonc
+   ```
+
+4. Prime the feeds before pointing clients at the Worker. Replace the origin
+   with the deployed workers.dev host or the custom hostname you attach.
+
+   ```sh
+   curl -X POST -H "Authorization: Bearer $PREVIEW_WRITE_TOKEN" \
+     https://breeze-reading-cache.<account>.workers.dev/feeds/refresh
+   ```
+
+   Confirm `GET /feeds/v1/0.xml` returns XML and `cache-control: public, max-age=600`.
+
+5. Redeploy the `article-preview` Edge Function with two secrets:
+   `READING_CACHE_PUT_URL` is the Worker origin with no trailing path, and
+   `READING_CACHE_WRITE_TOKEN` is the same token as step 2. Without those
+   secrets the function still returns invitations and does not write R2.
+
+6. Set `READING_CACHE_URL` in `config.js` to that https origin and ship the
+   app. Until this key exists, clients keep using the relay.
+
+Rollback for clients is step 6 in reverse: delete `READING_CACHE_URL` and ship.
+To stop the cron, deploy again with `triggers.crons` set to `[]`. Do not delete
+the bucket as part of rollback.
 
 ## Cost shape
 
-Cloudflare’s published R2 rates are about $0.015/GB-month, $4.50 per million
-Class A writes, and $0.36 per million Class B reads, with no egress charge.
-Thirteen feeds every ten minutes is under 60,000 writes a month. A few hundred
-thousand article, image, and invitation writes stays well under a million Class
-A operations (about $4.50). Reads are one Class B per cold client fetch; a ten
-minute HTTP cache makes a Home session one read per feed. Ten thousand daily
-sessions at thirteen feeds, plus a couple of article reads, is on the order of
-a few million Class B reads a month (about $1–$3). Retaining articles and images
-for thirty days is single-digit to low tens of GB (under about $1). The
-comparable Supabase cost is the byte egress of every client pulling those same
-feeds and pages. Treat these as order-of-magnitude checks, not a bill.
-
-## Optimizations to revert once this bucket serves the data
-
-Revert these. They were attempts to spend fewer Supabase bytes, and they are
-what made Preview unreliable:
-
-- `b3a2ecf6` (2026-10-05) and `24fc7673` (2026-10-05) strip `contentHtml` from
-  the discovery cache. After a restart inside the fresh window the card is still
-  there, but the body that the feed already sent is gone, so open depends on a
-  second origin fetch.
-- `24fc7673` also stopped resolving Medium owner bodies before a card could
-  appear. Selection then fetches the owner feed, and a failure falls through to
-  the article URL, which Medium often refuses.
-- `aeae18b6` (2026-10-05) waits for that body before requesting the Korean
-  invitation. When the body fails or is slow, the invitation never starts.
-- The Preview handler from `a1564f34` (2026-09-25) drops an invitation that
-  arrives while Read is in flight. That only became visible once Read started
-  failing more often.
-
-Do not revert the wordbook revision check from `b3a2ecf6`, the two-request cover
-budget, or the 128 KiB cover prefix. Those are separate from this Preview
-failure. This change keeps the cover limits and does not turn Medium prefetch
-back on while the bytes would still cross Supabase. It does keep a built-in
-feed body on device for the metadata’s twenty-four-hour window, and it lets the
-feed summary request the invitation before the body returns.
+Published R2 rates used as an order-of-magnitude check: about $0.015/GB-month,
+$4.50 per million Class A writes, and $0.36 per million Class B reads, with no
+egress charge. Thirteen feeds every ten minutes is under 60,000 writes a month.
+A few hundred thousand article, image, and invitation writes stays under about
+$4.50 of Class A. Ten thousand daily sessions at thirteen feeds plus a couple of
+article reads is a few million Class B reads, about $1–$3. Thirty days of
+articles and images is under about $1 of storage. The comparable Supabase cost
+is the byte egress of every client pulling those same feeds.

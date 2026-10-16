@@ -17,6 +17,19 @@ function validMetadata(value:any){
   }
   return meta;
 }
+async function publishReadingPreview(cacheKey:string,summaryKo:string){
+  const base=(Deno.env.get("READING_CACHE_PUT_URL")||"").replace(/\/+$/,"");
+  const token=Deno.env.get("READING_CACHE_WRITE_TOKEN")||"";
+  if(!/^https:\/\//.test(base)||!token)return;
+  try{
+    await fetch(base+"/previews/v5/"+cacheKey+".json",{
+      method:"PUT",
+      headers:{"content-type":"application/json","authorization":"Bearer "+token},
+      body:JSON.stringify({summaryKo,promptVersion:5}),
+      signal:AbortSignal.timeout(4000)
+    });
+  }catch{/* The reader already has the invitation. */}
+}
 async function digest(value:string){
   const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
   return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,"0")).join("");
@@ -52,7 +65,7 @@ Deno.serve(async request=>{
     const {data:hit,error:readError}=await db.from("article_preview_cache").select("hook_title,translated_title,teaser").eq("cache_key",cacheKey).maybeSingle();
     if(readError)return reply({error:"cache_unavailable"},503);
     const cached=hit && validMetadata({summaryKo:hit.teaser});
-    if(cached)return reply({...cached,cached:true,promptVersion:5});
+    if(cached){await publishReadingPreview(cacheKey,cached.summaryKo);return reply({...cached,cached:true,promptVersion:5});}
     if(hit)return reply({error:"cache_invalid"},503);
     const token=(request.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
     const {data:user}=await db.auth.getUser(token);
@@ -84,6 +97,7 @@ Deno.serve(async request=>{
         }catch{/* A storage transport failure must not discard usable metadata. */}
         // A useful, paid-for result remains usable even if shared persistence fails.
         // The client may keep it locally; no failure placeholder is cached.
+        await publishReadingPreview(cacheKey,meta.summaryKo);
         return {...meta,cached:false,persisted,promptVersion:5};
       })();
       generating.set(cacheKey,job);

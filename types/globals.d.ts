@@ -16,7 +16,7 @@ declare var qrcode: any;
    - `breezeExportDict` : 콘솔에서 사전 캐시를 들여다보는 문 */
 interface Window {
   supabase?: any;
-  BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean; RSS_CATALOG_FEED_IDS?: number[]; BOOK_CLOUD?: boolean };
+  BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean; RSS_CATALOG_FEED_IDS?: number[]; BOOK_CLOUD?: boolean; READING_CACHE_URL?: string };
   /* Kill switches read at runtime. Absent means the new timing stays on. */
   BREEZE_PDF_OCR_YIELD?: boolean;
   BREEZE_EPUB_PROGRESSIVE?: boolean;

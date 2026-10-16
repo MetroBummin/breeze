@@ -76,6 +76,19 @@ function articlePreviewUntil(value,signal){
     Promise.resolve(value).then(resolve,reject).finally(()=>signal.removeEventListener('abort',abort));
   });
 }
+function articlePreviewReadingBase(){
+  try{return typeof readingCacheBase==='function'?readingCacheBase():'';}catch{return '';}
+}
+async function articlePreviewReadCache(input, signal){
+  const base=articlePreviewReadingBase();
+  if(!base)return {reason:'off'};
+  const hash=await readingSha256('article-preview-v5\n'+input.url+'\n'+input.title+'\n'+input.excerpt);
+  const response=await fetch(base+'/previews/v5/'+hash+'.json',{credentials:'omit',signal});
+  if(response.status===404)return {reason:'miss'};
+  if(!response.ok)return {reason:'network'};
+  const meta=articlePreviewValid(await response.json());
+  return meta?{meta}:{reason:'network'};
+}
 async function articlePreviewMetadata(book){
   const input=articlePreviewInput(book),key=articlePreviewKey(book);
   const failed=reason=>({meta:null,reason});
@@ -83,11 +96,20 @@ async function articlePreviewMetadata(book){
   const cached=articlePreviewCached(key);if(cached)return {meta:cached,reason:''};
   if(articlePreviewJobs.has(key))return articlePreviewJobs.get(key);
   if(navigator.onLine===false)return failed('offline');
-  if(!SB_URL || !SB_KEY)return failed('unavailable');
+  const reading=!!articlePreviewReadingBase();
+  if(!reading && (!SB_URL || !SB_KEY))return failed('unavailable');
   if(articlePreviewJobs.size>=4)return failed('busy');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),ARTICLE_PREVIEW_TIMEOUT);
   const job=(async()=>{
     try{
+      if(reading){
+        let found;
+        try{found=await articlePreviewUntil(articlePreviewReadCache(input,controller.signal),controller.signal);}
+        catch{return failed(controller.signal.aborted?'timeout':'network');}
+        if(found.meta){articlePreviewSave(key,found.meta);return {meta:found.meta,reason:''};}
+        if(found.reason==='network')return failed('network');
+        if(!SB_URL || !SB_KEY)return failed('unavailable');
+      }
       let token=SB_KEY;
       try{
         const auth=await articlePreviewUntil(sb.auth.getSession(),controller.signal);
