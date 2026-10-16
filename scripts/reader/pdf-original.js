@@ -662,22 +662,84 @@ function capturePdfAnchor(inset){
   return anchor;
 }
 
+async function pdfOwnPageRatio(session,pageNumber){
+  const element=session.pages[pageNumber-1];
+  if(!element||element.dataset.breezeRatio==='own'||!session.pdf||typeof session.pdf.getPage!=='function')return;
+  const page=await session.pdf.getPage(pageNumber);
+  try{
+    const base=page&&page.getViewport?page.getViewport({scale:1}):null;
+    if(base&&base.width>0&&base.height>0){
+      element.style.aspectRatio=`${base.width}/${base.height}`;
+      element.dataset.breezeRatio='own';
+    }
+  }finally{ if(page&&typeof page.cleanup==='function')page.cleanup(); }
+}
+function pdfWatchAnchorInput(session){
+  if(!session||session.anchorWatch)return;
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  if(!box||typeof box.addEventListener!=='function')return;
+  session.anchorWatch=true;
+  const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
+  box.addEventListener('pointerdown',moved);
+  box.addEventListener('wheel',moved,{passive:true});
+  box.addEventListener('touchmove',moved,{passive:true});
+  box.addEventListener('keydown',moved);
+}
+function pdfScheduleAnchor(session){
+  if(!session||session.anchorTimer||typeof requestAnimationFrame!=='function')return;
+  session.anchorTimer=requestAnimationFrame(()=>{
+    session.anchorTimer=0;
+    if(originalSession!==session||!session.pendingAnchor)return;
+    if(session.anchorMoved){session.pendingAnchor=null;return;}
+    session.anchorTries=(session.anchorTries||0)+1;
+    if(session.anchorTries>30)return;
+    void restorePdfAnchor(session.pendingAnchor.source,session.pendingAnchor.inset);
+  });
+}
+function pdfRestoreOwnsPosition(){
+  return currentReaderMode==='original'
+    && !!(originalSession&&originalSession.kind==='pdf'&&originalSession.pendingAnchor&&!originalSession.anchorMoved);
+}
 async function restorePdfAnchor(source,inset,changeToken,isCurrent){
   const session=originalSession;
   if(!currentPdfSession(session))return false;
   const pageNumber=typeof pdfNearestPage==='function'?pdfNearestPage(session,Number(source.page)||1):Math.max(1,Math.min(session.pages.length,Number(source.page)||1));
-  const page=originalSession.pages[pageNumber-1];
+  const page=session.pages[pageNumber-1];
   if(!page) return false;
-  if(session?.readDirection==='horizontal')applyPdfDirection(session,pageNumber);
+  /* 자리 표시는 모두 첫 쪽의 비율입니다. 그 높이로 스크롤하면 다른 비율의 쪽이
+     화면의 다른 쪽이 되고, 그 자리가 읽던 곳으로 적힙니다. 목표 쪽까지의 실제
+     비율을 그린 뒤에만 옮기고, 높이가 생기기 전에는 저장하지 않습니다. */
+  if(!(session.pendingAnchor&&session.pendingAnchor.source===source))session.anchorMoved=false;
+  if(session.anchorMoved){session.pendingAnchor=null;return false;}
+  pdfWatchAnchorInput(session);
+  session.pendingAnchor={source,inset,page:pageNumber};
+  for(let index=1;index<=pageNumber;index++){
+    if(originalSession!==session||session.anchorMoved)break;
+    try{ await pdfOwnPageRatio(session,index); }catch(error){}
+  }
+  if(typeof invalidatePdfPageLayout==='function')invalidatePdfPageLayout(session);
+  const left=originalSession!==session||session.anchorMoved
+    || (changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
+    || (isCurrent&&!isCurrent());
+  if(left){ if(originalSession===session)session.pendingAnchor=null; return false; }
+  if(session.readDirection==='horizontal'&&typeof applyPdfDirection==='function')applyPdfDirection(session,pageNumber);
   /* 화면 좌표(`getBoundingClientRect`)는 벌린 배율을 이미 담고 있고, 읽는 칸의
      `scrollTop` 도 같은 단위입니다. 그래서 이 셈은 배율이 얼마든 그대로입니다. */
-  readerScrollTo(readerScrollTop()+page.getBoundingClientRect().top-inset);
-  await renderOriginalPdfPage(originalSession,pageNumber);
+  const before=page.getBoundingClientRect();
+  if(!(before.height>0)){ pdfScheduleAnchor(session); return true; }
+  readerScrollTo(readerScrollTop()+before.top-inset);
+  await renderOriginalPdfPage(session,pageNumber);
   if(!ownsPdfPage(page,session) || (changeToken!=null && (changeToken!==readerModeChangeToken || currentReaderMode!=='original'))
-      || (isCurrent&&!isCurrent())) return false;
+      || (isCurrent&&!isCurrent()) || session.anchorMoved){
+    if(originalSession===session)session.pendingAnchor=null;
+    return false;
+  }
   const rect=page.getBoundingClientRect();
+  if(!(rect.height>0)||page.dataset.breezeRatio!=='own'){ pdfScheduleAnchor(session); return true; }
   readerScrollTo(readerScrollTop()+rect.top-inset
     +Math.max(0,Math.min(1,Number(source.y)||0))*rect.height);
+  session.pendingAnchor=null;
+  session.anchorTries=0;
   return true;
 }
 

@@ -67,15 +67,20 @@ The saved place is the `public.positions` row whose `book_id` is the file
 SHA-256, not the local book id. Turning the link on publishes the place
 already stored on this device, and a later sync publishes it even when the
 reader has not moved again. The other device copies that locator onto its
-local book id before the reader opens. PDF opens through the existing page
-anchor. An EPUB place is the spine, the chapter href, the element, and the
-character offset. Restore resolves the chapter by href, then holds that
-anchor until the element has height and the character can be placed. A cover
-shown before pagination is not saved over the remote place. A hand scroll
-releases the hold. TXT uses the saved paragraph. Opening a downloaded book
-at the start does not count as a newer place, so that stamp cannot replace
-the remote locator or be written back over it. A newer place that is no
-longer the start still wins on the device where it was made.
+local book id before the reader opens. PDF, EPUB, and TXT each wait until
+their own layout can place that anchor. A PDF place is the page and the
+position on that page. Restore gives every page up through that page its own
+aspect ratio before it scrolls, and a page with no height is not saved. An
+EPUB place is the spine, the chapter href, the element, and the character
+offset. Restore resolves the chapter by href, then holds that anchor until
+the element has height and the character can be placed. A TXT place is the
+paragraph and its offset. Restore holds that paragraph until it has height
+and images above it have finished. A cover or a first paragraph shown before
+layout is not saved over the remote place. A hand scroll releases the hold.
+Opening a downloaded book at the start does not count as a newer place, so
+that stamp cannot replace the remote locator or be written back over it. A
+newer place that is no longer the start still wins on the device where it
+was made.
 
 The download stays off the sync return path and runs one book at a time.
 Bytes already received are kept in a separate IndexedDB database and the next
