@@ -463,7 +463,7 @@
 .book-ocr-cover .book-ocr-label{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .bookcard.has-cover .book-ocr-cover .book-ocr-hit{color:var(--on-color);text-shadow:0 1px 4px rgba(0,0,0,.75);}
 .book-ocr-cover .book-ocr-fill{display:block;height:4px;border-radius:2px;overflow:hidden;background:color-mix(in srgb,currentColor 22%,transparent);}
-.bookcard.has-cover .book-ocr-cover .book-ocr-fill{background:rgba(255,255,255,.45);}
+.bookcard.has-cover .book-ocr-cover .book-ocr-fill{background:var(--ocr-cover-track);}
 .book-ocr-cover .book-ocr-fill i{display:block;height:100%;width:0;background:var(--blue);transition:width .2s linear;}
 .book-ocr-cover[data-ocr-state="paused"] .book-ocr-fill i,
 .book-ocr-cover[data-ocr-state="failed"] .book-ocr-fill i{background:var(--settings-muted);}

@@ -113,8 +113,8 @@ const BreezePdfOcrLibrary=(()=>{
       detail.addEventListener('mousedown',stop);
       detail.addEventListener('touchstart',stop,{passive:true});
       detail.addEventListener('click',stop);
-      detail.querySelector('.book-ocr-detail-close').onclick=()=>closeDetail(true);
-      detail.querySelector('.book-ocr-detail-retry').onclick=()=>{
+      /** @type {HTMLButtonElement} */(detail.querySelector('.book-ocr-detail-close')).onclick=()=>closeDetail(true);
+      /** @type {HTMLButtonElement} */(detail.querySelector('.book-ocr-detail-retry')).onclick=()=>{
         const latest=jobs.get(detailJobId);if(!latest)return;
         latest.state='queued';latest.notice='';paint(latest);schedule();
       };
