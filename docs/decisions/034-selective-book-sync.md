@@ -118,3 +118,14 @@ book is stored.
 
 Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
 as an automatic rollback.
+
+## Pen and highlighter (2026-10-16)
+
+File bytes and reading position stay on the path above. PDF pen and highlighter
+strokes sync only when `INK_SYNC` is exactly `true`, `BOOK_CLOUD` is exactly
+`true`, and that book's 기기 간 연동 link is on. The link row, its copy, and
+its toggle are unchanged. EPUB locators are not ink pages. The key is the file
+SHA-256 plus the PDF page number. Rollback of ink is to set `INK_SYNC` false.
+Do not drop `book_ink` as an automatic rollback. The merge rules are
+`035-book-ink-sync.md`. `server/sync/book-ink.sql` is additive and does not
+change `book_cloud` or `positions`.

@@ -1,4 +1,5 @@
-/* PDF pen annotation. No finger drawing, export or sync.
+/* PDF pen annotation. No finger drawing or export.
+   Linked-book sync lives in ink-sync.js and stays idle during a stroke.
    Native iPad retains WebKit Touch + UIKit admission. Native Android
    PointerEvent runtimes use pen pointers and cancel their companion Touch
    defaults. SVG stays display-only; fingers retain the existing PDF scroller.
@@ -335,8 +336,9 @@ const BreezePdfInk = (()=>{
     return BreezePdfInkStore.write(key,value);
   }
   function valid(data){
+    const idOk=s=>s.id===undefined||(typeof s.id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.id));
     return data?.version===1 && Array.isArray(data.strokes) && data.strokes.every(s=>
-      (s.tool==='highlighter' ? highlightColors.includes(s.color)&&highlightWidths.includes(s.width)&&s.opacity===highlightOpacity&&(s.strokeId===undefined||typeof s.strokeId==='string')
+      idOk(s)&&(s.tool==='highlighter' ? highlightColors.includes(s.color)&&highlightWidths.includes(s.width)&&s.opacity===highlightOpacity&&(s.strokeId===undefined||typeof s.strokeId==='string')
         : (s.tool===undefined||s.tool==='pen')&&colors.includes(s.color)&&widths.includes(s.width)&&(s.opacity===undefined||s.opacity===1))
       && Array.isArray(s.points) && s.points.length>0
       && s.points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)));
@@ -364,7 +366,16 @@ const BreezePdfInk = (()=>{
           if(revision===state.revision)state.dirty=false;
         }
       }catch(error){state.error=true;console.warn('PDF ink save failed',error);}
-      finally{state.saving=null;summary();evict(state);}
+      finally{
+        state.saving=null;summary();
+        // Remote ink waits until this page is idle. Applying it starts another
+        // save; the upload itself is scheduled only after a clean write.
+        if(state.inkHeld&&!(active&&active.state===state)){
+          state.strokes=state.inkHeld;state.inkHeld=null;paint(state);changed(state);return;
+        }
+        if(!state.error&&!state.dirty&&typeof scheduleBookInk==='function')scheduleBookInk(state);
+        evict(state);
+      }
     })();
     return state.saving;
   }
@@ -447,10 +458,17 @@ const BreezePdfInk = (()=>{
   function point(touch,state,rect=state.element.getBoundingClientRect()){
     return [(touch.clientX-rect.left)/rect.width*state.width,(touch.clientY-rect.top)/rect.height*state.height];
   }
+  function fragmentIdentities(stroke,parts){
+    // A split retires the original stroke id. Each surviving fragment is its
+    // own stroke so another device can union it. Highlighter fragments keep
+    // the shared strokeId used for one opacity group.
+    if(parts.length===1&&parts[0]===stroke)return parts;
+    return parts.map(part=>({...part,id:crypto.randomUUID()}));
+  }
   function erase(state,p,previous=p){
     let edited=false;
     const strokes=state.strokes.flatMap(stroke=>{
-      const parts=BreezeInkGeometry.eraseStroke(stroke,previous,p,eraserRadius);
+      const parts=fragmentIdentities(stroke,BreezeInkGeometry.eraseStroke(stroke,previous,p,eraserRadius));
       if(parts.length!==1||parts[0]!==stroke)edited=true;
       return parts;
     });
@@ -588,7 +606,7 @@ const BreezePdfInk = (()=>{
     closeSettings();
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
     if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
-    active={id:pen.identifier,pointerId,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{color,width,points:[p]},
+    active={id:pen.identifier,pointerId,state,bounds,tool:mode,before:state.strokes.slice(),stroke:mode==='highlighter'?{id:crypto.randomUUID(),tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}:{id:crypto.randomUUID(),color,width,points:[p]},
       preview:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p):null};
     trace('stroke/start',event);
     updateHistoryControls();
@@ -834,6 +852,8 @@ const BreezePdfInk = (()=>{
     state.svg=element.querySelector('.pdf-ink-layer')||document.createElementNS(ns,'svg');state.svg.classList.add('pdf-ink-layer');
     state.svg.setAttribute('viewBox',`0 0 ${base.width} ${base.height}`);
     state.svg.setAttribute('aria-hidden','true');if(state.svg.parentElement!==element)element.append(state.svg);paint(state);
+    // Local ink is already on screen. Remote strokes merge after this returns.
+    if(typeof pullBookInk==='function')void pullBookInk(state);
   }
   const platformReady=(async()=>{
     if(!nativeAndroid())return;
@@ -845,6 +865,17 @@ const BreezePdfInk = (()=>{
     }catch{} // Older native wrappers without this narrow plugin stay read-only.
     window.dispatchEvent(new Event('breeze-ink-platform'));
   })();
+  if(typeof registerBookInkPage==='function')registerBookInkPage({
+    page:key=>pages.get(key)||null,
+    pages:()=>[...pages.values()],
+    busy:state=>!!active||suppressed.size>0,
+    accept(stroke){return valid({version:1,strokes:[stroke]});},
+    persist(state){paint(state);changed(state);},
+    held(state){
+      if(!state||!state.inkHeld||(active&&active.state===state))return false;
+      state.strokes=state.inkHeld;state.inkHeld=null;paint(state);changed(state);return true;
+    }
+  });
   return {
     available:supported,
     availability(){return platformReady.then(supported);},
@@ -867,6 +898,7 @@ const BreezePdfInk = (()=>{
       return {mode,active:active?{id:active.id,page:active.state.element?.dataset.page,tool:active.tool,points:active.stroke.points.length}:null,
         suppressed:[...suppressed],blockedPointers:[...blockedPointers],events:stateTraceRows.slice()};
     },
-    busy(){return !!active||suppressed.size>0;}
+    busy(){return !!active||suppressed.size>0;},
+    accept(stroke){return valid({version:1,strokes:[stroke]});}
   };
 })();

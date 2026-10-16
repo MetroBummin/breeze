@@ -3,8 +3,11 @@ on:
   pull_request:
     paths:
       - 'scripts/reader/**'
+      - 'scripts/library/ink-sync.js'
+      - 'server/sync/book-ink.sql'
       - 'styles/reader.css'
       - 'tests/verify-pdf*'
+      - 'tests/verify-ink-sync*'
       - 'tests/verify-device-polish-browser.mjs'
       - 'tests/helpers/pdf-geometry-fixture.mjs'
       - '.github/workflows/pdf-pointer-ink.yml'
@@ -24,7 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit
+      - run: npx playwright install --with-deps chromium webkit firefox
       - run: node --test tests/verify-pdf-ink-regressions.mjs
       - run: node tests/verify-pdf-pointer-ink-browser.mjs
       - run: node tests/verify-pdf-availability-browser.mjs
@@ -39,6 +42,11 @@ jobs:
           done
       - name: Pending and failed saves across close/reopen/background
         run: node tests/verify-pdf-ink-save-lifecycle-browser.mjs
+      - name: Ink sync debounce, merge apply, and storage fallback
+        run: |
+          for engine in chromium webkit firefox; do
+            BREEZE_QA_ENGINE=$engine node tests/verify-ink-sync-browser.mjs
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
