@@ -1,8 +1,10 @@
 /* Local, resumable PDF preparation. Cards observe this owner; they never wait
-   for it. Recognition itself is admitted only by BreezePdfOcr's global lane. */
+   for it. Recognition itself is admitted only by BreezePdfOcr's global lane.
+   The cover label is another view of the same job. It does not raster,
+   schedule, or keep a timer of its own. */
 const BreezePdfOcrLibrary=(()=>{
   const jobs=new Map();
-  let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0;
+  let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0,detail=null,detailOpener=null,detailJobId='',detailRelease=null;
   /* Opening the book that just finished downloading must not share the PDF
      parser with background recognition. `BREEZE_PDF_OCR_YIELD=false` keeps
      the old overlap. */
@@ -14,26 +16,139 @@ const BreezePdfOcrLibrary=(()=>{
     const deleted=new Set(bookOf(job)?.deletedPdfPages||[]);
     return Array.from({length:job.total||0},(_,i)=>i+1).filter(n=>!deleted.has(n));
   };
+  function coverMode(){
+    // Fill is the chosen cover. Absent, off, and any other value keep the bar.
+    try{
+      const search=typeof location!=='undefined'&&location&&typeof location.search==='string'?location.search:'';
+      const query=/[?&]ocrCover=([a-z]+)/i.exec(search);
+      let stored='';
+      try{stored=typeof localStorage!=='undefined'&&localStorage?localStorage.getItem('breeze.ocr-cover')||'':'';}
+      catch{stored='';}
+      const value=String((query&&query[1])||stored||'off').toLowerCase();
+      return value==='fill'||value==='on'?'fill':'off';
+    }catch{return 'off';}
+  }
+  function statusCopy(job){
+    if(job.state==='paused'&&job.notice==='failed')return '글자 스캔 실패';
+    if(job.state==='paused')return '글자 스캔 일시 중지';
+    return '글자 스캔 중';
+  }
   function summary(job){
     const pages=activePages(job),done=pages.filter(n=>job.done.has(n)).length;
     return {done,total:pages.length,complete:!!job.total&&done===pages.length};
   }
+  function paintBar(node,job,s){
+    const text=node.querySelector('span'),bar=node.querySelector('progress'),retry=node.querySelector('button');
+    if(!text||!bar||!retry)return;
+    const count=s.total?' · '+s.done+'/'+s.total+'쪽':'';
+    text.textContent=(job.state==='paused'?'글자 인식 일시 중지':'글자 인식 중')+count;
+    bar.max=Math.max(1,s.total);bar.value=s.done;
+    if(!s.total)bar.removeAttribute('value');
+    retry.hidden=job.state!=='paused';
+    node.setAttribute('aria-label',text.textContent);
+  }
+  function paintCover(node,job,s){
+    const button=node.querySelector('button'),label=node.querySelector('.book-ocr-label'),fill=node.querySelector('.book-ocr-fill i');
+    if(!button||!label||!fill)return;
+    const ratio=s.total?s.done/s.total:0;
+    label.textContent=statusCopy(job);
+    fill.style.width=Math.round(ratio*100)+'%';
+    node.dataset.ocrState=job.state==='paused'?(job.notice==='failed'?'failed':'paused'):'active';
+    const count=s.total?s.done+'/'+s.total+'쪽':'';
+    button.setAttribute('aria-label',statusCopy(job)+(count?' '+count:'')+' 자세히');
+  }
+  function apply(node,job){
+    const s=summary(job),mode=coverMode(),surface=node.dataset.ocrSurface||'bar';
+    if(surface==='cover')paintCover(node,job,s);else paintBar(node,job,s);
+    const inactive=surface==='bar'?mode!=='off':mode==='off'||node.dataset.ocrVariant!==mode;
+    const hide=job.state==='missing'||s.complete||inactive;
+    if(hide&&surface==='cover'&&detailOpener&&node.contains(detailOpener))closeDetail(false);
+    node.hidden=hide;
+  }
   function paint(job){
     if(jobs.get(job.id)!==job)return;
-    const s=summary(job);
     for(const node of document.querySelectorAll('[data-ocr-book]')){
       if(!(node instanceof HTMLElement))continue;
       if(node.dataset.ocrBook!==job.id)continue;
-      node.hidden=job.state==='missing'||s.complete;
-      if(node.hidden)continue;
-      const text=node.querySelector('span'),bar=node.querySelector('progress'),retry=node.querySelector('button');
-      const count=s.total?' · '+s.done+'/'+s.total+'쪽':'';
-      text.textContent=(job.state==='paused'?'글자 인식 일시 중지':'글자 인식 중')+count;
-      bar.max=Math.max(1,s.total);bar.value=s.done;
-      if(!s.total)bar.removeAttribute('value');
-      retry.hidden=job.state!=='paused';
-      node.setAttribute('aria-label',text.textContent);
+      apply(node,job);
     }
+    fillDetail(job);
+  }
+  function closeDetail(restoreFocus){
+    if(!detail)return;
+    detail.hidden=true;
+    detailRelease?.();detailRelease=null;
+    const opener=detailOpener;detailOpener=null;detailJobId='';
+    if(restoreFocus&&opener?.isConnected)opener.focus();
+  }
+  function fillDetail(job){
+    if(!detail||detail.hidden||detailJobId!==job.id)return;
+    const s=summary(job),paused=job.state==='paused';
+    detail.querySelector('.book-ocr-detail-status').textContent=statusCopy(job);
+    detail.querySelector('.book-ocr-detail-count').textContent=s.total?s.done+'/'+s.total+'쪽':'쪽수를 확인하는 중';
+    detail.querySelector('.book-ocr-detail-retry').hidden=!paused;
+  }
+  function placeDetail(opener){
+    const node=detail,margin=8;
+    const topbar=document.getElementById('topbar'),dock=document.querySelector('.control-dock');
+    const topLimit=(topbar?topbar.getBoundingClientRect().bottom:0)+margin;
+    const bottomLimit=Math.min(window.innerHeight-margin,dock?dock.getBoundingClientRect().top-margin:window.innerHeight-margin);
+    node.style.left='0px';node.style.top='0px';
+    const width=node.offsetWidth,height=node.offsetHeight,rect=opener.getBoundingClientRect();
+    let left=Math.min(Math.max(margin,rect.right-width),window.innerWidth-width-margin);
+    let top=rect.top-height-margin;
+    if(top<topLimit)top=rect.bottom+margin;
+    if(top+height>bottomLimit)top=Math.max(topLimit,bottomLimit-height);
+    node.style.left=Math.max(margin,left)+'px';
+    node.style.top=Math.max(topLimit,top)+'px';
+  }
+  function openDetail(opener,job){
+    if(!detail){
+      detail=document.createElement('div');
+      detail.className='book-ocr-detail';detail.hidden=true;detail.tabIndex=-1;
+      detail.setAttribute('role','dialog');detail.setAttribute('aria-label','글자 인식');
+      detail.innerHTML='<p class="book-ocr-detail-status"></p><p class="book-ocr-detail-count" aria-live="polite"></p><div class="book-ocr-detail-actions"><button type="button" class="book-ocr-detail-retry">다시 시도</button><button type="button" class="book-ocr-detail-close" aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>';
+      const stop=event=>event.stopPropagation();
+      detail.addEventListener('pointerdown',stop);
+      detail.addEventListener('mousedown',stop);
+      detail.addEventListener('touchstart',stop,{passive:true});
+      detail.addEventListener('click',stop);
+      /** @type {HTMLButtonElement} */(detail.querySelector('.book-ocr-detail-close')).onclick=()=>closeDetail(true);
+      /** @type {HTMLButtonElement} */(detail.querySelector('.book-ocr-detail-retry')).onclick=()=>{
+        const latest=jobs.get(detailJobId);if(!latest)return;
+        latest.state='queued';latest.notice='';paint(latest);schedule();
+      };
+      document.body.append(detail);
+    }
+    detailOpener=opener;detailJobId=job.id;detail.hidden=false;
+    fillDetail(job);placeDetail(opener);detail.focus();
+    let swallow=false;
+    const onKey=event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeDetail(true);}};
+    const onPointer=event=>{
+      if(detail.hidden)return;
+      const target=event.target;
+      if(detail.contains(target)||detailOpener?.contains(target))return;
+      swallow=true;closeDetail(false);
+    };
+    // The dismissing pointerdown removes the other listeners before click.
+    // This one stays through that click so the book underneath does not open.
+    const onClick=event=>{
+      document.removeEventListener('click',onClick,true);
+      if(!swallow)return;
+      swallow=false;event.preventDefault();event.stopPropagation();
+    };
+    const onScroll=()=>closeDetail(false);
+    document.addEventListener('keydown',onKey,true);
+    document.addEventListener('pointerdown',onPointer,true);
+    document.addEventListener('click',onClick,true);
+    window.addEventListener('scroll',onScroll,true);
+    window.addEventListener('resize',onScroll);
+    detailRelease=()=>{
+      document.removeEventListener('keydown',onKey,true);
+      document.removeEventListener('pointerdown',onPointer,true);
+      window.removeEventListener('scroll',onScroll,true);
+      window.removeEventListener('resize',onScroll);
+    };
   }
   function schedule(delay=350){
     if(timer||document.hidden||yielded)return;
@@ -94,11 +209,12 @@ const BreezePdfOcrLibrary=(()=>{
       const result=await BreezePdfOcr.background(book,n,pdf,()=>current(job));
       if(!current(job))return;
       if(result==='done')job.done.add(n);
-      else if(['failed','storage','blocked'].includes(result))job.state='paused';
+      else if(result==='failed'){job.state='paused';job.notice='failed';}
+      else if(result==='storage'||result==='blocked'){job.state='paused';job.notice='paused';}
       paint(job);
       if(summary(job).complete||job.state==='paused')await release();
     }catch{
-      if(!(yielded&&job.id===yielded)&&current(job)){job.state='paused';paint(job);}
+      if(!(yielded&&job.id===yielded)&&current(job)){job.state='paused';job.notice='failed';paint(job);}
       await release();
     }finally{busy=false;if(!yielded&&[...jobs.values()].some(j=>current(j)&&j.state==='queued'&&!summary(j).complete))schedule();}
   }
@@ -106,31 +222,54 @@ const BreezePdfOcrLibrary=(()=>{
     if(book?.kind!=='pdf'||!hash(book)||!BreezePdfOcr.available())return null;
     let job=jobs.get(book.id);
     if(job&&job.hash!==hash(book)){forget(book.id);job=null;}
-    if(!job){job={id:book.id,hash:hash(book),done:new Set(),total:0,state:'queued'};jobs.set(book.id,job);}
-    if(restart&&['missing','paused'].includes(job.state))job.state='queued';
+    if(!job){job={id:book.id,hash:hash(book),done:new Set(),total:0,state:'queued',notice:''};jobs.set(book.id,job);}
+    if(restart&&['missing','paused'].includes(job.state)){job.state='queued';job.notice='';}
     schedule();return job;
+  }
+  function coverButton(book){
+    const button=document.createElement('button');
+    button.type='button';button.className='book-ocr-hit';
+    const label=document.createElement('span');label.className='book-ocr-label';
+    const fill=document.createElement('span');fill.className='book-ocr-fill';fill.setAttribute('aria-hidden','true');
+    fill.append(document.createElement('i'));
+    button.append(label,fill);
+    const stop=event=>event.stopPropagation();
+    for(const type of ['pointerdown','mousedown','touchstart','click'])button.addEventListener(type,stop,type==='touchstart'?{passive:true}:undefined);
+    button.addEventListener('click',()=>{
+      const latest=jobs.get(book.id);if(!latest)return;
+      if(detailOpener===button&&detail&&!detail.hidden)closeDetail(false);else openDetail(button,latest);
+    });
+    return button;
+  }
+  function ensureCover(tile,book){
+    const mode=coverMode(),card=tile.querySelector('.bookcard');
+    const existing=card?.querySelector('[data-ocr-surface="cover"]');
+    if(mode==='off'||!card){existing?.remove();return null;}
+    if(existing&&existing.dataset.ocrVariant===mode)return existing;
+    existing?.remove();
+    const node=document.createElement('div');
+    node.className='book-ocr-cover';node.dataset.ocrBook=book.id;node.dataset.ocrSurface='cover';node.dataset.ocrVariant=mode;
+    node.append(coverButton(book));card.append(node);
+    return node;
   }
   function mount(tile,book){
     const job=track(book);if(!job)return;
-    let node=tile.querySelector('[data-ocr-book]');
-    if(!node){
-      node=document.createElement('div');node.className='book-ocr-progress';node.dataset.ocrBook=book.id;
-      const text=document.createElement('span'),bar=document.createElement('progress'),retry=document.createElement('button');
-      bar.setAttribute('aria-label','글자 인식 진행');retry.type='button';retry.textContent='다시 시도';
-      retry.onclick=event=>{event.stopPropagation();const latest=jobs.get(book.id);if(latest){latest.state='queued';paint(latest);schedule();}};
-      node.append(text,bar,retry);tile.append(node);
+    let bar=tile.querySelector('[data-ocr-surface="bar"]');
+    if(!bar){
+      bar=document.createElement('div');bar.className='book-ocr-progress';bar.dataset.ocrBook=book.id;bar.dataset.ocrSurface='bar';
+      const text=document.createElement('span'),progress=document.createElement('progress'),retry=document.createElement('button');
+      progress.setAttribute('aria-label','글자 인식 진행');retry.type='button';retry.textContent='다시 시도';
+      retry.onclick=event=>{event.stopPropagation();const latest=jobs.get(book.id);if(latest){latest.state='queued';latest.notice='';paint(latest);schedule();}};
+      bar.append(text,progress,retry);tile.append(bar);
     }
-    // The tile may not yet be connected, so initialise it before the shared update.
-    node.hidden=summary(job).complete||job.state==='missing';
-    const s=summary(job);node.querySelector('span').textContent='글자 인식 중'+(s.total?' · '+s.done+'/'+s.total+'쪽':'');
-    const bar=node.querySelector('progress');bar.max=Math.max(1,s.total);bar.value=s.done;
-    if(!s.total)bar.removeAttribute('value');
-    node.querySelector('button').hidden=job.state!=='paused';
+    const cover=ensureCover(tile,book);
+    apply(bar,job);if(cover)apply(cover,job);
     queueMicrotask(()=>paint(job));
   }
   function forget(id){
     const job=jobs.get(id);jobs.delete(id);
     if(held?.job===job)void release();
+    if(detailJobId===id)closeDetail(false);
   }
   function yieldToReader(bookId){
     if(!yieldEnabled()||!bookId)return;
@@ -165,5 +304,5 @@ const BreezePdfOcrLibrary=(()=>{
     for(const book of books)track(book);
   }
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){restore();schedule();}});
-  return {mount,track,restore,forget,summary,yieldToReader,adoptForReader,resumeReader};
+  return {mount,track,restore,forget,summary,yieldToReader,adoptForReader,resumeReader,coverMode};
 })();

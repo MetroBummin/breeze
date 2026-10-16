@@ -152,3 +152,17 @@ failures pause with a retry action, not false completion. The former global
 48-page eviction is removed so completion still means earlier pages are usable.
 Only metadata/recognized text persists; raster images and live reader maps
 remain bounded and released. Device-local state never enters book sync.
+
+### Cover progress (2026-10-16)
+
+Fill is the chosen cover treatment. `localStorage['breeze.ocr-cover']` or the
+`ocrCover` query set to `fill` or `on` draws it. The query wins. Absent, `off`,
+and any other value keep the approved under-card label and thin bar. That is
+the kill switch, and it remains the default.
+
+The cover shows a small label above a thin bar: `글자 스캔 중`, `글자 스캔 일시 중지`,
+or `글자 스캔 실패`. The page count is not drawn on the cover. A 44px target
+opens a small opaque detail with the count, the same retry, and a 44px close.
+Escape and an outside tap close it. The label updates only when the library
+already paints a job: no animation loop, no second raster, and no change to
+the recognition lane. The card size stays the same.

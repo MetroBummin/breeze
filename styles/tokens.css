@@ -231,6 +231,7 @@
   --on-color:#fff;                       /* 사진·파랑 위에 얹는 글자 — 두 화면 모두 흰색 */
   --cover-badge-quiet:rgba(255,255,255,.42);        /* 이미 올라간 책 */
   --cover-badge-hover-quiet:rgba(255,255,255,.55);
+  --ocr-cover-track:rgba(255,255,255,.45);          /* 표지 사진 위 글자 스캔 막대 */
   --card-bar:rgba(0,0,0,.12);            /* 카드 바닥의 진행 막대 */
   --cloud-thumb:rgba(255,255,255,.34);   /* 서버에만 있는 짧은 글 */
   --cloud-del:rgba(255,255,255,.78);
@@ -463,6 +464,7 @@ body.dark{
   --cover-badge-hover:rgba(0,0,0,.6);
   --cover-badge-quiet:rgba(0,0,0,.42);
   --cover-badge-hover-quiet:rgba(0,0,0,.6);
+  --ocr-cover-track:rgba(255,255,255,.45);          /* 표지 사진 위에서는 테마와 같은 흰 트랙 */
   --cloud-thumb:rgba(255,255,255,.025);
   --cloud-del:rgba(0,0,0,.45);
   --sheet-quiet:#171816;
