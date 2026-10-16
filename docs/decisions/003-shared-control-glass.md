@@ -621,7 +621,9 @@ Strokes are painted pixels via `vector-effect: non-scaling-stroke` with round
 caps and joins. The back chevron is 3.6px on a 26px frame, the close X is
 4.1px on a 27.8px frame, plus is 2.8px on a 26px frame, and complex glyphs
 (gear, bookmark, house, export, sidebar, pen tools, more) are 2.6px. Gear,
-bookmark, plus, back and house use the approved SF-style paths. The chevron
+bookmark, plus, back and house use the approved SF-style paths. The house and
+sidebar page drawings stay those paths. Their 60% ink is the svg's opacity, with
+an opaque stroke color, so a crossing does not stack darker. The chevron
 path is intentionally left of the viewBox center. Sheet closes sit 16px from
 the top-right, hide their decorative `::before`/`::after`, and drop the focus
 ring while open. `#readback` stays transparent inside the PDF page capsule.

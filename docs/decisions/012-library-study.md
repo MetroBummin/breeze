@@ -167,6 +167,17 @@ Both formats expose the same draggable scrollbar: a 4px visual thumb with a
 PageUp/PageDown and arrow-key support. The thumbnail's left and right insets
 match. The visual thumb sits in that right inset instead of a second 14px rail.
 The grip may cross the paper's outer margin; the bookmark glyph stays outside it.
+The 4px bar stays 9px inside the panel and is centered in the gap between the
+page and that edge, about 10px from the page and 9px from the panel, which is
+the inset a wide sidebar gets from the 180px thumbnail cap. A shorter sidebar
+would leave the page against the bar, so the thumbnail strip takes 10px of
+padding on each side. The page shrinks evenly, the left and right insets stay
+matched, and the same 10px/9px gap opens around the bar. The rule is a container
+query on the sidebar panel (`max-width: 184px`), so it follows the panel rather
+than the viewport. At the 184px cap the height cap already provides the inset
+and the padding is absorbed. iOS 15 does not support container queries; there
+the same cutoff is the viewport query at 613px, because this sidebar is `30vw`
+and reaches 184px at 613px. The 24px grip stays.
 This scrollbar is
 intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
 scroll position; paper reading position and gestures remain independent.
@@ -389,6 +400,8 @@ Reader/Home mismatch, which was not reproduced in ordinary Bohemia navigation.
 Regression: `tests/verify-bohemia-progress-browser.mjs` uses the actual bundled
 261-paragraph story, delayed assets, immediate Home, backward reading, completion,
 real database reopening, signed-out lifecycle saves and delayed-image offsets.
+Build 292 leaves that story without original bytes. User-imported TXT files
+keep originals while book sync is on; the catalog import does not.
 
 ## Cold illustration reservation and Bohemia CI follow-up (234)
 

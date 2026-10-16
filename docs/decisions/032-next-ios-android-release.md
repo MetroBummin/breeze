@@ -90,6 +90,20 @@ no announcement UI. App and Share Debug/Release counters move to 291. Marketing
 version stays 1.9.4. `BOOK_CLOUD` stays false. The cloud bootstrap still
 replaces that baseline with `CI_BUILD_NUMBER`.
 
+## Silent counter 292 (2026-10-16)
+
+Build 292 keeps the original house and page icon drawings and paints their 60%
+ink on the svg so a crossing stays one weight. The sidebar thumb stays centered
+in the gap beside the page, about 10px from the page and 9px from the panel,
+including on a short sidebar where the thumbnail strip is padded 10px each side.
+The Preview start button has 16px above and 16px below. Selective book sync is
+on: `BOOK_CLOUD` is true after the R2 secrets, bucket CORS, `book_cloud`
+migration, `book-cloud` function, and `dict` redeploy. Bundled long reads stay
+without an original file. There is no release note
+and no announcement UI. App and Share Debug/Release counters move to 292.
+Marketing version stays 1.9.4. The cloud bootstrap still replaces that baseline
+with `CI_BUILD_NUMBER`.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports

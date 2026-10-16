@@ -96,9 +96,19 @@ async function localRead(store,key,all=false){
 async function bookPut(book){void requestDurableLocalStorage();return localPut('books',book.id,book);}
 async function bookDel(id){return localDelete('books',id);}
 async function bookAll(){return await localRead('books',null,true) || [];}
-async function originalPut(id,record){return localPut('originals',id,record);}
-async function originalGet(id){return await localRead('originals',id) || null;}
-async function originalAll(){return await localRead('originals',null,true) || [];}
+function durableOriginal(record){
+  if(!record||!record.bytes)return record;
+  const stored={...record};
+  delete stored.blob;
+  return stored;
+}
+function presentOriginal(record){
+  if(!record||record.blob||!record.bytes)return record;
+  return {...record,blob:new Blob([record.bytes],{type:record.type||'text/plain'})};
+}
+async function originalPut(id,record){return localPut('originals',id,durableOriginal(record));}
+async function originalGet(id){return presentOriginal(await localRead('originals',id) || null);}
+async function originalAll(){return (await localRead('originals',null,true) || []).map(presentOriginal);}
 /* The temporary EPUB prefix belongs to preparation. Promotion, the original
    and book metadata share one commit; abort preserves the previous document.
    A selected cover is an existing asset, even when its key is also used by the

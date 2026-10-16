@@ -1,10 +1,10 @@
-# Selective book sync, dormant
+# Selective book sync
 
-Build 289 includes opt-in book and reading-position sync, but it does not run
-until `window.BREEZE_CONFIG.BOOK_CLOUD` is exactly `true`. Missing config or a
-missing key stays off. While it is off, the long-press sheet has no "기기 간
-연동" row, nothing is uploaded, and the app does not call R2 or the book-cloud
-function.
+Build 289 added opt-in book and reading-position sync. It runs only when
+`window.BREEZE_CONFIG.BOOK_CLOUD` is exactly `true`. Missing config or a
+missing key stays off. Build 292 sets that flag to true. While it was off, the
+long-press sheet had no "기기 간 연동" row, nothing was uploaded, and the app
+did not call R2 or the book-cloud function.
 
 ## What the flag turns on
 
@@ -19,23 +19,28 @@ open it with the existing importers. Caps are 40 books and 2 GiB
 account removes that account's server original. There is no end-to-end
 encryption, no cross-account sharing, and no DRM removal in this phase.
 
-## Still required before the flag can be turned on
+A bundled catalog story (`longReadId`) stays text without a stored original
+file. It is already on every device, so the link row stays unavailable. A
+user-imported TXT keeps its bytes. Those bytes are stored directly. WebKit
+cannot prepare a Blob for IndexedDB after the picker releases the file, and
+that failed write never published the book. Readers still receive a Blob.
 
-Do not apply SQL or deploy as part of this change. The private bucket and S3
-endpoint already exist. Before setting `BOOK_CLOUD: true`:
+## Flag on for build 292
 
-1. Set Supabase secrets `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, and
-   `R2_SECRET_ACCESS_KEY`. `R2_ACCOUNT_ID` should be
-   `dc26cb1d2297ca2206a0434ff88e24b4` and `R2_BUCKET` should be `breeze-books`.
+The private bucket and S3 endpoint already existed. These steps were completed
+outside the repo before `BOOK_CLOUD` was set to true:
+
+1. Supabase secrets `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, and
+   `R2_SECRET_ACCESS_KEY` are set. `R2_ACCOUNT_ID` is
+   `dc26cb1d2297ca2206a0434ff88e24b4` and `R2_BUCKET` is `breeze-books`.
    Access key values stay outside the repo.
-2. Allow browser PUT and GET on the bucket from the app origins
-   (`https://breeze.io.kr`, Capacitor, and localhost). That CORS change is not
-   applied here.
-3. Review and apply `server/sync/book-cloud.sql` in the SQL editor.
-4. Deploy `server/books` as the `book-cloud` edge function, and redeploy `dict`
-   so account deletion can remove R2 objects. Missing R2 secrets return 503
-   `{ok:false,error:"r2_not_configured",message:"R2 설정이 없습니다."}` before
-   auth and before any R2 call.
+2. Browser PUT and GET are allowed on the bucket from the app origins
+   (`https://breeze.io.kr`, Capacitor, and localhost).
+3. `server/sync/book-cloud.sql` is applied.
+4. `server/books` is deployed as the `book-cloud` edge function, and `dict` is
+   redeployed so account deletion can remove R2 objects. Missing R2 secrets
+   return 503 `{ok:false,error:"r2_not_configured",message:"R2 설정이 없습니다."}`
+   before auth and before any R2 call.
 
-Rollback is to leave `BOOK_CLOUD` false. Do not drop `book_cloud` or
-`positions` as an automatic rollback.
+Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
+as an automatic rollback.
