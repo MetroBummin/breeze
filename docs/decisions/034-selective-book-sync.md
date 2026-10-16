@@ -116,16 +116,15 @@ and opening it downloads and opens the book. An automatic download does not
 open the reader. The card is the same control it was; it disappears after the
 book is stored.
 
-While that download is in progress, the same card can show it. There is no
-second bar and no banner. `window.BREEZE_CARD_ACTIVITY` set to `ring`, `wash`,
-or `edge` chooses the treatment: a percent ring, a fill rising from the bottom
-of the cover, or a border drawn around the card. Any other value, including
-leaving it unset, paints nothing and does not schedule a frame. The amount is
-bytes already read over the declared size. An unknown size says "받는 중" and
-does not invent a percent. Notes share one animation frame and do not read
-layout. Checkpoints stay at 1 MiB. The same treatment is the on-card state for
-scanned-PDF word recognition (`data-kind="ocr"`). The separate recognition bar
-under the card is unchanged.
+While that download is in progress, the same card can show it.
+`window.BREEZE_CARD_ACTIVITY` set to `fill` paints a 4px track along the bottom
+of the cover and the label "받는 중" above that track. The label does not
+include a percent, a page count, or a size. The track width is bytes already
+read over the declared size. An unknown size leaves the track empty. Any other
+value, including leaving it unset, paints nothing and does not schedule a
+frame. Notes share one animation frame and do not read layout. Checkpoints
+stay at 1 MiB. Scanned-PDF preparation uses the same track and a label in the
+same place. The separate recognition bar under the card is unchanged.
 
 Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
 as an automatic rollback.

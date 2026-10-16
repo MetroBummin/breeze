@@ -138,69 +138,17 @@
   .bookcard.cloud .del:hover{background:var(--cover-badge-hover); color:var(--danger-strong);}
   body.dark .bookcard.cloud .del{background:var(--cloud-del); color:var(--cover-badge-ink);}
 
-  /* 받는 중과 글자 인식은 카드 위에 같은 자리로 앉습니다.
-     window.BREEZE_CARD_ACTIVITY 가 ring, wash, edge 일 때만 붙고,
-     그 밖에는 이 규칙이 화면에 나오지 않습니다. 막대나 배너는 없습니다.
-     고리(ring)는 오른쪽 아래 원, 채움(wash)은 아래쪽에서 차오르는 색,
-     테두리(edge)는 카드 둘레입니다. data-kind 가 download 이든 ocr 이든
-     자리와 색은 같습니다. */
-  .bookcard>.card-activity{position:absolute; inset:0; z-index:1; pointer-events:none; border-radius:inherit;}
+  /* 받는 중은 글자 스캔과 같은 자리입니다. 표지 아래 4px 트랙, 그 위에 짧은 글.
+     쪽수·퍼센트·용량은 적지 않습니다. window.BREEZE_CARD_ACTIVITY 가 fill 일 때만 붙습니다. */
   .bookcard.cloud.is-receiving .getbtn{visibility:hidden;}
   .bookcard.cloud.is-receiving:hover{border-color:var(--cloud-line); border-style:dashed; transform:none; box-shadow:none;}
-  .bookcard.cloud.is-receiving[data-activity="edge"],
-  .bookcard.cloud.is-receiving[data-activity="edge"]:hover{border-color:transparent; border-style:solid;}
-  .card-activity svg, .card-activity-wash, .card-activity-edge{display:none;}
-  .card-activity-label{font-variant-numeric:tabular-nums; letter-spacing:0;}
-  .card-activity[data-variant="ring"] svg,
-  .card-activity[data-variant="ring"] .card-activity-label{
-    position:absolute; right:12px; bottom:12px; width:48px; height:48px;}
-  .card-activity[data-variant="ring"] svg{
-    display:block; background:var(--sheet); border-radius:50%;
-    box-shadow:0 0 0 1px rgba(77,174,214,.35);}
-  .card-activity[data-variant="ring"] .track,
-  .card-activity[data-variant="ring"] .value{fill:none; stroke-width:2.4;}
-  .card-activity[data-variant="ring"] .track{stroke:rgba(77,174,214,.35);}
-  .card-activity[data-variant="ring"] .value{
-    stroke:var(--blue); stroke-linecap:round;
-    stroke-dasharray:calc(var(--p) * 100) 100;
-    transform:rotate(-90deg); transform-origin:18px 18px;}
-  .card-activity[data-variant="ring"] .card-activity-label{
-    display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:0 6px; font:600 11px/1.15 var(--ui); color:var(--ink);}
-  .card-activity[data-kind="ocr"][data-variant="ring"] .card-activity-label{font-size:10px;}
-  .card-activity[data-variant="wash"] .card-activity-wash{
-    display:block; position:absolute; left:0; right:0; bottom:0;
-    height:calc(var(--p) * 72%); background:rgba(77,174,214,.28);
-    border-top:2px solid var(--blue);}
-  .card-activity[data-unknown="1"] .card-activity-wash{display:none;}
-  .card-activity[data-variant="edge"] .card-activity-edge{
-    display:block; position:absolute; left:0; right:0; bottom:0; height:2.5px;
-    background:var(--blue); transform:scaleX(var(--p)); transform-origin:left center;}
-  @supports (mask-composite:exclude) or (-webkit-mask-composite:xor){
-    .card-activity[data-variant="edge"] .card-activity-edge{
-      inset:0; height:auto; transform:none; border-radius:inherit; padding:2.5px;
-      background:conic-gradient(from -90deg, var(--blue) calc(var(--p) * 1turn), rgba(77,174,214,.35) 0);
-      -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite:xor;
-      mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      mask-composite:exclude;}
-  }
-  .card-activity[data-variant="wash"] .card-activity-label,
-  .card-activity[data-variant="edge"] .card-activity-label{
-    position:absolute; left:24px; bottom:14px; padding:5px 9px; border-radius:999px;
-    background:var(--sheet); color:var(--ink); font:600 12px/1.2 var(--ui);
-    box-shadow:0 0 0 1px rgba(77,174,214,.28);}
-  .card-activity[data-variant="ring"][data-unknown="1"] .card-activity-label{
-    right:auto; left:24px; bottom:14px; width:auto; height:auto; padding:5px 9px; border-radius:999px;
-    background:var(--sheet); color:var(--ink); font:600 12px/1.2 var(--ui);
-    box-shadow:0 0 0 1px rgba(77,174,214,.28);}
-  @media (max-width:760px){
-    .card-activity[data-variant="ring"] svg,
-    .card-activity[data-variant="ring"] .card-activity-label{width:44px; height:44px; right:8px; bottom:8px;}
-    .card-activity[data-variant="wash"] .card-activity-label,
-    .card-activity[data-variant="edge"] .card-activity-label,
-    .card-activity[data-variant="ring"][data-unknown="1"] .card-activity-label{left:18px; bottom:12px; font-size:11px;}
-  }
+  .bookcard>.card-activity{position:absolute; z-index:1; left:12px; right:12px; bottom:8px; pointer-events:none;
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:6px;}
+  .card-activity-label{font:600 11px/1.2 var(--ui); color:var(--settings-ink);}
+  .bookcard.has-cover>.card-activity .card-activity-label{color:var(--on-color); text-shadow:0 1px 4px rgba(0,0,0,.7);}
+  .card-activity-fill{align-self:stretch; display:block; height:4px; border-radius:2px;
+    background:var(--sentence-glass-solid); overflow:hidden;}
+  .card-activity-fill i{display:block; height:100%; width:calc(var(--p) * 100%); background:var(--blue);}
   @media (prefers-reduced-motion:reduce){
     .card-activity, .card-activity *{transition:none; animation:none;}
   }

@@ -543,24 +543,11 @@ async function bookCloudDropPart(key){
 }
 function bookCloudActivityVariant(){
   if(typeof window==='undefined')return '';
-  const value=window.BREEZE_CARD_ACTIVITY;
-  return value==='ring'||value==='wash'||value==='edge'?value:'';
-}
-function bookCloudFormatBytes(bytes){
-  const n=Math.max(0,Number(bytes)||0);
-  const text=value=>value>=10?String(Math.round(value)):String(Math.round(value*10)/10);
-  if(n>=1073741824)return text(n/1073741824)+'GB';
-  if(n>=1048576)return text(n/1048576)+'MB';
-  if(n>=1024)return Math.round(n/1024)+'KB';
-  return Math.round(n)+'B';
+  return window.BREEZE_CARD_ACTIVITY==='fill'?'fill':'';
 }
 function bookCloudActivityCopy(state){
-  if(!state.total)return {pct:0,label:'받는 중',aria:'받는 중'};
-  const pct=Math.round(state.ratio*100);
-  const aria='받는 중 '+pct+'%';
-  if(state.variant==='ring')return {pct,label:pct+'%',aria};
-  if(state.variant==='edge')return {pct,label:bookCloudFormatBytes(state.received)+' / '+bookCloudFormatBytes(state.total),aria};
-  return {pct,label:pct+'% · '+bookCloudFormatBytes(state.received),aria};
+  const pct=state.total?Math.round(state.ratio*100):0;
+  return {pct,label:'받는 중',aria:'받는 중'};
 }
 function bookCloudScheduleActivity(){
   if(bookCloudActivityFrame)return;
@@ -593,7 +580,7 @@ function bookCloudActivityNode(){
   node.setAttribute('role','progressbar');
   node.setAttribute('aria-valuemin','0');
   node.setAttribute('aria-valuemax','100');
-  node.innerHTML='<svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="14" pathLength="100"></circle><circle class="value" cx="18" cy="18" r="14" pathLength="100"></circle></svg><span class="card-activity-wash"></span><span class="card-activity-edge"></span><span class="card-activity-label"></span>';
+  node.innerHTML='<span class="card-activity-label"></span><span class="card-activity-fill" aria-hidden="true"><i></i></span>';
   return node;
 }
 function bookCloudPaintActivity(){
