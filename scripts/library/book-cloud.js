@@ -65,6 +65,29 @@ function bookCloudLocator(position){
   }
   return locator;
 }
+function bookCloudSamePlace(left,right){
+  const clean=value=>{const locator=bookCloudLocator(value||{});delete locator.t;return JSON.stringify(locator);};
+  return clean(left)===clean(right);
+}
+function bookCloudAtStart(position){
+  const locator=bookCloudLocator(position||{});
+  if((Number(locator.p)||0)>0.001)return false;
+  if(locator.pi!=null&&Number(locator.pi)>0)return false;
+  if((Number(locator.y)||0)>8)return false;
+  if((Number(locator.dy)||0)>8)return false;
+  const original=locator.original;
+  if(!original)return true;
+  if(original.kind==='pdf')return (Number(original.page)||1)<=1&&(Number(original.y)||0)<=0.02;
+  if(original.kind==='epub')return (Number(original.spine)||0)<=0&&(Number(original.element)||0)<=0&&(Number(original.char)||0)<=0;
+  return true;
+}
+function bookCloudPreferRemote(local,remote){
+  if(!remote||typeof remote!=='object')return false;
+  if(!local)return true;
+  if(bookCloudAtStart(local)&&!bookCloudAtStart(remote))return true;
+  const remoteTime=Number(remote.t)||0,localTime=Number(local.t)||0;
+  return remoteTime>localTime&&!bookCloudAtStart(remote);
+}
 function bookCloudLibraryRows(){
   if(!bookCloudEnabled())return [];
   const local=new Set();
@@ -120,10 +143,10 @@ async function bookCloudSetLink(book,on){
     delete box.removes[bookCloudHash(book)];
     box.uploads[bookCloudHash(book)]={kind:book.kind,title:book.title||'',author:book.author||'',tombstone};
     bookCloudWriteOutbox(userId,box);
+    bookCloudQueuePosition(book);
     bookCloudLinkedNote(book);renderBookCloudToggle(book);
     toast('다른 기기와 이 책을 연동해요');
-    void syncBookCloud();
-    return;
+    return syncBookCloud();
   }
   const removed=await forgetBookCloud(book);
   if(removed===false){toast('서버의 원본을 아직 지우지 못했어요. 책은 그대로 두었어요.');return;}
@@ -194,7 +217,10 @@ async function bookCloudSendPosition(bookId,entry,session){
   });
   if(!bookCloudCurrent(session))return false;
   const data=result&&result.data;
-  if(data&&data.ok)return 'ok';
+  if(data&&data.ok){
+    bookCloudHeads[bookId]={revision:data.revision||entry.revision,locator:data.locator||entry.locator||null};
+    return 'ok';
+  }
   if(data&&data.ok===false&&data.revision){
     bookCloudHeads[bookId]={revision:data.revision,locator:data.locator||null};
     return 'conflict';
@@ -218,11 +244,39 @@ async function bookCloudRefresh(session){
 function bookCloudAdoptPosition(hash,locator){
   if(!locator||typeof books==='undefined'||typeof positions==='undefined')return;
   const book=books.find(item=>bookCloudHash(item)===hash);
-  if(!book)return;
-  const local=positions[book.id];
-  if(local&&local.t)return;
+  if(!book||!bookCloudPreferRemote(positions[book.id],locator))return;
   positions[book.id]={...bookCloudLocator(locator)};
   if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
+  bookCloudShowAdopted(book);
+}
+function bookCloudShowAdopted(book){
+  if(typeof curBook==='undefined'||curBook!==book)return;
+  if(typeof readerPositionPending==='function'&&readerPositionPending())return;
+  const position=positions[book.id];
+  if(!position)return;
+  if(position.mode==='original'&&position.original&&typeof switchReaderMode==='function'){
+    void switchReaderMode('original',{initial:true});
+    return;
+  }
+  if(typeof restoreAnchor==='function'&&restoreAnchor(position))return;
+  if(typeof readerScrollTo==='function')readerScrollTo(position.y||0);
+}
+function bookCloudQueuePosition(book){
+  if(!bookCloudEnabled())return;
+  const userId=bookCloudUserId();
+  if(!book||!userId||!(book.bookCloudLink&&book.bookCloudLink.on))return;
+  const bookId=bookCloudHash(book);
+  if(!bookId||typeof positions==='undefined'||!positions[book.id])return;
+  const box=bookCloudReadOutbox(userId);
+  if(box.removes[bookId])return;
+  const locator=bookCloudLocator(positions[book.id]);
+  const head=bookCloudHeads[bookId];
+  if(head&&bookCloudPreferRemote(positions[book.id],head.locator))return;
+  if(head&&bookCloudSamePlace(head.locator,locator))return;
+  const previous=box.positions[bookId];
+  if(previous&&bookCloudSamePlace(previous.locator,locator))return;
+  box.positions[bookId]={base:previous?previous.base:(head&&head.revision||null),revision:(previous&&previous.revision)||(crypto.randomUUID?crypto.randomUUID():String(Date.now())),locator};
+  bookCloudWriteOutbox(userId,box);
 }
 async function syncBookCloud(){
   if(!bookCloudEnabled())return false;
@@ -230,6 +284,9 @@ async function syncBookCloud(){
   if(!userId)return false;
   try{
     if(navigator.onLine===false)return false;
+    await bookCloudRefresh(session);
+    if(!bookCloudCurrent(session))return false;
+    if(typeof books!=='undefined')for(const book of books)bookCloudQueuePosition(book);
     const box=bookCloudReadOutbox(userId);
     for(const bookId of Object.keys(box.removes)){
       if(!bookCloudCurrent(session))return false;
@@ -261,14 +318,8 @@ function flushBookCloud(){
 function scheduleBookCloudPosition(){
   if(!bookCloudEnabled())return;
   const book=typeof curBook!=='undefined'?curBook:null;
-  const userId=bookCloudUserId();
-  if(!book||!userId||!(book.bookCloudLink&&book.bookCloudLink.on))return;
-  const bookId=bookCloudHash(book);
-  if(!bookId||typeof positions==='undefined')return;
-  const box=bookCloudReadOutbox(userId);
-  const previous=box.positions[bookId];
-  box.positions[bookId]={base:previous?previous.base:(bookCloudHeads[bookId]&&bookCloudHeads[bookId].revision||null),revision:(previous&&previous.revision)||(crypto.randomUUID?crypto.randomUUID():String(Date.now())),locator:bookCloudLocator(positions[book.id])};
-  bookCloudWriteOutbox(userId,box);
+  bookCloudQueuePosition(book);
+  if(!book||!bookCloudUserId()||!(book.bookCloudLink&&book.bookCloudLink.on)||!bookCloudHash(book))return;
   clearTimeout(bookCloudTimer);
   bookCloudTimer=setTimeout(()=>{bookCloudTimer=0;void syncBookCloud();},1500);
 }
@@ -519,7 +570,7 @@ async function bookCloudImportRemote(row,session,options){
     throw error;
   }
   await bookCloudDropPart(key);
-  if(row.locator&&typeof positions!=='undefined'){
+  if(row.locator&&typeof positions!=='undefined'&&bookCloudPreferRemote(positions[target.id],row.locator)){
     positions[target.id]={...bookCloudLocator(row.locator)};
     if(typeof save==='function')save(LS_POS,positions);
   }

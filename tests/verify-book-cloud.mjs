@@ -255,6 +255,73 @@ test('a partial download resumes with Range on any link',async()=>{
   assert.equal(stored.length,0);
 });
 
+test('linking a book publishes its saved place on the file hash',async()=>{
+  const places={
+    pdf:{p:0.42,t:1000,mode:'original',original:{kind:'pdf',page:12,y:0.35}},
+    epub:{p:0.27,t:1000,mode:'original',original:{kind:'epub',href:'ch3.xhtml',spine:3,element:4,char:12}},
+    txt:{p:0.61,t:1000,mode:'text',pi:18,dy:4,y:900}
+  };
+  for(const [kind,place] of Object.entries(places)){
+    const {context}=boot({flag:true});
+    const sent=[];
+    context.sb.rpc=async(name,args)=>{sent.push({name,args});return {data:{ok:true,revision:args.next_revision,locator:args.locator}};};
+    context.bookCloudPost=async op=>op==='reserve'?{ok:true,ready:true}:{ok:true};
+    const id='file-'+hash.slice(0,32);
+    const book={id,kind,title:'Sample',sourceHash:hash,original:{hash},bookCloudLink:{on:false,tombstone:''}};
+    context.books=[book];
+    context.positions[id]=place;
+    await context.bookCloudSetLink(book,true);
+    assert.equal(sent.length,1,kind);
+    assert.equal(sent[0].name,'breeze_put_book_position');
+    assert.equal(sent[0].args.book_id,hash);
+    assert.equal(sent[0].args.book_id===id,false);
+    assert.equal(sent[0].args.locator.mode,place.mode);
+    assert.equal(sent[0].args.locator.p,place.p);
+    if(place.original)assert.equal(sent[0].args.locator.original.kind,kind);
+    else assert.equal(sent[0].args.locator.pi,18);
+  }
+});
+
+test('an already linked book publishes its place without another scroll',async()=>{
+  const {context}=boot({flag:true});
+  const sent=[];
+  context.sb.rpc=async(name,args)=>{sent.push(args);return {data:{ok:true,revision:args.next_revision,locator:args.locator}};};
+  const id='file-'+hash.slice(0,32);
+  context.books=[{id,kind:'epub',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}}];
+  context.positions[id]={p:0.27,t:1000,mode:'original',original:{kind:'epub',spine:3,element:4,char:12}};
+  await context.syncBookCloud();
+  assert.equal(sent.length,1);
+  assert.equal(sent[0].book_id,hash);
+  assert.equal(sent[0].locator.original.spine,3);
+  await context.syncBookCloud();
+  assert.equal(sent.length,1);
+});
+
+test('a downloaded book restores the remote place and a local start does not replace it',async()=>{
+  const places={
+    pdf:{p:0.42,t:1000,mode:'original',original:{kind:'pdf',page:12,y:0.35}},
+    epub:{p:0.27,t:1000,mode:'original',original:{kind:'epub',href:'ch3.xhtml',spine:3,element:4,char:12}},
+    txt:{p:0.61,t:1000,mode:'text',pi:18,dy:4,y:900}
+  };
+  for(const [kind,place] of Object.entries(places)){
+    const {context}=boot({flag:true});
+    const id='file-'+hash.slice(0,32);
+    context.books=[{id,kind,sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}}];
+    context.positions[id]={p:0,t:Date.now(),mode:kind==='txt'?'text':'original'};
+    context.sb.from=table=>({select:async()=>table==='positions'?{data:[{book_id:hash,data:{revision:'rev-1',locator:place}}]}:{data:[{book_id:hash,title:'Sample',kind,status:'ready',byte_size:5}]}});
+    await context.syncBookCloud();
+    assert.equal(context.positions[id].p,place.p,kind);
+    assert.equal(context.positions[hash],undefined,kind);
+    if(place.original){
+      assert.equal(context.positions[id].original.kind,kind);
+      assert.equal(context.positions[id].original.page||context.positions[id].original.spine,place.original.page||place.original.spine);
+    }else assert.equal(context.positions[id].pi,18);
+    context.positions[id]={...place,t:place.t+50,p:0.8};
+    await context.bookCloudRefresh(context.bookCloudSession());
+    assert.equal(context.positions[id].p,0.8,kind);
+  }
+});
+
 test('each account keeps its own outbox',()=>{
   const {context}=boot({flag:true});
   context.bookCloudWriteOutbox(user,{version:1,uploads:{[hash]:{kind:'epub'}},positions:{},removes:{}});

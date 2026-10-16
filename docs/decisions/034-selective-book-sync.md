@@ -63,6 +63,17 @@ platform. The link type, a data-saver flag, and `navigator.storage.estimate`
 do not choose. The native shell does not consult Capacitor Network for this
 decision.
 
+The saved place is the `public.positions` row whose `book_id` is the file
+SHA-256, not the local book id. Turning the link on publishes the place
+already stored on this device, and a later sync publishes it even when the
+reader has not moved again. The other device copies that locator onto its
+local book id before the reader opens. PDF and EPUB open through the existing
+original restore, which waits until the file layout can place the anchor. TXT
+uses the saved paragraph. Opening a downloaded book at the start does not
+count as a newer place, so that stamp cannot replace the remote locator or
+be written back over it. A newer place that is no longer the start still wins
+on the device where it was made.
+
 The download stays off the sync return path and runs one book at a time.
 Bytes already received are kept in a separate IndexedDB database and the next
 attempt sends `Range`. A book larger than 2 GiB is not fetched. While the
