@@ -76,9 +76,10 @@ card or metadata photo. Only the missing Korean introduction uses the existing
 reduced-motion-aware shimmer, shaped as text lines. Failed photo decode keeps
 artwork; body failure keeps metadata and offers manual retry in the same sheet.
 Generation checks prevent an old completion/error from changing another article
-or reopening a dismissed preview. The body is fetched/parsed first, then its
-actual paragraphs supply the introduction request. Read becomes available when
-the body is ready, independently of the optional introduction. First-visible
+or reopening a dismissed preview. The feed summary can request the Korean invitation as soon as Preview opens.
+A later body must not clear an invitation already loading or shown for that
+article. Read stays independent: body failure keeps a ready invitation, and a
+failed Read still paints an invitation that arrived while opening. First-visible
 shell, body/Read-ready and introduction-ready latency are distinct measurements.
 
 The 238 device follow-up identified a first-screen regression: 236/PR97 fetched
@@ -391,14 +392,17 @@ Photo readiness does not establish article readability. The current client fixes
 these avoidable failures without resuming per-candidate background fetching.
 
 Legacy feed responses retain supplied explicit article bodies and feed-only
-social text in a separate memory-only cache: at most 200,000 serialized UTF-8 bytes per
-source and 1,000,000 in total (including identity and provenance), expiring after ten minutes. Successful source
+social text outside discovery metadata: at most 200,000 serialized UTF-8 bytes per
+source and 1,000,000 in total (including identity and provenance). Built-in public
+feeds also keep that evidence on device for the same twenty-four-hour window as
+the metadata still shown, so a restart or a failed refresh can open the body
+that was already transferred. Custom feeds stay in memory only. Successful source
 refresh replaces that source's evidence; a transient failure does not invent an
 empty successful feed. Cache budget eviction can remove old bodies. No body is
-added to discovery metadata, localStorage, the shared catalog, or a saved book.
+added to discovery metadata, the shared catalog, or a saved book.
 Readability and access/truncation checks still run only after selection. Reuse
-requires matching source provenance and canonical article identity. A cold
-restart with only persisted metadata cannot reconstruct these bodies.
+requires matching source provenance and canonical article identity. Metadata
+without a stored body still cannot invent one.
 
 Medium owner-feed jobs continue to coalesce while in flight and after success.
 Transport or parsing failures remove only their own job, so a manual retry can

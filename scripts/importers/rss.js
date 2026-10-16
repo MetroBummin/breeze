@@ -62,11 +62,15 @@ let rssLoadedOffline=false;
 let rssPublicCache=null;
 const rssPublicFeedJobs = new Map();
 const rssPreparedArticles = new Map();
-// Keep only public bodies already paid for by a legacy feed response. Discovery
-// and its persistent cache remain metadata-only; parsing still waits for a tap.
+// Keep public bodies already transferred with a legacy feed. Discovery cards stay
+// metadata-only. The body store survives a restart for the same window as the
+// metadata we still show, so a warm card can open without another origin fetch.
 const rssSuppliedBodies = new Map();
 const RSS_SUPPLIED_BODY_BYTES=1000000;
 const RSS_SUPPLIED_FEED_BYTES=200000;
+const RSS_SUPPLIED_STORE_KEY='breeze.rss-supplied.v1';
+let rssSuppliedHydrated=false;
+function rssBuiltinFeed(url){return RSS_FEEDS.some(source=>source.url===url);}
 const rssRenderIds = new WeakMap();
 let rssPage = 0;
 const RSS_COVER_CACHE_KEY='breeze.rss-cover-metadata.v2';
@@ -482,35 +486,80 @@ function rssStorePublicFeed(feed,entries,at){
 function rssForgetSuppliedBodies(feedUrl){
   for(const [key,record] of rssSuppliedBodies)if(record.feedUrl===feedUrl)rssSuppliedBodies.delete(key);
 }
+function rssPersistSuppliedBodies(){
+  if(typeof localStorage==='undefined')return;
+  try{
+    const now=Date.now(),kept=[];
+    let total=0;
+    for(const [key,record] of rssSuppliedBodies){
+      if(!rssBuiltinFeed(record.feedUrl)||!Number.isFinite(record.at)||record.at>now||now-record.at>=RSS_PUBLIC_STALE_MS)continue;
+      const html=record.body?.contentHtml;
+      if(typeof html!=='string'||!html||html.length>200000)continue;
+      if(total+record.bytes>RSS_SUPPLIED_BODY_BYTES)continue;
+      total+=record.bytes;
+      kept.push([key,{feedUrl:record.feedUrl,at:record.at,bytes:record.bytes,body:{contentHtml:html,bodyProvided:!!record.body.bodyProvided}}]);
+    }
+    localStorage.setItem(RSS_SUPPLIED_STORE_KEY,JSON.stringify(kept));
+  }catch{/* Private mode and quota denial keep this document's in-memory copy. */}
+}
+function rssRehydrateSuppliedBodies(){
+  if(rssSuppliedHydrated||typeof localStorage==='undefined'){rssSuppliedHydrated=true;return;}
+  rssSuppliedHydrated=true;
+  try{
+    const raw=localStorage.getItem(RSS_SUPPLIED_STORE_KEY);
+    if(!raw||raw.length>RSS_SUPPLIED_BODY_BYTES+65536)return;
+    const rows=JSON.parse(raw);
+    if(!Array.isArray(rows))return;
+    const now=Date.now();
+    let total=0;
+    for(const row of rows){
+      if(!Array.isArray(row)||row.length!==2)continue;
+      const [key,record]=row;
+      if(typeof key!=='string'||key.length>12000||!record||typeof record!=='object')continue;
+      if(!rssBuiltinFeed(record.feedUrl)||!Number.isFinite(record.at)||record.at>now||now-record.at>=RSS_PUBLIC_STALE_MS)continue;
+      const html=record.body?.contentHtml;
+      if(typeof html!=='string'||!html||html.length>200000||rssSuppliedBodies.has(key))continue;
+      const stored={feedUrl:record.feedUrl,at:record.at,body:{contentHtml:html,bodyProvided:!!record.body.bodyProvided}};
+      const bytes=rssCacheBytes([key,stored]);
+      if(bytes>RSS_SUPPLIED_FEED_BYTES||total+bytes>RSS_SUPPLIED_BODY_BYTES)continue;
+      total+=bytes;
+      rssSuppliedBodies.set(key,{...stored,bytes});
+    }
+  }catch{/* Corrupt or denied storage cannot block a body that is still in memory. */}
+}
 function rssRememberSuppliedBodies(feed,entries,at){
+  rssRehydrateSuppliedBodies();
   rssForgetSuppliedBodies(feed.url);
   const now=Date.now();
-  if(at>now || now-at>=RSS_CACHE_MS || typeof feed.url!=='string' || feed.url.length>4096)return;
-  let feedBytes=0;
-  for(const entry of entries){
-    if(!entry.contentHtml || !(entry.bodyProvided || entry.kind&&!entry.readUrl) || !rssCacheEntry(entry))continue;
-    const body={contentHtml:entry.contentHtml,bodyProvided:!!entry.bodyProvided};
-    const key=feed.url+'\n'+articleUrlKey(entry.url),record={feedUrl:feed.url,at,body};
-    const bytes=rssCacheBytes([key,record]);
-    if(bytes>RSS_SUPPLIED_FEED_BYTES-feedBytes)continue;
-    feedBytes+=bytes;
-    rssSuppliedBodies.delete(key);
-    rssSuppliedBodies.set(key,{...record,bytes});
+  if(!(at>now || now-at>=RSS_PUBLIC_STALE_MS || typeof feed.url!=='string' || feed.url.length>4096)){
+    let feedBytes=0;
+    for(const entry of entries){
+      if(!entry.contentHtml || !(entry.bodyProvided || entry.kind&&!entry.readUrl) || !rssCacheEntry(entry))continue;
+      const body={contentHtml:entry.contentHtml,bodyProvided:!!entry.bodyProvided};
+      const key=feed.url+'\n'+articleUrlKey(entry.url),record={feedUrl:feed.url,at,body};
+      const bytes=rssCacheBytes([key,record]);
+      if(bytes>RSS_SUPPLIED_FEED_BYTES-feedBytes)continue;
+      feedBytes+=bytes;
+      rssSuppliedBodies.delete(key);
+      rssSuppliedBodies.set(key,{...record,bytes});
+    }
   }
   let total=0;
   for(const [key,record] of rssSuppliedBodies){
-    if(record.at>now || now-record.at>=RSS_CACHE_MS)rssSuppliedBodies.delete(key);
+    if(record.at>now || now-record.at>=RSS_PUBLIC_STALE_MS)rssSuppliedBodies.delete(key);
     else total+=record.bytes;
   }
   for(const [key,record] of rssSuppliedBodies){
     if(total<=RSS_SUPPLIED_BODY_BYTES)break;
     rssSuppliedBodies.delete(key);total-=record.bytes;
   }
+  rssPersistSuppliedBodies();
 }
 function rssSuppliedEntry(entry){
+  rssRehydrateSuppliedBodies();
   const key=(entry.feedSourceUrl||entry.feedUrl)+'\n'+articleUrlKey(entry.url),record=rssSuppliedBodies.get(key),now=Date.now();
   if(!record)return entry;
-  if(record.at>now || now-record.at>=RSS_CACHE_MS){rssSuppliedBodies.delete(key);return entry;}
+  if(record.at>now || now-record.at>=RSS_PUBLIC_STALE_MS){rssSuppliedBodies.delete(key);return entry;}
   return record.feedUrl===(entry.feedSourceUrl||entry.feedUrl)?{...entry,...record.body}:entry;
 }
 async function rssFeedEntries(feed,force){
