@@ -251,7 +251,7 @@ async function originalGetForBook(book){
   if(recovered){
     try{ await originalPut(book.id,recovered); }catch(e){}
   }
-  return presentOriginal(recovered);
+  return recovered;
 }
 /* File import calls this only after its in-memory ID/hash checks miss. An alias
    recovery can then only find a different hash, so inspect direct records in one
