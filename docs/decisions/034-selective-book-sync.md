@@ -58,25 +58,20 @@ held in memory. IndexedDB is used only when a ready book is downloaded.
 
 ## Background download
 
-A ready book that is not already on this device downloads on its own when the
-link is unmetered. The native shell uses Capacitor Network `connectionType`
-when that plugin is present: `wifi` downloads, and `cellular`, `none`, and
-`unknown` keep the "받아서 이어 읽기" card. Otherwise the page uses
-`navigator.connection` when it exists. `cellular` and `saveData` keep the card.
-A desktop browser that exposes the API without a metered type is treated as
-unmetered. Firefox and Safari often omit the API; the card stays until the
-reader opens it.
+A ready book that is not already on this device downloads on its own on every
+platform. The link type, a data-saver flag, and `navigator.storage.estimate`
+do not choose. The native shell does not consult Capacitor Network for this
+decision.
 
-The download stays off the sync return path, runs one book at a time, and
-stops when the link becomes metered. Bytes already received are kept in a
-separate IndexedDB database and the next attempt sends `Range`. A book larger
-than 2 GiB is not fetched. `navigator.storage.estimate` must leave the book
-size plus 32 MiB free. Chrome's incognito headroom, about 9 GiB, does not
-qualify, and a rejected `navigator.storage.getDirectory()` (private Firefox
-and Safari) does not either. Opening the card still downloads on cellular, in
-private mode, and when the quota is tight. An automatic download does not open
-the reader. The card is the same control it was; it disappears after the book
-is stored.
+The download stays off the sync return path and runs one book at a time.
+Bytes already received are kept in a separate IndexedDB database and the next
+attempt sends `Range`. A book larger than 2 GiB is not fetched. While the
+device is offline the card stays, and the next sync tries again. If storing
+the file fails, including a private-mode quota or an IndexedDB rejection, the
+book is not added and nothing is reported. The "받아서 이어 읽기" card remains,
+and opening it downloads and opens the book. An automatic download does not
+open the reader. The card is the same control it was; it disappears after the
+book is stored.
 
 Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
 as an automatic rollback.

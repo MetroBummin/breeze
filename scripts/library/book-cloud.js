@@ -4,7 +4,6 @@ function bookCloudEnabled(){
   return !!(window.BREEZE_CONFIG&&window.BREEZE_CONFIG.BOOK_CLOUD===true);
 }
 var BOOK_CLOUD_BYTE_CAP=2147483648;
-var BOOK_CLOUD_AUTO_MARGIN=33554432;
 var bookCloudCatalog=[];
 var bookCloudHeads={};
 var bookCloudTimer=0;
@@ -12,7 +11,6 @@ var bookCloudPullTask=null;
 var bookCloudPullAgain=false;
 var bookCloudPullEpoch=0;
 var bookCloudJobs=new Map();
-var bookCloudWatching=false;
 var bookCloudPartsPromise=null;
 function bookCloudResetNotes(){
   const note=document.getElementById('ed-del-note');
@@ -294,56 +292,17 @@ async function forgetBookCloud(book){
   bookCloudWriteOutbox(userId,box);
   return false;
 }
-function bookCloudNativeType(){
-  const network=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Network;
-  if(!network||typeof network.getStatus!=='function')return Promise.resolve('');
-  return Promise.resolve(network.getStatus()).then(status=>String(status&&status.connectionType||''),()=>'');
-}
-async function bookCloudUnmetered(){
-  const native=await bookCloudNativeType();
-  if(native==='wifi')return true;
-  if(native)return false;
-  const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-  if(!conn||conn.saveData)return false;
-  const type=String(conn.type||'');
-  if(type==='cellular'||type==='wimax'||type==='bluetooth'||type==='none')return false;
-  const effective=String(conn.effectiveType||'');
-  if(effective==='slow-2g'||effective==='2g')return false;
-  return type==='wifi'||type==='ethernet'||type===''||type==='unknown'||type==='other';
-}
-async function bookCloudStorageAllows(bytes){
-  if(!Number.isSafeInteger(bytes)||bytes<1||bytes>BOOK_CLOUD_BYTE_CAP)return false;
-  if(typeof indexedDB==='undefined'||!indexedDB)return false;
-  let estimate;
-  try{estimate=navigator.storage&&typeof navigator.storage.estimate==='function'?await navigator.storage.estimate():null;}
-  catch{return false;}
-  const quota=Number(estimate&&estimate.quota);
-  const usage=Number(estimate&&estimate.usage)||0;
-  if(!Number.isFinite(quota)||quota<=0)return false;
-  const headroom=quota-usage;
-  if(!Number.isFinite(headroom)||headroom<bytes+BOOK_CLOUD_AUTO_MARGIN)return false;
-  // Chrome reports about 10 GiB of headroom in a normal window and about 9 GiB
-  // in incognito. A real disk that is simply too small fails the margin above.
-  const gib=1024*1024*1024;
-  if(headroom>=8.5*gib&&headroom<9.5*gib)return false;
-  if(typeof navigator.storage.getDirectory==='function'){
-    try{await navigator.storage.getDirectory();}catch{return false;}
-  }
-  return true;
-}
-function bookCloudWatchConnection(){
-  if(bookCloudWatching)return;
-  bookCloudWatching=true;
-  const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-  if(conn&&typeof conn.addEventListener==='function')conn.addEventListener('change',()=>{if(bookCloudEnabled())void bookCloudPullReady();});
-  const network=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Network;
-  if(network&&typeof network.addListener==='function'){
-    try{void network.addListener('networkStatusChange',()=>{if(bookCloudEnabled())void bookCloudPullReady();});}catch{}
-  }
+function bookCloudStorageFault(error){
+  if(!error)return false;
+  const name=String(error.name||'');
+  if(name==='QuotaExceededError'||error.code===22||error.code===1014)return true;
+  const message=String(error.message||'');
+  if(/QuotaExceededError|quota has been exceeded|Indexed Database|indexedDB|IDBFactory|IDBDatabase|private browsing|object store/i.test(message))return true;
+  return (name==='SecurityError'||name==='InvalidStateError'||name==='UnknownError'||name==='AbortError')
+    && /storage|database|indexedDB|quota|blob|file|private/i.test(message);
 }
 function bookCloudPullReady(session){
   if(!bookCloudEnabled())return Promise.resolve(false);
-  bookCloudWatchConnection();
   bookCloudPullAgain=true;
   if(bookCloudPullTask)return bookCloudPullTask;
   const current=session||bookCloudSession();
@@ -366,11 +325,11 @@ function bookCloudPullReady(session){
 }
 async function bookCloudAutoPull(session,epoch){
   if(!bookCloudEnabled()||!bookCloudCurrent(session)||epoch!==bookCloudPullEpoch)return;
-  if(navigator.onLine===false||!(await bookCloudUnmetered()))return;
+  if(navigator.onLine===false)return;
   for(const row of bookCloudLibraryRows()){
     if(epoch!==bookCloudPullEpoch||!bookCloudCurrent(session))return;
-    if(navigator.onLine===false||!(await bookCloudUnmetered()))return;
-    if(!(await bookCloudStorageAllows(Number(row.size)||0)))continue;
+    if(navigator.onLine===false)return;
+    if(Number(row.size)>BOOK_CLOUD_BYTE_CAP)continue;
     await bookCloudRunJob(row.bookId,()=>bookCloudImportRemote(row,session,{auto:true}));
     if(epoch!==bookCloudPullEpoch)return;
     if(typeof renderAllBookViews==='function')renderAllBookViews();
@@ -483,8 +442,6 @@ async function bookCloudImportRemote(row,session,options){
   if(navigator.onLine===false){note('오프라인에서는 이 책을 받을 수 없어요.');return null;}
   if(!bookCloudCurrent(session))return null;
   const size=Number(row.size)||0;
-  if(auto&&!(await bookCloudStorageAllows(size)))return null;
-  if(auto&&!(await bookCloudUnmetered()))return null;
   const key=bookCloudUserId()+'/'+row.bookId;
   let prefix=null;
   try{prefix=await bookCloudReadPart(key);}catch{prefix=null;}
@@ -520,7 +477,6 @@ async function bookCloudImportRemote(row,session,options){
       bytes=await bookCloudReadBody(response,prefix,async merged=>{
         await bookCloudWritePart(key,merged);
         if(!bookCloudCurrent(session))return false;
-        if(auto&&!(await bookCloudUnmetered()))return false;
         return true;
       });
     }catch(error){
@@ -547,10 +503,21 @@ async function bookCloudImportRemote(row,session,options){
     return null;
   }
   if(!bookCloudCurrent(session))return null;
-  const prepared=await prepareImportedFile(file,{},hash);
-  const target={id:prepared.id,title:row.title||prepared.title,author:row.author||'',addedAt:Date.now(),sourceHash:row.bookId,bookCloudLink:{on:true,tombstone:''}};
-  if(typeof books!=='undefined'&&!books.some(item=>item.id===target.id))books.push(target);
-  await applyPreparedBook(target,prepared,file);
+  let target=null;
+  let inserted=false;
+  try{
+    const prepared=await prepareImportedFile(file,{},hash);
+    target={id:prepared.id,title:row.title||prepared.title,author:row.author||'',addedAt:Date.now(),sourceHash:row.bookId,bookCloudLink:{on:true,tombstone:''}};
+    if(typeof books!=='undefined'&&!books.some(item=>item.id===target.id)){books.push(target);inserted=true;}
+    await applyPreparedBook(target,prepared,file);
+  }catch(error){
+    if(inserted&&target&&typeof books!=='undefined'){
+      const index=books.indexOf(target);
+      if(index>=0)books.splice(index,1);
+    }
+    if(bookCloudStorageFault(error)){await bookCloudWritePart(key,bytes);return null;}
+    throw error;
+  }
   await bookCloudDropPart(key);
   if(row.locator&&typeof positions!=='undefined'){
     positions[target.id]={...bookCloudLocator(row.locator)};

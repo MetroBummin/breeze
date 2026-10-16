@@ -18,7 +18,10 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 const hash='ab'.repeat(32);
 
 async function scenario(page,mode){
-  return page.evaluate(async({mode,hash})=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(String(error&&error.message||error)));
+  page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+  const result=await page.evaluate(async({mode,hash})=>{
     const bytes=new Uint8Array([9,8,7,6,5]);
     window.BREEZE_CONFIG={BOOK_CLOUD:true,SB_URL:'https://example.test',SB_KEY:'anon'};
     books=[];positions={};sbUser={id:'11111111-1111-1111-1111-111111111111'};
@@ -30,21 +33,44 @@ async function scenario(page,mode){
     window.fetch=async(request,init)=>{fetches.push(init&&init.headers||{});return {ok:true,status:200,arrayBuffer:async()=>bytes.buffer.slice(0)};};
     rawFileHash=async()=>hash;
     prepareImportedFile=async()=>({id:'saved',title:'Sample',kind:'epub',hash});
-    applyPreparedBook=async book=>{window.__applied=book;};
+    applyPreparedBook=async book=>{
+      if(mode==='storage'){
+        const error=new Error('quota');
+        error.name='QuotaExceededError';
+        throw error;
+      }
+      if(mode==='private-live'){
+        await new Promise((resolve,reject)=>{
+          const request=indexedDB.open('breeze-book-cloud-probe',1);
+          request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('parts'))request.result.createObjectStore('parts');};
+          request.onsuccess=()=>{
+            const tx=request.result.transaction('parts','readwrite');
+            try{tx.objectStore('parts').put(new Blob([bytes]),'probe');}catch(error){reject(error);return;}
+            tx.oncomplete=()=>resolve();
+            tx.onerror=tx.onabort=()=>reject(tx.error||new Error('idb'));
+          };
+          request.onerror=()=>reject(request.error||new Error('idb'));
+        });
+      }
+      window.__applied=book;
+    };
     openBook=async book=>{window.__opened=book.id;};
     window.el=(tag,cls)=>{const node=document.createElement(tag);if(cls)node.className=cls;return node;};
     window.fillCard=(card,map)=>{for(const [sel,text] of Object.entries(map))card.querySelector(sel).textContent=text;};
     const gib=1024*1024*1024;
     if(mode!=='private-live'){
-      const quota=mode==='incognito'?9*gib:mode==='tight'||mode==='manual'?1024*1024:20*gib;
-      const storage={estimate:async()=>({quota,usage:0}),getDirectory:async()=>({})};
+      const quota=mode==='incognito'?9*gib:mode==='tight'?1024*1024:20*gib;
+      const storage={estimate:async()=>({quota,usage:0}),getDirectory:async()=>{throw new Error('Security error when calling GetDirectory');}};
       Object.defineProperty(navigator,'storage',{configurable:true,get:()=>storage});
     }
-    const type=mode==='cellular'||mode==='manual'?'cellular':'wifi';
-    Object.defineProperty(navigator,'connection',{configurable:true,get:()=>({type,saveData:false,effectiveType:'4g',addEventListener(){}})});
+    if(mode!=='plain'&&mode!=='private-live'){
+      const type=mode==='cellular'||mode==='manual'||mode==='storage'?'cellular':'wifi';
+      Object.defineProperty(navigator,'connection',{configurable:true,get:()=>({type,saveData:mode==='cellular',effectiveType:mode==='cellular'?'2g':'4g',addEventListener(){}})});
+    }
     if(mode==='manual')await bookCloudDownload({bookId:hash,title:'Sample',kind:'epub',size:bytes.byteLength});
     else await bookCloudPullReady();
-    const card=bookCloudCard(bookCloudLibraryRows()[0]||{bookId:hash,title:'Sample',author:'Shelf',kind:'epub'});
+    const row=bookCloudLibraryRows()[0];
+    const card=bookCloudCard(row||{bookId:hash,title:'Sample',author:'Shelf',kind:'epub'});
     return {
       fetched:fetches.length,
       opened:window.__opened,
@@ -53,6 +79,7 @@ async function scenario(page,mode){
       label:card.querySelector('.getbtn').textContent
     };
   },{mode,hash});
+  return {...result,errors};
 }
 
 const engines=[
@@ -66,24 +93,27 @@ try{
   for(const [name,launch,options] of engines){
     const browser=await launch();
     try{
-      for(const mode of ['wifi','cellular','tight','incognito','manual']){
+      for(const mode of ['plain','cellular','tight','incognito','storage','manual']){
         const page=await (await browser.newContext(options)).newPage();
         await page.goto(url);
         const result=await scenario(page,mode);
         results.push({engine:name,mode,...result});
-        if(mode==='wifi'){
-          assert.equal(result.fetched,1,name+' wifi should fetch');
-          assert.equal(result.opened,'',name+' wifi should stay in the background');
-          assert.equal(result.linked,true,name+' wifi should link the saved book');
-          assert.equal(result.rows,0,name+' wifi should leave the shelf without a download card');
+        assert.deepEqual(result.errors,[],name+' '+mode+' should stay quiet');
+        if(mode==='storage'){
+          assert.equal(result.fetched,1,name+' storage failure should still fetch');
+          assert.equal(result.opened,'',name+' storage failure should not open');
+          assert.equal(result.linked,false,name+' storage failure should not keep the book');
+          assert.equal(result.rows,1,name+' storage failure should keep the card');
+          assert.equal(result.label,'받아서 이어 읽기');
         }else if(mode==='manual'){
-          assert.equal(result.fetched,1,name+' manual should fetch on cellular');
+          assert.equal(result.fetched,1,name+' manual should fetch');
           assert.equal(result.opened,'saved',name+' manual should open the book');
           assert.equal(result.label,'받아서 이어 읽기');
         }else{
-          assert.equal(result.fetched,0,name+' '+mode+' should keep the card');
-          assert.equal(result.rows,1,name+' '+mode+' should keep the ready row');
-          assert.equal(result.label,'받아서 이어 읽기');
+          assert.equal(result.fetched,1,name+' '+mode+' should fetch');
+          assert.equal(result.opened,'',name+' '+mode+' should stay in the background');
+          assert.equal(result.linked,true,name+' '+mode+' should link the saved book');
+          assert.equal(result.rows,0,name+' '+mode+' should leave the shelf without a download card');
         }
         await page.context().close();
       }
@@ -95,9 +125,14 @@ try{
     await page.goto(url);
     const result=await scenario(page,'private-live');
     results.push({engine:'firefox-private',mode:'private-live',...result});
-    assert.equal(result.fetched,0,'Firefox private mode should not auto-download');
-    assert.equal(result.rows,1);
-    assert.equal(result.label,'받아서 이어 읽기');
+    assert.equal(result.fetched,1,'Firefox private mode should still try the download');
+    assert.deepEqual(result.errors,[]);
+    assert.equal(result.opened,'');
+    if(result.linked)assert.equal(result.rows,0);
+    else{
+      assert.equal(result.rows,1);
+      assert.equal(result.label,'받아서 이어 읽기');
+    }
   }finally{await browser.close();}
 }finally{server.close();}
 console.log(JSON.stringify(results,null,2));
