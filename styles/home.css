@@ -138,6 +138,21 @@
   .bookcard.cloud .del:hover{background:var(--cover-badge-hover); color:var(--danger-strong);}
   body.dark .bookcard.cloud .del{background:var(--cloud-del); color:var(--cover-badge-ink);}
 
+  /* 받는 중은 글자 스캔과 같은 자리입니다. 표지 아래 4px 트랙, 그 위에 짧은 글.
+     쪽수·퍼센트·용량은 적지 않습니다. window.BREEZE_CARD_ACTIVITY 가 fill 일 때만 붙습니다. */
+  .bookcard.cloud.is-receiving .getbtn{visibility:hidden;}
+  .bookcard.cloud.is-receiving:hover{border-color:var(--cloud-line); border-style:dashed; transform:none; box-shadow:none;}
+  .bookcard>.card-activity{position:absolute; z-index:1; left:12px; right:12px; bottom:8px; pointer-events:none;
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:6px;}
+  .card-activity-label{font:600 11px/1.2 var(--ui); color:var(--settings-ink);}
+  .bookcard.has-cover>.card-activity .card-activity-label{color:var(--on-color); text-shadow:0 1px 4px rgba(0,0,0,.7);}
+  .card-activity-fill{align-self:stretch; display:block; height:4px; border-radius:2px;
+    background:var(--sentence-glass-solid); overflow:hidden;}
+  .card-activity-fill i{display:block; height:100%; width:calc(var(--p) * 100%); background:var(--blue);}
+  @media (prefers-reduced-motion:reduce){
+    .card-activity, .card-activity *{transition:none; animation:none;}
+  }
+
   .casual.cloud .thumb{border:1px dashed var(--line2); background:var(--cloud-thumb); filter:saturate(.25);}
   .casual.cloud .lede{opacity:.55; font-size:13px; line-height:1.45; padding:28px 18px;}
   .casual.cloud .cm{color:var(--blue);}
