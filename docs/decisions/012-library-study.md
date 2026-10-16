@@ -167,10 +167,15 @@ Both formats expose the same draggable scrollbar: a 4px visual thumb with a
 PageUp/PageDown and arrow-key support. The thumbnail's left and right insets
 match. The visual thumb sits in that right inset instead of a second 14px rail.
 The grip may cross the paper's outer margin; the bookmark glyph stays outside it.
-On viewports up to 560px the thumbnail fills that inset, so the visual thumb
-would sit on the paper. There the 4px bar moves to the sidebar's right edge,
-just inside it, leaving a gap beside the page. The 24px grip, the matched
-left and right thumbnail insets, and the wider inset placement stay.
+When the sidebar itself is 168px or narrower, a portrait thumbnail fills that
+inset and the visual thumb would sit on the paper (the leftover gap stays under
+2px until the sidebar is wider). The 4px bar then moves to the sidebar's right
+edge, just inside it, leaving a gap beside the page. The rule is a container
+query on the sidebar panel, so it follows the panel's width rather than the
+viewport. iOS 15 does not support container queries; there the same cutoff is
+the viewport query at 560px, because this sidebar is `30vw` and 168px is `30vw`
+at 560px. The 24px grip, the matched left and right thumbnail insets, and the
+wider inset placement stay.
 This scrollbar is
 intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
 scroll position; paper reading position and gestures remain independent.

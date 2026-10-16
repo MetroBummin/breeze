@@ -53,10 +53,16 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 #pdf-navigation-scrollbar{position:absolute;right:-8px;top:0;width:24px;min-height:44px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;z-index:3;}
 #pdf-navigation-scrollbar[hidden]{display:none;}
 #pdf-navigation-scrollbar::before{content:"";position:absolute;right:8px;top:0;bottom:0;width:4px;border-radius:4px;background:var(--sb-thumb);}
-/* A phone thumbnail fills the strip, so the inset bar sits on the paper.
-   The 24px grip and the matched side insets stay; only the 4px bar moves
-   to the panel edge. Wider sidebars keep the inset bar. */
-@media(max-width:560px){#pdf-navigation-scrollbar::before{right:1px;}}
+/* The inset bar occupies the last 4px of the thumbnail strip. A portrait page
+   caps at 180×(612/792) ≈ 139px, centered in a strip 17px narrower than the
+   sidebar, so the gap beside the paper stays under 2px until the sidebar
+   itself is wider than 168px. Below that the bar would sit on the paper:
+   move only the 4px bar to the panel edge. The 24px grip and the matched
+   side insets stay. Wider sidebars keep the inset bar. iOS 15 has no
+   container queries; this sidebar is still 30vw, and 168px is 30vw at 560px. */
+#pdf-page-control{container:pdf-sidebar / inline-size;}
+@container pdf-sidebar (max-width:168px){#pdf-navigation-scrollbar::before{right:1px;}}
+@supports not (container-type:inline-size){@media(max-width:560px){#pdf-navigation-scrollbar::before{right:1px;}}}
 #pdf-navigation-scrollbar:is(:hover,:focus-visible,.dragging)::before{width:6px;background:var(--sentence-glass-secondary);}
 #pdf-navigation-scrollbar.dragging{cursor:grabbing;}
 #pdf-navigation-scrollbar:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:8px;}
