@@ -69,7 +69,7 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.mouse.move(0,0);
   const wordbook=await capture(page,['wordbook-home','wordbook-review','wordbook-add']);
-  assert.equal(wordbook[2].style.backgroundColor,dark?'rgba(255, 255, 255, 0.18)':'rgba(255, 255, 255, 0.74)','Wordbook add uses the denser glass fill');
+  assert.equal(wordbook[2].style.backgroundColor,dark?'rgba(40, 40, 42, 0.68)':'rgba(255, 255, 255, 0.82)','Wordbook add uses the denser glass fill');
   for(let i=0;i<home.length;i++){
     const expected={...wordbook[i],style:{...wordbook[i].style},highlight:{...wordbook[i].highlight},rect:{...wordbook[i].rect}};
     if(i===2)expected.style.backgroundColor=home[i].style.backgroundColor;

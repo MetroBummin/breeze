@@ -72,7 +72,7 @@ test('entry/exit has one native owner, independent of PDF/EPUB/Text and UI class
   h.read(true);
   h.classesChanged(); h.classesChanged();
   h.read(false);
-  assert.deepEqual(h.messages, [true, false, true]);
+  assert.deepEqual(h.messages, [false]);
   assert.equal(h.observers.length, 1);
   assert.deepEqual(Array.from(h.observers[0].options.attributeFilter), ['class']);
   assert.equal(h.observers[0].options.subtree, undefined);
@@ -131,7 +131,7 @@ test('pageshow, visibility and native resume resend even if the last web state w
   assert.deepEqual(h.messages, [false, false, false, false]);
   h.read(false);
   h.window.emit('pageshow');
-  assert.deepEqual(h.messages.slice(-2), [true, true]);
+  assert.deepEqual(h.messages.slice(-2), [false, false]);
 });
 
 test('late bridge and failed postMessage can recover on next state event', () => {
@@ -141,7 +141,7 @@ test('late bridge and failed postMessage can recover on next state event', () =>
   assert.deepEqual(h.messages, [false]);
   const post = h.handler.postMessage;
   h.handler.postMessage = () => { throw new Error('bridge unavailable'); };
-  h.read(false);
+  h.focus(control());
   h.handler.postMessage = post;
   h.classesChanged();
   assert.deepEqual(h.messages, [false, true]);

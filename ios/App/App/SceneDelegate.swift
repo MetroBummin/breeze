@@ -1495,7 +1495,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
           ['text', 'search', 'email', 'url', 'tel', 'password', 'number'].includes(element.type);
       };
       const report = (force = false) => {
-        const enabled = !document.body?.classList.contains('reading') || textControl(document.activeElement);
+        const enabled = textControl(document.activeElement);
         if (!force && enabled === previous) return;
         const handler = window.webkit?.messageHandlers?.breezeReaderSelection;
         if (!handler) return;

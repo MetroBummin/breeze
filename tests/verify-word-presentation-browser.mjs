@@ -84,17 +84,17 @@ try{
     return {word:read(document.getElementById('word-peek')),bottom:read(document.getElementById('readpill'))};
   });
   const lightGlass=await glassMaterial();
-  // Center pills use the build 290 Apple Music blur. Lookup keeps its own material.
-  assert.equal(lightGlass.bottom.blur,'blur(14px) saturate(1.6)','center pill uses the Apple Music blur');
+  // Center pills use the shared Apple Music blur. Lookup keeps its own material.
+  assert.equal(lightGlass.bottom.blur,'blur(18px) saturate(1.55)','center pill uses the Apple Music blur');
   assert.equal(lightGlass.word.blur,'blur(19px) saturate(1.22)','Lookup keeps its existing blur');
   assert.notEqual(lightGlass.word.background,'rgba(0, 0, 0, 0)','Lookup lost its readable glass surface');
   await page.evaluate(()=>{document.documentElement.classList.add('dark');document.body.classList.add('dark');});
   await page.locator('#readpill').evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
   const darkGlass=await glassMaterial();
   assert.equal(darkGlass.word.background,'rgba(39, 40, 41, 0.76)','Lookup keeps its dark surface');
-  assert.equal(darkGlass.bottom.background,'rgba(255, 255, 255, 0.14)','center pill uses the dark Apple Music surface');
+  assert.equal(darkGlass.bottom.background,'rgba(40, 40, 42, 0.55)','center pill uses the dark Apple Music surface');
   assert.equal(darkGlass.word.blur,'blur(19px) saturate(1.22)','Lookup keeps its dark blur');
-  assert.equal(darkGlass.bottom.blur,'blur(14px) saturate(1.6)','center pill uses the dark Apple Music blur');
+  assert.equal(darkGlass.bottom.blur,'blur(18px) saturate(1.55)','center pill uses the dark Apple Music blur');
   assert.equal(darkGlass.word.border,'rgba(255, 255, 255, 0.13)','Lookup edge remains unchanged');
   assert.match(darkGlass.word.shadow,/rgba\(0, 0, 0, 0\.24\) 0px 6px 18px/,'Lookup shadow remains unchanged');
   assert.notDeepEqual(darkGlass.word,lightGlass.word,'light and dark glass materials did not adapt to theme');

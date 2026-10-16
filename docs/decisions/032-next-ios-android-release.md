@@ -80,6 +80,16 @@ Debug/Release counters move to290. Marketing version stays1.9.4. `BOOK_CLOUD`
 stays false. The cloud bootstrap still replaces that baseline with
 `CI_BUILD_NUMBER`.
 
+## Silent counter 291 (2026-10-15)
+
+Build 291 makes the shared glass slightly more frosted, including a darker
+neutral dark-mode fill, matches the PDF capsule and sidebar to that glass,
+smooths the set ellipsis morph on iPhone, locks flashcard swipes to one axis,
+and stops the system text callout on app chrome. There is no release note and
+no announcement UI. App and Share Debug/Release counters move to 291. Marketing
+version stays 1.9.4. `BOOK_CLOUD` stays false. The cloud bootstrap still
+replaces that baseline with `CI_BUILD_NUMBER`.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports

@@ -86,7 +86,7 @@ try{
     await new Promise(requestAnimationFrame);
    }return samples;
   },{dark,frames});
-  for(const s of samples){const ink=s.ink.match(/\d+/g).slice(0,3).map(Number);assert.equal(s.background,dark?'rgba(255, 255, 255, 0.14)':'rgba(255, 255, 255, 0.62)');assert.ok(dark?ink.every(x=>x>200):ink.every(x=>x<80),'readable ink follows theme without a dark flash');assert.equal(s.backBackground,s.background);assert.equal(s.backInk,s.ink);assert.equal(s.backLine,s.line);assert.equal(s.backShadow,s.shadow);assert.equal(s.backWidth,44);assert.equal(s.backHeight,44);assert.equal(s.backRadius,22,'physical circular radius remains22px');assert.ok(s.aligned);}
+  for(const s of samples){const ink=s.ink.match(/\d+/g).slice(0,3).map(Number);assert.equal(s.background,dark?'rgba(40, 40, 42, 0.55)':'rgba(255, 255, 255, 0.72)');assert.ok(dark?ink.every(x=>x>200):ink.every(x=>x<80),'readable ink follows theme without a dark flash');assert.equal(s.backBackground,s.background);assert.equal(s.backInk,s.ink);assert.equal(s.backLine,s.line);assert.equal(s.backShadow,s.shadow);assert.equal(s.backWidth,44);assert.equal(s.backHeight,44);assert.equal(s.backRadius,22,'physical circular radius remains22px');assert.ok(s.aligned);}
   materialSamples.push(...samples);
  };
  const checkHeaderIcons=async()=>{

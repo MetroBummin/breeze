@@ -177,38 +177,52 @@ function studySetsToggleEditMenu(focus=false){studySetsSetEditMenu(!studySetsUI.
 function studySetsSetEditMenu(open,focus=false,immediate=false){
   const ui=studySetsUI,panel=ui.editMenu,button=ui.editButton,surface=ui.editSurface;
   if(!panel||!button||!surface||open&&(ui.screen!=='detail'||!ui.pageOpen||button.hidden))return;
-  if(!open&&panel.hidden)return;
+  if(!open&&panel.hidden&&!ui.editAnimation)return;
   const epoch=++ui.editEpoch;
-  const current=ui.editAnimation?getComputedStyle(surface):null;
-  const from=current?{width:current.width,height:current.height,borderRadius:current.borderRadius}:null;
+  const layoutWidth=surface.offsetWidth;
   ui.editAnimation?.cancel();ui.editAnimation=null;ui.editOpen=open;
   button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'편집 메뉴 닫기':'세트 편집');button.tabIndex=open?-1:0;
   panel.hidden=false;panel.style.pointerEvents='none';panel.style.opacity='0';
-  button.style.opacity=open?'0':'1';
   const items=[...panel.querySelectorAll('button')];items.forEach(item=>{item.tabIndex=open?0:-1;});
   const width=Math.min(236,ui.sheet.clientWidth?ui.sheet.clientWidth-32:236);
   panel.style.width=(width-2)+'px';
   const height=panel.offsetHeight?panel.offsetHeight+2:150;
-  const circle={width:'44px',height:'44px',borderRadius:'22px'},expanded={width:width+'px',height:height+'px',borderRadius:'20px'};
-  const target=open?expanded:circle;
-  const finish=()=>{if(epoch!==ui.editEpoch)return;ui.editAnimation?.cancel();ui.editAnimation=null;Object.assign(surface.style,target);panel.hidden=!open;panel.style.pointerEvents=open?'auto':'none';panel.style.opacity=open?'1':'0';button.style.transition='none';button.style.opacity=open?'0':'1';if(focus){const targetControl=open?items[0]:button;targetControl?.focus({preventScroll:true});}};
-  if(immediate||typeof surface.animate!=='function'||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finish();return;}
-  const num=value=>Number.parseFloat(value)||0;
-  const origin=from||(open?circle:expanded);
-  const start={w:num(origin.width),h:num(origin.height),r:num(origin.borderRadius)};
-  const end={w:num(target.width),h:num(target.height),r:num(target.borderRadius)};
+  // One layout. iPhone re-blurs a backdrop layer on every width change; iPad can
+  // keep up. Scale and opacity stay on the compositor, and the filter is off
+  // until the shape settles.
+  surface.style.width=width+'px';surface.style.height=height+'px';surface.style.borderRadius='22px';
+  surface.style.transformOrigin='100% 0';
+  const finish=()=>{
+    if(epoch!==ui.editEpoch)return;
+    ui.editAnimation?.cancel();ui.editAnimation=null;surface.classList.remove('is-morphing');
+    surface.style.willChange='';surface.style.transform='none';button.style.transform='';
+    if(open){panel.hidden=false;panel.style.pointerEvents='auto';panel.style.opacity='1';button.style.opacity='0';}
+    else{surface.style.width='44px';surface.style.height='44px';surface.style.borderRadius='';panel.hidden=true;panel.style.pointerEvents='none';panel.style.opacity='0';button.style.opacity='1';}
+    button.style.transition='';
+    if(focus){const targetControl=open?items[0]:button;targetControl?.focus({preventScroll:true});}
+  };
+  if(immediate||window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches||typeof getComputedStyle!=='function'){finish();return;}
+  const previous=getComputedStyle(surface).transform;
+  const matrix=previous==='none'?null:new DOMMatrix(previous);
+  let start=matrix?{x:matrix.a,y:matrix.d}:{x:1,y:1};
+  if(!matrix&&layoutWidth<=46)start={x:44/width,y:44/height};
+  const end=open?{x:1,y:1}:{x:44/width,y:44/height};
+  surface.classList.add('is-morphing');surface.style.willChange='transform, opacity';
   panel.style.transition='none';button.style.transition='none';
   const paint=t=>{
-    const amount=Math.max(0,Math.min(1.08,t));
-    surface.style.width=(start.w+(end.w-start.w)*amount)+'px';
-    surface.style.height=(start.h+(end.h-start.h)*amount)+'px';
-    surface.style.borderRadius=(start.r+(end.r-start.r)*amount)+'px';
-    const menu=open?Math.max(0,Math.min(1,(amount-.32)/.68)):Math.max(0,1-amount*1.35);
+    if(epoch!==ui.editEpoch)return;
+    const amount=Math.max(0,Math.min(1,t));
+    const sx=start.x+(end.x-start.x)*amount,sy=start.y+(end.y-start.y)*amount;
+    surface.style.transform=`scale(${sx},${sy})`;
+    // The corner control stays a 44px target. Scaling the shell alone would
+    // shrink it toward the origin and a second tap would miss.
+    button.style.transformOrigin='100% 0';button.style.transform=`scale(${sx?1/sx:1},${sy?1/sy:1})`;
+    const menu=open?Math.max(0,Math.min(1,(amount-.78)/.22)):Math.max(0,1-amount/.25);
     panel.style.opacity=String(menu);
-    button.style.opacity=String(Math.max(0,1-menu));
+    button.style.opacity=String(open?Math.max(0,1-amount/.35):Math.max(0,(amount-.65)/.35));
   };
-  const travel=Math.max(1,Math.abs(end.w-start.w));
-  const stop=studySpring(0,travel,0,px=>paint(px/travel),()=>{if(epoch===ui.editEpoch)finish();});
+  paint(0);
+  const stop=studySpring(0,1,0,paint,()=>{if(epoch===ui.editEpoch)finish();});
   ui.editAnimation={cancel:stop};
 }
 function replaceStudySetsHistory(patch){
@@ -1249,6 +1263,10 @@ function renderStudySetsStudy(set){
   card.addEventListener('keydown',event=>{
     if(['Enter',' '].includes(event.key)){event.preventDefault();reveal();}
     if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();grade(event.key==='ArrowLeft'?'repeat':'remembered');}
+  });
+  requestAnimationFrame(()=>{
+    if(!body.isConnected||!body.classList.contains('study-session-body'))return;
+    body.style.overflowY=body.scrollHeight>body.clientHeight+1?'auto':'hidden';
   });
   const actions=studySetsNode('div','study-session-accessible-actions');
   const revealAction=studySetsButton('정답 확인',reveal);revealAction.id='study-sets-reveal';revealAction.hidden=view.revealed;actions.append(revealAction);

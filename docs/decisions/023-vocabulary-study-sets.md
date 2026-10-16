@@ -87,8 +87,14 @@ intentional swipe can park the action for tapping; a sufficiently deep swipe
 commits, then the row exits and its space collapses. Cancellation or insufficient
 distance returns the row. Exclusion affects only this set, with Undo. Keyboard
 users retain an equivalent operation without persistent row action clutter.
-The ellipsis circle itself is the shared material surface: its actual width,
-height and radius grow into the menu on the same spring used by a word-row swipe, then return to the same circle on closure.
+The ellipsis circle itself is the shared material surface. It is laid out once
+at the menu size, then a spring scales that shape from the 44px circle with
+transform and opacity only. Width, height, radius, box-shadow, and
+backdrop-filter do not change during the frames: resizing a blurred layer is
+smooth on iPad and drops frames on iPhone. The filter is suspended until the
+spring settles. The corner radius stays 22px. The corner button is
+counter-scaled so it stays a 44px hit target while the shell scales. The
+surface returns to the 44px circle on closure.
 The inner button and menu have transparent backgrounds; no separate visible
 button remains over the expanded menu. Dots fade out while it grows and unscaled
 action text fades in after expansion, following the existing Breeze pill morph
@@ -244,8 +250,13 @@ remain blocked. Added/excluded inventory does not change an active denominator.
 The study page uses a large central card and available safe-area height with a
 680px reading-width cap. The stored source example is visible on the front, while the answer is concealed before tap. Horizontal
 drag follows the finger, rotates slightly, returns below threshold, and exits
-on an accepted swipe to expose the next card. Vertical scroll, cancellation,
-movement before reveal and repeated input cannot grade. Normal layouts show
+on an accepted swipe to expose the next card. The card owns the gesture:
+`touch-action: none` so the browser does not choose a pan before the finger
+commits, then the first 10px locks the axis. A horizontal lock freezes the
+page scroll and follows the card; a vertical lock scrolls only when the card
+overflows and calls `preventDefault` on the rest of that gesture. When the
+card fits, the session body sets `overflow-y: hidden`. Vertical scroll,
+cancellation, movement before reveal and repeated input cannot grade. Normal layouts show
 direction text and Undo, with no visible rating buttons; keyboard/assistive
 controls remain, and focus reveals their alternatives. Reduced motion preserves
 the contracts without exit animation. Tests/videos are browser evidence;

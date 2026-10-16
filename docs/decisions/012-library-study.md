@@ -164,8 +164,10 @@ or failed writes report an error and never replace the saved data.
 
 Both formats expose the same draggable scrollbar: a 4px visual thumb with a
 24px-wide touch grip and at least 44px height, pointer capture, and Home/End,
-PageUp/PageDown and arrow-key support. A reserved 14px rail plus the strip's inner paper gutter separates its entire
-hit target from thumbnail paper and bookmark targets. This scrollbar is
+PageUp/PageDown and arrow-key support. The thumbnail's left and right insets
+match. The visual thumb sits in that right inset instead of a second 14px rail.
+The grip may cross the paper's outer margin; the bookmark glyph stays outside it.
+This scrollbar is
 intentionally narrower than an action button to preserve the thumbnail width. It owns only the sidebar
 scroll position; paper reading position and gestures remain independent.
 
