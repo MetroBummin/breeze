@@ -604,7 +604,6 @@ async function switchReaderMode(mode,options){
     }catch(error){
       if(ownsPosition()){
         console.error(error);
-        readerPositionRestoration=null;
         releaseReaderPillProgress(true);
         toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
       }
