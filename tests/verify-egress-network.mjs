@@ -67,23 +67,6 @@ test('a local edit during CAS does not become acknowledged until a later merge',
   await h.client.api.all(false);assert.equal(h.db.peek(WORD).words.second,undefined);
   await h.client.api.all(false);assert.equal(h.db.peek(WORD).words.second.up,400);assert.equal(fullReads(h.db),3);
 });
-test('a mutation during clean completion remains unacknowledged and is merged on the next pass',async()=>{
-  for(const dirty of [false,true]){
-    const h=measuredSync();await h.client.api.all(false);
-    h.client.memory.set('breeze.private-logs-purged:user',false);
-    const entered=deferred(),release=deferred();
-    h.client.context.dictCall=async()=>{entered.resolve();await release.promise;return {ok:true};};
-    const pending=h.client.api.all(false);await entered.promise;
-    if(dirty)h.client.add('completion-edit',word(400));
-    else h.client.context.words['completion-edit']=word(400);
-    release.resolve();assert.equal(await pending,true);
-    assert.equal(h.db.peek(WORD).words['completion-edit'],undefined);
-    assert.equal(await h.client.api.all(false),true);
-    assert.equal(h.db.peek(WORD).words['completion-edit'].up,400);
-    assert.equal(h.client.memory.get('words')['completion-edit'].up,400);
-    assert.equal(fullReads(h.db),2);assert.equal(headers(h.db),1);
-  }
-});
 test('failed local persistence never acknowledges the failed pull',async()=>{
   const h=measuredSync();h.client.context.saveWords=()=>false;
   assert.equal(await h.client.api.all(false),false);

@@ -759,12 +759,6 @@ async function readLegacyRows(){
   if(result.error) throw result.error;
   return result.data||[];
 }
-async function purgePrivateDictionaryLogs(){
-  const flag=`breeze.private-logs-purged:${sbUser.id}`;
-  if(load(flag,false)) return;
-  try{ const answer=await dictCall({op:'purge_private_logs'}); if(answer&&answer.ok) save(flag,true); }
-  catch(error){}
-}
 async function importLegacyWordbook(session,wordbook){
   const flag=`breeze.wordbook.legacy-imported:${session.userId}`;
   if(wordbook&&wordbook.legacyImportedAt){
@@ -809,7 +803,7 @@ async function importLegacyWordbook(session,wordbook){
 
 async function completeWordbookSync(manual,session){
   noteSyncSuccess();lastSync=Date.now();save('breeze.lastsync',lastSync);
-  await purgePrivateDictionaryLogs(); assertSyncSession(session);
+  assertSyncSession(session);
   if(manual||document.getElementById('settings-modal').classList.contains('on')) renderSyncModal();
   if(manual) syncStatus('단어장 동기화를 마쳤어요');
   if(document.getElementById('v-vocab').classList.contains('on')) renderVocab();

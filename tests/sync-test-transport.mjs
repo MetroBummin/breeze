@@ -133,7 +133,7 @@ export function device(db,label,{user='user',words={},dead={},books=[],positions
     change:(key)=>{if(typeof markSyncDirty==='function')markSyncDirty(key);else save(key,Date.now());}
   };`,{filename:'actual-sync.js'}).runInContext(context);
   context.syncTest.setup(db.client(label),user,db.peek(META,user));
-  memory.set('breeze.vault.remote:'+user,seen);memory.set('breeze.private-logs-purged:'+user,true);
+  memory.set('breeze.vault.remote:'+user,seen);
   memory.set('breeze.vault.changed',dirty);memory.set('breeze.progress.changed',progressDirty);
   memory.set('breeze.wordbook.legacy-imported:'+user,legacyImported);
   return {api:context.syncTest,context,memory,timers,views,errors,snapshot:()=>clone(context.syncTest.snapshot()),
