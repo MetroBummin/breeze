@@ -548,9 +548,10 @@ function bookCloudShowManual(bookId, show){
   else bookCloudManual.delete(bookId);
   if(typeof document==='undefined'||typeof document.querySelectorAll!=='function')return;
   const cards=document.querySelectorAll('.bookcard.cloud[data-book-cloud]');
-  for(const card of cards){
+  for(const item of cards){
+    const card=/** @type {HTMLElement} */(item);
     if(card.dataset.bookCloud!==bookId)continue;
-    const button=card.querySelector('.getbtn');
+    const button=/** @type {HTMLButtonElement|null} */(card.querySelector('.getbtn'));
     if(button)button.hidden=!bookCloudManual.has(bookId);
   }
 }
