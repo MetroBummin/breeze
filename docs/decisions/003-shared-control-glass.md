@@ -43,10 +43,18 @@ In the iOS app, WKWebView's scroll view owns the pull gesture, bounce stays on,
 and one `UIRefreshControl` owns the spinner. The web handler reports whether
 Home or a shelf is active and runs the same refresh operation when native
 refresh fires. The spinner uses the measured logo position and live safe area
-to sit in the pulled gap. While that control is pulling, WebKit shifts the
-whole web layer, including `position:fixed`, so the dock moves with the page.
-Browser use retains the touch gesture above. Home and Casuals refresh their
-RSS cards; all three library views reload saved books.
+to sit in the pulled gap. While the finger is still past the top inset, WebKit
+shifts the whole web layer, including `position:fixed`. When the control begins
+refreshing it applies that inset and the dock returns; the spinner can still
+be visible. `endRefreshing` runs after the page posts `finished` (450–1200 ms).
+That begin/end path is the same in the TestFlight 285 source, TestFlight 290,
+and TestFlight 299. The shelf grid was already cleared and rebuilt on refresh
+in those trees, and the in-flow OCR bar already mounted with a new card.
+TestFlight 299 adds linked-book rows to that same rebuild because book sync is
+on, and it can mount an in-card OCR cover; with the cover switch off, that
+cover stays hidden and the bar remains the in-flow status. Browser use retains
+the touch gesture above. Home and Casuals refresh their RSS cards; all three
+library views reload saved books.
 
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper

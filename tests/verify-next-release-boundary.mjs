@@ -26,7 +26,7 @@ const expected={
     "assets/auth/README.md": "d9533bd379393c34ab3bb2a54d4d623d4bb89acc7e2f9211d512fa8adeae9437",
     "config.js": "6b1fbcda553e20e6fba88176e06312836c2b4f568d64daa2791cce5faaaac59e",
     "docs/decisions/002-dictionary-panel-reading-anchor.md": "3514973905ef0f687ecad896bfa270c6357e0b0bfb9e0fd3ebc3e1879ca31318",
-    "docs/decisions/003-shared-control-glass.md": "23d4dc1e582a4cb213d8ff5d601c14be54ffbf8b8efa6ae45475396385423074",
+    "docs/decisions/003-shared-control-glass.md": "2e1eb7ae67b7635845da30667ff89ffadb9cf0f80146529a0dcc1fc109ef7d40",
     "docs/decisions/007-word-item-storage.md": "b3230b0817b18964cc0afdb3f02ce8a886787b6fec14b64ece8d3e52f9dca582",
     "docs/decisions/008-web-content-ingestion.md": "b2b424b96c6c7b5fec5d4d0658a12f76b0fb9ff1c2919d31e84cdf8838f4df3a",
     "docs/decisions/009-pdf-ink.md": "f3ba1ab17d183f5017452077cf38b270722e8f1d6c487cc00f5bddb30fe74ada",
