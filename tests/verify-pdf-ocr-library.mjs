@@ -14,7 +14,7 @@ function fixture({pages=80,stored=new Set(),result='done',gate=null,ocr={}}={}){
   currentPdfSession:()=>!!context.originalSession,pdfPagesInView:()=>[17],
   BreezePdfOcr:{available:()=>true,completed:async()=>new Set(stored),
    async background(_book,n,_pdf,valid){calls.push(n);live++;peak=Math.max(peak,live);if(gate)await gate.promise;live--;
-    if(valid()&&result==='done')stored.add(n);return valid()?result:'retired';},...ocr}};
+    if(valid()&&(result==='done'||result==='scan'))stored.add(n);return valid()?result:'retired';},...ocr}};
  vm.createContext(context);const api=vm.runInContext(source+'\nBreezePdfOcrLibrary;',context);
  async function tick(){const first=timers.entries().next().value;if(first){timers.delete(first[0]);first[1]();}await flush();}
  async function finish(){for(let i=0;timers.size&&i<pages+8;i++)await tick();}
@@ -91,23 +91,26 @@ test('the yield kill flag leaves background preparation on the old schedule',asy
  await f.finish();
  assert.equal(f.calls.length,1);
 });
-test('cover kill switch stays off unless fill is selected',()=>{
+test('the cover is the shelf unless it is turned off',()=>{
  const f=fixture();
+ assert.equal(f.api.coverMode(),'fill');
+ f.context.location={search:'?ocrCover=off'};
+ f.context.localStorage={getItem:()=>'fill'};
  assert.equal(f.api.coverMode(),'off');
  f.context.location={search:'?ocrCover=FILL'};
- f.context.localStorage={getItem:()=>'off'};
+ f.context.localStorage.getItem=()=>'off';
  assert.equal(f.api.coverMode(),'fill');
  f.context.location={search:'?ocrCover=on'};
  assert.equal(f.api.coverMode(),'fill');
- f.context.location={search:''};
- f.context.localStorage.getItem=()=>'fill';
+ f.context.location={search:'?ocrCover=ring'};
  assert.equal(f.api.coverMode(),'fill');
- f.context.localStorage.getItem=()=>'ring';
+ f.context.location={search:''};
+ f.context.localStorage.getItem=()=>'off';
  assert.equal(f.api.coverMode(),'off');
  f.context.localStorage.getItem=()=>'chip';
- assert.equal(f.api.coverMode(),'off');
+ assert.equal(f.api.coverMode(),'fill');
  f.context.localStorage.getItem=()=>{throw new Error('private');};
- assert.equal(f.api.coverMode(),'off');
+ assert.equal(f.api.coverMode(),'fill');
 });
 test('successful same-hash reconnect explicitly restarts missing original work',async()=>{
  const f=open(fixture({pages:2})),original=f.context.originalGetForBook;
@@ -184,4 +187,60 @@ test('stuck native keeps retry disabled until that request finishes',async()=>{
  assert.equal(f.calls.length,1);
  f.api.track(f.book,{restart:true});await f.tick();
  assert.equal(f.calls.length,2);assert.equal(job.stuck,'req-9');
+});
+function shelfDom(context){
+ function HTMLElement(){}
+ context.HTMLElement=HTMLElement;
+ const nodes=[];
+ const match=(node,sel)=>sel==='[data-ocr-book]'?!!node.dataset.ocrBook
+  :sel==='[data-ocr-surface="bar"]'?node.dataset.ocrSurface==='bar'
+  :sel==='[data-ocr-surface="cover"]'?node.dataset.ocrSurface==='cover'
+  :sel==='.bookcard'?node.className.split(/\s+/).includes('bookcard')
+  :sel==='button'?node.tag==='button'
+  :sel==='.book-ocr-label'?node.className.split(/\s+/).includes('book-ocr-label')
+  :sel==='.book-ocr-fill i'?node.tag==='i'
+  :sel==='span'?node.tag==='span'
+  :sel==='progress'?node.tag==='progress'
+  :false;
+ function wrap(tag){
+  const node=Object.assign(Object.create(HTMLElement.prototype),{tag,className:'',hidden:false,dataset:{},children:[],style:{},textContent:'',ariaLabel:'',
+   setAttribute(name,value){if(name==='aria-label')this.ariaLabel=value;},
+   append(...kids){for(const kid of kids){kid.parent=this;this.children.push(kid);}},
+   queryAll(sel){return (match(this,sel)?[this]:[]).concat(this.children.flatMap(kid=>kid.queryAll?kid.queryAll(sel):[]));},
+   querySelector(sel){return this.queryAll(sel)[0]||null;},
+   addEventListener(){},
+   remove(){if(this.parent)this.parent.children=this.parent.children.filter(kid=>kid!==this);}});
+  nodes.push(node);return node;
+ }
+ context.document.createElement=wrap;
+ context.document.querySelectorAll=sel=>nodes.filter(node=>match(node,sel));
+ return {createElement:wrap};
+}
+function mounted(f){
+ const dom=shelfDom(f.context),tile=dom.createElement('div'),card=dom.createElement('div');
+ card.className='bookcard editorial-cover';tile.append(card);f.api.mount(tile,f.book);
+ return {tile,card,cover:()=>card.querySelector('[data-ocr-surface="cover"]')};
+}
+test('an epub or text file is not an OCR job',()=>{
+ const f=fixture();
+ assert.equal(f.api.track({id:'E',kind:'epub',sourceHash:'h'}),null);
+ assert.equal(f.api.track({id:'T',kind:'txt',sourceHash:'h'}),null);
+});
+test('the cover stays hidden until a scanned page is pending',async()=>{
+ const quiet=fixture({pages:2});const unopened=mounted(quiet);
+ await quiet.finish();
+ assert.equal(quiet.calls.length,0);
+ assert.equal(unopened.tile.querySelector('[data-ocr-surface="bar"]'),null);
+ assert.equal(unopened.cover().hidden,true);
+ const text=open(fixture({pages:2}));const textShelf=mounted(text);
+ await text.tick();assert.equal(textShelf.cover().hidden,true);
+ await text.finish();assert.equal(textShelf.cover().hidden,true);assert.equal(text.api.summary(text.api.track(text.book)).complete,true);
+ const scan=open(fixture({pages:2,result:'scan'}));const shelf=mounted(scan);
+ assert.equal(shelf.cover().hidden,true);
+ await scan.tick();
+ assert.equal(shelf.cover().hidden,false);
+ assert.equal(shelf.cover().querySelector('.book-ocr-label').textContent,'글자 스캔 중');
+ await scan.finish();
+ assert.equal(shelf.cover().hidden,true);
+ assert.equal(scan.api.summary(scan.api.track(scan.book)).complete,true);
 });

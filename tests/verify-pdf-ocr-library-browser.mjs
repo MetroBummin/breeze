@@ -67,8 +67,10 @@ try{
  }
  assert.equal(lookups,0,'background recognition never sends meaning requests');
  await page.evaluate(()=>show('home'));
- const slot=page.locator('#v-home [data-ocr-book]').first();
- await page.waitForFunction(()=>document.querySelector('#v-home [data-ocr-book] span')?.textContent.includes('12/80쪽'));
+ const slot=page.locator('#v-home .book-ocr-cover').first();
+ await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover .book-ocr-hit')?.getAttribute('aria-label')?.includes('12/80쪽'));
+ assert.equal(await page.locator('#v-home .book-ocr-progress').count(),0);
+ assert.equal(await slot.evaluate(node=>!!node.closest('.bookcard')&&node.getBoundingClientRect().bottom<=node.closest('.bookcard').getBoundingClientRect().bottom+1),true);
  const proof='/tmp/breeze-ocr-library';mkdirSync(proof,{recursive:true});
  const heldAt=Date.now();
  for(const size of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000},{width:320,height:568},{width:844,height:390}]){

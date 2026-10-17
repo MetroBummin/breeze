@@ -349,11 +349,13 @@ const BreezePdfOcr=(()=>{
     active={session:owned,n,cancel:null};
     try{
       let words=await cached(key(owned,n));
+      let scan=Array.isArray(words)&&words.length>0;
       if(words===null){
         const page=await pdf.getPage(n),content=await page.getTextContent();
         if(!valid()||document.hidden)return 'busy';
         if(content.items.some(item=>String(item.str||'').trim())){words=[];page.cleanup();}
         else{
+          scan=true;
           const image=await raster(owned,n,()=>valid()&&!document.hidden
             &&!(currentPdfSession()&&(originalPdfPaintPaused()||pdfScrollBusy(originalSession)||originalSession.paintActive)));
           if(!image)return 'busy';
@@ -361,7 +363,8 @@ const BreezePdfOcr=(()=>{
         }
       }
       if(!valid())return 'retired';
-      return await remember(key(owned,n),words,book.id)?'done':'storage';
+      if(!await remember(key(owned,n),words,book.id))return 'storage';
+      return scan?'scan':'done';
     }catch{return 'failed';}
     finally{active=null;if(currentPdfSession(wanted))schedule(wanted);}
   }
@@ -375,6 +378,27 @@ const BreezePdfOcr=(()=>{
       })));
     });
   }
+  async function scanned(book){
+    const raw=key({bookId:book.id,hash:book.original?.hash||book.sourceHash},1);
+    if(!raw)return false;
+    const prefix=JSON.parse(raw);prefix.pop();
+    const head=JSON.stringify(prefix);
+    try{
+      return !!(await localTransaction(await cacheDb(),'pages','readonly',(tx,done)=>{
+        const rq=tx.objectStore('pages').openCursor();
+        rq.onsuccess=()=>{
+          const cursor=rq.result;
+          if(!cursor){done(false);return;}
+          try{
+            const parts=JSON.parse(cursor.key);
+            if(JSON.stringify(parts.slice(0,-1))===head&&Array.isArray(cursor.value?.words)&&cursor.value.words.length){done(true);return;}
+          }catch{}
+          cursor.continue();
+        };
+        rq.onerror=()=>done(false);
+      }));
+    }catch{return false;}
+  }
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
-  return {inspect,schedule,release,close,tap,forget,boxesFromWords,background,completed,available:()=>!!plugin(),laneOn,nativeHold,nativeSettled};
+  return {inspect,schedule,release,close,tap,forget,boxesFromWords,background,completed,scanned,available:()=>!!plugin(),laneOn,nativeHold,nativeSettled};
 })();

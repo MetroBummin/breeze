@@ -2,8 +2,9 @@
    for it. Recognition itself is admitted only by BreezePdfOcr's global lane.
    With the lane enabled, only the opened book is prepared, and only once
    reading and the shelf are idle. The kill switch restores the previous
-   shelf-wide queue. The cover label is another view of the same job. It does
-   not raster, schedule, or keep a timer of its own. */
+   shelf-wide queue. The cover label is the only shelf view of that job, and
+   only while a scanned page is still pending. It does not raster, schedule,
+   or keep a timer of its own. */
 const BreezePdfOcrLibrary=(()=>{
   const jobs=new Map();
   let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0,detail=null,detailOpener=null,detailJobId='',detailRelease=null,focusId='',shelfScrolling=false,shelfTimer=0,stuckTimer=0;
@@ -40,18 +41,19 @@ const BreezePdfOcrLibrary=(()=>{
     return !shelfScrolling;
   }
   function coverMode(){
-    // Fill is the chosen cover. Absent, off, and any other value keep the bar.
+    // The cover is the shelf. off hides it. Absent and any other value stay on the cover.
     try{
       const search=typeof location!=='undefined'&&location&&typeof location.search==='string'?location.search:'';
       const query=/[?&]ocrCover=([a-z]+)/i.exec(search);
       let stored='';
       try{stored=typeof localStorage!=='undefined'&&localStorage?localStorage.getItem('breeze.ocr-cover')||'':'';}
       catch{stored='';}
-      const value=String((query&&query[1])||stored||'off').toLowerCase();
-      return value==='fill'||value==='on'?'fill':'off';
-    }catch{return 'off';}
+      const value=String((query&&query[1])||stored||'fill').toLowerCase();
+      return value==='off'?'off':'fill';
+    }catch{return 'fill';}
   }
   function statusCopy(job){
+    if(job.stuck&&job.state==='paused')return '앱 완전 종료 후 다시 열기';
     if(job.state==='paused'&&job.notice==='failed')return '글자 스캔 실패';
     if(job.state==='paused')return '글자 스캔 일시 중지';
     return '글자 스캔 중';
@@ -82,13 +84,16 @@ const BreezePdfOcrLibrary=(()=>{
     const count=s.total?s.done+'/'+s.total+'쪽':'';
     button.setAttribute('aria-label',statusCopy(job)+(count?' '+count:'')+' 자세히');
   }
+  function coverPending(job,s){
+    if(job.state==='missing'||s.complete||!job.total)return false;
+    return !!(job.scan||(job.stuck&&job.state==='paused'));
+  }
   function apply(node,job){
     const s=summary(job),mode=coverMode(),surface=node.dataset.ocrSurface||'bar';
     if(surface==='cover')paintCover(node,job,s);else paintBar(node,job,s);
-    const inactive=surface==='bar'?mode!=='off':mode==='off'||node.dataset.ocrVariant!==mode;
-    const hide=job.state==='missing'||s.complete||inactive;
-    if(hide&&surface==='cover'&&detailOpener&&node.contains(detailOpener))closeDetail(false);
-    node.hidden=hide;
+    const show=surface==='cover'&&mode==='fill'&&node.dataset.ocrVariant===mode&&coverPending(job,s);
+    if(!show&&surface==='cover'&&detailOpener&&node.contains(detailOpener))closeDetail(false);
+    node.hidden=!show;
   }
   function paint(job){
     if(jobs.get(job.id)!==job)return;
@@ -226,7 +231,8 @@ const BreezePdfOcrLibrary=(()=>{
       if(held?.pdf!==shared)await release();
       held={job,pdf:shared,owned:false};
       job.total=shared.numPages;
-      job.done=await BreezePdfOcr.completed(bookOf(job));paint(job);
+      job.done=await BreezePdfOcr.completed(bookOf(job));
+      await rememberScan(job);paint(job);
       return shared;
     }
     if(held?.job===job&&held.owned)return held.pdf;
@@ -249,7 +255,8 @@ const BreezePdfOcrLibrary=(()=>{
     if(loading&&loading.task===task)loading=null;
     if(!current(job)||(yielded&&job.id===yielded)){await pdf.destroy();return null;}
     held={job,pdf,owned:true};job.total=pdf.numPages;
-    job.done=await BreezePdfOcr.completed(book);paint(job);
+    job.done=await BreezePdfOcr.completed(book);
+    await rememberScan(job);paint(job);
     return pdf;
   }
   async function drain(){
@@ -266,13 +273,14 @@ const BreezePdfOcrLibrary=(()=>{
       const book=bookOf(job);
       // A foreground page may have completed since the last background turn.
       job.done=await BreezePdfOcr.completed(book);
+      await rememberScan(job);
       const remaining=activePages(job).filter(n=>!job.done.has(n));
       if(!remaining.length){paint(job);await release();return;}
       const visible=currentPdfSession()&&originalSession.bookId===job.id?pdfPagesInView(originalSession):[];
       const n=remaining.find(page=>visible.includes(page))||remaining[0];
       const result=await BreezePdfOcr.background(book,n,pdf,()=>current(job)&&readingIdle()&&!(yielded&&job.id===yielded));
       if(!current(job))return;
-      if(result==='done')job.done.add(n);
+      if(result==='done'||result==='scan'){if(result==='scan')job.scan=true;job.done.add(n);}
       else if(result==='blocked'){
         const hold=BreezePdfOcr.nativeHold?.();
         if(lane()&&hold?.expired){job.state='paused';job.notice='paused';job.stuck=hold.id;watchStuck(job);}
@@ -285,6 +293,11 @@ const BreezePdfOcrLibrary=(()=>{
       if(!(yielded&&job.id===yielded)&&current(job)){job.state='paused';job.notice='failed';paint(job);}
       await release();
     }finally{busy=false;if(!yielded&&[...jobs.values()].some(wanted))schedule();}
+  }
+  async function rememberScan(job){
+    if(job.scan||typeof BreezePdfOcr.scanned!=='function')return;
+    const book=bookOf(job);if(!book)return;
+    try{job.scan=!!await BreezePdfOcr.scanned(book);}catch{}
   }
   function track(book,{restart=false}={}){
     if(book?.kind!=='pdf'||!hash(book)||!BreezePdfOcr.available())return null;
@@ -322,21 +335,9 @@ const BreezePdfOcrLibrary=(()=>{
   }
   function mount(tile,book){
     const job=track(book);if(!job)return;
-    let bar=tile.querySelector('[data-ocr-surface="bar"]');
-    if(!bar){
-      bar=document.createElement('div');bar.className='book-ocr-progress';bar.dataset.ocrBook=book.id;bar.dataset.ocrSurface='bar';
-      const text=document.createElement('span'),progress=document.createElement('progress'),retry=document.createElement('button');
-      progress.setAttribute('aria-label','글자 인식 진행');retry.type='button';retry.textContent='다시 시도';
-      retry.onclick=event=>{
-        event.stopPropagation();
-        const latest=jobs.get(book.id);
-        if(!latest||latest.stuck||retry.disabled)return;
-        latest.state='queued';latest.notice='';paint(latest);schedule();
-      };
-      bar.append(text,progress,retry);tile.append(bar);
-    }
+    tile.querySelector('[data-ocr-surface="bar"]')?.remove();
     const cover=ensureCover(tile,book);
-    apply(bar,job);if(cover)apply(cover,job);
+    if(cover)apply(cover,job);
     queueMicrotask(()=>paint(job));
   }
   function forget(id){

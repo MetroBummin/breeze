@@ -277,7 +277,7 @@ test('background and visible OCR share one lane; visible work goes next',async()
  const f=fixture(),book={id:'A',sourceHash:'hash-A'};
  const pending=f.ocr.background(book,2,f.session.pdf,()=>true);await flush();assert.equal(f.calls.length,1);
  await f.inspect(1);await f.start();assert.equal(f.calls.length,1);
- f.calls[0].resolve({words:[word('Background')]});assert.equal(await pending,'done');await f.tick();
+ f.calls[0].resolve({words:[word('Background')]});assert.equal(await pending,'scan');await f.tick();
  assert.equal(f.calls.length,2);f.calls[1].resolve({words:[word('Visible')]});await flush();
  assert.equal(f.session.wordBoxes.get(1)[0].word,'Visible');
  assert.deepEqual([...await f.ocr.completed(book)].sort(),[1,2]);
@@ -292,7 +292,7 @@ test('background results survive reader closure but not book retirement',async()
   const f=fixture();let alive=true;
   const pending=f.ocr.background({id:'A',sourceHash:'hash-A'},1,f.session.pdf,()=>alive);await flush();
   f.context.originalSession=null;if(retire)alive=false;
-  f.calls[0].resolve({words:[word()]});assert.equal(await pending,retire?'retired':'done');
+  f.calls[0].resolve({words:[word()]});assert.equal(await pending,retire?'retired':'scan');
   assert.equal(f.cache.size,retire?0:1);
  }
 });

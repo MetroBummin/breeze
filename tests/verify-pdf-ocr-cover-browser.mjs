@@ -1,5 +1,6 @@
-/* Cover progress is a flagged view of the same bookshelf job. Native recognition
-   stays a bridge double. Flag off keeps the approved under-card bar. */
+/* Cover progress is the bookshelf job. Native recognition stays a bridge double.
+   The label sits inside the card, and only while a scanned page is pending.
+   ocrCover=off hides it. The under-card line is not mounted. */
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync,mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -50,6 +51,12 @@ try{
   await page.locator('#fileinput').setInputFiles({name:'스캔 영어.pdf',mimeType:'application/pdf',buffer:scanPdf(jpeg,{pages:10})});
   await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'),null,{timeout:60000});
  };
+ const openImported=async()=>{
+  await page.evaluate(async()=>{
+   const book=books.find(item=>item.kind==='pdf');
+   if(book&&curBook?.id!==book.id)await openBook(book);
+  });
+ };
  const settle=async()=>{
   await page.waitForFunction(()=>qaCoverOcr.calls.length>=1,null,{timeout:30000});
   for(let i=0;i<5;i++){
@@ -68,17 +75,18 @@ try{
  };
  await boot('');
  await importScan();
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-progress span')?.textContent.includes('/10쪽'));
- assert.equal(await page.locator('#v-home [data-ocr-surface="cover"]').count(),0);
- assert.equal(await page.locator('#v-home .book-ocr-progress').isVisible(),true);
- await boot('on');
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover')?.dataset.ocrVariant==='fill');
- await boot('fill');
  await settle();
+ await page.evaluate(()=>show('home'));
  const started=Date.now();
  const cover=page.locator('#v-home .book-ocr-cover');
  const bar=page.locator('#v-home .book-ocr-progress');
- assert.equal(await bar.evaluate(node=>getComputedStyle(node).display),'none','cover mode hides the under-card bar');
+ assert.equal(await bar.count(),0,'the under-card line is not mounted');
+ assert.equal(await cover.evaluate(node=>{
+  const card=node.closest('.bookcard');
+  const under=card.parentElement.querySelector('.home-regular-title');
+  const nr=node.getBoundingClientRect(),cr=card.getBoundingClientRect(),ur=under.getBoundingClientRect();
+  return nr.top>=cr.top-1&&nr.bottom<=cr.bottom+1&&nr.bottom<=ur.top+1;
+ }),true,'the label sits inside the card, above the title under it');
  assert.equal(await page.locator('#v-home .book-ocr-count').count(),0,'the page-count chip stays off the cover');
  assert.equal(await cover.locator('.book-ocr-hit').evaluate(node=>{const r=node.getBoundingClientRect();return r.width>=44&&r.height>=44;}),true);
  for(const size of [{name:'phone',width:390,height:844},{name:'tablet',width:820,height:1180},{name:'web',width:1440,height:1000},{name:'short',width:320,height:568},{name:'landscape',width:844,height:390}]){
@@ -129,17 +137,19 @@ try{
   assert.equal(await cover.getAttribute('data-ocr-state'),'active','screenshots must finish before the native deadline pauses the job');
   assert.ok(Date.now()-started<25000,'capture must finish before the 30s native deadline');
  await page.evaluate(dark=>{darkMode=false;applyDark();},false);
- await boot('');
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-progress span')?.textContent.includes('5/10쪽'));
- assert.equal(await page.locator('#v-home [data-ocr-surface="cover"]').count(),0);
+ await boot('off');
+ assert.equal(await page.locator('#v-home .book-ocr-cover').count(),0);
+ assert.equal(await page.locator('#v-home .book-ocr-progress').count(),0);
  await page.setViewportSize({width:390,height:844});
  await capture('off-phone-light',page.locator('#v-home #shelf'));
  await page.evaluate(()=>{darkMode=true;applyDark();});
  await capture('off-phone-dark',page.locator('#v-home #shelf'));
  await boot('ring');
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-progress span')?.textContent.includes('/10쪽'));
- assert.equal(await page.locator('#v-home [data-ocr-surface="cover"]').count(),0,'retired variants keep the bar');
+ await openImported();
+ await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover .book-ocr-label')?.textContent==='글자 스캔 중');
+ assert.equal(await page.locator('#v-home .book-ocr-progress').count(),0,'unknown values stay on the cover');
  await boot('fill');
+ await openImported();
  await page.waitForFunction(()=>qaCoverOcr.calls.length>=1&&document.querySelector('#v-home .book-ocr-label')?.textContent==='글자 스캔 중');
  const pending=await page.evaluate(()=>qaCoverOcr.calls.length-1);
  await page.evaluate(i=>qaCoverOcr.calls[i].reject(new Error('stopped')),pending);
@@ -157,6 +167,6 @@ try{
  await page.locator('.book-ocr-detail-retry').click();
  await page.waitForFunction(n=>qaCoverOcr.calls.length>n,calls);
  assert.equal(await page.locator('#v-home .book-ocr-label').innerText(),'글자 스캔 중');
- console.log('cover fill label, kill switch, and bar fallback passed');
+ console.log('cover label inside the card, off hides it, and unknown values stay on the cover');
  console.log(shots.join('\n'));
 }finally{await browser?.close();rmSync(profile,{recursive:true,force:true});server.close();}
