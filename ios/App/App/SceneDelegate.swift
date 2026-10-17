@@ -351,6 +351,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var libraryRefreshLayoutSize = CGSize.zero
     private var libraryRefreshSafeTop: CGFloat = -1
     private var libraryRefreshSequence = 0
+    private var libraryDockPin: CGFloat = 0
+    private var libraryDockPinQueued = false
     private var activeLibraryRefreshSequence: Int?
     private static let speechCategory = "playback"
     private static let speechMode = "default"
@@ -479,6 +481,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         libraryRefreshScrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { [weak self] scrollView, _ in
             guard let self, scrollView.refreshControl === self.libraryRefreshControl else { return }
             self.libraryRefreshControl.setNeedsLayout()
+            // The pull translates the whole web layer, including position:fixed.
+            // Feed the negative offset back so the dock stays on the glass.
+            self.queueLibraryDockPin(scrollView)
         }
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
@@ -735,6 +740,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                     finishLibraryRefresh(activeLibraryRefreshSequence)
                     webView?.scrollView.refreshControl = nil
                     activeLibraryRefreshSequence = nil
+                    queueLibraryDockPin(0)
                 }
             } else if let finished = (request["finished"] as? NSNumber)?.intValue,
                       finished == activeLibraryRefreshSequence {
@@ -1202,6 +1208,25 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             measureLibraryRefreshLogo()
         }
         libraryRefreshControl.setNeedsLayout()
+    }
+
+    private func queueLibraryDockPin(_ scrollView: UIScrollView) {
+        let pulled = min(0, scrollView.contentOffset.y)
+        queueLibraryDockPin(pulled < -0.5 ? pulled : 0)
+    }
+
+    private func queueLibraryDockPin(_ offset: CGFloat) {
+        let next = offset.isFinite ? min(0, offset) : 0
+        if abs(next - libraryDockPin) < 0.5 { return }
+        libraryDockPin = next
+        guard !libraryDockPinQueued else { return }
+        libraryDockPinQueued = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.libraryDockPinQueued = false
+            let value = self.libraryDockPin
+            self.webView?.evaluateJavaScript("window.breezePinDock&&window.breezePinDock(\(value))")
+        }
     }
 
     private func measureLibraryRefreshLogo() {
