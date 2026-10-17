@@ -451,12 +451,24 @@
   width:155px;height:155px;transform:rotate(-12deg);opacity:.18;}
 .bookcard.editorial-cover:not(.has-cover) .wave{display:none;}
 
-/* A short piece with no photo still names itself on the card. A book does not:
-   the ornament is the cover, and the title stays under the card. Painting the
-   title inside as well put the author line on top of it. */
+/* A short piece with no photo still names itself on the card. A book with no
+   photo draws the author and the title on the ornament too, in bands that stay
+   clear of each other, the badges, and the fill. The title under the card stays. */
 :is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .casual .thumb:not(.has-cover) .lede{
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;
   font-size:clamp(17px,2vw,23px);line-height:1.35;overflow-wrap:anywhere;}
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover) .home-cover-meta{
+  top:12px;right:72px;}
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover) .bt{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
+  position:absolute;z-index:1;left:12px;right:12px;top:36px;bottom:64px;margin:0;max-width:none;
+  color:inherit;opacity:1;font-size:clamp(14px,3.4vw,18px);line-height:1.25;overflow-wrap:anywhere;}
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard.cloud:not(.has-cover) .getbtn{
+  top:auto;bottom:10px;left:12px;right:12px;width:auto;max-width:none;transform:none;}
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover):has(.book-ocr-cover:not([hidden])) .prog,
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover):has(> .card-activity) .prog,
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover):has(.getbtn:not([hidden])) .prog{
+  display:none;}
 :is(#v-home,#v-casuals,#v-longform) .home-regular-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.7em;}
 :is(.casual,.bookcard)[role="button"]:focus-visible{outline:2px solid var(--blue);outline-offset:4px;}
 
@@ -473,16 +485,8 @@
 #v-home #casual-rail{overflow-anchor:none;}
 
 /* OCR preparation is device-local and separate from reading progress.
-   The under-card bar stays the default. Fill is the chosen cover treatment:
-   a small label above a thin bar, painted only while the kill switch is on. */
-.book-ocr-progress{margin-top:5px;display:grid;gap:5px;color:var(--settings-muted);font-size:11px;line-height:1.4;min-width:0;}
-.book-ocr-progress[hidden]{display:none;}
-.book-ocr-progress progress{appearance:none;-webkit-appearance:none;width:100%;height:2px;border:0;border-radius:2px;overflow:hidden;background:var(--sentence-glass-line);}
-.book-ocr-progress progress::-webkit-progress-bar{background:var(--sentence-glass-line);}
-.book-ocr-progress progress::-webkit-progress-value{background:var(--settings-muted);}
-.book-ocr-progress progress::-moz-progress-bar{background:var(--settings-muted);}
-.book-ocr-progress button{justify-self:start;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;}
-.book-ocr-progress button:disabled{opacity:.45;text-decoration:none;cursor:default;}
+   The cover label is the shelf. It sits in the bottom band by default, and
+   only while a scanned page is still pending. off removes it. */
 .book-ocr-cover{position:absolute;z-index:4;left:10px;right:10px;bottom:8px;pointer-events:none;}
 .book-ocr-cover[hidden]{display:none;}
 .book-ocr-cover .book-ocr-hit{pointer-events:auto;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:6px;box-sizing:border-box;width:100%;min-height:44px;margin:0;padding:0 0 2px;border:0;border-radius:0;background:transparent;color:inherit;font:600 11px/1.25 var(--ui);text-align:left;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}

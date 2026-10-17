@@ -1,62 +1,30 @@
-/* Pull-to-refresh for the library views. Leave the scroll/bounce to the browser. */
+/* Home and the shelves reload on their own. Opening the app already loads
+   books and recommendations; that boot starts a 45s quiet period for the
+   screen that is showing. Coming back to the foreground, or opening a
+   different library screen, reloads that screen. A finger pull does not. */
+const LIBRARY_REFRESH_GAP_MS=45000;
+var libraryRefreshRuns=0;
+var libraryRefreshLaunch=0;
+var libraryRefreshSeen={};
 let libraryRefreshTask=null;
 let libraryRefreshWork=null;
 let libraryRefreshWorkView='';
-const LIBRARY_PULL_START=10;
-const LIBRARY_PULL_THRESHOLD=96;
-const LIBRARY_REFRESH_MIN_MS=450;
-const LIBRARY_REFRESH_MAX_MS=1200;
-/** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}, breezeNativeRefresh?: (sequence: number) => boolean}} */
-const refreshWindow=window;
-const nativeRefreshHandler=refreshWindow.webkit?.messageHandlers?.breezeRefresh || null;
-const libraryRefreshMotion=(()=>{
-  const indicator=document.getElementById('library-refresh');
-  let frame=0,timer=0,owner='',distance=0;
-  function paint(){
-    frame=0;
-    const progress=Math.min(1,distance/LIBRARY_PULL_THRESHOLD);
-    indicator.style.opacity=String(progress);
-  }
-  function clear(){
-    cancelAnimationFrame(frame);frame=0;
-    clearTimeout(timer);timer=0;owner='';distance=0;
-    indicator.classList.remove('pulling');
-    indicator.hidden=true;
-    indicator.style.removeProperty('opacity');
-  }
-  function draw(next,pulling=false){
-    clearTimeout(timer);
-    owner=activeAppView();distance=next;
-    indicator.classList.toggle('pulling',pulling);
-    if(next>0)indicator.hidden=false;
-    if(pulling){
-      if(!frame)frame=requestAnimationFrame(paint);
-      return;
-    }
-    cancelAnimationFrame(frame);
-    paint();
-    if(next===0)timer=setTimeout(clear,320);
-  }
-  return {draw,clear,changed:()=>!!owner && owner!==activeAppView()};
-})();
 function libraryRefreshAllowed(){
   return ['home','casuals','longform'].includes(activeAppView()) &&
     !document.querySelector('#settings-modal.on,#add-modal[open],#edit-modal[open],#onboarding:not([hidden])');
 }
 function refreshLibrary(){
+  return reloadLibrary(true);
+}
+function reloadLibrary(rotateRss){
   if(libraryRefreshTask) return libraryRefreshTask;
   if(!libraryRefreshAllowed()) return Promise.resolve();
+  libraryRefreshRuns++;
   const view=activeAppView();
   if(view==='home'){
     const rail=document.getElementById('casual-rail');
     rail.dataset.rssResetStart='1';
     rssAlignRailStart(rail);
-  }
-  const indicator=document.getElementById('library-refresh');
-  if(!nativeRefreshHandler){
-    libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
-    indicator.classList.add('refreshing');
-    indicator.setAttribute('aria-label','새로고침 중');
   }
   const redraw=()=>{
     if(activeAppView()!==view) return;
@@ -68,13 +36,15 @@ function refreshLibrary(){
     libraryRefreshWorkView=view;
     libraryRefreshWork=(async()=>{
       try{
-        if((view==='home'||view==='casuals') && !rssLoading){
+        if(rotateRss && (view==='home'||view==='casuals') && !rssLoading){
           rssPage++;
           rssLoadedAt=0;
-          // Rendering subscribes to source updates before the requests start.
           redraw();
         }
-        await loadBooks();
+        const loaded=await loadBooks();
+        // show() already painted this screen. Paint again only when the saved
+        // shelf actually changed. A save during the read paints on its own.
+        if(loaded==='same'||loaded==='stale') return;
         redraw();
       }catch(error){
         redraw();
@@ -87,78 +57,53 @@ function refreshLibrary(){
     });
   }
   const work=libraryRefreshWork;
-  libraryRefreshTask=(async()=>{
-    try{
-      await Promise.all([
-        new Promise(resolve=>setTimeout(resolve,LIBRARY_REFRESH_MIN_MS)),
-        Promise.race([work,new Promise(resolve=>setTimeout(resolve,LIBRARY_REFRESH_MAX_MS))]),
-      ]);
-    }finally{
-      if(!nativeRefreshHandler){
-        if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
-        else libraryRefreshMotion.clear();
-        indicator.classList.remove('refreshing');
-        indicator.removeAttribute('aria-label');
-      }
-      libraryRefreshTask=null;
-    }
-  })();
+  libraryRefreshTask=work.finally(()=>{libraryRefreshTask=null;});
   return libraryRefreshTask;
 }
-
+function refreshLibrarySoon(){
+  if(!libraryRefreshAllowed()) return Promise.resolve();
+  const view=activeAppView();
+  const now=Date.now();
+  if(now-(libraryRefreshSeen[view]||0)<LIBRARY_REFRESH_GAP_MS) return Promise.resolve();
+  libraryRefreshSeen[view]=now;
+  // Home owns the recommendation rail. A shelf reload reads saved and synced
+  // books without advancing that rail's cursor.
+  return reloadLibrary(view==='home');
+}
+function noteLibraryLaunch(){
+  if(!libraryRefreshAllowed()) return;
+  libraryRefreshSeen[activeAppView()]=Date.now();
+  libraryRefreshLaunch++;
+}
 (()=>{
-  if(nativeRefreshHandler){
-    refreshWindow.breezeNativeRefresh=sequence=>{
-      Promise.resolve(refreshLibrary()).catch(()=>{}).finally(()=>nativeRefreshHandler.postMessage({finished:sequence}));
-      return true;
-    };
-    let previous=null;
-    const report=()=>{
-      const enabled=libraryRefreshAllowed();
-      if(enabled===previous)return;
-      previous=enabled;
-      nativeRefreshHandler.postMessage({enabled});
-    };
-    const observer=new MutationObserver(report);
-    document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden','open']}));
-    report();
-    return;
+  const watch=()=>void refreshLibrarySoon();
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden) watch();
+  });
+  let appStateAttached=false;
+  function attachAppState(){
+    if(appStateAttached) return;
+    const app=window.Capacitor?.Plugins?.App;
+    if(!app||typeof app.addListener!=='function') return;
+    appStateAttached=true;
+    void app.addListener('appStateChange',state=>{
+      if(state&&state.isActive) watch();
+    });
   }
-  let start=null;
-  let distance=0;
-  const reset=()=>{
-    const pulled=distance>0;start=null;distance=0;
-    if(pulled && !libraryRefreshTask) libraryRefreshMotion.draw(0);
-  };
-  document.addEventListener('touchstart',event=>{
-    reset();
-    if(event.touches.length!==1 || libraryRefreshTask || !libraryRefreshAllowed() || window.scrollY>0) return;
-    const target=event.target;
-    if(target instanceof Element && target.closest('button,input,textarea,a,select,#home-controls')) return;
-    const touch=event.touches[0];
-    start={x:touch.clientX,y:touch.clientY,view:activeAppView()};
-  },{passive:true});
-  document.addEventListener('touchmove',event=>{
-    if(!start) return;
-    if(event.touches.length!==1 || !libraryRefreshAllowed() || activeAppView()!==start.view || window.scrollY>0){reset();return;}
-    const touch=event.touches[0],dx=touch.clientX-start.x,dy=touch.clientY-start.y;
-    if(dy<0 || (Math.abs(dx)>10 && Math.abs(dx)>dy)){reset();return;}
-    distance=Math.max(0,dy-LIBRARY_PULL_START);
-    if(distance>0)libraryRefreshMotion.draw(distance,true);
-    else if(!document.getElementById('library-refresh').hidden)libraryRefreshMotion.draw(0,true);
-  },{passive:true});
-  document.addEventListener('touchend',event=>{
-    const ready=event.touches.length===0 && start && distance>=LIBRARY_PULL_THRESHOLD && libraryRefreshAllowed() && activeAppView()===start.view;
-    if(ready){
-      start=null;distance=0;
-      void refreshLibrary();
-    }else reset();
-  },{passive:true});
-  document.addEventListener('touchcancel',reset,{passive:true});
+  attachAppState();
+  let libraryRefreshView=activeAppView();
   const observer=new MutationObserver(()=>{
-    if(!libraryRefreshAllowed() || libraryRefreshMotion.changed()) {
-      start=null;distance=0;libraryRefreshMotion.clear();
-    }
+    const view=activeAppView();
+    if(!libraryRefreshAllowed()){libraryRefreshView=view;return;}
+    if(view===libraryRefreshView) return;
+    libraryRefreshView=view;
+    watch();
   });
   document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden','open']}));
+  setTimeout(()=>{
+    attachAppState();
+    const arm=()=>noteLibraryLaunch();
+    if(typeof homeReady!=='undefined'&&homeReady&&typeof homeReady.then==='function') homeReady.then(arm,arm);
+    else arm();
+  },0);
 })();

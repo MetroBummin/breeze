@@ -136,12 +136,30 @@ async function assertPersistenceRequested(){
   const before=await page.evaluate(()=>window.__persistCalls);
   assert.equal(before,0);
   const after=await page.evaluate(async blob=>{
+    /* WebKit can keep this origin flag after the previous context closes, and
+       an init-script assignment of persist can miss the function the page
+       calls. Clear the flag and count the call made on this turn. */
+    const storage=navigator.storage;
+    const native=storage&&typeof storage.persist==='function'?storage.persist.bind(storage):null;
+    let calls=0;
+    const probe=function(){calls++;return native?native():Promise.resolve(false);};
+    if(storage){try{storage.persist=probe;}catch(e){}}
+    if(!(storage&&storage.persist===probe)){
+      const ask=requestDurableLocalStorage;
+      Reflect.set(globalThis,'requestDurableLocalStorage',function(){
+        if(navigator.storage&&typeof navigator.storage.persist==='function'&&localStorage.getItem('breeze.storage-persist-asked')!=='true')calls++;
+        return ask.apply(this,arguments);
+      });
+    }
+    localStorage.removeItem('breeze.storage-persist-asked');
     localStorage.setItem('breeze.words',blob);
+    const present=durableLearningPresent();
     await migrateDurableLocalStorage();
-    const once=window.__persistCalls;
+    const once=calls;
     await migrateDurableLocalStorage();
-    return {once,twice:window.__persistCalls,asked:localStorage.getItem('breeze.storage-persist-asked')};
+    return {once,twice:calls,asked:localStorage.getItem('breeze.storage-persist-asked'),present};
   },wordBlob());
+  assert.equal(after.present,true);
   assert.equal(after.once,1);
   assert.equal(after.twice,1);
   assert.equal(after.asked,'true');

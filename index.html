@@ -42,7 +42,7 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=dd26ef52">
   <link rel="stylesheet" href="styles/base.css?v=4d0c83fb">
-  <link rel="stylesheet" href="styles/home.css?v=7dc06e23">
+  <link rel="stylesheet" href="styles/home.css?v=2ed4ead2">
   <link rel="stylesheet" href="styles/article-preview.css?v=6f944b5a">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=1a1b9b1c">
   <link rel="stylesheet" href="styles/reader.css?v=a2dc8a3e">
@@ -53,7 +53,7 @@
   <link rel="stylesheet" href="styles/study-sets.css?v=6b8a0acc">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=6288709d">
+  <link rel="stylesheet" href="styles/home-shell.css?v=f5622f35">
   <link rel="stylesheet" href="styles/onboarding.css?v=17f829a6">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -75,25 +75,25 @@
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=26df6591"></script>
   <script defer src="scripts/core/account-scope.js?v=2d083ed6"></script>
-  <script defer src="scripts/core/state.js?v=a4836057"></script>
+  <script defer src="scripts/core/state.js?v=46263a7e"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=5c42e803"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=1f6fa553"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=faf00a92"></script>
-  <script defer src="scripts/reader/pdf-pinch.js?v=2e47e0f6"></script>
+  <script defer src="scripts/reader/pdf-pinch.js?v=01d57e65"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
   <script defer src="scripts/library/library.js?v=8ef9c57c"></script>
   <script defer src="scripts/library/shared-links.js?v=9b5e1c4a"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=5670e589"></script>
-  <script defer src="scripts/library/book-cloud.js?v=afcde6f9"></script>
-  <script defer src="scripts/library/ink-sync.js?v=00e79b2c"></script>
+  <script defer src="scripts/library/book-cloud.js?v=179545bf"></script>
+  <script defer src="scripts/library/ink-sync.js?v=d4cbc42e"></script>
   <script defer src="scripts/library/longreads.js?v=902909ef"></script>
   <script defer src="scripts/library/holmes-layout.js?v=16ae497a"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=24ab4083"></script>
@@ -126,14 +126,14 @@
   <script defer src="scripts/reader/original-session.js?v=08a077c1"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
   <script defer src="scripts/reader/pdf-ink-store.js?v=5159b552"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=eddbb0fc"></script>
-  <script defer src="scripts/reader/pdf-ocr.js?v=e910add7"></script>
-  <script defer src="scripts/reader/pdf-ocr-library.js?v=efa4998c"></script>
-  <script defer src="scripts/reader/pdf-original.js?v=5f13b1ed"></script>
-  <script defer src="scripts/reader/epub-original.js?v=55402818"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=83a7db3a"></script>
+  <script defer src="scripts/reader/pdf-ocr.js?v=01155e31"></script>
+  <script defer src="scripts/reader/pdf-ocr-library.js?v=fe311045"></script>
+  <script defer src="scripts/reader/pdf-original.js?v=726e86e8"></script>
+  <script defer src="scripts/reader/epub-original.js?v=b865ef61"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=9952840b"></script>
-  <script defer src="scripts/reader/reader.js?v=c7843d8d"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=9a4b6488"></script>
+  <script defer src="scripts/reader/reader.js?v=f4b3b582"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
   <script defer src="scripts/ui/preferences.js?v=605490b3"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -142,9 +142,9 @@
   <script defer src="scripts/sync/sync.js?v=720c405c"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
   <script defer src="scripts/ui/onboarding.js?v=0f95c0b7"></script>
-  <script defer src="scripts/ui/library-refresh.js?v=0c262796"></script>
+  <script defer src="scripts/ui/library-refresh.js?v=7a6b6c1f"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=6b72e077"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=084e3fef"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=7f224bbc"></script>
@@ -175,7 +175,6 @@
 </div>
 
   <div id="home-controls" class="control-dock"><button id="home-resume" class="control-glass control-pill" type="button" onclick="resumeHomeBook(this)" disabled><span id="home-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span><span id="home-resume-progress" aria-hidden="true"></span><span class="home-resume-copy"><span id="home-resume-title">Welcome to Breeze</span><span id="home-resume-percent"></span></span><span class="completion-badge" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 3 2 3.6.4 1 3.5L22 10l-1 3.5.3 3.6-3.2 1.7L16 22l-4-1-4 1-2.1-3.2-3.2-1.7.3-3.6L2 10l2.4-3.1 1-3.5L9 3Z"/><path d="m7.5 12 3 3 6-6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="completion-label">완독</span></span></button><button id="home-add" class="control-glass control-circle" type="button" aria-label="글 또는 책 추가" title="글 또는 책 추가" onclick="openAddModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
-<div id="library-refresh" role="status" aria-live="polite" hidden><span class="refresh-spinner" aria-hidden="true"></span></div>
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
 

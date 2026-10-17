@@ -24,26 +24,61 @@ Run `npm run test:home-ui` for the cross-view browser checks below, alongside `n
 
 Home, Wordbook and expanded Reader controls are compared as three identical slot rectangles, including computed padding and alignment. Wordbook status chips and selected filters use the same `--s1`/`--s2`/`--s3` background and ink tokens as Reader status buttons.
 
-## Shelf pull and native canvas
+## Shelf reload
 
-Home and shelves use a bounded, damped content translation while pulling at the
-upper edge. The fixed control dock stays in place. A small neutral spinner is the
-only visible refresh cue; accessible status remains available without on-screen
-instructions. Release settles with a short eased transition; reduced-motion users
-keep static content. Horizontal, short, cancelled, multi-touch and overlay-owned
-gestures do not refresh. Navigation clears the presentation and concurrent refreshes
-share one operation. The Reader never participates in the shelf pull handler.
-The refresh cue stays up briefly and settles within 1.2 seconds even if local
-book loading is slow. Home and Casuals subscribe to RSS source updates as soon
-as refresh starts; each ready source updates the rail while remaining sources
-continue in the background. Repeated pulls share any ongoing book load.
+Home and the book shelves reload on their own. There is no pull gesture and no
+refresh button. Opening the app loads saved books and Home recommendations
+through the existing boot (`loadBooks`, then `renderHome` when the first-run
+guide is not showing). That boot is the launch reload. When it finishes, the
+scheduler records the visible library screen. A foreground return inside 45
+seconds does not fetch that screen again.
 
-In the iOS app, WKWebView's scroll view owns the pull gesture and one
-`UIRefreshControl` owns the spinner. The web handler reports whether Home or a
-shelf is active and runs the same refresh operation when native refresh fires.
-The spinner uses the measured logo position and live safe area to sit in the
-pulled gap. Browser use retains the touch gesture above. Home and Casuals refresh
-their RSS cards; all three library views reload saved books.
+Returning to the foreground reloads the visible library screen.
+`visibilitychange` runs when the document is shown, and Capacitor
+`appStateChange` runs when `isActive` is true. One iOS resume can fire both;
+the second finds the screen already recorded and does nothing. Entering Home,
+Casuals, or the long-form shelf reloads that screen. The same screen waits 45
+seconds (`LIBRARY_REFRESH_GAP_MS`) before another automatic pass. A different
+screen still reloads on entry. Settings, add, edit, and the first-run guide
+block the pass. The reader never reloads from this path.
+
+`refreshLibrary()` is the reload direct callers already use, and it is not on
+the 45 second clock. Home resets the recommendation rail. Home and Casuals
+advance the feed cursor and subscribe to source updates before the requests
+start. Every library screen reloads saved books, and one in-flight load is
+shared. An automatic pass calls the same reload. On Home it also advances the
+feed. On a shelf it reloads saved and synced books and leaves the Home feed
+cursor where it is. Opening a screen already paints it. The reload paints
+that screen again only when the saved books changed. A save that lands during
+the read keeps those books and paints once, from the save.
+
+The iOS scroll view keeps bounce (`webView.scrollView.bounces = true`) and does
+not attach `UIRefreshControl`. With a refresh control, WebKit shifts the whole
+web layer, including `position:fixed` `#home-controls`, by about 65px when the
+pull begins and brings it back within about 300ms. Without a refresh control,
+bounce leaves a fixed element in place. The `breezeRefresh` bridge and the
+page's touch pull are gone.
+
+TestFlight 1.9.3 (`37de1377` through `2eca96d7`) shipped with that refresh
+control, bounce, and the fixed dock. Reinstalling that binary still showed the
+drop. The iOS shell loads the archive at `breeze://localhost`. Xcode Cloud runs
+`npm run www` and `cap sync ios` for that commit. `capacitor.config.json` has
+no `server.url`. The service worker registers only for an `http` page that is
+not the native shell, so a TestFlight binary does not pick up a later web
+deploy or a change to `sw.js`. `BREEZE_CONFIG` is the bundled `config.js`.
+`BOOK_CLOUD` arrives in 1.9.4. Installing another build of the same app keeps
+the existing container unless the app is deleted first. That data can change
+which cards the old script draws. It does not replace the script, the dock
+CSS, or the refresh control inside the 1.9.3 binary. Shelf height, safe area,
+and scroll settings were measured on TestFlight 299 (`0b61e512`, 390×844) and
+did not cause the 65px shift: the shift was present with book sync off, and a
+real height change left about 5px. A per-frame counter-offset, a native dock,
+and a snapshot hold were rejected. This build stops attaching the control.
+
+`tests/verify-library-refresh-browser.mjs` covers launch, foreground, entering
+a screen, and the 45 second gap. `tests/verify-dock-pull-browser.mjs` checks
+that the shell no longer attaches a refresh control and that the dock stays on
+the visible bottom through a downward drag and an automatic reload.
 
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper
@@ -117,8 +152,13 @@ remain required; simulated browsers do not establish physical iPhone frame rate.
 ## Covers without photos
 
 Local long-form and shared-link cards use deterministic local SVG line ornaments
-when no cover is available. The book title stays under the card. It is not also
-drawn inside the ornament, because that line sat on top of the author. Casuals
+when no cover is available. The author and the title are drawn on that ornament,
+in separate bands: the author along the top, stopping before the completion
+badge and the corner controls, and the title in at most three lines between
+that band and the bottom band. The bottom band is reserved for a download fill,
+an OCR label, a progress line, or the fallback download button, so those cannot
+meet the title or each other. The same title also stays under the card. A photo
+cover does not repeat the title on the art. Casuals
 use the title (three lines), not a long body excerpt. The full title remains
 available in card metadata; stored article content is unchanged. Existing palette tokens supply both themes, and real covers
 hide the ornament. RSS discovery cards require a working cover image. Home reserves their footprint

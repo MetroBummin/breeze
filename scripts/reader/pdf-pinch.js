@@ -164,6 +164,7 @@ function beginOriginalPinch(center, distance, ids){
   originalPinch = {
     box, layer, stage, outer, origin, distance, ids, level, next:level, elastic:1,
     width:box.clientWidth, viewportHeight:box.clientHeight, height:originalZoomBaseHeight,
+    windowWidth:window.innerWidth, windowHeight:window.innerHeight,
     carry:null,carryScale:0,rawLevel:level,
     trailing:Math.max(0,box.scrollHeight-origin.y-originalZoomBaseHeight*level),
     paper:{x:(box.scrollLeft+center.x-outer.left-origin.x)/level,

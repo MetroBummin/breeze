@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const box=readerScroller(); if(!box) return;
   const moved=event=>{
     if(currentReaderMode==='text') textModeMovedByUser=true;
+    if(currentReaderMode==='original')releaseSavedReadingPlace();
     // Reflow can clamp scrollTop without input. Pointer pan/pinch have their
     // existing owners; the existing wheel/key listeners own these body intents.
     if((event.type==='wheel'||event.type==='keydown')&&typeof closePdfNavigation==='function')closePdfNavigation();
@@ -448,10 +449,24 @@ function showOriginalLandingCue(record,target,paragraphHint){
 /* PDF는 placeholder가 실제 쪽 비율을 배울 때 높이가 한 번 더 바뀔 수 있습니다.
    한 줄의 px 보정보다, 독자가 보던 문장(없으면 원본 앵커)을 두 번 다시 가운데에
    놓는 편이 쪽 크기가 섞인 스캔본에도 견고합니다. */
+function releaseSavedReadingPlace(){
+  if(currentReaderMode==='text'){textModeMovedByUser=true;return true;}
+  const session=typeof originalSession!=='undefined'?originalSession:null;
+  if(!session)return false;
+  session.userMovedPlace=true;
+  if(session.pendingAnchor)session.anchorMoved=true;
+  return true;
+}
+function savedPlaceReleased(){
+  if(currentReaderMode==='text')return textModeMovedByUser;
+  const session=typeof originalSession!=='undefined'?originalSession:null;
+  return !!(session&&session.userMovedPlace);
+}
 function stabilizePdfModeTarget(record,target,bridge,changeToken,bookAtStart){
   if(!record || record.kind!=='pdf' || !target) return;
   [360,900].forEach(delay=>setTimeout(async()=>{
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    if(savedPlaceReleased())return;
     suspendReaderScrollSave(500);
     const found=bridge ? await ORIGINAL_FORMATS.pdf.restoreSentence(
       bridge.candidates,target,changeToken,bridge.paragraph) : false;
@@ -519,8 +534,14 @@ async function switchReaderMode(mode,options){
   readerPositionRestoration=positionRestoration;
   const ownsPosition=()=>readerPositionRestoration===positionRestoration
     &&changeToken===readerModeChangeToken&&curBook===bookAtStart&&currentReaderMode===mode;
+  // A superseded switch must not leave the reader stuck "restoring", or the
+  // next pinch is ignored. A newer owner replaces this object and keeps it.
+  const releasePosition=()=>{
+    if(readerPositionRestoration===positionRestoration) readerPositionRestoration=null;
+    return false;
+  };
   const commitPosition=()=>{
-    if(!ownsPosition())return false;
+    if(!ownsPosition())return releasePosition();
     readerPositionRestoration=null;
     // Cold opening is not reading movement. An actual mode landing commits
     // mode, logical progress and its resume anchor through the ordinary writer.
@@ -568,13 +589,13 @@ async function switchReaderMode(mode,options){
   if(mode==='text'){
     const targetPi = paragraphForSource(curBook,bridge);
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    if(!ownsPosition())return false;
+    if(!ownsPosition())return releasePosition();
     try{
       const canonicalPi=sentenceBridge&&sentenceBridge.paragraph!=null
         ? sentenceBridge.paragraph : targetPi;
       const sentenceFound=sentenceBridge
         ? await restoreTextSentence(sentenceBridge.candidates,canonicalPi) : false;
-      if(!ownsPosition())return false;
+      if(!ownsPosition())return releasePosition();
       if(resumeTextPosition){
         if(!restoreAnchor(resumeTextPosition))readerScrollTo(resumeTextPosition.y||0);
       }else if(!sentenceFound && targetPi!=null){
@@ -602,11 +623,12 @@ async function switchReaderMode(mode,options){
       suspendReaderScrollSave(450);
       return commitPosition();
     }catch(error){
-      if(ownsPosition()){
-        console.error(error);
-        releaseReaderPillProgress(true);
-        toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
-      }
+      // Keep this operation's restoration on a real failure so a later save
+      // cannot record the unlanded surface. A newer switch replaces the owner.
+      if(!ownsPosition())return releasePosition();
+      console.error(error);
+      releaseReaderPillProgress(true);
+      toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
       return false;
     }
   }
@@ -617,7 +639,7 @@ async function switchReaderMode(mode,options){
   const record = options.record || (reusable
     ? {kind:originalSession.kind,hash:originalSession.hash}
     : await originalGetForBook(curBook));
-  if(!ownsPosition())return false;
+      if(!ownsPosition())return releasePosition();
   if(!record){
     showOriginalReconnect(curBook);
     delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
@@ -630,7 +652,7 @@ async function switchReaderMode(mode,options){
     const rendering=renderOriginalBook(curBook,record);
     if(options.onPresented) options.onPresented();
     await rendering;
-    if(!ownsPosition())return false;
+    if(!ownsPosition())return releasePosition();
     let target = bridge || posOf(curBook.id).original;
     // 처음 여는 책은 맨 앞부터 — 형식별 "맨 앞"은 형식 표가 압니다.
     if(!target && options.initial){
@@ -638,8 +660,13 @@ async function switchReaderMode(mode,options){
     }
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
     const anchorRestored=await restoreOriginalAnchor(target,changeToken);
-    if(!ownsPosition())return false;
-    if(!anchorRestored)throw new Error('읽던 위치를 복원하지 못했어요. 책을 다시 열어 주세요.');
+    if(!ownsPosition())return releasePosition();
+    // A hand move declines an automatic jump and keeps the paper already on
+    // screen. That is a landing, not a failure: replacing the document here
+    // detaches every page and the next pinch has nothing to hold.
+    const paperLive=reusable && originalSession?.pages?.some(page=>page.isConnected);
+    if(!anchorRestored && !(savedPlaceReleased() && paperLive))
+      throw new Error('읽던 위치를 복원하지 못했어요. 책을 다시 열어 주세요.');
     if(sentenceBridge){
       /* 첫 PDF 진입은 문장 색인을 읽는 데 시간이 걸릴 수 있습니다. 레이아웃과
          sourceMap은 이미 준비됐으므로 같은 문단 블록을 먼저 보여 줍니다. */
@@ -649,7 +676,7 @@ async function switchReaderMode(mode,options){
          still a stable and useful fallback. */
       const sentenceFound=await ORIGINAL_FORMATS[record.kind].restoreSentence(
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
-      if(!ownsPosition())return false;
+      if(!ownsPosition())return releasePosition();
       if(record.kind==='pdf'){
         clearReaderModeCue();
         showPdfParagraphModeCue(sentenceBridge.paragraph,10000,target&&target.page);
@@ -671,7 +698,10 @@ async function switchReaderMode(mode,options){
     else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
     return commitPosition();
   }catch(error){
-    if(!ownsPosition())return false;
+    // A newer switch owns restoration. This failure must keep its own owner:
+    // clearing it would let the next save treat the unlanded surface as the
+    // reading place. A hand move never reaches this catch.
+    if(!ownsPosition())return releasePosition();
     console.error(error);
     showOriginalError(error);
     releaseReaderPillProgress(true);

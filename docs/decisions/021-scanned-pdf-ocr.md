@@ -153,19 +153,32 @@ failures pause with a retry action, not false completion. The former global
 Only metadata/recognized text persists; raster images and live reader maps
 remain bounded and released. Device-local state never enters book sync.
 
-### Cover progress (2026-10-16)
+### Cover progress (2026-10-17)
 
-Fill is the chosen cover treatment. `localStorage['breeze.ocr-cover']` or the
-`ocrCover` query set to `fill` or `on` draws it. The query wins. Absent, `off`,
-and any other value keep the approved under-card label and thin bar. That is
-the kill switch, and it remains the default.
+The shelf paints preparation on the cover, in the same bottom band as a
+download fill. That label is the default. It does not wait for
+`ocrCover=fill` or `ocrCover=on`. `?ocrCover=off` or
+`localStorage['breeze.ocr-cover']=off` hides it. The query wins. Any other
+value, including absent, keeps the cover. The under-card line and its
+progress bar are removed: there is no `.book-ocr-progress` markup or CSS.
 
-The cover shows a small label above a thin bar: `글자 스캔 중`, `글자 스캔 일시 중지`,
-or `글자 스캔 실패`. The page count is not drawn on the cover. A 44px target
-opens a small opaque detail with the count, the same retry, and a 44px close.
-Escape and an outside tap close it. The label updates only when the library
-already paints a job: no animation loop, no second raster, and no change to
-the recognition lane. The card size stays the same.
+The cover stays hidden unless this job has seen a scanned page (no text layer,
+or cached words) and still has pages left. A text-layer PDF, an EPUB or TXT, a
+finished scan, and a PDF that has not been opened stay quiet. Unknown work is
+not pending: a job with no page count, a book whose local page cache is empty
+(including one just synced onto this device), and a finished cache do not
+receive the in-progress words. A record whose original file is an EPUB or TXT
+is not an OCR job, even when its kind field says pdf. A stuck native request
+may show before that scan flag, once the page count is known, because the
+request itself is the warning. Only the opened book is prepared.
+
+The label is `글자 스캔 중`, `글자 스캔 일시 중지`, `글자 스캔 실패`, or
+`앱 완전 종료 후 다시 열기` when that native request is stuck. The page count
+is not drawn on the cover. A 44px target opens a small opaque detail with the
+count, the same retry, and a 44px close. Escape and an outside tap close it.
+The label updates only when the library already paints a job: no animation
+loop, no second raster, and no change to the recognition lane. The card size
+stays the same.
 
 ### Idle lane (2026-10-16)
 
@@ -178,7 +191,8 @@ on the shelf and keeps Retry disabled until `getStatus` reports that exact
 request finished. iOS stops at 3,000 words and skips one bad box instead of
 failing the page. `localStorage['breeze.ocr-lane']=off` or `?ocrLane=off`
 restores the previous shelf-wide queue, synchronous PNG encode, and separate
-document. The default is the idle lane. The approved under-card bar stays.
+document. The default is the idle lane. Progress on the shelf is the cover
+label, and only while a scanned page is still pending.
 
 ### Hosted ML Kit runner (2026-10-16)
 
