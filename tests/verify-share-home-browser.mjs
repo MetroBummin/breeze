@@ -31,7 +31,9 @@ try {
       await page.evaluate(async() => {
         await renderRssCards(document.getElementById('casual-rail'),false);
         renderRssCards = async()=>{};
-        books = [{id:'reading', title:'읽던 글', kind:'paste', site:'Breeze', paras:['읽던 글', '본문'], addedAt:1}];
+        const reading={id:'reading', title:'읽던 글', kind:'paste', site:'Breeze', paras:['읽던 글', '본문'], addedAt:1};
+        await bookPut(reading);
+        books = [reading];
         positions = {reading:{t:10,p:.2}};
         receiveSharedLinks([
           {id:'x-new', url:'https://x.com/example/status/123', savedAt:'2026-09-23T05:00:00Z'},

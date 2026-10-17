@@ -175,9 +175,14 @@ let libraryLoadError=false;
    just wrote. The reload paints only when that read is still current and the
    shelf is not already showing those books. */
 let libraryBooksEpoch=0;
-const savedBookPut=bookPut, savedBookDel=bookDel;
-bookPut=function(book){libraryBooksEpoch++;return savedBookPut(book);};
-bookDel=function(id){libraryBooksEpoch++;return savedBookDel(id);};
+/* storage.js owns these functions. A later assignment is how a reload learns
+   that a save landed during its read. Word-only fixtures never load storage,
+   so the wrap stays absent there. */
+if(typeof bookPut==='function'&&typeof bookDel==='function'){
+  const savedBookPut=bookPut, savedBookDel=bookDel;
+  Reflect.set(globalThis,'bookPut',function(book){libraryBooksEpoch++;return savedBookPut(book);});
+  Reflect.set(globalThis,'bookDel',function(id){libraryBooksEpoch++;return savedBookDel(id);});
+}
 async function loadBooks(){
   const epoch=libraryBooksEpoch;
   let loaded;

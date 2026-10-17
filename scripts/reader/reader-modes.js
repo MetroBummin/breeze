@@ -623,13 +623,12 @@ async function switchReaderMode(mode,options){
       suspendReaderScrollSave(450);
       return commitPosition();
     }catch(error){
-      const owned=ownsPosition();
-      releasePosition();
-      if(owned){
-        console.error(error);
-        releaseReaderPillProgress(true);
-        toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
-      }
+      // Keep this operation's restoration on a real failure so a later save
+      // cannot record the unlanded surface. A newer switch replaces the owner.
+      if(!ownsPosition())return releasePosition();
+      console.error(error);
+      releaseReaderPillProgress(true);
+      toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
       return false;
     }
   }
@@ -699,9 +698,10 @@ async function switchReaderMode(mode,options){
     else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
     return commitPosition();
   }catch(error){
-    const owned=ownsPosition();
-    releasePosition();
-    if(!owned)return false;
+    // A newer switch owns restoration. This failure must keep its own owner:
+    // clearing it would let the next save treat the unlanded surface as the
+    // reading place. A hand move never reaches this catch.
+    if(!ownsPosition())return releasePosition();
     console.error(error);
     showOriginalError(error);
     releaseReaderPillProgress(true);
