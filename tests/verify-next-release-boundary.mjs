@@ -172,7 +172,7 @@ const expected={
     "tests/verify-pdf-ocr-browser.mjs": "c7ae7abc6ae06894eaf75ea663cfc5b9a6ae2110632c8dae92aca013c26fa503",
     "tests/verify-pdf-ocr-cover-browser.mjs": "4d45c95b6504ac3a8db300c239141cb725771c74e3e8463a8353fd65fe2747b7",
     "tests/verify-pdf-ocr-library-browser.mjs": "8844028b904d1af838854be9af46e39429f16c6f9f8eb2ef6e8bd86ef2e7bc5a",
-    "tests/verify-pdf-ocr-ipad-shelf-browser.mjs": "5bcfc0d3946bd96a108ee34d1ebd59f1f1bff9eaf9febc329b9b46795db0030b",
+    "tests/verify-pdf-ocr-ipad-shelf-browser.mjs": "fe13546c98beca4d1d73e2e85e9cd5537997eda1c51814e111b683ce4c7ff819",
     "tests/verify-pdf-ocr-library.mjs": "f4247ddf93f4dca33ed516c7dedbbdfc4eeaa5093015ffbbce60a11337544df8",
     "tests/verify-pdf-ocr-shelf-browser.mjs": "5312a516720efd16899337e0ae07631acb289ef1153f8979a87819d28f82b8ee",
     "tests/verify-pdf-ocr.mjs": "3fea212fabcbec4d05413fe2695006606064bd7fbbb1ba2160bec57556c63f13",

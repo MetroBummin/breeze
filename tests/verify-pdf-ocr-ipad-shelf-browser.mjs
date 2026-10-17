@@ -124,6 +124,9 @@ try{
    {id:'tagged-ipad',title:'EPUB인데 종류가 PDF',author:'김영하',kind:'pdf',addedAt:now-3,sourceHash:'tagged-hash',original:{kind:'epub',hash:'tagged-hash'}},
   );
   BreezePdfOcrLibrary.forget(doneId);
+  // Entering the shelf reloads saved books. These cards are the fixture already
+  // on screen, so that reload must not replace them before the labels are read.
+  libraryRefreshSeen.home=libraryRefreshSeen.longform=libraryRefreshSeen.casuals=Date.now();
   show('longform');
  },{doneId,textId,pendingId});
  const report=async()=>page.evaluate(({doneId,textId,pendingId})=>{
