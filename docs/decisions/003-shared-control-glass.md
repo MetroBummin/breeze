@@ -74,6 +74,19 @@ rubber-band, so the shelf stays on the clear-and-rebuild path and the dock
 gets no counter-offset. `tests/verify-refresh-height-browser.mjs` keeps painted
 document height and dock position steady through a refresh.
 
+The iOS shell loads the web UI from the archive. Xcode Cloud runs `npm run www`
+and `cap sync ios` for that commit, and Capacitor serves `www` at
+`breeze://localhost`. `capacitor.config.json` has no `server.url`. The service
+worker registers only for an `http` page that is not the native shell, so a
+TestFlight binary does not pick up a later web deploy or a change to
+`sw.js`. `BREEZE_CONFIG` is the bundled `config.js`. TestFlight 1.9.3
+(`37de1377` through `2eca96d7`) has `UIRefreshControl`, bounce, and
+`position:fixed` `#home-controls`, and its config has `RSS_CATALOG` only.
+`BOOK_CLOUD` arrives in 1.9.4. Installing another build of the same app keeps
+the existing container unless the app is deleted first, so books and the login
+session written by a newer build remain. That data can change which cards the
+old script draws. It does not replace the script or the refresh control.
+
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper
 behind its native edge bounce. Colors come from the existing CSS palette.
