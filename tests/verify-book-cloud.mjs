@@ -623,6 +623,111 @@ test('a phone page opens once on the tablet, then newer stamps of that page stay
   assert.equal(context.bookCloudHeads[hash].locator.original.page,23);
 });
 
+test('a device switch publishes the place 1500ms after leaving, and the return open keeps the older page',async()=>{
+  const preferences=readFileSync(new URL('../scripts/ui/preferences.js',import.meta.url),'utf8');
+  const sync=readFileSync(new URL('../scripts/sync/sync.js',import.meta.url),'utf8');
+  const hidden=sync.slice(sync.lastIndexOf("document.addEventListener('visibilitychange'"));
+  assert.match(preferences,/addEventListener\('pagehide', saveReadingState\)/);
+  assert.doesNotMatch(preferences,/flushBookCloud/);
+  assert.match(hidden,/document\.hidden/);
+  assert.doesNotMatch(hidden,/flushBookCloud|syncBookCloud/);
+  assert.match(source,/void syncBookCloud\(\);\},1500\)/);
+
+  const server={positions:{},revisions:{}};
+  const phone=boot({flag:true});
+  const tablet=boot({flag:true});
+  const id='file-'+hash.slice(0,32);
+  const book={id,kind:'pdf',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+  const arm=context=>{
+    let now=0,seq=0;
+    const pending=[];
+    context.setTimeout=(fn,ms)=>{const timer={id:++seq,fn,at:now+Number(ms)};pending.push(timer);return timer.id;};
+    context.clearTimeout=timerId=>{const index=pending.findIndex(timer=>timer.id===timerId);if(index>=0)pending.splice(index,1);};
+    return {now:()=>now,pending:()=>pending.length,async advance(ms){
+      now+=ms;
+      for(const timer of pending.filter(item=>item.at<=now).sort((a,b)=>a.at-b.at)){
+        const index=pending.indexOf(timer);if(index>=0)pending.splice(index,1);timer.fn();
+      }
+      for(let step=0;step<20;step++)await new Promise(resolve=>setImmediate(resolve));
+    }};
+  };
+  const serve=(context,clock)=>{
+    context.sb.from=table=>({select:async()=>table==='positions'
+      ?{data:Object.entries(server.positions).map(([book_id,locator])=>({book_id,data:{revision:server.revisions[book_id]||'',locator}}))}
+      :{data:[]}});
+    context.sb.rpc=async(name,args)=>{
+      if(name==='breeze_put_book_position'){
+        server.positions[args.book_id]=args.locator;
+        server.revisions[args.book_id]=args.next_revision;
+        server.readyAt=clock.now();
+      }
+      return {data:{ok:true,revision:args&&args.next_revision,locator:args&&args.locator}};
+    };
+  };
+  const phoneClock=arm(phone.context);
+  const tabletClock=arm(tablet.context);
+  serve(phone.context,phoneClock);
+  serve(tablet.context,tabletClock);
+  for(const context of [phone.context,tablet.context]){
+    context.books=[book];
+    context.curBook=book;
+    context.switchReaderMode=()=>{context.moved=(context.moved||0)+1;};
+    context.savedPlaceReleased=()=>false;
+  }
+  phone.context.positions[id]={p:0.62,t:5000,mode:'original',original:{kind:'pdf',page:23,y:0.42}};
+  phone.context.scheduleBookCloudPosition();
+  await phoneClock.advance(1499);
+  assert.equal(server.positions[hash],undefined,'1499ms after the phone hides, the tablet cannot see page 23');
+  await phoneClock.advance(1);
+  assert.equal(server.readyAt,1500);
+  assert.equal(server.positions[hash].original.page,23);
+
+  tablet.context.positions[id]={p:0,t:1,mode:'original',original:{kind:'pdf',page:1,y:0}};
+  tablet.context.curBook=null;
+  await tablet.context.bookCloudPositionBeforeOpen(book);
+  assert.equal(tablet.context.positions[id].original.page,23,'a tablet still at the start copies the phone page before paint');
+  assert.equal(tablet.context.moved||0,0,'that copy does not scroll');
+  assert.equal(tabletClock.now(),0,'a fast read does not wait out the 400ms cap');
+
+  tablet.context.positions[id]={p:0.35,t:8000,mode:'original',original:{kind:'pdf',page:14,y:0.2}};
+  tablet.context.curBook=book;
+  tablet.context.scheduleBookCloudPosition();
+  await tabletClock.advance(1500);
+  assert.equal(server.positions[hash].original.page,14);
+  assert.equal(server.readyAt,1500);
+
+  phone.context.curBook=null;
+  phone.context.moved=0;
+  await phone.context.bookCloudPositionBeforeOpen(book);
+  assert.equal(phone.context.positions[id].original.page,23,'the phone already has a page, so the return open does not read page 14');
+  assert.equal(phone.context.moved,0);
+  phone.context.curBook=book;
+  await phone.context.bookCloudRefresh(phone.context.bookCloudSession());
+  assert.equal(phone.context.moved,1,'the newer page then moves the book that is already open');
+  assert.equal(phone.context.positions[id].original.page,14);
+
+  const slow=boot({flag:true});
+  const slowClock=arm(slow.context);
+  let releaseRead=null;
+  const late={p:0.62,t:5000,mode:'original',original:{kind:'pdf',page:23,y:0.42}};
+  slow.context.books=[book];
+  slow.context.curBook=null;
+  slow.context.positions[id]={p:0,t:1,mode:'original',original:{kind:'pdf',page:1,y:0}};
+  slow.context.switchReaderMode=()=>{throw new Error('a late place must not move the open book');};
+  slow.context.sb.from=()=>({select:()=>new Promise(resolve=>{releaseRead=()=>resolve({data:[{book_id:hash,data:{revision:'slow',locator:late}}]});})});
+  const opening=slow.context.bookCloudPositionBeforeOpen(book);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(slowClock.pending(),1);
+  await slowClock.advance(400);
+  await opening;
+  assert.equal(slow.context.positions[id].original.page,1,'a read slower than 400ms leaves the first open at the local page');
+  assert.equal(slow.context.bookCloudRevealQuiet,id);
+  releaseRead();
+  for(let step=0;step<5;step++)await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(slow.context.positions[id].original.page,1,'the late reply is kept and does not jump');
+  assert.equal(slow.context.bookCloudHeads[hash].locator.original.page,23);
+});
+
 test('before the reader moves, a newer remote page is still applied once',async()=>{
   const {context}=boot({flag:true});
   const id='file-'+hash.slice(0,32);
