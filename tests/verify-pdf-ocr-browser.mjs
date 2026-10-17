@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,firefox,webkit} from 'playwright';
 import {scanPdf} from './helpers/pdf-scan-fixture.mjs';
 import {stressPdfOcrBrowser} from './helpers/pdf-ocr-browser-stress.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2'};
@@ -16,7 +16,8 @@ const server=createServer((req,res)=>{
  try{res.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const url=`http://127.0.0.1:${server.address().port}/`,engine=process.env.BROWSER==='webkit'?webkit:chromium;
+const url=`http://127.0.0.1:${server.address().port}/`;
+const engines={chromium,firefox,webkit},engine=engines[process.env.BROWSER]||chromium;
 const profile=mkdtempSync(resolve(tmpdir(),'breeze-ocr-')),errors=[],external=[];
 let browser,lookupAllowed=false;const prematureLookups=[];
 const waitForMeaning=page=>page.waitForFunction(()=>{
@@ -27,7 +28,7 @@ const waitForMeaning=page=>page.waitForFunction(()=>{
   &&rect.width>0&&rect.height>0&&meaning.textContent.trim()==='밝은';
 });
 try{
- browser=await engine.launchPersistentContext(profile,{headless:true,executablePath:process.env.BREEZE_BROWSER_EXECUTABLE,viewport:{width:820,height:1180},serviceWorkers:'block'});
+ browser=await engine.launchPersistentContext(profile,{headless:true,...(engine===chromium&&process.env.BREEZE_BROWSER_EXECUTABLE?{executablePath:process.env.BREEZE_BROWSER_EXECUTABLE}:{}),viewport:{width:820,height:1180},serviceWorkers:'block'});
  const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
  page.on('console',message=>{if(/pdf|worker/i.test(message.text()))console.log('PDF browser diagnostic:',message.text());});
  page.on('requestfailed',request=>{if(request.url().includes('pdf-3.11.174.worker'))console.log('Bundled worker request failed:',request.failure());});

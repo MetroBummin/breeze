@@ -469,6 +469,7 @@
 .book-ocr-progress progress::-webkit-progress-value{background:var(--settings-muted);}
 .book-ocr-progress progress::-moz-progress-bar{background:var(--settings-muted);}
 .book-ocr-progress button{justify-self:start;padding:2px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;}
+.book-ocr-progress button:disabled{opacity:.45;text-decoration:none;cursor:default;}
 .book-ocr-cover{position:absolute;z-index:4;left:10px;right:10px;bottom:8px;pointer-events:none;}
 .book-ocr-cover[hidden]{display:none;}
 .book-ocr-cover .book-ocr-hit{pointer-events:auto;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:6px;box-sizing:border-box;width:100%;min-height:44px;margin:0;padding:0 0 2px;border:0;border-radius:0;background:transparent;color:inherit;font:600 11px/1.25 var(--ui);text-align:left;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}

@@ -166,3 +166,26 @@ opens a small opaque detail with the count, the same retry, and a 44px close.
 Escape and an outside tap close it. The label updates only when the library
 already paints a job: no animation loop, no second raster, and no change to
 the recognition lane. The card size stays the same.
+
+### Idle lane (2026-10-16)
+
+Preparation no longer walks every PDF on the shelf. It follows the book the
+reader has opened, after painting, scrolling, gestures, and shelf scrolling
+are idle, and it reuses that reader's PDF.js document instead of loading a
+second copy. Page rasters are encoded off the UI thread when a worker or
+`toBlob` is available. A stuck native request shows `앱 완전 종료 후 다시 열기`
+on the shelf and keeps Retry disabled until `getStatus` reports that exact
+request finished. iOS stops at 3,000 words and skips one bad box instead of
+failing the page. `localStorage['breeze.ocr-lane']=off` or `?ocrLane=off`
+restores the previous shelf-wide queue, synchronous PNG encode, and separate
+document. The default is the idle lane. The approved under-card bar stays.
+
+### Hosted ML Kit runner (2026-10-16)
+
+The native ML Kit job stays on the hosted Ubuntu runner and is not skipped.
+That runner already has `/dev/kvm`, but the job user cannot read or write it,
+so the emulator never started. Before the harness, the job applies the
+android-emulator-runner KVM udev rule (`MODE="0666"`) and requires the node to
+be readable and writable. The harness still exits when KVM is missing or
+acceleration is not usable, and it still does not fall back to software
+emulation.

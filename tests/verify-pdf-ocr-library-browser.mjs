@@ -6,9 +6,10 @@ import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,firefox,webkit} from 'playwright';
 import {scanPdf} from './helpers/pdf-scan-fixture.mjs';
-const root=fileURLToPath(new URL('../',import.meta.url)),engine=process.env.BROWSER==='webkit'?webkit:chromium;
+const root=fileURLToPath(new URL('../',import.meta.url));
+const engines={chromium,firefox,webkit},engine=engines[process.env.BROWSER]||chromium;
 const server=createServer((req,res)=>{
  const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
  if(!path.startsWith(root)){res.writeHead(403).end();return;}
@@ -43,12 +44,29 @@ try{
  const jpeg=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=600;c.height=800;const g=c.getContext('2d');g.fillStyle='white';g.fillRect(0,0,600,800);g.fillStyle='black';g.font='24px sans-serif';g.fillText('Bright world',60,116);return c.toDataURL('image/jpeg').split(',')[1];});
  await page.locator('#fileinput').setInputFiles({name:'수능 영어 스캔본.pdf',mimeType:'application/pdf',buffer:scanPdf(jpeg,{pages:80})});
  await page.waitForFunction(()=>books.some(b=>b.kind==='pdf'),null,{timeout:60000});
- await page.waitForFunction(()=>qaLibraryOcr.calls.length===1,null,{timeout:30000});
- for(let i=0;i<12;i++){
+ await page.waitForTimeout(700);
+ assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),0,'an unopened shelf does not start recognition');
+ await page.evaluate(()=>{
+  // pdfjsLib.getDocument is a non-configurable getter. Each document still
+  // starts its own PDF.js worker, which is the second copy we must not load.
+  qaDocs=0;const Native=window.Worker;
+  window.Worker=function(url,options){
+   if(String(url).includes('pdf-3.11.174.worker'))qaDocs++;
+   return new Native(url,options);
+  };
+ });
+ await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
+ await page.waitForFunction(()=>originalSession?.pdf&&qaLibraryOcr.calls.length>=1,null,{timeout:60000});
+ assert.equal(await page.evaluate(()=>qaDocs),1,'preparation reuses the reader document');
+ assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),1);
+ await page.evaluate(()=>qaLibraryOcr.calls[0].resolve());
+ await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===1&&qaLibraryOcr.calls.length>=2);
+ for(let i=1;i<12;i++){
   await page.evaluate(i=>qaLibraryOcr.calls[i].resolve(),i);
   await page.waitForFunction(n=>qaLibraryOcr.calls.length===n,i+2);
  }
  assert.equal(lookups,0,'background recognition never sends meaning requests');
+ await page.evaluate(()=>show('home'));
  const slot=page.locator('#v-home [data-ocr-book]').first();
  await page.waitForFunction(()=>document.querySelector('#v-home [data-ocr-book] span')?.textContent.includes('12/80쪽'));
  const proof='/tmp/breeze-ocr-library';mkdirSync(proof,{recursive:true});
@@ -67,17 +85,17 @@ try{
   }
  }
  assert.ok(Date.now()-heldAt<20000,'viewport capture must leave headroom before the real30s native deadline');
- await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
- await page.waitForFunction(()=>originalSession?.wordBoxes.get(1)?.length===1);
- assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),13,'reading prepared page reuses durable OCR');
- await page.evaluate(()=>show('home'));
+ assert.equal(await page.evaluate(()=>qaDocs),1,'shelf progress still uses the one reader document');
  await page.evaluate(()=>{qaLibraryOcr.auto=true;qaLibraryOcr.calls[12].resolve();});
  await page.waitForFunction(()=>document.querySelector('#v-home [data-ocr-book]')?.hidden===true,null,{timeout:120000});
  assert.equal(await page.evaluate(()=>qaLibraryOcr.peak),1);
  assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),80);
  assert.equal(lookups,0);
  await page.reload();await page.evaluate(()=>homeReady);
+ await page.waitForTimeout(700);
+ assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),0,'restart does not recognize before the book is opened');
+ await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='pdf'));await switchReaderMode('original');});
  await page.waitForFunction(()=>document.querySelector('#v-home [data-ocr-book]')?.hidden===true,null,{timeout:30000});
  assert.equal(await page.evaluate(()=>qaLibraryOcr.calls.length),0,'restart reuses all80 durable records');
- console.log('80-page bookshelf progress, nonblocking reading, one lane, cache/restart and viewport checks passed');
+ console.log('80-page bookshelf progress, open-book lane, one document, cache/restart and viewport checks passed');
 }finally{await browser?.close();rmSync(profile,{recursive:true,force:true});server.close();}

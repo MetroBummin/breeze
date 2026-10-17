@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../scripts/reader/pdf-ocr.js',import.meta.url
 const word=(word='Bright',extra={})=>({word,line:0,x:.1,y:.2,w:.2,h:.04,confidence:.9,...extra});
 const defer=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {resolve,reject,promise};};
 const flush=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
-function fixture({supported=true,cache=new Map(),nativeProxy=false}={}){
+function fixture({supported=true,cache=new Map(),nativeProxy=false,encode='dataurl'}={}){
  const timers=new Map(),calls=[],statusCalls=[],paints=[],canvases=[],toasts=[];let next=0,now=0;
  const session={kind:'pdf',bookId:'A',hash:'hash-A',pages:[1,2,3].map(n=>({isConnected:true,dataset:{page:String(n)}})),wordBoxes:new Map([[1,[]],[2,[]],[3,[]]]),settled:new Set([1,2,3])};
  const native={recognize(args){const job=defer();calls.push({args,...job});return job.promise;},
@@ -23,8 +23,12 @@ function fixture({supported=true,cache=new Map(),nativeProxy=false}={}){
     getAll:()=>request([...cache.values()]),getAllKeys:()=>request([...cache.keys()])};
    run({objectStore:()=>store},value=>result=value);for(const fn of pending)fn();return result;
   },
+  btoa,Uint8Array,String,
   window:{Capacitor:{isNativePlatform:()=>supported,getPlatform:()=> 'ios',isPluginAvailable:()=>supported,registerPlugin:()=>native}},
-  document:{hidden:false,addEventListener(){},createElement(){const canvas={width:0,height:0,getContext:()=>({}),toDataURL:()=> 'data:image/png;base64,cGFnZQ=='};canvases.push(canvas);return canvas;}},
+  document:{hidden:false,addEventListener(){},createElement(){const canvas={width:0,height:0,dataUrls:0,blobs:0,getContext:()=>({}),
+    toDataURL(){canvas.dataUrls++;return 'data:image/png;base64,cGFnZQ==';}};
+   if(encode==='blob')canvas.toBlob=cb=>{canvas.blobs++;cb({arrayBuffer:async()=>Uint8Array.from([1,2,3]).buffer});};
+   canvases.push(canvas);return canvas;}},
   originalSession:session,visible:[1],paused:false,busy:false,
   currentPdfSession:s=>!!s&&s===context.originalSession,ownsPdfPage:(p,s)=>s===context.originalSession&&s.pages.includes(p)&&p.isConnected,
   pdfPagesInView:()=>context.visible,originalPdfPaintPaused:()=>context.paused,pdfScrollBusy:()=>context.busy,
@@ -55,9 +59,19 @@ test('only the visible page enters OCR; repeated taps and scheduling share one n
  const f=fixture();await f.inspect(1);await f.inspect(2);await f.start();
  for(let i=0;i<8;i++){assert.equal(f.ocr.tap(f.session,1),true);await f.tick();}
  assert.equal(f.calls.length,1);assert.equal(f.calls[0].args.image,'cGFnZQ==');
+ assert.equal(f.canvases[0].dataUrls,1);
  assert.ok(f.canvases.every(c=>c.width===0&&c.height===0));
  f.calls[0].resolve({words:[word()]});await flush();await f.tick();
  assert.equal(f.paints.length,1);assert.equal(f.session.wordBoxes.get(1)[0].word,'Bright');assert.equal(f.session.wordBoxes.get(2).length,0);
+});
+test('png encode prefers toBlob and the kill flag keeps synchronous toDataURL',async()=>{
+ const asyncEncode=fixture({encode:'blob'});await asyncEncode.inspect();await asyncEncode.start();
+ assert.equal(asyncEncode.canvases[0].blobs,1);assert.equal(asyncEncode.canvases[0].dataUrls,0);
+ assert.equal(asyncEncode.calls[0].args.image,btoa(String.fromCharCode(1,2,3)));
+ const syncEncode=fixture({encode:'blob'});syncEncode.context.localStorage={getItem:key=>key==='breeze.ocr-lane'?'off':null};
+ await syncEncode.inspect();await syncEncode.start();
+ assert.equal(syncEncode.canvases[0].blobs,0);assert.equal(syncEncode.canvases[0].dataUrls,1);
+ assert.equal(syncEncode.calls[0].args.image,'cGFnZQ==');
 });
 test('fast page switching defers old-page paint and starts only the latest visible page',async()=>{
  const f=fixture();for(const n of [1,2,3])await f.inspect(n);await f.start();
