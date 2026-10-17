@@ -168,7 +168,7 @@ const expected={
     "tests/verify-ios-cloud-build.mjs": "3e68f601b6b6ebd915bf75c5f5173273a00de7f0b443108ebc79709c7a57f12b",
     "tests/verify-learning-sync-sql.mjs": "2e872df5f9364dff26e1263469826663c2c90f1bace91ceade4c79efee5098b7",
     "tests/verify-learning-sync.mjs": "8eea53b910fd3a5948eb295fa2db17f48489a9243d0c415d607ba49812be54f4",
-    "tests/verify-library-refresh-browser.mjs": "85c4c563c6a0ec06b217bbaac1350d262065323bfe3d590a1b029a31e33f136e",
+    "tests/verify-library-refresh-browser.mjs": "5c6ffa0801976edc04a6376e447652339cd92cb6970a2a0aca45746a416e9db6",
     "tests/verify-lookup-work-browser.mjs": "3ca2e4dddf48cf293c6a3f9daebe29fb59208c86b5371921e67bf45aed846178",
     "tests/verify-memory-edit-filter-browser.mjs": "e7b45b6d9f6ed80b5772ea6401d8b44d5d419de395ff9f73a6303c07d4d071e3",
     "tests/verify-onboarding-study-browser.mjs": "9e6a9bd5c99e6b9b719581a2a096b6fcaae13d92b01bcd016770be8f846d44f7",

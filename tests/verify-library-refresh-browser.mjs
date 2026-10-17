@@ -45,10 +45,11 @@ try{
      window.rssPageAtStub=rssPage;
      loadBooks=async()=>{window.refreshCalls++};
      loadRss=async()=>[];
-     const realNow=Date.now.bind(Date);
-     let shift=0;
-     Date.now=()=>realNow()+shift;
-     window.advanceRefreshClock=ms=>{shift+=ms};
+     /* The gap is checked with Date.now. A shift added to the live clock
+        still moves, so a 1ms margin can expire before the event runs. */
+     let now=Date.now();
+     Date.now=()=>now;
+     window.advanceRefreshClock=ms=>{now+=ms};
      window.pull=(dx,dy)=>{
        const target=document.querySelector('.view.on');
        const touch=(x,y)=>({identifier:1,target,clientX:x,clientY:y});
