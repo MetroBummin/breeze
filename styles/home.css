@@ -140,12 +140,20 @@
 
   /* 받는 중은 글자 스캔과 같은 자리입니다. 표지 아래 4px 트랙, 그 위에 짧은 글.
      쪽수·퍼센트·용량은 적지 않습니다. window.BREEZE_CARD_ACTIVITY 가 fill 일 때만 붙습니다. */
+  .bookcard.cloud .getbtn[hidden]{display:none;}
   .bookcard.cloud.is-receiving .getbtn{visibility:hidden;}
   .bookcard.cloud.is-receiving:hover{border-color:var(--cloud-line); border-style:dashed; transform:none; box-shadow:none;}
   .bookcard>.card-activity{position:absolute; z-index:1; left:12px; right:12px; bottom:8px; pointer-events:none;
     display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:6px;}
   .card-activity-label{font:600 11px/1.2 var(--ui); color:var(--settings-ink);}
   .bookcard.has-cover>.card-activity .card-activity-label{color:var(--on-color); text-shadow:0 1px 4px rgba(0,0,0,.7);}
+  /* 표지 아래쪽에 글자가 있어도 라벨이 읽히게, 카드 안에서만 짧게 어두워집니다.
+     카드 밖 제목(home-regular-title)까지 내려가지 않습니다. */
+  .bookcard.has-cover>.card-activity::before{content:""; position:absolute; z-index:-1; left:-12px; right:-12px;
+    bottom:-8px; height:72px; pointer-events:none;
+    background:linear-gradient(to top, rgba(0,0,0,.46), rgba(0,0,0,.14) 52%, rgba(0,0,0,0));}
+  .bookcard.has-cover>.card-activity .card-activity-label,
+  .bookcard.has-cover>.card-activity .card-activity-fill{position:relative; z-index:1;}
   .card-activity-fill{align-self:stretch; display:block; height:4px; border-radius:2px;
     background:var(--sentence-glass-solid); overflow:hidden;}
   .card-activity-fill i{display:block; height:100%; width:calc(var(--p) * 100%); background:var(--blue);}
@@ -168,6 +176,10 @@
   .pal0{background:var(--cover1-bg); color:var(--cover1-ink);} .pal0 .author{color:var(--cover1-sub);}
   .pal1{background:var(--cover2-bg); color:var(--cover2-ink);} .pal1 .author{color:var(--cover2-sub);}
   .pal2{background:var(--cover3-bg); color:var(--cover3-ink);} .pal2 .author{color:var(--cover3-sub);}
+  /* 내려받는 카드도 글자 표지 대신 같은 기본 장식을 씁니다. `.cloud` 의 빈 바탕보다 팔레트가 이깁니다. */
+  .bookcard.cloud.editorial-cover.pal0{background:var(--cover1-bg); color:var(--cover1-ink);}
+  .bookcard.cloud.editorial-cover.pal1{background:var(--cover2-bg); color:var(--cover2-ink);}
+  .bookcard.cloud.editorial-cover.pal2{background:var(--cover3-bg); color:var(--cover3-ink);}
 
   /* 아직 안 들여온 무료 고전. 눌러야 실제로 받습니다. */
   .bookcard.classic{background:transparent; border:1px solid var(--cloud-line); color:var(--soft);}
@@ -439,9 +451,10 @@
   width:155px;height:155px;transform:rotate(-12deg);opacity:.18;}
 .bookcard.editorial-cover:not(.has-cover) .wave{display:none;}
 
-/* No-cover cards identify the actual document rather than a generic pattern. */
-:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .casual .thumb:not(.has-cover) .lede,
-:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .bookcard:not(.has-cover) .bt{
+/* A short piece with no photo still names itself on the card. A book does not:
+   the ornament is the cover, and the title stays under the card. Painting the
+   title inside as well put the author line on top of it. */
+:is(#v-home,#v-casuals,#v-longform) .home-regular-tile > .casual .thumb:not(.has-cover) .lede{
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;
   font-size:clamp(17px,2vw,23px);line-height:1.35;overflow-wrap:anywhere;}
 :is(#v-home,#v-casuals,#v-longform) .home-regular-title{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.7em;}

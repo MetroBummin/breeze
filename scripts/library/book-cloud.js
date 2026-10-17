@@ -14,6 +14,7 @@ var bookCloudJobs=new Map();
 var bookCloudActivity=new Map();
 var bookCloudActivityFrame=0;
 var bookCloudPartsPromise=null;
+var bookCloudManual=new Set();
 function bookCloudResetNotes(){
   const note=document.getElementById('ed-del-note');
   const choice=document.querySelector('#edit-modal [data-step="delete"] .am-d');
@@ -24,7 +25,7 @@ var bookCloudRevealQuiet=null;
 function resetBookCloudSession(){
   bookCloudPullEpoch++;bookCloudPullAgain=false;
   clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudCatalog=[];bookCloudHeads={};
-  bookCloudRevealQuiet=null;bookCloudActivity.clear();
+  bookCloudRevealQuiet=null;bookCloudActivity.clear();bookCloudManual.clear();
 }
 function bookCloudHash(book){
   const hash=String(book&&(book.sourceHash||(book.original&&book.original.hash))||'');
@@ -541,6 +542,19 @@ async function bookCloudWritePart(key,bytes){
 async function bookCloudDropPart(key){
   try{await bookCloudPartOp('readwrite',store=>{store.delete(key);});}catch{}
 }
+function bookCloudShowManual(bookId, show){
+  if(!bookId)return;
+  if(show)bookCloudManual.add(bookId);
+  else bookCloudManual.delete(bookId);
+  if(typeof document==='undefined'||typeof document.querySelectorAll!=='function')return;
+  const cards=document.querySelectorAll('.bookcard.cloud[data-book-cloud]');
+  for(const item of cards){
+    const card=/** @type {HTMLElement} */(item);
+    if(card.dataset.bookCloud!==bookId)continue;
+    const button=/** @type {HTMLButtonElement|null} */(card.querySelector('.getbtn'));
+    if(button)button.hidden=!bookCloudManual.has(bookId);
+  }
+}
 function bookCloudActivityVariant(){
   if(typeof window==='undefined')return '';
   return window.BREEZE_CARD_ACTIVITY==='fill'?'fill':'';
@@ -654,6 +668,7 @@ async function bookCloudImportRemote(row,session,options){
   if(!bookCloudEnabled()||!row||!row.bookId)return null;
   if(navigator.onLine===false){note('오프라인에서는 이 책을 받을 수 없어요.');return null;}
   if(!bookCloudCurrent(session))return null;
+  if(auto)bookCloudShowManual(row.bookId, false);
   const size=Number(row.size)||0;
   const key=bookCloudUserId()+'/'+row.bookId;
   let prefix=null;
@@ -733,10 +748,15 @@ async function bookCloudImportRemote(row,session,options){
       const index=books.indexOf(target);
       if(index>=0)books.splice(index,1);
     }
-    if(bookCloudStorageFault(error)){await bookCloudWritePart(key,bytes);return null;}
+    if(bookCloudStorageFault(error)){
+      await bookCloudWritePart(key,bytes);
+      bookCloudShowManual(row.bookId, true);
+      return null;
+    }
     throw error;
   }
   await bookCloudDropPart(key);
+  bookCloudShowManual(row.bookId, false);
   if(row.locator&&typeof positions!=='undefined'&&bookCloudPreferRemote(positions[target.id],row.locator)){
     positions[target.id]={...bookCloudLocator(row.locator)};
     if(typeof save==='function')save(LS_POS,positions);
@@ -747,13 +767,16 @@ async function bookCloudImportRemote(row,session,options){
   }
 }
 function bookCloudCard(row){
-  const card=el('div','bookcard cloud');
+  const index=typeof paletteOf==='function'?paletteOf({id:row.bookId||''},3):0;
+  const card=el('div','bookcard cloud editorial-cover pal'+(index%3));
   const percent=row.locator&&row.locator.p!=null&&typeof readingPercent==='function'?readingPercent(row.locator.p):null;
   const label=percent?percent+'%부터 받아서 이어 읽기':'받아서 이어 읽기';
-  card.innerHTML='<div class="author"></div><div class="bt"></div><button class="getbtn" type="button"></button>';
+  const art=typeof coverArtwork==='function'?coverArtwork(row.bookId||row.title||''):'';
+  card.innerHTML=art+'<div class="author"></div><div class="bt"></div><button class="getbtn" type="button" hidden></button>';
   fillCard(card,{'.author':row.author||'내 책','.bt':row.title||'(제목 없음)'});
   const button=card.querySelector('.getbtn');
   button.textContent=label;
+  button.hidden=!bookCloudManual.has(row.bookId);
   if(row.bookId)card.dataset.bookCloud=row.bookId;
   const open=event=>{event.stopPropagation();void bookCloudDownload(row,card);};
   button.onclick=open;card.onclick=open;

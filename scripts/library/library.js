@@ -175,8 +175,8 @@ function nowReadingLabel(book, current){
 }
 
 /* 표지 사진은 IndexedDB에 있습니다. 다른 기기에서 받은 기사면 `bookImageBlob`이
-   원래 주소에서 한 번 받아 옵니다. 그래도 없으면(사진이 없는 기사, 오프라인)
-   지금까지의 글자 표지가 그대로 나옵니다. 두 줄의 카드가 같은 함수를 씁니다. */
+   원래 주소에서 한 번 받아 옵니다. 그래도 없으면 짧은 글은 제목을, 책은 기본
+   장식 표지를 그대로 둡니다. 두 줄의 카드가 같은 함수를 씁니다. */
 function applyCover(host, book){
   if(!book.cover) return;
   bookImageBlob(book, book.cover).then(blob => {

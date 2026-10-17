@@ -184,6 +184,7 @@ test('cellular, data saver, a tight quota, and a missing connection still downlo
     assert.equal(calls.includes('download'),true,JSON.stringify(connection));
     assert.equal(context.opened,undefined);
     assert.equal(context.bookCloudLibraryRows().length,0);
+    assert.equal(context.bookCloudManual.size,0);
   }
   const native=boot({flag:true});
   const calls=armCloud(native.context,{type:'cellular'});
@@ -219,6 +220,16 @@ test('a storage failure keeps the card and stays quiet',async()=>{
     assert.equal(toasts.length,0);
     assert.equal(errors.length,0);
     assert.equal(kept[0],5);
+    assert.equal(context.bookCloudManual.has(hash),true);
+    activityDocument(context,[]);
+    context.el=(tag,cls)=>{const node=context.document.createElement(tag);node.className=cls||'';return node;};
+    context.fillCard=(host,map)=>{for(const [sel,text] of Object.entries(map))host.querySelector(sel).textContent=text;};
+    const failed=context.bookCloudCard({bookId:hash,title:'데미안',author:'헤르만 헤세'});
+    assert.equal(String(failed.className).includes('editorial-cover'),true);
+    assert.equal(failed.querySelector('.getbtn').hidden,false);
+    assert.equal(failed.querySelector('.getbtn').textContent,'받아서 이어 읽기');
+    const pending=context.bookCloudCard({bookId:'b'.repeat(64),title:'다른 책',author:'작가'});
+    assert.equal(pending.querySelector('.getbtn').hidden,true);
     await context.bookCloudDownload({bookId:hash,title:'Sample',kind:'epub',size:5});
     assert.equal(context.opened,undefined);
     assert.equal(toasts.length,0);
