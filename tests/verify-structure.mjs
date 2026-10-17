@@ -885,6 +885,12 @@ assert.doesNotMatch(opLogBody, /body\.(sentence|book|ai_ko|user_ko|clicked|word)
   'The log op reads the sentence, book title or meanings out of the request again');
 assert.doesNotMatch(opLogBody, /\.from\("dict_events"\)|logEvent/,
   'The reconciled production log op writes private word events again');
+assert.doesNotMatch(syncSource, /purge_private_logs|purgePrivateDictionaryLogs|private-logs-purged/,
+  'Wordbook sync still asks the server to delete private dictionary logs');
+assert.match(dictServer, /if\(op==="purge_private_logs"\)return json\(\{ok:true\}\)/,
+  'Old app versions still need a cheap success for the retired purge op');
+assert.doesNotMatch(dictServer, /\.from\("dict_events"\)/,
+  'The dictionary endpoint reads or deletes private event rows again');
 /* ── 단어 팝업의 뜻 문법 ──
    외울 손짓은 셋뿐입니다: 칩 = 이 뜻을 본다, ＋ = 뜻을 만든다, 메인 × = 지금 뜻을
    없앤다. 이 셋을 깨는 예외가 다시 생기지 않았는지 봅니다. */
