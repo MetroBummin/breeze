@@ -65,14 +65,14 @@ test('a never-settling auth read respects the shared 30s deadline',async()=>{
   }
 });
 
-test('word 9s attempts settle failed loading; manual retry recovers and late auth cannot dispatch',async()=>{
-  const f=fixture(),old=[deferred(),deferred()];let at=0;f.session(()=>old[at++].promise);
-  const pending=f.box.askAI();await f.fire(9000);assert.equal(f.auth.length,2);
-  await f.fire(9000);assert.equal(await pending,false);assert.equal(f.box.words.patient.aiLoading,undefined);
+test('word 9s attempt settles failed loading; manual retry recovers and late auth cannot dispatch',async()=>{
+  const f=fixture(),old=deferred();f.session(()=>old.promise);
+  const pending=f.box.askAI();await f.fire(9000);assert.equal(f.auth.length,1);
+  assert.equal(await pending,false);assert.equal(f.box.words.patient.aiLoading,undefined);
   assert.equal(f.context().loading,'');assert.equal(f.context().error,'error');assert.equal(f.calls.length,0);assert.equal(f.timers.size,0);
   f.session(async()=>session);assert.equal(await f.box.askAI(),true);assert.equal(f.calls.length,1);assert.equal(f.box.words.patient.ko,'참을성 있는');
   const id=f.calls[0].payload.lookupId;assert.ok(id);assert.equal(f.context().error,undefined);
-  for(const auth of old)auth.resolve(session);await flush();assert.equal(f.calls.length,1);assert.equal(f.puts.length,1);
+  old.resolve(session);await flush();assert.equal(f.calls.length,1);assert.equal(f.puts.length,1);
 });
 
 test('close during auth settles promptly without recovery or late fetch',async()=>{

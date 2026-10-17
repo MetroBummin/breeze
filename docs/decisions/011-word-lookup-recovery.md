@@ -27,19 +27,22 @@ rule. A concurrent request that loses the last quota slot receives the quota
 error, not a meaning that exceeded the cap. Failed attempts can still incur
 provider cost; telemetry records them independently of user quota.
 
-The client has one automatic HTTP retry per logical lookup for timeout, 5xx,
-transport or unusable contract. Each attempt has a nine-second abort controller
-linked to the existing opening lifetime. Quota/login/trial/offline/4xx are not
-retried. Cancellation never starts recovery or revives a surface; an already
-arrived usable response can still populate the existing cache/storage path.
+The server falls back inside one lookup. A compact validated word lookup gives
+OpenRouter about 4 seconds; a timeout or network error goes to Gemini inside the
+same 8 second budget. A second OpenRouter call happens only after a validation
+failure (`invalid_*` or `missing_fixed_word`), and only when enough time remains
+for Gemini to keep about 2.5 seconds. The client does not automatically repeat
+the HTTP request. Each lookup still has a nine-second abort controller linked to
+the existing opening lifetime. Quota/login/trial/offline/4xx are not retried.
+Cancellation never starts recovery or revives a surface; an already arrived
+usable response can still populate the existing cache/storage path.
 
-Failed logical requests retain their exact payload/ID and automatic-attempt
-budget in a bounded in-memory recovery map (32 entries, current app session,
-scoped by account/device and occurrence). A manual retry after technical failure
-recovers that request without another automatic retry. A usable answer clears
-recovery, so subsequent explicit quality retry is a new ID and costs one unit
-when successful. Restarting the app loses this recovery map; no client quota
-arithmetic or remote usage correction is introduced.
+Failed logical requests retain their exact payload and ID in a bounded
+in-memory recovery map (32 entries, current app session, scoped by
+account/device and occurrence). The manual "다시 시도" button reuses that saved
+ID. A usable answer clears the map, so a later explicit quality retry is a new
+ID and costs one unit when successful. Restarting the app loses this recovery
+map; no client quota arithmetic or remote usage correction is introduced.
 
 READY still waits for 250ms motion idle. Only a lookup that showed pending feedback
 needs 750ms of continuous SHOWN visibility before user motion dismisses it.
@@ -176,3 +179,19 @@ Run `tools/stamp-version.mjs` after the client change. The AI canonical follow-u
 receipt records its exact approved file scope and before/after hashes while
 retaining the historical release checks. This only prepares source for the next
 app build; the server bundle excludes client assets and receipt files.
+
+## Provider timeout fallback (2026-10-17)
+
+OpenRouter slowness was consuming both short-lookup attempts, so Gemini never
+ran inside the 8 second budget. A compact validated lookup now caps OpenRouter
+at about 4 seconds. Timeout and network errors move to Gemini with the time
+that remains. The same provider is tried again only after `invalid_*` or
+`missing_fixed_word`, and only when Gemini would still have about 2.5 seconds.
+The client no longer auto-retries `lookup_failed`. The manual retry button
+stays and reuses the saved lookup id.
+
+Our own abort is logged as `timeout` instead of `network_error`. Persisting
+that outcome requires `record_dict_ai_usage` to allow `timeout`
+(`supabase/migrations/20261017130155_dict_ai_timeout_outcome.sql`). The
+migration is in the repository and is not applied here. This change does not
+deploy the dict function.

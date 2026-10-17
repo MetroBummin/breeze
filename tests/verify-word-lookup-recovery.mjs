@@ -15,18 +15,21 @@ function fixture(responses){
 }
 for(const failure of [null,{error:'lookup_failed',httpStatus:502},{error:'invalid_response',httpStatus:200},{ko:'broken'},
   signal=>new Promise(resolve=>signal.addEventListener('abort',()=>resolve(null)))]){
-  const f=fixture([failure,good]);assert.equal((await f.c.recoverableWordLookup(payload,1)).ko,good.ko);
+  const f=fixture([failure,good]);
+  assert.equal((await f.c.recoverableWordLookup(payload,1)).error,'lookup_failed');
+  assert.equal(f.requests.length,1,'technical failure started an automatic retry');
+  assert.equal((await f.c.recoverableWordLookup(payload,1)).ko,good.ko);
   assert.equal(f.requests.length,2);assert.equal(f.requests[0].lookupId,f.requests[1].lookupId);
 }
 {
-  const f=fixture([null,null,good,good]);
+  const f=fixture([null,good,good]);
   assert.equal((await f.c.recoverableWordLookup(payload,1)).error,'lookup_failed');
   const id=f.requests[0].lookupId;
   await f.c.recoverableWordLookup({...payload,retry:true,avoid:['old meaning']},1);
-  assert.equal(f.requests.length,3,'manual recovery repeated automatic budget');
-  assert.equal(f.requests[2].lookupId,id);assert.equal(f.requests[2].retry,false,'recovery changed server fingerprint');
+  assert.equal(f.requests.length,2,'manual recovery repeated the lookup');
+  assert.equal(f.requests[1].lookupId,id);assert.equal(f.requests[1].retry,false,'recovery changed server fingerprint');
   await f.c.recoverableWordLookup({...payload,retry:true},1);
-  assert.notEqual(f.requests[3].lookupId,id,'quality retry reused completed receipt');
+  assert.notEqual(f.requests[2].lookupId,id,'quality retry reused completed receipt');
 }
 for(const error of ['quota_exceeded','anon_exhausted','login_required','offline','bad_op','request_conflict']){
   const f=fixture([{error},good]);await f.c.recoverableWordLookup(payload,1);assert.equal(f.requests.length,1,error);

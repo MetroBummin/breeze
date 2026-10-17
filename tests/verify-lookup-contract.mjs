@@ -61,6 +61,38 @@ assert.equal(box.calls.length,3);
 const abort=new AbortController();abort.abort();box.calls=[];
 await assert.rejects(()=>box.opLook({word:'apple',clicked:'apple',sentence:'An apple.',clickedIndex:1},null,true,abort.signal));
 assert.equal(box.calls.length,0);
+const bankAnswer=JSON.stringify({kind:'word',canonical:'bank',members:[1],ko:'둑'});
+const lookBody={word:'bank',clicked:'bank',sentence:'The bank flooded.',clickedIndex:1};
+const realTimeout=box.AbortSignal.timeout.bind(box.AbortSignal);
+const budgets=[];
+box.AbortSignal.timeout=ms=>{budgets.push(ms);return realTimeout(ms);};
+const restoreClock=()=>run('Date.now=globalThis.__realLookupNow;');
+run('globalThis.__realLookupNow=Date.now;globalThis.__lookupNow=Date.now();Date.now=()=>globalThis.__lookupNow;');
+try{
+  run(`calls=[];callOpenRouter=async()=>{calls.push('primary');__lookupNow+=4000;const error=new Error('slow');error.name='TimeoutError';throw error;};
+callGemini=async()=>{calls.push('fallback');return {text:${JSON.stringify(bankAnswer)}}};`);
+  budgets.length=0;
+  const started=box.__realLookupNow();
+  response=await box.opLook(lookBody,null,true);
+  assert.ok(box.__realLookupNow()-started<1000,'timeout fallback waited on a provider');
+  assert.equal(response.status,200);assert.equal((await response.json()).ko,'둑');
+  assert.deepEqual(Array.from(box.calls),['primary','fallback']);
+  assert.equal(budgets.length,2);assert.ok(budgets[0]>=3500&&budgets[0]<=4000,budgets.join(','));
+  assert.ok(budgets[1]>=3500&&budgets[1]<=4500,budgets.join(','));
+  assert.ok(budgets[0]+budgets[1]<=8000,'Gemini ran past the 8s lookup budget');
+  run(`calls=[];callOpenRouter=async()=>{calls.push('primary');throw new TypeError('fetch failed');};callGemini=async()=>{calls.push('fallback');return {text:${JSON.stringify(bankAnswer)}}};`);
+  budgets.length=0;response=await box.opLook(lookBody,null,true);
+  assert.equal(response.status,200);assert.deepEqual(Array.from(box.calls),['primary','fallback']);
+  assert.equal(budgets.length,2);
+  run(`calls=[];callOpenRouter=async()=>{calls.push('primary');return {text:'not json'};};callGemini=async()=>{calls.push('fallback');return {text:${JSON.stringify(bankAnswer)}}};`);
+  budgets.length=0;response=await box.opLook(lookBody,null,true);
+  assert.equal((await response.json()).ko,'둑');assert.deepEqual(Array.from(box.calls),['primary','primary','fallback']);
+  assert.ok(budgets[0]<=4000&&budgets[1]<=4000&&budgets[2]>=2500,budgets.join(','));
+  run(`calls=[];callOpenRouter=async()=>{calls.push('primary');__lookupNow+=5000;throw new Error('invalid_fields');};callGemini=async()=>{calls.push('fallback');return {text:${JSON.stringify(bankAnswer)}}};`);
+  budgets.length=0;response=await box.opLook(lookBody,null,true);
+  assert.equal((await response.json()).ko,'둑');assert.deepEqual(Array.from(box.calls),['primary','fallback']);
+  assert.equal(budgets.length,2);assert.ok(budgets[1]>=2500&&budgets[1]<=3500,budgets.join(','));
+}finally{restoreClock();box.AbortSignal.timeout=realTimeout;}
 console.log('Lookup contract, target alignment, malformed-output fallback, cancellation and fail-closed checks passed');
 
 // Sentence lookup generates only the translation while preserving quota/errors.

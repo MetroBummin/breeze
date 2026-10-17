@@ -73,21 +73,21 @@ const client={navigator:{onLine:true},sbUser:{id:'fixture-user'},deviceId:()=>''
 vm.runInNewContext(recovery,client);
 const payload={op:'look_v2',word:'slept',clicked:'slept',sentence:'They slept outside.',tokens:[{text:'They'},{text:'slept'},{text:'outside'}],clickedIndex:1,cands:['slept'],retry:false};
 answer={kind:'word',canonical:'sleep',members:[1],ko:'잠을 자다'};
-// Exhaust both HTTP attempts once, then recover the same logical request.
-// This proves a technical failure is not permanently cached and that old client
-// candidates no longer force the otherwise-correct retry to fail again.
-transientFailures=6;
+// One failed HTTP lookup, then the same logical request recovers manually.
+// A technical failure is not permanently cached, and old client candidates
+// no longer force the otherwise-correct retry to fail again.
+transientFailures=2;
 assert.equal((await client.recoverableWordLookup(payload,1)).error,'lookup_failed');
-assert.equal(charged,0);assert.equal(requests.length,2);
+assert.equal(charged,0);assert.equal(requests.length,1);
 const id=requests[0].lookupId;
 assert.equal((await client.recoverableWordLookup({...payload,retry:true},1)).ko,'잠을 자다');
-assert.equal(requests.length,3);assert.equal(requests[2].lookupId,id);assert.equal(charged,1);
+assert.equal(requests.length,2);assert.equal(requests[1].lookupId,id);assert.equal(charged,1);
 const count=providerCalls;
-assert.equal((await (await box.opLook(requests[2],'fixture-user')).json()).ko,'잠을 자다');
+assert.equal((await (await box.opLook(requests[1],'fixture-user')).json()).ko,'잠을 자다');
 assert.equal(providerCalls,count);assert.equal(charged,1,'same ID receipt was charged twice');
 // A fresh quality retry is distinct after success, and another word also works.
 assert.equal((await client.recoverableWordLookup({...payload,retry:true},1)).ko,'잠을 자다');
-assert.notEqual(requests[3].lookupId,id);assert.equal(charged,2);
+assert.notEqual(requests[2].lookupId,id);assert.equal(charged,2);
 answer={kind:'word',canonical:'patient',members:[1],ko:'참을성 있는'};
 assert.equal((await client.recoverableWordLookup({...payload,word:'patient',clicked:'patient',sentence:'A patient reader.',tokens:[{text:'A'},{text:'patient'},{text:'reader'}],cands:['patient']},1)).ko,'참을성 있는');
 assert.equal(charged,3);
@@ -117,20 +117,20 @@ const beforeCharge=charged;
 // A structurally invalid answer must not cache, consume quota or keep loading.
 answer={kind:'word',canonical:'selfie',members:[99],ko:'셀카'};
 assert.equal(await app.fetchLook('selfy',{life:1}),false);
-assert.equal(appRequests.length,2);assert.equal(card.aiOff,'error');assert.equal(card.aiLoading,undefined);
+assert.equal(appRequests.length,1);assert.equal(card.aiOff,'error');assert.equal(card.aiLoading,undefined);
 assert.equal(charged,beforeCharge);assert.equal(cache.size,0);
 const failedId=appRequests[0].lookupId;
 answer={kind:'word',canonical:'selfie',members:[0],ko:'셀카'};
 const beforeManualProvider=providerCalls;
 assert.equal(await app.fetchLook('selfy',{life:1,retry:true}),true);
 assert.equal(providerCalls,beforeManualProvider+1,'valid canonical started an unnecessary fallback');
-assert.equal(appRequests.length,3);assert.equal(appRequests[2].lookupId,failedId);
+assert.equal(appRequests.length,2);assert.equal(appRequests[1].lookupId,failedId);
 assert.equal(card.word,'selfie');assert.equal(card.aiLemma,'selfie');assert.equal(card.ko,'셀카');
 assert.equal(card.clicked,'Selfies');assert.equal(card.aiOff,undefined);assert.equal(card.aiLoading,undefined);
 assert.equal(app.words.selfy,card);assert.equal(app.words.selfie,undefined);
 assert.equal(charged,beforeCharge+1);assert.equal(cacheWrites.length,1);
 const afterProvider=providerCalls;
-assert.equal((await (await box.opLook(appRequests[2],'fixture-app')).json()).ko,'셀카');
+assert.equal((await (await box.opLook(appRequests[1],'fixture-app')).json()).ko,'셀카');
 assert.equal(providerCalls,afterProvider);assert.equal(charged,beforeCharge+1);
 assert.equal(await app.loadCachedLook('selfy',0,1,null),true);
 assert.equal(providerCalls,afterProvider);assert.equal(charged,beforeCharge+1);

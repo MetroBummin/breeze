@@ -38,7 +38,7 @@ try{
 
 
   const pill=page.locator('#word-peek'),requests=[];
-  let failures=1,responseGate=null,releaseResponse=null;
+  let failures=0,responseGate=null,releaseResponse=null;
   await page.route(url+'functions/v1/dict',async route=>{
     assert.equal(route.request().headers().authorization,'Bearer synthetic-qa-user');
     const payload=route.request().postDataJSON();requests.push(payload);
@@ -64,8 +64,7 @@ try{
   },url);
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
   assert.equal(await page.evaluate(()=>captureLearningScope().id),'user:qa-user');
-  assert.equal(requests.length,2);assert.equal(requests[0].op,'look_v2');
-  assert.equal(requests[0].lookupId,requests[1].lookupId);
+  assert.equal(requests.length,1);assert.equal(requests[0].op,'look_v2');
   assert.equal(await page.evaluate(()=>words[selKey].ko),'참을성 있는');
   assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
   const rect=await pill.boundingBox();
@@ -90,19 +89,19 @@ try{
   // Explicit retry after a usable answer is a new logical lookup.
   await page.evaluate(()=>retryWordPeek());
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden&&!wordPeekPending());
-  assert.equal(requests.length,3);assert.notEqual(requests[2].lookupId,requests[0].lookupId);
-  assert.equal(requests[2].retry,true);
+  assert.equal(requests.length,2);assert.notEqual(requests[1].lookupId,requests[0].lookupId);
+  assert.equal(requests[1].retry,true);
   await page.emulateMedia({reducedMotion:'reduce'});
   assert.equal(await pill.evaluate(n=>getComputedStyle(n,'::after').animationName),'none');
   // Saved/cache opening has no arrival accent and makes no AI call.
   await page.evaluate(()=>{const node=qaNode;closePanel();openWord('patient',node);});
   await page.waitForFunction(()=>!document.getElementById('word-peek').hidden);
-  assert.equal(requests.length,3);assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
+  assert.equal(requests.length,2);assert.equal(await pill.evaluate(n=>n.classList.contains('result-accent')),false);
   // Existing unresolved cards own a context view. Exhaust initial recovery, then
   // exercise both actual retry controls: stale context errors must not hide
   // pending feedback or the successful meaning already saved in the card.
   for(const [surface,mode] of [['Selfies','mini'],['reader','detail']]){
-    const before=requests.length;failures=2;
+    const before=requests.length;failures=1;
     await page.evaluate(surface=>{
       closePanel();
       const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface.toLowerCase()&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
@@ -112,7 +111,7 @@ try{
       openWord(key,node);
     },surface);
     await page.waitForFunction(()=>currentContext(selKey)?.error==='error'&&!words[selKey].aiLoading&&!document.getElementById('word-peek').hidden);
-    assert.equal(requests.length,before+2);
+    assert.equal(requests.length,before+1);
     responseGate=new Promise(done=>{releaseResponse=done;});
     if(mode==='detail'){
       await page.locator('#word-peek-more').click();
@@ -135,7 +134,7 @@ try{
       await page.locator('#word-peek-more').click();
       assert.equal(await page.locator('#p-word').textContent(),'selfie');
     }
-    assert.equal(requests.length,before+3,'manual retry repeated automatic budget');
+    assert.equal(requests.length,before+2,'manual retry repeated the failed lookup');
     assert.equal(requests.at(-1).lookupId,requests[before].lookupId,'manual retry lost its recovery ID');
     assert.equal(await page.evaluate(()=>currentContext(selKey)?.error||''),'');
   }
@@ -183,9 +182,9 @@ try{
     const before=requests.length;
     await page.evaluate(surface=>qaOpenUnresolved(surface),surface);
     await page.waitForFunction(()=>qaAuthPending.length===1);
-    await page.evaluate(()=>qaFireDeadline(9000));await page.waitForFunction(()=>qaAuthPending.length===2);
     await page.evaluate(()=>qaFireDeadline(9000));
     await page.waitForFunction(()=>!words[selKey].aiLoading&&currentContext(selKey)?.error==='error'&&!document.getElementById('word-peek').hidden);
+    assert.equal(await page.evaluate(()=>qaAuthPending.length),1);
     assert.equal(requests.length,before,'hung auth unexpectedly dispatched HTTP');
     await page.evaluate(()=>{qaAuthReady=true;});
     if(mode==='detail'){
