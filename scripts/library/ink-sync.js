@@ -1,8 +1,8 @@
 /* Cross-device pen and highlighter sync for books with 기기 간 연동 on.
    Dormant unless window.BREEZE_CONFIG.INK_SYNC === true and BOOK_CLOUD === true.
    Drawing never waits on this file. A page uploads a few seconds after the pen
-   lifts, and immediately when the page is hidden. Remote strokes are merged
-   only into a page that is already open. */
+   lifts, and immediately when the page is hidden. Opening a page waits one
+   short read so a fast reply is in the first paint. */
 const INK_SYNC_DEBOUNCE_MS=3000;
 const INK_SYNC_BATCH=40;
 const INK_SYNC_PAGE_CAP=4000;

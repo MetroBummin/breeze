@@ -199,13 +199,14 @@ test('ink drawn on the phone arrives on the tablet for the same page',async()=>{
   assert.deepEqual(phonePage.strokes.map(item=>item.id).sort(),[idA,idB,idC,tabletStroke.id].sort());
 });
 
-test('leaving publishes ink in the same turn, and the open page paints local ink first',async()=>{
+test('leaving publishes ink in the same turn, and a fast read is in the first paint',async()=>{
   const ink=readFileSync(new URL('../scripts/reader/pdf-ink.js',import.meta.url),'utf8');
   const mount=ink.slice(ink.indexOf('async function mount'),ink.indexOf('const platformReady'));
-  const painted=mount.indexOf('paint(state);');
-  const pulled=mount.indexOf('void pullBookInk(state)');
-  assert.ok(painted>0&&pulled>painted,'remote ink is requested after the local page is painted');
-  assert.doesNotMatch(mount,/await pullBookInk/);
+  const pulled=mount.indexOf('const remote=pullBookInk(state)');
+  const painted=mount.lastIndexOf('paint(state)');
+  assert.ok(pulled>0&&painted>pulled,'the open waits for remote ink, then paints');
+  assert.match(mount,/setTimeout\(resolve,400\)/);
+  assert.doesNotMatch(mount,/void pullBookInk/);
   const {context,calls,flush,pending}=boot();
   context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
   const state={key:JSON.stringify([sha,23]),strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
@@ -225,6 +226,50 @@ test('leaving publishes ink in the same turn, and the open page paints local ink
   assert.equal(pending(),0);
   assert.equal(calls.length,1,'hiding publishes without waiting for that 3000ms');
   assert.equal(calls[0].args.ops[0].id,idB);
+
+  const open=boot();
+  open.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const openKey=JSON.stringify([sha,23]);
+  const openPage={key:openKey,strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  open.context.pages.set(openKey,openPage);
+  open.context.sb.from=()=>({select:()=>({eq:()=>({eq:()=>({limit:async()=>({data:[{stroke_id:idB,rev:2,deleted:false,payload:stroke(idB,8)}],error:null})})})})});
+  const remote=open.context.pullBookInk(openPage);
+  let openTimer=0;
+  await Promise.race([
+    Promise.resolve(remote).catch(()=>{}),
+    new Promise(resolve=>{openTimer=open.context.setTimeout(resolve,400);})
+  ]);
+  open.context.clearTimeout(openTimer);
+  assert.equal(open.pending(),0,'a fast ink read does not keep the 400ms timer');
+  assert.deepEqual(openPage.strokes.map(item=>item.id),[idA,idB]);
+
+  const slow=boot();
+  slow.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const slowPage={key:openKey,strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  slow.context.pages.set(openKey,slowPage);
+  let releaseInk=null;
+  const inkRows=()=>new Promise(resolve=>{releaseInk=()=>resolve({data:[{stroke_id:idB,rev:2,deleted:false,payload:stroke(idB,8)}],error:null});});
+  slow.context.sb.from=()=>({select:()=>({eq:()=>({eq:()=>({limit:inkRows})})})});
+  const pendingPull=slow.context.pullBookInk(slowPage);
+  let merged=false;
+  pendingPull.then(()=>{merged=true;});
+  let slowTimer=0;
+  const raced=Promise.race([
+    pendingPull.then(()=>{},()=>{}),
+    new Promise(resolve=>{slowTimer=slow.context.setTimeout(resolve,400);})
+  ]);
+  slow.flush(399);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(merged,false);
+  assert.deepEqual(slowPage.strokes.map(item=>item.id),[idA],'399ms into a slow read, the page still has local ink');
+  slow.flush(1);
+  await raced;
+  assert.equal(merged,false,'the 400ms cap resolves while the read is still out');
+  assert.deepEqual(slowPage.strokes.map(item=>item.id),[idA]);
+  releaseInk();
+  await pendingPull;
+  assert.equal(merged,true);
+  assert.deepEqual(slowPage.strokes.map(item=>item.id),[idA,idB]);
 });
 
 test('two devices that already have ink union by stroke id',()=>{
@@ -414,7 +459,7 @@ test('logout and account switch drop the previous user mid-upload',async()=>{
   assert.deepEqual(again,[userB]);
 });
 
-test('remote ink is applied only after the open page has already painted',async()=>{
+test('remote ink merges when its read resolves',async()=>{
   const {context}=boot();
   context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
   const state={key:JSON.stringify([sha,1]),strokes:[stroke(idA)],svg:{},dirty:false,busy:false};

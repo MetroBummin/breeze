@@ -66,7 +66,10 @@ decision.
 The saved place is the `public.positions` row whose `book_id` is the file
 SHA-256, not the local book id. Turning the link on publishes the place
 already stored on this device, and a later sync publishes it even when the
-reader has not moved again. The other device copies that locator onto its
+reader has not moved again. While the reader stays open, a changed place is
+published 1500ms after the change. Hiding the app or leaving the page
+publishes that place in the same turn: a timer does not run once the web view
+is suspended. The other device copies that locator onto its
 local book id before the reader opens. PDF, EPUB, and TXT each wait until
 their own layout can place that anchor. A PDF place is the page and the
 position on that page. Restore gives every page up through that page its own
@@ -87,17 +90,18 @@ release it, and neither does the scroll the reader applies while opening the
 saved page, so that page can still settle. That release happens once. A later layout retry, a sync refresh, or a
 remote place with a newer stamp does not scroll the open book again. The
 place this device just made is the one stored and sent, including when the
-other device's stamp is newer. The next open uses that place. Before the
-reader moves, a newer remote place is still applied once.
+other device's stamp is newer. The next open uses whichever place is newer.
+Before the reader moves, a newer remote place is still applied once.
 Opening a downloaded book at the start does not count as a newer place, so
 that stamp cannot replace the remote locator or be written back over it. A
 newer place that is no longer the start still wins on the device where it
 was made.
 
-The reader does not paint that start and then jump. A linked book whose
-local place is still the start copies a locator this device already has, or
-waits one short read, before the first paint. If the read is slow, the book
-opens at the local place and a late reply is kept for the next open. It does
+The reader does not paint one page and then jump. A linked open copies a
+newer locator before the first paint, including when this device already has
+a page. A locator this device already fetched is written first, then one
+short read can replace it. If the read is slow, the book opens at the place
+already stored and a late reply is kept for the next open. It does
 not move the page already on screen. PDF paints the saved page, with that
 page's aspect ratio, instead of painting page 1 first. The preparing surface
 stays up until the saved page, chapter, or paragraph has been scrolled into

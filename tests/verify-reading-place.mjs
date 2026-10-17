@@ -499,22 +499,23 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(view.top,phoneHeld);
 
   positions[bookId]={p:0.62,t:5000,mode:'original',original:{kind:'pdf',page:target,y:fromTablet.y}};
+  remote={p:0.4,t:9000,mode:'original',original:{kind:'pdf',page:earlier,y:0.2}};
   session.userMovedPlace=false;
   session.pendingAnchor=null;
   session.anchorMoved=false;
   session.pageLayout=null;
+  context.resetBookCloudSession();
   await context.bookCloudPositionBeforeOpen(book);
-  assert.equal(positions[bookId].original.page,target,'the return open keeps the page this device already stored');
+  assert.equal(positions[bookId].original.page,earlier,'the return open copies the newer page before paint');
   view.top=0;
   scrolls.length=0;moves=0;landing=null;
-  assert.equal(await context.pdfPlaceBeforePaint(session,book),target);
-  assert.equal(scrolls.length,1,'the return open paints its stored page once');
-  assert.equal(placeAt(context.topInset()+10).page,target);
-  remote={p:0.4,t:9000,mode:'original',original:{kind:'pdf',page:earlier,y:0.2}};
+  assert.equal(await context.pdfPlaceBeforePaint(session,book),earlier);
+  assert.equal(scrolls.length,1,'the return open paints the newer page once');
+  assert.equal(placeAt(context.topInset()+10).page,earlier);
   await context.bookCloudRefresh(context.bookCloudSession());
   if(landing)await landing;
-  assert.equal(moves,1,'a newer place that arrives after that paint scrolls again');
-  assert.equal(scrolls.length,2);
+  assert.equal(moves,0,'a later refresh does not scroll again');
+  assert.equal(scrolls.length,1);
   assert.equal(placeAt(context.topInset()+10).page,earlier);
 }
 

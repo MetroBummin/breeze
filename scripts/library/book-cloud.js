@@ -7,6 +7,8 @@ var BOOK_CLOUD_BYTE_CAP=2147483648;
 var bookCloudCatalog=[];
 var bookCloudHeads={};
 var bookCloudTimer=0;
+var bookCloudFlight=null;
+var bookCloudLeaveNow=false;
 var bookCloudPullTask=null;
 var bookCloudPullAgain=false;
 var bookCloudPullEpoch=0;
@@ -24,7 +26,7 @@ function bookCloudResetNotes(){
 var bookCloudRevealQuiet=null;
 function resetBookCloudSession(){
   bookCloudPullEpoch++;bookCloudPullAgain=false;
-  clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudCatalog=[];bookCloudHeads={};
+  clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudFlight=null;bookCloudLeaveNow=false;bookCloudCatalog=[];bookCloudHeads={};
   bookCloudRevealQuiet=null;bookCloudActivity.clear();bookCloudManual.clear();
 }
 function bookCloudHash(book){
@@ -276,11 +278,10 @@ function bookCloudShowAdopted(book){
   if(typeof restoreAnchor==='function'&&restoreAnchor(position))return;
   if(typeof readerScrollTo==='function')readerScrollTo(position.y||0);
 }
-/* The open path paints the place already stored on this device. A linked book
-   that still has only the start adopts a locator this device already fetched,
-   or waits one short read. If that read is slow, the book opens at the local
-   place and the late reply is kept for the next open — it does not move the
-   page that is already visible. */
+/* A linked open copies a newer locator before the first paint, including when
+   this device already has a page. A locator already fetched is written first,
+   then one short read can replace it. If that read is slow, the book opens at
+   the place already stored and the late reply is kept for the next open. */
 function bookCloudRememberHead(row){
   if(!row||!row.book_id)return null;
   const data=row.data||{};
@@ -304,20 +305,14 @@ function bookCloudWriteLocator(book,locator){
 }
 async function bookCloudPositionBeforeOpen(book){
   if(!bookCloudEnabled()||typeof positions==='undefined'||!book)return;
-  const local=positions[book.id];
-  if(local&&!bookCloudAtStart(local)){
-    if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
-    return;
-  }
   const hash=bookCloudHash(book);
   if(!hash||!(book.bookCloudLink&&book.bookCloudLink.on))return;
   const head=bookCloudHeads[hash];
-  if(head){
-    bookCloudWriteLocator(book,head.locator);
+  if(head)bookCloudWriteLocator(book,head.locator);
+  if(!bookCloudUserId()){
     if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
     return;
   }
-  if(!bookCloudUserId())return;
   const session=bookCloudSession();
   let timer=0;
   const read=bookCloudReadPositionRows();
@@ -398,7 +393,13 @@ async function syncBookCloud(){
 }
 function flushBookCloud(){
   if(!bookCloudEnabled())return Promise.resolve(false);
-  return syncBookCloud();
+  clearTimeout(bookCloudTimer);
+  bookCloudTimer=0;
+  if(bookCloudFlight)return bookCloudFlight;
+  let flight;
+  flight=syncBookCloud().finally(()=>{if(bookCloudFlight===flight)bookCloudFlight=null;});
+  bookCloudFlight=flight;
+  return flight;
 }
 function scheduleBookCloudPosition(){
   if(!bookCloudEnabled())return;
@@ -406,7 +407,26 @@ function scheduleBookCloudPosition(){
   bookCloudQueuePosition(book);
   if(!book||!bookCloudUserId()||!(book.bookCloudLink&&book.bookCloudLink.on)||!bookCloudHash(book))return;
   clearTimeout(bookCloudTimer);
+  bookCloudTimer=0;
+  if(bookCloudLeaveNow)return;
+  if(typeof document!=='undefined'&&document.hidden){
+    void flushBookCloud();
+    return;
+  }
   bookCloudTimer=setTimeout(()=>{bookCloudTimer=0;void syncBookCloud();},1500);
+}
+function bookCloudPublishLeave(){
+  if(!bookCloudEnabled())return Promise.resolve(false);
+  bookCloudLeaveNow=true;
+  try{if(typeof saveReadingState==='function')saveReadingState();}
+  finally{bookCloudLeaveNow=false;}
+  return flushBookCloud();
+}
+if(typeof document!=='undefined'&&typeof document.addEventListener==='function'){
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)void bookCloudPublishLeave();});
+}
+if(typeof window!=='undefined'&&typeof window.addEventListener==='function'){
+  window.addEventListener('pagehide',()=>{void bookCloudPublishLeave();});
 }
 async function forgetBookCloud(book){
   if(!bookCloudEnabled())return true;

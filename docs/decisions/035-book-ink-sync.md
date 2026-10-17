@@ -23,11 +23,10 @@ that same turn. A timer scheduled for later does not run once iOS has suspended
 the web view, so that is the only way a stroke drawn on one device is on the
 server before the other device opens the page. A resting finger does not hold
 the upload. Only a stroke that is still on the glass does. While that stroke
-is active the timer only reschedules. Remote strokes are folded into a page
-that is already open and
-already painted from local ink. A page that is busy keeps the folded result
-until the pen lifts, then paints and saves it. Rendering does not wait on the
-request.
+is active the timer only reschedules. Opening a page waits up to 400ms so a
+fast reply is in the first paint. A slower reply still merges after local ink
+is painted and does not hold the page open. A page that is busy keeps the
+folded result until the pen lifts, then paints and saves it.
 
 ## Merge
 
