@@ -127,6 +127,7 @@ try{
   const done=document.querySelector(`[data-home-key="book:${doneId}"]`);
   const doneCard=done.querySelector('.bookcard'),doneOcr=done.querySelector('[data-ocr-book]');
   if(!doneOcr||doneOcr.hidden!==true)problems.push('finished scan still shows OCR');
+  if(doneOcr?.querySelector('.book-ocr-label')?.textContent)problems.push('finished scan still carries OCR words');
   const badge=doneCard.querySelector('.library-completion');
   if(!badge)problems.push('finished book is missing the completion badge');
   else if(overlap(box(doneCard.querySelector('.home-cover-meta')),box(badge)))problems.push('author meets the completion badge');

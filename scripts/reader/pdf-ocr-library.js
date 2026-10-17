@@ -3,8 +3,10 @@
    With the lane enabled, only the opened book is prepared, and only once
    reading and the shelf are idle. The kill switch restores the previous
    shelf-wide queue. The cover label is the only shelf view of that job, and
-   only while a scanned page is still pending. It does not raster, schedule,
-   or keep a timer of its own. */
+   only while a scanned page is still pending. An unknown job is not pending:
+   no page count, an empty local cache, or a finished cache does not write the
+   in-progress words. An EPUB or TXT original is not a job even if its kind
+   field says pdf. The label does not raster, schedule, or keep a timer. */
 const BreezePdfOcrLibrary=(()=>{
   const jobs=new Map();
   let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0,detail=null,detailOpener=null,detailJobId='',detailRelease=null,focusId='',shelfScrolling=false,shelfTimer=0,stuckTimer=0;
@@ -84,14 +86,22 @@ const BreezePdfOcrLibrary=(()=>{
     const count=s.total?s.done+'/'+s.total+'쪽':'';
     button.setAttribute('aria-label',statusCopy(job)+(count?' '+count:'')+' 자세히');
   }
+  function clearCover(node){
+    const label=node.querySelector('.book-ocr-label'),fill=node.querySelector('.book-ocr-fill i'),button=node.querySelector('button');
+    if(label)label.textContent='';
+    if(fill)fill.style.width='0';
+    if(button)button.setAttribute('aria-label','');
+    delete node.dataset.ocrState;
+  }
   function coverPending(job,s){
     if(job.state==='missing'||s.complete||!job.total)return false;
     return !!(job.scan||(job.stuck&&job.state==='paused'));
   }
   function apply(node,job){
     const s=summary(job),mode=coverMode(),surface=node.dataset.ocrSurface||'bar';
-    if(surface==='cover')paintCover(node,job,s);else paintBar(node,job,s);
     const show=surface==='cover'&&mode==='fill'&&node.dataset.ocrVariant===mode&&coverPending(job,s);
+    if(surface==='cover'){if(show)paintCover(node,job,s);else clearCover(node);}
+    else paintBar(node,job,s);
     if(!show&&surface==='cover'&&detailOpener&&node.contains(detailOpener))closeDetail(false);
     node.hidden=!show;
   }
@@ -300,7 +310,8 @@ const BreezePdfOcrLibrary=(()=>{
     try{job.scan=!!await BreezePdfOcr.scanned(book);}catch{}
   }
   function track(book,{restart=false}={}){
-    if(book?.kind!=='pdf'||!hash(book)||!BreezePdfOcr.available())return null;
+    const originalKind=book?.original?.kind||'';
+    if(book?.kind!=='pdf'||(originalKind&&originalKind!=='pdf')||!hash(book)||!BreezePdfOcr.available())return null;
     let job=jobs.get(book.id);
     if(job&&job.hash!==hash(book)){forget(book.id);job=null;}
     if(!job){job={id:book.id,hash:hash(book),done:new Set(),total:0,state:'queued',notice:'',stuck:''};jobs.set(book.id,job);}

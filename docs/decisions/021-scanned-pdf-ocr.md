@@ -162,9 +162,13 @@ value, including absent, keeps the cover. The old under-card line is not shown.
 
 The cover stays hidden unless this job has seen a scanned page (no text layer,
 or cached words) and still has pages left. A text-layer PDF, an EPUB or TXT, a
-finished scan, and a PDF that has not been opened stay quiet. A stuck native
-request may show before that scan flag, once the page count is known, because
-the request itself is the warning. Only the opened book is prepared.
+finished scan, and a PDF that has not been opened stay quiet. Unknown work is
+not pending: a job with no page count, a book whose local page cache is empty
+(including one just synced onto this device), and a finished cache do not
+receive the in-progress words. A record whose original file is an EPUB or TXT
+is not an OCR job, even when its kind field says pdf. A stuck native request
+may show before that scan flag, once the page count is known, because the
+request itself is the warning. Only the opened book is prepared.
 
 The label is `글자 스캔 중`, `글자 스캔 일시 중지`, `글자 스캔 실패`, or
 `앱 완전 종료 후 다시 열기` when that native request is stuck. The page count

@@ -225,6 +225,7 @@ test('an epub or text file is not an OCR job',()=>{
  const f=fixture();
  assert.equal(f.api.track({id:'E',kind:'epub',sourceHash:'h'}),null);
  assert.equal(f.api.track({id:'T',kind:'txt',sourceHash:'h'}),null);
+ assert.equal(f.api.track({id:'M',kind:'pdf',sourceHash:'h',original:{kind:'epub',hash:'h'}}),null);
 });
 test('the cover stays hidden until a scanned page is pending',async()=>{
  const quiet=fixture({pages:2});const unopened=mounted(quiet);
@@ -232,8 +233,10 @@ test('the cover stays hidden until a scanned page is pending',async()=>{
  assert.equal(quiet.calls.length,0);
  assert.equal(unopened.tile.querySelector('[data-ocr-surface="bar"]'),null);
  assert.equal(unopened.cover().hidden,true);
+ assert.equal(unopened.cover().querySelector('.book-ocr-label').textContent,'');
  const text=open(fixture({pages:2}));const textShelf=mounted(text);
  await text.tick();assert.equal(textShelf.cover().hidden,true);
+ assert.equal(textShelf.cover().querySelector('.book-ocr-label').textContent,'');
  await text.finish();assert.equal(textShelf.cover().hidden,true);assert.equal(text.api.summary(text.api.track(text.book)).complete,true);
  const scan=open(fixture({pages:2,result:'scan'}));const shelf=mounted(scan);
  assert.equal(shelf.cover().hidden,true);
