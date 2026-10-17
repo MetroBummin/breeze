@@ -156,9 +156,11 @@ remain bounded and released. Device-local state never enters book sync.
 ### Cover progress (2026-10-17)
 
 The shelf paints preparation on the cover, in the same bottom band as a
-download fill. That is the default. `?ocrCover=off` or
+download fill. That label is the default. It does not wait for
+`ocrCover=fill` or `ocrCover=on`. `?ocrCover=off` or
 `localStorage['breeze.ocr-cover']=off` hides it. The query wins. Any other
-value, including absent, keeps the cover. The old under-card line is not shown.
+value, including absent, keeps the cover. The under-card line and its
+progress bar are removed: there is no `.book-ocr-progress` markup or CSS.
 
 The cover stays hidden unless this job has seen a scanned page (no text layer,
 or cached words) and still has pages left. A text-layer PDF, an EPUB or TXT, a

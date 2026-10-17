@@ -2,11 +2,12 @@
    for it. Recognition itself is admitted only by BreezePdfOcr's global lane.
    With the lane enabled, only the opened book is prepared, and only once
    reading and the shelf are idle. The kill switch restores the previous
-   shelf-wide queue. The cover label is the only shelf view of that job, and
-   only while a scanned page is still pending. An unknown job is not pending:
-   no page count, an empty local cache, or a finished cache does not write the
-   in-progress words. An EPUB or TXT original is not a job even if its kind
-   field says pdf. The label does not raster, schedule, or keep a timer. */
+   shelf-wide queue. The cover label is the only shelf view of that job. It
+   shows by default, and only while a scanned page is still pending. An
+   unknown job is not pending: no page count, an empty local cache, or a
+   finished cache does not write the in-progress words. An EPUB or TXT
+   original is not a job even if its kind field says pdf. The label does not
+   raster, schedule, or keep a timer. */
 const BreezePdfOcrLibrary=(()=>{
   const jobs=new Map();
   let timer=0,busy=false,held=null,yielded='',loading=null,yieldGeneration=0,detail=null,detailOpener=null,detailJobId='',detailRelease=null,focusId='',shelfScrolling=false,shelfTimer=0,stuckTimer=0;
@@ -64,18 +65,6 @@ const BreezePdfOcrLibrary=(()=>{
     const pages=activePages(job),done=pages.filter(n=>job.done.has(n)).length;
     return {done,total:pages.length,complete:!!job.total&&done===pages.length};
   }
-  function paintBar(node,job,s){
-    const text=node.querySelector('span'),bar=node.querySelector('progress'),retry=node.querySelector('button');
-    if(!text||!bar||!retry)return;
-    const count=s.total?' · '+s.done+'/'+s.total+'쪽':'';
-    const stuck=!!(job.stuck&&job.state==='paused');
-    text.textContent=(stuck?'앱 완전 종료 후 다시 열기':job.state==='paused'?'글자 인식 일시 중지':'글자 인식 중')+count;
-    bar.max=Math.max(1,s.total);bar.value=s.done;
-    if(!s.total)bar.removeAttribute('value');
-    retry.hidden=job.state!=='paused';
-    retry.disabled=stuck;
-    node.setAttribute('aria-label',text.textContent);
-  }
   function paintCover(node,job,s){
     const button=node.querySelector('button'),label=node.querySelector('.book-ocr-label'),fill=node.querySelector('.book-ocr-fill i');
     if(!button||!label||!fill)return;
@@ -98,11 +87,10 @@ const BreezePdfOcrLibrary=(()=>{
     return !!(job.scan||(job.stuck&&job.state==='paused'));
   }
   function apply(node,job){
-    const s=summary(job),mode=coverMode(),surface=node.dataset.ocrSurface||'bar';
-    const show=surface==='cover'&&mode==='fill'&&node.dataset.ocrVariant===mode&&coverPending(job,s);
-    if(surface==='cover'){if(show)paintCover(node,job,s);else clearCover(node);}
-    else paintBar(node,job,s);
-    if(!show&&surface==='cover'&&detailOpener&&node.contains(detailOpener))closeDetail(false);
+    const s=summary(job);
+    const show=coverMode()!=='off'&&coverPending(job,s);
+    if(show)paintCover(node,job,s);else clearCover(node);
+    if(!show&&detailOpener&&node.contains(detailOpener))closeDetail(false);
     node.hidden=!show;
   }
   function paint(job){
@@ -334,19 +322,17 @@ const BreezePdfOcrLibrary=(()=>{
     return button;
   }
   function ensureCover(tile,book){
-    const mode=coverMode(),card=tile.querySelector('.bookcard');
-    const existing=card?.querySelector('[data-ocr-surface="cover"]');
-    if(mode==='off'||!card){existing?.remove();return null;}
-    if(existing&&existing.dataset.ocrVariant===mode)return existing;
-    existing?.remove();
+    const card=tile.querySelector('.bookcard');
+    const existing=card?.querySelector('.book-ocr-cover');
+    if(coverMode()==='off'||!card){existing?.remove();return null;}
+    if(existing)return existing;
     const node=document.createElement('div');
-    node.className='book-ocr-cover';node.dataset.ocrBook=book.id;node.dataset.ocrSurface='cover';node.dataset.ocrVariant=mode;
+    node.className='book-ocr-cover';node.dataset.ocrBook=book.id;
     node.append(coverButton(book));card.append(node);
     return node;
   }
   function mount(tile,book){
     const job=track(book);if(!job)return;
-    tile.querySelector('[data-ocr-surface="bar"]')?.remove();
     const cover=ensureCover(tile,book);
     if(cover)apply(cover,job);
     queueMicrotask(()=>paint(job));
