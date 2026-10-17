@@ -534,8 +534,14 @@ async function switchReaderMode(mode,options){
   readerPositionRestoration=positionRestoration;
   const ownsPosition=()=>readerPositionRestoration===positionRestoration
     &&changeToken===readerModeChangeToken&&curBook===bookAtStart&&currentReaderMode===mode;
+  // A superseded switch must not leave the reader stuck "restoring", or the
+  // next pinch is ignored. A newer owner replaces this object and keeps it.
+  const releasePosition=()=>{
+    if(readerPositionRestoration===positionRestoration) readerPositionRestoration=null;
+    return false;
+  };
   const commitPosition=()=>{
-    if(!ownsPosition())return false;
+    if(!ownsPosition())return releasePosition();
     readerPositionRestoration=null;
     // Cold opening is not reading movement. An actual mode landing commits
     // mode, logical progress and its resume anchor through the ordinary writer.
@@ -583,13 +589,13 @@ async function switchReaderMode(mode,options){
   if(mode==='text'){
     const targetPi = paragraphForSource(curBook,bridge);
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    if(!ownsPosition())return false;
+    if(!ownsPosition())return releasePosition();
     try{
       const canonicalPi=sentenceBridge&&sentenceBridge.paragraph!=null
         ? sentenceBridge.paragraph : targetPi;
       const sentenceFound=sentenceBridge
         ? await restoreTextSentence(sentenceBridge.candidates,canonicalPi) : false;
-      if(!ownsPosition())return false;
+      if(!ownsPosition())return releasePosition();
       if(resumeTextPosition){
         if(!restoreAnchor(resumeTextPosition))readerScrollTo(resumeTextPosition.y||0);
       }else if(!sentenceFound && targetPi!=null){
@@ -617,7 +623,9 @@ async function switchReaderMode(mode,options){
       suspendReaderScrollSave(450);
       return commitPosition();
     }catch(error){
-      if(ownsPosition()){
+      const owned=ownsPosition();
+      releasePosition();
+      if(owned){
         console.error(error);
         releaseReaderPillProgress(true);
         toast('읽던 위치를 복원하지 못했어요. 원본으로 다시 전환해 주세요.');
@@ -632,7 +640,7 @@ async function switchReaderMode(mode,options){
   const record = options.record || (reusable
     ? {kind:originalSession.kind,hash:originalSession.hash}
     : await originalGetForBook(curBook));
-  if(!ownsPosition())return false;
+      if(!ownsPosition())return releasePosition();
   if(!record){
     showOriginalReconnect(curBook);
     delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');
@@ -645,7 +653,7 @@ async function switchReaderMode(mode,options){
     const rendering=renderOriginalBook(curBook,record);
     if(options.onPresented) options.onPresented();
     await rendering;
-    if(!ownsPosition())return false;
+    if(!ownsPosition())return releasePosition();
     let target = bridge || posOf(curBook.id).original;
     // 처음 여는 책은 맨 앞부터 — 형식별 "맨 앞"은 형식 표가 압니다.
     if(!target && options.initial){
@@ -653,8 +661,13 @@ async function switchReaderMode(mode,options){
     }
     target = target || sourceAnchorForParagraph(curBook,posOf(curBook.id).pi);
     const anchorRestored=await restoreOriginalAnchor(target,changeToken);
-    if(!ownsPosition())return false;
-    if(!anchorRestored)throw new Error('읽던 위치를 복원하지 못했어요. 책을 다시 열어 주세요.');
+    if(!ownsPosition())return releasePosition();
+    // A hand move declines an automatic jump and keeps the paper already on
+    // screen. That is a landing, not a failure: replacing the document here
+    // detaches every page and the next pinch has nothing to hold.
+    const paperLive=reusable && originalSession?.pages?.some(page=>page.isConnected);
+    if(!anchorRestored && !(savedPlaceReleased() && paperLive))
+      throw new Error('읽던 위치를 복원하지 못했어요. 책을 다시 열어 주세요.');
     if(sentenceBridge){
       /* 첫 PDF 진입은 문장 색인을 읽는 데 시간이 걸릴 수 있습니다. 레이아웃과
          sourceMap은 이미 준비됐으므로 같은 문단 블록을 먼저 보여 줍니다. */
@@ -664,7 +677,7 @@ async function switchReaderMode(mode,options){
          still a stable and useful fallback. */
       const sentenceFound=await ORIGINAL_FORMATS[record.kind].restoreSentence(
         sentenceBridge.candidates,target,changeToken,sentenceBridge.paragraph);
-      if(!ownsPosition())return false;
+      if(!ownsPosition())return releasePosition();
       if(record.kind==='pdf'){
         clearReaderModeCue();
         showPdfParagraphModeCue(sentenceBridge.paragraph,10000,target&&target.page);
@@ -686,7 +699,9 @@ async function switchReaderMode(mode,options){
     else{delete originalWrap.dataset.readerPreparing;originalWrap.removeAttribute('aria-busy');}
     return commitPosition();
   }catch(error){
-    if(!ownsPosition())return false;
+    const owned=ownsPosition();
+    releasePosition();
+    if(!owned)return false;
     console.error(error);
     showOriginalError(error);
     releaseReaderPillProgress(true);

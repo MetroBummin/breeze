@@ -48,7 +48,9 @@ advance the feed cursor and subscribe to source updates before the requests
 start. Every library screen reloads saved books, and one in-flight load is
 shared. An automatic pass calls the same reload. On Home it also advances the
 feed. On a shelf it reloads saved and synced books and leaves the Home feed
-cursor where it is.
+cursor where it is. Opening a screen already paints it. The reload paints
+that screen again only when the saved books changed. A save that lands during
+the read keeps those books and paints once, from the save.
 
 The iOS scroll view keeps bounce (`webView.scrollView.bounces = true`) and does
 not attach `UIRefreshControl`. With a refresh control, WebKit shifts the whole

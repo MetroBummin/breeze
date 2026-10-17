@@ -171,17 +171,30 @@ let books = [];                       // 본문은 IndexedDB에 저장(부팅 �
    지문만 남깁니다. 이건 변환이 아니라 서버와 짝을 맞추는 열쇠라, 어떤
    경로로 들어온 책이든 있어야 합니다. */
 let libraryLoadError=false;
+/* A save that lands while a reload is reading must keep the books the reader
+   just wrote. The reload paints only when that read is still current and the
+   shelf is not already showing those books. */
+let libraryBooksEpoch=0;
+const savedBookPut=bookPut, savedBookDel=bookDel;
+bookPut=function(book){libraryBooksEpoch++;return savedBookPut(book);};
+bookDel=function(id){libraryBooksEpoch++;return savedBookDel(id);};
 async function loadBooks(){
+  const epoch=libraryBooksEpoch;
   let loaded;
   try{loaded=await bookAll();libraryLoadError=false;Reflect.set(window,'breezeLibraryLoadFailed',false);}
   catch(error){libraryLoadError=true;Reflect.set(window,'breezeLibraryLoadFailed',true);throw error;}
-  books = loaded.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  if(epoch!==libraryBooksEpoch) return 'stale';
+  loaded=loaded.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  const ids=new Set(books.map(book=>book.id));
+  const same=loaded.length===ids.size && loaded.every(book=>ids.has(book.id));
+  books = loaded;
   for(const book of books){
     const previousFingerprint = book.fingerprint || '';
     ensureBookFingerprint(book);
     if(book.fingerprint !== previousFingerprint) await bookPut(book);
   }
   if(typeof BreezePdfOcrLibrary!=='undefined')BreezePdfOcrLibrary.restore();
+  return same?'same':'changed';
 }
 let positions = load(LS_POS, {});   // bookId -> text anchor + original source anchor
 let curBook = null, selKey = null;

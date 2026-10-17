@@ -41,7 +41,10 @@ function reloadLibrary(rotateRss){
           rssLoadedAt=0;
           redraw();
         }
-        await loadBooks();
+        const loaded=await loadBooks();
+        // show() already painted this screen. Paint again only when the saved
+        // shelf actually changed. A save during the read paints on its own.
+        if(loaded==='same'||loaded==='stale') return;
         redraw();
       }catch(error){
         redraw();

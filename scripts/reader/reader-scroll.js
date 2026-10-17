@@ -317,9 +317,10 @@ let originalZoomWatchers = [];
       }else if(originalRotationAnchor&&originalRotationAnchor.session!==session){
         originalRotationAnchor=null;
       }
-      // A queued notification from the preceding zoom must not cancel a new
-      // gesture that already captured the current viewport.
-      if(!originalPinch||originalPinch.width!==box.clientWidth||originalPinch.viewportHeight!==box.clientHeight)cancelOriginalPinch();
+      // A queued notification from the preceding zoom, or a content reflow
+      // under the same window, must not cancel a gesture that already captured
+      // this viewport. A real viewport change still releases it.
+      if(!originalPinch||originalPinch.windowWidth!==window.innerWidth||originalPinch.windowHeight!==window.innerHeight)cancelOriginalPinch();
       if(!reading()){settleOriginalZoomGeometry(rect.width,rect.height);return;}
       if(!pdf()){pendingRect=rect;scheduleLayout();return;}
       layoutOriginalZoom();settleOriginalZoomGeometry(rect.width,rect.height);

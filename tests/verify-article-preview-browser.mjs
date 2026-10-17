@@ -35,11 +35,12 @@ try{
           return route.abort();
         });
         await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});await page.evaluate(()=>homeReady);
-        await page.evaluate(()=>{
+        await page.evaluate(async()=>{
           const paras=title=>[title,...Array.from({length:6},(_,i)=>`This is paragraph ${i+1} of ${title}. It has enough detail to preview the article without copying all of the content. The rest remains in Reader.`)];
-          books=[{id:'preview-one',title:'First article',kind:'article',site:'Example',sourceUrl:'https://example.com/one',paras:paras('First article'),addedAt:2},
+          const saved=[{id:'preview-one',title:'First article',kind:'article',site:'Example',sourceUrl:'https://example.com/one',paras:paras('First article'),addedAt:2},
             {id:'preview-two',title:'Second article',kind:'article',site:'Example',sourceUrl:'https://example.com/two',paras:paras('Second article'),addedAt:1}];
-          positions={};renderHome();renderCasualLibrary();show('casuals');
+          for(const book of saved)await bookPut(book);
+          books=saved;positions={};renderHome();renderCasualLibrary();show('casuals');
         });
         await page.locator('#casual-grid .casual').filter({hasText:'First article'}).first().click();
         await page.waitForFunction(()=>document.querySelector('#article-preview').open);

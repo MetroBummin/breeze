@@ -111,22 +111,33 @@ try{
  const pendingId=await importFile('수능특강.pdf','application/pdf',scanPdf(jpeg,{pages:4}));
  await openOriginal(pendingId);
  await pump(pendingId,'pending');
- await page.evaluate(({doneId,textId,pendingId})=>{
+ await page.evaluate(async({doneId,textId,pendingId})=>{
   const done=books.find(book=>book.id===doneId),text=books.find(book=>book.id===textId),pending=books.find(book=>book.id===pendingId);
   done.title='끝난 스캔';done.author='올린 사람';
   text.title='글자 있는 책';text.author='본문';
   pending.title='2026 수능특강 영어';pending.author='EBS';
   const now=Date.now();
-  books.unshift(
+  const fixtures=[
    {id:'epub-ipad',title:'데미안',author:'헤르만 헤세',kind:'epub',addedAt:now,sourceHash:'epub-hash',original:{kind:'epub',hash:'epub-hash'}},
    {id:'txt-ipad',title:'짧은 노트',author:'나',kind:'txt',addedAt:now-1,sourceHash:'txt-hash'},
    {id:'cloud-ipad',title:'다른 기기에서 받은 책',author:'클라우드',kind:'pdf',addedAt:now-2,sourceHash:'cloud-hash',original:{kind:'pdf',hash:'cloud-hash'}},
    {id:'tagged-ipad',title:'EPUB인데 종류가 PDF',author:'김영하',kind:'pdf',addedAt:now-3,sourceHash:'tagged-hash',original:{kind:'epub',hash:'tagged-hash'}},
-  );
+  ];
+  for(const book of fixtures)await bookPut(book);
+  books.unshift(...fixtures);
   BreezePdfOcrLibrary.forget(doneId);
-  // Entering the shelf reloads saved books. These cards are the fixture already
-  // on screen, so that reload must not replace them before the labels are read.
-  libraryRefreshSeen.home=libraryRefreshSeen.longform=libraryRefreshSeen.casuals=Date.now();
+  // The open reader can still finish this scan after the label first appears.
+  // Drop that job so its late paint cannot clear the shelf, and keep one
+  // pending scan: four pages, one done.
+  const kept=new Set([1]);
+  const scanned=BreezePdfOcr.scanned.bind(BreezePdfOcr);
+  const completed=BreezePdfOcr.completed.bind(BreezePdfOcr);
+  BreezePdfOcr.background=async()=>'busy';
+  BreezePdfOcr.scanned=async book=>book?.id===pendingId?true:scanned(book);
+  BreezePdfOcr.completed=async book=>book?.id===pendingId?new Set(kept):completed(book);
+  BreezePdfOcrLibrary.forget(pendingId);
+  const held=BreezePdfOcrLibrary.track(pending);
+  held.total=4;held.scan=true;held.state='queued';held.done=new Set(kept);
   show('longform');
  },{doneId,textId,pendingId});
  const report=async()=>page.evaluate(({doneId,textId,pendingId})=>{
