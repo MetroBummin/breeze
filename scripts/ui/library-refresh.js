@@ -1,5 +1,5 @@
-/* Pull-to-refresh for the library views. Leave the scroll/bounce to the browser.
-   The fixed dock is pinned back while that bounce carries it downward. */
+/* Pull-to-refresh for the library views. The gesture draws the spinner and
+   reloads the shelf. It does not translate the page, so the fixed dock stays. */
 let libraryRefreshTask=null;
 let libraryRefreshWork=null;
 let libraryRefreshWorkView='';
@@ -7,44 +7,9 @@ const LIBRARY_PULL_START=10;
 const LIBRARY_PULL_THRESHOLD=96;
 const LIBRARY_REFRESH_MIN_MS=450;
 const LIBRARY_REFRESH_MAX_MS=1200;
-/** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}, breezeNativeRefresh?: (sequence: number) => boolean, breezePinDock?: (offset?: number) => boolean}} */
+/** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}}} */
 const refreshWindow=window;
 const nativeRefreshHandler=refreshWindow.webkit?.messageHandlers?.breezeRefresh || null;
-/* A pull moves the scroll layer down, and a fixed dock inside that layer moves
-   with it. The same negative offset, applied only to the dock, puts it back.
-   No argument measures the dock against the visible bottom; the iOS shell
-   passes the scroll view's content offset instead, because that shift is
-   outside the page's coordinates. */
-function breezePinDock(offset){
-  const dock=document.getElementById('home-controls');
-  if(!dock) return false;
-  const explicit=typeof offset==='number' && Number.isFinite(offset);
-  let pull=explicit ? Math.min(0,offset) : 0;
-  if(!explicit && getComputedStyle(dock).display!=='none'){
-    const raw=dock.style.transform;
-    const match=/^translateY\(([-\d.]+)px\)$/.exec(raw);
-    const applied=match ? Number(match[1]) : 0;
-    const bottom=dock.getBoundingClientRect().bottom-(Number.isFinite(applied)?applied:0);
-    const viewport=refreshWindow.visualViewport;
-    const limit=viewport ? viewport.offsetTop+viewport.height : refreshWindow.innerHeight;
-    const slip=bottom-limit;
-    pull=slip>1 ? -slip : 0;
-  }
-  if(pull) dock.style.transform=`translateY(${pull}px)`;
-  else dock.style.removeProperty('transform');
-  return true;
-}
-refreshWindow.breezePinDock=breezePinDock;
-let dockPinFrame=0;
-function trackDockPin(){
-  if(nativeRefreshHandler || dockPinFrame) return;
-  const started=performance.now();
-  const step=()=>{
-    breezePinDock();
-    dockPinFrame=performance.now()-started<480 ? requestAnimationFrame(step) : 0;
-  };
-  dockPinFrame=requestAnimationFrame(step);
-}
 const libraryRefreshMotion=(()=>{
   const indicator=document.getElementById('library-refresh');
   let frame=0,timer=0,owner='',distance=0;
@@ -89,11 +54,9 @@ function refreshLibrary(){
     rssAlignRailStart(rail);
   }
   const indicator=document.getElementById('library-refresh');
-  if(!nativeRefreshHandler){
-    libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
-    indicator.classList.add('refreshing');
-    indicator.setAttribute('aria-label','새로고침 중');
-  }
+  libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
+  indicator.classList.add('refreshing');
+  indicator.setAttribute('aria-label','새로고침 중');
   const redraw=()=>{
     if(activeAppView()!==view) return;
     if(view==='home') renderHome();
@@ -130,12 +93,10 @@ function refreshLibrary(){
         Promise.race([work,new Promise(resolve=>setTimeout(resolve,LIBRARY_REFRESH_MAX_MS))]),
       ]);
     }finally{
-      if(!nativeRefreshHandler){
-        if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
-        else libraryRefreshMotion.clear();
-        indicator.classList.remove('refreshing');
-        indicator.removeAttribute('aria-label');
-      }
+      if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
+      else libraryRefreshMotion.clear();
+      indicator.classList.remove('refreshing');
+      indicator.removeAttribute('aria-label');
       libraryRefreshTask=null;
     }
   })();
@@ -144,10 +105,6 @@ function refreshLibrary(){
 
 (()=>{
   if(nativeRefreshHandler){
-    refreshWindow.breezeNativeRefresh=sequence=>{
-      Promise.resolve(refreshLibrary()).catch(()=>{}).finally(()=>nativeRefreshHandler.postMessage({finished:sequence}));
-      return true;
-    };
     let previous=null;
     const report=()=>{
       const enabled=libraryRefreshAllowed();
@@ -158,7 +115,6 @@ function refreshLibrary(){
     const observer=new MutationObserver(report);
     document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden','open']}));
     report();
-    return;
   }
   let start=null;
   let distance=0;
@@ -180,7 +136,7 @@ function refreshLibrary(){
     const touch=event.touches[0],dx=touch.clientX-start.x,dy=touch.clientY-start.y;
     if(dy<0 || (Math.abs(dx)>10 && Math.abs(dx)>dy)){reset();return;}
     distance=Math.max(0,dy-LIBRARY_PULL_START);
-    if(distance>0){libraryRefreshMotion.draw(distance,true);trackDockPin();}
+    if(distance>0)libraryRefreshMotion.draw(distance,true);
     else if(!document.getElementById('library-refresh').hidden)libraryRefreshMotion.draw(0,true);
   },{passive:true});
   document.addEventListener('touchend',event=>{

@@ -108,16 +108,23 @@ try{
    window.webkit={messageHandlers:{breezeRefresh:{postMessage:message=>window.nativeMessages.push(message)}}};
  });
  await nativePage.goto(url);await nativePage.evaluate(()=>homeReady);
- assert.equal(await nativePage.evaluate(()=>window.nativeMessages.some(message=>message.enabled===true)),true,'Native refresh was not enabled on Home');
+ assert.equal(await nativePage.evaluate(()=>window.nativeMessages.some(message=>message.enabled===true)),true,'Shelf did not tell the shell to stop bouncing');
  await nativePage.evaluate(()=>{
    window.refreshCalls=0;
    loadBooks=async()=>{window.refreshCalls++};
    loadRss=async()=>[];
-   window.breezeNativeRefresh(7);
+   const target=document.querySelector('.view.on');
+   const touch=(x,y)=>({identifier:1,target,clientX:x,clientY:y});
+   const fire=(type,touches)=>{const event=new Event(type,{bubbles:true,cancelable:true});Object.defineProperty(event,'touches',{value:touches});target.dispatchEvent(event);};
+   fire('touchstart',[touch(180,120)]);
+   fire('touchmove',[touch(180,280)]);
+   fire('touchend',[]);
  });
- await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.finished===7));
- assert.equal(await nativePage.evaluate(()=>window.refreshCalls),1,'Native refresh did not load books');
- assert.equal(await nativePage.locator('#library-refresh').isVisible(),false,'Web spinner appeared alongside native control');
+ await nativePage.waitForFunction(()=>libraryRefreshTask===null);
+ assert.equal(await nativePage.evaluate(()=>window.refreshCalls),1,'Shelf pull did not load books inside the app');
+ assert.equal(await nativePage.evaluate(()=>document.getElementById('home-controls').style.transform||'none'),'none','Pull moved the dock');
+ assert.equal(await nativePage.evaluate(()=>typeof window.breezePinDock),'undefined','Dock pin is still installed');
+ assert.equal(await nativePage.evaluate(()=>window.nativeMessages.some(message=>Object.prototype.hasOwnProperty.call(message,'finished'))),false,'Refresh control completion is still wired');
  await nativePage.evaluate(()=>show('vocab'));
  await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.enabled===false));
  await nativePage.close();

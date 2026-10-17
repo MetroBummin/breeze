@@ -80,42 +80,49 @@ try{
     }
     await client.detach();
   }
-  // The native pull translates the whole web layer. A transformed viewport-sized
-  // root is the same capture: fixed descendants move down with the page.
-  async function pullLayer(shift){
+  const shell=readFileSync(resolve(root,'ios/App/App/SceneDelegate.swift'),'utf8');
+  const refreshSource=readFileSync(resolve(root,'scripts/ui/library-refresh.js'),'utf8');
+  assert.equal(shell.includes('UIRefreshControl'),false,'UIRefreshControl is still attached to the web layer');
+  assert.equal(shell.includes('breezePinDock'),false,'Dock pin is still in the shell');
+  assert.equal(refreshSource.includes('breezePinDock'),false,'Dock pin is still in the page');
+  // Before: the refresh control shifts the whole web layer, and a fixed dock
+  // inside that layer moves with it. This capture only demonstrates that shift.
+  async function shiftedLayer(shift){
     await page.evaluate(dy=>{
       const root=document.documentElement;
-      root.style.height='100%';
-      root.style.transform=dy?`translateY(${dy}px)`:'';
-      if(!dy) root.style.removeProperty('height');
-      document.body.style.overflow=dy?'hidden':'';
-      if(!dy) document.body.style.removeProperty('overflow');
+      if(dy){root.style.height='100%';root.style.transform=`translateY(${dy}px)`;document.body.style.overflow='hidden';}
+      else{root.style.removeProperty('height');root.style.removeProperty('transform');document.body.style.removeProperty('overflow');}
     },shift);
   }
+  const bottom={x:0,y:624,width:390,height:220};
   await page.evaluate(()=>show('home'));
-  await pullLayer(96);
+  await shiftedLayer(96);
   const before=await dockBox();
-  assert.ok(before.bottom>before.limit+40,'Captured pull did not carry the dock down');
+  assert.ok(before.bottom>before.limit+40,'Layer shift did not carry the dock');
   await page.screenshot({path:`${shots}/dock-pull-before-home.png`});
+  await page.screenshot({path:`${shots}/dock-pull-before-home-bottom.png`,clip:bottom});
   await page.evaluate(()=>show('longform'));
   await page.screenshot({path:`${shots}/dock-pull-before-bookshelf.png`});
-  await page.evaluate(()=>breezePinDock());
-  const afterShelf=await dockBox();
-  assertDockResting(afterShelf,'bookshelf pin');
-  await page.screenshot({path:`${shots}/dock-pull-after-bookshelf.png`});
+  await page.screenshot({path:`${shots}/dock-pull-before-bookshelf-bottom.png`,clip:bottom});
+  await shiftedLayer(0);
   await page.evaluate(()=>show('home'));
-  await page.evaluate(()=>breezePinDock());
-  const afterHome=await dockBox();
-  assertDockResting(afterHome,'home pin');
-  assert.match(afterHome.transform,/translateY\(-9\d/);
+  const client=await page.context().newCDPSession(page);
+  await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:180,y:280,id:1}]});
+  for(const y of [360,460,540]){
+    await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:180,y,id:1}]});
+    await page.waitForTimeout(20);
+  }
+  const pulling=await dockBox();
+  assertDockResting(pulling,'home during the page pull');
+  assert.equal(pulling.transform,'none','Page pull transformed the dock');
   await page.screenshot({path:`${shots}/dock-pull-after-home.png`});
-  await page.evaluate(()=>breezePinDock(-96));
-  assertDockResting(await dockBox(),'native offset');
-  await pullLayer(0);
-  await page.evaluate(()=>breezePinDock(0));
-  const restored=await dockBox();
-  assertDockResting(restored,'cleared pull');
-  assert.equal(restored.transform,'none','Resting dock kept a pull transform');
+  await page.screenshot({path:`${shots}/dock-pull-after-home-bottom.png`,clip:bottom});
+  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await client.detach();
+  await page.evaluate(()=>show('longform'));
+  assertDockResting(await dockBox(),'bookshelf after the pull');
+  await page.screenshot({path:`${shots}/dock-pull-after-bookshelf.png`});
+  await page.screenshot({path:`${shots}/dock-pull-after-bookshelf-bottom.png`,clip:bottom});
   assert.deepEqual(errors,[]);
   console.log('Dock stays on the glass during pull on Home and the bookshelf.');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

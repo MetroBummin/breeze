@@ -26,29 +26,25 @@ Home, Wordbook and expanded Reader controls are compared as three identical slot
 
 ## Shelf pull and native canvas
 
-Home and shelves leave the pull to the scroll view. The fixed control dock stays
-on the glass: while the pull offset is negative, that offset is applied back to
-`#home-controls` and cleared at rest, so the dock does not follow the rubber-band.
-Its size, material, and resting position stay the shared dock. A small neutral
-spinner is the only visible refresh cue; accessible status remains available
-without on-screen instructions. Horizontal, short, cancelled, multi-touch and
-overlay-owned gestures do not refresh. Navigation clears the presentation and
-concurrent refreshes share one operation. The Reader never participates in the
-shelf pull handler.
+Home and shelves pull with the page's touch handler. It draws the small neutral
+spinner and reloads the shelf. It does not translate the page, so the fixed
+control dock stays on the glass. Its size, material, and resting position stay
+the shared dock. Accessible status remains available without on-screen
+instructions. Horizontal, short, cancelled, multi-touch and overlay-owned
+gestures do not refresh. Navigation clears the presentation and concurrent
+refreshes share one operation. The Reader never participates in the shelf pull
+handler.
 The refresh cue stays up briefly and settles within 1.2 seconds even if local
 book loading is slow. Home and Casuals subscribe to RSS source updates as soon
 as refresh starts; each ready source updates the rail while remaining sources
 continue in the background. Repeated pulls share any ongoing book load.
 
-In the iOS app, WKWebView's scroll view owns the pull gesture and one
-`UIRefreshControl` owns the spinner. The web handler reports whether Home or a
-shelf is active and runs the same refresh operation when native refresh fires.
-The spinner uses the measured logo position and live safe area to sit in the
-pulled gap. The same content-offset observation reports a negative pull to
-`breezePinDock` so the fixed dock stays put while UIKit is moving the web layer.
-Browser use retains the touch gesture above and corrects the dock only when its
-box has actually slipped below the visible bottom. Home and Casuals refresh
-their RSS cards; all three library views reload saved books.
+The iOS shell does not attach `UIRefreshControl` to the WKWebView scroll view.
+While that control is pulling, WebKit shifts the whole web layer, including
+`position:fixed`, so the dock slides with the page. The page tells the shell
+when Home or a shelf is visible, and the shell turns scroll-view bounce off
+for that time. The Reader turns bounce back on. Home and Casuals refresh their
+RSS cards; all three library views reload saved books.
 
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper
