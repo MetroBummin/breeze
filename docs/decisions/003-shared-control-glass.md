@@ -56,6 +56,24 @@ cover stays hidden and the bar remains the in-flow status. Browser use retains
 the touch gesture above. Home and Casuals refresh their RSS cards; all three
 library views reload saved books.
 
+A phone-sized WebKit run of TestFlight 299 (`0b61e512`, 390×844) sampled
+document height and `#home-controls` from the native refresh call through
+`finished` (450–1200 ms). With the shelf already showing its books, painted
+`scrollHeight` stayed constant on Home and the long-form shelf with book sync
+on and with it off, and the dock stayed `position:fixed` at the bottom of the
+viewport. The long-form `innerHTML` clear drops layout height to the viewport
+inside that same turn (2042px or 2608px down to 844px) and the turn builds the
+cards again; no animation frame observed the short height. Linked-book rows
+that appear during `loadBooks` raise the long-form document from 2042px to
+2608px. Home's horizontal shelf keeps the same document height when those rows
+appear. The simulated layer shift is about 65px at inset begin and is back by
+300ms on every arm, including book sync off and an in-place shelf update. A
+height change during the inset leaves about 5px of residual after 300ms, on
+both the clearing shelf and the in-place shelf. That is the refresh control's
+rubber-band, so the shelf stays on the clear-and-rebuild path and the dock
+gets no counter-offset. `tests/verify-refresh-height-browser.mjs` keeps painted
+document height and dock position steady through a refresh.
+
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper
 behind its native edge bounce. Colors come from the existing CSS palette.
