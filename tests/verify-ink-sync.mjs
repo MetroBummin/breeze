@@ -351,6 +351,68 @@ test('storage quota keeps the pending page in memory and still retries',async()=
   assert.equal(calls[0].args.ops[0].id,idA);
 });
 
+test('hiding the page uploads finished strokes without the debounce',async()=>{
+  const {context,calls,pending}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,7]),strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  context.pages.set(state.key,state);
+  context.scheduleBookInk(state);
+  assert.equal(pending(),1);
+  await context.flushBookInkNow();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].name,'breeze_merge_book_ink');
+  assert.equal(calls[0].args.page,7);
+  assert.equal(calls[0].args.ops[0].id,idA);
+  assert.equal(pending(),0);
+});
+
+test('a stroke without an id uploads in the same flush',async()=>{
+  const {context,calls}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,7]),strokes:[{color:'#111111',width:1.5,points:[[1,1],[2,2]]}],svg:{},dirty:false,busy:false};
+  context.pages.set(state.key,state);
+  assert.equal(await context.flushBookInk(state),true);
+  assert.equal(calls.length,1);
+  assert.match(calls[0].args.ops[0].id,/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  assert.equal(state.persisted>0,true);
+});
+
+test('an active stroke waits, then an immediate flush sends it',async()=>{
+  const {context,calls}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,7]),strokes:[stroke(idA)],svg:{},dirty:false,busy:true};
+  context.pages.set(state.key,state);
+  await context.flushBookInkNow();
+  assert.equal(calls.length,0);
+  state.busy=false;
+  await context.flushBookInkNow();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].args.ops[0].id,idA);
+});
+
+test('an immediate flush waits for the local write instead of another timer',async()=>{
+  const {context,calls}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  let release;
+  const state={key:JSON.stringify([sha,7]),strokes:[stroke(idA)],svg:{},dirty:true,busy:false};
+  state.saving=new Promise(resolve=>{release=()=>{state.dirty=false;state.saving=null;resolve();};});
+  context.pages.set(state.key,state);
+  const pendingFlush=context.flushBookInk(state,true);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.length,0);
+  release();
+  assert.equal(await pendingFlush,true);
+  assert.equal(calls.length,1);
+});
+
+test('the iPad path flushes on hide and does not treat a resting touch as a stroke',()=>{
+  const ink=readFileSync(new URL('../scripts/reader/pdf-ink.js',import.meta.url),'utf8');
+  assert.match(ink,/busy:\(\)=>!!active/);
+  assert.doesNotMatch(ink,/busy:\(\)=>!!active\|\|suppressed/);
+  assert.match(ink,/pagehide/);
+  assert.match(ink,/flushBookInkNow\(\)/);
+});
+
 test('same display name with a different file does not share a page key',()=>{
   const {context}=boot();
   const left=context.inkSyncRecordKey(userA,sha,1);

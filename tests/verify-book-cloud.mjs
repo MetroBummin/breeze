@@ -564,3 +564,47 @@ test('download progress is reported without checkpointing more often than 1 MiB'
   assert.deepEqual(checks,[1200100]);
   assert.equal(bytes.byteLength,1200100);
 });
+
+test('after the reader moves, a newer remote page does not take the open book',async()=>{
+  const {context}=boot({flag:true});
+  const id='file-'+hash.slice(0,32);
+  const book={id,kind:'pdf',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+  context.books=[book];
+  context.curBook=book;
+  context.positions[id]={p:0.2,t:2000,mode:'original',original:{kind:'pdf',page:8,y:0.1}};
+  let moved=0;
+  context.switchReaderMode=()=>{moved++;};
+  context.restoreAnchor=()=>{moved++;return true;};
+  context.readerScrollTo=()=>{moved++;};
+  context.savedPlaceReleased=()=>true;
+  const remote={p:0.55,t:9000,mode:'original',original:{kind:'pdf',page:23,y:0.2}};
+  context.sb.from=table=>({select:async()=>table==='positions'
+    ?{data:[{book_id:hash,data:{revision:'rev-9',locator:remote}}]}
+    :{data:[{book_id:hash,title:'Sample',kind:'pdf',status:'ready',byte_size:5}]}});
+  await context.bookCloudRefresh(context.bookCloudSession());
+  assert.equal(moved,0);
+  assert.equal(context.positions[id].original.page,8);
+  assert.equal(context.bookCloudHeads[hash].locator.original.page,23);
+  context.bookCloudQueuePosition(book);
+  const box=context.bookCloudReadOutbox(user);
+  assert.equal(box.positions[hash].locator.original.page,8);
+});
+
+test('before the reader moves, a newer remote page is still applied once',async()=>{
+  const {context}=boot({flag:true});
+  const id='file-'+hash.slice(0,32);
+  const book={id,kind:'pdf',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+  context.books=[book];
+  context.curBook=book;
+  context.positions[id]={p:0.2,t:2000,mode:'original',original:{kind:'pdf',page:8,y:0.1}};
+  let moved=0;
+  context.switchReaderMode=()=>{moved++;};
+  context.savedPlaceReleased=()=>false;
+  const remote={p:0.55,t:9000,mode:'original',original:{kind:'pdf',page:23,y:0.2}};
+  context.sb.from=table=>({select:async()=>table==='positions'
+    ?{data:[{book_id:hash,data:{revision:'rev-9',locator:remote}}]}
+    :{data:[]}});
+  await context.bookCloudRefresh(context.bookCloudSession());
+  assert.equal(moved,1);
+  assert.equal(context.positions[id].original.page,23);
+});

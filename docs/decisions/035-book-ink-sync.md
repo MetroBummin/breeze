@@ -18,8 +18,13 @@ EPUB spine, CFI, or percent locator never selects an ink page.
 ## When work runs
 
 Drawing does not call the network. A few seconds after the pen lifts, the open
-page uploads in the background. While a stroke is still active the timer only
-reschedules. Remote strokes are folded into a page that is already open and
+page uploads in the background. Hiding the page or leaving the app uploads in
+that same turn. A timer scheduled for later does not run once iOS has suspended
+the web view, so that is the only way a stroke drawn on one device is on the
+server before the other device opens the page. A resting finger does not hold
+the upload. Only a stroke that is still on the glass does. While that stroke
+is active the timer only reschedules. Remote strokes are folded into a page
+that is already open and
 already painted from local ink. A page that is busy keeps the folded result
 until the pen lifts, then paints and saves it. Rendering does not wait on the
 request.
@@ -40,7 +45,7 @@ can restore the stroke. Different ids are a union. The client never replaces
 the whole page with one device's snapshot.
 
 Legacy strokes with no id are assigned ids once, written locally, and uploaded
-on a later flush. A duplicate id in one page is split so only the first keeps
+in that same flush. A duplicate id in one page is split so only the first keeps
 it. The worker's transient numeric transport ids still never enter disk.
 
 ## Queue, caps, and failure

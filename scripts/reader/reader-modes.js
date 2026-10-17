@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const box=readerScroller(); if(!box) return;
   const moved=event=>{
     if(currentReaderMode==='text') textModeMovedByUser=true;
+    if(currentReaderMode==='original')releaseSavedReadingPlace();
     // Reflow can clamp scrollTop without input. Pointer pan/pinch have their
     // existing owners; the existing wheel/key listeners own these body intents.
     if((event.type==='wheel'||event.type==='keydown')&&typeof closePdfNavigation==='function')closePdfNavigation();
@@ -448,10 +449,24 @@ function showOriginalLandingCue(record,target,paragraphHint){
 /* PDF는 placeholder가 실제 쪽 비율을 배울 때 높이가 한 번 더 바뀔 수 있습니다.
    한 줄의 px 보정보다, 독자가 보던 문장(없으면 원본 앵커)을 두 번 다시 가운데에
    놓는 편이 쪽 크기가 섞인 스캔본에도 견고합니다. */
+function releaseSavedReadingPlace(){
+  if(currentReaderMode==='text'){textModeMovedByUser=true;return true;}
+  const session=typeof originalSession!=='undefined'?originalSession:null;
+  if(!session)return false;
+  session.userMovedPlace=true;
+  if(session.pendingAnchor)session.anchorMoved=true;
+  return true;
+}
+function savedPlaceReleased(){
+  if(currentReaderMode==='text')return textModeMovedByUser;
+  const session=typeof originalSession!=='undefined'?originalSession:null;
+  return !!(session&&session.userMovedPlace);
+}
 function stabilizePdfModeTarget(record,target,bridge,changeToken,bookAtStart){
   if(!record || record.kind!=='pdf' || !target) return;
   [360,900].forEach(delay=>setTimeout(async()=>{
     if(changeToken!==readerModeChangeToken || curBook!==bookAtStart || currentReaderMode!=='original') return;
+    if(savedPlaceReleased())return;
     suspendReaderScrollSave(500);
     const found=bridge ? await ORIGINAL_FORMATS.pdf.restoreSentence(
       bridge.candidates,target,changeToken,bridge.paragraph) : false;

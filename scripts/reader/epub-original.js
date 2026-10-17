@@ -1025,7 +1025,11 @@ function epubWatchAnchorInput(session){
   const box=typeof readerScroller==='function'?readerScroller():null;
   if(!box||typeof box.addEventListener!=='function')return;
   session.anchorWatch=true;
-  const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
+  const moved=()=>{
+    if(originalSession!==session)return;
+    if(typeof releaseSavedReadingPlace==='function')releaseSavedReadingPlace();
+    else if(session.pendingAnchor)session.anchorMoved=true;
+  };
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',moved);

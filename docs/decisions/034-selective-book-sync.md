@@ -81,7 +81,12 @@ until it has height. An image above it holds the paragraph only while that
 image has no layout box yet. An image that already occupies its box does not
 hold the paragraph; if the box later collapses, the image-error path restores
 the place. A cover or a first paragraph shown before layout is not saved over
-the remote place. A hand scroll releases the hold.
+the remote place. A hand scroll, a page change, or a key move releases the
+hold. That release happens once. A later layout retry, a sync refresh, or a
+remote place with a newer stamp does not scroll the open book again. The
+place this device just made is the one stored and sent, including when the
+other device's stamp is newer. The next open uses that place. Before the
+reader moves, a newer remote place is still applied once.
 Opening a downloaded book at the start does not count as a newer place, so
 that stamp cannot replace the remote locator or be written back over it. A
 newer place that is no longer the start still wins on the device where it

@@ -1,7 +1,8 @@
 /* Cross-device pen and highlighter sync for books with 기기 간 연동 on.
    Dormant unless window.BREEZE_CONFIG.INK_SYNC === true and BOOK_CLOUD === true.
    Drawing never waits on this file. A page uploads a few seconds after the pen
-   lifts, and remote strokes are merged only into a page that is already open. */
+   lifts, and immediately when the page is hidden. Remote strokes are merged
+   only into a page that is already open. */
 const INK_SYNC_DEBOUNCE_MS=3000;
 const INK_SYNC_BATCH=40;
 const INK_SYNC_PAGE_CAP=4000;
@@ -287,7 +288,12 @@ function scheduleBookInk(state){
     void flushBookInk(live);
   },INK_SYNC_DEBOUNCE_MS));
 }
-async function flushBookInk(state){
+async function inkSyncSettle(state){
+  if(!state.saving&&state.dirty&&inkSyncHooks&&typeof inkSyncHooks.persist==='function')inkSyncHooks.persist(state);
+  if(state.saving){try{await state.saving;}catch{}}
+  return !state.dirty&&!state.saving;
+}
+async function flushBookInk(state,immediate){
   if(!inkSyncEnabled()||!state||!inkParseKey(state.key))return false;
   const session=inkSyncSession();
   const userId=session.userId;
@@ -296,7 +302,10 @@ async function flushBookInk(state){
   const book=inkSyncBook(parsed.sha);
   if(!inkSyncAdmits(book))return false;
   if(inkSyncHooks&&inkSyncHooks.busy(state)){scheduleBookInk(state);return false;}
-  if(state.dirty||state.saving){scheduleBookInk(state);return false;}
+  if(state.dirty||state.saving){
+    if(!immediate){scheduleBookInk(state);return false;}
+    if(!await inkSyncSettle(state)||!inkSyncCurrent(session))return false;
+  }
   const recordKey=inkSyncRecordKey(userId,parsed.sha,parsed.page);
   let meta=await inkSyncLoad(recordKey);
   if(!inkSyncCurrent(session))return false;
@@ -305,7 +314,7 @@ async function flushBookInk(state){
   if(prepared.changed){
     state.strokes=prepared.strokes;
     if(inkSyncHooks)inkSyncHooks.persist(state);
-    return false;
+    if(state.saving){try{await state.saving;}catch{}}
   }
   const planned=inkAdvance(state.strokes,meta);
   meta=planned.meta;
@@ -393,9 +402,17 @@ function resumeBookInk(bookId){
     meta.blocked=false;meta.backoff=0;inkSyncMemory.set(key,inkCloneMeta(meta));
   }
 }
-function flushBookInkSoon(){
-  if(!inkSyncEnabled()||!inkSyncHooks||typeof inkSyncHooks.pages!=='function')return;
-  for(const state of inkSyncHooks.pages())scheduleBookInk(state);
+function flushBookInkNow(){
+  if(!inkSyncEnabled()||!inkSyncHooks||typeof inkSyncHooks.pages!=='function')return Promise.resolve(false);
+  const jobs=[];
+  for(const state of inkSyncHooks.pages()){
+    if(!state||!state.key)continue;
+    clearTimeout(inkSyncTimers.get(state.key));
+    inkSyncTimers.delete(state.key);
+    jobs.push(flushBookInk(state,true));
+  }
+  return Promise.all(jobs);
 }
+function flushBookInkSoon(){return flushBookInkNow();}
 
-if(typeof window!=='undefined')window.addEventListener('online',()=>{flushBookInkSoon();});
+if(typeof window!=='undefined')window.addEventListener('online',()=>{void flushBookInkNow();});

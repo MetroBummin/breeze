@@ -247,10 +247,14 @@ async function bookCloudRefresh(session){
   }
   if(typeof renderAllBookViews==='function')renderAllBookViews();
 }
+function bookCloudReaderHoldsPlace(book){
+  return !!(book&&typeof curBook!=='undefined'&&curBook===book&&typeof savedPlaceReleased==='function'&&savedPlaceReleased());
+}
 function bookCloudAdoptPosition(hash,locator){
   if(!locator||typeof books==='undefined'||typeof positions==='undefined')return;
   const book=books.find(item=>bookCloudHash(item)===hash);
   if(!book||book.id===bookCloudRevealQuiet||!bookCloudPreferRemote(positions[book.id],locator))return;
+  if(bookCloudReaderHoldsPlace(book))return;
   positions[book.id]={...bookCloudLocator(locator)};
   if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
   bookCloudShowAdopted(book);
@@ -258,6 +262,7 @@ function bookCloudAdoptPosition(hash,locator){
 function bookCloudShowAdopted(book){
   if(!book||book.id===bookCloudRevealQuiet)return;
   if(typeof curBook==='undefined'||curBook!==book)return;
+  if(bookCloudReaderHoldsPlace(book))return;
   if(typeof readerPositionPending==='function'&&readerPositionPending())return;
   if(typeof pdfRestoreOwnsPosition==='function'&&pdfRestoreOwnsPosition())return;
   if(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition())return;
@@ -350,7 +355,7 @@ function bookCloudQueuePosition(book){
   if(box.removes[bookId])return;
   const locator=bookCloudLocator(positions[book.id]);
   const head=bookCloudHeads[bookId];
-  if(head&&bookCloudPreferRemote(positions[book.id],head.locator))return;
+  if(head&&bookCloudPreferRemote(positions[book.id],head.locator)&&!bookCloudReaderHoldsPlace(book))return;
   if(head&&bookCloudSamePlace(head.locator,locator))return;
   const previous=box.positions[bookId];
   if(previous&&bookCloudSamePlace(previous.locator,locator))return;

@@ -79,7 +79,7 @@ async function setPdfReadDirection(direction){
   if(direction===studyPrefs.direction)return;
   const session=originalSession,anchor=currentPdfSession(session)?capturePdfAnchor(topInset()):null;
   if(!persistStudyPrefs({...studyPrefs,direction}))return;
-  if(anchor){const token=++readerModeChangeToken;applyPdfDirection(session,anchor.page);await restorePdfAnchor(anchor,topInset(),token);}
+  if(anchor){const token=++readerModeChangeToken;applyPdfDirection(session,anchor.page);await restorePdfAnchor(anchor,topInset(),token,null,true);}
   if(currentPdfSession(session)){saveReadingState();updatePfill(true);}
 }
 async function goPdfPage(n,{keepNavigation=false}={}){
@@ -91,7 +91,8 @@ async function goPdfPage(n,{keepNavigation=false}={}){
   if(typeof closeSentence==='function')closeSentence();
   if(!keepNavigation)closePdfNavigation();expandReaderChrome();
   const token=++readerModeChangeToken;
-  await restorePdfAnchor({kind:'pdf',page:n,y:0},topInset(),token);
+  if(typeof releaseSavedReadingPlace==='function')releaseSavedReadingPlace();
+  await restorePdfAnchor({kind:'pdf',page:n,y:0},topInset(),token,null,true);
   if(!currentPdfSession(session)||token!==readerModeChangeToken)return;
   saveReadingState();updatePfill(true);updatePdfNavigationControls();
 }
@@ -673,7 +674,7 @@ async function deletePdfPage(session,n){
     session.deletedPages=deleted;session.availablePages=null;
     ++readerModeChangeToken;
     closePdfNavigation();renderBookBody(book);applyPdfDirection(session,anchor?.page||1);
-    await restorePdfAnchor({...anchor,page:pdfNearestPage(session,anchor?.page||1)},topInset());
+    await restorePdfAnchor({...anchor,page:pdfNearestPage(session,anchor?.page||1)},topInset(),undefined,undefined,true);
     saveReadingState();updatePfill(true);toast('페이지를 삭제했어요');return true;
   }catch(error){console.warn('Page deletion failed',error);toast('페이지를 삭제하지 못했어요. 다시 시도해 주세요.');return false;}
   finally{pdfDeletionBusy=false;}

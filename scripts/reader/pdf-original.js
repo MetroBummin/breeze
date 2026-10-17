@@ -695,14 +695,19 @@ function noteOriginalAnchorInput(event){
   const box=typeof readerScroller==='function'?readerScroller():null;
   const target=event&&event.target;
   if(!box||!target||typeof box.contains!=='function'||!box.contains(target))return;
-  session.anchorMoved=true;
+  if(typeof releaseSavedReadingPlace==='function')releaseSavedReadingPlace();
+  else session.anchorMoved=true;
 }
 function pdfWatchAnchorInput(session){
   if(!session||session.anchorWatch)return;
   const box=typeof readerScroller==='function'?readerScroller():null;
   if(!box||typeof box.addEventListener!=='function')return;
   session.anchorWatch=true;
-  const moved=()=>{ if(originalSession===session&&session.pendingAnchor)session.anchorMoved=true; };
+  const moved=()=>{
+    if(originalSession!==session)return;
+    if(typeof releaseSavedReadingPlace==='function')releaseSavedReadingPlace();
+    else if(session.pendingAnchor)session.anchorMoved=true;
+  };
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',moved);
@@ -712,7 +717,7 @@ function pdfScheduleAnchor(session){
   session.anchorTimer=requestAnimationFrame(()=>{
     session.anchorTimer=0;
     if(originalSession!==session||!session.pendingAnchor)return;
-    if(session.anchorMoved){session.pendingAnchor=null;session.revealFrozen=false;return;}
+    if(session.anchorMoved||session.userMovedPlace){session.pendingAnchor=null;session.revealFrozen=false;return;}
     /* 가림막을 걷기로 한 뒤에는 더 이상 옮기지 않습니다. 늦게 맞추면 보이는 점프가 됩니다. */
     if(session.revealFrozen)return;
     session.anchorTries=(session.anchorTries||0)+1;
@@ -784,9 +789,10 @@ function pdfRestoreOwnsPosition(){
   return currentReaderMode==='original'
     && !!(originalSession&&originalSession.kind==='pdf'&&originalSession.pendingAnchor&&!originalSession.anchorMoved);
 }
-async function restorePdfAnchor(source,inset,changeToken,isCurrent){
+async function restorePdfAnchor(source,inset,changeToken,isCurrent,requested){
   const session=originalSession;
   if(!currentPdfSession(session))return false;
+  if(session.userMovedPlace&&!requested){session.pendingAnchor=null;session.revealFrozen=true;return false;}
   const pageNumber=typeof pdfNearestPage==='function'?pdfNearestPage(session,Number(source.page)||1):Math.max(1,Math.min(session.pages.length,Number(source.page)||1));
   const page=session.pages[pageNumber-1];
   if(!page) return false;

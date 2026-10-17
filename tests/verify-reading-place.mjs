@@ -52,6 +52,21 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(top,600-40+0.25*800,'the saved page fraction uses the real page height');
   assert.equal(context.pdfRestoreOwnsPosition(),false);
 
+  top=180;
+  session.userMovedPlace=true;
+  session.pendingAnchor=null;
+  const stayed=await context.restorePdfAnchor(source,40);
+  assert.equal(stayed,false);
+  assert.equal(top,180,'a later automatic restore leaves the page the reader moved to');
+  const asked=await context.restorePdfAnchor({kind:'pdf',page:2,y:0.25},40,null,null,true);
+  assert.equal(asked,true);
+  assert.notEqual(top,180,'a page the reader asked for still moves');
+  session.userMovedPlace=false;
+  session.pendingAnchor=null;
+  session.revealFrozen=false;
+  session.anchorMoved=false;
+  top=0;
+
   top=0;
   page.getBoundingClientRect=()=>({top:0,height:0,width:0,bottom:0});
   cover.getBoundingClientRect=()=>({top:0,height:0,width:0,bottom:0});
@@ -172,6 +187,36 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(top,600-(30+10)+0.25*800,'the saved page is the first scroll, before page 1 is shown');
   assert.equal(page.dataset.breezeRatio,'own');
   assert.equal(cover.dataset.breezeRatio,'own');
+}
+
+{
+  const modes=readFileSync(resolve(root,'scripts/reader/reader-modes.js'),'utf8');
+  const timers=[];
+  let restored=0;
+  const book={id:'book'};
+  const context=createContext({
+    console,Promise,
+    document:{addEventListener(){}},
+    currentReaderMode:'original',
+    readerModeChangeToken:1,
+    curBook:book,
+    originalSession:{userMovedPlace:true,pendingAnchor:null},
+    setTimeout(fn){timers.push(fn);return timers.length;},
+    suspendReaderScrollSave(){throw new Error('a hand move must not schedule another restore');},
+    restoreOriginalAnchor(){restored++;return false;}
+  });
+  new Script(modes,{filename:'reader-modes.js'}).runInContext(context);
+  context.stabilizePdfModeTarget({kind:'pdf'},{kind:'pdf',page:23,y:0.2},null,1,book);
+  assert.equal(timers.length,2);
+  await Promise.all(timers.map(fn=>fn()));
+  assert.equal(restored,0,'the saved page is not applied again after the reader moves');
+  context.originalSession.userMovedPlace=false;
+  context.suspendReaderScrollSave=()=>{};
+  context.restoreOriginalAnchor=()=>{restored++;return true;};
+  timers.length=0;
+  context.stabilizePdfModeTarget({kind:'pdf'},{kind:'pdf',page:23,y:0.2},null,1,book);
+  await Promise.all(timers.splice(0).map(fn=>fn()));
+  assert.equal(restored,2,'before the reader moves, the opening place can still settle');
 }
 
 console.log('Reading place contract verified');

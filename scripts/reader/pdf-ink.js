@@ -817,7 +817,14 @@ const BreezePdfInk = (()=>{
   window.addEventListener('resize',()=>{cancel('resize');pendingAdmission=null;resumeOriginalPdfPaint();});
   document.addEventListener('scroll',event=>{if(event.target===readerScroller()){if(pointerInk())pointerScrolling=true;trace('reader/scroll',event);pendingAdmission=null;cancel('reader-scroll');}},{capture:true,passive:true});
   document.addEventListener('scrollend',event=>{if(event.target===readerScroller()){pointerScrolling=false;trace('reader/scrollend',event);flushTrace();scheduleNativeScope();}},{capture:true,passive:true});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)interrupt();});
+  const leaveInk=()=>{
+    interrupt();
+    // iOS suspends timers when this web view is hidden. The pen-up debounce
+    // never reaches the merge RPC unless the upload starts in this turn.
+    if(typeof flushBookInkNow==='function')void flushBookInkNow();
+  };
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)leaveInk();});
+  window.addEventListener('pagehide',leaveInk);
   window.addEventListener('breeze-ink-platform',()=>{
     if(!supported()&&mode!=='read')setMode('read');
     if(originalSession?.kind==='pdf'){
@@ -868,7 +875,7 @@ const BreezePdfInk = (()=>{
   if(typeof registerBookInkPage==='function')registerBookInkPage({
     page:key=>pages.get(key)||null,
     pages:()=>[...pages.values()],
-    busy:state=>!!active||suppressed.size>0,
+    busy:()=>!!active,
     accept(stroke){return valid({version:1,strokes:[stroke]});},
     persist(state){paint(state);changed(state);},
     held(state){

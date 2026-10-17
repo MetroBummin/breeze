@@ -127,7 +127,7 @@ function restorePdfRotationAnchor(pending){
   if(typeof currentPdfSession==='function'&&!currentPdfSession(session)) return;
   if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
   const token=++readerModeChangeToken;
-  void restorePdfAnchor(anchor,topInset(),token).then(restored=>{
+  void restorePdfAnchor(anchor,topInset(),token,null,true).then(restored=>{
     if(!restored||token!==readerModeChangeToken||session!==originalSession) return;
     session.presented=true;session.lastScrollTop=readerScrollTop();
     if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
