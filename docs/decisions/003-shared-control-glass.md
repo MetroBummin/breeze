@@ -24,68 +24,59 @@ Run `npm run test:home-ui` for the cross-view browser checks below, alongside `n
 
 Home, Wordbook and expanded Reader controls are compared as three identical slot rectangles, including computed padding and alignment. Wordbook status chips and selected filters use the same `--s1`/`--s2`/`--s3` background and ink tokens as Reader status buttons.
 
-## Shelf pull and native canvas
+## Shelf reload
 
-Home and shelves pull with the page's touch handler in the browser. It draws
-the small neutral spinner and reloads the shelf. The handler leaves scrolling
-to the browser and does not translate the page. Its size, material, and resting
-position stay the shared dock. Accessible status remains available without
-on-screen instructions. Horizontal, short, cancelled, multi-touch and
-overlay-owned gestures do not refresh. Navigation clears the presentation and
-concurrent refreshes share one operation. The Reader never participates in the
-shelf pull handler.
-The refresh cue stays up briefly and settles within 1.2 seconds even if local
-book loading is slow. Home and Casuals subscribe to RSS source updates as soon
-as refresh starts; each ready source updates the rail while remaining sources
-continue in the background. Repeated pulls share any ongoing book load.
+Home and the book shelves reload on their own. There is no pull gesture and no
+refresh button. Opening the app loads saved books and Home recommendations
+through the existing boot (`loadBooks`, then `renderHome` when the first-run
+guide is not showing). That boot is the launch reload. When it finishes, the
+scheduler records the visible library screen. A foreground return inside 45
+seconds does not fetch that screen again.
 
-In the iOS app, WKWebView's scroll view owns the pull gesture, bounce stays on,
-and one `UIRefreshControl` owns the spinner. The web handler reports whether
-Home or a shelf is active and runs the same refresh operation when native
-refresh fires. The spinner uses the measured logo position and live safe area
-to sit in the pulled gap. While the finger is still past the top inset, WebKit
-shifts the whole web layer, including `position:fixed`. When the control begins
-refreshing it applies that inset and the dock returns; the spinner can still
-be visible. `endRefreshing` runs after the page posts `finished` (450–1200 ms).
-That begin/end path is the same in the TestFlight 285 source, TestFlight 290,
-and TestFlight 299. The shelf grid was already cleared and rebuilt on refresh
-in those trees, and the in-flow OCR bar already mounted with a new card.
-TestFlight 299 adds linked-book rows to that same rebuild because book sync is
-on, and it can mount an in-card OCR cover; with the cover switch off, that
-cover stays hidden and the bar remains the in-flow status. Browser use retains
-the touch gesture above. Home and Casuals refresh their RSS cards; all three
-library views reload saved books.
+Returning to the foreground reloads the visible library screen.
+`visibilitychange` runs when the document is shown, and Capacitor
+`appStateChange` runs when `isActive` is true. One iOS resume can fire both;
+the second finds the screen already recorded and does nothing. Entering Home,
+Casuals, or the long-form shelf reloads that screen. The same screen waits 45
+seconds (`LIBRARY_REFRESH_GAP_MS`) before another automatic pass. A different
+screen still reloads on entry. Settings, add, edit, and the first-run guide
+block the pass. The reader never reloads from this path.
 
-A phone-sized WebKit run of TestFlight 299 (`0b61e512`, 390×844) sampled
-document height and `#home-controls` from the native refresh call through
-`finished` (450–1200 ms). With the shelf already showing its books, painted
-`scrollHeight` stayed constant on Home and the long-form shelf with book sync
-on and with it off, and the dock stayed `position:fixed` at the bottom of the
-viewport. The long-form `innerHTML` clear drops layout height to the viewport
-inside that same turn (2042px or 2608px down to 844px) and the turn builds the
-cards again; no animation frame observed the short height. Linked-book rows
-that appear during `loadBooks` raise the long-form document from 2042px to
-2608px. Home's horizontal shelf keeps the same document height when those rows
-appear. The simulated layer shift is about 65px at inset begin and is back by
-300ms on every arm, including book sync off and an in-place shelf update. A
-height change during the inset leaves about 5px of residual after 300ms, on
-both the clearing shelf and the in-place shelf. That is the refresh control's
-rubber-band, so the shelf stays on the clear-and-rebuild path and the dock
-gets no counter-offset. `tests/verify-refresh-height-browser.mjs` keeps painted
-document height and dock position steady through a refresh.
+`refreshLibrary()` is the reload direct callers already use, and it is not on
+the 45 second clock. Home resets the recommendation rail. Home and Casuals
+advance the feed cursor and subscribe to source updates before the requests
+start. Every library screen reloads saved books, and one in-flight load is
+shared. An automatic pass calls the same reload. On Home it also advances the
+feed. On a shelf it reloads saved and synced books and leaves the Home feed
+cursor where it is.
 
-The iOS shell loads the web UI from the archive. Xcode Cloud runs `npm run www`
-and `cap sync ios` for that commit, and Capacitor serves `www` at
-`breeze://localhost`. `capacitor.config.json` has no `server.url`. The service
-worker registers only for an `http` page that is not the native shell, so a
-TestFlight binary does not pick up a later web deploy or a change to
-`sw.js`. `BREEZE_CONFIG` is the bundled `config.js`. TestFlight 1.9.3
-(`37de1377` through `2eca96d7`) has `UIRefreshControl`, bounce, and
-`position:fixed` `#home-controls`, and its config has `RSS_CATALOG` only.
+The iOS scroll view keeps bounce (`webView.scrollView.bounces = true`) and does
+not attach `UIRefreshControl`. With a refresh control, WebKit shifts the whole
+web layer, including `position:fixed` `#home-controls`, by about 65px when the
+pull begins and brings it back within about 300ms. Without a refresh control,
+bounce leaves a fixed element in place. The `breezeRefresh` bridge and the
+page's touch pull are gone.
+
+TestFlight 1.9.3 (`37de1377` through `2eca96d7`) shipped with that refresh
+control, bounce, and the fixed dock. Reinstalling that binary still showed the
+drop. The iOS shell loads the archive at `breeze://localhost`. Xcode Cloud runs
+`npm run www` and `cap sync ios` for that commit. `capacitor.config.json` has
+no `server.url`. The service worker registers only for an `http` page that is
+not the native shell, so a TestFlight binary does not pick up a later web
+deploy or a change to `sw.js`. `BREEZE_CONFIG` is the bundled `config.js`.
 `BOOK_CLOUD` arrives in 1.9.4. Installing another build of the same app keeps
-the existing container unless the app is deleted first, so books and the login
-session written by a newer build remain. That data can change which cards the
-old script draws. It does not replace the script or the refresh control.
+the existing container unless the app is deleted first. That data can change
+which cards the old script draws. It does not replace the script, the dock
+CSS, or the refresh control inside the 1.9.3 binary. Shelf height, safe area,
+and scroll settings were measured on TestFlight 299 (`0b61e512`, 390×844) and
+did not cause the 65px shift: the shift was present with book sync off, and a
+real height change left about 5px. A per-frame counter-offset, a native dock,
+and a snapshot hold were rejected. This build stops attaching the control.
+
+`tests/verify-library-refresh-browser.mjs` covers launch, foreground, entering
+a screen, and the 45 second gap. `tests/verify-dock-pull-browser.mjs` checks
+that the shell no longer attaches a refresh control and that the dock stays on
+the visible bottom through a downward drag and an automatic reload.
 
 The iOS canvas, WebView, scroll view and under-page background follow the computed
 root background on view/theme changes. Home gray must not expose Reader paper

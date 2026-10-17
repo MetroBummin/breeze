@@ -15,112 +15,150 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
-const browser=await (process.env.BROWSER==='webkit'?webkit:chromium).launch();
+const engines=(process.env.BROWSER==='webkit'?[webkit]:process.env.BROWSER==='chromium'?[chromium]:[chromium,webkit]);
 
 try{
- const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
- const errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));
- await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
- await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
- await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
- assert.equal(await page.locator('#home-resume').isDisabled(),true);
- assert.equal(await page.locator('#login-nudge').textContent(),'');
- await page.evaluate(()=>{
-   window.refreshCalls=0;
-   window.gestureCanceled=false;
-   loadBooks=async()=>{window.refreshCalls++};
-   loadRss=async()=>[];
-   window.pull=(dx,dy,cancel=false)=>{
-     const target=document.querySelector('.view.on');
-     const touch=(x,y)=>({identifier:1,target,clientX:x,clientY:y});
-     const fire=(type,touches)=>{const event=new Event(type,{bubbles:true,cancelable:true});Object.defineProperty(event,'touches',{value:touches});target.dispatchEvent(event);window.gestureCanceled ||= event.defaultPrevented;};
-     fire('touchstart',[touch(180,120)]);
-     fire('touchmove',[touch(180+dx,120+dy)]);
-     fire(cancel?'touchcancel':'touchend',[]);
-   };
- });
- for(const view of ['home','casuals','longform']){
-   await page.evaluate(v=>show(v),view);
-   assert.equal(await page.locator('#home-controls').isVisible(),true);
-   assert.equal(await page.locator('#topbar #nav-settings').count(),1);
-   await page.evaluate(()=>window.pull(0,150));
+ for(const engine of engines){
+  const browser=await engine.launch();
+  try{
+   const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
+   const errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));
+   await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
+   await page.addInitScript(()=>{
+     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+     window.capacitorResumes=[];
+     window.Capacitor={Plugins:{App:{addListener(name,callback){
+       window.capacitorResumes.push(name);
+       window.capacitorAppListener=callback;
+       return Promise.resolve({remove(){}});
+     }}}};
+   });
+   await page.goto(url,{waitUntil:'domcontentloaded'});
+   await page.evaluate(()=>homeReady);
+   await page.waitForFunction(()=>libraryRefreshLaunch===1);
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),0,'Launch fetched a second time after boot');
+   assert.equal(await page.locator('#library-refresh').count(),0,'Pull indicator is still in the page');
+   assert.equal(await page.evaluate(()=>window.capacitorResumes.includes('appStateChange')),true,'Foreground listener was not installed');
+   assert.ok(await page.evaluate(()=>libraryRefreshSeen.home>0),'Launch did not record Home');
+   await page.evaluate(()=>{
+     window.refreshCalls=0;
+     window.rssPageAtStub=rssPage;
+     loadBooks=async()=>{window.refreshCalls++};
+     loadRss=async()=>[];
+     const realNow=Date.now.bind(Date);
+     let shift=0;
+     Date.now=()=>realNow()+shift;
+     window.advanceRefreshClock=ms=>{shift+=ms};
+     window.pull=(dx,dy)=>{
+       const target=document.querySelector('.view.on');
+       const touch=(x,y)=>({identifier:1,target,clientX:x,clientY:y});
+       const fire=(type,touches)=>{const event=new Event(type,{bubbles:true,cancelable:true});Object.defineProperty(event,'touches',{value:touches});target.dispatchEvent(event);};
+       fire('touchstart',[touch(180,120)]);
+       fire('touchmove',[touch(180+dx,120+dy)]);
+       fire('touchend',[]);
+     };
+   });
+   const pageAtLaunch=await page.evaluate(()=>window.rssPageAtStub);
+   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+   await page.evaluate(()=>window.capacitorAppListener({isActive:true}));
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),0,'Foreground refreshed inside the launch quiet period');
+   await page.evaluate(()=>show('casuals'));
    await page.waitForFunction(()=>libraryRefreshTask===null);
+   const held=await page.evaluate(async()=>{
+     loadBooks=()=>new Promise(resolve=>{window.refreshCalls++;window.releaseRefresh=resolve});
+     show('longform');
+     await new Promise(resolve=>queueMicrotask(resolve));
+     const node=document.getElementById('home-controls');
+     const rect=node.getBoundingClientRect();
+     const limit=window.visualViewport?window.visualViewport.offsetTop+window.visualViewport.height:window.innerHeight;
+     return {runs:libraryRefreshRuns,calls:window.refreshCalls,dock:{bottom:rect.bottom,limit,transform:getComputedStyle(node).transform}};
+   });
+   assert.equal(held.runs,2,'Entering each shelf did not reload');
+   assert.equal(held.calls,2,'Entering a shelf did not reload saved books');
+   assert.ok(Math.abs(held.dock.bottom-held.dock.limit)<=1,`Automatic reload moved the dock to ${held.dock.bottom}`);
+   assert.equal(held.dock.transform,'none','Automatic reload transformed the dock');
+   await page.evaluate(()=>{
+     window.releaseRefresh();
+     loadBooks=async()=>{window.refreshCalls++};
+   });
+   await page.waitForFunction(()=>libraryRefreshTask===null);
+   assert.equal(await page.evaluate(()=>rssPage),pageAtLaunch,'A shelf reload advanced the Home feed');
+   await page.evaluate(()=>show('home'));
+   await page.waitForFunction(()=>libraryRefreshTask===null);
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),2,'Returning to Home inside 45s reloaded');
+   await page.evaluate(()=>show('vocab'));
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),2,'Wordbook reloaded');
+   await page.evaluate(()=>show('read'));
+   assert.equal(await page.locator('#v-read').isVisible(),true);
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),2,'Reader reloaded');
+   await page.evaluate(()=>show('home'));
+   await page.evaluate(()=>show('longform'));
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),2,'Re-entering a shelf inside 45s reloaded');
+   await page.evaluate(()=>show('home'));
+   const earlyRuns=await page.evaluate(()=>{
+     const remaining=45000-(Date.now()-libraryRefreshSeen.home);
+     window.advanceRefreshClock(remaining-1);
+     document.dispatchEvent(new Event('visibilitychange'));
+     return libraryRefreshRuns;
+   });
+   assert.equal(earlyRuns,2,'Foreground refreshed 1ms early');
+   await page.evaluate(()=>{
+     window.advanceRefreshClock(1);
+     document.dispatchEvent(new Event('visibilitychange'));
+     document.dispatchEvent(new Event('visibilitychange'));
+     window.capacitorAppListener({isActive:true});
+     window.capacitorAppListener({isActive:false});
+   });
+   await page.waitForFunction(()=>libraryRefreshTask===null);
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),3,'A second foreground event in the same quiet period reloaded');
+   assert.equal(await page.evaluate(()=>rssPage),pageAtLaunch+1,'Home foreground reload did not advance the feed');
+   await page.evaluate(()=>window.advanceRefreshClock(45000));
+   await page.evaluate(()=>window.capacitorAppListener({isActive:true}));
+   await page.waitForFunction(()=>libraryRefreshRuns===4);
+   await page.evaluate(()=>window.capacitorAppListener({isActive:true}));
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),4,'Repeat app resume reloaded inside the quiet period');
+   await page.evaluate(()=>window.pull(0,180));
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),4,'A downward pull reloaded');
+   await page.evaluate(()=>openSettings());
+   await page.evaluate(()=>window.advanceRefreshClock(45000));
+   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+   await page.evaluate(()=>closeSettings());
+   await page.locator('#settings-modal').waitFor({state:'hidden'});
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),4,'Settings sheet let a reload through');
+   await page.evaluate(()=>{
+     show('home');
+     loadBooks=()=>{window.refreshCalls++;return new Promise(resolve=>window.releaseRefresh=resolve)};
+     const before=window.refreshCalls;
+     refreshLibrary();
+     refreshLibrary();
+     window.coalesced=window.refreshCalls-before;
+   });
+   assert.equal(await page.evaluate(()=>window.coalesced),1,'Concurrent refresh duplicated work');
+   assert.equal(await page.evaluate(()=>libraryRefreshRuns),5,'Direct refresh stayed on the automatic clock');
+   await page.evaluate(()=>show('vocab'));
+   await page.evaluate(()=>window.releaseRefresh());
+   await page.waitForFunction(()=>libraryRefreshTask===null);
+   assert.equal(await page.locator('#v-vocab').isVisible(),true,'Refresh navigated back to the old shelf');
+   await page.evaluate(()=>{loadBooks=async()=>{};show('home')});
+   await page.waitForFunction(()=>libraryRefreshTask===null);
+   await page.evaluate(async()=>{
+     rssCands=RSS_FEEDS.map(()=>[]);
+     loadBooks=async()=>{};
+     loadRss=()=>new Promise(resolve=>window.releaseFeed=resolve);
+     refreshLibrary();
+   });
+   await page.waitForFunction(()=>libraryRefreshTask===null,null,{timeout:2000});
+   assert.equal(await page.evaluate(()=>rssListeners.size>0),true,'Feed updates stopped when the reload settled');
+   await page.evaluate(()=>{
+     rssCands[0]=[{title:'Ready source',url:'https://example.com/ready-source',source:'Dexerto',
+       feedSourceUrl:RSS_FEEDS[0].url,photo:'/assets/samples/starship-1.jpg'}];
+     rssListeners.forEach(notify=>notify(rssCands));
+   });
+   await page.locator('#casual-rail .rss-card:not([hidden])').waitFor({timeout:2000});
+   assert.equal(await page.locator('#casual-rail .rss-card .ct').first().textContent(),'Ready source');
+   await page.evaluate(()=>window.releaseFeed(rssCands));
+   assert.deepEqual(errors,[]);
+   console.log(engine.name(),'automatic library reload: launch, shelves, foreground, 45s gap, and feed updates passed.');
+  }finally{await browser.close();}
  }
- assert.equal(await page.evaluate(()=>window.refreshCalls),3);
- assert.equal(await page.evaluate(()=>window.gestureCanceled),false,'Pull prevented the browser scroll/bounce');
- await page.evaluate(()=>{window.pull(150,30);window.pull(0,50);window.pull(0,150,true)});
- assert.equal(await page.evaluate(()=>window.refreshCalls),3,'Horizontal, short or cancelled drag refreshed');
- await page.evaluate(()=>{
-   const target=document.querySelector('.view.on');
-   const fire=(type,y,touches=1)=>{
-     const event=new Event(type,{bubbles:true,cancelable:true});
-     Object.defineProperty(event,'touches',{value:Array.from({length:touches},()=>({clientX:180,clientY:y}))});target.dispatchEvent(event);
-   };
-   fire('touchstart',120);fire('touchmove',300);fire('touchmove',125);fire('touchend',125,0);
-   fire('touchstart',120);fire('touchmove',300,2);fire('touchend',300,0);
- });
- assert.equal(await page.evaluate(()=>window.refreshCalls),3,'Retracted or multi-touch drag refreshed');
- await page.evaluate(()=>openSettings());await page.evaluate(()=>window.pull(0,150));
- assert.equal(await page.evaluate(()=>window.refreshCalls),3,'Settings sheet gesture refreshed underlying shelf');
- await page.evaluate(()=>closeSettings());await page.locator('#settings-modal').waitFor({state:'hidden'});
- await page.evaluate(()=>{show('home');loadBooks=()=>{window.refreshCalls++;return new Promise(resolve=>window.releaseRefresh=resolve)};refreshLibrary();refreshLibrary()});
- assert.equal(await page.evaluate(()=>window.refreshCalls),4,'Concurrent refresh duplicated work');
- assert.equal(await page.locator('#library-refresh').textContent(),'','Refresh displayed instruction copy');
- assert.equal(await page.locator('.refresh-spinner').isVisible(),true);
- const motion=await page.evaluate(()=>({top:getComputedStyle(document.getElementById('topbar')).translate,view:getComputedStyle(document.getElementById('v-home')).translate,indicator:getComputedStyle(document.getElementById('library-refresh')).opacity}));
- assert.equal(motion.top,'none','Pull still translates the whole top bar');
- assert.equal(motion.view,'none','Pull still translates the whole shelf');
- assert.equal(motion.indicator,'1','Refresh indicator did not settle visibly');
- await page.evaluate(()=>show('vocab'));
- await page.waitForFunction(()=>document.getElementById('library-refresh').hidden);
- await page.evaluate(()=>window.releaseRefresh());await page.waitForFunction(()=>libraryRefreshTask===null);
- assert.equal(await page.locator('#v-vocab').isVisible(),true,'Refresh navigated back to old shelf');
- assert.equal(await page.evaluate(()=>document.getElementById('library-refresh').classList.contains('pulling')),false,'Navigation retained the pull state');
- await page.evaluate(()=>window.pull(0,150));assert.equal(await page.evaluate(()=>window.refreshCalls),4,'Non-shelf view refreshed');
- await page.evaluate(()=>show('home'));
- await page.locator('#home-casuals .section-link').click();assert.equal(await page.locator('#v-casuals').isVisible(),true);
- await page.evaluate(()=>show('home'));await page.locator('#longform .section-link').click();assert.equal(await page.locator('#v-longform').isVisible(),true);
- await page.evaluate(async()=>{sbUser={id:'fixture-library-account',email:'fixture@example.test'};await switchLearningAccount(sbUser.id);syncLoginNudge()});
- assert.equal(await page.locator('#login-nudge').isVisible(),false,'Signed-in account still has dot');
- await page.evaluate(()=>{
-   show('home');
-   rssCands=RSS_FEEDS.map(()=>[]);
-   loadBooks=async()=>{};
-   loadRss=()=>new Promise(resolve=>window.releaseFeed=resolve);
-   refreshLibrary();
- });
- await page.waitForFunction(()=>libraryRefreshTask===null,null,{timeout:2000});
- assert.equal(await page.evaluate(()=>rssListeners.size>0),true,'Feed updates stopped when pull indicator settled');
- await page.evaluate(()=>{
-   rssCands[0]=[{title:'Ready source',url:'https://example.com/ready-source',source:'Dexerto',
-     feedSourceUrl:RSS_FEEDS[0].url,photo:'/assets/samples/starship-1.jpg'}];
-   rssListeners.forEach(notify=>notify(rssCands));
- });
- await page.locator('#casual-rail .rss-card:not([hidden])').waitFor({timeout:2000});
- assert.equal(await page.locator('#casual-rail .rss-card .ct').first().textContent(),'Ready source');
- await page.evaluate(()=>window.releaseFeed(rssCands));
- assert.deepEqual(errors,[]);
- const nativePage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
- await nativePage.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
- await nativePage.addInitScript(()=>{
-   localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
-   window.nativeMessages=[];
-   window.webkit={messageHandlers:{breezeRefresh:{postMessage:message=>window.nativeMessages.push(message)}}};
- });
- await nativePage.goto(url);await nativePage.evaluate(()=>homeReady);
- assert.equal(await nativePage.evaluate(()=>window.nativeMessages.some(message=>message.enabled===true)),true,'Native refresh was not enabled on Home');
- await nativePage.evaluate(()=>{
-   window.refreshCalls=0;
-   loadBooks=async()=>{window.refreshCalls++};
-   loadRss=async()=>[];
-   window.breezeNativeRefresh(7);
- });
- await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.finished===7));
- assert.equal(await nativePage.evaluate(()=>window.refreshCalls),1,'Native refresh did not load books');
- assert.equal(await nativePage.locator('#library-refresh').isVisible(),false,'Web spinner appeared alongside native control');
- assert.equal(await nativePage.evaluate(()=>typeof window.breezePinDock),'undefined','Dock pin is installed');
- await nativePage.evaluate(()=>show('vocab'));
- await nativePage.waitForFunction(()=>window.nativeMessages.some(message=>message.enabled===false));
- await nativePage.close();
- console.log('Pull refresh: bounded indicator, progressive RSS, three shelves, gesture gates, coalescing and navigation safety passed.');
-}finally{await browser.close();await new Promise(done=>server.close(done))}
+}finally{await new Promise(done=>server.close(done));}
