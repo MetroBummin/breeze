@@ -199,7 +199,7 @@ const expected={
     "tests/verify-social-import-server.mjs": "be3b58cc8457569f11af548c748d7643a4b97e9f189a17673ea8fb44aa2df104",
     "tests/verify-social-inline.mjs": "5aeb7647df8327c402a373b60c9849e173590ef046d4c5e2352c7613397081d1",
     "tests/verify-storage-migration-browser.mjs": "7a169595a087f12d117752148527eaff376582af1aed168a09b2cbb8c92dd6de",
-    "tests/verify-storage-migration-web.mjs": "b0e5dfbd5369e4ef7a97a1b461663aee0e70c2599ef578ce244f53689f2e7fe9",
+    "tests/verify-storage-migration-web.mjs": "c567c6fcc108b5a306eecba6dcde1a05c4a3e705c2c8c23112d36508e764e7dc",
     "tests/verify-storage-migration.mjs": "f6593a7e7a6e9bdcbd233461f482994bfee708bb60bcc7bd5fdd71d56adafeab",
     "tests/verify-storage-quota-browser.mjs": "375645083ef106939a949b774d7e773e4173f0c87851fef765cfb7df204e953e",
     "tests/verify-storage-quota.mjs": "ba84ace85d2e2e26bc6bda10e0b46a07272018104682164c6ebb9ae41166cb72",
