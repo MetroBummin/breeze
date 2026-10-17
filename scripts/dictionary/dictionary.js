@@ -1343,7 +1343,7 @@ async function fetchEnMetadata(form,force=false){
      l:<낱말>|<문장 해시>   이 문장에서의 뜻 · 설명 · 다른 뜻 후보
 
    영어 metadata 조회는 이 한국어 뜻 경로와 완전히 분리되어 있습니다. */
-const AI_TIMEOUT  = 9000;   // 각 attempt의 제한. 기술적 실패만 같은 logical ID로 1회 자동 복구.
+const AI_TIMEOUT  = 9000;   // 한 번의 조회 제한. 서버가 느린 제공자를 바꾸고, 다시 시도는 사람이 누를 때만.
 const AI_MIN_WAIT = 280;    // 갓 받은 답은 이만큼은 바람을 보여 준 뒤에 놓습니다
 
 function sentenceHash(text){
@@ -1473,32 +1473,29 @@ async function recoverableWordLookup(payload,life){
   const key=JSON.stringify([actor,payload.word,payload.clicked,payload.sentence,payload.before,payload.after,payload.clickedIndex,payload.cands]);
   let logical=wordLookupRecoveries.get(key);
   if(!logical){
-    logical={payload:{...payload,lookupId:crypto.randomUUID()},autoUsed:false};
+    logical={payload:{...payload,lookupId:crypto.randomUUID()}};
     wordLookupRecoveries.set(key,logical);
     if(wordLookupRecoveries.size>32)wordLookupRecoveries.delete(wordLookupRecoveries.keys().next().value);
   }
-  while(wordLookupAlive(life)&&current()){
-    if(navigator.onLine===false)return {error:'offline'};
-    const controller=new AbortController(),owner=wordLookupSignal();
-    const cancel=()=>controller.abort();
-    if(owner?.aborted)return null;
-    owner?.addEventListener('abort',cancel,{once:true});
-    const timeout=setTimeout(cancel,AI_TIMEOUT);
-    let answer;
-    try{answer=await dictCall(logical.payload,controller.signal);}
-    finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel);}
-    if(!current())return null;
-    if(usableLookupAnswer(answer,logical.payload)){
-      wordLookupRecoveries.delete(key);return answer;
-    }
-    if(owner?.aborted||!wordLookupAlive(life))return null;
-    if(!technicalLookupFailure(answer,logical.payload)){
-      wordLookupRecoveries.delete(key);return {error:answer?.error||'lookup_failed'};
-    }
-    if(logical.autoUsed)return {error:'lookup_failed'};
-    logical.autoUsed=true;
+  if(!wordLookupAlive(life)||!current())return null;
+  if(navigator.onLine===false)return {error:'offline'};
+  const controller=new AbortController(),owner=wordLookupSignal();
+  const cancel=()=>controller.abort();
+  if(owner?.aborted)return null;
+  owner?.addEventListener('abort',cancel,{once:true});
+  const timeout=setTimeout(cancel,AI_TIMEOUT);
+  let answer;
+  try{answer=await dictCall(logical.payload,controller.signal);}
+  finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel);}
+  if(!current())return null;
+  if(usableLookupAnswer(answer,logical.payload)){
+    wordLookupRecoveries.delete(key);return answer;
   }
-  return null;
+  if(owner?.aborted||!wordLookupAlive(life))return null;
+  if(!technicalLookupFailure(answer,logical.payload)){
+    wordLookupRecoveries.delete(key);return {error:answer?.error||'lookup_failed'};
+  }
+  return {error:'lookup_failed'};
 }
 
 /* 읽기 시작할 때 함수만 깨워 둡니다. AI 도 한도도 쓰지 않습니다. */

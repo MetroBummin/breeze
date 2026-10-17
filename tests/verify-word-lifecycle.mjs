@@ -819,7 +819,6 @@ console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects dela
     ctx.words.bank={...savedWord('bank',''),example:'The bank flooded.'};
     ctx.openWord('bank',spanFor('bank','The bank flooded.'));await settle(20);
     net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
-    net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
     assert.equal(ctx.currentContext('bank').error,'error');
     assert.equal(ctx.words.bank.ko,'');
     return f;
@@ -837,7 +836,7 @@ console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects dela
     assert.equal(ctx.words.bank.ko,'강둑');
     assert.equal(ctx.currentContext('bank'),null);
     assert.equal(ctx.wordPeekState(ctx.words.bank,null).text,'강둑');
-    assert.equal(world.sent.length,4,'manual retries restarted the exhausted automatic budget');
+    assert.equal(world.sent.length,3,'manual retries restarted the failed lookup');
     ctx.closePanel();
   }
   {
@@ -860,7 +859,7 @@ console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects dela
     assert.equal(context.loading,'');assert.equal(context.error,undefined);
     assert.equal(world.el('p-ai-ko').textContent,'강둑','saved retry answer stayed hidden behind context.error');
     assert.equal(world.el('p-ai-note').textContent,'');
-    assert.equal(world.sent.length,4);
+    assert.equal(world.sent.length,3);
     ctx.closePanel();
   }
   for(const surface of ['mini','detail'])for(const next of ['cancel','same-word','other-word']){
@@ -873,7 +872,6 @@ console.log('Pinch acquisition ends mini/detail lookup lifetime and rejects dela
       const key=next==='same-word'?'bank':'river',sentence='The '+key+' closed.';
       if(key!=='bank')ctx.words[key]={...savedWord(key,''),example:sentence};
       ctx.openWord(key,spanFor(key,sentence));await settle(20);
-      net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
       net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
       newer=ctx.currentContext(key);assert.equal(newer.error,'error');
     }
@@ -906,7 +904,6 @@ for(const format of ['text','pdf','ocr','epub'])for(const phase of ['pending','r
   const signal=ctx.wordLookupSignal();
   if(phase==='ready'){net.deliver({ko:'달'});await settle(350);}
   if(phase==='error'){
-    net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
     net.deliver({error:'lookup_failed',httpStatus:502});await settle(20);
   }
   const requests=world.sent.length,saved=JSON.stringify(ctx.words.moon);

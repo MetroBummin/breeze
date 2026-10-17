@@ -37,23 +37,39 @@ async function callGemini(key:string,ask:Ask){
 }
 function providerKeys(){return{oKey:Deno.env.get("OPENROUTER_API_KEY"),gKey:Deno.env.get("GEMINI_API_KEY")}}
 async function ask(input:Ask){
-  const a={...input,trace:newAiTrace(input.action)};const{oKey,gKey}=providerKeys();const attempts:Array<{provider:"openrouter"|"gemini";run:()=>Promise<{text:string;usage:any}>}>=[];
-  if(oKey){attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});if(input.validate)attempts.push({provider:"openrouter",run:()=>callOpenRouter(oKey,a)});}if(gKey)attempts.push({provider:"gemini",run:()=>callGemini(gKey,a)});if(!attempts.length)throw new Error("server_not_configured");
+  const a={...input,trace:newAiTrace(input.action)};const{oKey,gKey}=providerKeys();
+  const providers:Array<"openrouter"|"gemini">=[];if(oKey)providers.push("openrouter");if(gKey)providers.push("gemini");
+  if(!providers.length)throw new Error("server_not_configured");
   let lastError:unknown=new Error("server_not_configured");
   const compact=input.maxTokens<=120;
   const deadline=Date.now()+(compact?8000:25000);
-  for(let index=0;index<attempts.length;index++){
-    const remaining=deadline-Date.now();if(remaining<250||input.signal?.aborted)break;
-    const timeout=AbortSignal.timeout(Math.min(compact?5000:15000,remaining));
-    a.signal=input.signal?AbortSignal.any([input.signal,timeout]):timeout;
-    try{
-      const out=await attempts[index].run();
-      if(input.validate)input.validate(parseJson(out.text));
-      return {...out,provider:attempts[index].provider,attempts:index+1};
-    }catch(error){
-      lastError=error;if(input.signal?.aborted)throw error;
-      const reason=String((error as Error).message);
-      if(/^(invalid_|missing_fixed_word)/.test(reason))a.prompt=input.prompt+"\nCorrection: the previous response failed "+reason+". Recheck the selected token, headword and fixed member indices. Return the same four fields only.";
+  // A short lookup keeps about 4s for OpenRouter so Gemini still has a turn inside 8s.
+  const openRouterLimit=compact&&input.validate?4000:compact?5000:15000;
+  const geminiReserve=2500;
+  let attempts=0;
+  for(const provider of providers){
+    let validationRetry=false;
+    for(let pass=0;pass<2;pass++){
+      const remaining=deadline-Date.now();
+      if(remaining<250||input.signal?.aborted)break;
+      if(pass===1){
+        if(provider!=="openrouter"||!validationRetry)break;
+        if(gKey&&remaining<openRouterLimit+geminiReserve)break;
+      }
+      const cap=provider==="openrouter"?openRouterLimit:(compact&&input.validate?remaining:compact?5000:15000);
+      const timeout=AbortSignal.timeout(Math.min(cap,remaining));
+      a.signal=input.signal?AbortSignal.any([input.signal,timeout]):timeout;
+      attempts++;
+      try{
+        const out=provider==="openrouter"?await callOpenRouter(oKey!,a):await callGemini(gKey!,a);
+        if(input.validate)input.validate(parseJson(out.text));
+        return {...out,provider,attempts};
+      }catch(error){
+        lastError=error;if(input.signal?.aborted)throw error;
+        const reason=String((error as Error).message);
+        validationRetry=/^(invalid_|missing_fixed_word)/.test(reason);
+        if(validationRetry)a.prompt=input.prompt+"\nCorrection: the previous response failed "+reason+". Recheck the selected token, headword and fixed member indices. Return the same four fields only.";
+      }
     }
   }
   throw lastError;

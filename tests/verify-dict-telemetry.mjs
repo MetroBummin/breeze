@@ -16,4 +16,16 @@ assert.equal(typeof releasePersist,'function','telemetry persistence did not sta
 releasePersist();
 await backgroundTask;
 
+async function outcomeFor(fail){
+  let recorded;
+  const recording={rpc(_name,args){recorded=args;return{abortSignal(){return Promise.resolve({data:'metric-id',error:null});}};}};
+  globalThis.fetch=async()=>{throw fail();};
+  await assert.rejects(()=>meteredFetch(recording,newAiTrace('look'),'openrouter','deepseek/deepseek-v4-flash-0731','https://provider.test',{}));
+  await backgroundTask;
+  return recorded.p_outcome;
+}
+const timeout=new Error('The operation was aborted due to timeout');timeout.name='TimeoutError';
+assert.equal(await outcomeFor(()=>timeout),'timeout');
+assert.equal(await outcomeFor(()=>new TypeError('fetch failed')),'network_error');
+
 console.log('Dictionary telemetry persists behind the provider response');
