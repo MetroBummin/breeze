@@ -82,7 +82,9 @@ image has no layout box yet. An image that already occupies its box does not
 hold the paragraph; if the box later collapses, the image-error path restores
 the place. A cover or a first paragraph shown before layout is not saved over
 the remote place. A hand scroll, a page change, or a key move releases the
-hold. That release happens once. A later layout retry, a sync refresh, or a
+hold. A touch or a key that does not change the scroll position does not
+release it, and neither does the scroll the reader applies while opening the
+saved page, so that page can still settle. That release happens once. A later layout retry, a sync refresh, or a
 remote place with a newer stamp does not scroll the open book again. The
 place this device just made is the one stored and sent, including when the
 other device's stamp is newer. The next open uses that place. Before the

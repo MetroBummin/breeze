@@ -219,4 +219,69 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(restored,2,'before the reader moves, the opening place can still settle');
 }
 
+{
+  const pdf=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
+  const session={kind:'pdf',pendingAnchor:{source:{kind:'pdf',page:23},inset:40},anchorMoved:false,userMovedPlace:false,pages:[]};
+  const listeners={};
+  const box={
+    addEventListener(type,fn){(listeners[type]||=[]).push(fn);},
+    contains(){return true;}
+  };
+  let programmatic=false;
+  const context=createContext({
+    console,Promise,Map,Set,WeakMap,Math,Number,
+    registerReaderSurface(){},
+    document:{getElementById(){return null;}},
+    originalSession:session,
+    currentReaderMode:'original',
+    readerScroller:()=>box,
+    readerScrollWasProgrammatic:()=>programmatic,
+    releaseSavedReadingPlace(){session.userMovedPlace=true;if(session.pendingAnchor)session.anchorMoved=true;}
+  });
+  new Script(pdf,{filename:'pdf-original.js'}).runInContext(context);
+  context.pdfWatchAnchorInput(session);
+  for(const fn of listeners.touchmove)fn();
+  assert.equal(session.anchorMoved,true,'a touch during the opening restore does not fight the finger');
+  assert.equal(session.userMovedPlace,false,'that touch still leaves page 23 free to settle');
+  session.anchorMoved=false;
+  context.noteOriginalAnchorInput({target:box});
+  assert.equal(session.anchorMoved,true);
+  assert.equal(session.userMovedPlace,false,'a tap is not a hand scroll');
+  programmatic=true;
+  for(const fn of listeners.scroll)fn();
+  assert.equal(session.userMovedPlace,false,'the scroll that opens page 23 is not a hand move');
+  programmatic=false;
+  for(const fn of listeners.scroll)fn();
+  assert.equal(session.userMovedPlace,true,'a hand scroll releases the saved page');
+}
+
+{
+  const scroll=readFileSync(resolve(root,'scripts/reader/reader-scroll.js'),'utf8');
+  let top=0;
+  const listeners=[];
+  const box={
+    clientHeight:800,
+    get scrollTop(){return top;},
+    set scrollTop(value){top=value;for(const fn of listeners)fn();},
+    addEventListener(type,fn){if(type==='scroll')listeners.push(fn);}
+  };
+  let during=null;
+  const context=createContext({
+    console,Math,
+    window:{scrollTo(){},scrollY:0,innerHeight:800},
+    document:{
+      addEventListener(){},
+      getElementById(id){return id==='reader-scroll'?box:null;},
+      body:{classList:{contains(){return false;}}}
+    }
+  });
+  new Script(scroll,{filename:'reader-scroll.js'}).runInContext(context);
+  box.addEventListener('scroll',()=>{during=context.readerScrollWasProgrammatic();});
+  context.readerScrollTo(900);
+  assert.equal(during,true,'opening page 23 does not look like a hand scroll');
+  assert.equal(context.readerScrollWasProgrammatic(),true);
+  box.scrollTop=40;
+  assert.equal(during,false,'a later hand scroll is distinguishable');
+}
+
 console.log('Reading place contract verified');

@@ -1026,13 +1026,18 @@ function epubWatchAnchorInput(session){
   if(!box||typeof box.addEventListener!=='function')return;
   session.anchorWatch=true;
   const moved=()=>{
+    if(originalSession!==session||!session.pendingAnchor)return;
+    session.anchorMoved=true;
+  };
+  const released=()=>{
     if(originalSession!==session)return;
+    if(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic())return;
     if(typeof releaseSavedReadingPlace==='function')releaseSavedReadingPlace();
-    else if(session.pendingAnchor)session.anchorMoved=true;
   };
   box.addEventListener('wheel',moved,{passive:true});
   box.addEventListener('touchmove',moved,{passive:true});
   box.addEventListener('keydown',moved);
+  box.addEventListener('scroll',released,{passive:true});
 }
 function epubRestoreOwnsPosition(){
   const pending=originalSession&&originalSession.pendingAnchor;
