@@ -268,6 +268,24 @@ private final class BreezeInkInputProbe: UIGestureRecognizer {
 }
 #endif
 
+// Preserve UIKit's spinner and pull animation while placing it in the
+// visible gap. UIKit owns the control's frame, so recalculate after layout.
+private final class BreezeRefreshControl: UIRefreshControl {
+    var verticalPlacement: ((UIRefreshControl) -> CGFloat)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let placement = CATransform3DMakeTranslation(0, verticalPlacement?(self) ?? 0, 0)
+        if !CATransform3DEqualToTransform(layer.sublayerTransform, placement) {
+            layer.sublayerTransform = placement
+        }
+        clipsToBounds = false
+        // The target can overlap the web page's empty safe-area padding.
+        // Keep the system spinner above the opaque WKWebView content there.
+        if superview?.subviews.last !== self { superview?.bringSubviewToFront(self) }
+    }
+}
+
 final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate, ASWebAuthenticationPresentationContextProviding, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     #if DEBUG
     private let pdfMotionProbe = BreezePdfMotionProbe()
@@ -327,6 +345,13 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var speechGenerations: [ObjectIdentifier: Int] = [:]
     private var activeSpeechGeneration: Int?
     private var speechStartDeadline: DispatchWorkItem?
+    private let libraryRefreshControl = BreezeRefreshControl()
+    private var libraryRefreshLogoTop: CGFloat?
+    private var libraryRefreshScrollObservation: NSKeyValueObservation?
+    private var libraryRefreshLayoutSize = CGSize.zero
+    private var libraryRefreshSafeTop: CGFloat = -1
+    private var libraryRefreshSequence = 0
+    private var activeLibraryRefreshSequence: Int?
     private static let speechCategory = "playback"
     private static let speechMode = "default"
     private static let speechOptions = ["duckOthers"]
@@ -440,9 +465,21 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         }
         #endif
 
-        // Reader edge bounce. Library screens turn this off: a refresh control
-        // on this scroll view shifts position:fixed with the web layer.
         webView.scrollView.bounces = true
+        libraryRefreshControl.addTarget(self, action: #selector(refreshLibraryFromScroll), for: .valueChanged)
+        libraryRefreshControl.verticalPlacement = { [weak self] control in
+            guard let self, let webView = self.webView else { return 0 }
+            let safeTop = self.view.safeAreaInsets.top
+            guard let logoTop = self.libraryRefreshLogoTop else { return safeTop }
+            let logoScreenTop = webView.scrollView.convert(CGPoint(x: 0, y: logoTop), to: self.view).y
+            let target = (safeTop + logoScreenTop) / 2
+            let center = control.convert(CGPoint(x: control.bounds.midX, y: control.bounds.midY), to: self.view).y
+            return max(0, target - center)
+        }
+        libraryRefreshScrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { [weak self] scrollView, _ in
+            guard let self, scrollView.refreshControl === self.libraryRefreshControl else { return }
+            self.libraryRefreshControl.setNeedsLayout()
+        }
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
@@ -688,11 +725,20 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                   message.frameInfo.securityOrigin.protocol == "breeze",
                   message.frameInfo.securityOrigin.host == "localhost",
                   let request = message.body as? [String: Any] else { return }
-            if let enabled = request["enabled"] as? Bool, let scrollView = webView?.scrollView {
-                // Home and the shelves pull inside the page. A system refresh
-                // control on this scroll view moves the fixed dock with the layer.
-                scrollView.refreshControl = nil
-                scrollView.bounces = !enabled
+            if let enabled = request["enabled"] as? Bool {
+                if enabled {
+                    if webView?.scrollView.refreshControl !== libraryRefreshControl {
+                        webView?.scrollView.refreshControl = libraryRefreshControl
+                        measureLibraryRefreshLogo()
+                    }
+                } else {
+                    finishLibraryRefresh(activeLibraryRefreshSequence)
+                    webView?.scrollView.refreshControl = nil
+                    activeLibraryRefreshSequence = nil
+                }
+            } else if let finished = (request["finished"] as? NSNumber)?.intValue,
+                      finished == activeLibraryRefreshSequence {
+                finishLibraryRefresh(finished)
             }
             return
         }
@@ -1132,6 +1178,17 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     }
     #endif
 
+    @objc private func refreshLibraryFromScroll() {
+        libraryRefreshSequence += 1
+        let sequence = libraryRefreshSequence
+        activeLibraryRefreshSequence = sequence
+        webView?.evaluateJavaScript("typeof window.breezeNativeRefresh === 'function' && (window.breezeNativeRefresh(\(sequence)), true)") { [weak self] result, error in
+            if error != nil || (result as? Bool) != true {
+                self?.finishLibraryRefresh(sequence)
+            }
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         if inkNativeScope["enabled"] as? Bool == true,
@@ -1139,6 +1196,29 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             pdfRoutingNeedsRefresh = true
         }
         schedulePdfRoutingRefresh()
+        if libraryRefreshLayoutSize != view.bounds.size || libraryRefreshSafeTop != view.safeAreaInsets.top {
+            libraryRefreshLayoutSize = view.bounds.size
+            libraryRefreshSafeTop = view.safeAreaInsets.top
+            measureLibraryRefreshLogo()
+        }
+        libraryRefreshControl.setNeedsLayout()
+    }
+
+    private func measureLibraryRefreshLogo() {
+        guard webView?.scrollView.refreshControl === libraryRefreshControl else { return }
+        // Measure once when enabled or the viewport changes, never on touchmove.
+        // Adding scrollY gives a stable document coordinate even during a pull.
+        webView?.evaluateJavaScript("(() => { const logo = document.getElementById('logo'); return logo ? logo.getBoundingClientRect().top + window.scrollY : null; })()") { [weak self] result, _ in
+            guard let self, let top = (result as? NSNumber)?.doubleValue, top.isFinite, top >= 0 else { return }
+            self.libraryRefreshLogoTop = CGFloat(top)
+            self.libraryRefreshControl.setNeedsLayout()
+        }
+    }
+
+    private func finishLibraryRefresh(_ sequence: Int?) {
+        guard let sequence, activeLibraryRefreshSequence == sequence else { return }
+        libraryRefreshControl.endRefreshing()
+        activeLibraryRefreshSequence = nil
     }
 
     func deliverSharedLinks() {
@@ -1379,6 +1459,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView?.backgroundColor = color
         webView?.scrollView.backgroundColor = color
         webView?.underPageBackgroundColor = color
+        // Follow the app's actual background, even when its theme differs
+        // from the device setting. UIKit's spinner also needs the local trait.
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 1
+        if color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            let isDark = 0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.5
+            libraryRefreshControl.overrideUserInterfaceStyle = isDark ? .dark : .light
+            libraryRefreshControl.tintColor = isDark
+                ? UIColor.label
+                : UIColor(red: 65 / 255, green: 105 / 255, blue: 118 / 255, alpha: 1)
+        }
     }
 
     // BEGIN READER_NATIVE_SELECTION

@@ -82,9 +82,12 @@ try{
   }
   const shell=readFileSync(resolve(root,'ios/App/App/SceneDelegate.swift'),'utf8');
   const refreshSource=readFileSync(resolve(root,'scripts/ui/library-refresh.js'),'utf8');
-  assert.equal(shell.includes('UIRefreshControl'),false,'UIRefreshControl is still attached to the web layer');
+  assert.equal(shell.includes('UIRefreshControl'),true,'UIRefreshControl is missing from the shell');
+  assert.equal(shell.includes('webView?.scrollView.refreshControl = libraryRefreshControl'),true,'Home and shelves do not attach the system refresh control');
+  assert.equal(shell.includes('webView.scrollView.bounces = true'),true,'Scroll-view bounce is off');
   assert.equal(shell.includes('breezePinDock'),false,'Dock pin is still in the shell');
   assert.equal(refreshSource.includes('breezePinDock'),false,'Dock pin is still in the page');
+  assert.equal(refreshSource.includes('breezeNativeRefresh'),true,'Native refresh entry is missing');
   // Before: the refresh control shifts the whole web layer, and a fixed dock
   // inside that layer moves with it. This capture only demonstrates that shift.
   async function shiftedLayer(shift){

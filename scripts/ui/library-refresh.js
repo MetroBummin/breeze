@@ -1,5 +1,4 @@
-/* Pull-to-refresh for the library views. The gesture draws the spinner and
-   reloads the shelf. It does not translate the page, so the fixed dock stays. */
+/* Pull-to-refresh for the library views. Leave the scroll/bounce to the browser. */
 let libraryRefreshTask=null;
 let libraryRefreshWork=null;
 let libraryRefreshWorkView='';
@@ -7,7 +6,7 @@ const LIBRARY_PULL_START=10;
 const LIBRARY_PULL_THRESHOLD=96;
 const LIBRARY_REFRESH_MIN_MS=450;
 const LIBRARY_REFRESH_MAX_MS=1200;
-/** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}}} */
+/** @type {Window & {webkit?: {messageHandlers?: {breezeRefresh?: {postMessage: (message: object) => void}}}, breezeNativeRefresh?: (sequence: number) => boolean}} */
 const refreshWindow=window;
 const nativeRefreshHandler=refreshWindow.webkit?.messageHandlers?.breezeRefresh || null;
 const libraryRefreshMotion=(()=>{
@@ -54,9 +53,11 @@ function refreshLibrary(){
     rssAlignRailStart(rail);
   }
   const indicator=document.getElementById('library-refresh');
-  libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
-  indicator.classList.add('refreshing');
-  indicator.setAttribute('aria-label','새로고침 중');
+  if(!nativeRefreshHandler){
+    libraryRefreshMotion.draw(LIBRARY_PULL_THRESHOLD);
+    indicator.classList.add('refreshing');
+    indicator.setAttribute('aria-label','새로고침 중');
+  }
   const redraw=()=>{
     if(activeAppView()!==view) return;
     if(view==='home') renderHome();
@@ -93,10 +94,12 @@ function refreshLibrary(){
         Promise.race([work,new Promise(resolve=>setTimeout(resolve,LIBRARY_REFRESH_MAX_MS))]),
       ]);
     }finally{
-      if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
-      else libraryRefreshMotion.clear();
-      indicator.classList.remove('refreshing');
-      indicator.removeAttribute('aria-label');
+      if(!nativeRefreshHandler){
+        if(activeAppView()===view && libraryRefreshAllowed()) libraryRefreshMotion.draw(0);
+        else libraryRefreshMotion.clear();
+        indicator.classList.remove('refreshing');
+        indicator.removeAttribute('aria-label');
+      }
       libraryRefreshTask=null;
     }
   })();
@@ -105,6 +108,10 @@ function refreshLibrary(){
 
 (()=>{
   if(nativeRefreshHandler){
+    refreshWindow.breezeNativeRefresh=sequence=>{
+      Promise.resolve(refreshLibrary()).catch(()=>{}).finally(()=>nativeRefreshHandler.postMessage({finished:sequence}));
+      return true;
+    };
     let previous=null;
     const report=()=>{
       const enabled=libraryRefreshAllowed();
@@ -115,6 +122,7 @@ function refreshLibrary(){
     const observer=new MutationObserver(report);
     document.querySelectorAll('.view,#settings-modal,#add-modal,#edit-modal,#onboarding').forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class','hidden','open']}));
     report();
+    return;
   }
   let start=null;
   let distance=0;
