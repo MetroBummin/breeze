@@ -46,15 +46,22 @@ function readerScrollTop(){
    시계가 아니라 값을 남깁니다. 우리가 마지막으로 적어 넣은 값과 지금 값이
    같으면 그 스크롤은 우리 것입니다. 얼마나 오래 걸리든 정확합니다. */
 let lastProgrammaticScrollTop = null;
+let readerScrollDepth = 0;
 function readerScrollTo(y){
   const top = Math.max(0, y || 0);
   const box = readerScroller();
-  if(box){ box.scrollTop = top; lastProgrammaticScrollTop = box.scrollTop; }
-  else window.scrollTo(0, top);
+  // The scroll event is delivered inside the assignment, before the value
+  // below can be stored. Depth marks that event as ours.
+  readerScrollDepth++;
+  try{
+    if(box){ box.scrollTop = top; lastProgrammaticScrollTop = box.scrollTop; }
+    else window.scrollTo(0, top);
+  }finally{ readerScrollDepth--; }
   /* 자리를 옮겼으면 방금 잰 값은 옛 화면의 것입니다 — scripts/core/state.js */
   if(typeof invalidateReaderMeasurements === 'function') invalidateReaderMeasurements();
 }
 function readerScrollWasProgrammatic(){
+  if(readerScrollDepth>0) return true;
   const box = readerScroller();
   if(!box || lastProgrammaticScrollTop === null) return false;
   return Math.abs(box.scrollTop - lastProgrammaticScrollTop) < 1;
@@ -127,7 +134,7 @@ function restorePdfRotationAnchor(pending){
   if(typeof currentPdfSession==='function'&&!currentPdfSession(session)) return;
   if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);
   const token=++readerModeChangeToken;
-  void restorePdfAnchor(anchor,topInset(),token).then(restored=>{
+  void restorePdfAnchor(anchor,topInset(),token,null,true).then(restored=>{
     if(!restored||token!==readerModeChangeToken||session!==originalSession) return;
     session.presented=true;session.lastScrollTop=readerScrollTop();
     if(typeof invalidatePdfPageLayout==='function') invalidatePdfPageLayout(session);

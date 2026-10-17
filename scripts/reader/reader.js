@@ -771,7 +771,7 @@ let chromeFrame=0;
   if(!chromeFrame) chromeFrame=requestAnimationFrame(()=>{ chromeFrame=0; if(curBook) followScrollDirection(); });
   invalidateReaderMeasurements();
   scheduleProgressUpdate();
-  if(Date.now()<readerScrollPauseUntil) return;
+  if(Date.now()<readerScrollPauseUntil && !(typeof savedPlaceReleased==='function'&&savedPlaceReleased())) return;
   if(scrollTick) return;
   const scheduledBook=curBook;
   const scheduledMode=currentReaderMode;

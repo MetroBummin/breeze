@@ -130,6 +130,148 @@ test('legacy strokes gain one stable id and duplicate ids split',()=>{
   assert.equal(again.changed,false);
 });
 
+test('ink drawn on the phone arrives on the tablet for the same page',async()=>{
+  const phone=boot();
+  const server=[];
+  phone.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  phone.context.sb.rpc=async(name,args)=>{
+    phone.calls.push({name,args});
+    for(const op of args.ops||[]){
+      const row={stroke_id:op.id,rev:op.rev,deleted:op.deleted===true,payload:op.deleted?null:op.stroke};
+      const existing=server.find(item=>item.stroke_id===op.id);
+      if(existing)Object.assign(existing,row);else server.push(row);
+    }
+    return {data:{ok:true,applied:(args.ops||[]).map(op=>op.id)}};
+  };
+  const key=JSON.stringify([sha,23]);
+  const phonePage={key,strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  phone.context.pages.set(key,phonePage);
+  await phone.context.flushBookInkNow();
+  assert.equal(phone.calls.length,1);
+  assert.equal(phone.calls[0].args.book_id,sha);
+  assert.equal(phone.calls[0].args.page,23);
+  const tablet=boot();
+  tablet.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  tablet.context.sb.from=table=>{
+    assert.equal(table,'book_ink');
+    return {select:()=>({eq:(column,value)=>{
+      assert.equal(column,'book_id');
+      assert.equal(value,sha);
+      return {eq:(pageColumn,page)=>{
+        assert.equal(pageColumn,'page');
+        assert.equal(page,23);
+        return {limit:async()=>({data:server.map(row=>({...row})),error:null})};
+      }};
+    }})};
+  };
+  const tabletPage={key,strokes:[stroke(idC,3)],svg:{},dirty:false,busy:false};
+  tablet.context.pages.set(key,tabletPage);
+  assert.equal(await tablet.context.pullBookInk(tabletPage),true);
+  assert.deepEqual(tabletPage.strokes.map(item=>item.id),[idC,idA]);
+  phonePage.strokes=[stroke(idA),highlight(idB,'group-phone')];
+  await phone.context.flushBookInkNow();
+  assert.equal(phone.calls.length,2);
+  assert.equal(phone.calls[1].args.ops.length,1);
+  assert.equal(phone.calls[1].args.ops[0].id,idB);
+  assert.equal(await tablet.context.pullBookInk(tabletPage),true);
+  assert.deepEqual(tabletPage.strokes.map(item=>item.id),[idC,idA,idB]);
+  assert.equal(tabletPage.strokes[2].tool,'highlighter');
+  assert.equal(tabletPage.strokes[2].strokeId,'group-phone');
+  assert.equal(tablet.calls.length,0);
+  assert.equal(await tablet.context.pullBookInk(tabletPage),true);
+  assert.deepEqual(tabletPage.strokes.map(item=>item.id),[idC,idA,idB]);
+  tabletPage.strokes=[stroke(idC,3),stroke(idA),highlight(idB,'group-phone'),stroke('dddddddd-dddd-4ddd-8ddd-dddddddddddd',8)];
+  const tabletStroke=tabletPage.strokes[3];
+  tablet.context.sb.rpc=async(name,args)=>{
+    tablet.calls.push({name,args});
+    for(const op of args.ops||[]){
+      const row={stroke_id:op.id,rev:op.rev,deleted:op.deleted===true,payload:op.deleted?null:op.stroke};
+      const existing=server.find(item=>item.stroke_id===op.id);
+      if(existing)Object.assign(existing,row);else server.push(row);
+    }
+    return {data:{ok:true,applied:(args.ops||[]).map(op=>op.id)}};
+  };
+  await tablet.context.flushBookInkNow();
+  assert.equal(tablet.calls.length,1);
+  assert.ok(tablet.calls[0].args.ops.some(op=>op.id===tabletStroke.id));
+  phone.context.sb.from=()=>({select:()=>({eq:()=>({eq:()=>({limit:async()=>({data:server.map(row=>({...row})),error:null})})})})});
+  assert.equal(await phone.context.pullBookInk(phonePage),true);
+  assert.deepEqual(phonePage.strokes.map(item=>item.id).sort(),[idA,idB,idC,tabletStroke.id].sort());
+});
+
+test('leaving publishes ink in the same turn, and a fast read is in the first paint',async()=>{
+  const ink=readFileSync(new URL('../scripts/reader/pdf-ink.js',import.meta.url),'utf8');
+  const mount=ink.slice(ink.indexOf('async function mount'),ink.indexOf('const platformReady'));
+  const pulled=mount.indexOf('const remote=pullBookInk(state)');
+  const painted=mount.lastIndexOf('paint(state)');
+  assert.ok(pulled>0&&painted>pulled,'the open waits for remote ink, then paints');
+  assert.match(mount,/setTimeout\(resolve,400\)/);
+  assert.doesNotMatch(mount,/void pullBookInk/);
+  const {context,calls,flush,pending}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,23]),strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  context.pages.set(state.key,state);
+  context.scheduleBookInk(state);
+  assert.equal(pending(),1);
+  flush(2999);
+  assert.equal(calls.length,0,'2999ms after the pen lifts, the other device cannot see the stroke');
+  flush(1);
+  for(let step=0;step<10;step++)await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.length,1,'the pen-up path publishes at 3000ms');
+  calls.length=0;
+  state.strokes=[stroke(idA),stroke(idB)];
+  context.scheduleBookInk(state);
+  assert.equal(pending(),1);
+  await context.flushBookInkNow();
+  assert.equal(pending(),0);
+  assert.equal(calls.length,1,'hiding publishes without waiting for that 3000ms');
+  assert.equal(calls[0].args.ops[0].id,idB);
+
+  const open=boot();
+  open.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const openKey=JSON.stringify([sha,23]);
+  const openPage={key:openKey,strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  open.context.pages.set(openKey,openPage);
+  open.context.sb.from=()=>({select:()=>({eq:()=>({eq:()=>({limit:async()=>({data:[{stroke_id:idB,rev:2,deleted:false,payload:stroke(idB,8)}],error:null})})})})});
+  const remote=open.context.pullBookInk(openPage);
+  let openTimer=0;
+  await Promise.race([
+    Promise.resolve(remote).catch(()=>{}),
+    new Promise(resolve=>{openTimer=open.context.setTimeout(resolve,400);})
+  ]);
+  open.context.clearTimeout(openTimer);
+  assert.equal(open.pending(),0,'a fast ink read does not keep the 400ms timer');
+  assert.deepEqual(openPage.strokes.map(item=>item.id),[idA,idB]);
+
+  const slow=boot();
+  slow.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const slowPage={key:openKey,strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  slow.context.pages.set(openKey,slowPage);
+  let releaseInk=null;
+  const inkRows=()=>new Promise(resolve=>{releaseInk=()=>resolve({data:[{stroke_id:idB,rev:2,deleted:false,payload:stroke(idB,8)}],error:null});});
+  slow.context.sb.from=()=>({select:()=>({eq:()=>({eq:()=>({limit:inkRows})})})});
+  const pendingPull=slow.context.pullBookInk(slowPage);
+  let merged=false;
+  pendingPull.then(()=>{merged=true;});
+  let slowTimer=0;
+  const raced=Promise.race([
+    pendingPull.then(()=>{},()=>{}),
+    new Promise(resolve=>{slowTimer=slow.context.setTimeout(resolve,400);})
+  ]);
+  slow.flush(399);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(merged,false);
+  assert.deepEqual(slowPage.strokes.map(item=>item.id),[idA],'399ms into a slow read, the page still has local ink');
+  slow.flush(1);
+  await raced;
+  assert.equal(merged,false,'the 400ms cap resolves while the read is still out');
+  assert.deepEqual(slowPage.strokes.map(item=>item.id),[idA]);
+  releaseInk();
+  await pendingPull;
+  assert.equal(merged,true);
+  assert.deepEqual(slowPage.strokes.map(item=>item.id),[idA,idB]);
+});
+
 test('two devices that already have ink union by stroke id',()=>{
   const {context}=boot();
   const left=context.inkAdvance([stroke(idA,1),highlight(idB,'group-1')],null);
@@ -317,7 +459,7 @@ test('logout and account switch drop the previous user mid-upload',async()=>{
   assert.deepEqual(again,[userB]);
 });
 
-test('remote ink is applied only after the open page has already painted',async()=>{
+test('remote ink merges when its read resolves',async()=>{
   const {context}=boot();
   context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
   const state={key:JSON.stringify([sha,1]),strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
@@ -349,6 +491,68 @@ test('storage quota keeps the pending page in memory and still retries',async()=
   assert.equal(await context.flushBookInk(state),true);
   assert.equal(calls.length,1);
   assert.equal(calls[0].args.ops[0].id,idA);
+});
+
+test('hiding the page uploads finished strokes without the debounce',async()=>{
+  const {context,calls,pending}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,7]),strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  context.pages.set(state.key,state);
+  context.scheduleBookInk(state);
+  assert.equal(pending(),1);
+  await context.flushBookInkNow();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].name,'breeze_merge_book_ink');
+  assert.equal(calls[0].args.page,7);
+  assert.equal(calls[0].args.ops[0].id,idA);
+  assert.equal(pending(),0);
+});
+
+test('a stroke without an id uploads in the same flush',async()=>{
+  const {context,calls}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,7]),strokes:[{color:'#111111',width:1.5,points:[[1,1],[2,2]]}],svg:{},dirty:false,busy:false};
+  context.pages.set(state.key,state);
+  assert.equal(await context.flushBookInk(state),true);
+  assert.equal(calls.length,1);
+  assert.match(calls[0].args.ops[0].id,/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  assert.equal(state.persisted>0,true);
+});
+
+test('an active stroke waits, then an immediate flush sends it',async()=>{
+  const {context,calls}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  const state={key:JSON.stringify([sha,7]),strokes:[stroke(idA)],svg:{},dirty:false,busy:true};
+  context.pages.set(state.key,state);
+  await context.flushBookInkNow();
+  assert.equal(calls.length,0);
+  state.busy=false;
+  await context.flushBookInkNow();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].args.ops[0].id,idA);
+});
+
+test('an immediate flush waits for the local write instead of another timer',async()=>{
+  const {context,calls}=boot();
+  context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  let release;
+  const state={key:JSON.stringify([sha,7]),strokes:[stroke(idA)],svg:{},dirty:true,busy:false};
+  state.saving=new Promise(resolve=>{release=()=>{state.dirty=false;state.saving=null;resolve();};});
+  context.pages.set(state.key,state);
+  const pendingFlush=context.flushBookInk(state,true);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.length,0);
+  release();
+  assert.equal(await pendingFlush,true);
+  assert.equal(calls.length,1);
+});
+
+test('the iPad path flushes on hide and does not treat a resting touch as a stroke',()=>{
+  const ink=readFileSync(new URL('../scripts/reader/pdf-ink.js',import.meta.url),'utf8');
+  assert.match(ink,/busy:\(\)=>!!active/);
+  assert.doesNotMatch(ink,/busy:\(\)=>!!active\|\|suppressed/);
+  assert.match(ink,/pagehide/);
+  assert.match(ink,/flushBookInkNow\(\)/);
 });
 
 test('same display name with a different file does not share a page key',()=>{
