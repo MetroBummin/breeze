@@ -130,6 +130,58 @@ test('legacy strokes gain one stable id and duplicate ids split',()=>{
   assert.equal(again.changed,false);
 });
 
+test('ink drawn on the phone arrives on the tablet for the same page',async()=>{
+  const phone=boot();
+  const server=[];
+  phone.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  phone.context.sb.rpc=async(name,args)=>{
+    phone.calls.push({name,args});
+    for(const op of args.ops||[]){
+      const row={stroke_id:op.id,rev:op.rev,deleted:op.deleted===true,payload:op.deleted?null:op.stroke};
+      const existing=server.find(item=>item.stroke_id===op.id);
+      if(existing)Object.assign(existing,row);else server.push(row);
+    }
+    return {data:{ok:true,applied:(args.ops||[]).map(op=>op.id)}};
+  };
+  const key=JSON.stringify([sha,23]);
+  const phonePage={key,strokes:[stroke(idA)],svg:{},dirty:false,busy:false};
+  phone.context.pages.set(key,phonePage);
+  await phone.context.flushBookInkNow();
+  assert.equal(phone.calls.length,1);
+  assert.equal(phone.calls[0].args.book_id,sha);
+  assert.equal(phone.calls[0].args.page,23);
+  const tablet=boot();
+  tablet.context.books=[{kind:'pdf',sourceHash:sha,bookCloudLink:{on:true}}];
+  tablet.context.sb.from=table=>{
+    assert.equal(table,'book_ink');
+    return {select:()=>({eq:(column,value)=>{
+      assert.equal(column,'book_id');
+      assert.equal(value,sha);
+      return {eq:(pageColumn,page)=>{
+        assert.equal(pageColumn,'page');
+        assert.equal(page,23);
+        return {limit:async()=>({data:server.map(row=>({...row})),error:null})};
+      }};
+    }})};
+  };
+  const tabletPage={key,strokes:[stroke(idC,3)],svg:{},dirty:false,busy:false};
+  tablet.context.pages.set(key,tabletPage);
+  assert.equal(await tablet.context.pullBookInk(tabletPage),true);
+  assert.deepEqual(tabletPage.strokes.map(item=>item.id),[idC,idA]);
+  phonePage.strokes=[stroke(idA),highlight(idB,'group-phone')];
+  await phone.context.flushBookInkNow();
+  assert.equal(phone.calls.length,2);
+  assert.equal(phone.calls[1].args.ops.length,1);
+  assert.equal(phone.calls[1].args.ops[0].id,idB);
+  assert.equal(await tablet.context.pullBookInk(tabletPage),true);
+  assert.deepEqual(tabletPage.strokes.map(item=>item.id),[idC,idA,idB]);
+  assert.equal(tabletPage.strokes[2].tool,'highlighter');
+  assert.equal(tabletPage.strokes[2].strokeId,'group-phone');
+  assert.equal(tablet.calls.length,0);
+  assert.equal(await tablet.context.pullBookInk(tabletPage),true);
+  assert.deepEqual(tabletPage.strokes.map(item=>item.id),[idC,idA,idB]);
+});
+
 test('two devices that already have ink union by stroke id',()=>{
   const {context}=boot();
   const left=context.inkAdvance([stroke(idA,1),highlight(idB,'group-1')],null);

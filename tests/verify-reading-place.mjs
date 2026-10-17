@@ -2,6 +2,7 @@ import {readFileSync} from 'node:fs';
 import {Script, createContext} from 'node:vm';
 import {fileURLToPath} from 'node:url';
 import {dirname, resolve} from 'node:path';
+import {webcrypto} from 'node:crypto';
 import assert from 'node:assert/strict';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
@@ -282,6 +283,172 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(context.readerScrollWasProgrammatic(),true);
   box.scrollTop=40;
   assert.equal(during,false,'a later hand scroll is distinguishable');
+}
+
+{
+  const pdf=readFileSync(resolve(root,'scripts/reader/pdf-original.js'),'utf8');
+  const cloud=readFileSync(resolve(root,'scripts/library/book-cloud.js'),'utf8');
+  const hash='ab'.repeat(32);
+  const bookId='file-'+hash.slice(0,32);
+  const user='11111111-1111-1111-1111-111111111111';
+  const book={id:bookId,kind:'pdf',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+  const pageCount=30,target=23,earlier=14;
+  const intrinsic=number=>number===1?{width:600,height:600}:{width:595,height:842};
+  let view=null;
+  let remote=null;
+  let moves=0;
+  let landing=null;
+  const scrolls=[];
+  const frames=[];
+  const memory=new Map();
+  const positions={};
+  const session={
+    kind:'pdf',bookId,hash,loadToken:1,pages:[],deletedPages:new Set(),
+    settled:new Set(),rendering:new Map(),wordBoxes:new Map(),
+    pdf:{async getPage(number){const size=intrinsic(number);return {getViewport:()=>size,cleanup(){}};}},
+    userMovedPlace:false,pendingAnchor:null,anchorMoved:false
+  };
+  const makeView=(width,height)=>{
+    let top=0;
+    const listeners={};
+    const pages=[];
+    let cursor=0;
+    for(let number=1;number<=pageCount;number++){
+      const size=intrinsic(number);
+      const pageHeight=width*size.height/size.width;
+      const element={
+        dataset:{page:String(number)},classList:{contains:()=>false},style:{},isConnected:true,
+        documentTop:cursor,pageHeight
+      };
+      element.getBoundingClientRect=()=>({
+        top:element.documentTop-top,left:0,width,height:element.pageHeight,
+        bottom:element.documentTop-top+element.pageHeight,right:width
+      });
+      cursor+=pageHeight;
+      pages.push(element);
+    }
+    const contentHeight=cursor;
+    const scroller={
+      clientWidth:width,clientHeight:height,scrollLeft:0,
+      get scrollTop(){return top;},set scrollTop(value){top=value;},
+      get scrollHeight(){return contentHeight;},
+      getBoundingClientRect:()=>({top:0,left:0,width,height,bottom:height,right:width}),
+      addEventListener(type,fn){(listeners[type]||=[]).push(fn);},
+      contains:()=>true
+    };
+    return {width,height,pages,listeners,scroller,get top(){return top;},set top(value){top=value;}};
+  };
+  const context=createContext({
+    console,Promise,Map,Set,WeakMap,Math,Number,Date,JSON,Object,Array,String,Error,
+    crypto:webcrypto,setTimeout,clearTimeout,
+    document:{getElementById:()=>null,querySelector:()=>null,createElement:()=>({append(){},setAttribute(){},className:''})},
+    registerReaderSurface(){},
+    window:{BREEZE_CONFIG:{BOOK_CLOUD:true,SB_URL:'https://example.test',SB_KEY:'anon'}},
+    localStorage:{
+      getItem:key=>memory.has(key)?memory.get(key):null,
+      setItem:(key,value)=>memory.set(key,String(value)),
+      removeItem:key=>memory.delete(key)
+    },
+    navigator:{onLine:true},
+    sbUser:{id:user},
+    sb:{
+      auth:{getSession:async()=>({data:{session:{access_token:'token'}}})},
+      from(table){return {select:async()=>table==='positions'
+        ?{data:[{book_id:hash,data:{revision:'rev-phone',locator:remote}}]}
+        :{data:[]}};},
+      rpc:async()=>({data:{ok:true}})
+    },
+    books:[book],positions,curBook:book,LS_POS:'breeze.pos',
+    save(){},toast(){},bookPut:async()=>{},
+    readerScrollTop:()=>view.top,
+    readerScrollTo(value){scrolls.push(value);view.top=value;},
+    readerScroller:()=>view.scroller,
+    topInset:()=>47,
+    originalZoom:()=>1,
+    requestAnimationFrame(fn){frames.push(fn);return frames.length;},
+    posOf:id=>positions[id]||{y:0,p:0,t:0,mode:'text',original:null},
+    renderOriginalPdfPage:async()=>{},
+    currentReaderMode:'original',originalLoadToken:1,originalSession:session,readerModeChangeToken:1
+  });
+  new Script(pdf,{filename:'pdf-original.js'}).runInContext(context);
+  new Script(cloud,{filename:'book-cloud.js'}).runInContext(context);
+  context.releaseSavedReadingPlace=()=>{session.userMovedPlace=true;if(session.pendingAnchor)session.anchorMoved=true;};
+  context.savedPlaceReleased=()=>!!session.userMovedPlace;
+  context.readerScrollWasProgrammatic=()=>false;
+  context.switchReaderMode=()=>{moves++;landing=context.pdfPlaceBeforePaint(session,book);return landing;};
+  const placeAt=inset=>{
+    session.pageLayout=null;
+    const layout=context.pdfPageLayout(session);
+    const y=view.top+inset;
+    const index=context.pdfPageIndexAtY(layout.rects,y);
+    const rect=layout.rects[index];
+    return {page:index+1,y:(y-rect[1])/rect[3]};
+  };
+  view=makeView(390,844);
+  context.originalZoomObservedWidth=390;
+  context.originalZoomObservedHeight=844;
+  session.pages=view.pages;
+  const phonePage=view.pages[target-1];
+  view.top=phonePage.documentTop+0.42*phonePage.pageHeight-context.topInset();
+  const captured=context.capturePdfAnchor(context.topInset());
+  assert.equal(captured.page,target,'the phone is reading page N');
+  assert.ok(Math.abs(captured.y-0.42)<1e-9,'the phone stores a page fraction, not a pixel');
+  const phoneTop=view.top;
+  const phonePlace=stamp=>remote={p:(target-1+captured.y)/pageCount,t:stamp,mode:'original',original:{kind:'pdf',page:captured.page,y:captured.y}};
+  const landed=[];
+  for(const [width,height] of [[1024,1366],[820,1180]]){
+    view=makeView(width,height);
+    context.originalZoomObservedWidth=width;
+    context.originalZoomObservedHeight=height;
+    session.pages=view.pages;
+    session.pageLayout=null;
+    session.userMovedPlace=false;
+    session.pendingAnchor=null;
+    session.anchorMoved=false;
+    session.anchorWatch=false;
+    session.anchorTimer=0;
+    session.revealFrozen=false;
+    positions[bookId]={p:0,t:1000,mode:'original',original:{kind:'pdf',page:1,y:0}};
+    scrolls.length=0;frames.length=0;moves=0;landing=null;
+    context.resetBookCloudSession();
+    phonePlace(5000);
+    await context.bookCloudRefresh(context.bookCloudSession());
+    await landing;
+    assert.equal(moves,1,width+'x'+height+' applies the phone page once');
+    assert.equal(scrolls.length,1,width+'x'+height+' scrolls to that page once');
+    const shown=placeAt(context.topInset()+10);
+    assert.equal(shown.page,target,width+'x'+height+' opens on the phone page');
+    assert.ok(Math.abs(shown.y-captured.y)<1e-6,width+'x'+height+' keeps the phone fraction');
+    assert.notEqual(view.top,phoneTop,width+'x'+height+' uses its own page height');
+    landed.push(view.top);
+    const earlierPage=view.pages[earlier-1];
+    view.top=earlierPage.documentTop+0.2*earlierPage.pageHeight-context.topInset();
+    context.pdfWatchAnchorInput(session);
+    for(const fn of view.listeners.scroll)fn();
+    assert.equal(session.userMovedPlace,true);
+    const stayed=view.top;
+    assert.equal(placeAt(context.topInset()).page,earlier);
+    positions[bookId]={p:0.4,t:6000,mode:'original',original:{kind:'pdf',page:earlier,y:0.2}};
+    assert.equal(await context.restorePdfAnchor(captured,context.topInset()+10),false);
+    session.pendingAnchor={source:captured,inset:context.topInset()+10};
+    session.anchorMoved=false;
+    context.pdfScheduleAnchor(session);
+    while(frames.length)await frames.shift()();
+    phonePlace(9000);
+    await context.bookCloudRefresh(context.bookCloudSession());
+    phonePlace(15000);
+    await context.bookCloudRefresh(context.bookCloudSession());
+    if(landing)await landing;
+    assert.equal(moves,1,width+'x'+height+' does not reopen for a newer stamp of page N');
+    assert.equal(scrolls.length,1,width+'x'+height+' does not scroll back to page N');
+    assert.equal(view.top,stayed);
+    assert.equal(placeAt(context.topInset()).page,earlier);
+    assert.equal(positions[bookId].original.page,earlier);
+    context.bookCloudQueuePosition(book);
+    const box=context.bookCloudReadOutbox(user);
+    assert.equal(box.positions[hash].locator.original.page,earlier,width+'x'+height+' sends the page it moved to');
+  }
+  assert.notEqual(landed[0],landed[1],'each tablet width lands with its own scroll');
 }
 
 console.log('Reading place contract verified');

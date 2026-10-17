@@ -590,6 +590,39 @@ test('after the reader moves, a newer remote page does not take the open book',a
   assert.equal(box.positions[hash].locator.original.page,8);
 });
 
+test('a phone page opens once on the tablet, then newer stamps of that page stay behind',async()=>{
+  const {context}=boot({flag:true});
+  const id='file-'+hash.slice(0,32);
+  const book={id,kind:'pdf',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+  context.books=[book];
+  context.curBook=book;
+  context.positions[id]={p:0,t:1000,mode:'original',original:{kind:'pdf',page:1,y:0}};
+  let moved=0;
+  context.switchReaderMode=()=>{moved++;};
+  context.restoreAnchor=()=>{moved++;return true;};
+  context.readerScrollTo=()=>{moved++;};
+  context.savedPlaceReleased=()=>false;
+  const phone=stamp=>({p:0.62,t:stamp,mode:'original',original:{kind:'pdf',page:23,y:0.42}});
+  let remote=phone(5000);
+  context.sb.from=table=>({select:async()=>table==='positions'
+    ?{data:[{book_id:hash,data:{revision:'rev-phone',locator:remote}}]}
+    :{data:[]}});
+  await context.bookCloudRefresh(context.bookCloudSession());
+  assert.equal(moved,1);
+  assert.equal(context.positions[id].original.page,23);
+  context.savedPlaceReleased=()=>true;
+  context.positions[id]={p:0.35,t:6000,mode:'original',original:{kind:'pdf',page:14,y:0.2}};
+  remote=phone(9000);
+  await context.bookCloudRefresh(context.bookCloudSession());
+  remote=phone(15000);
+  await context.bookCloudRefresh(context.bookCloudSession());
+  assert.equal(moved,1);
+  assert.equal(context.positions[id].original.page,14);
+  context.bookCloudQueuePosition(book);
+  assert.equal(context.bookCloudReadOutbox(user).positions[hash].locator.original.page,14);
+  assert.equal(context.bookCloudHeads[hash].locator.original.page,23);
+});
+
 test('before the reader moves, a newer remote page is still applied once',async()=>{
   const {context}=boot({flag:true});
   const id='file-'+hash.slice(0,32);
