@@ -54,7 +54,9 @@ try{
  const openImported=async()=>{
   await page.evaluate(async()=>{
    const book=books.find(item=>item.kind==='pdf');
-   if(book&&curBook?.id!==book.id)await openBook(book);
+   if(!book)return;
+   if(curBook?.id!==book.id)await openBook(book);
+   if(currentReaderMode!=='original')await switchReaderMode('original');
   });
  };
  const settle=async()=>{
@@ -75,6 +77,7 @@ try{
  };
  await boot('');
  await importScan();
+ await openImported();
  await settle();
  await page.evaluate(()=>show('home'));
  const started=Date.now();
@@ -146,14 +149,15 @@ try{
  await capture('off-phone-dark',page.locator('#v-home #shelf'));
  await boot('ring');
  await openImported();
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover .book-ocr-label')?.textContent==='글자 스캔 중');
+ await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover:not([hidden]) .book-ocr-label')?.textContent==='글자 스캔 중');
  assert.equal(await page.locator('#v-home .book-ocr-progress').count(),0,'unknown values stay on the cover');
  await boot('fill');
  await openImported();
- await page.waitForFunction(()=>qaCoverOcr.calls.length>=1&&document.querySelector('#v-home .book-ocr-label')?.textContent==='글자 스캔 중');
+ await page.waitForFunction(()=>qaCoverOcr.calls.length>=1&&document.querySelector('#v-home .book-ocr-cover:not([hidden]) .book-ocr-label')?.textContent==='글자 스캔 중');
  const pending=await page.evaluate(()=>qaCoverOcr.calls.length-1);
  await page.evaluate(i=>qaCoverOcr.calls[i].reject(new Error('stopped')),pending);
- await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-label')?.textContent==='글자 스캔 실패');
+ await page.waitForFunction(()=>document.querySelector('#v-home .book-ocr-cover:not([hidden]) .book-ocr-label')?.textContent==='글자 스캔 실패');
+ await page.evaluate(()=>show('home'));
  await page.setViewportSize({width:390,height:844});
  await page.evaluate(()=>{darkMode=false;applyDark();});
  await page.locator('#v-home .book-ocr-cover').scrollIntoViewIfNeeded();

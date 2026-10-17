@@ -46,29 +46,60 @@ try{
   await page.waitForFunction(known=>books.some(book=>book.kind==='pdf'&&!known.includes(book.id)),before,{timeout:60000});
   return page.evaluate(known=>books.find(book=>book.kind==='pdf'&&!known.includes(book.id)).id,before);
  };
- const resolveNext=async()=>{
-  await page.waitForFunction(()=>qaShelfOcr.calls.some(call=>!call.settled),null,{timeout:30000});
-  await page.evaluate(()=>{
-   const call=qaShelfOcr.calls.find(item=>!item.settled);
-   call.settled=true;call.resolve();
-  });
+ const pump=async(id,kind)=>{
+  const start=Date.now();
+  let last=null;const seen=[];
+  while(Date.now()-start<90000){
+   last=await page.evaluate(({id,kind})=>{
+    const book=books.find(item=>item.id===id);
+    const summary=book?BreezePdfOcrLibrary.summary(BreezePdfOcrLibrary.track(book)):null;
+    const node=document.querySelector(`[data-ocr-book="${id}"]`);
+    const job=book?BreezePdfOcrLibrary.track(book):null;
+    const shown=!!node&&node.hidden===false&&node.querySelector('.book-ocr-label')?.textContent==='글자 스캔 중';
+    return {ok:kind==='done'?!!(summary&&summary.complete):shown,summary,shown,scan:!!job?.scan,state:job?.state||'',hidden:node?node.hidden:null,text:node?.querySelector('.book-ocr-label')?.textContent||'',calls:qaShelfOcr.calls.length,nodes:[...document.querySelectorAll('[data-ocr-book]')].map(item=>({id:item.dataset.ocrBook,hidden:item.hidden,text:item.querySelector('.book-ocr-label')?.textContent||''}))};
+   },{id,kind});
+   const mark=[last.summary&&last.summary.done,last.scan,last.hidden,last.text,last.shown].join('/');
+   if(seen[seen.length-1]!==mark)seen.push(mark);
+   if(last.ok)return;
+   if(kind==='pending'&&last.summary&&last.summary.done>0&&!last.summary.complete){
+    for(let i=0;i<40;i++){
+     await page.waitForTimeout(25);
+     last=await page.evaluate(({id,kind})=>{
+      const book=books.find(item=>item.id===id);
+      const summary=book?BreezePdfOcrLibrary.summary(BreezePdfOcrLibrary.track(book)):null;
+      const node=document.querySelector(`[data-ocr-book="${id}"]`);
+      const shown=!!node&&node.hidden===false&&node.querySelector('.book-ocr-label')?.textContent==='글자 스캔 중';
+      return {ok:shown,summary,shown,hidden:node?node.hidden:null};
+     },{id,kind});
+     if(last.ok)return;
+    }
+    throw new Error('pending scan stayed hidden '+JSON.stringify(last));
+   }
+   const waiting=await page.evaluate(()=>qaShelfOcr.calls.some(call=>!call.settled));
+   if(waiting)await page.evaluate(()=>{const call=qaShelfOcr.calls.find(item=>!item.settled);call.settled=true;call.resolve();});
+   else await page.waitForTimeout(100);
+  }
+  throw new Error('OCR shelf state did not arrive '+seen.join(' | ')+' || '+JSON.stringify(last));
  };
  await page.evaluate(()=>{
   books.unshift({id:'epub-shelf',title:'아주 긴 전자책 제목이 표지 안에서 세 줄을 넘지 않고 저자와 만나지 않아야 한다',author:'김영하',kind:'epub',addedAt:1,original:{hash:'not-a-pdf'}});
   renderHome();
  });
+ const openOriginal=async id=>{
+  await page.evaluate(async id=>{
+   const book=books.find(item=>item.id===id);
+   if(curBook?.id!==book.id)await openBook(book);
+   if(currentReaderMode!=='original')await switchReaderMode('original');
+  },id);
+ };
  const doneId=await importScan('Scythe.pdf',1);
- await resolveNext();
- await page.waitForFunction(id=>{
-  const node=document.querySelector(`[data-ocr-book="${id}"]`);
-  return !!node&&node.hidden===true;
- },doneId,{timeout:30000});
- const pendingId=await importScan('수능특강.pdf',4);
- await resolveNext();
- await page.waitForFunction(id=>{
-  const node=document.querySelector(`[data-ocr-book="${id}"]`);
-  return !!node&&node.hidden===false&&node.querySelector('.book-ocr-label')?.textContent==='글자 스캔 중';
- },pendingId,{timeout:30000});
+ await openOriginal(doneId);
+ await pump(doneId,'done');
+ await page.evaluate(()=>{show('home');renderHome();});
+ const pendingId=await importScan('수능특강.pdf',8);
+ await page.evaluate(()=>{show('home');renderHome();});
+ await openOriginal(pendingId);
+ await pump(pendingId,'pending');
  await page.evaluate(({doneId,pendingId,cloudId})=>{
   const done=books.find(book=>book.id===doneId),pending=books.find(book=>book.id===pendingId);
   done.title='Scythe';done.author='Neal Shusterman';
