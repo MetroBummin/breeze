@@ -18,6 +18,17 @@ SHA-256 and decoded dimensions.
 | `scandal-in-bohemia.webp` | 122,122 | 768 × 1152 |
 | `speckled-band.webp` | 160,112 | 768 × 1152 |
 
+Alice and Gatsby use the same uncropped 768 × 1152 WebP frame. Both pictures
+are original paintings made for Breeze: no film still, no copyrighted cover,
+and no scanned illustration. Alice is a dark midnight view of a girl and a
+white rabbit at a glowing hole. Gatsby is a night bay, a distant house, and
+one green light at the end of a dock.
+
+| Current asset | Bytes | Dimensions |
+| --- | ---: | --- |
+| `alice-in-wonderland.webp` | 126,608 | 768 × 1152 |
+| `the-great-gatsby.webp` | 147,660 | 768 × 1152 |
+
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
 saved/custom covers are preserved; source text and reading identity are never

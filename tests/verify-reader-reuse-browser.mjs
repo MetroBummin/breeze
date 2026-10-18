@@ -60,7 +60,7 @@ try{for(const engine of [chromium,webkit]){
   show('home');releaseRetainedReader();check(!retainedReader&&!document.getElementById('rtext').childElementCount,'expiry did not free DOM');
   // Exercise actual EPUB/PDF sessions and retain their parsed document identity.
   const originalResults=[];
-  for(const [kind,path] of [['epub','assets/classics/alice-in-wonderland.epub'],['pdf','ready/workbooks/ne-minbyeongcheon-lesson-1.pdf']]){
+  for(const [kind,path] of [['epub','tests/fixtures/sample.epub'],['pdf','ready/workbooks/ne-minbyeongcheon-lesson-1.pdf']]){
     const blob=await (await fetch(path)).blob();
     const record={kind,hash:'retained-'+kind,blob};
     const book={id:'retained-'+kind,title:'Retained '+kind,kind,original:{hash:record.hash},paras:['A gentle breeze makes reading easy.']};

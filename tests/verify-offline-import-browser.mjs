@@ -13,7 +13,7 @@ const server=createServer((req,res)=>{try{
  res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(nextGeneration&&path.endsWith('/sw.js')?readFileSync(path,'utf8').replace(/const VERSION = '[a-f0-9]{8}'/,"const VERSION = 'a18a18a1'"):readFileSync(path));
 }catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
-const epubFile={name:'QA Alice.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'assets/classics/alice-in-wonderland.epub'))};
+const epubFile={name:'QA Alice.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'tests/fixtures/sample.epub'))};
 // Playwright's worker enumeration/lifecycle automation is Chromium-only:
 // https://playwright.dev/docs/api/class-browsercontext#browser-context-service-workers
 // Keep WebKit's real IndexedDB/import/cover matrix in verify-import-commit-browser.

@@ -43,7 +43,7 @@ const url=`http://127.0.0.1:${server.address().port}`;
  await p.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  const errors=[];p.on('pageerror',error=>errors.push(error.message));
  await p.goto(url+'/?viewport=1');const c=await p.context().newCDPSession(p);
- const inputs=[{name:'Rapid taps.txt',mimeType:'text/plain',buffer:Buffer.from('Reading carefully keeps words clear. A second sentence gives the reader another example.\n\n'.repeat(30))},{name:'rapid.pdf',mimeType:'application/pdf',buffer:fixturePdf(8)},resolve(root,'assets/classics/alice-in-wonderland.epub')];
+ const inputs=[{name:'Rapid taps.txt',mimeType:'text/plain',buffer:Buffer.from('Reading carefully keeps words clear. A second sentence gives the reader another example.\n\n'.repeat(30))},{name:'rapid.pdf',mimeType:'application/pdf',buffer:fixturePdf(8)},resolve(root,'tests/fixtures/sample.epub')];
  for(let n=0;n<inputs.length;n++){
   const count=await p.evaluate(()=>books.length);await p.locator('#fileinput').setInputFiles(inputs[n]);
   await p.waitForFunction(count=>books.length>count,count,{timeout:120000});

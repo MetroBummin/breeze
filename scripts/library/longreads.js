@@ -1,18 +1,9 @@
-/* The legacy EPUB table remains only so an older cloud record can restore its
-   original bundled book. It is deliberately absent from the default shelf. */
-
-const CLASSICS = [
-  { id:'alice-in-wonderland', title:"Alice's Adventures in Wonderland",
-    author:'Lewis Carroll', year:1865, kb:136,
-    blurb:'가장 짧고 가장 쉽습니다. 첫 원서로 자주 고르는 책.' },
-  { id:'the-great-gatsby', title:'The Great Gatsby',
-    author:'F. Scott Fitzgerald', year:1925, kb:180,
-    blurb:'문장이 아름답기로 이름난 미국 소설. 5만 단어 남짓.' },
-];
+/* CLASSICS is empty. Alice and Gatsby are Breeze Original text books below,
+   and The Odyssey is not in the catalog. A missing classic id restores nothing. */
+const CLASSICS = [];
 
 const classicFile = id => `assets/classics/${id}.epub`;
-/* 표지는 EPUB 안에도 들어 있지만(`epubCoverImage`), 이 두 권이 실제로 쓰는
-   표지는 파일 밖의 이 한 장입니다.
+/* A catalog cover, when an entry exists, is the file outside the EPUB.
 
    이유가 둘입니다. 하나는 권유 카드가 아직 받기 *전*에 뜨는 자리라, 표지
    한 장을 보자고 400KB 짜리 책을 미리 받을 수 없다는 것. 다른 하나가 더
@@ -201,6 +192,38 @@ const LONG_READS = [
     "sha256": "19906dcd8bd6e3127bfd6676361901199dd10ba6bf3077963e6de2768d08b2c4",
     "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s “The Hound of the Baskervilles” (1902). Complete fifteen-chapter novel with original frontmatter. Source text: Project Gutenberg, eBook #2852. Language lightly modernized for Breeze; this is not Doyle’s verbatim text. The story, paragraph order, period setting and clues are preserved.",
     "glossary": "Historical money, objects, dates, names and clue-bearing language are retained."
+  },
+  {
+    id:'alice-in-wonderland', presentation:'story',
+    file:'assets/longreads/alice-in-wonderland.txt',
+    cover:'assets/longreads/covers/alice-in-wonderland.webp', coverPosition:'center top',
+    title:"Alice's Adventures in Wonderland",
+    originalTitle:"Alice's Adventures in Wonderland (1865)",
+    author:'Lewis Carroll',
+    sourceUrl:'https://www.gutenberg.org/ebooks/11', site:'Project Gutenberg',
+    license:'Public domain in the USA',
+    licenseUrl:'https://www.gutenberg.org/policy/license.html',
+    series:'BREEZE ORIGINAL',
+    hook:'강둑에서 졸고 있던 앨리스가, 조끼 주머니에서 회중시계를 꺼내는 토끼를 따라 굴속으로 들어갑니다.',
+    edition:'Public-domain text, typeset for Breeze', wordCount:26302,
+    sha256:'e82881f1db2fbd796e7630eb641ae8c48206988371098f0cd198801d9c485496',
+    editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #11. This is Lewis Carroll’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and the verse lines of the poems are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credits: Arthur DiBianca and David Widger. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
+  },
+  {
+    id:'the-great-gatsby', presentation:'story',
+    file:'assets/longreads/the-great-gatsby.txt',
+    cover:'assets/longreads/covers/the-great-gatsby.webp', coverPosition:'center top',
+    title:'The Great Gatsby',
+    originalTitle:'The Great Gatsby (1925)',
+    author:'F. Scott Fitzgerald',
+    sourceUrl:'https://www.gutenberg.org/ebooks/64317', site:'Project Gutenberg',
+    license:'Public domain in the USA',
+    licenseUrl:'https://www.gutenberg.org/policy/license.html',
+    series:'BREEZE ORIGINAL',
+    hook:'부두 끝의 초록 불빛. 개츠비가 밤마다 바라보던 그 빛 너머에는 데이지가 있습니다.',
+    edition:'Public-domain text, typeset for Breeze', wordCount:48153,
+    sha256:'a88b52c53fabbd19fa78bf4cee7da6b69e656cec8b97b273d26ab0d04baac675',
+    editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
   },
 ];
 /* These pictures sit above the exact story passage they depict. Match the
@@ -884,13 +907,61 @@ async function upgradeHomewardLongRead(book,alive=()=>true,signal){
   }
 }
 function pendingLongReads(){
-  const owned=new Set(books.map(book=>book.longReadId).filter(Boolean));
+  const owned=new Set(books.flatMap(book=>[book.longReadId, book.kind==='epub'?book.classicId:'']).filter(Boolean));
   return LONG_READS.filter(read=>!read.dormant&&!owned.has(read.id));
+}
+/* An imported EPUB classic keeps its book id. The saved fraction becomes a
+   paragraph in the text edition, so the reader opens where the EPUB left off. */
+async function migrateBundledClassic(book, read, options={}){
+  if(!book||!read||book.classicId!==read.id||book.kind!=='epub') return book.longReadId===read.id?book:null;
+  if(typeof curBook!=='undefined'&&curBook===book&&typeof activeAppView==='function'&&activeAppView()==='read') return book;
+  const fileUrl=read.sha256?`${read.file}?v=${read.sha256.slice(0,8)}`:read.file;
+  const response=await fetch(fileUrl,{signal:options.signal});
+  if(!response.ok) throw new Error('HTTP '+response.status);
+  const text=await response.text();
+  if(read.sha256){
+    const digest=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    const hash=Array.from(new Uint8Array(digest), byte=>byte.toString(16).padStart(2,'0')).join('');
+    if(hash!==read.sha256) throw new Error('Text book is incomplete or has changed');
+  }
+  const paras=parseTXT(text,{preserveParagraphs:true});
+  if(paras.length<20) throw new Error('Text book is empty');
+  const before=positions[book.id];
+  Object.assign(book,{
+    kind:'txt', paras, formatting:null, sourceMap:null, layoutSignals:null, original:null,
+    longReadId:read.id, title:read.title, author:read.author, originalTitle:read.originalTitle,
+    sourceUrl:read.sourceUrl, site:read.site, attribution:longReadAttribution(read),
+    coverPosition:book.coverUpdatedAt?book.coverPosition:read.coverPosition,
+    fingerprint:bookContentFingerprint(paras),
+  });
+  await bookPut(book);
+  if(typeof localDelete==='function') await localDelete('originals', book.id);
+  if(before&&before.t){
+    const fraction=Math.max(0, Math.min(1, Number(before.p)||0));
+    positions[book.id]={...before, p:fraction, y:0, dy:0, mode:'text', original:null,
+      pi:paras.length<=1?0:Math.round(fraction*(paras.length-1))};
+    save(LS_POS, positions);
+  }
+  if(!book.coverUpdatedAt) await applyLongReadCover(read, options);
+  return book;
+}
+async function migrateBundledClassics(){
+  for(const book of books.slice()){
+    const read=LONG_READS.find(item=>item.presentation==='story'&&item.id===book.classicId);
+    if(!read||book.kind!=='epub'||book.longReadId===read.id) continue;
+    try{ await migrateBundledClassic(book, read); }
+    catch(error){ console.warn('고전을 텍스트 판으로 옮기지 못했습니다:', error&&error.message); }
+  }
 }
 
 let longReadBusy=false;
 async function importLongRead(read,card,options={}){
   if(longReadBusy)return;
+  const classic=books.find(book=>book.classicId===read.id&&book.kind==='epub'&&book.longReadId!==read.id);
+  if(classic){
+    try{ return await migrateBundledClassic(classic, read, options); }
+    catch(error){ console.warn('고전을 텍스트 판으로 옮기지 못했습니다:', error&&error.message); }
+  }
   const owned=books.find(book=>book.longReadId===read.id);
   if(owned){
     if(!owned.cover)await applyLongReadCover(read,options);

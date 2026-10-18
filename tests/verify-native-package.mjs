@@ -12,7 +12,7 @@ const html=readFileSync(resolve(out,'index.html'),'utf8');
 for(const match of html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)="(?!https?:|\/\/|data:|#)([^"]+)"/g)){
  assert(existsSync(resolve(out,match[1].split('?')[0])),'missing entry dependency '+match[1]);
 }
-for(const path of ['assets/lib/readability-0.6.0.js','assets/longreads/homeward-lookup-data.js','scripts/reader/frame-trace.js','scripts/reader/pdf-ink-store.js','assets/classics/alice-in-wonderland.epub']){
+for(const path of ['assets/lib/readability-0.6.0.js','assets/longreads/homeward-lookup-data.js','scripts/reader/frame-trace.js','scripts/reader/pdf-ink-store.js']){
  assert(existsSync(resolve(out,path)),'required offline/deferred resource missing: '+path);
 }
 for(const dir of ['assets/longreads','assets/brand/wordmarks']){

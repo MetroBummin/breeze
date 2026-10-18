@@ -118,10 +118,9 @@ test('books replace the rail, keep saved books on the shelf, and open like the l
   assert.ok(document.querySelector('#shelf [data-book-id="saved-other"]'));
   cards[0].click();
   assert.deepEqual(opened,['sherlock-holmes-scandal-in-bohemia']);
-  const classic=cards.find(card=>card.dataset.classicId==='the-great-gatsby');
-  classic.click();
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(opened.at(-1),'imported-the-great-gatsby');
+  const gatsby=cards.find(card=>card.dataset.longreadId==='the-great-gatsby');
+  gatsby.click();
+  assert.equal(opened.at(-1),'the-great-gatsby');
   c.setHomeRecommendKind('articles');
   assert.equal(document.querySelectorAll('#casual-rail .home-recommend-book').length,0);
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,1);

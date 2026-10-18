@@ -26,7 +26,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   try{
    await page.goto(url);await page.evaluate(()=>homeReady);
    await page.evaluate(async()=>{
-    const blob=await (await fetch('assets/classics/alice-in-wonderland.epub')).blob();
+    const blob=await (await fetch('tests/fixtures/sample.epub')).blob();
     window.commitQA={file:new File([blob],'Atomic Alice.epub',{type:'application/epub+zip'})};
     commitQA.import=async options=>{readerNotices.reset();return importFile(commitQA.file,null,options);};
     commitQA.hash=async(value,label)=>{

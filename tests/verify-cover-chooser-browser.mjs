@@ -37,7 +37,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     const evaluate=(name,fn,arg)=>phase(name,()=>page.evaluate(fn,arg));
     await phase('navigate',()=>page.goto(url));await evaluate('homeReady',()=>homeReady);
     const id=await evaluate('import EPUB',async()=>{
-      const file=new File([await(await fetch('assets/classics/alice-in-wonderland.epub')).blob()],'Cover Alice.epub',{type:'application/epub+zip'});
+      const file=new File([await(await fetch('tests/fixtures/sample.epub')).blob()],'Cover Alice.epub',{type:'application/epub+zip'});
       await importFile(file);return books.find(b=>b.kind==='epub').id;
     });
     await evaluate('open edit sheet',id=>openEditSheet(books.find(b=>b.id===id)),id);
@@ -77,7 +77,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     const replacement=await chosen();assert.notEqual(replacement.storedHash,photo.storedHash);assert.equal(replacement.shownHash,replacement.storedHash,'same cover key shows replacement bytes');
     await evaluate('save replacement',()=>saveEditSheet());
     await evaluate('reimport EPUB',async()=>{
-      const file=new File([await(await fetch('assets/classics/alice-in-wonderland.epub')).blob()],'Cover Alice.epub',{type:'application/epub+zip'});
+      const file=new File([await(await fetch('tests/fixtures/sample.epub')).blob()],'Cover Alice.epub',{type:'application/epub+zip'});
       await importFile(file);
     });
     await evaluate('reopen after reimport',id=>openEditSheet(books.find(b=>b.id===id)),id);assert.deepEqual(await chosen(),replacement,'reimport retains current custom cover and its bytes');

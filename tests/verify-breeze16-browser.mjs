@@ -276,7 +276,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
    return {result,unchanged:JSON.stringify(curBook)===previous,visible:!originalSession.deletedPages.has(62)};
   });assert.deepEqual(failedWrite,{result:false,unchanged:true,visible:true});
   await page.evaluate(()=>returnHomeFromReader());
-  await page.locator('#fileinput').setInputFiles({name:'Alice.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'assets/classics/alice-in-wonderland.epub'))});
+  await page.locator('#fileinput').setInputFiles({name:'Alice.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'tests/fixtures/sample.epub'))});
   await page.waitForFunction(()=>books.some(b=>b.kind==='epub'));
   await page.evaluate(async()=>{await openBook(books.find(b=>b.kind==='epub'));await switchReaderMode('original');});
   await page.waitForFunction(()=>originalSession?.kind==='epub'&&originalSession.frames.some(frame=>frame.contentDocument?.getElementById('breeze-saved-mark-style')));

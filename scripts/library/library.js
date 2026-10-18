@@ -348,27 +348,46 @@ function bookCard(book, current, canManage=true){
 
 /* 서버에만 있는 책. 이름만 받아 와서 흐린 카드로 둡니다 — 있다는 것은 보이고,
    가운데 단추가 "받으면 읽을 수 있다"를 말합니다. */
+function bundledLongReadForMeta(meta){
+  if(typeof LONG_READS==='undefined'||!meta) return null;
+  const id=meta.longReadId||meta.classicId;
+  return LONG_READS.find(read=>read.id===id&&!read.dormant)||null;
+}
+async function restoreBundledLongRead(read, meta){
+  const book=await importLongRead(read);
+  if(!book) return;
+  const position=meta&&meta.position;
+  if(position&&position.t&&!posOf(book.id).t){
+    const count=book.paras.length;
+    const fraction=Math.max(0, Math.min(1, Number(position.p)||0));
+    positions[book.id]={p:fraction, t:position.t, mode:'text', y:0, dy:0, original:null,
+      pi:count<=1?0:Math.round(fraction*(count-1))};
+    save(LS_POS, positions);
+  }
+  openCasualPreviewOrReader(book);
+}
 function cloudBookCard(row, canManage=true){
   const meta = row.meta || {};
-  const classic=classicForMeta(meta);
+  const bundled=bundledLongReadForMeta(meta);
+  const classic=bundled?null:classicForMeta(meta);
   const card = el('div', 'bookcard cloud');
   const progress=meta.position&&meta.position.t?readingPercent(meta.position.p)+'%부터 이어 읽기':'';
-  card.innerHTML = `${classic?'<img class="cover" alt="" hidden>':''}<div class="author"></div><div class="bt"></div>
-    <button class="getbtn" type="button">${classic?'무료로 다시 받아서':'파일 연결해서'} ${progress||'마저 읽기'}</button>
+  card.innerHTML = `${bundled||classic?'<img class="cover" alt="" hidden>':''}<div class="author"></div><div class="bt"></div>
+    <button class="getbtn" type="button">${bundled||classic?'무료로 다시 받아서':'파일 연결해서'} ${progress||'마저 읽기'}</button>
     <button class="del" type="button" title="이 기기에서 지우기">✕</button>`;
   fillCard(card, { '.author': meta.author || '파일 연결 필요', '.bt': meta.title || '(제목 없음)' });
-  if(classic){
+  if(bundled||classic){
     card.classList.add('classic-cloud');
     const image=card.querySelector('.cover');
     image.onload=()=>{ image.hidden=false; card.classList.add('has-cover'); };
-    image.src=classicCoverFile(classic.id);
+    image.src=bundled?bundled.cover:classicCoverFile(classic.id);
   }
   const remove=card.querySelector('.del');
   if(canManage)remove.onclick = event => {
     event.stopPropagation(); hideBookLocally(row.book_id); renderAllBookViews(); toast('이 기기에서 지웠어요');
   };
   else remove.remove();
-  card.onclick = () => classic ? importClassic(classic,card) : requestVaultReconnect(row);
+  card.onclick = () => bundled ? restoreBundledLongRead(bundled, meta) : classic ? importClassic(classic,card) : requestVaultReconnect(row);
   return card;
 }
 
