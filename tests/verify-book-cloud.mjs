@@ -130,6 +130,112 @@ test('a position conflict keeps the server head and does not rewrite the open re
   assert.equal(box.positions[hash],undefined);
 });
 
+test('a not-linked position is dropped and is not sent again',async()=>{
+  const {context}=boot({flag:true});
+  let calls=0;
+  context.sb.rpc=async()=>{
+    calls++;
+    return {data:null,error:{code:'42501',message:'Book is not linked'}};
+  };
+  context.bookCloudHeads[hash]={revision:'rev-1',locator:{p:0.2,t:9,mode:'text'}};
+  const place={base:'rev-1',revision:'local-2',locator:{p:0.4,t:12,mode:'text'}};
+  context.bookCloudWriteOutbox(user,{version:1,uploads:{},removes:{},positions:{[hash]:place}});
+  await context.syncBookCloud();
+  assert.equal(calls,1);
+  assert.equal(context.bookCloudReadOutbox(user).positions[hash],undefined);
+  assert.equal(context.bookCloudHeads[hash],undefined);
+  await context.syncBookCloud();
+  assert.equal(calls,1);
+
+  const deleted=boot({flag:true});
+  let refused=0;
+  deleted.context.sb.rpc=async()=>{refused++;return {data:null,error:{code:'42501',message:'Book is not linked'}};};
+  const id='file-'+hash.slice(0,32);
+  deleted.context.books=[{id,kind:'pdf',title:'2026.03.16',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}}];
+  deleted.context.positions[id]={p:0.4,t:12,mode:'original',original:{kind:'pdf',page:3,y:0.2}};
+  deleted.context.sb.from=table=>({select:async()=>table==='book_cloud'
+    ?{data:[{book_id:hash,title:'2026.03.16',author:'',kind:'pdf',status:'deleted',tombstone:'gone',byte_size:0}]}
+    :{data:[]}});
+  deleted.context.bookCloudWriteOutbox(user,{version:1,uploads:{},removes:{},positions:{[hash]:place}});
+  await deleted.context.syncBookCloud();
+  await deleted.context.syncBookCloud();
+  assert.equal(refused,0);
+  assert.equal(deleted.context.bookCloudReadOutbox(user).positions[hash],undefined);
+});
+
+test('ok still clears a position and a retryable failure stays queued',async()=>{
+  for(const status of ['pending','ready']){
+    const live=boot({flag:true});
+    let calls=0;
+    live.context.sb.rpc=async(name,args)=>{calls++;return {data:{ok:true,revision:args.next_revision,locator:args.locator}};};
+    live.context.sb.from=table=>({select:async()=>table==='book_cloud'
+      ?{data:[{book_id:hash,status,kind:'pdf',title:'',author:'',tombstone:'',byte_size:1}]}
+      :{data:[]}});
+    live.context.bookCloudWriteOutbox(user,{version:1,uploads:{},removes:{},positions:{[hash]:{base:null,revision:'local-'+status,locator:{p:0.2,t:3,mode:'text'}}}});
+    await live.context.syncBookCloud();
+    assert.equal(calls,1,status);
+    assert.equal(live.context.bookCloudReadOutbox(user).positions[hash],undefined,status);
+    assert.equal(live.context.bookCloudHeads[hash].revision,'local-'+status,status);
+  }
+
+  const fail=boot({flag:true});
+  let calls=0;
+  fail.context.sb.rpc=async()=>{
+    calls++;
+    return {data:null,error:{code:'42501',message:'Book account changed'}};
+  };
+  const place={base:'rev-1',revision:'local-2',locator:{p:0.4,t:12,mode:'text'}};
+  fail.context.bookCloudHeads[hash]={revision:'rev-1',locator:{p:0.2,t:9,mode:'text'}};
+  fail.context.bookCloudWriteOutbox(user,{version:1,uploads:{},removes:{},positions:{[hash]:place}});
+  await fail.context.syncBookCloud();
+  assert.equal(calls,1);
+  assert.equal(fail.context.bookCloudReadOutbox(user).positions[hash].revision,'local-2');
+  assert.equal(fail.context.bookCloudHeads[hash].revision,'rev-1');
+  await fail.context.syncBookCloud();
+  assert.equal(calls,2);
+});
+
+test('forget during an in-flight position send is not written back',async()=>{
+  const {context}=boot({flag:true});
+  const other='b'.repeat(64);
+  const book={id:'local',kind:'pdf',title:'2026.03.16',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}};
+  context.books=[book];
+  context.positions.local={p:0.4,t:12,mode:'text'};
+  context.bookCloudPost=async()=>({ok:true,removed:true});
+  const place={base:null,revision:'local-2',locator:{p:0.4,t:12,mode:'text'}};
+  context.bookCloudWriteOutbox(user,{version:1,uploads:{},removes:{},positions:{[hash]:place}});
+  context.sb.rpc=async()=>{
+    await context.forgetBookCloud(book);
+    const box=context.bookCloudReadOutbox(user);
+    box.positions[other]={base:null,revision:'keep-me',locator:{p:0.1,t:1,mode:'text'}};
+    context.bookCloudWriteOutbox(user,box);
+    return {data:null,error:{message:'timeout'}};
+  };
+  await context.syncBookCloud();
+  const box=context.bookCloudReadOutbox(user);
+  assert.equal(box.positions[hash],undefined);
+  assert.equal(box.removes[hash],undefined);
+  assert.equal(box.positions[other].revision,'keep-me');
+});
+
+test('relinking a deleted book still publishes the place saved on this device',async()=>{
+  const {context}=boot({flag:true});
+  const sent=[];
+  context.sb.rpc=async(name,args)=>{sent.push(args);return {data:{ok:true,revision:args.next_revision,locator:args.locator}};};
+  context.bookCloudPost=async op=>op==='reserve'?{ok:true,ready:true}:{ok:true};
+  context.originalGetForBook=async()=>({blob:new Blob([new Uint8Array([1,2,3])])});
+  context.rawFileHash=async()=>hash;
+  context.sb.from=()=>({select:async()=>({data:[{book_id:hash,title:'Sample',author:'',kind:'epub',status:'deleted',tombstone:'old',byte_size:0}]})});
+  const id='file-'+hash.slice(0,32);
+  const book={id,kind:'epub',title:'Sample',sourceHash:hash,original:{hash},bookCloudLink:{on:false,tombstone:''}};
+  context.books=[book];
+  context.positions[id]={p:0.27,t:1000,mode:'text'};
+  await context.bookCloudSetLink(book,true);
+  assert.equal(sent.length,1);
+  assert.equal(sent[0].book_id,hash);
+  assert.equal(sent[0].locator.p,0.27);
+});
+
 function readyCloud(bytes){
   return {book_id:hash,title:'Sample',author:'Author',kind:'epub',status:'ready',tombstone:'',byte_size:bytes.byteLength};
 }

@@ -224,6 +224,11 @@ async function bookCloudSendPosition(bookId,entry,session){
     expected_user_id:userId,book_id:bookId,expected_revision:entry.base||null,next_revision:entry.revision,locator:entry.locator
   });
   if(!bookCloudCurrent(session))return false;
+  const error=result&&result.error;
+  if(error&&String(error.code)==='42501'&&/not linked/i.test(String(error.message||''))){
+    delete bookCloudHeads[bookId];
+    return 'gone';
+  }
   const data=result&&result.data;
   if(data&&data.ok){
     bookCloudHeads[bookId]={revision:data.revision||entry.revision,locator:data.locator||entry.locator||null};
@@ -381,6 +386,18 @@ function bookCloudQueuePosition(book){
   box.positions[bookId]={base:previous?previous.base:(head&&head.revision||null),revision:(previous&&previous.revision)||(crypto.randomUUID?crypto.randomUUID():String(Date.now())),locator};
   bookCloudWriteOutbox(userId,box);
 }
+/* Forget writes the outbox while a pass is awaiting. Re-read at the end and
+   remove only the keys this pass finished, so that write is not replaced. */
+function bookCloudCommitOutbox(userId,done){
+  const latest=bookCloudReadOutbox(userId);
+  for(const bookId of done.uploads)delete latest.uploads[bookId];
+  for(const bookId of done.removes)delete latest.removes[bookId];
+  for(const bookId of Object.keys(done.positions)){
+    const entry=latest.positions[bookId];
+    if(entry&&entry.revision===done.positions[bookId])delete latest.positions[bookId];
+  }
+  bookCloudWriteOutbox(userId,latest);
+}
 async function syncBookCloud(){
   if(!bookCloudEnabled())return false;
   const session=bookCloudSession(),userId=session.userId;
@@ -391,22 +408,34 @@ async function syncBookCloud(){
     if(!bookCloudCurrent(session))return false;
     if(typeof books!=='undefined')for(const book of books)bookCloudQueuePosition(book);
     const box=bookCloudReadOutbox(userId);
+    const done={uploads:new Set(),removes:new Set(),positions:{}};
+    const linkedNow=new Set();
     for(const bookId of Object.keys(box.removes)){
       if(!bookCloudCurrent(session))return false;
-      if(await bookCloudSendRemove(bookId,session))delete box.removes[bookId];
+      if(await bookCloudSendRemove(bookId,session)){delete box.removes[bookId];done.removes.add(bookId);}
     }
     for(const bookId of Object.keys(box.uploads)){
       if(!bookCloudCurrent(session))return false;
       if(box.removes[bookId])continue;
-      if(await bookCloudSendUpload(bookId,box.uploads[bookId],session))delete box.uploads[bookId];
+      if(await bookCloudSendUpload(bookId,box.uploads[bookId],session)){delete box.uploads[bookId];done.uploads.add(bookId);linkedNow.add(bookId);}
     }
     if(typeof flushBookInkSoon==='function')flushBookInkSoon();
     for(const bookId of Object.keys(box.positions)){
       if(!bookCloudCurrent(session))return false;
-      const sent=await bookCloudSendPosition(bookId,box.positions[bookId],session);
-      if(sent==='ok'||sent==='conflict')delete box.positions[bookId];
+      const entry=box.positions[bookId];
+      const row=bookCloudCatalog.find(item=>item&&item.book_id===bookId);
+      if(!linkedNow.has(bookId)&&row&&row.status!=='pending'&&row.status!=='ready'){
+        done.positions[bookId]=entry&&entry.revision;
+        delete box.positions[bookId];
+        continue;
+      }
+      const sent=await bookCloudSendPosition(bookId,entry,session);
+      if(sent==='ok'||sent==='conflict'||sent==='gone'){
+        done.positions[bookId]=entry&&entry.revision;
+        delete box.positions[bookId];
+      }
     }
-    if(bookCloudCurrent(session))bookCloudWriteOutbox(userId,box);
+    if(bookCloudCurrent(session))bookCloudCommitOutbox(userId,done);
     await bookCloudRefresh(session);
     if(bookCloudCurrent(session))void bookCloudPullReady(session);
     return true;
