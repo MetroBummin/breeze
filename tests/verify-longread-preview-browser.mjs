@@ -33,10 +33,11 @@ try{
       const page=await context.newPage();
       await page.route('**/*',route=>route.request().url().startsWith(base)||route.request().url().startsWith('blob:')?route.continue():route.abort());
       await page.goto(base);await page.evaluate(()=>homeReady);
-      const card=()=>page.locator(`#shelf .longread[data-longread-id="${storyId}"]`);
+      await page.evaluate(()=>show('longform'));
+      const card=()=>page.locator(`:is(#v-longform.on #longform-grid, #v-home.on #shelf) .longread[data-longread-id="${storyId}"]`);
       const start=()=>page.locator('#article-preview .ap-start');
       for(const id of [storyId,'sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles']){
-        await page.locator(`#shelf .longread[data-longread-id="${id}"]`).click();
+        await page.locator(`#longform-grid .longread[data-longread-id="${id}"]`).click();
         assert.equal(await start().textContent(),'읽기');
         assert.doesNotMatch(await page.locator('#article-preview').innerText(),/다운로드/);
         assert.equal(await page.evaluate(()=>books.length),0);
@@ -63,6 +64,8 @@ try{
       }
       await page.setViewportSize({width:390,height:844});
       await page.evaluate(()=>document.body.classList.remove('dark'));
+      await page.goBack();
+      await page.waitForFunction(()=>activeAppView()==='home');
       // Browser Back is navigation, not just the dialog's Close/Escape path.
       mode='hold';
       await page.evaluate(()=>{show('longform');openLongReadPreview(LONG_READS.find(read=>read.id==='sherlock-holmes-speckled-band'));});
@@ -73,6 +76,7 @@ try{
       await page.waitForFunction(()=>!longReadBusy);
       assert.deepEqual(await page.evaluate(async()=>({view:activeAppView(),books:books.length,stored:(await bookAll()).length})),
         {view:'home',books:0,stored:0},'Cancelled navigation imported or reopened the story');
+      await page.evaluate(()=>show('longform'));
       mode='ok';await card().click();
       await page.evaluate(()=>{
         const prepare=prepareImportedFile;window.__releasePrepared=null;
@@ -135,8 +139,8 @@ try{
           const href=route.request().url();if(href.includes('/'+slug+'.txt'))fetches++;
           return href.startsWith(base)||href.startsWith('blob:')?route.continue():route.abort();
         });
-        await p.goto(base);await p.evaluate(()=>homeReady);
-        const tile=()=>p.locator(`#shelf [data-longread-id="${id}"]`);
+        await p.goto(base);await p.evaluate(()=>homeReady);await p.evaluate(()=>show('longform'));
+        const tile=()=>p.locator(`:is(#v-longform.on #longform-grid, #v-home.on #shelf) [data-longread-id="${id}"]`);
         await tile().click();assert.equal(fetches,0);
         assert.equal(await p.locator('.ap-start').textContent(),'읽기');
         await p.keyboard.press('Escape');assert.equal(await p.evaluate(async()=>(await bookAll()).length),0);
@@ -185,7 +189,8 @@ try{
         await cachedPage.goto(base);await cachedPage.evaluate(()=>homeReady);
         await cachedPage.evaluate(()=>navigator.serviceWorker.ready);
         await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
-        await cachedPage.locator(`#shelf .longread[data-longread-id="${storyId}"]`).click();
+        await cachedPage.evaluate(()=>show('longform'));
+        await cachedPage.locator(`#longform-grid .longread[data-longread-id="${storyId}"]`).click();
         mode='truncated';
         await cachedPage.locator('.ap-start').click();
         await cachedPage.waitForFunction(()=>!articlePreviewOpening);

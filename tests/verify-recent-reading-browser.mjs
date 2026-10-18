@@ -24,7 +24,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  await context.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
  await page.goto(url);await page.evaluate(()=>homeReady);
- await page.locator('#shelf [data-longread-id="sherlock-holmes-scandal-in-bohemia"]').click();await page.locator('.ap-start').click();
+ await page.evaluate(()=>show('longform'));
+ await page.locator('#longform-grid [data-longread-id="sherlock-holmes-scandal-in-bohemia"]').click();await page.locator('.ap-start').click();
  await page.waitForFunction(()=>curBook&&!readerPositionPending());
  const holmes=await page.evaluate(()=>curBook.id);await page.evaluate(()=>show('home'));
  for(const file of [{name:'Recent fixture.txt',mimeType:'text/plain',buffer:Buffer.from('A quiet reader keeps a story.\n\n'.repeat(100))},

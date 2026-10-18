@@ -52,7 +52,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
- await page.goto(url);await page.evaluate(()=>homeReady);
+ await page.goto(url);await page.evaluate(()=>homeReady);await page.evaluate(()=>show('longform'));
  const id='sherlock-holmes-speckled-band';
  await waitForShelfCover(page,id);
  const saved=await page.evaluate(async id=>{
@@ -67,6 +67,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  assert.equal(await page.evaluate(id=>books.find(b=>b.longReadId===id).cover,id),'custom-cover','custom cover preserved');
  await page.evaluate(async id=>{const b=books.find(b=>b.longReadId===id);delete b.cover;await bookPut(b);await restoreMissingLongReadCovers();},id);
  const otherCovers=['sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league'];
+ await page.evaluate(()=>show('longform'));
  for(const coverId of otherCovers){
   await waitForShelfCover(page,coverId);
   await page.evaluate(async id=>{const b=await importLongRead(LONG_READS.find(read=>read.id===id));delete b.cover;await bookPut(b);},coverId);

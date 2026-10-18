@@ -149,13 +149,14 @@ bundled Project Gutenberg catalog: the five Holmes Text books and the classic
 EPUBs that are actually in the app (Alice, Gatsby, Odyssey). The last choice
 is stored locally at `breeze.home-recommend` and is not ranked or uploaded.
 
-Holmes cards open through `openLongReadPreviewOrReader`, the same path as the
-long-form shelf. An owned classic opens like its shelf card; an unowned classic
-uses `importClassic` and then that open. Personal library cards still do not
-enter the article rail. While books are selected, those catalog items are left
-out of the long-form shelf so one Holmes story is not shown twice. Article mode
-keeps the shelf unchanged. `pendingClassics()` stays empty, so the older
-classics are not restored to the default shelf.
+Holmes cards open through `openLongReadPreviewOrReader`. An owned classic
+opens like its library card; an unowned classic uses `importClassic` and then
+that open. Personal library cards still do not enter the article rail. The
+bundled Holmes offers are not placed on the Home 긴 글 shelf in either toggle
+state. That shelf is the reader's own long-form library, and only its add tile
+when nothing is saved. The same offers stay on the long-form library view and
+on the 책 rail. `pendingClassics()` stays empty, so the older classics are not
+restored to a default shelf.
 
 The book card's outer box matches the article card, so the sections below do
 not move when the control appears or the choice changes. The picture ends above

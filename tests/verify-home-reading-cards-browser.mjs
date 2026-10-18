@@ -55,8 +55,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.goto(url);await page.evaluate(()=>homeReady);const before=downloads;
   if(process.env.BREEZE_QA_CASE!=='pdf'){
-  // Home and Explore unread previews and browser Back/Forward do not commit.
-  await page.locator(`#shelf [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
+  // The catalog offer is on the library shelf. Home no longer previews it, and Back/Forward do not commit.
+  assert.equal(await page.locator(`#shelf [data-longread-id="${story}"]`).count(),0);
   await page.evaluate(()=>show('longform'));
   await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
   await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');
@@ -123,9 +123,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   // Deletion returns the offer to preview; Read is again the import boundary.
   assert.equal(await page.evaluate(async id=>deleteBook(books.find(book=>book.id===id)),id),true);
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),0);
-  await page.locator(`#shelf [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
+  await page.evaluate(()=>show('longform'));
+  await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),0);
-  await page.locator(`#shelf [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
+  await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),1);assert.equal(await page.evaluate(()=>curBook.longReadId),story);
   assert.equal(await page.evaluate(()=>visibleReaderProgress()),0);
   await page.evaluate(()=>show('home'));await page.locator(`#shelf [data-longread-id="${story}"]`).click();await readerReady(page);
