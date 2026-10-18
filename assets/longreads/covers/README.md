@@ -37,7 +37,7 @@ with a dark edge so the name stays readable against the fireworks. The Home
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
-| `alice-in-wonderland.webp` | 201,374 | 768 × 1152 |
+| `alice-in-wonderland.webp` | 244,260 | 768 × 1152 |
 | `the-great-gatsby.webp` | 184,044 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking

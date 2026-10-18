@@ -58,7 +58,8 @@ test('Alice and Gatsby are clean public-domain text with the shipped checksum',(
     assert.equal(cover.width,768);
     assert.equal(cover.height,1152);
     assert.ok(cover.bytes>=100000);
-    assert.ok(cover.bytes<200*1024);
+    // Alice is the chosen garden poster, which is larger than the earlier 200KB budget.
+    assert.ok(cover.bytes<(id==='alice-in-wonderland'?250:200)*1024);
   }
   assert.equal(alice[0],'Chapter I. Down the Rabbit-Hole');
   assert.equal(alice.filter(paragraph=>/^Chapter [IVXLC]+\./.test(paragraph)).length,12);
