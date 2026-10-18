@@ -1,10 +1,20 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync, statSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {Script} from 'node:vm';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+function webpFrame(path){
+  const bytes=readFileSync(new URL('../'+path,import.meta.url));
+  assert.equal(bytes.subarray(0,4).toString(),'RIFF');
+  assert.equal(bytes.subarray(8,12).toString(),'WEBP');
+  assert.equal(bytes.subarray(12,16).toString(),'VP8 ');
+  assert.equal(bytes[23],0x9d);
+  assert.equal(bytes[24],0x01);
+  assert.equal(bytes[25],0x2a);
+  return {bytes:bytes.length,width:bytes.readUInt16LE(26)&0x3fff,height:bytes.readUInt16LE(28)&0x3fff};
+}
 const paragraphs=text=>text.trim().split(/\n\s*\n/);
 const aliceText=read('assets/longreads/alice-in-wonderland.txt');
 const gatsbyText=read('assets/longreads/the-great-gatsby.txt');
@@ -44,8 +54,11 @@ test('Alice and Gatsby are clean public-domain text with the shipped checksum',(
     assert.equal(body.length,text.trim().split(/\n\n/).length);
     assert.doesNotMatch(text,/Gutenberg|START OF|END OF THE PROJECT|www\.gutenberg\.org/);
     assert.doesNotMatch(text,/["]|--/);
-    assert.ok(statSync(new URL('../'+story.cover,import.meta.url)).size>=100000);
-    assert.ok(statSync(new URL('../'+story.cover,import.meta.url)).size<=180000);
+    const cover=webpFrame(story.cover);
+    assert.equal(cover.width,768);
+    assert.equal(cover.height,1152);
+    assert.ok(cover.bytes>=100000);
+    assert.ok(cover.bytes<200*1024);
   }
   assert.equal(alice[0],'Chapter I. Down the Rabbit-Hole');
   assert.equal(alice.filter(paragraph=>/^Chapter [IVXLC]+\./.test(paragraph)).length,12);
