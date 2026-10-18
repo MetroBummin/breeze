@@ -1423,7 +1423,9 @@ function reportLookupFailure(reason){
 async function dictCall(payload, signal, hooks){
   if(!sb || navigator.onLine === false || signal?.aborted) return null;
   const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
-  const notify=reason=>{if(typeof reportLookupFailure==='function')reportLookupFailure(reason);};
+  // Warm, account deletion, and grading are not the lookup the reader saw fail.
+  const reportsLookup=payload.op==='look'||payload.op==='look_v2'||payload.op==='explain'||payload.op==='easy_explanation'||payload.op==='sentence_easy_explanation';
+  const notify=reason=>{if(reportsLookup&&typeof reportLookupFailure==='function')reportLookupFailure(reason);};
   const heldCredential=()=>{
     if(typeof dictAuthCredential==='undefined'||!dictAuthCredential)return null;
     const held=dictAuthCredential;

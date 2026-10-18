@@ -52,6 +52,10 @@ test('cached credential sends without getSession; signed-out, HTTP, and network 
   assert.equal(f.reports.at(-1),'server_status_429');
   f.fetch(async()=>{throw Error('network down');});assert.equal(await f.box.dictCall({op:'look_v2'}),null);
   assert.equal(f.reports.at(-1),'fetch_error');assert.equal(f.timers.size,0);
+  const before=f.reports.length;
+  await f.box.dictCall({op:'warm'});
+  await f.box.dictCall({op:'delete_account'});
+  assert.equal(f.reports.length,before);
 });
 
 test('401 refreshes the cached session once and retries the lookup once',async()=>{
@@ -114,7 +118,8 @@ test('a hung fetch ends at 30s and a late getSession cannot send another request
     const pending=f.box.dictCall({op});await flush();
     assert.equal(f.auth.length,0);assert.equal(f.calls.length,1);
     assert.equal(f.calls[0].headers.Authorization,'Bearer synthetic-fixture-token');
-    await f.fire(30000);assert.equal(await pending,null);assert.equal(f.reports.at(-1),'timeout');assert.equal(f.timers.size,0);
+    await f.fire(30000);assert.equal(await pending,null);assert.equal(f.timers.size,0);
+    assert.equal(f.reports.at(-1),op==='warm'?undefined:'timeout');
     auth.resolve(session);await flush();assert.equal(f.calls.length,1,'late authentication dispatched another request');
   }
 });

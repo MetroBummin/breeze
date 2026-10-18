@@ -218,7 +218,7 @@ second word deadline is armed when `fetch` starts and is not charged for that
 refresh. The 30 second transport limit still bounds a fetch that ignores
 cancellation. A different account's token is never sent for the active scope.
 
-Client failures report `{op:'lookup_failure',reason}` and nothing else. The
+Client failures report `{op:'lookup_failure',reason}` and nothing else. A report is sent only for a reader lookup (`look`, `look_v2`, `explain`, `easy_explanation`, `sentence_easy_explanation`). Warm, account deletion, and grading stay silent, so a failed background warm is not recorded as a lookup. The
 reason is one of `clicked_index_missing`, `session_timeout`, `fetch_error`,
 `scope_mismatch`, `timeout`, or `server_status_N`. The report uses the anon
 key so an expired user JWT cannot block it. The retired `op:'log'` path is
