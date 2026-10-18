@@ -464,11 +464,24 @@ function homeBookSpec(book,casual){
 function homeRecommendKind(){
   return load('breeze.home-recommend','articles')==='books'?'books':'articles';
 }
+/* A started catalog book is one library record. Bundled text keeps the catalog
+   id on longReadId, a bundled EPUB keeps it on classicId, and a copy migrated
+   from EPUB can carry either. Server catalog books use that same id. */
+function homeRecommendCatalogOwned(id){
+  if(!id)return false;
+  const match=record=>!!record&&(record.classicId===id||record.longReadId===id);
+  if(typeof books!=='undefined'&&books.some(match))return true;
+  if(typeof activeServerBooks!=='function')return false;
+  const hidden=typeof hiddenBookIds==='function'?hiddenBookIds():{};
+  return activeServerBooks().some(row=>row&&!hidden[row.book_id]&&match(row.meta));
+}
 function homeRecommendReads(){
-  return typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
+  const bundled=typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
+  const remote=typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[];
+  return bundled.concat(remote).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
 }
 function homeRecommendClassics(){
-  return typeof CLASSICS==='undefined'?[]:CLASSICS.slice();
+  return typeof CLASSICS==='undefined'?[]:CLASSICS.filter(classic=>!homeRecommendCatalogOwned(classic.id));
 }
 function syncHomeRecommendToggle(){
   const group=document.getElementById('home-recommend-kind');
@@ -535,14 +548,19 @@ async function openHomeRecommendClassic(classic){
   if(book)return openCasualPreviewOrReader(book);
 }
 function renderHomeRecommendBooks(rail){
-  const empty=document.getElementById('home-feed-empty');
-  if(empty)empty.hidden=true;
   clearHomeRssCards(rail);
   const specs=[
     ...homeRecommendReads().map(read=>({key:'recommend:'+read.id,stamp:read.id,create:()=>homeRecommendLongReadCard(read)})),
     ...homeRecommendClassics().map(classic=>({key:'recommend:'+classic.id,stamp:classic.id,create:()=>homeRecommendClassicCard(classic)})),
   ];
   reconcileHomeCards(rail,specs);
+  const none=!specs.length;
+  rail.hidden=none;
+  const empty=document.getElementById('home-feed-empty');
+  if(empty){
+    empty.hidden=!none;
+    empty.textContent=none?'시작한 책은 서재에 있어요.':'';
+  }
 }
 function renderHome(){
   renderLibraryStorageNotice();
@@ -552,6 +570,9 @@ function renderHome(){
   const recommendBooks=homeRecommendKind()==='books';
   if(recommendBooks)renderHomeRecommendBooks(rail);
   else{
+    rail.hidden=false;
+    const empty=document.getElementById('home-feed-empty');
+    if(empty)empty.hidden=true;
     reconcileHomeCards(rail,[]);
     if(typeof appendRssCards==='function')appendRssCards(rail);
   }
