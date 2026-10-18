@@ -487,7 +487,7 @@ function syncHomeRecommendToggle(){
   group.addEventListener('keydown',event=>{
     if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
     const buttons=[...group.querySelectorAll('button')];
-    const index=buttons.indexOf(document.activeElement);
+    const index=buttons.findIndex(button=>button===document.activeElement);
     if(index<0)return;
     event.preventDefault();
     const next=buttons[(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];
