@@ -104,6 +104,13 @@ and no announcement UI. App and Share Debug/Release counters move to 292.
 Marketing version stays 1.9.4. The cloud bootstrap still replaces that baseline
 with `CI_BUILD_NUMBER`.
 
+## Marketing version 1.9.5 (2026-10-18)
+
+App and Share Debug/Release `MARKETING_VERSION` move to 1.9.5, and their
+counters move from 295 to 296. The cloud bootstrap still replaces that baseline
+with `CI_BUILD_NUMBER`. Android `versionName` follows the same release. The
+checked-in Play version code stays 2.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports
