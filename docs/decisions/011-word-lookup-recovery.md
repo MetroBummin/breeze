@@ -195,3 +195,41 @@ that outcome requires `record_dict_ai_usage` to allow `timeout`
 (`supabase/migrations/20261017130155_dict_ai_timeout_outcome.sql`). The
 migration is in the repository and is not applied here. This change does not
 deploy the dict function.
+
+## Cached credential and client failure reports (2026-10-18)
+
+Some lookups showed "뜻을 찾지 못했어요" while the dict function received no
+request. The 9 second word deadline wrapped `dictCall`, including
+`sb.auth.getSession()`. When the auth client was busy (lock contention or a
+token refresh), that deadline aborted the lookup before `fetch`. A brief
+`sbUser === null`, a scope mismatch, or a thrown `fetch` also returned null
+with no telemetry.
+
+A lookup now sends the access token already held in memory.
+`onAuthStateChange` and the stored session keep that credential current,
+including across a moment when `sbUser` is null but the scope is still that
+user. A real sign-out has no credential and keeps the anonymous key. The
+lookup does not call `getSession` first. The anonymous path still does not
+require login.
+
+If the server answers 401 to a user token, the client calls `refreshSession`
+once, with its own 2.5 second limit, and retries the request once. The 9
+second word deadline is armed when `fetch` starts and is not charged for that
+refresh. The 30 second transport limit still bounds a fetch that ignores
+cancellation. A different account's token is never sent for the active scope.
+
+Client failures report `{op:'lookup_failure',reason}` and nothing else. A report is sent only for a reader lookup (`look`, `look_v2`, `explain`, `easy_explanation`, `sentence_easy_explanation`). Warm, account deletion, and grading stay silent, so a failed background warm is not recorded as a lookup. The
+reason is one of `clicked_index_missing`, `session_timeout`, `fetch_error`,
+`scope_mismatch`, `timeout`, or `server_status_N`. The report uses the anon
+key so an expired user JWT cannot block it. The retired `op:'log'` path is
+unchanged and still must not carry reading data. `lookup_failure` is handled
+before `getUser` and writes only `client_lookup_failure` plus the allow-listed
+reason to the function log. It does not write `dict_events`. Recording that
+line in production requires a dict deploy, which this change does not perform.
+Until then the current function answers `bad_op` and the client ignores it.
+
+The multi-word fallback around the clicked-token search remains a separate
+weakness. When the tapped surface matches more than one sentence token, or is
+several words such as "smoke and mirrors", the index stays negative and the
+lookup stops before `fetch`. That path now reports `clicked_index_missing`.
+It still does not guess which occurrence was tapped.

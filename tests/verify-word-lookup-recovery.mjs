@@ -9,7 +9,12 @@ function fixture(responses){
   const requests=[],owner=new AbortController();let alive=true;
   const c={navigator:{onLine:true},sbUser:{id:'user'},deviceId:()=> 'device-1234',crypto,AbortController,
     setTimeout,clearTimeout,AI_TIMEOUT:10,wordLookupAlive:()=>alive,wordLookupSignal:()=>owner.signal,
-    dictCall:async(p,signal)=>{requests.push(structuredClone(p));const next=responses.shift();return typeof next==='function'?await next(signal):next;}};
+    dictCall:async(p,signal,hooks)=>{
+      requests.push(structuredClone(p));
+      if(typeof hooks?.onFetch==='function')hooks.onFetch();
+      try{const next=responses.shift();return typeof next==='function'?await next(signal):next;}
+      finally{if(typeof hooks?.onSettled==='function')hooks.onSettled();}
+    }};
   runInNewContext(helper,c);
   return {c,requests,cancel(){alive=false;owner.abort();}};
 }

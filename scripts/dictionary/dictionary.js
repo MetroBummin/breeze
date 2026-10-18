@@ -1406,47 +1406,129 @@ function rememberAiLeft(left){
   if(sbUser) save(LS_AI_LEFT,{day:aiDay(),left}); else anonLooksLeft=left;
 }
 
-async function dictCall(payload, signal){
+const LOOKUP_FAILURE_REASON=/^(clicked_index_missing|session_timeout|fetch_error|scope_mismatch|timeout|server_status_[1-5][0-9]{2})$/;
+function reportLookupFailure(reason){
+  if(!LOOKUP_FAILURE_REASON.test(reason)||!sb||navigator.onLine===false||typeof fetch!=='function'||!SB_URL)return;
+  // Reason code only. The anon key authorizes the report so an expired user
+  // JWT cannot block it, and the body never carries a token or lookup text.
+  const body=JSON.stringify({op:'lookup_failure',reason});
+  try{
+    void fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/dict',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SB_KEY,'apikey':SB_KEY},
+      body
+    }).catch(()=>{});
+  }catch(e){}
+}
+async function dictCall(payload, signal, hooks){
   if(!sb || navigator.onLine === false || signal?.aborted) return null;
   const scope=typeof captureLearningScope==='function'?captureLearningScope():null;
-  const actor=sbUser?.id||null;
-  if(scope&&(actor?scope.id!=='user:'+actor:scope.id.startsWith('user:')))return null;
-  const current=()=>!scope||(isLearningScopeCurrent(scope)&&(sbUser?.id||null)===actor);
-  // Authentication can refresh a session before fetch even begins. Bound the
-  // whole call, not just fetch, and let the opening's shorter deadline win.
+  // Warm, account deletion, and grading are not the lookup the reader saw fail.
+  const reportsLookup=payload.op==='look'||payload.op==='look_v2'||payload.op==='explain'||payload.op==='easy_explanation'||payload.op==='sentence_easy_explanation';
+  const notify=reason=>{if(reportsLookup&&typeof reportLookupFailure==='function')reportLookupFailure(reason);};
+  const heldCredential=()=>{
+    if(typeof dictAuthCredential==='undefined'||!dictAuthCredential)return null;
+    const held=dictAuthCredential;
+    if(typeof held.userId!=='string'||!held.userId||typeof held.accessToken!=='string'||!held.accessToken)return null;
+    return held;
+  };
+  const storeCredential=session=>{
+    const userId=session&&session.user&&session.user.id;
+    const accessToken=session&&session.access_token;
+    if(typeof userId!=='string'||!userId||typeof accessToken!=='string'||!accessToken)return null;
+    const next={userId,accessToken};
+    try{dictAuthCredential=next;}catch(e){return null;}
+    return next;
+  };
+  const held=heldCredential();
+  const live=sbUser&&sbUser.id||null;
+  // A different signed-in account must not spend this scope's quota.
+  if(scope&&live&&scope.id!=='user:'+live){notify('scope_mismatch');return null;}
+  if(live&&held&&held.userId!==live){notify('scope_mismatch');return null;}
+  let actor=live,token=SB_KEY;
+  if(live&&held&&held.userId===live)token=held.accessToken;
+  else if(!live){
+    // sbUser can be null for a moment while a refresh updates the app.
+    // Keep the cached token when it still belongs to this scope. A real
+    // sign-out has no cached token and uses the anonymous key.
+    if(held&&(!scope||scope.id==='user:'+held.userId)){actor=held.userId;token=held.accessToken;}
+    else if(held&&scope&&scope.id.startsWith('user:')){notify('scope_mismatch');return null;}
+  }
+  const sameActor=()=>{
+    const now=sbUser&&sbUser.id||null;
+    if(now===actor)return true;
+    const cached=heldCredential();
+    return !now&&!!actor&&!!cached&&cached.userId===actor;
+  };
+  const current=()=>!scope||(isLearningScopeCurrent(scope)&&sameActor());
   const controller=new AbortController();
   let cancel;
   const cancelled=new Promise(resolve=>{cancel=()=>{controller.abort();resolve(null);};});
   signal?.addEventListener('abort',cancel,{once:true});
-  const timeout=setTimeout(cancel,30000);
-  const request=async()=>{
-    let token = SB_KEY;
-    try{
-      const { data:{ session } } = await sb.auth.getSession();
-      // Auth state may change before its notification reaches the application.
-      // Never spend another account's quota on a request started by this one.
-      if(scope&&(session?.user?.id||null)!==actor)return null;
-      if(session)token=session.access_token;
-    }catch(e){}
-    // getSession cannot be aborted. A late completion must never start a request
-    // for a timed-out or closed lookup, even if another lookup is now active.
-    if(controller.signal.aborted||!current())return null;
-    const opt = {
+  // Bounds a fetch that ignores cancellation. The word lookup's 9s deadline
+  // is armed by the caller only once fetch starts.
+  const timeout=setTimeout(()=>{if(!signal?.aborted)notify('timeout');cancel();},30000);
+  const present=(status,json)=>{
+    if(!status)return null;
+    return payload.op==='look_v2'?{...(json||{error:'invalid_response'}),httpStatus:status}:json||null;
+  };
+  const refreshDictSession=async()=>{
+    const auth=sb&&sb.auth;
+    const run=auth&&(typeof auth.refreshSession==='function'?auth.refreshSession:auth.getSession);
+    if(typeof run!=='function'||controller.signal.aborted)return null;
+    const refreshMs=2500;
+    let timer;
+    const timed=new Promise(resolve=>{timer=setTimeout(()=>resolve('timeout'),refreshMs);});
+    const job=Promise.resolve().then(()=>run.call(auth)).then(result=>storeCredential(result&&result.data&&result.data.session)).catch(()=>null);
+    try{return await Promise.race([job,timed]);}
+    finally{clearTimeout(timer);}
+  };
+  const post=async authToken=>{
+    if(controller.signal.aborted||signal?.aborted)return {aborted:true};
+    if(!current())return {stale:true};
+    if(typeof hooks?.onFetch==='function')hooks.onFetch();
+    const opt={
       method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SB_KEY },
-      body: JSON.stringify(payload),signal:controller.signal
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken,'apikey':SB_KEY},
+      body:JSON.stringify(payload),signal:controller.signal
     };
     try{
-      const r = await fetch(SB_URL.replace(/\/$/,'') + '/functions/v1/dict', opt);
-      const j = await r.json().catch(()=>null);
-      if(controller.signal.aborted||!current())return null;
-      if(!r.ok || !j) console.warn('dict', r.status, j && j.error);
-      /* 오류도 답입니다. 한도 초과와 서버 장애는 화면에서 다르게 말해야 하므로
-         null 로 뭉개지 않고 그대로 올려 보냅니다. */
-      return payload.op==='look_v2'?{...(j||{error:'invalid_response'}),httpStatus:r.status}:j||null;
-    }catch(e){ console.warn('dict failed', e); return null; }
+      const r=await fetch(SB_URL.replace(/\/$/,'')+'/functions/v1/dict',opt);
+      const j=await r.json().catch(()=>null);
+      if(controller.signal.aborted||signal?.aborted)return {aborted:true};
+      if(!current())return {stale:true};
+      if(!r.ok||!j)console.warn('dict',r.status,j&&j.error);
+      return {status:r.status,json:j};
+    }catch(e){
+      if(controller.signal.aborted||signal?.aborted)return {aborted:true};
+      console.warn('dict failed',e);
+      return {thrown:true};
+    }finally{if(typeof hooks?.onSettled==='function')hooks.onSettled();}
   };
-  try{return await Promise.race([request(),cancelled]);}
+  const run=async()=>{
+    let outcome=await post(token);
+    if(outcome.status===401&&token!==SB_KEY&&!controller.signal.aborted&&current()){
+      const refreshed=await refreshDictSession();
+      if(controller.signal.aborted||signal?.aborted)return null;
+      if(refreshed==='timeout'){
+        notify('session_timeout');
+        return current()?present(outcome.status,outcome.json):null;
+      }
+      if(refreshed&&refreshed.userId===actor&&current()){
+        token=refreshed.accessToken;
+        outcome=await post(token);
+      }else if(refreshed&&refreshed.userId!==actor){notify('scope_mismatch');return null;}
+    }
+    if(outcome.aborted||controller.signal.aborted||signal?.aborted)return null;
+    if(!current()||outcome.stale){notify('scope_mismatch');return null;}
+    if(outcome.thrown){notify('fetch_error');return null;}
+    if(outcome.status>=400){
+      const reason='server_status_'+outcome.status;
+      if(/^(clicked_index_missing|session_timeout|fetch_error|scope_mismatch|timeout|server_status_[1-5][0-9]{2})$/.test(reason))notify(reason);
+    }
+    return present(outcome.status,outcome.json);
+  };
+  try{return await Promise.race([run(),cancelled]);}
   finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
 
@@ -1483,15 +1565,19 @@ async function recoverableWordLookup(payload,life){
   const cancel=()=>controller.abort();
   if(owner?.aborted)return null;
   owner?.addEventListener('abort',cancel,{once:true});
-  const timeout=setTimeout(cancel,AI_TIMEOUT);
+  // The 9s budget starts when fetch starts, not while a session refresh runs.
+  let timeout=0,expired=false;
+  const armTimeout=()=>{clearTimeout(timeout);expired=false;timeout=setTimeout(()=>{expired=true;cancel();},AI_TIMEOUT);};
+  const disarmTimeout=()=>{clearTimeout(timeout);timeout=0;};
   let answer;
-  try{answer=await dictCall(logical.payload,controller.signal);}
-  finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel);}
+  try{answer=await dictCall(logical.payload,controller.signal,{onFetch:armTimeout,onSettled:disarmTimeout});}
+  finally{disarmTimeout();owner?.removeEventListener('abort',cancel);}
   if(!current())return null;
   if(usableLookupAnswer(answer,logical.payload)){
     wordLookupRecoveries.delete(key);return answer;
   }
   if(owner?.aborted||!wordLookupAlive(life))return null;
+  if(expired&&typeof reportLookupFailure==='function')reportLookupFailure('timeout');
   if(!technicalLookupFailure(answer,logical.payload)){
     wordLookupRecoveries.delete(key);return {error:answer?.error||'lookup_failed'};
   }
@@ -1720,11 +1806,16 @@ async function fetchLook(k, opt){
   if(!Number.isInteger(clickedIndex)||clickedIndex<0||clickedIndex>=lookupTokens.length)
     clickedIndex=lookupClickedTokenIndex(opt.node||null,querySentence,lookupTokens);
   if(clickedIndex<0){
+    // A repeated token, or a multi-word surface such as "smoke and mirrors",
+    // has no single occurrence to pin. This does not guess; it reports and stops.
     const needle=String(opt.clicked||w.clicked||w.word||k).replace(/’/g,"'").toLowerCase();
     const matches=lookupTokens.map((token,index)=>({token,index})).filter(item=>item.token.text.replace(/’/g,"'").toLowerCase()===needle);
     clickedIndex=matches.length===1?matches[0].index:-1;
   }
-  if(clickedIndex<0){w.aiOff='error';renderIfAlive(life);return false;}
+  if(clickedIndex<0){
+    if(typeof reportLookupFailure==='function')reportLookupFailure('clicked_index_missing');
+    w.aiOff='error';renderIfAlive(life);return false;
+  }
   /* `hold` 는 답을 카드에 바르지 않고 그대로 돌려 달라는 뜻입니다. 넓은 문맥으로
      다시 물어본 답은 지금 뜻을 덮는 것이 아니라 새 뜻이 되기 때문입니다. */
   if(navigator.onLine === false){ w.aiOff = 'offline'; renderIfAlive(life); return false; }
