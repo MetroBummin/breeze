@@ -74,24 +74,25 @@ function harness(){
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};
-  for(const name of ['homeRecommendKind','homeRecommendReads','homeRecommendClassics','homeRecommendShelfOmits','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','renderHome'])
+  for(const name of ['homeRecommendKind','homeRecommendReads','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','renderHome'])
     vm.runInContext(extractFunction(library,name),context);
   return {context,books,opened,rss,store,document};
 }
 
-test('articles stay on the rail and Holmes stay on the long-form shelf',()=>{
+test('articles stay on the rail and the home shelf does not offer the catalog',()=>{
   const {context:c,rss,document}=harness();
   c.renderHome();
   assert.equal(c.homeRecommendKind(),'articles');
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,1);
   assert.equal(document.querySelectorAll('#casual-rail .home-recommend-book').length,0);
-  assert.deepEqual([...document.querySelectorAll('#shelf [data-home-key^="longread:"]')].map(node=>node.getAttribute('data-home-key')),[
-    'longread:sherlock-holmes-speckled-band','longread:sherlock-holmes-scandal-in-bohemia','longread:sherlock-holmes-red-headed-league','longread:sherlock-holmes-final-problem','longread:sherlock-holmes-hound-of-the-baskervilles',
-  ]);
+  assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,0);
+  assert.equal(document.querySelectorAll('#shelf [data-home-key="add"]').length,1);
+  assert.match(extractFunction(library,'renderLongformLibrary'),/pendingLongReads\(\)/);
+  assert.doesNotMatch(extractFunction(library,'renderHome'),/pendingLongReads|homeRecommendShelfOmits/);
   assert.equal(rss.length,1);
 });
 
-test('books replace the rail, hide the same Holmes from the shelf, and open like the library',async()=>{
+test('books replace the rail, keep saved books on the shelf, and open like the library',async()=>{
   const {context:c,books,opened,rss,store,document}=harness();
   books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
   books.push({id:'saved-other',kind:'txt',title:'Notebook',author:'Me'});
@@ -107,7 +108,7 @@ test('books replace the rail, hide the same Holmes from the shelf, and open like
   ]);
   assert.equal(cards[0].querySelector('.author').textContent,'Arthur Conan Doyle');
   assert.equal(cards[0].querySelector('.author').textContent.includes('SHERLOCK'),false);
-  assert.equal(document.querySelector('#shelf [data-book-id="saved-holmes"]'),null);
+  assert.ok(document.querySelector('#shelf [data-book-id="saved-holmes"]'));
   assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,0);
   assert.ok(document.querySelector('#shelf [data-book-id="saved-other"]'));
   cards[0].click();
@@ -120,6 +121,6 @@ test('books replace the rail, hide the same Holmes from the shelf, and open like
   assert.equal(document.querySelectorAll('#casual-rail .home-recommend-book').length,0);
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,1);
   assert.ok(document.querySelector('#shelf [data-book-id="saved-holmes"]'));
-  assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,4);
+  assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,0);
   assert.equal(rss.length,1);
 });

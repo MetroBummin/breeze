@@ -22,7 +22,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.goto(url);await page.evaluate(()=>homeReady);
   const offeredIds=slugs.map(slug=>'sherlock-holmes-'+slug);
-  assert.deepEqual(await page.locator('#shelf .longread').evaluateAll(nodes=>nodes.map(node=>node.dataset.longreadId)),offeredIds,'Home promotes only the five Holmes works');
+  assert.equal(await page.locator('#shelf .longread').count(),0,'Home long-form shelf offers the Gutenberg catalog');
   await page.evaluate(()=>show('longform'));
   assert.deepEqual(await page.locator('#longform-grid .longread').evaluateAll(nodes=>nodes.map(node=>node.dataset.longreadId)),offeredIds,'Long-form offers the same Holmes collection');
   for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){

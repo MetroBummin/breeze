@@ -470,11 +470,6 @@ function homeRecommendReads(){
 function homeRecommendClassics(){
   return typeof CLASSICS==='undefined'?[]:CLASSICS.slice();
 }
-function homeRecommendShelfOmits(book){
-  if(homeRecommendKind()!=='books'||!book)return false;
-  if(book.longReadId&&homeRecommendReads().some(read=>read.id===book.longReadId))return true;
-  return typeof classicForMeta==='function'&&!!classicForMeta(book);
-}
 function syncHomeRecommendToggle(){
   const group=document.getElementById('home-recommend-kind');
   if(!group)return;
@@ -560,14 +555,12 @@ function renderHome(){
     reconcileHomeCards(rail,[]);
     if(typeof appendRssCards==='function')appendRssCards(rail);
   }
-  const longform=longformBooks().filter(book=>!homeRecommendShelfOmits(book)),shelf=document.getElementById('shelf');
+  const longform=longformBooks(),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
   for(const row of serverOnlyBooks()){
-    if(recommendBooks&&typeof classicForMeta==='function'&&classicForMeta(row.meta))continue;
     specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
   }
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
-  for(const read of (recommendBooks?[]:pendingLongReads()))specs.push({key:'longread:'+read.id,stamp:JSON.stringify(read),create:()=>homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')});
   specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
   const light=document.getElementById('home-casual-rail');
