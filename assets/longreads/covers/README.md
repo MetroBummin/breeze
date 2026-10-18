@@ -28,17 +28,15 @@ the tea table, and the cat in the roses. The painted title “ALICE in
 WONDERLAND” and the “LEWIS CARROLL” line stay as they are. The small
 tagline and its ornament are gone, and the path continues through that
 spot. The Home card shows the title and the characters; it may crop the
-author line. Gatsby keeps the first mansion, dock, and green light, under
-an indigo-to-gold twilight with painted fireworks, strings of party lights,
-and gold on the water. “THE GREAT GATSBY” is set in an Art Deco face inside
-a thin gold frame. “F. SCOTT FITZGERALD” is set in Cinzel, in the same gold,
-with a dark edge so the name stays readable against the fireworks. The Home
-책 card shows about the top 829 pixels.
+author line. Gatsby is the chosen poster, copied as given: “THE GREAT
+GATSBY”, “F. SCOTT FITZGERALD”, the couple, the green light, fireworks, and
+the mansion, inside a gold frame. The Home 책 card shows about the top 829
+pixels.
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
 | `alice-in-wonderland.webp` | 244,260 | 768 × 1152 |
-| `the-great-gatsby.webp` | 184,044 | 768 × 1152 |
+| `the-great-gatsby.webp` | 171,204 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
