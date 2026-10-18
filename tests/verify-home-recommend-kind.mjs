@@ -87,7 +87,8 @@ test('articles stay on the rail and the home shelf does not offer the catalog',(
   assert.equal(document.querySelectorAll('#casual-rail .home-recommend-book').length,0);
   assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,0);
   assert.equal(document.querySelectorAll('#shelf [data-home-key="add"]').length,1);
-  assert.match(extractFunction(library,'renderLongformLibrary'),/pendingLongReads\(\)/);
+  assert.match(extractFunction(library,'renderLongformLibrary'),/offeredLongReads\(\)/);
+  assert.match(extractFunction(library,'offeredLongReads'),/pendingLongReads\(\)/);
   assert.doesNotMatch(extractFunction(library,'renderHome'),/pendingLongReads|homeRecommendShelfOmits/);
   assert.equal(rss.length,1);
 });
