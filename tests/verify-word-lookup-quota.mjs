@@ -15,13 +15,14 @@ try{
   const migration=readFileSync(new URL('../supabase/migrations/20260928152749_word_lookup_receipts.sql',import.meta.url),'utf8');
   await db.exec(migration);
   await db.exec(readFileSync(new URL('../supabase/migrations/20260928160147_lookup_trial_limits.sql',import.meta.url),'utf8'));
+  await db.exec(readFileSync(new URL('../supabase/migrations/20261018052727_lookup_receipt_remaining.sql',import.meta.url),'utf8'));
   await db.exec('grant usage on schema public to service_role;grant execute on function public.take_ai_quota(uuid,integer,integer) to service_role;');
   const user='00000000-0000-0000-0000-000000000001',id=crypto.randomUUID(),fp='a'.repeat(64);
   const answer={kind:'word',canonical:'patient',members:[0],ko:'참을성 있는'};
   const receipt=async({u=user,device='',request=id,fingerprint=fp,result=null,cap=2000,kind='word'}={})=>
     (await db.query(`select public.${kind}_lookup_receipt($1,$2,$3,$4,$5,3000,50,$6) as r`,[u,device,request,fingerprint,result,cap])).rows[0].r;
   const calls=async()=>Number((await db.query('select coalesce(sum(calls),0) as n from public.ai_usage where user_id=$1',[user])).rows[0].n);
-  assert.equal((await receipt()).status,'ok');assert.equal(await calls(),0);
+  assert.equal((await receipt()).status,'ok');assert.equal((await receipt()).left,3000);assert.equal(await calls(),0);
   await assert.rejects(logicalLookup(result=>receipt({result}),async()=>{throw Error('timeout');}));
   assert.equal(await calls(),0,'technical failure debited quota');
   assert.equal((await logicalLookup(result=>receipt({result}),async()=>answer)).status,'replay');
@@ -98,6 +99,20 @@ try{
   assert.equal(providerCalls,beforeDenied);assert.equal(await calls(),3000);
   await db.exec('reset role');
   await db.query('update public.ai_usage set calls=3 where user_id=$1',[user]);
+  const jobs=[];
+  globalThis.EdgeRuntime={waitUntil(task){jobs.push(task);}};
+  try{
+    await db.exec('set role service_role');
+    const bgId=crypto.randomUUID(),beforeBg=providerCalls;
+    const bg=await invoke(bgId,selfieBody);
+    assert.equal(bg.status,200);assert.equal(bg.body.ko,'셀카');assert.equal(bg.body.left,2996);
+    assert.equal(providerCalls,beforeBg+1);assert.equal(jobs.length,1,'success debit was not handed to waitUntil');
+    await jobs[0];
+    assert.equal(await calls(),4);
+    const replayProvider=providerCalls;
+    assert.equal((await invoke(bgId,selfieBody)).body.ko,'셀카');
+    assert.equal(providerCalls,replayProvider);assert.equal(await calls(),4);assert.equal(jobs.length,1);
+  }finally{delete globalThis.EdgeRuntime;await db.exec('reset role');}
   await db.exec('reset role;update public.anon_daily set calls=0');
   for(let n=0;n<10;n++)await receipt({u:null,device:'device-1234',kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}});
   assert.equal((await receipt({u:null,device:'device-1234',kind:'sentence',request:crypto.randomUUID()})).status,'anon_exhausted');

@@ -23,8 +23,10 @@ persists the answer. Same-ID calls serialize with a transaction advisory lock;
 usage upserts retain the cap across different IDs. A lost HTTP response replays
 that answer, including when the user has since reached quota. Technical failures
 never reach the debit. Anonymous trial/global caps use the same success-only
-rule. A concurrent request that loses the last quota slot receives the quota
-error, not a meaning that exceeded the cap. Failed attempts can still incur
+rule. A concurrent request that loses the last quota slot on the pre-provider
+check receives the quota error. The success debit runs after the response, so a
+lookup that already passed the check can still be delivered; see the 2026-10-18
+note. Failed attempts can still incur
 provider cost; telemetry records them independently of user quota.
 
 The server falls back inside one lookup. A compact validated word lookup gives
@@ -195,3 +197,22 @@ that outcome requires `record_dict_ai_usage` to allow `timeout`
 (`supabase/migrations/20261017130155_dict_ai_timeout_outcome.sql`). The
 migration is in the repository and is not applied here. This change does not
 deploy the dict function.
+
+## Receipt debit after the response (2026-10-18)
+
+Auth and the pre-provider receipt check stay on the response path. That check
+still refuses replay conflicts, logged-out callers, and callers already at the
+quota cap, and it returns the remaining count. After a usable answer, the
+success debit (`word_lookup_receipts` plus `ai_usage`, or `anon_usage` and
+`anon_daily`) runs in `EdgeRuntime.waitUntil`. The response uses the checked
+remainder minus this lookup's cost and does not wait for the debit. A debit
+that loses a concurrent race or fails is logged as `lookup_receipt_failed` and
+does not change the response. One in-flight lookup can therefore be delivered
+after the last unit was taken. The next check enforces the cap, and the debit
+still refuses a second charge for the same request. `record_dict_ai_usage` /
+`dict_events` was already recorded after the provider response. Provider
+fallback and the `timeout` outcome are unchanged. Apply
+`supabase/migrations/20261018052727_lookup_receipt_remaining.sql` before
+deploying `dict` so `left` stays on the response. Until that migration is
+applied, the function still waits for the debit. This note does not deploy
+the function.

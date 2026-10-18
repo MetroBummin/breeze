@@ -95,7 +95,7 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
       const {data,error}=await SR.rpc("word_lookup_receipt",{p_user:userId,p_device:clean(body.device,64),p_request:requestId,p_fingerprint:fingerprint,p_answer:answer??null,p_limit:DEFAULT_DAILY_LIMIT,p_anon_limit:ANON_FREE,p_anon_cap:ANON_DAILY_CAP});
       if(error||!data||typeof data.status!=="string")throw new Error("quota_unavailable");
       return data;
-    },generate);
+    },generate,1,requestId);
     if(verdict.status==="replay")return json({...verdict.answer,left:verdict.left,lookupId:requestId});
     const code=verdict.status==="quota_exceeded"||verdict.status==="anon_exhausted"?429:verdict.status==="request_conflict"?409:401;
     return json({error:verdict.status,limit:verdict.limit??DEFAULT_DAILY_LIMIT,left:verdict.left},code);
@@ -121,7 +121,7 @@ async function opExplain(body:any,userId:string|null,signal?:AbortSignal){
     const parsed=parseJson(out.text);if(!parsed)throw new Error("sentence_parse_failed");
     const ko=clean(parsed.ko,500);if(!ko)throw new Error("sentence_empty_answer");
     return {ko,provider:out.provider};
-  });
+  },2,requestId);
   if(verdict.status==="replay")return json({...verdict.answer,left:verdict.left});
   return json({error:verdict.status,left:verdict.left,limit:verdict.limit??DEFAULT_DAILY_LIMIT},
     ['quota_exceeded','anon_exhausted'].includes(verdict.status)?429:verdict.status==='request_conflict'?409:401);
