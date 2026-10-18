@@ -19,27 +19,25 @@ SHA-256 and decoded dimensions.
 | `speckled-band.webp` | 160,112 | 768 × 1152 |
 
 Alice and Gatsby use the same uncropped 768 × 1152 WebP frame, with
-`object-position: center top`. Both pictures are original paintings made for
-Breeze. They are not film stills, actor likenesses, Disney designs, or
-Tenniel plates. The titles are set in type on the paintings. The Home 책
-card is wider than 2:3 and crops the bottom of the picture, so the title
-and the main artwork sit in the upper three quarters.
+`object-position: center top`. The Home 책 card is wider than 2:3 and
+crops the bottom of the picture, so the title and the main artwork sit in
+the upper three quarters. The preview sheet shows the whole picture.
 
-Alice is a bright fall down a rabbit hole: a white rabbit in a waistcoat
-with a pocket watch, a sunlit tunnel, and floating cups and cards. The
-title “ALICE IN WONDERLAND” sits in the sky above the hole, with the
-author line on a dark band, all inside the top of the frame. Gatsby keeps
-the first mansion, dock, and green light, under an indigo-to-gold twilight
-with painted fireworks, strings of party lights, and gold on the water.
-“THE GREAT GATSBY” is set in an Art Deco face inside a thin gold frame.
-“F. SCOTT FITZGERALD” is set in Cinzel, in the same gold, with a dark
-edge so the name stays readable against the fireworks. The Home 책 card
-shows about the top 829 pixels, and the preview sheet shows the whole
-picture.
+Alice is the chosen garden painting: Alice on the path, the White Rabbit,
+the tea table, and the cat in the roses. The painted title “ALICE in
+WONDERLAND” and the “LEWIS CARROLL” line stay as they are. The small
+tagline and its ornament are gone, and the path continues through that
+spot. The Home card shows the title and the characters; it may crop the
+author line. Gatsby keeps the first mansion, dock, and green light, under
+an indigo-to-gold twilight with painted fireworks, strings of party lights,
+and gold on the water. “THE GREAT GATSBY” is set in an Art Deco face inside
+a thin gold frame. “F. SCOTT FITZGERALD” is set in Cinzel, in the same gold,
+with a dark edge so the name stays readable against the fireworks. The Home
+책 card shows about the top 829 pixels.
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
-| `alice-in-wonderland.webp` | 190,178 | 768 × 1152 |
+| `alice-in-wonderland.webp` | 201,374 | 768 × 1152 |
 | `the-great-gatsby.webp` | 184,044 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking
