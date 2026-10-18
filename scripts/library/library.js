@@ -477,7 +477,8 @@ function homeRecommendCatalogOwned(id){
 }
 function homeRecommendReads(){
   const bundled=typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
-  const remote=typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[];
+  const remoteReads=globalThis['remoteClassicCatalogReads'];
+  const remote=typeof remoteReads==='function'?remoteReads():[];
   return bundled.concat(remote).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
 }
 function homeRecommendClassics(){
