@@ -24,22 +24,21 @@ Breeze. They are not film stills, film posters, actor likenesses, Disney
 designs, or Tenniel plates. The Home 책 card is wider than 2:3 and crops the
 bottom of the picture, so the figures sit in the upper three quarters.
 
-Alice is a bright pastel garden: a girl in a blue dress and white apron,
-full length on a path, with a waistcoated white rabbit and a pocket watch.
-A smaller queen in a heart-patterned gown and a hatter in a tall hat stand
-behind them, with curling flowering trees and a rabbit hole. Roses,
-mushrooms, a teapot, and heart-marked cards fill the lower foreground.
-Gatsby is a bright gold-and-black 1920s party: a generic gentleman, full
-length on a marble terrace and seen in three-quarter view, raises a
-champagne coupe among flappers in headbands. Fireworks, mansion lights, a
-small green dock light, and inset gold geometric corners sit above a
-foreground of a vintage car, a lantern-lit pool, champagne, and roses.
-The figures end inside the top three quarters of the frame.
+Alice is cinematic key art: a young woman, waist-up and sharply lit, in a
+blue dress and white apron, with a white rabbit and a pocket watch beside
+her. A queen in a heart-patterned gown and a hatter in a tall hat sit
+softer behind them, among sunlit curling trees. Mushrooms, roses, and
+heart-marked cards fill the lower foreground.
+Gatsby is cinematic key art: a gentleman, waist-up and facing the viewer,
+raises a champagne coupe. Flappers stand behind him. Fireworks, a lit
+mansion, a small green dock light, and inset gold geometric corners frame
+the scene. A vintage car, a pool, and champagne fill the lower foreground.
+Both faces sit inside the top three quarters of the frame. No title text.
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
-| `alice-in-wonderland.webp` | 199,080 | 768 × 1152 |
-| `the-great-gatsby.webp` | 177,492 | 768 × 1152 |
+| `alice-in-wonderland.webp` | 184,770 | 768 × 1152 |
+| `the-great-gatsby.webp` | 155,506 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
