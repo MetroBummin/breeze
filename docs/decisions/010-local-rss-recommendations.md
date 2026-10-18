@@ -141,6 +141,26 @@ candidates are still checked by ranking/card selection. Decision 015 applies
 the same lexical English/promo rules at the optional catalog boundary, without
 claiming Jev approval. Saved material is unchanged; Jev stays OFF.
 
+## Home articles / books toggle (2026-10-18)
+
+The recommendation rail stays the external RSS row by default. An explicit
+segmented control beside the 추천 heading can replace that same rail with the
+bundled Project Gutenberg catalog: the five Holmes Text books and the classic
+EPUBs that are actually in the app (Alice, Gatsby, Odyssey). The last choice
+is stored locally at `breeze.home-recommend` and is not ranked or uploaded.
+
+Holmes cards open through `openLongReadPreviewOrReader`, the same path as the
+long-form shelf. An owned classic opens like its shelf card; an unowned classic
+uses `importClassic` and then that open. Personal library cards still do not
+enter the article rail. While books are selected, those catalog items are left
+out of the long-form shelf so one Holmes story is not shown twice. Article mode
+keeps the shelf unchanged. `pendingClassics()` stays empty, so the older
+classics are not restored to the default shelf.
+
+The book card's outer box matches the article card, so the sections below do
+not move when the control appears or the choice changes. The picture ends above
+the title and author, and the author is not painted over the cover art.
+
 ## Selected-article intent and optional catalog (2026-10-05)
 
 [Decision 015](015-rss-intent-and-public-catalog.md) removes background article

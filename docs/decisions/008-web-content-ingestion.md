@@ -41,9 +41,11 @@ its removal continue loading from local storage. Feed
 failures are isolated. Discovery omits cards without a working cover; the saved
 essay remains readable after it is opened.
 
-Home recommendation shows only the external feed discovery rail, always across
-all categories. It has no category chips, locally saved article cards, or action
-card at the end. The Home
+Home recommendation shows the external feed discovery rail by default, always
+across all categories. An explicit articles/books control may replace that rail
+with the bundled Gutenberg catalog (Decision 010); personal library cards still
+stay on the shelves below. It has no category chips, locally saved article cards,
+or action card at the end. The Home
 shelves below it show long-form Library content and saved Casuals separately,
 with their existing add cards at the end of each rail.
 Home recommendation cards place source and title over the photo; Home Library

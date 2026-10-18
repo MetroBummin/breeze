@@ -347,7 +347,7 @@
 /* Home: discovery is large; the two Library shelves share one card footprint. */
 #v-home .sec-head{margin-bottom:14px;}
 #v-home #casual-rail{gap:12px;padding-top:0;padding-bottom:8px;scroll-snap-type:x mandatory;}
-#v-home #casual-rail > .casual{
+#v-home #casual-rail > :is(.casual,.home-recommend-book){
   flex:0 0 min(61vw,560px);width:min(61vw,560px);
   min-width:min(61vw,560px);max-width:min(61vw,560px);
 }
@@ -365,6 +365,16 @@
 #v-home #casual-rail .rss-card .thumb:not(.has-cover) .src{color:inherit;text-shadow:none;}
 #v-home #casual-rail .rss-card .thumb:not(.has-cover) .lede{display:none;}
 #v-home #casual-rail .rss-card:has(.thumb:not(.has-cover)) .ct{color:var(--ink);text-shadow:none;}
+/* Books use the article card's outer box. The picture stops above the caption
+   so the author never sits on the artwork, and the row below does not move. */
+#v-home #casual-rail > .home-recommend-book{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto;align-content:stretch;height:auto;min-height:0;aspect-ratio:3/4;padding:0;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none;scroll-snap-align:start;}
+#v-home #casual-rail > .home-recommend-book:hover{transform:none;box-shadow:none;}
+#v-home #casual-rail > .home-recommend-book.has-cover::after{content:none;}
+#v-home #casual-rail > .home-recommend-book .cover{position:relative;inset:auto;grid-column:1;grid-row:1;width:100%;height:100%;min-width:0;min-height:0;border-radius:18px;object-fit:cover;}
+#v-home #casual-rail > .home-recommend-book .bt{position:relative;inset:auto;grid-column:1;grid-row:2;max-width:none;min-width:0;margin:8px 1px 0;color:var(--settings-ink);font:600 18px/1.3 var(--ui);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+#v-home #casual-rail > .home-recommend-book .author{position:relative;inset:auto;grid-column:1;grid-row:3;max-width:none;min-width:0;margin:2px 72px 0 1px;padding:0;border-radius:0;background:none;color:var(--settings-muted);font:500 12.5px/1.3 var(--ui);letter-spacing:0;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#v-home #casual-rail > .home-recommend-book:not(:has(.get)) .author{margin-right:1px;}
+#v-home #casual-rail > .home-recommend-book .get{position:relative;inset:auto;z-index:2;grid-column:1;grid-row:3;justify-self:end;align-self:end;left:auto;right:auto;bottom:auto;margin:2px 1px 0 0;color:var(--settings-muted);font:600 11px/1.3 var(--ui);text-shadow:none;}
 #v-home #longform{margin-top:42px;}
 #v-home #home-casuals{margin-top:42px;}
 #v-home #shelf,#v-home #home-casual-rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;
@@ -413,18 +423,18 @@
 }
 @media (max-width:760px){
   #v-home #casual-rail{gap:12px;padding:0 18px 8px;margin:0 -18px;scroll-padding-left:18px;}
-  #v-home #casual-rail > .casual{flex-basis:61vw;width:61vw;min-width:61vw;max-width:61vw;}
+  #v-home #casual-rail > :is(.casual,.home-recommend-book){flex-basis:61vw;width:61vw;min-width:61vw;max-width:61vw;}
   #v-home #shelf,#v-home #home-casual-rail{padding:0 18px 8px;margin:0 -18px;scroll-padding-left:18px;}
   #v-home #shelf > .home-regular-tile,#v-home #home-casual-rail > .home-regular-tile{
     flex-basis:39vw;width:39vw;min-width:39vw;max-width:170px;}
 }
 @media (min-width:761px) and (max-width:899px){
-  #v-home #casual-rail > .casual{
+  #v-home #casual-rail > :is(.casual,.home-recommend-book){
     flex:0 0 38vw;width:38vw;min-width:38vw;max-width:38vw;
   }
 }
 @media (min-width:900px){
-  #v-home #casual-rail > .casual{
+  #v-home #casual-rail > :is(.casual,.home-recommend-book){
     flex:0 0 calc((100% - 36px)/4);width:calc((100% - 36px)/4);
     min-width:calc((100% - 36px)/4);max-width:calc((100% - 36px)/4);
   }
