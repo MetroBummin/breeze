@@ -70,7 +70,17 @@ reader has not moved again. While the reader stays open, a changed place is
 published 1500ms after the change. Hiding the app or leaving the page
 publishes that place in the same turn: a timer does not run once the web view
 is suspended. The other device copies that locator onto its
-local book id before the reader opens. PDF, EPUB, and TXT each wait until
+local book id before the reader opens. A device that stays on Home does not
+wait for that open. While Home is visible, one `positions` read is armed for
+the end of the 45s library quiet period and armed again after each read. A
+Home reload that the quiet period skips keeps that single wait. The read is
+the existing position fetch: it does not list `book_cloud`, upload a book, or
+advance the recommendation rail. A newer locator is copied into local
+`breeze.pos`, and Home's continue percent and shelf label repaint. An open
+book is left alone, so a newer remote place cannot scroll the page already on
+screen; that open still applies its place once. Hiding the app or leaving
+Home cancels the wait. Coming back uses the existing visibility sync, then
+waits another quiet period. PDF, EPUB, and TXT each wait until
 their own layout can place that anchor. A PDF place is the page and the
 position on that page. Restore gives every page up through that page its own
 aspect ratio before it scrolls, and a page with no height is not saved. An

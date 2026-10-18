@@ -235,19 +235,43 @@ async function bookCloudSendPosition(bookId,entry,session){
   }
   return 'fail';
 }
+function bookCloudStorePositionRows(rows){
+  let changed=false;
+  for(const row of rows||[]){
+    if(!row||!row.book_id)continue;
+    const data=row.data||{};
+    const book=typeof books!=='undefined'?books.find(item=>bookCloudHash(item)===row.book_id):null;
+    const before=book&&typeof positions!=='undefined'?JSON.stringify(positions[book.id]||null):'';
+    bookCloudHeads[row.book_id]={revision:data.revision||'',locator:data.locator||null};
+    bookCloudAdoptPosition(row.book_id,data.locator);
+    const after=book&&typeof positions!=='undefined'?JSON.stringify(positions[book.id]||null):'';
+    if(before!==after)changed=true;
+  }
+  return changed;
+}
 async function bookCloudRefresh(session){
   if(!sb||typeof sb.from!=='function')return;
   const listed=await sb.from('book_cloud').select('book_id,title,author,kind,status,tombstone,byte_size');
   const placed=await sb.from('positions').select('book_id,data');
   if(!bookCloudCurrent(session))return;
   bookCloudCatalog=listed&&listed.data||[];
-  const rows=placed&&placed.data||[];
-  for(const row of rows){
-    const data=row&&row.data||{};
-    bookCloudHeads[row.book_id]={revision:data.revision||'',locator:data.locator||null};
-    bookCloudAdoptPosition(row.book_id,data.locator);
-  }
+  bookCloudStorePositionRows(placed&&placed.data);
   if(typeof renderAllBookViews==='function')renderAllBookViews();
+}
+/* Home can stay visible for a long time. One positions read copies a newer
+   locator into the local place and repaints that percent. An open book keeps
+   the place it already applied. */
+async function bookCloudRefreshPlaces(){
+  if(!bookCloudEnabled()||!bookCloudUserId())return false;
+  if(typeof navigator!=='undefined'&&navigator.onLine===false)return false;
+  const session=bookCloudSession();
+  const placed=await bookCloudReadPositionRows();
+  if(!bookCloudCurrent(session)||!placed)return false;
+  if(typeof curBook!=='undefined'&&curBook)return false;
+  if(typeof activeAppView==='function'&&activeAppView()==='read')return false;
+  const changed=bookCloudStorePositionRows(placed.data);
+  if(changed&&typeof activeAppView==='function'&&activeAppView()==='home'&&typeof renderHome==='function'&&!(typeof curBook!=='undefined'&&curBook))renderHome();
+  return changed;
 }
 function bookCloudReaderHoldsPlace(book){
   return !!(book&&typeof curBook!=='undefined'&&curBook===book&&typeof savedPlaceReleased==='function'&&savedPlaceReleased());
