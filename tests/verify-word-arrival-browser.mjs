@@ -40,17 +40,25 @@ try{
   const pill=page.locator('#word-peek'),requests=[];
   let failures=0,responseGate=null,releaseResponse=null;
   await page.route(url+'functions/v1/dict',async route=>{
+    const payload=route.request().postDataJSON();
+    if(payload.op==='lookup_failure'){
+      assert.equal(route.request().headers().authorization,'Bearer qa');
+      assert.deepEqual(Object.keys(payload).sort(),['op','reason']);
+      return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true})});
+    }
     assert.equal(route.request().headers().authorization,'Bearer synthetic-qa-user');
-    const payload=route.request().postDataJSON();requests.push(payload);
+    requests.push(payload);
     if(failures>0){failures--;return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'lookup_failed'})});}
     if(responseGate)await responseGate;
     const canonical=({selfies:'selfie',brownies:'brownie'})[String(payload.clicked||'').toLowerCase()]||payload.word;
-    return route.fulfill({contentType:'application/json',body:JSON.stringify({kind:'word',canonical,lemma:canonical,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId})});
+    const body=JSON.stringify({kind:'word',canonical,lemma:canonical,members:[payload.clickedIndex],ko:'참을성 있는',left:299,lookupId:payload.lookupId});
+    try{return await route.fulfill({contentType:'application/json',body});}catch{return;}
   });
   await page.evaluate(async url=>{
     sbUser={id:'qa-user'};
     window.qaAuthSession={data:{session:{user:{id:'qa-user'},access_token:'synthetic-qa-user'}}};
-    sb={auth:{getSession:async()=>qaAuthSession}};SB_URL=url;SB_KEY='qa';
+    dictAuthCredential={userId:'qa-user',accessToken:'synthetic-qa-user'};
+    sb={auth:{getSession:async()=>qaAuthSession,refreshSession:async()=>qaAuthSession}};SB_URL=url;SB_KEY='qa';
     await switchLearningAccount(sbUser.id);
     dictGet=async()=>null;fillDictionaryMetadata=async()=>{};
     const bounds=readerScroller().getBoundingClientRect();
@@ -166,59 +174,62 @@ try{
     window.clearTimeout=id=>{qaDeadlines.delete(id);qaNativeClearTimeout(id);};
     window.qaFireDeadline=ms=>{
       const entry=[...qaDeadlines].find(([,item])=>item.ms===ms);
-      if(!entry)throw Error('Missing auth deadline '+ms);
+      if(!entry)throw Error('Missing deadline '+ms);
       const [id,item]=entry;clearTimeout(id);item.fn(...item.args);
     };
-    sb.auth.getSession=()=>qaAuthReady?Promise.resolve(qaAuthSession):new Promise(resolve=>qaAuthPending.push(resolve));
+    sb.auth.getSession=()=>new Promise(resolve=>qaAuthPending.push(resolve));
+    sb.auth.refreshSession=()=>new Promise(resolve=>qaAuthPending.push(resolve));
+    dictAuthCredential={userId:'qa-user',accessToken:'synthetic-qa-user'};
     window.qaOpenUnresolved=surface=>{
       closePanel();
       const node=[...document.querySelectorAll('#rtext .w')].find(n=>n.textContent.toLowerCase()===surface&&n.getBoundingClientRect().top>100&&n.getBoundingClientRect().bottom<innerHeight-100);
       if(!node)throw Error('Missing auth fixture '+surface);
       const key=keyOf(surface);words[key]={word:surface,clicked:surface,forms:[key],ko:'',defs:[],example:sentenceOf(node),book:curBook.title,status:1,addedAt:1,up:1};
-      window.qaAuthWord=words[key];window.qaAuthNode=node;qaAuthPending=[];qaAuthReady=false;openWord(key,node);
+      window.qaAuthWord=words[key];window.qaAuthNode=node;openWord(key,node);
     };
   });
-  for(const [surface,mode] of [['resilient','mini'],['reader','detail']]){
-    const before=requests.length;
-    await page.evaluate(surface=>qaOpenUnresolved(surface),surface);
-    await page.waitForFunction(()=>qaAuthPending.length===1);
-    await page.evaluate(()=>qaFireDeadline(9000));
-    await page.waitForFunction(()=>!words[selKey].aiLoading&&currentContext(selKey)?.error==='error'&&!document.getElementById('word-peek').hidden);
-    assert.equal(await page.evaluate(()=>qaAuthPending.length),1);
-    assert.equal(requests.length,before,'hung auth unexpectedly dispatched HTTP');
-    await page.evaluate(()=>{qaAuthReady=true;});
-    if(mode==='detail'){
-      await page.locator('#word-peek-more').click();await page.locator('#p-aibtn').click();
-      await page.waitForFunction(()=>document.getElementById('p-ai-ko').textContent==='참을성 있는');
-    }else{
-      await page.locator('#word-peek-retry').click();
-      await page.waitForFunction(()=>!wordPeekPending()&&!document.getElementById('word-peek').hidden&&document.getElementById('word-peek-meaning').textContent==='참을성 있는');
-    }
-    assert.equal(requests.length,before+1,'manual auth recovery did not send exactly one request');
-    await page.evaluate(()=>qaAuthPending.forEach(resolve=>resolve(qaAuthSession)));
-    await page.waitForTimeout(50);assert.equal(requests.length,before+1,'late auth dispatched an expired attempt');
-  }
-  const beforeClose=requests.length;
-  await page.evaluate(()=>qaOpenUnresolved('resilient'));await page.waitForFunction(()=>qaAuthPending.length===1);
-  await page.evaluate(()=>closePanel());await page.waitForFunction(()=>!qaAuthWord.aiLoading);
+  responseGate=new Promise(done=>{releaseResponse=done;});
+  const beforeDeadline=requests.length;
+  await page.evaluate(()=>qaOpenUnresolved('resilient'));
+  await page.waitForFunction(()=>qaAuthWord.aiLoading);
+  assert.equal(requests.length,beforeDeadline+1,'cached credential did not send while getSession was pending');
+  assert.equal(await page.evaluate(()=>qaAuthPending.length),0);
+  await page.evaluate(()=>qaFireDeadline(9000));
+  await page.waitForFunction(()=>!qaAuthWord.aiLoading&&currentContext(selKey)?.error==='error');
+  releaseResponse();responseGate=null;releaseResponse=null;
+  assert.equal(requests.length,beforeDeadline+1);
+  await page.locator('#word-peek-retry').click();
+  await page.waitForFunction(()=>!wordPeekPending()&&!document.getElementById('word-peek').hidden&&document.getElementById('word-peek-meaning').textContent==='참을성 있는');
+  assert.equal(requests.length,beforeDeadline+2,'manual retry did not send exactly one more request');
   await page.evaluate(()=>qaAuthPending.forEach(resolve=>resolve(qaAuthSession)));
-  await page.waitForTimeout(50);assert.equal(requests.length,beforeClose,'closed word dispatched after late auth');
-  // Sentence translation has the shared transport's 30s total deadline.
-  await page.evaluate(()=>{qaAuthReady=false;qaAuthPending=[];void openSentence('A patient reader.',{peekTarget:qaAuthNode,owner:qaAuthNode});});
-  await page.waitForFunction(()=>qaAuthPending.length===1);
+  await page.waitForTimeout(50);assert.equal(requests.length,beforeDeadline+2,'late auth dispatched an expired attempt');
+  const beforeClose=requests.length;
+  responseGate=new Promise(done=>{releaseResponse=done;});
+  await page.evaluate(()=>qaOpenUnresolved('resilient'));
+  await page.waitForFunction(()=>qaAuthWord.aiLoading);
+  await page.evaluate(()=>closePanel());
+  await page.waitForFunction(()=>!qaAuthWord.aiLoading);
+  releaseResponse();responseGate=null;releaseResponse=null;
+  await page.waitForTimeout(50);assert.equal(requests.length,beforeClose+1,'closed word sent a follow-up after its in-flight lookup');
+  // Sentence translation uses the same cached credential. A held response still dies at 30s.
+  responseGate=new Promise(done=>{releaseResponse=done;});
+  const beforeSentence=requests.length;
+  await page.evaluate(()=>{qaAuthPending=[];void openSentence('A patient reader.',{peekTarget:qaAuthNode,owner:qaAuthNode});});
+  await page.waitForFunction(()=>sentenceWaitingActive());
+  assert.equal(requests.length,beforeSentence+1);assert.equal(await page.evaluate(()=>qaAuthPending.length),0);
   await page.evaluate(()=>qaFireDeadline(30000));
+  releaseResponse();responseGate=null;releaseResponse=null;
   await page.waitForFunction(()=>!sentenceWaitingActive()&&!document.getElementById('sentence-peek').hidden);
   assert.equal(await page.locator('#sentence-peek-meaning').textContent(),'해석하지 못했어요');
-  assert.equal(requests.length,beforeClose);
-  await page.evaluate(()=>{qaAuthReady=true;});await page.locator('#sentence-peek-retry').click();
+  await page.locator('#sentence-peek-retry').click();
   await page.waitForFunction(()=>!document.getElementById('sentence-modal').hidden&&document.getElementById('ps-ko').textContent==='참을성 있는');
-  assert.equal(requests.length,beforeClose+1);
+  assert.equal(requests.length,beforeSentence+2);
   await page.evaluate(()=>{
     qaAuthPending.forEach(resolve=>resolve(qaAuthSession));
     window.setTimeout=qaNativeSetTimeout;window.clearTimeout=qaNativeClearTimeout;
     sb.auth.getSession=async()=>qaAuthSession;closeSentence();
   });
-  await page.waitForTimeout(50);assert.equal(requests.length,beforeClose+1);
+  await page.waitForTimeout(50);assert.equal(requests.length,beforeSentence+2);
   console.log(`${process.env.BROWSER||'chromium'} word recovery + auth deadlines + neutral arrival browser: passed`);
 }catch(error){
   if(page)console.error('word recovery fixture state',await page.evaluate(()=>({

@@ -12,9 +12,10 @@ const session=id=>({data:{session:id?{user:{id},access_token:'synthetic-'+id}:nu
 
 function fixture(names){
   let scope={id:'user:A',generation:1},life=1;
-  const calls=[],saves=[],puts=[],renders=[],frames=[],timers=new Map();let timer=0;
+  const calls=[],saves=[],puts=[],renders=[],frames=[],reports=[],timers=new Map();let timer=0;
   const word={word:'bank',clicked:'bank',forms:['bank'],example:'A bank stands.',ko:'',book:'fixture'};
-  const box={console:{warn(){}},navigator:{onLine:true},sbUser:{id:'A'},sb:{auth:{getSession:async()=>session('A')}},
+  const box={console:{warn(){}},navigator:{onLine:true},sbUser:{id:'A'},dictAuthCredential:{userId:'A',accessToken:'synthetic-A'},
+    reportLookupFailure:reason=>reports.push(reason),sb:{auth:{getSession:async()=>session('A')}},
     SB_URL:'https://fixture.invalid',SB_KEY:'synthetic-anon',AbortController,Response,crypto,WeakMap,Map,
     captureLearningScope:()=>({...scope}),isLearningScopeCurrent:token=>token.id===scope.id&&token.generation===scope.generation,
     setTimeout:(callback,ms)=>{timers.set(++timer,{callback,ms});return timer;},clearTimeout:id=>timers.delete(id),
@@ -35,29 +36,53 @@ function fixture(names){
   vm.createContext(box);vm.runInContext(names.map(fn).join('\n'),box);
   const switchTo=(id,{resetLife=false}={})=>{
     scope={id:id?'user:'+id:'guest',generation:scope.generation+1};box.sbUser=id?{id}:null;
+    box.dictAuthCredential=id?{userId:id,accessToken:'synthetic-'+id}:null;
     box.sb.auth.getSession=async()=>session(id);
     if(resetLife)box.wordLookupLife=++life;
   };
-  return {box,word,calls,saves,puts,renders,frames,timers,switchTo,
+  return {box,word,calls,saves,puts,renders,frames,reports,timers,switchTo,
     fire:async ms=>{const entry=[...timers].find(([,t])=>t.ms===ms);assert.ok(entry,'missing timer');timers.delete(entry[0]);entry[1].callback();await flush();}};
 }
 
-test('late authentication cannot dispatch for B or after A → B → A',async()=>{
+test('a response that arrives after the account changes is discarded',async()=>{
   for(const returnToA of [false,true]){
-    const f=fixture(['dictCall']),auth=deferred();f.box.sb.auth.getSession=()=>auth.promise;
-    const pending=f.box.dictCall({op:'look_v2'});f.switchTo('B');if(returnToA)f.switchTo('A');
-    auth.resolve(session(returnToA?'A':'B'));
-    assert.equal(await pending,null);assert.equal(f.calls.length,0);assert.equal(f.timers.size,0);
+    const f=fixture(['dictCall']),late=deferred();
+    f.box.fetch=async(url,opt)=>{f.calls.push({url,opt});return late.promise;};
+    const pending=f.box.dictCall({op:'look_v2'});await flush();
+    assert.equal(f.calls.length,1);assert.equal(f.calls[0].opt.headers.Authorization,'Bearer synthetic-A');
+    f.switchTo('B');if(returnToA)f.switchTo('A');
+    late.resolve(Response.json(answer));
+    assert.equal(await pending,null);assert.equal(f.timers.size,0);
   }
 });
 
-test('auth actor mismatch fails before its account-change event is delivered',async()=>{
-  for(const [actor,received] of [['A','B'],['A',null],[null,'A']]){
-    const f=fixture(['dictCall']);f.switchTo(actor);f.box.sb.auth.getSession=async()=>session(received);
+test('a cached token for a different account is not sent',async()=>{
+  const mismatch=fixture(['dictCall']);mismatch.box.dictAuthCredential={userId:'B',accessToken:'synthetic-B'};
+  assert.equal(await mismatch.box.dictCall({op:'look_v2'}),null);assert.equal(mismatch.calls.length,0);
+  assert.equal(mismatch.reports.at(-1),'scope_mismatch');
+  const missing=fixture(['dictCall']);missing.box.dictAuthCredential=null;
+  await missing.box.dictCall({op:'warm'});
+  assert.equal(missing.calls[0].opt.headers.Authorization,'Bearer synthetic-anon');
+  for(const actor of ['A',null]){
+    const f=fixture(['dictCall']);f.switchTo(actor);f.box.sbUser={id:'B'};
+    f.box.dictAuthCredential={userId:'B',accessToken:'synthetic-B'};
     assert.equal(await f.box.dictCall({op:'look_v2'}),null);assert.equal(f.calls.length,0);
   }
+  const signedOut=fixture(['dictCall']);signedOut.switchTo(null);
+  signedOut.box.dictAuthCredential={userId:'A',accessToken:'synthetic-A'};
+  await signedOut.box.dictCall({op:'look_v2'});
+  assert.equal(signedOut.calls[0].opt.headers.Authorization,'Bearer synthetic-anon');
   const f=fixture(['dictCall']);assert.equal((await f.box.dictCall({op:'look_v2'})).ko,answer.ko);
   assert.equal(f.calls[0].opt.headers.Authorization,'Bearer synthetic-A');
+});
+
+test('sbUser null keeps the cached token, and a real sign-out stays anonymous',async()=>{
+  const cached=fixture(['dictCall']);cached.box.sbUser=null;
+  assert.equal((await cached.box.dictCall({op:'look_v2'})).ko,answer.ko);
+  assert.equal(cached.calls[0].opt.headers.Authorization,'Bearer synthetic-A');
+  const signedOut=fixture(['dictCall']);signedOut.box.sbUser=null;signedOut.box.dictAuthCredential=null;
+  await signedOut.box.dictCall({op:'warm'});
+  assert.equal(signedOut.calls[0].opt.headers.Authorization,'Bearer synthetic-anon');
 });
 
 
@@ -67,9 +92,12 @@ test('an auth user cannot dispatch while the active local scope still belongs el
     let authCalls=0;f.box.sb.auth.getSession=async()=>{authCalls++;return session('B');};
     assert.equal(await f.box.dictCall({op:'look_v2'}),null);assert.equal(authCalls,0);assert.equal(f.calls.length,0);
   }
-  const f=fixture(['dictCall']),late=deferred();f.box.sb.auth.getSession=()=>late.promise;
-  const pending=f.box.dictCall({op:'look_v2'});f.box.sbUser={id:'B'};late.resolve(session('A'));
-  assert.equal(await pending,null);assert.equal(f.calls.length,0);
+  const f=fixture(['dictCall']),late=deferred();
+  f.box.fetch=async(url,opt)=>{f.calls.push({url,opt});return late.promise;};
+  const pending=f.box.dictCall({op:'look_v2'});await flush();f.box.sbUser={id:'B'};
+  late.resolve(Response.json(answer));
+  assert.equal(await pending,null);assert.equal(f.calls.length,1);
+  assert.equal(f.calls[0].opt.headers.Authorization,'Bearer synthetic-A');
 });
 
 test('HTTP and body completions that ignore cancellation cannot return across a scope generation',async()=>{

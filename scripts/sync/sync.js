@@ -4,6 +4,9 @@
    Reading progress and book content stay local. */
 let SB_URL='', SB_KEY='', sb=null, sbInitProblem='', authListenerAttached=false;
 let sbUser=null, syncTimer=null, syncPromise=null, syncAgain=false, syncAgainManual=false;
+// The access token dictionary requests may send without waiting on getSession.
+// onAuthStateChange keeps it current. SIGNED_OUT clears it. Never log this value.
+let dictAuthCredential=null;
 let lastSync=load('breeze.lastsync',0);
 let progressSyncTimer=null, lastProgressSyncAt=0;
 let syncCooldownUntil=0, syncFailureCount=0;
@@ -1042,14 +1045,38 @@ function syncRemoteChanges(manual){
    가짜 로그인을 만드는 것이 아닙니다 — 이미 이 기기에 있는 것을 네트워크가
    대답할 때까지 버리지 않는 것뿐입니다. 로그아웃하면 이 값이 사라지므로
    로그아웃은 그대로 로그아웃입니다. */
-function storedAuthUser(){
+function storedAuthRecord(){
   try{
     const ref=new URL(SB_URL).hostname.split('.')[0];
     const raw=localStorage.getItem(`sb-${ref}-auth-token`);
     if(!raw) return null;
     const saved=JSON.parse(raw);
-    return saved&&saved.user&&saved.user.id?saved.user:null;
+    return saved&&typeof saved==='object'?saved:null;
   }catch(error){ return null; }
+}
+function storedAuthUser(){
+  const saved=storedAuthRecord();
+  return saved&&saved.user&&saved.user.id?saved.user:null;
+}
+function storedAuthCredential(){
+  const saved=storedAuthRecord();
+  const userId=saved&&saved.user&&saved.user.id;
+  const accessToken=saved&&saved.access_token;
+  if(typeof userId!=='string'||!userId||typeof accessToken!=='string'||!accessToken)return null;
+  return {userId,accessToken};
+}
+function rememberDictAuth(session, event){
+  if(event==='SIGNED_OUT'){dictAuthCredential=null;return;}
+  const userId=session&&session.user&&session.user.id;
+  const accessToken=session&&session.access_token;
+  if(typeof userId==='string'&&userId&&typeof accessToken==='string'&&accessToken){
+    dictAuthCredential={userId,accessToken};
+    return;
+  }
+  if(!dictAuthCredential){
+    const stored=storedAuthCredential();
+    if(stored)dictAuthCredential=stored;
+  }
 }
 
 function attachSupabaseAuth(){
@@ -1057,6 +1084,7 @@ function attachSupabaseAuth(){
   let authVersion=0;
   const accept=(session,event)=>{
     /* 서버가 세션을 주지 않았어도 이 기기에 남아 있으면 그것이 지금의 사실입니다. */
+    rememberDictAuth(session,event);
     const next=event==='SIGNED_OUT'?null:session?session.user:storedAuthUser();
     activateSyncAccount(next);
     syncBadge();
