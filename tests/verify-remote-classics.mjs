@@ -42,7 +42,7 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   assert.match(book.toString('utf8'),/—/);
   assert.equal(entry.series,'BREEZE ORIGINAL');
   assert.deepEqual(webpSize(cover),{width:768,height:1152});
-  assert.equal(cover.length,184178);
+  assert.equal(cover.length,170858);
   assert.doesNotMatch(text('scripts/library/longreads.js'),/pride-and-prejudice/);
   assert.doesNotMatch(text('tools/build-www.mjs'),/server\/classics/);
 });

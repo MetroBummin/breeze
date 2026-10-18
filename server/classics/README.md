@@ -60,7 +60,7 @@ Original Breeze cover art. No film or television stills. One file replaces it.
 | Public URL | `https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/cover.webp` |
 | Format | WebP (VP8) |
 | Dimensions | 768 × 1152 |
-| Size | 184,178 bytes |
+| Size | 170,858 bytes |
 
 Upload a replacement to the same path, same format, and same dimensions. The
 catalog URL can stay. The upload script sends
