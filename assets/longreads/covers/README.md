@@ -20,25 +20,25 @@ SHA-256 and decoded dimensions.
 
 Alice and Gatsby use the same uncropped 768 × 1152 WebP frame, with
 `object-position: center top`. Both pictures are original paintings made for
-Breeze. They are not film stills, film posters, actor likenesses, Disney
-designs, or Tenniel plates. The Home 책 card is wider than 2:3 and crops the
-bottom of the picture, so the figures sit in the upper three quarters.
+Breeze. They are not film stills, actor likenesses, Disney designs, or
+Tenniel plates. The titles are set in type on the paintings. The Home 책
+card is wider than 2:3 and crops the bottom of the picture, so the title
+and the main artwork sit in the upper three quarters.
 
-Alice is cinematic key art: a young woman, waist-up and sharply lit, in a
-blue dress and white apron, with a white rabbit and a pocket watch beside
-her. A queen in a heart-patterned gown and a hatter in a tall hat sit
-softer behind them, among sunlit curling trees. Mushrooms, roses, and
-heart-marked cards fill the lower foreground.
-Gatsby is cinematic key art: a gentleman, waist-up and facing the viewer,
-raises a champagne coupe. Flappers stand behind him. Fireworks, a lit
-mansion, a small green dock light, and inset gold geometric corners frame
-the scene. A vintage car, a pool, and champagne fill the lower foreground.
-Both faces sit inside the top three quarters of the frame. No title text.
+Alice is a bright fall down a rabbit hole: a white rabbit in a waistcoat
+with a pocket watch, a sunlit tunnel, and floating cups and cards. The
+title “ALICE IN WONDERLAND” and the author line are set in type, inside
+the top of the frame. Gatsby keeps the first mansion-at-night composition,
+the dock, and the green light, relit with fireworks, gold windows, and
+sparkles on the water. The title “THE GREAT GATSBY” and the author line
+are set in an Art Deco face, also inside the top of the frame. The Home
+책 card shows about the top 829 pixels, and the preview sheet shows the
+whole picture.
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
-| `alice-in-wonderland.webp` | 184,770 | 768 × 1152 |
-| `the-great-gatsby.webp` | 155,506 | 768 × 1152 |
+| `alice-in-wonderland.webp` | 197,490 | 768 × 1152 |
+| `the-great-gatsby.webp` | 174,542 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
