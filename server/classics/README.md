@@ -52,17 +52,15 @@ wording is not modernized. There are no in-chapter illustrations.
 
 ## Cover
 
-Original cover art for this catalog, in the same quiet painterly family as
-`assets/longreads/covers/*.webp`. It is not a film or television still and not
-a Hugh Thomson or C. E. Brock plate. One file replaces it.
+Original Breeze cover art. No film or television stills. One file replaces it.
 
 | | |
 | --- | --- |
 | Object path | `classics/pride-and-prejudice/cover.webp` |
 | Public URL | `https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/cover.webp` |
-| Format | WebP |
-| Dimensions | 768 × 1152 (2:3, same frame as the Holmes covers) |
-| Size | About 100–180KB |
+| Format | WebP (VP8) |
+| Dimensions | 768 × 1152 |
+| Size | 26,270 bytes |
 
 Upload a replacement to the same path, same format, and same dimensions. The
 catalog URL can stay. The upload script sends
