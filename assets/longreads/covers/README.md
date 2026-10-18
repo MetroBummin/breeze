@@ -31,14 +31,16 @@ title “ALICE IN WONDERLAND” sits in the sky above the hole, with the
 author line on a dark band, all inside the top of the frame. Gatsby keeps
 the first mansion, dock, and green light, under an indigo-to-gold twilight
 with painted fireworks, strings of party lights, and gold on the water.
-“THE GREAT GATSBY” and the author line are set in an Art Deco face inside
-a thin gold frame. The Home 책 card shows about the top 829 pixels, and
-the preview sheet shows the whole picture.
+“THE GREAT GATSBY” is set in an Art Deco face inside a thin gold frame.
+“F. SCOTT FITZGERALD” is set in Cinzel, in the same gold, with a dark
+edge so the name stays readable against the fireworks. The Home 책 card
+shows about the top 829 pixels, and the preview sheet shows the whole
+picture.
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
 | `alice-in-wonderland.webp` | 190,178 | 768 × 1152 |
-| `the-great-gatsby.webp` | 191,996 | 768 × 1152 |
+| `the-great-gatsby.webp` | 184,044 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
