@@ -953,6 +953,25 @@ async function migrateBundledClassics(){
     catch(error){ console.warn('고전을 텍스트 판으로 옮기지 못했습니다:', error&&error.message); }
   }
 }
+async function longReadDownloadText(response,options){
+  const reader=response.body&&response.body.getReader?response.body.getReader():null;
+  if(!reader)return response.text();
+  const total=Number(response.headers.get('content-length'))||Number(options.bytes)||0;
+  const chunks=[];
+  let received=0;
+  while(true){
+    const step=await reader.read();
+    if(step.done)break;
+    chunks.push(step.value);
+    received+=step.value.byteLength;
+    options.onProgress(total?received/total:0);
+  }
+  const bytes=new Uint8Array(received);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  options.onProgress(1);
+  return new TextDecoder().decode(bytes);
+}
 
 let longReadBusy=false;
 async function importLongRead(read,card,options={}){
@@ -971,10 +990,10 @@ async function importLongRead(read,card,options={}){
   if(card)card.classList.add('busy');
   try{
     // Reuse the worker's versioned-asset verification before it caches bytes.
-    const fileUrl=read.sha256?`${read.file}?v=${read.sha256.slice(0,8)}`:read.file;
-    const response=await fetch(fileUrl,{signal:options.signal});
+    const fileUrl=read.sha256&&!/^https?:/i.test(read.file)?`${read.file}?v=${read.sha256.slice(0,8)}`:read.file;
+    const response=await fetch(fileUrl,{signal:options.signal,headers:read.remote&&typeof remoteClassicHeaders==='function'?remoteClassicHeaders():undefined});
     if(!response.ok)throw new Error('HTTP '+response.status);
-    const text=await response.text();
+    const text=options.onProgress?await longReadDownloadText(response,options):await response.text();
     if(text.trim().length<100)throw new Error('Text book is empty');
     if(read.sha256){
       const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
@@ -1040,6 +1059,7 @@ function longReadCard(read){
   image.onload=()=>{image.hidden=false;card.classList.add('has-cover');};
   image.style.objectPosition=read.coverPosition;
   if(read.cover)image.src=read.cover;
+  if(typeof remoteClassicOffline==='function'&&remoteClassicOffline(read))card.classList.add('is-offline');
   card.title=`${read.originalTitle} · ${read.author} · ${read.series}`;
   accessibleLibraryCard(card,read.title);
   card.onclick=()=>openLongReadPreviewOrReader(read);

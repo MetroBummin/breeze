@@ -496,9 +496,17 @@ function homeRecommendCatalogOwned(id){
 }
 function homeRecommendReads(){
   const bundled=typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
-  const remoteReads=globalThis['remoteClassicCatalogReads'];
-  const remote=typeof remoteReads==='function'?remoteReads():[];
+  const remote=typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[];
   return bundled.concat(remote).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
+}
+function offeredLongReads(){
+  const bundled=typeof pendingLongReads==='function'?pendingLongReads():[];
+  const remote=typeof remoteClassicOffers==='function'?remoteClassicOffers():[];
+  return bundled.concat(remote);
+}
+function longReadOfferStamp(read){
+  const offline=read.remote&&typeof navigator!=='undefined'&&navigator.onLine===false?':offline':'';
+  return JSON.stringify(read)+offline;
 }
 function homeRecommendClassics(){
   return typeof CLASSICS==='undefined'?[]:CLASSICS.filter(classic=>!homeRecommendCatalogOwned(classic.id));
@@ -570,7 +578,7 @@ async function openHomeRecommendClassic(classic){
 function renderHomeRecommendBooks(rail){
   clearHomeRssCards(rail);
   const specs=[
-    ...homeRecommendReads().map(read=>({key:'recommend:'+read.id,stamp:read.id,create:()=>homeRecommendLongReadCard(read)})),
+    ...homeRecommendReads().map(read=>({key:'recommend:'+read.id,stamp:read.remote?longReadOfferStamp(read):read.id,create:()=>homeRecommendLongReadCard(read)})),
     ...homeRecommendClassics().map(classic=>({key:'recommend:'+classic.id,stamp:classic.id,create:()=>homeRecommendClassicCard(classic)})),
   ];
   reconcileHomeCards(rail,specs);
@@ -649,7 +657,7 @@ function renderLongformLibrary(){
   const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id,'longform'));
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())grid.appendChild(homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책'));
-  const offered = currentLibraryFolder('longform')?[]:pendingLongReads();
+  const offered = currentLibraryFolder('longform')?[]:offeredLongReads();
   offered.forEach(read => grid.appendChild(homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')));
   grid.appendChild(homeAddTile(longformAddCard(),'파일 추가'));
   const linked=typeof bookCloudLibraryRows==='function'?bookCloudLibraryRows().length:0;

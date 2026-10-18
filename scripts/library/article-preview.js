@@ -319,15 +319,25 @@ async function articlePreviewStart(){
   if(articlePreviewOpening || !articlePreviewBook || articlePreviewDialog.dataset.preparing==='true')return;
   const book=articlePreviewBook,generation=articlePreviewGeneration;
   const start=/** @type {HTMLButtonElement} */(articlePreviewDialog.querySelector('.ap-start'));
-  start.disabled=true;start.textContent='글 여는 중…';start.setAttribute('aria-busy','true');
+  const remote=!!book.bundledRead?.remote;
+  if(remote&&typeof remoteClassicOffline==='function'&&remoteClassicOffline(book.bundledRead)){
+    articlePreviewStatus('오프라인이에요. 연결되면 다시 눌러 주세요.');
+    start.disabled=false;start.textContent='다시 시도';start.removeAttribute('aria-busy');
+    return;
+  }
+  start.disabled=true;start.textContent=remote?'받는 중…':'글 여는 중…';start.setAttribute('aria-busy','true');
   articlePreviewStatus('');
   const controller=new AbortController();articlePreviewOpenController=controller;
-  const deadline=setTimeout(()=>controller.abort(),15000);
+  const deadline=setTimeout(()=>controller.abort(),remote?120000:15000);
   const openingOptions={signal:controller.signal,onPresented:()=>{if(articlePreviewActive(generation))articlePreviewClose(false);}};
   const job=articlePreviewUntil(Promise.resolve().then(async()=>{
     // The CTA is the save boundary. A dismissed preparation never reaches here.
     const saved=book.bundledRead
-      ? await importLongRead(book.bundledRead,null,{signal:controller.signal})
+      ? await importLongRead(book.bundledRead,null,{signal:controller.signal,bytes:book.bundledRead.bytes,onProgress:remote?ratio=>{
+          if(!articlePreviewActive(generation))return;
+          if(ratio>=1){start.textContent='글 여는 중…';return;}
+          if(ratio>0)start.textContent=`받는 중… ${Math.max(1,Math.min(99,Math.round(ratio*100)))}%`;
+        }:undefined})
       : await commitArticleDraft(book,undefined,{signal:controller.signal});
     if(!saved)throw new Error('Book preparation failed');
     if(controller.signal.aborted||!articlePreviewActive(generation))return;
@@ -339,14 +349,14 @@ async function articlePreviewStart(){
     await job;
     if(articlePreviewActive(generation))articlePreviewClose(false);
   }catch{
-    if(articlePreviewActive(generation))articlePreviewStatus('저장하거나 글을 열지 못했어요. 다시 눌러 주세요.');
+    if(articlePreviewActive(generation))articlePreviewStatus(remote?'받지 못했어요. 다시 눌러 주세요.':'저장하거나 글을 열지 못했어요. 다시 눌러 주세요.');
     else if(!controller.signal.aborted&&typeof toast==='function')toast('글을 열지 못했어요. 다시 시도해 주세요.');
   }finally{
     clearTimeout(deadline);if(articlePreviewOpenController===controller)articlePreviewOpenController=null;
     if(articlePreviewOpening===job)articlePreviewOpening=null;
     if(articlePreviewActive(generation)){
       articlePreviewPaintPending();
-      start.disabled=false;start.textContent=book.bundledRead?longReadPreviewAction(book.bundledRead):'읽기 시작';start.removeAttribute('aria-busy');
+      start.disabled=false;start.textContent=remote?'다시 시도':book.bundledRead?longReadPreviewAction(book.bundledRead):'읽기 시작';start.removeAttribute('aria-busy');
     }
   }
 }
@@ -377,7 +387,8 @@ articlePreviewDetails.className='ap-details';articlePreviewDetails.hidden=true;
 articlePreviewSummaryCard.after(articlePreviewDetails);
 function longReadPreviewAction(read){
   const book=books.find(item=>item.longReadId===read.id);
-  return book&&posOf(book.id).t?'이어서 읽기':'읽기';
+  if(book&&posOf(book.id).t)return '이어서 읽기';
+  return read.remote?'읽기 시작':'읽기';
 }
 function openLongReadPreviewOrReader(read){
   // Resolve the live library record at tap time; preview alone never starts it.
@@ -412,6 +423,8 @@ function openLongReadPreview(read){
   start.onclick=articlePreviewStart;start.disabled=false;start.textContent=longReadPreviewAction(read);start.removeAttribute('aria-busy');
   articlePreviewStatus('');dialog.querySelector('.ap-scroll').scrollTop=0;
   dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
+  if(typeof remoteClassicOffline==='function'&&remoteClassicOffline(read))
+    articlePreviewStatus('오프라인이에요. 연결되면 받을 수 있어요.');
 }
 const articlePreviewStatusNode=document.createElement('p');
 articlePreviewStatusNode.className='ap-status';articlePreviewStatusNode.setAttribute('role','status');

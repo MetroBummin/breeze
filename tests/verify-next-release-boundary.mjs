@@ -75,13 +75,14 @@ const expected={
     "scripts/importers/importers.js": "36710c997baecade016796cd3577dbf9638630c243f9d9dfd7c4c8fdf7be70a6",
     "scripts/importers/rss.js": "c8316809d21afd57323415e5d362ca47ef6d13bc1ed0fa18e0b4707ee15deec4",
     "scripts/importers/social.js": "0278bfd4ef980dd3deaf307956eea4480dcf211966094cc294901a0260e6a731",
-    "scripts/library/article-preview.js": "3db41fbdc24f7c0c778017710c0537398b97e2d85e3fbf1647295a30139a08b1",
+    "scripts/library/article-preview.js": "bdbbc35d2a059d0d0ba77aafc9598a7f431c833f89a6533a04d40e90c36212de",
     "scripts/library/book-cloud.js": "9b8898d8515d807783e34862952d63a5a6e775fcacab1140c8fd8cfdefd0291f",
     "scripts/library/book-edit.js": "5670e5897d40b74973967dbb92a974831d92f6d41459b70ecf416c14fa67626e",
     "scripts/library/ink-sync.js": "d4cbc42e7432c6754dd43f5915612d2765c55db91f710d7b118a98a90a260d04",
     "scripts/library/library.js": "5aa1b5b49284ff98b3b29edab6fe8eec4b7b7f220c432cdc913bb42bdb9029d8",
     "scripts/library/longreads.js": "61edaf331f1f5f9a35f35c9d27cf876320946861edfd1173273c743c771544cd",
     "scripts/library/public-domain-layout.js": "1d06314a59e9a3f4302639b99c0bea8fa1808a3b64c2622da7f6cdde8343244d",
+    "scripts/library/remote-classics.js": "203bda31557c0ab449e5f2380a1f56167f38c8b5f6e8b22dc7c8e544013d076e",
     "scripts/main.js": "5377f327254238a0a83b2c4b1bf0b3fd78880edbdcd6ae58aeacd6b6938b9c46",
     "scripts/reader/epub-original.js": "bb4b2f1f5c43ce22d9079ad05b2143deca94986466221e32144d95ed22933664",
     "scripts/reader/gesture-diag.js": "7245bb14dcebc23832edea2928e90094376428aa12729c774bae25a581ad1da3",
@@ -110,6 +111,11 @@ const expected={
     "server/books/r2.ts": "ff0da8de2f736ad396a07446c54a36ab7f06eb50aab288e3f06a269106b945e4",
     "server/dict/client-failure.ts": "887641e729cca4e834aeb7f1932890ef53f639c0725e7d8b366b81702a5aeaab",
     "server/dict/index.ts": "c898283b5742935cfd619bee73b8cb0af5cf14ce00ca945467a5d96cde7a07b8",
+    "server/classics/README.md": "f68f0d6ff2a86f844eb8fe24aa6b86deb7d273c463fe857000c6cd1eec2701fb",
+    "server/classics/catalog.json": "3851e39f4567dbae79d7fb5f9f39097e5c1fd978855c9192b2166e9341603f6a",
+    "server/classics/pride-and-prejudice/book.txt": "90ba98072f8abc53c34df97be3c17bd00761fb5a5e41bb4c001e965fc028983f",
+    "server/classics/pride-and-prejudice/cover.webp": "e862b8ad7bde559c83a3b64ecbcabdb470a46cd694cceedb89fdc3fcf84d7be6",
+    "server/classics/upload.mjs": "0d42e83a795a8e5b59c971d1346b0b422c3abe3c41eacb4aeba37d13d37c1544",
     "server/dict/study-set-test.ts": "5d873ebd9a40be7a94a05fc78b3309a0d5dfbcfdbfa2b87b970bf5b1184d8ceb",
     "server/dict/telemetry.ts": "6176c0a1b2f2bb7b1e50d04e54a2fdd60aa17910bcadfa23cbb371324bf66763",
     "server/reading-cache/src/feeds.mjs": "45db42acc27adedfc2daf05994c19d5e268604d988f9e7b496f157e3795fc4ac",
@@ -227,6 +233,8 @@ const expected={
     "tests/verify-reading-place-browser.mjs": "aa6eb53e8ad58af66cc4982523a91a07e87ecae6619b23d438f1092c98576c6e",
     "tests/verify-reading-place.mjs": "677ba664b25226d18847ea7ea759f02f3334e77a1311b457a4e0f97e22746a01",
     "tests/verify-recent-reading-browser.mjs": "492499bc9f2dad057bffde5ab2a4d0cbc6f3d94f4baf4236049d8232392bff2d",
+    "tests/verify-remote-classics-browser.mjs": "e737c3b22d849098c8055b294503813320a67c76b4edc2eb695c265179289d3e",
+    "tests/verify-remote-classics.mjs": "ae7a38ae0acac43b1b1f48521b4b00c5e3be05378d61b8f22935bf9c21c0bd14",
     "tests/verify-rss-catalog-hybrid-browser.mjs": "ba4668678085a2412da018a6fa15aa238f82f73c502e76802ae442683a58c6fc",
     "tests/verify-rss-selected-body.mjs": "75936d211c0d1e8028fdcadda12f1d765192982f2e1e85dc54781550e2291f0f",
     "tests/verify-sentence-help-browser.mjs": "a58c923aa985532f2ab16781750f33fe6cf9738b7defb93791f175691bea9a25",
@@ -276,7 +284,7 @@ const expected={
     "tools/build-public-domain-longreads.mjs": "39e0076da61fca1308d3db282faebd9056ac56800a8aeb6f2721663fac7e1eec",
     "tools/ios-testflight.sh": "0813c18b01288cb6f94f0eb8d2644a0b8d0a8d0fa639b10550989cedf823e0c1",
     "tools/verify-ios-release.mjs": "10ae03c08b0bf24f5de5bf5655fbe1edb96d863c3fa25e05b45c92ec73d1c4c4",
-    "types/globals.d.ts": "0c5a66571dc17dce9639c78486f1be1f879d7bfdfe765f45a9f9cec084d2b657"
+    "types/globals.d.ts": "cda07340d3d602008860d5a85cb962d62bfb9aa64f649dacad5a266c7d3a939d"
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "books": [
+    {
+      "id": "pride-and-prejudice",
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/cover.webp",
+      "bytes": 693312,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/book.txt",
+      "contentVersion": "90ba98072f8abc53c34df97be3c17bd00761fb5a5e41bb4c001e965fc028983f",
+      "wordCount": 121672,
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1342",
+      "site": "Project Gutenberg",
+      "license": "Original: public domain in the USA",
+      "licenseUrl": "https://www.gutenberg.org/policy/license.html",
+      "originalTitle": "Pride and Prejudice (1813)",
+      "series": "FREE CLASSIC",
+      "hook": "시골 마을에 젊은 신사가 들어오자, 베넷 가의 딸들에게 시선이 모입니다. 엘리자베스는 다아시의 첫인상을 쉽게 믿지 않습니다.",
+      "edition": "Project Gutenberg text",
+      "editionNote": "Jane Austen’s Pride and Prejudice (1813). Reading text prepared from Project Gutenberg eBook #1342, retrieved 2026-10-18 from https://www.gutenberg.org/cache/epub/1342/pg1342.txt. Gutenberg header and license boilerplate, the 1894 title pages, preface, illustration list, illustration captions, and printer’s colophon are omitted. Paragraphs are unwrapped and the sixty-one chapter headings are numbered. Austen’s prose is not modernized. This is not a Project Gutenberg branded edition."
+    }
+  ]
+}
