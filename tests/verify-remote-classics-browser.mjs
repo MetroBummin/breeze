@@ -140,6 +140,12 @@ try {
   assert.equal(saved.first.startsWith('It is a truth universally acknowledged'), true);
   assert.equal(saved.last.endsWith('uniting them.'), true);
   assert.equal(bookFetches, 2);
+  assert.equal(await page.locator('#rtext .original-chapter').first().textContent(), 'Chapter 1');
+  assert.equal(await page.locator('#rtext .original-byline').textContent(), 'Jane Austen');
+  assert.equal(await page.evaluate(bookId => {
+    const book = books.find(item => item.longReadId === bookId);
+    return book.readingStyle === 'original' && book.paras.some(paragraph => paragraph.includes('—')) && !book.paras.some(paragraph => paragraph.includes('--'));
+  }, id), true);
   await page.screenshot({animations: 'disabled', path: `${proof}/reader-phone-light.png`});
   await page.evaluate(() => { darkMode = true; applyDark(); });
   await page.screenshot({animations: 'disabled', path: `${proof}/reader-phone-dark.png`});

@@ -39,13 +39,22 @@ around letters are removed. Chapter labels are `Chapter 1` through `Chapter 61`.
 The prose itself is Austen’s, not a modernization.
 
 SHA-256 of `pride-and-prejudice/book.txt`:
-`90ba98072f8abc53c34df97be3c17bd00761fb5a5e41bb4c001e965fc028983f`
+`e697ed5afdaa7762e1b45913cef3b8838932414c7ce4f6acfd36f1597ce4e1de`
 
-61 chapters, 2121 paragraphs, 121,672 whitespace-delimited words, 693,312 bytes.
+61 chapters, 2121 paragraphs, 121,669 whitespace-delimited words, 693,618 bytes.
 
-## Cover placeholder
+The reading text is a Breeze Original: the same plain-text chapter format as
+the Sherlock long reads, not an EPUB. Each chapter is its own `Chapter N`
+paragraph. Dialogue uses curly quotes. Gutenberg’s `--` dashes are em dashes,
+and a blanked name such as the regiment is a two-em dash (`——shire`). Three
+leftover printer marks (`RIGHT` before a letter’s date) are removed. Austen’s
+wording is not modernized. There are no in-chapter illustrations.
 
-The owner replaces this file. Do not treat the flat image as a finished cover.
+## Cover
+
+Original cover art for this catalog, in the same quiet painterly family as
+`assets/longreads/covers/*.webp`. It is not a film or television still and not
+a Hugh Thomson or C. E. Brock plate. One file replaces it.
 
 | | |
 | --- | --- |
@@ -53,12 +62,10 @@ The owner replaces this file. Do not treat the flat image as a finished cover.
 | Public URL | `https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/cover.webp` |
 | Format | WebP |
 | Dimensions | 768 × 1152 (2:3, same frame as the Holmes covers) |
-| Size | Under 200KB |
+| Size | About 100–180KB |
 
-`pride-and-prejudice/cover.webp` in this folder is a flat placeholder in the
-app’s light cover color (`#EEE7D5`). It is not a period illustration and not a
-film image. Upload a replacement to the same path, same format, and same
-dimensions. The catalog URL can stay. The upload script sends
+Upload a replacement to the same path, same format, and same dimensions. The
+catalog URL can stay. The upload script sends
 `cache-control: public, max-age=300` for the cover, so a replacement can lag
 by about five minutes.
 

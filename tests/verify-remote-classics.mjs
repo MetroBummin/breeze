@@ -38,9 +38,11 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   assert.equal(paragraphs[1].startsWith('It is a truth universally acknowledged'),true);
   assert.equal(paragraphs.at(-1).endsWith('uniting them.'),true);
   assert.equal(paragraphs.join(' ').split(/\s+/).length,entry.wordCount);
-  assert.doesNotMatch(book.toString('utf8'),/\[Illustration|Project Gutenberg|Chiswick Press|Hugh Thomson/);
+  assert.doesNotMatch(book.toString('utf8'),/\[Illustration|Project Gutenberg|Chiswick Press|Hugh Thomson|--|RIGHT “/);
+  assert.match(book.toString('utf8'),/—/);
+  assert.equal(entry.series,'BREEZE ORIGINAL');
   assert.deepEqual(webpSize(cover),{width:768,height:1152});
-  assert.ok(cover.length<200*1024);
+  assert.ok(cover.length>=100*1024&&cover.length<=180*1024);
   assert.doesNotMatch(text('scripts/library/longreads.js'),/pride-and-prejudice/);
   assert.doesNotMatch(text('tools/build-www.mjs'),/server\/classics/);
 });
