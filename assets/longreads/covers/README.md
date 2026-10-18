@@ -27,18 +27,18 @@ and the main artwork sit in the upper three quarters.
 
 Alice is a bright fall down a rabbit hole: a white rabbit in a waistcoat
 with a pocket watch, a sunlit tunnel, and floating cups and cards. The
-title “ALICE IN WONDERLAND” and the author line are set in type, inside
-the top of the frame. Gatsby keeps the first mansion-at-night composition,
-the dock, and the green light, relit with fireworks, gold windows, and
-sparkles on the water. The title “THE GREAT GATSBY” and the author line
-are set in an Art Deco face, also inside the top of the frame. The Home
-책 card shows about the top 829 pixels, and the preview sheet shows the
-whole picture.
+title “ALICE IN WONDERLAND” sits in the sky above the hole, with the
+author line on a dark band, all inside the top of the frame. Gatsby keeps
+the first mansion, dock, and green light, under an indigo-to-gold twilight
+with painted fireworks, strings of party lights, and gold on the water.
+“THE GREAT GATSBY” and the author line are set in an Art Deco face inside
+a thin gold frame. The Home 책 card shows about the top 829 pixels, and
+the preview sheet shows the whole picture.
 
 | Current asset | Bytes | Dimensions |
 | --- | ---: | --- |
-| `alice-in-wonderland.webp` | 197,490 | 768 × 1152 |
-| `the-great-gatsby.webp` | 174,542 | 768 × 1152 |
+| `alice-in-wonderland.webp` | 190,178 | 768 × 1152 |
+| `the-great-gatsby.webp` | 191,996 | 768 × 1152 |
 
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
