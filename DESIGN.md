@@ -22,7 +22,7 @@ Home의 책 표지와 Reader의 종이 배경 위에서는 같은 유리가 다�
 | 짧은 작업 창 | `--sentence-glass-solid/surface`, `--sentence-glass-line`, `--sentence-glass-ink`, `--sentence-glass-shadow` | 글 추가, 책 수정, 단어 추가, 짧은 확인창의 정리 목표 |
 | 홈 설정 시트 | `--settings-sheet-surface` (light `#F2F2F7`, dark `#2C2C2E`) | 불투명 무광 배경, blur·반사 없음 |
 | 설정 그룹 | 기존 불투명 그룹 표면 | 계정·동기화처럼 여러 항목을 오래 읽는 화면 |
-| 원본 콘텐츠 | 원본 표현 유지 | PDF 종이, EPUB 본문·표지, 기사 사진 |
+| 원본 콘텐츠 | 본문 종이는 테마, 그림은 원본 색 | PDF·EPUB 쪽 바탕은 어두운 화면에서 어두운 종이. 사진·SVG·영상·표지·기사 사진은 원래 색 |
 
 공통 작업 창 스타일은 `styles/surfaces.css`가 소유한다. 기존 Reader 룩업과 dock은 각 소유 파일을 유지한다.
 

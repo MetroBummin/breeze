@@ -104,6 +104,10 @@ function renderOriginalPdfPage(session,pageNumber,options){
   if(!currentPdfSession(session))return Promise.resolve();
   if(session.paintActive?.pageNumber===pageNumber){
     const pending=session.paintActive.promise;
+    // A theme change that arrives mid-paint must run after that canvas lands,
+    // or the in-flight light page replaces the dark one.
+    if(options?.theme) return pending.then(()=>currentPdfSession(session)
+      ? renderOriginalPdfPage(session,pageNumber,{resharpen:true,theme:true}):undefined);
     return options?.prefetch?pending:pending.then(()=>{
       if(currentPdfSession(session)&&session.settled.has(pageNumber)&&!session.wordBoxes.has(pageNumber))
         return renderOriginalPdfPage(session,pageNumber,{prepare:true,lookup:true});
@@ -170,6 +174,14 @@ const PDF_MAX_RENDER_ZOOM = 3;   // 이보다 더 벌리면 늘린 그림으로 
 const PDF_KEEP_REACH = 4000;
 const PDF_MAX_PAGE_PIXELS = 6 * 1024 * 1024;
 const PDF_MAX_CACHE_PIXELS = 24 * 1024 * 1024;
+// Decorations and hairline rules are not photographs. A full-bleed image is a
+// scan (or a full-page picture), handled separately from inset photos.
+const PDF_PHOTO_MIN_EDGE = 24;
+const PDF_SCAN_EDGE = 0.92;
+// Dim a full-page image instead of inverting it. Inverting turns a photograph
+// into a negative; a slightly darker natural render keeps the picture, and a
+// text scan, readable without a pure-white sheet on the dark desk.
+const PDF_SCAN_BRIGHTNESS = 0.82;
 
 /* 새로 그릴 때마다 훑습니다. "자리를 새로 얻을 때 남는 자리를 만든다"는 뜻이라,
    가만히 있으면 아무 일도 안 하고 늘어날 때만 정리합니다. 놓친 쪽이 있어도
@@ -199,6 +211,7 @@ function releaseOriginalPdfPage(session,pageNumber){
   session.settled.delete(pageNumber);
   session.rendering.delete(pageNumber);
   session.drawnAt.delete(pageNumber);
+  session.paintedDark?.delete(pageNumber);
   session.drawToken.delete(pageNumber);   // 아직 도는 일감이 있으면 이걸로 물러납니다
   session.wordBoxes.delete(pageNumber);
   const pageElement=session.pages[pageNumber-1];
@@ -252,7 +265,7 @@ async function openOriginalPdf(book,record,token){
                  /* settled: 다 그려진 쪽 — 놓아 줄 수 있는 것은 이 쪽들뿐입니다.
                     drawToken: 쪽마다 "지금 유효한 일감". 놓아 주면 지워지므로,
                     돌고 있던 일감이 뒤늦게 캔버스를 끼워 넣지 못합니다. */
-                 settled:new Set(),drawToken:new Map()};
+                 settled:new Set(),drawToken:new Map(),paintedDark:new Map()};
   for(let pageNumber=1; pageNumber<=pdf.numPages; pageNumber++){
     const page=document.createElement('article');
     page.className='pdf-source-page';
@@ -262,6 +275,7 @@ async function openOriginalPdf(book,record,token){
     content.appendChild(page); pages.push(page);
   }
   originalSession=session;
+  ensureSourceThemeWatch();
   session.deletedPages=new Set(book.deletedPdfPages||[]);
   if(typeof applyPdfDirection==='function')applyPdfDirection(session);
   BreezePdfInk.open(session);
@@ -299,6 +313,202 @@ async function prepareOriginalPdfPage(session,pageNumber,options){
   }finally{page.cleanup();}
 }
 
+function pdfReaderIsDark(){
+  return !!(document.body&&document.body.classList&&document.body.classList.contains('dark'));
+}
+function pdfDarkPageColors(){
+  if(!pdfReaderIsDark()||typeof getComputedStyle!=='function') return null;
+  const style=getComputedStyle(document.body);
+  const background=(style.getPropertyValue('--source-page')||'').trim();
+  const foreground=(style.getPropertyValue('--ink')||'').trim();
+  if(!background||!foreground||background===foreground) return null;
+  return {background,foreground};
+}
+function pdfCanvasBaseMatrix(viewport,outputScale){
+  const view=viewport.transform,scale=outputScale||1;
+  if(scale===1) return view.slice();
+  return [scale*view[0],scale*view[1],scale*view[2],scale*view[3],scale*view[4],scale*view[5]];
+}
+// One scratch canvas for the whole reader. Pixel storage is dropped as soon
+// as the copy finishes so a page never holds two full bitmaps at rest.
+let pdfPhotoScratchCanvas=null;
+function pdfPhotoScratch(width,height){
+  const canvas=pdfPhotoScratchCanvas||(pdfPhotoScratchCanvas=document.createElement('canvas'));
+  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+  return canvas;
+}
+function releasePdfPhotoScratch(){
+  if(pdfPhotoScratchCanvas){pdfPhotoScratchCanvas.width=0;pdfPhotoScratchCanvas.height=0;}
+}
+function bakePdfCanvasFilter(context,filter){
+  const canvas=context.canvas;
+  if(!canvas.width||!canvas.height) return;
+  const scratch=pdfPhotoScratch(canvas.width,canvas.height);
+  const scratchContext=scratch.getContext('2d',{alpha:false});
+  try{
+    scratchContext.setTransform(1,0,0,1,0,0);
+    scratchContext.drawImage(canvas,0,0);
+    context.save();
+    context.setTransform(1,0,0,1,0,0);
+    context.filter=filter;
+    context.drawImage(scratch,0,0);
+    context.filter='none';
+    context.restore();
+  }finally{releasePdfPhotoScratch();}
+}
+let pdfSvgFilterAppliesCache;
+function pdfSvgFilterApplies(){
+  if(pdfSvgFilterAppliesCache!=null) return pdfSvgFilterAppliesCache;
+  pdfSvgFilterAppliesCache=false;
+  try{
+    const source=document.createElement('canvas');
+    source.width=source.height=2;
+    const sourceContext=source.getContext('2d',{alpha:false});
+    sourceContext.fillStyle='#fff';
+    sourceContext.fillRect(0,0,2,2);
+    const canvas=document.createElement('canvas');
+    canvas.width=canvas.height=2;
+    const context=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
+    const ns='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(ns,'svg');
+    const filter=document.createElementNS(ns,'filter');
+    filter.id='breeze-pdf-pagecolor-probe';
+    filter.setAttribute('color-interpolation-filters','sRGB');
+    const matrix=document.createElementNS(ns,'feColorMatrix');
+    matrix.setAttribute('type','matrix');
+    matrix.setAttribute('values','-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0');
+    filter.appendChild(matrix);svg.appendChild(filter);
+    svg.setAttribute('width','0');svg.setAttribute('height','0');
+    svg.style.cssText='position:absolute;width:0;height:0';
+    (document.body||document.documentElement).appendChild(svg);
+    context.filter='url(#breeze-pdf-pagecolor-probe)';
+    context.drawImage(source,0,0);
+    context.filter='none';
+    const pixel=context.getImageData(0,0,1,1).data;
+    svg.remove();source.width=source.height=canvas.width=canvas.height=0;
+    pdfSvgFilterAppliesCache=pixel[0]<48&&pixel[1]<48&&pixel[2]<48;
+  }catch(error){pdfSvgFilterAppliesCache=false;}
+  return pdfSvgFilterAppliesCache;
+}
+function pdfPhotoRects(operatorList,viewport,outputScale,ops){
+  if(!operatorList||typeof pdfMatrix!=='function'||typeof pdfGlyphBounds!=='function') return [];
+  let ctm=pdfCanvasBaseMatrix(viewport,outputScale);
+  const stack=[],images=[];
+  const fn=operatorList.fnArray||[],args=operatorList.argsArray||[];
+  const push=(matrix,mask)=>{
+    const bounds=pdfGlyphBounds(matrix,0,0,1,1);
+    const left=Math.min(bounds.left,bounds.right),right=Math.max(bounds.left,bounds.right);
+    const top=Math.min(bounds.top,bounds.bottom),bottom=Math.max(bounds.top,bounds.bottom);
+    const width=right-left,height=bottom-top;
+    if(width>0&&height>0) images.push({left,top,width,height,right,bottom,mask:!!mask});
+  };
+  for(let i=0;i<fn.length;i++){
+    const op=fn[i],a=args[i]||[];
+    switch(op){
+      case ops.save: stack.push(ctm); break;
+      case ops.restore: if(stack.length) ctm=stack.pop(); break;
+      case ops.transform: if(a.length===6) ctm=pdfMatrix(ctm,a); break;
+      case ops.paintFormXObjectBegin:
+        stack.push(ctm);
+        if(a[0]&&a[0].length===6) ctm=pdfMatrix(ctm,a[0]);
+        break;
+      case ops.paintFormXObjectEnd: if(stack.length) ctm=stack.pop(); break;
+      case ops.beginGroup:
+        stack.push(ctm);
+        if(a[0]&&a[0].matrix&&a[0].matrix.length===6) ctm=pdfMatrix(ctm,a[0].matrix);
+        break;
+      case ops.endGroup: if(stack.length) ctm=stack.pop(); break;
+      case ops.paintImageXObject:
+      case ops.paintInlineImageXObject:
+        push(ctm,false); break;
+      case ops.paintImageXObjectRepeat:{
+        const positions=a[3]||[],sx=a[1],sy=a[2];
+        for(let p=0;p+1<positions.length;p+=2)
+          push(pdfMatrix(ctm,[sx,0,0,sy,positions[p],positions[p+1]]),false);
+        break;
+      }
+      case ops.paintInlineImageXObjectGroup:
+        if(Array.isArray(a[1])) for(const entry of a[1])
+          if(entry&&entry.transform&&entry.transform.length===6) push(pdfMatrix(ctm,entry.transform),false);
+        break;
+      // Masks are stencils filled with the current color (rules, some fonts),
+      // not photographs. Copying the light-mode stencil would paint dark ink
+      // back onto the dark page, so they stay with the dark pass.
+      case ops.paintImageMaskXObject:
+      case ops.paintImageMaskXObjectGroup:
+      case ops.paintImageMaskXObjectRepeat:
+      case ops.paintSolidColorImageMask:
+        push(ctm,true); break;
+      default: break;
+    }
+  }
+  return images;
+}
+function pdfPhotoPlan(images,canvasWidth,canvasHeight){
+  const sizable=(images||[]).filter(img=>!img.mask&&img.width>=PDF_PHOTO_MIN_EDGE&&img.height>=PDF_PHOTO_MIN_EDGE);
+  const full=sizable.filter(img=>img.width>=canvasWidth*PDF_SCAN_EDGE&&img.height>=canvasHeight*PDF_SCAN_EDGE);
+  const photos=sizable.filter(img=>full.indexOf(img)<0);
+  return {photos,scan:full.length===1&&photos.length===0};
+}
+async function renderPdfPageSurface(page,context,viewport,transform,outputScale){
+  const colors=pdfDarkPageColors();
+  if(!colors){
+    await page.render({canvasContext:context,viewport,transform}).promise;
+    return false;
+  }
+  let plan={photos:[],scan:false};
+  try{
+    const list=await page.getOperatorList({annotationMode:pdfjsLib.AnnotationMode.DISABLE});
+    plan=pdfPhotoPlan(pdfPhotoRects(list,viewport,outputScale,pdfjsLib.OPS),context.canvas.width,context.canvas.height);
+  }catch(error){console.warn('PDF photo map skipped:',error);}
+  if(plan.scan){
+    await page.render({canvasContext:context,viewport,transform}).promise;
+    bakePdfCanvasFilter(context,`brightness(${PDF_SCAN_BRIGHTNESS})`);
+    return true;
+  }
+  // pageColors bakes the theme into the bitmap. Pinch zoom only transforms
+  // #original-zoom, so there is no live filter on the page.
+  await page.render({canvasContext:context,viewport,transform,pageColors:colors}).promise;
+  // WebKit ignores pdf.js's url(#…) SVG filter and leaves the light bitmap.
+  if(!pdfSvgFilterApplies()) bakePdfCanvasFilter(context,'invert(1) hue-rotate(180deg)');
+  if(!plan.photos.length) return true;
+  const scratch=pdfPhotoScratch(context.canvas.width,context.canvas.height);
+  const scratchContext=scratch.getContext('2d',{alpha:false});
+  try{
+    await page.render({canvasContext:scratchContext,viewport,transform}).promise;
+    const width=context.canvas.width,height=context.canvas.height;
+    for(const rect of plan.photos){
+      const x=Math.max(0,Math.floor(rect.left)-1);
+      const y=Math.max(0,Math.floor(rect.top)-1);
+      const w=Math.min(width-x,Math.ceil(rect.right)-x+1);
+      const h=Math.min(height-y,Math.ceil(rect.bottom)-y+1);
+      if(w>0&&h>0) context.drawImage(scratch,x,y,w,h,x,y,w,h);
+    }
+  }finally{releasePdfPhotoScratch();}
+  return true;
+}
+let sourceThemeWatchStarted=false;
+function ensureSourceThemeWatch(){
+  if(sourceThemeWatchStarted||typeof MutationObserver!=='function'||!document.body?.classList) return;
+  sourceThemeWatchStarted=true;
+  let dark=pdfReaderIsDark();
+  new MutationObserver(()=>{
+    const next=pdfReaderIsDark();
+    if(next===dark) return;
+    dark=next;
+    repaintOriginalPdfForTheme();
+    if(typeof applyEpubDarkTheme==='function') applyEpubDarkTheme();
+  }).observe(document.body,{attributes:true,attributeFilter:['class']});
+}
+function repaintOriginalPdfForTheme(){
+  const session=originalSession;
+  if(!currentPdfSession(session)) return;
+  for(const pageNumber of [...session.settled]){
+    session.drawnAt.set(pageNumber,0);
+    void renderOriginalPdfPage(session,pageNumber,{resharpen:true,theme:true});
+  }
+}
+
 async function paintOriginalPdfPage(session,pageNumber,options){
   if(!currentPdfSession(session)) return;
   if(options?.prepare)return prepareOriginalPdfPage(session,pageNumber,options);
@@ -310,8 +520,9 @@ async function paintOriginalPdfPage(session,pageNumber,options){
   if(drawn){
     /* 이미 그려진 쪽입니다. 벌린 만큼 눈에 띄게 흐려졌을 때만 다시 그립니다 —
        1.25배까지는 넉넉히 그려 둔 여유(PDF_OVERSAMPLE)로 버팁니다. */
-    if(!options || !options.resharpen) return drawn;
-    if(zoom <= (session.drawnAt.get(pageNumber)||1) * 1.25) return drawn;
+    if(!options?.resharpen&&!options?.theme) return drawn;
+    const themeStale=!!options?.theme && session.paintedDark?.get(pageNumber)!==pdfReaderIsDark();
+    if(!themeStale && zoom <= (session.drawnAt.get(pageNumber)||1) * 1.25) return drawn;
   }
   const redraw=!!drawn;
   const previousZoom=session.drawnAt.get(pageNumber)||1;
@@ -357,7 +568,7 @@ async function paintOriginalPdfPage(session,pageNumber,options){
       /* 다시 그릴 때는 캔버스만 갈아 끼웁니다. 통째로 비우면 칠해 둔 낱말과
          지금 눌러 둔 낱말 표시가 함께 지워집니다 — 뜻을 보는 중에 벌리면
          보고 있던 그 낱말의 표시가 사라졌습니다. */
-      await page.render({canvasContext:context,viewport,transform}).promise;
+      const bakedDark=await renderPdfPageSurface(page,context,viewport,transform,outputScale);
       if(!alive()){ canvas.width=0; canvas.height=0; return; }
       // A new pinch may have started while PDF.js was painting. Its Touch.target
       // must stay attached until release; retry sharpening after that gesture.
@@ -369,6 +580,7 @@ async function paintOriginalPdfPage(session,pageNumber,options){
       const old=pageElement.querySelector('canvas');
       if(old){ old.replaceWith(canvas); old.width=0; old.height=0; }
       else pageElement.insertBefore(canvas,pageElement.firstChild);
+      if(session.paintedDark) session.paintedDark.set(pageNumber,bakedDark);
       return;
     }
     /* Placeholders all use the first page's proportions. When a page that has
@@ -387,8 +599,9 @@ async function paintOriginalPdfPage(session,pageNumber,options){
       const after=pageElement.getBoundingClientRect();
       if(before.bottom<=0 && after.height!==before.height) readerScrollBy(after.height-before.height);
     }
-    await page.render({canvasContext:context,viewport,transform}).promise;
+    const bakedDark=await renderPdfPageSurface(page,context,viewport,transform,outputScale);
     if(!alive()) return;
+    if(session.paintedDark) session.paintedDark.set(pageNumber,bakedDark);
     // Yield between canvas work and operator-map work. Only one page job runs.
     await new Promise(resolve=>setTimeout(resolve,0));
     if(!alive())return;

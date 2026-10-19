@@ -103,6 +103,43 @@ async function resolveEpubCss(archive,path,resources,seen){
   return rewriteEpubCssUrls(css,path,resources);
 }
 
+const EPUB_DARK_STYLE_ID='breeze-source-dark';
+function epubDarkColors(){
+  if(typeof getComputedStyle!=='function'||!document.body) return null;
+  const style=getComputedStyle(document.body);
+  const paper=(style.getPropertyValue('--source-page')||'').trim();
+  const ink=(style.getPropertyValue('--ink')||'').trim();
+  const link=(style.getPropertyValue('--brand-strong')||style.getPropertyValue('--blue')||'').trim();
+  if(!paper||!ink) return null;
+  return {paper,ink,link:link||ink};
+}
+function epubDarkStyleText(colors){
+  const {paper,ink,link}=colors;
+  // Publisher pictures keep their own pixels. No filter, no color override.
+  return `html,body{background:${paper}!important;color:${ink}!important}`
+    +`p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th,div,span,figcaption,caption,cite,em,strong,b,i,u,small,pre,code,section,article,header,footer,nav,aside,ul,ol,dl,label,q{color:${ink}!important}`
+    +`a,a:visited{color:${link}!important}`;
+}
+function sourceReaderIsDark(){
+  return !!(document.body&&document.body.classList&&document.body.classList.contains('dark'));
+}
+function applyEpubDarkDocument(doc){
+  if(!doc||!doc.head||typeof doc.getElementById!=='function') return;
+  let style=doc.getElementById(EPUB_DARK_STYLE_ID);
+  if(!sourceReaderIsDark()){if(style&&style.remove) style.remove();return;}
+  const colors=epubDarkColors();
+  if(!colors) return;
+  if(!style){style=doc.createElement('style');style.id=EPUB_DARK_STYLE_ID;doc.head.appendChild(style);}
+  style.textContent=epubDarkStyleText(colors);
+}
+function applyEpubDarkTheme(){
+  const session=typeof originalSession==='undefined'?null:originalSession;
+  if(!session||session.kind!=='epub') return;
+  for(const frame of session.frames||[]){
+    try{applyEpubDarkDocument(frame&&frame.contentDocument);}catch(error){}
+  }
+}
+
 async function sanitiseEpubChapter(archive,chapter,resources,viewport){
   const file=archive.zip.file(chapter.path) || archive.zip.file(decodeURIComponent(chapter.href));
   if(!file) return '';
@@ -190,6 +227,15 @@ async function sanitiseEpubChapter(archive,chapter,resources,viewport){
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
     .breeze-original-word.s3{background:rgba(255,140,140,.42)}`;
   const style=doc.createElement('style'); style.textContent=cssParts.join('\n')+'\n'+safety; doc.head.appendChild(style);
+  if(sourceReaderIsDark()){
+    const colors=epubDarkColors();
+    if(colors){
+      const dark=doc.createElement('style');
+      dark.id=EPUB_DARK_STYLE_ID;
+      dark.textContent=epubDarkStyleText(colors);
+      doc.head.appendChild(dark);
+    }
+  }
   return {html:'<!doctype html>'+doc.documentElement.outerHTML,
           viewportDependent:viewportState.viewportDependent};
 }
@@ -427,6 +473,7 @@ async function openOriginalEpub(book,record,token){
   const session={kind:'epub',bookId:book.id,hash:record.hash,archive,urls:[],frames:[],frameReady:[],
     frameGeometryReady:[],frameMeta:[],resizeObservers:[],viewportMedia:[],viewport:epubStableViewport()};
   originalSession=session;
+  if(typeof ensureSourceThemeWatch==='function') ensureSourceThemeWatch();
   session.viewportListener=()=>{
     if(originalSession===session&&currentReaderMode==='original') ensureEpubViewportCurrent(session);
   };
@@ -493,6 +540,7 @@ async function openOriginalEpub(book,record,token){
           setEpubFrameHeight(frame,epubFrameHeight(frame));
         };
         applyEpubStableViewport(frame,session.viewport);
+        applyEpubDarkDocument(frameDoc);
         if(meta.viewportDependent) freezeEpubHeightMediaQueries(frame,session);
         resize();
         if(window.ResizeObserver && frameDoc && !meta.viewportDependent){

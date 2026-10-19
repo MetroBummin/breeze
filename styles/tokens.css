@@ -344,6 +344,7 @@ body.dark{
   --control-line:rgba(255,255,255,.12);
   --control-shadow:0 3px 12px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.08);
   --pdf-desk:#202124;
+  --source-page:#2c2a26; /* 책상보다 한 톤 밝은 따뜻한 종이 */
   --control-glass-surface:var(--sentence-glass-pill);
   --pdf-paper-shadow:0 2px 8px rgba(0,0,0,.28);
   --selection-ink:#83C7E5;
