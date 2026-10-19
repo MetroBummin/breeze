@@ -124,11 +124,13 @@ test('EPUB dark stylesheet recolors text and leaves pictures alone',()=>{
   assert.doesNotMatch(css,/img|svg|video|filter/);
 });
 
-test('a canvas that ignores ctx.filter still inverts paper and dims a scan',()=>{
+test('a canvas that ignores ctx.filter tints paper to the EPUB sheet and dims a scan',()=>{
   const {context}=loadPdf();
-  const data=new Uint8ClampedArray([255,255,255,255, 0,0,0,255, 210,32,36,255, 100,100,100,255]);
+  const data=new Uint8ClampedArray([255,255,255,255, 0,0,0,255, 100,100,100,255]);
   context.pdfBakeFilterPixels(data,'invert(1) hue-rotate(180deg)');
-  assert.deepEqual([...data.slice(0,8)],[0,0,0,255, 255,255,255,255]);
+  assert.deepEqual([...data.slice(0,8)],[0x2c,0x2a,0x26,255, 0xe7,0xe1,0xd4,255]);
+  const mid=data.slice(8,11);
+  assert.ok(mid[0]>0x2c&&mid[0]<0xe7&&mid[1]>0x2a&&mid[1]<0xe1&&mid[2]>0x26&&mid[2]<0xd4);
   const dim=new Uint8ClampedArray([255,255,255,255, 0,10,20,255]);
   context.pdfBakeFilterPixels(dim,'brightness(0.82)');
   assert.deepEqual([...dim],[209,209,209,255, 0,8,16,255]);

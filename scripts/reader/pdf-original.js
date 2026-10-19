@@ -360,15 +360,53 @@ function bakePdfCanvasFilter(context,filter){
       context.filter='none';
       context.restore();
     }finally{releasePdfPhotoScratch();}
+  }else{
+    const image=context.getImageData(0,0,canvas.width,canvas.height);
+    pdfBakeFilterPixels(image.data,filter);
+    context.putImageData(image,0,0);
     return;
   }
-  const image=context.getImageData(0,0,canvas.width,canvas.height);
-  pdfBakeFilterPixels(image.data,filter);
-  context.putImageData(image,0,0);
+  // A real ctx.filter invert lands on pure black and white. EPUB paper is
+  // the warm sheet, so pull that result onto the same paper-to-ink line.
+  if(!/^brightness\(/.test(filter)){
+    const image=context.getImageData(0,0,canvas.width,canvas.height);
+    pdfTintDarkPixels(image.data);
+    context.putImageData(image,0,0);
+  }
 }
 // invert(1) hue-rotate(180deg): invert, then the CSS hue-rotate(180) matrix
-// (cos -1, sin 0). Black and white match a plain invert.
+// (cos -1, sin 0). Black and white match a plain invert, then the tint
+// below maps them onto --source-page and --ink.
 const PDF_HUE180=[-0.574,1.43,0.144, 0.426,0.43,0.144, 0.426,1.43,-0.856];
+const PDF_DARK_PAPER=[0x2c,0x2a,0x26];
+const PDF_DARK_INK=[0xe7,0xe1,0xd4];
+function pdfHexBytes(hex){
+  const match=/^#([0-9a-f]{6})$/i.exec(String(hex||'').trim());
+  if(!match) return null;
+  const value=parseInt(match[1],16);
+  return [(value>>>16)&255,(value>>>8)&255,value&255];
+}
+function pdfDarkPaperInk(){
+  const colors=pdfDarkPageColors();
+  return {
+    paper:pdfHexBytes(colors&&colors.background)||PDF_DARK_PAPER,
+    ink:pdfHexBytes(colors&&colors.foreground)||PDF_DARK_INK,
+  };
+}
+function pdfTintChannel(value,from,to){
+  return Math.max(0,Math.min(255,Math.round(from+(value/255)*(to-from))));
+}
+// Linear map: inverted black (the page) becomes the dark paper, inverted
+// white (the ink) becomes the light ink. Channels in between stay on that line.
+function pdfTintDarkPixels(data,colors){
+  const theme=colors||pdfDarkPaperInk();
+  const paper=theme.paper,ink=theme.ink;
+  for(let i=0;i<data.length;i+=4){
+    data[i]=pdfTintChannel(data[i],paper[0],ink[0]);
+    data[i+1]=pdfTintChannel(data[i+1],paper[1],ink[1]);
+    data[i+2]=pdfTintChannel(data[i+2],paper[2],ink[2]);
+  }
+}
 function pdfBakeFilterPixels(data,filter){
   const brightness=/^brightness\(([\d.]+)\)/.exec(filter);
   if(brightness){
@@ -387,6 +425,7 @@ function pdfBakeFilterPixels(data,filter){
     data[i+1]=Math.max(0,Math.min(255,Math.round(255*(m[3]*r+m[4]*g+m[5]*b))));
     data[i+2]=Math.max(0,Math.min(255,Math.round(255*(m[6]*r+m[7]*g+m[8]*b))));
   }
+  pdfTintDarkPixels(data);
 }
 let pdfCssFilterBakesCache;
 function pdfCssFilterBakes(){
