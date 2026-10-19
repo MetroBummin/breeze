@@ -223,7 +223,7 @@ function previewLongRead(id){
   if(!id)return null;
   const offered=typeof classicCatalogOffers==='function'&&classicCatalogOffers().find(read=>read.id===id);
   if(offered)return offered;
-  return typeof LONG_READS!=='undefined'&&LONG_READS.find(read=>read.id===id&&!read.dormant)||null;
+  return typeof LONG_READS!=='undefined'&&LONG_READS.find(read=>read.id===id)||null;
 }
 function openCasualPreviewOrReader(book,options={}){
   const bundled=book.longReadId&&previewLongRead(book.longReadId);
