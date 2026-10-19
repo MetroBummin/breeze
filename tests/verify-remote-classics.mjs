@@ -105,7 +105,7 @@ test('the catalog merges valid books, skips bundled ids, and survives a failed r
   assert.equal(loaded[0].file,'https://cdn.example/book.txt');
   assert.equal(loaded[0].sha256,'ab'.repeat(32));
   assert.equal(loaded[0].remote,true);
-  assert.equal(context.pendingLongReads().length,5);
+  assert.equal(context.pendingLongReads().length,7);
   failed=true;
   const again=await context.refreshRemoteClassics();
   assert.equal(Array.from(again,read=>read.id).join(),'pride-and-prejudice');
