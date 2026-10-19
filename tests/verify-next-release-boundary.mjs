@@ -90,7 +90,7 @@ const expected={
     "scripts/reader/pdf-ocr.js": "01155e3119af4e83cb90b8c58f923f0ff0841cf502157ccca5c838ce2883b01e",
     "scripts/reader/pdf-ocr-library.js": "fe31104515b9fb560fa06107034532cf9702ab9dbbf8e47a59481a690807c4d0",
     "scripts/reader/pdf-navigation.js": "084e3fef01427feb412b496fd1dddb36e714daf0ceabbc901676bd65cd4e8bf1",
-    "scripts/reader/pdf-original.js": "46e4b11a51e2dfd342f5b686ba244ababcaee56efebe752e374be83ccd7e1a49",
+    "scripts/reader/pdf-original.js": "764b35cd030d64127501bb176d34278bf9c8b36c146ead21dfcc81a1f4403ab4",
     "scripts/reader/pdf-pinch.js": "01d57e65780d678bec6c6d185330a2b6ba49e73c11eb0d67e3c330140babd32c",
     "scripts/reader/reader-modes.js": "9a4b64888a882afb9c0733eed5f6053812bcf13b7e0af9ad5c8fed752e772198",
     "scripts/reader/reader-scroll.js": "1f6fa5534dc249348cfe3fb32c4c89a6e914d183bb5ee77a819bf494b9a947cf",

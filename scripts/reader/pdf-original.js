@@ -376,10 +376,13 @@ function bakePdfCanvasFilter(context,filter){
 }
 // invert(1) hue-rotate(180deg): invert, then the CSS hue-rotate(180) matrix
 // (cos -1, sin 0). Black and white match a plain invert, then the tint
-// below maps them onto --source-page and --ink.
+// below maps them onto --source-page and --ink. Gray pixels, which are
+// almost the whole of a text page, skip the matrix and use a 256-entry
+// table so idle sharpening still finishes inside its budget.
 const PDF_HUE180=[-0.574,1.43,0.144, 0.426,0.43,0.144, 0.426,1.43,-0.856];
 const PDF_DARK_PAPER=[0x2c,0x2a,0x26];
 const PDF_DARK_INK=[0xe7,0xe1,0xd4];
+const pdfLittleEndian=new Uint8Array(Uint32Array.of(1).buffer)[0]===1;
 function pdfHexBytes(hex){
   const match=/^#([0-9a-f]{6})$/i.exec(String(hex||'').trim());
   if(!match) return null;
@@ -393,19 +396,38 @@ function pdfDarkPaperInk(){
     ink:pdfHexBytes(colors&&colors.foreground)||PDF_DARK_INK,
   };
 }
-function pdfTintChannel(value,from,to){
-  return Math.max(0,Math.min(255,Math.round(from+(value/255)*(to-from))));
+function pdfTintLuts(theme){
+  const paper=theme.paper,ink=theme.ink,luts=[new Uint8Array(256),new Uint8Array(256),new Uint8Array(256)];
+  for(let v=0;v<256;v++)for(let c=0;c<3;c++)luts[c][v]=Math.round(paper[c]+(v/255)*(ink[c]-paper[c]));
+  return luts;
 }
-// Linear map: inverted black (the page) becomes the dark paper, inverted
-// white (the ink) becomes the light ink. Channels in between stay on that line.
-function pdfTintDarkPixels(data,colors){
-  const theme=colors||pdfDarkPaperInk();
-  const paper=theme.paper,ink=theme.ink;
-  for(let i=0;i<data.length;i+=4){
-    data[i]=pdfTintChannel(data[i],paper[0],ink[0]);
-    data[i+1]=pdfTintChannel(data[i+1],paper[1],ink[1]);
-    data[i+2]=pdfTintChannel(data[i+2],paper[2],ink[2]);
+function pdfHueByte(r,g,b,row){
+  const m=PDF_HUE180;
+  return Math.max(0,Math.min(255,Math.round(m[row]*r+m[row+1]*g+m[row+2]*b)));
+}
+// Linear map after the invert: 0 becomes the dark paper and 255 the light ink.
+function pdfMapTintedPixels(data,luts,invert){
+  if(pdfLittleEndian){
+    const px=new Uint32Array(data.buffer,data.byteOffset,data.length>>>2);
+    const lr=luts[0],lg=luts[1],lb=luts[2];
+    for(let i=0;i<px.length;i++){
+      const p=px[i];
+      let r=p&255,g=(p>>>8)&255,b=(p>>>16)&255;
+      if(invert){r=255-r;g=255-g;b=255-b;}
+      if(invert&&(r!==g||g!==b)){const rr=pdfHueByte(r,g,b,0),gg=pdfHueByte(r,g,b,3),bb=pdfHueByte(r,g,b,6);r=rr;g=gg;b=bb;}
+      px[i]=(255<<24)|(lb[b]<<16)|(lg[g]<<8)|lr[r];
+    }
+    return;
   }
+  for(let i=0;i<data.length;i+=4){
+    let r=data[i],g=data[i+1],b=data[i+2];
+    if(invert){r=255-r;g=255-g;b=255-b;}
+    if(invert&&(r!==g||g!==b)){const rr=pdfHueByte(r,g,b,0),gg=pdfHueByte(r,g,b,3),bb=pdfHueByte(r,g,b,6);r=rr;g=gg;b=bb;}
+    data[i]=luts[0][r];data[i+1]=luts[1][g];data[i+2]=luts[2][b];
+  }
+}
+function pdfTintDarkPixels(data,colors){
+  pdfMapTintedPixels(data,pdfTintLuts(colors||pdfDarkPaperInk()),false);
 }
 function pdfBakeFilterPixels(data,filter){
   const brightness=/^brightness\(([\d.]+)\)/.exec(filter);
@@ -418,14 +440,7 @@ function pdfBakeFilterPixels(data,filter){
     }
     return;
   }
-  const m=PDF_HUE180;
-  for(let i=0;i<data.length;i+=4){
-    const r=(255-data[i])/255,g=(255-data[i+1])/255,b=(255-data[i+2])/255;
-    data[i]=Math.max(0,Math.min(255,Math.round(255*(m[0]*r+m[1]*g+m[2]*b))));
-    data[i+1]=Math.max(0,Math.min(255,Math.round(255*(m[3]*r+m[4]*g+m[5]*b))));
-    data[i+2]=Math.max(0,Math.min(255,Math.round(255*(m[6]*r+m[7]*g+m[8]*b))));
-  }
-  pdfTintDarkPixels(data);
+  pdfMapTintedPixels(data,pdfTintLuts(pdfDarkPaperInk()),true);
 }
 let pdfCssFilterBakesCache;
 function pdfCssFilterBakes(){
@@ -544,6 +559,7 @@ function pdfPhotoPlan(images,canvasWidth,canvasHeight){
   const photos=sizable.filter(img=>full.indexOf(img)<0);
   return {photos,scan:full.length===1&&photos.length===0};
 }
+const pdfTextOnlyPages=new WeakSet();
 async function renderPdfPageSurface(page,context,viewport,transform,outputScale){
   const colors=pdfDarkPageColors();
   if(!colors){
@@ -551,20 +567,27 @@ async function renderPdfPageSurface(page,context,viewport,transform,outputScale)
     return false;
   }
   let plan={photos:[],scan:false};
-  try{
-    const list=await page.getOperatorList({annotationMode:pdfjsLib.AnnotationMode.DISABLE});
-    plan=pdfPhotoPlan(pdfPhotoRects(list,viewport,outputScale,pdfjsLib.OPS),context.canvas.width,context.canvas.height);
-  }catch(error){console.warn('PDF photo map skipped:',error);}
+  if(!pdfTextOnlyPages.has(page)){
+    try{
+      const list=await page.getOperatorList({annotationMode:pdfjsLib.AnnotationMode.DISABLE});
+      plan=pdfPhotoPlan(pdfPhotoRects(list,viewport,outputScale,pdfjsLib.OPS),context.canvas.width,context.canvas.height);
+      if(!plan.photos.length&&!plan.scan) pdfTextOnlyPages.add(page);
+    }catch(error){console.warn('PDF photo map skipped:',error);}
+  }
   if(plan.scan){
     await page.render({canvasContext:context,viewport,transform}).promise;
     bakePdfCanvasFilter(context,`brightness(${PDF_SCAN_BRIGHTNESS})`);
     return true;
   }
-  // pageColors bakes the theme into the bitmap. Pinch zoom only transforms
-  // #original-zoom, so there is no live filter on the page.
-  await page.render({canvasContext:context,viewport,transform,pageColors:colors}).promise;
-  // WebKit ignores pdf.js's url(#…) SVG filter and leaves the light bitmap.
-  if(!pdfSvgFilterApplies()) bakePdfCanvasFilter(context,'invert(1) hue-rotate(180deg)');
+  // pageColors bakes the theme where pdf.js's SVG filter actually runs.
+  // WebKit ignores that filter and would also copy the canvas onto itself,
+  // so those pages render normally and the tint is applied once afterwards.
+  // Pinch zoom only transforms #original-zoom.
+  if(pdfSvgFilterApplies()) await page.render({canvasContext:context,viewport,transform,pageColors:colors}).promise;
+  else{
+    await page.render({canvasContext:context,viewport,transform}).promise;
+    bakePdfCanvasFilter(context,'invert(1) hue-rotate(180deg)');
+  }
   if(!plan.photos.length) return true;
   const scratch=pdfPhotoScratch(context.canvas.width,context.canvas.height);
   const scratchContext=scratch.getContext('2d',{alpha:false});
