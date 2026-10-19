@@ -219,8 +219,14 @@ function articlePreviewPaintPending(){
   articlePreviewSummaryPending=null;
   articlePreviewApply(pending.meta,pending.reason);
 }
+function previewLongRead(id){
+  if(!id)return null;
+  const offered=typeof classicCatalogOffers==='function'&&classicCatalogOffers().find(read=>read.id===id);
+  if(offered)return offered;
+  return typeof LONG_READS!=='undefined'&&LONG_READS.find(read=>read.id===id)||null;
+}
 function openCasualPreviewOrReader(book,options={}){
-  const bundled=book.longReadId&&LONG_READS.find(read=>read.id===book.longReadId);
+  const bundled=book.longReadId&&previewLongRead(book.longReadId);
   if(bundled&&!posOf(book.id).t)return openLongReadPreview(bundled);
   if(articlePreviewOpening)articlePreviewClose();
   if(book.kind!=='article' || posOf(book.id).t){articlePreviewClose();return openBook(book);}

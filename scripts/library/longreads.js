@@ -1,5 +1,7 @@
-/* CLASSICS is empty. Alice and Gatsby are Breeze Original text books below,
-   and The Odyssey is not in the catalog. A missing classic id restores nothing. */
+/* CLASSICS is empty. Alice and Gatsby are remote classics. CLASSIC_FALLBACKS
+   keeps the same ids and local files for a failed catalog fetch, offline
+   reading, and an already saved copy. The Odyssey is not in the catalog.
+   A missing classic id restores nothing. */
 const CLASSICS = [];
 
 const classicFile = id => `assets/classics/${id}.epub`;
@@ -193,8 +195,10 @@ const LONG_READS = [
     "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s “The Hound of the Baskervilles” (1902). Complete fifteen-chapter novel with original frontmatter. Source text: Project Gutenberg, eBook #2852. Language lightly modernized for Breeze; this is not Doyle’s verbatim text. The story, paragraph order, period setting and clues are preserved.",
     "glossary": "Historical money, objects, dates, names and clue-bearing language are retained."
   },
+];
+const CLASSIC_FALLBACKS = [
   {
-    id:'alice-in-wonderland', presentation:'story',
+    id:'alice-in-wonderland', presentation:'story', fallback:true,
     file:'assets/longreads/alice-in-wonderland.txt',
     cover:'assets/longreads/covers/alice-in-wonderland.webp', coverPosition:'center top',
     title:"Alice's Adventures in Wonderland",
@@ -204,13 +208,13 @@ const LONG_READS = [
     license:'Public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/policy/license.html',
     series:'BREEZE ORIGINAL',
-    hook:'강둑에서 졸고 있던 앨리스가, 조끼 주머니에서 회중시계를 꺼내는 토끼를 따라 굴속으로 들어갑니다.',
+    hook:'회중시계를 보며 "늦었다!"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?',
     edition:'Public-domain text, typeset for Breeze', wordCount:26302,
     sha256:'e82881f1db2fbd796e7630eb641ae8c48206988371098f0cd198801d9c485496',
     editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #11. This is Lewis Carroll’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and the verse lines of the poems are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credits: Arthur DiBianca and David Widger. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
   },
   {
-    id:'the-great-gatsby', presentation:'story',
+    id:'the-great-gatsby', presentation:'story', fallback:true,
     file:'assets/longreads/the-great-gatsby.txt',
     cover:'assets/longreads/covers/the-great-gatsby.webp', coverPosition:'center top',
     title:'The Great Gatsby',
@@ -220,12 +224,31 @@ const LONG_READS = [
     license:'Public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/policy/license.html',
     series:'BREEZE ORIGINAL',
-    hook:'부두 끝의 초록 불빛. 개츠비가 밤마다 바라보던 그 빛 너머에는 데이지가 있습니다.',
+    hook:'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?',
     edition:'Public-domain text, typeset for Breeze', wordCount:48153,
     sha256:'a88b52c53fabbd19fa78bf4cee7da6b69e656cec8b97b273d26ab0d04baac675',
     editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
   },
 ];
+/* Same ids as the remote catalog. Offered when that catalog has no entry
+   yet, the fetch failed, or the device is offline. A saved book keeps its own
+   text and reading position; importing again does not replace it. */
+function longReadDefinition(id){
+  return LONG_READS.find(read=>read.id===id)||CLASSIC_FALLBACKS.find(read=>read.id===id)||null;
+}
+/* A catalog entry replaces the bundled copy, so a later server edit of the
+   text or hook does not wait for an app release. Offline, the local file
+   stays readable. */
+function classicCatalogOffers(){
+  const remote=typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[];
+  const offline=typeof navigator!=='undefined'&&navigator.onLine===false;
+  if(offline){
+    const ids=new Set(CLASSIC_FALLBACKS.map(read=>read.id));
+    return CLASSIC_FALLBACKS.concat(remote.filter(read=>read&&!ids.has(read.id)));
+  }
+  const ids=new Set(remote.map(read=>read&&read.id));
+  return remote.concat(CLASSIC_FALLBACKS.filter(read=>!ids.has(read.id)));
+}
 /* These pictures sit above the exact story passage they depict. Match the
    passage text so a saved Text book keeps its original paragraph indices and
    reading position, including copies imported before the pictures shipped. */
@@ -947,8 +970,8 @@ async function migrateBundledClassic(book, read, options={}){
 }
 async function migrateBundledClassics(){
   for(const book of books.slice()){
-    const read=LONG_READS.find(item=>item.presentation==='story'&&item.id===book.classicId);
-    if(!read||book.kind!=='epub'||book.longReadId===read.id) continue;
+    const read=longReadDefinition(book.classicId);
+    if(!read||read.presentation!=='story'||book.kind!=='epub'||book.longReadId===read.id) continue;
     try{ await migrateBundledClassic(book, read); }
     catch(error){ console.warn('고전을 텍스트 판으로 옮기지 못했습니다:', error&&error.message); }
   }
@@ -1044,7 +1067,11 @@ async function applyLongReadCover(read,options={}){
   finally{clearTimeout(timeout);options.signal?.removeEventListener('abort',abort);}
 }
 async function restoreMissingLongReadCovers(){
-  for(const read of LONG_READS){
+  const reads=LONG_READS.concat(classicCatalogOffers());
+  const seen=new Set();
+  for(const read of reads){
+    if(!read||seen.has(read.id))continue;
+    seen.add(read.id);
     if(read.cover&&books.some(book=>book.longReadId===read.id&&!book.cover))
       await applyLongReadCover(read,{onlyMissing:true});
   }

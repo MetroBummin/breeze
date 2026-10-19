@@ -41,7 +41,7 @@ new Script(read('scripts/core/book-identity.js')).runInNewContext(context);
 new Script(read('scripts/library/longreads.js')).runInNewContext(context);
 new Script(read('scripts/library/public-domain-layout.js')).runInNewContext(context);
 context.applyLongReadCover=async()=>{};
-const catalog=()=>new Script('LONG_READS').runInNewContext(context);
+const catalog=()=>new Script('CLASSIC_FALLBACKS').runInNewContext(context);
 const readById=id=>catalog().find(item=>item.id===id);
 
 test('Alice and Gatsby are clean public-domain text with the shipped checksum',()=>{

@@ -1110,9 +1110,11 @@ assert.deepEqual(Array.from(offered, read => read.title), [
   'The Red-Headed League',
   'The Final Problem',
   'The Hound of the Baskervilles',
+], 'Holmes stories stay bundled; Alice and Gatsby are remote classics');
+assert.deepEqual(Array.from(longReadsContext.classicCatalogOffers(), read => read.title), [
   "Alice's Adventures in Wonderland",
   'The Great Gatsby',
-], 'Holmes and the two public-domain originals should be offered independently');
+], 'Alice and Gatsby stay reachable when the remote catalog has not loaded');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
 const bundledClassics=new Script('CLASSICS').runInNewContext(longReadsContext);
@@ -1123,9 +1125,11 @@ for(const file of ['odyssey.epub','odyssey.jpg','alice-in-wonderland.epub','alic
     'A removed classic file is still bundled: '+file);
 }
 const retainedLongReads=new Script('LONG_READS').runInNewContext(longReadsContext);
-assert.equal(retainedLongReads.length,8,'Dormant Backrooms catalog entry was removed');
+assert.equal(retainedLongReads.length,6,'Dormant Backrooms catalog entry was removed');
 assert.equal(retainedLongReads.find(read=>read.id==='backroom-homeward-bound').dormant,true);
-for(const read of retainedLongReads){
+assert.equal(retainedLongReads.some(read=>read.id==='alice-in-wonderland'||read.id==='the-great-gatsby'),false);
+const fallbackReads=new Script('CLASSIC_FALLBACKS').runInNewContext(longReadsContext);
+for(const read of [...retainedLongReads,...fallbackReads]){
   assert.match(read.file,/\.txt$/,`${read.id} is not a local Text book`);
   assert.ok(existsSync(resolve(root,read.file)),`Local text is missing: ${read.id}`);
   if(read.cover)assert.ok(existsSync(resolve(root,read.cover)),`Supplied cover is missing: ${read.id}`);

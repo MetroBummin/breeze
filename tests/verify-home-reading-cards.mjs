@@ -25,7 +25,7 @@ function environment(){
   homeRegularTile:card=>{const tile=document.createElement('div');tile.append(card);return tile;}});
  for(const name of ['el','fillCard','readingPercent','nowReadingLabel','bookCard','homeBookSpec','reconcileHomeCards'])
   vm.runInContext(fn(library,name),context);
- vm.runInContext(fn(preview,'openCasualPreviewOrReader')+fn(preview,'openLongReadPreviewOrReader')+fn(catalog,'longReadCard'),context);
+ vm.runInContext(fn(preview,'previewLongRead')+fn(preview,'openCasualPreviewOrReader')+fn(preview,'openLongReadPreviewOrReader')+fn(catalog,'longReadCard'),context);
  return {context,positions,books,opened,previews,shelf:document.getElementById('shelf')};
 }
 test('reused Home cover updates 66 to 68 and backward progress from the current committed record',()=>{
