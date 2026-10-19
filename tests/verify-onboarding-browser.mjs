@@ -335,7 +335,9 @@ try{
  await page.locator('#onboard-carousel').press('Space');assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
  await page.locator('#onboard-carousel').press('Space');await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  assert.equal(await page.locator('#onboard-carousel video[src]').count(),1,'offscreen decoder retained');
- await page.emulateMedia({reducedMotion:'reduce'});await wait(50);assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.paused),true);
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) video')?.paused===true,null,{timeout:2000});
+ assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.paused),true);
  await context.close();
  }
  assert.deepEqual(errors,[]);writeFileSync(resolve(out,'test-receipt.json'),JSON.stringify(receipts,null,2));
