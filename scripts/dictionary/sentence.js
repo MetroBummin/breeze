@@ -237,6 +237,11 @@ function parkSentenceForScroll(){
   sentenceScrollParked=sentenceLife;
   armSentenceScrollTeardown();
 }
+function sentenceScrollChanged(){
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  const position=[box?.scrollTop||0,box?.scrollLeft||0];
+  return !sentenceScrollPosition || position.some((value,index)=>value!==sentenceScrollPosition[index]);
+}
 function sentenceReaderScrolled(userScroll){
   if(sentenceScrollParked){
     if(userScroll) armSentenceScrollTeardown();

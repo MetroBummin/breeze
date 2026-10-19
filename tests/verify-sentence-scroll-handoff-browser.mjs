@@ -65,6 +65,7 @@ try{
     };
   });
 
+  const settle=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const show=async ko=>{
     await page.evaluate(async ko=>{
       closeSentence();
@@ -87,6 +88,7 @@ try{
       const view=sentenceViewport();
       return Math.abs(view.width-width)<1 && Math.abs(view.height-height)<1;
     },{width,height});
+    await settle();
     await show('짧은 뜻');
     assert.equal(await page.evaluate(()=>document.getElementById('p-sentence').style.overflowY),'hidden',
       `${width} short card kept a nested scroller`);
@@ -99,13 +101,21 @@ try{
       const scroller=readerScroller();
       const before=scroller.scrollTop;
       scroller.scrollTop=before+80;
+      // Chrome delivers the scroll event on a later frame. Invoke the same
+      // handler now so the parked card can be observed before scrollend.
+      scrollGesture();
       if(scroller.scrollTop===before) throw new Error('reader did not scroll');
       const parked=qaParked();
       qaPointer(spot.node,'pointerup',spot.x+18,spot.y+18);
       const click=new MouseEvent('click',{bubbles:true,cancelable:true,clientX:spot.x+18,clientY:spot.y+18});
       spot.node.dispatchEvent(click);
+      scroller.dispatchEvent(new Event('scrollend'));
+      const panel=document.getElementById('p-sentence');
       return {parked,defaultPrevented:click.defaultPrevented,
-        word:document.getElementById('panel').classList.contains('on')};
+        word:document.getElementById('panel').classList.contains('on'),
+        torn:{hidden:document.getElementById('sentence-modal').hidden,
+          anchored:document.body.classList.contains('sentence-result-anchored'),
+          opacity:panel.style.opacity,pointerEvents:panel.style.pointerEvents}};
     });
     assert.equal(dragged.parked.open,false,`${width} drag left the lookup open`);
     assert.equal(dragged.parked.hidden,false,`${width} drag set modal.hidden during the pan`);
@@ -115,19 +125,12 @@ try{
     assert.match(dragged.parked.blur,/blur\(/,`${width} drag dropped backdrop-filter during the pan`);
     assert.equal(dragged.defaultPrevented,false,`${width} trailing click cancelled the scroll`);
     assert.equal(dragged.word,false,`${width} trailing click opened a word`);
+    assert.equal(dragged.torn.hidden,true,`${width} scrollend left the modal up`);
+    assert.equal(dragged.torn.anchored,false,`${width} scrollend left the backdrop class`);
+    assert.equal(dragged.torn.opacity,'',`${width} scrollend left the card transparent`);
+    assert.equal(dragged.torn.pointerEvents,'',`${width} scrollend left pointer-events none`);
 
-    const torn=await page.evaluate(()=>{
-      readerScroller().dispatchEvent(new Event('scrollend'));
-      const panel=document.getElementById('p-sentence');
-      return {hidden:document.getElementById('sentence-modal').hidden,
-        anchored:document.body.classList.contains('sentence-result-anchored'),
-        opacity:panel.style.opacity,pointerEvents:panel.style.pointerEvents};
-    });
-    assert.equal(torn.hidden,true,`${width} scrollend left the modal up`);
-    assert.equal(torn.anchored,false,`${width} scrollend left the backdrop class`);
-    assert.equal(torn.opacity,'',`${width} scrollend left the card transparent`);
-    assert.equal(torn.pointerEvents,'',`${width} scrollend left pointer-events none`);
-
+    await settle();
     await show('짧은 뜻');
     const early=await page.evaluate(()=>{
       const spot=qaOutsidePoint();
@@ -136,12 +139,13 @@ try{
       const scroller=readerScroller();
       const before=scroller.scrollTop;
       scroller.scrollTop=before+60;
+      scrollGesture();
       if(scroller.scrollTop===before) throw new Error('reader did not scroll');
       const parked=qaParked();
       qaPointer(spot.node,'pointerup',spot.x,spot.y+4);
       const click=new MouseEvent('click',{bubbles:true,cancelable:true,clientX:spot.x,clientY:spot.y+4});
       spot.node.dispatchEvent(click);
-      readerScroller().removeEventListener('scrollend', finishSentenceScrollTeardown);
+      scroller.addEventListener('scrollend',event=>event.stopImmediatePropagation(),{capture:true,once:true});
       return {parked,defaultPrevented:click.defaultPrevented};
     });
     assert.equal(early.parked.hidden,false,`${width} scroll-before-move hid the modal immediately`);
@@ -150,6 +154,7 @@ try{
     assert.equal(early.defaultPrevented,false,`${width} pointerup without pointermove cancelled the click`);
     await page.waitForFunction(()=>document.getElementById('sentence-modal').hidden
       && !document.body.classList.contains('sentence-result-anchored'),null,{timeout:2000});
+    await settle();
 
     await show('짧은 뜻');
     const tap=await page.evaluate(()=>{
@@ -167,10 +172,12 @@ try{
     assert.equal(tap.hidden,true,`${width} outside tap deferred modal.hidden`);
     assert.equal(tap.anchored,false,`${width} outside tap left the glass class`);
     assert.equal(tap.defaultPrevented,true,`${width} outside tap click reached the reader`);
+    await settle();
 
     await show('짧은 뜻');
     const plain=await page.evaluate(()=>{
       readerScroller().scrollTop+=40;
+      scrollGesture();
       const panel=document.getElementById('p-sentence');
       return {open:sentenceLookupOpen(),hidden:document.getElementById('sentence-modal').hidden,
         anchored:document.body.classList.contains('sentence-result-anchored'),opacity:panel.style.opacity};
@@ -179,6 +186,7 @@ try{
     assert.equal(plain.hidden,true,`${width} gesture-free scroll deferred modal.hidden`);
     assert.equal(plain.anchored,false,`${width} gesture-free scroll left the glass class`);
     assert.equal(plain.opacity,'',`${width} gesture-free scroll parked the card`);
+    await settle();
 
     await show(`${'긴 번역이 카드 안을 넘깁니다. '.repeat(80)}`);
     assert.equal(await page.evaluate(()=>document.getElementById('p-sentence').style.overflowY),'auto',

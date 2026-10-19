@@ -622,7 +622,9 @@ function clickGesture(event){
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
   const userScroll=!(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic());
-  if(userScroll) noteSentenceOutsideScroll(activeGesture);
+  // A scroll event that does not move the reader must not turn an outside tap into a pan.
+  if(userScroll && (typeof sentenceScrollChanged!=='function' || sentenceScrollChanged()))
+    noteSentenceOutsideScroll(activeGesture);
   if(typeof sentenceReaderScrolled==='function') sentenceReaderScrolled(userScroll);
   /* Mini pills wait for scroll idle, preserving the same lookup/result. Expanded
      detail keeps its existing scroll dismissal. Only real position changes reset idle. */
