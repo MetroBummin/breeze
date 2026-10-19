@@ -34,10 +34,10 @@ try{
       await page.route('**/*',route=>route.request().url().startsWith(base)||route.request().url().startsWith('blob:')?route.continue():route.abort());
       await page.goto(base);await page.evaluate(()=>homeReady);
       await page.evaluate(()=>show('longform'));
-      const card=()=>page.locator(`:is(#v-longform.on #longform-grid, #v-home.on #shelf) .longread[data-longread-id="${storyId}"]`);
+      const card=()=>page.locator(`:is(#v-longform.on #longform-recommend-rail, #v-longform.on #longform-grid, #v-home.on #shelf) .longread[data-longread-id="${storyId}"]`);
       const start=()=>page.locator('#article-preview .ap-start');
       for(const id of [storyId,'sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles']){
-        await page.locator(`#longform-grid .longread[data-longread-id="${id}"]`).click();
+        await page.locator(`#longform-recommend-rail .longread[data-longread-id="${id}"]`).click();
         assert.equal(await start().textContent(),'읽기');
         assert.doesNotMatch(await page.locator('#article-preview').innerText(),/다운로드/);
         assert.equal(await page.evaluate(()=>books.length),0);
@@ -140,7 +140,7 @@ try{
           return href.startsWith(base)||href.startsWith('blob:')?route.continue():route.abort();
         });
         await p.goto(base);await p.evaluate(()=>homeReady);await p.evaluate(()=>show('longform'));
-        const tile=()=>p.locator(`:is(#v-longform.on #longform-grid, #v-home.on #shelf) [data-longread-id="${id}"]`);
+        const tile=()=>p.locator(`:is(#v-longform.on #longform-recommend-rail, #v-longform.on #longform-grid, #v-home.on #shelf) [data-longread-id="${id}"]`);
         await tile().click();assert.equal(fetches,0);
         assert.equal(await p.locator('.ap-start').textContent(),'읽기');
         await p.keyboard.press('Escape');assert.equal(await p.evaluate(async()=>(await bookAll()).length),0);
@@ -190,7 +190,7 @@ try{
         await cachedPage.evaluate(()=>navigator.serviceWorker.ready);
         await cachedPage.reload();await cachedPage.evaluate(()=>homeReady);
         await cachedPage.evaluate(()=>show('longform'));
-        await cachedPage.locator(`#longform-grid .longread[data-longread-id="${storyId}"]`).click();
+        await cachedPage.locator(`#longform-recommend-rail .longread[data-longread-id="${storyId}"]`).click();
         mode='truncated';
         await cachedPage.locator('.ap-start').click();
         await cachedPage.waitForFunction(()=>!articlePreviewOpening);
