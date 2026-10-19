@@ -13,7 +13,7 @@ const novel = readFileSync(resolve(root, 'server/classics/pride-and-prejudice/bo
 const cover = readFileSync(resolve(root, 'server/classics/pride-and-prejudice/cover.webp'));
 const id = 'pride-and-prejudice';
 const card = `#casual-rail .longread[data-longread-id="${id}"]`;
-const libraryCard = `#longform-grid .longread[data-longread-id="${id}"]`;
+const libraryCard = `#longform-recommend-rail .longread[data-longread-id="${id}"]`;
 
 const server = createServer((req, res) => {
   const path = resolve(root, '.' + new URL(req.url, 'http://localhost').pathname.replace(/^\/$/, '/index.html'));

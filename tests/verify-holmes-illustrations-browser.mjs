@@ -24,7 +24,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
   const offeredIds=[...slugs.map(slug=>'sherlock-holmes-'+slug),'alice-in-wonderland','the-great-gatsby'];
   assert.equal(await page.locator('#shelf .longread').count(),0,'Home long-form shelf offers the Gutenberg catalog');
   await page.evaluate(()=>show('longform'));
-  assert.deepEqual(await page.locator('#longform-grid .longread').evaluateAll(nodes=>nodes.map(node=>node.dataset.longreadId)),offeredIds,'Long-form offers Holmes and the public-domain originals');
+  assert.equal(await page.locator('#longform-grid .longread').count(),0,'Unstarted offers stay out of the owned grid');
+  assert.deepEqual(await page.locator('#longform-recommend-rail .longread').evaluateAll(nodes=>nodes.map(node=>node.dataset.longreadId)),offeredIds,'Long-form offers Holmes and the public-domain originals');
   for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();show('longform');},dark);
    await page.screenshot({path:`${proof}/${engine.name()}-shelf-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});

@@ -502,7 +502,7 @@ function homeRecommendReads(){
 function offeredLongReads(){
   const bundled=typeof pendingLongReads==='function'?pendingLongReads():[];
   const remote=typeof remoteClassicOffers==='function'?remoteClassicOffers():[];
-  return bundled.concat(remote);
+  return bundled.concat(remote).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
 }
 function longReadOfferStamp(read){
   const offline=read.remote&&typeof navigator!=='undefined'&&navigator.onLine===false?':offline':'';
@@ -645,6 +645,17 @@ function renderCasualLibrary(){
   const add=document.createElement('button');add.type='button';add.textContent='글 추가';add.onclick=()=>openAddModal('casual');empty.append(add);
 }
 
+function renderLongformRecommend(offered){
+  const section=document.getElementById('longform-recommend');
+  const rail=document.getElementById('longform-recommend-rail');
+  if(!section||!rail)return;
+  section.hidden=!offered.length;
+  reconcileHomeCards(rail,offered.map(read=>({
+    key:'recommend:'+read.id,
+    stamp:read.remote?longReadOfferStamp(read):read.id,
+    create:()=>homeRecommendLongReadCard(read),
+  })));
+}
 function renderLongformLibrary(){
   renderFolderControls();
   renderLibraryStorageNotice();
@@ -659,7 +670,7 @@ function renderLongformLibrary(){
   cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())grid.appendChild(homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책'));
   const offered = currentLibraryFolder('longform')?[]:offeredLongReads();
-  offered.forEach(read => grid.appendChild(homeRegularTile(longReadCard(read),read.title,read.author||'Breeze')));
+  renderLongformRecommend(offered);
   grid.appendChild(homeAddTile(longformAddCard(),'파일 추가'));
   const linked=typeof bookCloudLibraryRows==='function'?bookCloudLibraryRows().length:0;
   empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0 || linked>0;

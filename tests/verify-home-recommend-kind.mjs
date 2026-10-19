@@ -40,18 +40,21 @@ test('the recommendation heading keeps its place and gains the E1 kind control',
 });
 
 test('book captions sit under the picture inside the article card box',()=>{
-  assert.match(homeCss,/#v-home #casual-rail > :is\(\.casual,\.home-recommend-book\)\{[^}]*flex:0 0 min\(61vw,560px\)/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book\{[^}]*grid-template-columns:minmax\(0,1fr\)[^}]*aspect-ratio:3\/4/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book \.cover\{[^}]*position:relative[^}]*grid-row:1/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book \.author\{[^}]*position:relative[^}]*grid-row:3[^}]*color:var\(--settings-muted\)/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book \.bt\{[^}]*grid-row:2[^}]*color:var\(--settings-ink\)/);
-  const block=homeCss.slice(homeCss.indexOf('#v-home #casual-rail > .home-recommend-book{'),homeCss.indexOf('#v-home #longform{'));
+  const rail=String.raw`:is\(#v-home #casual-rail, #v-longform #longform-recommend-rail\)`;
+  assert.match(homeCss,new RegExp(rail+String.raw` > :is\(\.casual,\.home-recommend-book\)\{[^}]*flex:0 0 min\(61vw,560px\)`));
+  assert.match(homeCss,new RegExp(rail+String.raw` > \.home-recommend-book\{[^}]*grid-template-columns:minmax\(0,1fr\)[^}]*aspect-ratio:3\/4`));
+  assert.match(homeCss,new RegExp(rail+String.raw` > \.home-recommend-book \.cover\{[^}]*position:relative[^}]*grid-row:1`));
+  assert.match(homeCss,new RegExp(rail+String.raw` > \.home-recommend-book \.author\{[^}]*position:relative[^}]*grid-row:3[^}]*color:var\(--settings-muted\)`));
+  assert.match(homeCss,new RegExp(rail+String.raw` > \.home-recommend-book \.bt\{[^}]*grid-row:2[^}]*color:var\(--settings-ink\)`));
+  const block=homeCss.slice(homeCss.indexOf(':is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book{'),homeCss.indexOf('#v-home #longform{'));
   assert.doesNotMatch(block,/#[0-9a-fA-F]{3,8}/,'Book rail styling introduces a new color');
 });
 
 function harness(){
   const {document}=parseHTML(`<div id="casual-rail"></div><p id="home-feed-empty"></p><div id="shelf"></div><div id="home-casual-rail"></div>
-    <div id="home-recommend-kind" role="group"><button type="button" data-kind="articles" aria-pressed="true">기사</button><button type="button" data-kind="books">책</button></div>`);
+    <div id="home-recommend-kind" role="group"><button type="button" data-kind="articles" aria-pressed="true">기사</button><button type="button" data-kind="books">책</button></div>
+    <span id="longform-cnt"></span><div id="longform-grid"></div><div id="longform-empty" hidden></div>
+    <section id="longform-recommend" hidden><h2 id="longform-recommend-title">추천</h2><div id="longform-recommend-rail"></div></section>`);
   const store=new Map(),opened=[],rss=[];
   const books=[];
   const context=vm.createContext({
@@ -63,18 +66,23 @@ function harness(){
     homeBookSpec:book=>({key:'book:'+book.id,stamp:book.id,create(){const tile=document.createElement('div');tile.dataset.bookId=book.id;tile.className='saved-book';return tile;}}),
     serverOnlyBooks:()=>[],serverOnlyCasuals:()=>[],casualBooks:()=>[],localReadAt:()=>0,
     homeRegularTile(card){const tile=document.createElement('div');tile.className='home-regular-tile';tile.append(card);return tile;},
-    homeAddTile:()=>document.createElement('div'),longformAddCard:()=>document.createElement('button'),
+    homeAddTile(card){const tile=document.createElement('div');tile.className='home-add-tile';tile.append(card);return tile;},
+    longformAddCard(){const card=document.createElement('button');card.className='bookcard add';return card;},
     casualAddCard:()=>document.createElement('button'),
     appendRssCards(rail){rss.push(rail.id);rail.dataset.rssStamp='articles';const card=document.createElement('article');card.className='casual rss-card';rail.append(card);},
     openLongReadPreviewOrReader(read){opened.push(read.id);},
     openCasualPreviewOrReader(book){opened.push(book.id);},
     importClassic(classic){books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();},
+    renderFolderControls(){},folderBooks:list=>list,folderMatches:()=>true,
+    bookCard(book){const card=document.createElement('div');card.className='bookcard owned';card.dataset.localBook=book.id;return card;},
+    cloudBookCard(){return document.createElement('div');},
   });
+  vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}',context);
   for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards'])
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};
-  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','renderHome'])
+  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','renderHome','renderLongformRecommend','renderLongformLibrary'])
     vm.runInContext(extractFunction(library,name),context);
   return {context,books,opened,rss,store,document};
 }
@@ -87,8 +95,10 @@ test('articles stay on the rail and the home shelf does not offer the catalog',(
   assert.equal(document.querySelectorAll('#casual-rail .home-recommend-book').length,0);
   assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,0);
   assert.equal(document.querySelectorAll('#shelf [data-home-key="add"]').length,1);
-  assert.match(extractFunction(library,'renderLongformLibrary'),/offeredLongReads\(\)/);
+  assert.match(extractFunction(library,'renderLongformLibrary'),/renderLongformRecommend\(offered\)/);
+  assert.doesNotMatch(extractFunction(library,'renderLongformLibrary'),/longReadCard\(/);
   assert.match(extractFunction(library,'offeredLongReads'),/pendingLongReads\(\)/);
+  assert.match(extractFunction(library,'offeredLongReads'),/homeRecommendCatalogOwned\(read\.id\)/);
   assert.doesNotMatch(extractFunction(library,'renderHome'),/pendingLongReads|homeRecommendShelfOmits/);
   assert.equal(rss.length,1);
 });
@@ -217,4 +227,48 @@ test('a remote catalog book uses the same id, and an empty rail says the books a
   assert.equal(empty.hidden,true);
   assert.ok(railTitles(document).includes('Pride and Prejudice'));
   assert.ok(railTitles(document).includes('A Scandal in Bohemia'));
+});
+
+function libraryOfferTitles(document){
+  return [...document.querySelectorAll('#longform-recommend-rail .home-recommend-book .bt')].map(node=>node.textContent);
+}
+
+test('long-form offers use the 추천 rail and the same catalog ownership as Home',()=>{
+  const {context:c,books,document}=harness();
+  c.renderLongformLibrary();
+  const section=document.getElementById('longform-recommend');
+  assert.equal(section.hidden,false);
+  assert.equal(document.querySelectorAll('#longform-grid .longread').length,0);
+  assert.equal(document.querySelectorAll('#longform-grid .bookcard.add').length,1);
+  assert.equal(document.getElementById('longform-cnt').textContent,'');
+  assert.ok(libraryOfferTitles(document).includes('A Scandal in Bohemia'));
+  assert.ok(libraryOfferTitles(document).includes("Alice's Adventures in Wonderland"));
+  books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
+  c.renderLongformLibrary();
+  assert.equal(document.getElementById('longform-cnt').textContent,'1권');
+  assert.ok(document.querySelector('#longform-grid [data-local-book="saved-holmes"]'));
+  assert.equal(libraryOfferTitles(document).includes('The Adventure of the Speckled Band'),false);
+  assert.ok(libraryOfferTitles(document).includes('A Scandal in Bohemia'));
+  c.libraryFolder='school';
+  c.renderLongformLibrary();
+  assert.equal(section.hidden,true);
+  assert.equal(document.querySelector('#longform-recommend-title').textContent,'추천');
+  assert.equal(document.querySelectorAll('#longform-recommend-rail .home-recommend-book').length,0);
+  c.libraryFolder='';
+  books.length=0;
+  const rows=[{book_id:'cloud-bohemia',meta:{longReadId:'sherlock-holmes-scandal-in-bohemia',title:'A Scandal in Bohemia'}}];
+  const hidden={};
+  c.activeServerBooks=()=>rows;
+  c.hiddenBookIds=()=>hidden;
+  c.renderLongformLibrary();
+  assert.equal(section.hidden,false);
+  assert.equal(libraryOfferTitles(document).includes('A Scandal in Bohemia'),false);
+  hidden['cloud-bohemia']=true;
+  c.renderLongformLibrary();
+  assert.ok(libraryOfferTitles(document).includes('A Scandal in Bohemia'));
+  for(const id of ['sherlock-holmes-speckled-band','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles','alice-in-wonderland','the-great-gatsby'])
+    books.push({id:'lib-'+id,kind:'txt',title:id,longReadId:id});
+  c.renderLongformLibrary();
+  assert.equal(section.hidden,true);
+  assert.equal(document.getElementById('longform-cnt').textContent,'7권');
 });

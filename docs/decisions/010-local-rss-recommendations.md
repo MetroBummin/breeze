@@ -160,15 +160,22 @@ Holmes, Alice, and Gatsby cards open through `openLongReadPreviewOrReader`.
 still do not enter the article rail. The bundled Holmes offers are not placed
 on the Home 긴 글 shelf in either toggle state. That shelf is the reader's own
 long-form library, and only its add tile
-when nothing is saved. Unstarted offers stay on the long-form library view.
+when nothing is saved. Unstarted offers stay on the long-form library view,
+in a 추천 rail under the owned books. The rail uses the same card and the
+same horizontal row as the Home 책 rail. It appears only while the category
+filter is 전체, and the whole section, heading included, is absent when a
+category is selected or nothing is offered. The N권 count is owned books
+only, and the 파일 추가 tile stays in the owned grid.
 `pendingClassics()` stays empty, so the older classics are not restored to a
 default shelf.
 
-The 책 rail is keyed by catalog id. A card leaves once any library entry has
-that id in `classicId` or `longReadId`: a bundled EPUB, a text long read, a
-copy migrated from EPUB, or a server-hosted catalog book that uses the same
-id. A device-hidden server row does not count. Removing the library entry
-paints the card again, because Home renders from the current library.
+The 책 rail and the long-form 추천 rail are keyed by catalog id. A card leaves
+once any library entry has that id in `classicId` or `longReadId`: a bundled
+EPUB, a text long read, a copy migrated from EPUB, or a server-hosted catalog
+book that uses the same id. A device-hidden server row does not count.
+Removing the library entry paints the card again, because both rails render
+from the current library. A book started on another device therefore does not
+appear again as an unstarted offer.
 When every offered book is already in the library, the rail is hidden and the
 recommendation status says the started books are on the shelf.
 

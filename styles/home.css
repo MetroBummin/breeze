@@ -16,10 +16,10 @@
   /* 레일이 페이지 여백 밖까지 흘러야 "옆으로 더 있다"가 잘려 보입니다. */
   /* scroll-padding 이 없으면 스냅이 안쪽 여백을 무시하고 첫 카드를 화면
      왼쪽 끝에 붙여 버립니다(레일이 저 혼자 18px 밀려 있는 것처럼 보임). */
-  #casual-rail, .casual-rail{display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x proximity;
+  #casual-rail, .casual-rail, #longform-recommend-rail{display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x proximity;
     padding:16px 26px 8px; margin:0 -26px; scroll-padding-left:26px;
     -webkit-overflow-scrolling:touch; scrollbar-width:none;}
-  #casual-rail::-webkit-scrollbar, .casual-rail::-webkit-scrollbar{display:none;}
+  #casual-rail::-webkit-scrollbar, .casual-rail::-webkit-scrollbar, #longform-recommend-rail::-webkit-scrollbar{display:none;}
   /* 피드 카드든 내 Casual이든 레일에서 차지하는 바깥 폭은 하나여야 합니다.
      사진·테두리·article/div 태그 차이에 flex 계산이 흔들리지 않게 명시합니다. */
   #casual-rail > .casual{flex:0 0 158px; width:158px; min-width:158px; max-width:158px;}
@@ -347,8 +347,8 @@
 
 /* Home: discovery is large; the two Library shelves share one card footprint. */
 #v-home .sec-head{margin-bottom:14px;}
-#v-home #casual-rail{gap:12px;padding-top:0;padding-bottom:8px;scroll-snap-type:x mandatory;}
-#v-home #casual-rail > :is(.casual,.home-recommend-book){
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail){gap:12px;padding-top:0;padding-bottom:8px;scroll-snap-type:x mandatory;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > :is(.casual,.home-recommend-book){
   flex:0 0 min(61vw,560px);width:min(61vw,560px);
   min-width:min(61vw,560px);max-width:min(61vw,560px);
 }
@@ -368,16 +368,16 @@
 #v-home #casual-rail .rss-card:has(.thumb:not(.has-cover)) .ct{color:var(--ink);text-shadow:none;}
 /* Books use the article card's outer box. The picture stops above the caption
    so the author never sits on the artwork, and the row below does not move. */
-#v-home #casual-rail > .home-recommend-book{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto;align-content:stretch;height:auto;min-height:0;aspect-ratio:3/4;padding:0;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none;scroll-snap-align:start;}
-#v-home #casual-rail > .home-recommend-book:hover{transform:none;box-shadow:none;}
-#v-home #casual-rail > .home-recommend-book.has-cover::after{content:none;}
-#v-home #casual-rail > .home-recommend-book .cover{position:relative;inset:auto;grid-column:1;grid-row:1;width:100%;height:100%;min-width:0;min-height:0;border-radius:18px;object-fit:cover;}
-#v-home #casual-rail > .home-recommend-book .bt{position:relative;inset:auto;grid-column:1;grid-row:2;max-width:none;min-width:0;margin:8px 1px 0;color:var(--settings-ink);font:600 18px/1.3 var(--ui);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
-#v-home #casual-rail > .home-recommend-book .author{position:relative;inset:auto;grid-column:1;grid-row:3;max-width:none;min-width:0;margin:2px 72px 0 1px;padding:0;border-radius:0;background:none;color:var(--settings-muted);font:500 12.5px/1.3 var(--ui);letter-spacing:0;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#v-home #casual-rail > .home-recommend-book:not(:has(.get)) .author{margin-right:1px;}
-#v-home #casual-rail > .home-recommend-book .get{position:relative;inset:auto;z-index:2;grid-column:1;grid-row:3;justify-self:end;align-self:end;left:auto;right:auto;bottom:auto;margin:2px 1px 0 0;color:var(--settings-muted);font:600 11px/1.3 var(--ui);text-shadow:none;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto;align-content:stretch;height:auto;min-height:0;aspect-ratio:3/4;padding:0;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none;scroll-snap-align:start;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book:hover{transform:none;box-shadow:none;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book.has-cover::after{content:none;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book .cover{position:relative;inset:auto;grid-column:1;grid-row:1;width:100%;height:100%;min-width:0;min-height:0;border-radius:18px;object-fit:cover;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book .bt{position:relative;inset:auto;grid-column:1;grid-row:2;max-width:none;min-width:0;margin:8px 1px 0;color:var(--settings-ink);font:600 18px/1.3 var(--ui);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book .author{position:relative;inset:auto;grid-column:1;grid-row:3;max-width:none;min-width:0;margin:2px 72px 0 1px;padding:0;border-radius:0;background:none;color:var(--settings-muted);font:500 12.5px/1.3 var(--ui);letter-spacing:0;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book:not(:has(.get)) .author{margin-right:1px;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book .get{position:relative;inset:auto;z-index:2;grid-column:1;grid-row:3;justify-self:end;align-self:end;left:auto;right:auto;bottom:auto;margin:2px 1px 0 0;color:var(--settings-muted);font:600 11px/1.3 var(--ui);text-shadow:none;}
 #v-home #longform{margin-top:42px;}
-#v-home #casual-rail[hidden]{display:none;}
+#v-home #casual-rail[hidden],#v-longform #longform-recommend[hidden]{display:none;}
 #v-home #home-feed-empty{margin:0;text-align:center;color:var(--settings-muted);padding:8px 0 12px;font:500 13px/1.5 var(--ui);}
 #v-home #home-casuals{margin-top:42px;}
 #v-home #shelf,#v-home #home-casual-rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;
@@ -420,24 +420,26 @@
 #v-casuals #casual-grid,#v-longform #longform-grid{
   display:grid;grid-template-columns:repeat(auto-fill,min(41vw,190px));gap:24px 12px;
   justify-content:start;margin:16px 0 0;padding:0;overflow:visible;}
+#v-longform #longform-recommend{margin-top:42px;}
+#v-longform #longform-recommend > .sec-head{margin-bottom:14px;}
 #v-casuals #casual-grid > .home-regular-tile,#v-longform #longform-grid > .home-regular-tile{width:100%;}
 @media (max-width:600px){
   #v-casuals #casual-grid,#v-longform #longform-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media (max-width:760px){
-  #v-home #casual-rail{gap:12px;padding:0 18px 8px;margin:0 -18px;scroll-padding-left:18px;}
-  #v-home #casual-rail > :is(.casual,.home-recommend-book){flex-basis:61vw;width:61vw;min-width:61vw;max-width:61vw;}
+  :is(#v-home #casual-rail, #v-longform #longform-recommend-rail){gap:12px;padding:0 18px 8px;margin:0 -18px;scroll-padding-left:18px;}
+  :is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > :is(.casual,.home-recommend-book){flex-basis:61vw;width:61vw;min-width:61vw;max-width:61vw;}
   #v-home #shelf,#v-home #home-casual-rail{padding:0 18px 8px;margin:0 -18px;scroll-padding-left:18px;}
   #v-home #shelf > .home-regular-tile,#v-home #home-casual-rail > .home-regular-tile{
     flex-basis:39vw;width:39vw;min-width:39vw;max-width:170px;}
 }
 @media (min-width:761px) and (max-width:899px){
-  #v-home #casual-rail > :is(.casual,.home-recommend-book){
+  :is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > :is(.casual,.home-recommend-book){
     flex:0 0 38vw;width:38vw;min-width:38vw;max-width:38vw;
   }
 }
 @media (min-width:900px){
-  #v-home #casual-rail > :is(.casual,.home-recommend-book){
+  :is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > :is(.casual,.home-recommend-book){
     flex:0 0 calc((100% - 36px)/4);width:calc((100% - 36px)/4);
     min-width:calc((100% - 36px)/4);max-width:calc((100% - 36px)/4);
   }
@@ -495,7 +497,7 @@
   background:var(--sentence-glass-solid,var(--bg));color:inherit;outline:2px solid var(--blue);}
 
 /* Card replacement must not anchor the rail to an outgoing skeleton/card. */
-#v-home #casual-rail{overflow-anchor:none;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail){overflow-anchor:none;}
 
 /* OCR preparation is device-local and separate from reading progress.
    The cover label is the shelf. It sits in the bottom band by default, and

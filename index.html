@@ -42,7 +42,7 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=2e5103bb">
   <link rel="stylesheet" href="styles/base.css?v=4d0c83fb">
-  <link rel="stylesheet" href="styles/home.css?v=e2277d0a">
+  <link rel="stylesheet" href="styles/home.css?v=66b8db30">
   <link rel="stylesheet" href="styles/article-preview.css?v=6f944b5a">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=7804083f">
   <link rel="stylesheet" href="styles/reader.css?v=15b1ab3b">
@@ -53,7 +53,7 @@
   <link rel="stylesheet" href="styles/study-sets.css?v=6b8a0acc">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=769a3687">
+  <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
   <link rel="stylesheet" href="styles/onboarding.css?v=17f829a6">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -88,7 +88,7 @@
   <script defer src="scripts/reader/pdf-pinch.js?v=01d57e65"></script>
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
-  <script defer src="scripts/library/library.js?v=6105936f"></script>
+  <script defer src="scripts/library/library.js?v=8c9aa949"></script>
   <script defer src="scripts/library/shared-links.js?v=9b5e1c4a"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=5670e589"></script>
@@ -228,6 +228,12 @@
   </div>
   <div id="longform-grid"></div>
   <div id="longform-empty" hidden></div>
+  <section id="longform-recommend" hidden aria-labelledby="longform-recommend-title">
+    <div class="sec-head">
+      <h2 id="longform-recommend-title" data-i18n="home.recommend">추천</h2>
+    </div>
+    <div id="longform-recommend-rail"></div>
+  </section>
 </div>
 
 <!-- ================= READER ================= -->

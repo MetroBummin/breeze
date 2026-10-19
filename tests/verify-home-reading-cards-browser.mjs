@@ -58,12 +58,12 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   // The catalog offer is on the library shelf. Home no longer previews it, and Back/Forward do not commit.
   assert.equal(await page.locator(`#shelf [data-longread-id="${story}"]`).count(),0);
   await page.evaluate(()=>show('longform'));
-  await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
+  await page.locator(`#longform-recommend-rail [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
   await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');
   await page.goForward();await page.waitForFunction(()=>activeAppView()==='longform');
   assert.equal(await page.evaluate(()=>articlePreviewDialog.open),false);
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),0);assert.equal(downloads,before);
-  await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
+  await page.locator(`#longform-recommend-rail [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
   const id=await page.evaluate(()=>curBook.id);assert.equal(await page.evaluate(async()=>(await bookAll()).length),1);
   // Cold launch builds a real 66% tile, then real scrolling reaches 68%.
   await page.evaluate(()=>{restoreAnchor({pi:173,dy:30});show('home');});
@@ -124,9 +124,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(await page.evaluate(async id=>deleteBook(books.find(book=>book.id===id)),id),true);
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),0);
   await page.evaluate(()=>show('longform'));
-  await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
+  await page.locator(`#longform-recommend-rail [data-longread-id="${story}"]`).click();await page.keyboard.press('Escape');
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),0);
-  await page.locator(`#longform-grid [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
+  await page.locator(`#longform-recommend-rail [data-longread-id="${story}"]`).click();await page.locator('.ap-start').click();await readerReady(page);
   assert.equal(await page.evaluate(async()=>(await bookAll()).length),1);assert.equal(await page.evaluate(()=>curBook.longReadId),story);
   assert.equal(await page.evaluate(()=>visibleReaderProgress()),0);
   await page.evaluate(()=>show('home'));await page.locator(`#shelf [data-longread-id="${story}"]`).click();await readerReady(page);
