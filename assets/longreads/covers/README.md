@@ -18,6 +18,26 @@ SHA-256 and decoded dimensions.
 | `scandal-in-bohemia.webp` | 122,122 | 768 × 1152 |
 | `speckled-band.webp` | 160,112 | 768 × 1152 |
 
+Alice and Gatsby use the same uncropped 768 × 1152 WebP frame, with
+`object-position: center top`. The Home 책 card is wider than 2:3 and
+crops the bottom of the picture, so the title and the main artwork sit in
+the upper three quarters. The preview sheet shows the whole picture.
+
+Alice is the chosen garden painting: Alice on the path, the White Rabbit,
+the tea table, and the cat in the roses. The painted title “ALICE in
+WONDERLAND” and the “LEWIS CARROLL” line stay as they are. The small
+tagline and its ornament are gone, and the path continues through that
+spot. The Home card shows the title and the characters; it may crop the
+author line. Gatsby is the chosen poster, copied as given: “THE GREAT
+GATSBY”, “F. SCOTT FITZGERALD”, the couple, the green light, fireworks, and
+the mansion, inside a gold frame. The Home 책 card shows about the top 829
+pixels.
+
+| Current asset | Bytes | Dimensions |
+| --- | ---: | --- |
+| `alice-in-wonderland.webp` | 244,260 | 768 × 1152 |
+| `the-great-gatsby.webp` | 171,204 | 768 × 1152 |
+
 New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
 saved/custom covers are preserved; source text and reading identity are never

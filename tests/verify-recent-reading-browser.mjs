@@ -30,7 +30,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
  const holmes=await page.evaluate(()=>curBook.id);await page.evaluate(()=>show('home'));
  for(const file of [{name:'Recent fixture.txt',mimeType:'text/plain',buffer:Buffer.from('A quiet reader keeps a story.\n\n'.repeat(100))},
  {name:'Recent fixture.pdf',mimeType:'application/pdf',buffer:fixturePdf(3)},
- {name:'Recent fixture.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'assets/classics/alice-in-wonderland.epub'))}]){
+ {name:'Recent fixture.epub',mimeType:'application/epub+zip',buffer:readFileSync(resolve(root,'tests/fixtures/sample.epub'))}]){
   await page.locator('#fileinput').setInputFiles(file);
   const kind=file.name.split('.').pop();await page.waitForFunction(kind=>books.some(b=>b.kind===kind),kind);
  }

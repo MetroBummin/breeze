@@ -1110,20 +1110,20 @@ assert.deepEqual(Array.from(offered, read => read.title), [
   'The Red-Headed League',
   'The Final Problem',
   'The Hound of the Baskervilles',
-], 'Only the five Holmes stories should be offered independently');
+  "Alice's Adventures in Wonderland",
+  'The Great Gatsby',
+], 'Holmes and the two public-domain originals should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
 const bundledClassics=new Script('CLASSICS').runInNewContext(longReadsContext);
-assert.deepEqual(Array.from(bundledClassics, classic => classic.id), [
-  'alice-in-wonderland',
-  'the-great-gatsby',
-], 'The bundled classic catalog should be Alice and Gatsby');
-assert.equal(existsSync(resolve(root, 'assets/classics/odyssey.epub')), false,
-  'The Odyssey EPUB is still bundled');
-assert.equal(existsSync(resolve(root, 'assets/classics/odyssey.jpg')), false,
-  'The Odyssey cover is still bundled');
+assert.deepEqual(Array.from(bundledClassics, classic => classic.id), [],
+  'The bundled classic catalog should be empty');
+for(const file of ['odyssey.epub','odyssey.jpg','alice-in-wonderland.epub','alice-in-wonderland.jpg','the-great-gatsby.epub','the-great-gatsby.jpg']){
+  assert.equal(existsSync(resolve(root, 'assets/classics/'+file)), false,
+    'A removed classic file is still bundled: '+file);
+}
 const retainedLongReads=new Script('LONG_READS').runInNewContext(longReadsContext);
-assert.equal(retainedLongReads.length,6,'Dormant Backrooms catalog entry was removed');
+assert.equal(retainedLongReads.length,8,'Dormant Backrooms catalog entry was removed');
 assert.equal(retainedLongReads.find(read=>read.id==='backroom-homeward-bound').dormant,true);
 for(const read of retainedLongReads){
   assert.match(read.file,/\.txt$/,`${read.id} is not a local Text book`);
@@ -1132,7 +1132,9 @@ for(const read of retainedLongReads){
   if(read.id==='backroom-homeward-bound'){
     assert.equal(read.license,'CC BY-SA 3.0');
     assert.ok(read.sourceUrl.startsWith('https://backrooms-wiki.wikidot.com/'));
-  }else assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/'+(read.id.endsWith('final-problem')?'834':read.id.endsWith('hound-of-the-baskervilles')?'2852':'1661'));
+  }else if(read.id==='alice-in-wonderland') assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/11');
+  else if(read.id==='the-great-gatsby') assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/64317');
+  else assert.equal(read.sourceUrl,'https://www.gutenberg.org/ebooks/'+(read.id.endsWith('final-problem')?'834':read.id.endsWith('hound-of-the-baskervilles')?'2852':'1661'));
 }
 assert.match(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),/importFile\(file,/,
   'Bundled stories no longer use the normal Text import path');

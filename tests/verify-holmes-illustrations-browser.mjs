@@ -21,10 +21,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
   await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.goto(url);await page.evaluate(()=>homeReady);
-  const offeredIds=slugs.map(slug=>'sherlock-holmes-'+slug);
+  const offeredIds=[...slugs.map(slug=>'sherlock-holmes-'+slug),'alice-in-wonderland','the-great-gatsby'];
   assert.equal(await page.locator('#shelf .longread').count(),0,'Home long-form shelf offers the Gutenberg catalog');
   await page.evaluate(()=>show('longform'));
-  assert.deepEqual(await page.locator('#longform-grid .longread').evaluateAll(nodes=>nodes.map(node=>node.dataset.longreadId)),offeredIds,'Long-form offers the same Holmes collection');
+  assert.deepEqual(await page.locator('#longform-grid .longread').evaluateAll(nodes=>nodes.map(node=>node.dataset.longreadId)),offeredIds,'Long-form offers Holmes and the public-domain originals');
   for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();show('longform');},dark);
    await page.screenshot({path:`${proof}/${engine.name()}-shelf-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});

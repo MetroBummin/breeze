@@ -19,7 +19,7 @@ function pdfBytes(){
   return Buffer.from(text+`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
 }
 const fixtures=[{name:'Shared PDF.pdf',bytes:pdfBytes()},
-  {name:'Shared EPUB.epub',bytes:readFileSync(resolve(root,'assets/classics/alice-in-wonderland.epub'))}];
+  {name:'Shared EPUB.epub',bytes:readFileSync(resolve(root,'tests/fixtures/sample.epub'))}];
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg'};
 const server=createServer((req,res)=>{
   const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));

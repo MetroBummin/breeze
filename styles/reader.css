@@ -353,6 +353,11 @@
     text-align:center;font-size:1.15em;line-height:1.5;font-weight:600;letter-spacing:0;
     margin:1em 0 1.6em;text-wrap:balance;break-after:avoid;}
   #rtext.holmes-story .holmes-end{text-align:center;font-size:.82em;letter-spacing:.12em;margin:2em 0 1em;}
+  #rtext.holmes-story .holmes-verse{font-style:italic;margin:.12em 0 .12em 8%;line-height:1.55;font-size:.98em;}
+  #rtext.holmes-story .holmes-verse.verse-indent{margin-left:16%;}
+  #rtext.holmes-story .holmes-verse.verse-stanza{margin-top:1em;}
+  #rtext.holmes-story .holmes-label{text-align:center;font-size:.86em;letter-spacing:.06em;margin:1.1em 0 .35em;font-weight:600;}
+  #rtext.holmes-story .holmes-inscription{text-align:center;font-size:.95em;line-height:1.6;margin:.15em 0;}
   #rtext.holmes-story .holmes-paragraph-part{display:block;}
   #rtext.holmes-story .holmes-paragraph-part + .holmes-paragraph-part{margin-top:1.2em;}
   #rtext.holmes-story figure.story-illustration{margin:1.6em 0 1.8em;}

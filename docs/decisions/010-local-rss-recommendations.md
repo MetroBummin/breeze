@@ -145,20 +145,21 @@ claiming Jev approval. Saved material is unchanged; Jev stays OFF.
 
 The recommendation rail stays the external RSS row by default. An explicit
 segmented control beside the 추천 heading can replace that same rail with the
-bundled Project Gutenberg catalog: the five Holmes Text books and the classic
-EPUBs that are actually in the app (Alice and Gatsby). The Odyssey is not
-registered in that catalog, so it is absent from the Home 책 rail, the 추천
-row, the preview sheet, and the bundled asset list. A book already saved in
+bundled Project Gutenberg catalog: the five Holmes Text books, plus Alice
+and Gatsby as Breeze Original text. The Odyssey is not registered in that
+catalog, so it is absent from the Home 책 rail, the 추천 row, the preview
+sheet, and the bundled asset list. Alice and Gatsby are not bundled EPUBs;
+their text and covers live with the other Text books. A book already saved in
 the long-form library keeps its stored text and cover. Looking up a missing
 catalog id returns nothing and does not throw; a cloud-only record falls back
 to reconnecting the reader's own file. The last choice is stored locally at
 `breeze.home-recommend` and is not ranked or uploaded.
 
-Holmes cards open through `openLongReadPreviewOrReader`. An owned classic
-opens like its library card; an unowned classic uses `importClassic` and then
-that open. Personal library cards still do not enter the article rail. The
-bundled Holmes offers are not placed on the Home 긴 글 shelf in either toggle
-state. That shelf is the reader's own long-form library, and only its add tile
+Holmes, Alice, and Gatsby cards open through `openLongReadPreviewOrReader`.
+`CLASSICS` is empty, so no bundled EPUB is offered. Personal library cards
+still do not enter the article rail. The bundled Holmes offers are not placed
+on the Home 긴 글 shelf in either toggle state. That shelf is the reader's own
+long-form library, and only its add tile
 when nothing is saved. Unstarted offers stay on the long-form library view.
 `pendingClassics()` stays empty, so the older classics are not restored to a
 default shelf.

@@ -125,11 +125,12 @@ function renderBookBody(b){
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
   const holmes=LONG_READS.find(read=>read.id===b.longReadId&&read.id.startsWith('sherlock-holmes-'));
-  rt.classList.toggle('holmes-story',!!holmes);
+  const story=holmes||LONG_READS.find(read=>read.id===b.longReadId&&read.presentation==='story');
+  rt.classList.toggle('holmes-story',!!story);
   const sourceTitle=!!holmes&&b.longReadId==='sherlock-holmes-hound-of-the-baskervilles'&&
     b.paras[0]===HOLMES_HOUND_FRONTMATTER[0].text&&b.title.toLowerCase()===holmes.title.toLowerCase();
   document.getElementById('readwrap').classList.toggle('holmes-source-title',sourceTitle);
-  document.getElementById('readwrap').classList.toggle('holmes-reading',!!holmes);
+  document.getElementById('readwrap').classList.toggle('holmes-reading',!!story);
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
   const wordSpanTargets=[];
@@ -165,15 +166,16 @@ function renderBookBody(b){
     headScan++;
     return !(bl.r && bl.r.charAt(0) === 'h' && String(bl.t||'').trim() === titleText);
   });
-  if(holmes)list=list.map(block=>{
-    const role=longReadBlockRole(b,block);
-    return role?{...block,bookRole:role,r:['title'].includes(role)?'h1':
-      ['chapter','section','contents-heading'].includes(role)?'h2':block.r,
+  if(story)list=list.map(block=>{
+    const extra=typeof publicDomainRole==='function'?publicDomainRole(b,block):null;
+    const role=extra?.role||longReadBlockRole(b,block);
+    return role?{...block,bookRole:role,verseIndent:!!extra?.indent,verseStanza:!!extra?.stanza,
+      r:['title'].includes(role)?'h1':['chapter','section','contents-heading'].includes(role)?'h2':block.r,
       before:['chapter','section'].includes(role)?'page':block.before}:block;
   });
-  if(holmes&&b.longReadId!=='sherlock-holmes-hound-of-the-baskervilles'){
+  if(story&&b.longReadId!=='sherlock-holmes-hound-of-the-baskervilles'){
     const author=document.createElement('p');author.className='holmes-byline';
-    author.textContent=b.author||holmes.author;frag.insertBefore(author,page);
+    author.textContent=b.author||story.author;frag.insertBefore(author,page);
   }
   list.forEach(bl=>{
     if(b.longReadId==='backroom-homeward-bound'&&bl.t==='Chapter 2'&&pageChars>0)newPage();
@@ -273,10 +275,12 @@ function renderBookBody(b){
     const host = inBox && box ? box : page;
     const el = document.createElement(isHead ? (lvl===1?'h2':lvl===3?'h4':'h3') : 'p');
     if(bl.r === 'toc') el.classList.add('toc-entry');
-    if(b.longReadId==='backroom-homeward-bound'&&bl.t==='* * *')el.classList.add('story-scene-break');
+    if(bl.bookRole==='scene'||(b.longReadId==='backroom-homeward-bound'&&bl.t==='* * *'))el.classList.add('story-scene-break');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
     if(bl.bookRole)el.classList.add('holmes-'+bl.bookRole);
+    if(bl.verseIndent)el.classList.add('verse-indent');
+    if(bl.verseStanza)el.classList.add('verse-stanza');
     el.textContent = bl.v || bl.t;
     const parts=holmes&&holmesParagraphParts(b,bl);
     if(parts){
@@ -296,7 +300,9 @@ function renderBookBody(b){
         for(const text of entries){const line=document.createElement('span');line.className='holmes-contents-line';line.textContent=text;el.appendChild(line);}
       }
     }
-    if(Array.isArray(bl.marks)) articleParagraphMarks.set(el,bl.marks);
+    const inlineMarks=typeof publicDomainMarks==='function'?publicDomainMarks(b,bl):null;
+    if(inlineMarks) articleParagraphMarks.set(el,inlineMarks);
+    else if(Array.isArray(bl.marks)) articleParagraphMarks.set(el,bl.marks);
     if(bl.list){el.classList.add('article-list-item'); el.dataset.marker=bl.list;}
     if(bl.caption) el.classList.add('article-caption');
     if(bl.table) el.classList.add('article-table-row');
@@ -896,17 +902,38 @@ registerReaderSurface({
 
 // Styling is metadata on the same word spans; lexical identity and sentence offsets stay unchanged.
 const articleParagraphMarks = new WeakMap();
+function paintPartialMarks(node, marks, offset){
+  const text=node.textContent, end=offset+text.length;
+  const points=new Set([offset, end]);
+  for(const mark of marks){
+    if(mark.end<=offset||mark.start>=end) continue;
+    points.add(Math.max(offset, mark.start));
+    points.add(Math.min(end, mark.end));
+  }
+  const cuts=[...points].sort((a,b)=>a-b);
+  let html='';
+  for(let index=0;index<cuts.length-1;index++){
+    const start=cuts[index], stop=cuts[index+1];
+    const active=marks.filter(mark=>mark.start<=start&&mark.end>=stop);
+    let piece=esc(text.slice(start-offset, stop-offset));
+    if(active.some(mark=>mark.kind==='em')) piece=`<em>${piece}</em>`;
+    if(active.some(mark=>mark.kind==='strong')) piece=`<strong>${piece}</strong>`;
+    html+=piece;
+  }
+  node.innerHTML=html;
+}
 function decorateArticleWords(element){
   const marks = articleParagraphMarks.get(element); if(!marks) return;
   let offset = 0;
-  for(const node of element.childNodes){
+  for(const node of [...element.childNodes]){
     const end = offset + node.textContent.length;
     if(node.nodeType === 1){
-      for(const mark of marks){
-        if(mark.start < end && mark.end > offset){
-          if(mark.kind === 'strong') node.style.fontWeight = '700';
-          if(mark.kind === 'em') node.style.fontStyle = 'italic';
-        }
+      const hits=marks.filter(mark=>mark.start<end&&mark.end>offset);
+      const partial=hits.some(mark=>mark.start>offset||mark.end<end);
+      if(partial) paintPartialMarks(node, hits, offset);
+      else for(const mark of hits){
+        if(mark.kind === 'strong') node.style.fontWeight = '700';
+        if(mark.kind === 'em') node.style.fontStyle = 'italic';
       }
     }
     offset = end;

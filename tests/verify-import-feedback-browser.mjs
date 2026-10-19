@@ -80,7 +80,7 @@ try{
       // EPUB and TXT use the same lifecycle and refresh the open Long-form shelf.
       for(const [name,type,bytes] of [
         ['Feedback text.txt','text/plain',Buffer.from('A quiet reader opens a new book.\n\nThe words stay on the page.')],
-        ['Feedback epub.epub','application/epub+zip',readFileSync(resolve(root,'assets/classics/alice-in-wonderland.epub'))],
+        ['Feedback epub.epub','application/epub+zip',readFileSync(resolve(root,'tests/fixtures/sample.epub'))],
       ]){
         await page.evaluate(()=>feedbackQA.start('longform'));
         await page.locator('#fileinput').setInputFiles({name,mimeType:type,buffer:bytes});
