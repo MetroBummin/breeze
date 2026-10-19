@@ -172,6 +172,7 @@ const expected={
     "tests/verify-header-controls-browser.mjs": "a96b442a4f840a4e320ea70c3322a1105e8abb54fcbf57b3d39d4889ba8b0b71",
     "tests/verify-holmes-illustrations-browser.mjs": "e58fc463e11b6b020209da320d2b3c742020c39f6c4f1d210cefbb4b605ab71a",
     "tests/verify-home-controls-browser.mjs": "011f550d3fc244e51b59f8383518ed1e818261add91e59437ca4b09de3f82982",
+    "tests/verify-home-heading-browser.mjs": "ca3328e5f59849e808ccc63ffa86d40bf16f902fc969da31311e245ab82425ee",
     "tests/verify-home-progress-sync-browser.mjs": "73bf7db4f01d69c15caab24838676dca3b581b8ab5419b922ccbd737eba0b89b",
     "tests/verify-home-reading-cards-browser.mjs": "91e7a6e1094a61da089ddd8e5f2736cb144aad0e5f632e962868e232ed64671a",
     "tests/verify-home-recommend-kind.mjs": "2532bf18f5f83937ab1f41d73c820b12be3c4581d462f9bf4338d1a7612b40e7",
