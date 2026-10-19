@@ -196,6 +196,7 @@ const expected={
     "tests/verify-home-heading-browser.mjs": "ca3328e5f59849e808ccc63ffa86d40bf16f902fc969da31311e245ab82425ee",
     "tests/verify-home-progress-sync-browser.mjs": "73bf7db4f01d69c15caab24838676dca3b581b8ab5419b922ccbd737eba0b89b",
     "tests/verify-home-reading-cards-browser.mjs": "272691ec3339da41ed9a69cb62ec62f4ffebb9a1764dbb83142bf31e4f34eb79",
+    "tests/verify-home-reading-cards.mjs": "3fb47901a83c30e0b62a0de0975c01ec2f0b87e543eb967c932ef5f29a6f4c25",
     "tests/verify-home-recommend-kind.mjs": "22c6be81caa753cfe852d705727bc604b3dc191a0cdcebeb4b29348332f7957b",
     "tests/verify-import-commit-browser.mjs": "8dcb62c2d8c95cf6df2ce86fbfef36ce3e3bf17d3ba2cf28aa2670f1408eb070",
     "tests/verify-import-feedback-browser.mjs": "ffe2d4326d88f7cbb47e8f733b758d84232b46616bfe1722482cab15f848a792",
