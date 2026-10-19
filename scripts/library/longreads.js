@@ -8,13 +8,10 @@ const CLASSICS = [
   { id:'the-great-gatsby', title:'The Great Gatsby',
     author:'F. Scott Fitzgerald', year:1925, kb:180,
     blurb:'문장이 아름답기로 이름난 미국 소설. 5만 단어 남짓.' },
-  { id:'odyssey', title:'The Odyssey',
-    author:'Homer', year:-700, kb:435,
-    blurb:'서양 이야기의 출발점. 새뮤얼 버틀러의 산문 번역이라 운문보다 훨씬 읽기 쉽습니다.' },
 ];
 
 const classicFile = id => `assets/classics/${id}.epub`;
-/* 표지는 EPUB 안에도 들어 있지만(`epubCoverImage`), 이 세 권이 실제로 쓰는
+/* 표지는 EPUB 안에도 들어 있지만(`epubCoverImage`), 이 두 권이 실제로 쓰는
    표지는 파일 밖의 이 한 장입니다.
 
    이유가 둘입니다. 하나는 권유 카드가 아직 받기 *전*에 뜨는 자리라, 표지

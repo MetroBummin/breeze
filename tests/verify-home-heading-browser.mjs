@@ -45,6 +45,9 @@ try{
   try{
    const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,
     serviceWorkers:'block',reducedMotion:'reduce'}),errors=[];
+   // WebKit allows 100 pushState/replaceState calls per 10 seconds. This loop
+   // calls show() once per case and once per heading click.
+   const paceHistory=engine.name()==='webkit'?()=>page.waitForTimeout(120):async()=>{};
    page.on('pageerror',error=>errors.push(error.message));
    await page.route('**/*',route=>route.request().url().startsWith(url)||route.request().url().startsWith('blob:')?route.continue():route.abort());
    await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
@@ -55,6 +58,7 @@ try{
    for(const [width,height] of [[320,740],[390,844],[820,1180],[1440,900],[844,390],[390,360]]){
     await page.setViewportSize({width,height});
     for(const dark of [false,true])for(const lang of ['ko','en']){
+     await paceHistory();
      await page.evaluate(({dark,lang})=>{darkMode=dark;applyDark();setLang(lang);show('home');}, {dark,lang});
      await page.evaluate(()=>document.fonts.ready);
      await page.waitForFunction(()=>!rssLoading&&!document.querySelector('#casual-rail .rss-loading'));
@@ -90,9 +94,11 @@ try{
       const button=page.locator(`#${section} .section-link`);
       if(lang==='ko')await page.locator(`#${section} .sec-head`).screenshot({path:`${out}/${key}-${section}-after.png`});
       // Both label and icon remain part of the same existing hit target.
+      await paceHistory();
       await button.locator('span').click();
       await page.waitForFunction(view=>activeAppView()===view,destination);
       await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');
+      await paceHistory();
       await button.locator('svg').click();
       await page.waitForFunction(view=>activeAppView()===view,destination);
       await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');
@@ -101,6 +107,7 @@ try{
     }
    }
    for(const [section,destination] of headings){
+    await paceHistory();
     await page.locator(`#${section} .section-link`).focus();await page.keyboard.press('Enter');
     await page.waitForFunction(view=>activeAppView()===view,destination);
     await page.goBack();await page.waitForFunction(()=>activeAppView()==='home');

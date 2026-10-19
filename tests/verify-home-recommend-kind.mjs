@@ -96,6 +96,7 @@ test('books replace the rail, keep saved books on the shelf, and open like the l
   const {context:c,books,opened,rss,store,document}=harness();
   books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
   books.push({id:'saved-other',kind:'txt',title:'Notebook',author:'Me'});
+  books.push({id:'saved-odyssey',kind:'epub',title:'The Odyssey',author:'Homer',classicId:'odyssey'});
   c.setHomeRecommendKind('books');
   assert.equal(store.get('breeze.home-recommend'),'books');
   assert.equal(document.querySelector('#home-recommend-kind [data-kind="books"]').getAttribute('aria-pressed'),'true');
@@ -104,8 +105,11 @@ test('books replace the rail, keep saved books on the shelf, and open like the l
   const cards=[...document.querySelectorAll('#casual-rail .home-recommend-book')];
   assert.deepEqual(cards.map(card=>card.querySelector('.bt').textContent),[
     'The Adventure of the Speckled Band','A Scandal in Bohemia','The Red-Headed League','The Final Problem','The Hound of the Baskervilles',
-    "Alice's Adventures in Wonderland",'The Great Gatsby','The Odyssey',
+    "Alice's Adventures in Wonderland",'The Great Gatsby',
   ]);
+  assert.equal(cards.some(card=>card.dataset.classicId==='odyssey'),false);
+  assert.equal(c.classicForMeta({classicId:'odyssey',title:'The Odyssey',author:'Homer'}),null);
+  assert.ok(document.querySelector('#shelf [data-book-id="saved-odyssey"]'));
   assert.equal(cards[0].querySelector('.author').textContent,'Arthur Conan Doyle');
   assert.equal(cards[0].querySelector('.author').textContent.includes('SHERLOCK'),false);
   assert.ok(document.querySelector('#shelf [data-book-id="saved-holmes"]'));

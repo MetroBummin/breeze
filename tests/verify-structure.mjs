@@ -1113,6 +1113,15 @@ assert.deepEqual(Array.from(offered, read => read.title), [
 ], 'Only the five Holmes stories should be offered independently');
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
+const bundledClassics=new Script('CLASSICS').runInNewContext(longReadsContext);
+assert.deepEqual(Array.from(bundledClassics, classic => classic.id), [
+  'alice-in-wonderland',
+  'the-great-gatsby',
+], 'The bundled classic catalog should be Alice and Gatsby');
+assert.equal(existsSync(resolve(root, 'assets/classics/odyssey.epub')), false,
+  'The Odyssey EPUB is still bundled');
+assert.equal(existsSync(resolve(root, 'assets/classics/odyssey.jpg')), false,
+  'The Odyssey cover is still bundled');
 const retainedLongReads=new Script('LONG_READS').runInNewContext(longReadsContext);
 assert.equal(retainedLongReads.length,6,'Dormant Backrooms catalog entry was removed');
 assert.equal(retainedLongReads.find(read=>read.id==='backroom-homeward-bound').dormant,true);

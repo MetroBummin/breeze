@@ -2,7 +2,7 @@
 // and account learning isolation/incremental persistence (decision033,2026-10-15).
 // Historical export/release guards run unchanged on their exact source commits.
 import assert from 'node:assert/strict';
-import {readFileSync,lstatSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,lstatSync,mkdtempSync,rmSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
@@ -25,13 +25,14 @@ const expected={
     "PRIVACY.md": "bdee7e68a9aa3eb4570fdec496c8cf3088dd4a41b38e7b4603f59db31db5025f",
     "SYNC.md": "c9ca7c313aabd8b82db71393510e725719a85da7c590d43ab180f9a545c36161",
     "assets/auth/README.md": "d9533bd379393c34ab3bb2a54d4d623d4bb89acc7e2f9211d512fa8adeae9437",
+    "assets/classics/README.md": "842aea287cf014f14c268d54503d963e945b51ebb8181f7768ea4a31c219f51f",
     "config.js": "6b1fbcda553e20e6fba88176e06312836c2b4f568d64daa2791cce5faaaac59e",
     "docs/decisions/002-dictionary-panel-reading-anchor.md": "3514973905ef0f687ecad896bfa270c6357e0b0bfb9e0fd3ebc3e1879ca31318",
     "docs/decisions/003-shared-control-glass.md": "f289ad147a363fcb923f55960c95db442bfb9466aefde8cacd49c8122cf2c544",
     "docs/decisions/007-word-item-storage.md": "b3230b0817b18964cc0afdb3f02ce8a886787b6fec14b64ece8d3e52f9dca582",
     "docs/decisions/008-web-content-ingestion.md": "dc8ece43e313863aac5c7574b3cf30399cc9abda56af3112bd14c45cd2083124",
     "docs/decisions/009-pdf-ink.md": "f3ba1ab17d183f5017452077cf38b270722e8f1d6c487cc00f5bddb30fe74ada",
-    "docs/decisions/010-local-rss-recommendations.md": "831c5317bf73e1149ad1dc18af4f53f7d84932cb1d854112631af6c4a0467fca",
+    "docs/decisions/010-local-rss-recommendations.md": "a2b7bb6941a1fe3cc74d454d2d216b7c4a914682f9a90e96e412b76c31d832e7",
     "docs/decisions/011-word-lookup-recovery.md": "761467f8844ebdf5854f96d3fe4afeb8f3af5721c2dcea214bb30fc76d414191",
     "docs/decisions/012-library-study.md": "7fb9ba41f53ee1e21a27336233e49086d725360192a2bc4d62212d383b6750ea",
     "docs/decisions/015-rss-intent-and-public-catalog.md": "f8296533f8328726a459cd79b7dfab02b96718b193c06d9b3d1a763558f32b7d",
@@ -47,7 +48,7 @@ const expected={
     "docs/privacy.html": "ed796df746a08547ef7b634457721f5d67078bb69fc3629248cfd250a94a568f",
     "docs/qa/account-learning-20261015.md": "9df0549e17ffa6abb32666207cd7ee6d7287811a4fa0aec2392ba8fd0840874c",
     "docs/sync.html": "5ae428c9ba03d580539924422eec65525a1a37973653f24c68061827aeb2f8cf",
-    "index.html": "0c349eb6fc009c853174550e326d4c511a8badb73a9f3f9c5ed6bba4bc3f414f",
+    "index.html": "359067785e75d6a3b316a242f0817b34a26cd9a9f310ff7ed6b1608ff9567c11",
     "ios/App/App.xcodeproj/project.pbxproj": "d539136dfd2edf441b6f91cd1e3c4372a99489dcea6a23c41b5fd3577989becc",
     "ios/App/App/BreezePdfOcrPlugin.swift": "a7b590bde55e61ef37f7dde5cc6aeeeb8a6a4b0e40867df951bdfdde13c0a31e",
     "ios/App/App/SceneDelegate.swift": "eb341df49bcc1702588b7220a6045a21a697747c5b77de8c87ed122482cf24ee",
@@ -74,6 +75,7 @@ const expected={
     "scripts/library/book-edit.js": "5670e5897d40b74973967dbb92a974831d92f6d41459b70ecf416c14fa67626e",
     "scripts/library/ink-sync.js": "d4cbc42e7432c6754dd43f5915612d2765c55db91f710d7b118a98a90a260d04",
     "scripts/library/library.js": "7b1abe087fa8f39a63ca3d50bdb27e2719c454912dd6e75dc4b28f922fe63a32",
+    "scripts/library/longreads.js": "519435750c31a9ebcd8701f67c21bb2d2fa38cff62e06d5d0e2c786b2404a55d",
     "scripts/main.js": "7f224bbcf0eba5600f3bfb4442ddeef1fd0399ca5c9a521b9c1f692ce9e905ee",
     "scripts/reader/epub-original.js": "b865ef6175e8d0f475853d0cbf2f89dc5608329ddc888529baa684c698c6795d",
     "scripts/reader/gesture.js": "faf00a92a774f0ef4303d8ce8e675ae522ad922cccb2f3b7e0f14578a4cd8ce2",
@@ -128,7 +130,7 @@ const expected={
     "supabase/functions/article-preview/index.ts": "486dc27e1af92c5e69c6467c849bed97e2996b1346539ed28584c200e312bc9f",
     "supabase/migrations/20261017130155_dict_ai_timeout_outcome.sql": "fd804ad4140c4af0f83155c6888575db4d0d248432f0d3272c6674050ea7e225",
     "support/index.html": "4f6647c6a0354b2172da9a23556e9b53c19ab090120afc2182e616acb374b639",
-    "sw.js": "5ce543fea46872af8328d4b2a289e2dc26fa067c8197d9561273d3b6b897384e",
+    "sw.js": "b82ea26f2456dfc5d8d83931e8fd50e814c5299f8bdf0f6ebc5a5963bc27a9f2",
     "tests/capture-app-icon-family.mjs": "5139f5ed90f0d28acafb11653d30d81524cac2499c6cdf1f1b4695bf0f44b88a",
     "tests/capture-approved-home-close.mjs": "a122d2d771f7a339fd22db5baa21ba21633fe8bb57752fe0f0c061d3b841e233",
     "tests/capture-safari-dock-review.mjs": "39215652c25d5c44034783317a7c5d7ad1292a9d4d00461268841573ddb419a1",
@@ -170,9 +172,10 @@ const expected={
     "tests/verify-header-controls-browser.mjs": "a96b442a4f840a4e320ea70c3322a1105e8abb54fcbf57b3d39d4889ba8b0b71",
     "tests/verify-holmes-illustrations-browser.mjs": "e58fc463e11b6b020209da320d2b3c742020c39f6c4f1d210cefbb4b605ab71a",
     "tests/verify-home-controls-browser.mjs": "011f550d3fc244e51b59f8383518ed1e818261add91e59437ca4b09de3f82982",
+    "tests/verify-home-heading-browser.mjs": "ca3328e5f59849e808ccc63ffa86d40bf16f902fc969da31311e245ab82425ee",
     "tests/verify-home-progress-sync-browser.mjs": "73bf7db4f01d69c15caab24838676dca3b581b8ab5419b922ccbd737eba0b89b",
     "tests/verify-home-reading-cards-browser.mjs": "91e7a6e1094a61da089ddd8e5f2736cb144aad0e5f632e962868e232ed64671a",
-    "tests/verify-home-recommend-kind.mjs": "625df7abdda7a0f9f620c0758b6213b4c97d398716854ec4c7d7085f41696aca",
+    "tests/verify-home-recommend-kind.mjs": "2532bf18f5f83937ab1f41d73c820b12be3c4581d462f9bf4338d1a7612b40e7",
     "tests/verify-incremental-word-browser.mjs": "b386ef4d23cb6de424d7b320d2762e94d111fc58a0dd1869126fa8e5fcc58fef",
     "tests/verify-incremental-word-save.mjs": "5ff45c338dd1c10d852b0e0aebca6d0be0c55c82303295cda7de4e7ec6d08b21",
     "tests/verify-ingestion-browser.mjs": "444f5fe67ea55fb2724886ad333892957f35f297e508e1028ee51a49eb770548",
@@ -221,7 +224,7 @@ const expected={
     "tests/verify-storage-migration.mjs": "f6593a7e7a6e9bdcbd233461f482994bfee708bb60bcc7bd5fdd71d56adafeab",
     "tests/verify-storage-quota-browser.mjs": "375645083ef106939a949b774d7e773e4173f0c87851fef765cfb7df204e953e",
     "tests/verify-storage-quota.mjs": "ba84ace85d2e2e26bc6bda10e0b46a07272018104682164c6ebb9ae41166cb72",
-    "tests/verify-structure.mjs": "d3dc8a6556aebc330bca3fd5449a0f9cd2817af5dd34b4b40f3e935b69e44e7f",
+    "tests/verify-structure.mjs": "aa15285b752cee1ffb06d981f36c5600d2712439bbb67133a0c7e45b0b137fb0",
     "tests/verify-study-account-storage.mjs": "8d435b6b019330aad2c3ac761f8cc37656e0b49d69d1c97d265ed42dd044df54",
     "tests/verify-study-axis-lock-browser.mjs": "9c1b1502107331aef3fe35b4a0ea7968ab5a7c232da2dfc7ecd062db320c0ac5",
     "tests/verify-study-completion-browser.mjs": "8fc6fac3cf17dbe035b36508c9d872d1064bda2e6c5fb8fa48a425a30274c73f",
@@ -261,7 +264,8 @@ const baseline=new Map(git('ls-tree','-rz',base).toString().split('\0').filter(B
  const [meta,file]=line.split('\t'),[mode,type,hash]=meta.split(' ');assert.equal(type,'blob');return [file,{mode,hash}];
 }));
 for(const file of runners)expected[file]=sha(Buffer.from(git('show',base+':'+file).toString().replaceAll('tests/verify-vocabulary-export-boundary.mjs',guard)));
-const paths=new Set([...baseline.keys(),...git('ls-files','-z','--cached','--others','--exclude-standard').toString().split('\0').filter(Boolean)]);
+const removed=new Set(['assets/classics/odyssey.epub','assets/classics/odyssey.jpg']);
+const paths=new Set([...baseline.keys(),...git('ls-files','-z','--cached','--others','--exclude-standard').toString().split('\0')].filter(file=>file&&!removed.has(file)));
 const current=new Map([...paths].map(file=>{
  const stat=lstatSync(join(root,file));assert.ok(stat.isFile(),'Expected regular file: '+file);
  const bytes=readFileSync(join(root,file));return [file,{mode:stat.mode&0o111?'100755':'100644',hash:blob(bytes),sha256:sha(bytes)}];
@@ -273,7 +277,14 @@ function verify(entries){
   if(Object.hasOwn(expected,file))assert.equal(entry.sha256,expected[file],'Approved source changed: '+file);
   else if(file!==guard)assert.equal(entry.hash,before.hash,'Source outside approved scope changed: '+file);
  }
- for(const file of [...baseline.keys(),...Object.keys(expected),guard])assert.ok(entries.has(file),'Missing source: '+file);
+ for(const file of removed){
+  assert.ok(baseline.has(file),'Removal is not a previously bundled asset: '+file);
+  assert.equal(existsSync(join(root,file)),false,'Removed Odyssey asset returned: '+file);
+ }
+ for(const file of [...baseline.keys(),...Object.keys(expected),guard]){
+  if(removed.has(file))continue;
+  assert.ok(entries.has(file),'Missing source: '+file);
+ }
 }
 git('merge-base','--is-ancestor',base,'HEAD');verify(current);
 assert.match(readFileSync(join(root,'scripts/core/vocabulary-test.js'),'utf8'),/const ENABLED=false;/);
