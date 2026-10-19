@@ -349,9 +349,13 @@ function bookCard(book, current, canManage=true){
 /* 서버에만 있는 책. 이름만 받아 와서 흐린 카드로 둡니다 — 있다는 것은 보이고,
    가운데 단추가 "받으면 읽을 수 있다"를 말합니다. */
 function bundledLongReadForMeta(meta){
-  if(typeof LONG_READS==='undefined'||!meta) return null;
+  if(!meta) return null;
   const id=meta.longReadId||meta.classicId;
-  return LONG_READS.find(read=>read.id===id&&!read.dormant)||null;
+  if(!id) return null;
+  const bundled=typeof LONG_READS!=='undefined'&&LONG_READS.find(read=>read.id===id&&!read.dormant);
+  if(bundled) return bundled;
+  const offers=typeof classicCatalogOffers==='function'?classicCatalogOffers():[];
+  return offers.find(read=>read.id===id)||null;
 }
 async function restoreBundledLongRead(read, meta){
   const book=await importLongRead(read);
@@ -496,13 +500,15 @@ function homeRecommendCatalogOwned(id){
 }
 function homeRecommendReads(){
   const bundled=typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
-  const remote=typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[];
-  return bundled.concat(remote).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
+  const extra=typeof classicCatalogOffers==='function'?classicCatalogOffers():
+    (typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[]);
+  return bundled.concat(extra).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
 }
 function offeredLongReads(){
   const bundled=typeof pendingLongReads==='function'?pendingLongReads():[];
-  const remote=typeof remoteClassicOffers==='function'?remoteClassicOffers():[];
-  return bundled.concat(remote).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
+  const extra=typeof classicCatalogOffers==='function'?classicCatalogOffers():
+    (typeof remoteClassicOffers==='function'?remoteClassicOffers():[]);
+  return bundled.concat(extra).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
 }
 function longReadOfferStamp(read){
   const offline=read.remote&&typeof navigator!=='undefined'&&navigator.onLine===false?':offline':'';

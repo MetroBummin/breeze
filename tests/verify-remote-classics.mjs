@@ -24,7 +24,9 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const entry=catalog.books[0];
   assert.equal(catalog.version,1);
+  assert.deepEqual(catalog.books.map(book=>book.id),['pride-and-prejudice','alice-in-wonderland','the-great-gatsby']);
   assert.equal(entry.id,'pride-and-prejudice');
+  assert.equal(entry.hook,'첫 만남부터 오만하게 구는 부자 신사 다아시, 그런 그를 단번에 싫어하게 된 엘리자베스. 첫인상과 편견을 넘어, 두 사람은 서로를 제대로 보게 될까?');
   assert.equal(entry.title,'Pride and Prejudice');
   assert.equal(entry.author,'Jane Austen');
   assert.equal(entry.bytes,book.length);
@@ -105,7 +107,7 @@ test('the catalog merges valid books, skips bundled ids, and survives a failed r
   assert.equal(loaded[0].file,'https://cdn.example/book.txt');
   assert.equal(loaded[0].sha256,'ab'.repeat(32));
   assert.equal(loaded[0].remote,true);
-  assert.equal(context.pendingLongReads().length,7);
+  assert.equal(context.pendingLongReads().length,5);
   failed=true;
   const again=await context.refreshRemoteClassics();
   assert.equal(Array.from(again,read=>read.id).join(),'pride-and-prejudice');
@@ -158,11 +160,71 @@ test('읽기 시작 downloads once, reports progress, and rejects a changed file
   assert.equal(context.imported.length,1);
 });
 
+test('Alice and Gatsby move to the catalog and a saved copy keeps its text',async()=>{
+  const catalog=JSON.parse(text('server/classics/catalog.json'));
+  const hooks={
+    'alice-in-wonderland':'회중시계를 보며 "늦었다!"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?',
+    'the-great-gatsby':'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까?',
+  };
+  for(const id of Object.keys(hooks)){
+    const entry=catalog.books.find(book=>book.id===id);
+    const file=read(`server/classics/${id}/book.txt`);
+    assert.equal(entry.hook,hooks[id]);
+    assert.equal(entry.presentation,'story');
+    assert.equal(entry.bytes,file.length);
+    assert.equal(entry.contentVersion,createHash('sha256').update(file).digest('hex'));
+    assert.equal(entry.editionNote.length>0,true);
+    assert.equal(file.equals(read(`assets/longreads/${id}.txt`)),true);
+  }
+  const paras=['Chapter I. Down the Rabbit-Hole','saved paragraph'];
+  const position={p:.4,t:50,pi:1,mode:'text'};
+  const {context}=harness(async()=>new Response(JSON.stringify(catalog),{status:200,headers:{'content-type':'application/json'}}));
+  const book={id:'saved-alice',kind:'txt',longReadId:'alice-in-wonderland',title:"Alice's Adventures in Wonderland",author:'Lewis Carroll',paras};
+  context.books.push(book);
+  context.positions={'saved-alice':position};
+  const before=JSON.stringify(book);
+  await context.refreshRemoteClassics();
+  const offer=context.classicCatalogOffers().find(read=>read.id==='alice-in-wonderland');
+  assert.equal(offer.remote,true);
+  assert.equal(offer.hook,hooks['alice-in-wonderland']);
+  assert.equal(offer.presentation,'story');
+  assert.equal(offer.file,catalog.books.find(item=>item.id==='alice-in-wonderland').content);
+  assert.equal(JSON.stringify(book),before);
+  assert.deepEqual(context.positions['saved-alice'],position);
+  const owned=await context.importLongRead(offer);
+  assert.equal(owned,book);
+  assert.equal(context.imported.length,0,'A started book was downloaded again');
+  assert.deepEqual(book.paras,paras);
+  assert.deepEqual(context.positions['saved-alice'],position);
+});
+
+test('a failed catalog still offers the bundled Alice and Gatsby files',async()=>{
+  const {context,store}=harness(async()=>{throw new Error('offline');});
+  store.set('breeze.remote-classics',{at:1,books:[{
+    id:'alice-in-wonderland',title:"Alice's Adventures in Wonderland",author:'Lewis Carroll',
+    content:'https://cdn.example/alice.txt',contentVersion:'ab'.repeat(32),hook:'server hook',
+  }]});
+  await context.refreshRemoteClassics();
+  context.navigator.onLine=false;
+  const offline=context.classicCatalogOffers().find(read=>read.id==='alice-in-wonderland');
+  assert.equal(offline.file,'assets/longreads/alice-in-wonderland.txt');
+  assert.equal(offline.remote,undefined);
+  const gatsby=context.classicCatalogOffers().find(read=>read.id==='the-great-gatsby');
+  assert.equal(gatsby.file,'assets/longreads/the-great-gatsby.txt');
+  context.navigator.onLine=true;
+  const cached=context.classicCatalogOffers().find(read=>read.id==='alice-in-wonderland');
+  assert.equal(cached.remote,true);
+  assert.equal(cached.hook,'server hook');
+  assert.equal(context.classicCatalogOffers().some(read=>read.id==='the-great-gatsby'&&read.fallback),true);
+});
+
 test('the upload script stays a dry run and refuses any other Supabase project',()=>{
   const plan=spawnSync(process.execPath,['server/classics/upload.mjs'],{cwd:root,encoding:'utf8'});
   assert.equal(plan.status,0,plan.stderr);
   assert.match(plan.stdout,/dry-run/);
   assert.match(plan.stdout,/hrtfhojbhqvaoiulspto/);
+  assert.match(plan.stdout,/alice-in-wonderland\/book\.txt/);
+  assert.match(plan.stdout,/the-great-gatsby\/cover\.webp/);
   assert.doesNotMatch(plan.stdout,/SERVICE_ROLE_KEY=/);
   const wrong=spawnSync(process.execPath,['server/classics/upload.mjs','--apply'],{
     cwd:root,encoding:'utf8',env:{...process.env,SUPABASE_URL:'https://example.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'secret'},

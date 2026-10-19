@@ -124,8 +124,9 @@ function renderBookBody(b){
   const formatting = b.formatting || null;
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
-  const holmes=LONG_READS.find(read=>read.id===b.longReadId&&read.id.startsWith('sherlock-holmes-'));
-  const story=holmes||LONG_READS.find(read=>read.id===b.longReadId&&read.presentation==='story');
+  const defined=typeof longReadDefinition==='function'?longReadDefinition(b.longReadId):LONG_READS.find(read=>read.id===b.longReadId);
+  const holmes=defined&&defined.id.startsWith('sherlock-holmes-')?defined:null;
+  const story=holmes||(defined&&defined.presentation==='story'?defined:null);
   const originalStory=!story && b.kind==='txt' && b.readingStyle==='original';
   rt.classList.toggle('holmes-story',!!story);
   rt.classList.toggle('original-story',originalStory);

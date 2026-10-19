@@ -21,6 +21,16 @@ function remoteClassicText(value,max){
   const text=String(value||'').replace(/\s+/g,' ').trim();
   return text?text.slice(0,max):'';
 }
+function remoteClassicSources(value){
+  if(!Array.isArray(value))return undefined;
+  const sources=value.slice(0,8).map(item=>{
+    if(!item||typeof item!=='object')return null;
+    const title=remoteClassicText(item.title,200);
+    const url=remoteClassicUrl(item.url);
+    return title&&url?{title,url}:null;
+  }).filter(Boolean);
+  return sources.length?sources:undefined;
+}
 function remoteClassicEntry(raw){
   if(!raw||typeof raw!=='object')return null;
   const id=remoteClassicText(raw.id,80);
@@ -34,9 +44,11 @@ function remoteClassicEntry(raw){
   if(!title||!author||!content||!/^[a-f0-9]{64}$/.test(version))return null;
   const bytes=Number(raw.bytes??raw.size);
   const words=Number(raw.wordCount);
+  const sources=remoteClassicSources(raw.sources);
   return {
     id, remote:true, title, author, file:content, sha256:version, contentVersion:version,
-    cover:remoteClassicUrl(raw.cover||raw.coverUrl), coverPosition:'center top',
+    cover:remoteClassicUrl(raw.cover||raw.coverUrl),
+    coverPosition:remoteClassicText(raw.coverPosition,40)||'center top',
     bytes:Number.isFinite(bytes)&&bytes>=0?Math.round(bytes):0,
     wordCount:Number.isFinite(words)&&words>0?Math.round(words):0,
     sourceUrl:remoteClassicUrl(raw.sourceUrl),
@@ -48,6 +60,9 @@ function remoteClassicEntry(raw){
     hook:remoteClassicText(raw.hook,400),
     edition:remoteClassicText(raw.edition,120)||'Project Gutenberg text',
     editionNote:remoteClassicText(raw.editionNote,800),
+    glossary:remoteClassicText(raw.glossary,400),
+    ...(raw.presentation==='story'?{presentation:'story'}:{}),
+    ...(sources?{sources}:{}),
   };
 }
 function remoteClassicEntries(manifest){

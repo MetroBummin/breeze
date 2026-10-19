@@ -93,8 +93,8 @@ points at a different project. This script refuses any host other than
    ```
 
 4. Create the public `classics` bucket if it is missing, and upsert
-   `catalog.json`, `pride-and-prejudice/book.txt`, and
-   `pride-and-prejudice/cover.webp`.
+   `catalog.json` plus `book.txt` and `cover.webp` for
+   `pride-and-prejudice`, `alice-in-wonderland`, and `the-great-gatsby`.
 
    ```
    node server/classics/upload.mjs --apply
@@ -108,7 +108,9 @@ points at a different project. This script refuses any host other than
 
 No app release is required after that. The next Home open reads the catalog.
 Another book is a new object plus one new entry in `catalog.json`, then the
-same upload. The bucket is public read. The service-role key is the only
-writer.
+same upload. Alice and Gatsby keep the same ids as the previously bundled
+copies. Until those catalog entries are public, the app still offers the
+bundled files. Once the entries are public, Home uses the catalog text, cover,
+and hook. The bucket is public read. The service-role key is the only writer.
 
 There is no SQL migration. `ready/` and `server/ready/` are not part of this.

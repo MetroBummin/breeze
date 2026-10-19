@@ -216,7 +216,7 @@ try{
         results.push({title:definition.title,paras:saved.paras.length,kind:saved.kind,
           lookup:true,sentence:true,highlight:true,lightDark:true,progressRestored:true});
       }
-      assert.equal(await page.evaluate(()=>pendingLongReads().length),7,'Imported Long Reads reappeared as recommendations');
+      assert.equal(await page.evaluate(()=>pendingLongReads().length),5,'Imported Long Reads reappeared as recommendations');
       reports.push({engine:engine.name(),viewport:'320×568',stories:results});
       await page.close();
     }finally{await browser.close();}
