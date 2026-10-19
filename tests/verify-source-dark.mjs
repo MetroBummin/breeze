@@ -25,7 +25,7 @@ const ops={
 function loadPdf(){
   const requests=[];
   const context={
-    console,Map,Set,WeakMap,Math,Number,performance:{now:()=>0},
+    console,Map,Set,WeakMap,Math,Number,Uint8ClampedArray,performance:{now:()=>0},
     setTimeout,clearTimeout,
     document:{body:{classList:{contains:()=>false}},addEventListener(){},getElementById:()=>null},
     window:{addEventListener(){}},
@@ -122,6 +122,16 @@ test('EPUB dark stylesheet recolors text and leaves pictures alone',()=>{
   assert.match(css,/p,li,blockquote[\s\S]*\{color:#E7E1D4!important\}/);
   assert.match(css,/a,a:visited\{color:#78C9EA!important\}/);
   assert.doesNotMatch(css,/img|svg|video|filter/);
+});
+
+test('a canvas that ignores ctx.filter still inverts paper and dims a scan',()=>{
+  const {context}=loadPdf();
+  const data=new Uint8ClampedArray([255,255,255,255, 0,0,0,255, 210,32,36,255, 100,100,100,255]);
+  context.pdfBakeFilterPixels(data,'invert(1) hue-rotate(180deg)');
+  assert.deepEqual([...data.slice(0,8)],[0,0,0,255, 255,255,255,255]);
+  const dim=new Uint8ClampedArray([255,255,255,255, 0,10,20,255]);
+  context.pdfBakeFilterPixels(dim,'brightness(0.82)');
+  assert.deepEqual([...dim],[209,209,209,255, 0,8,16,255]);
 });
 
 test('dark source pages are baked, not filtered at pinch time',()=>{

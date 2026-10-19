@@ -343,18 +343,73 @@ function releasePdfPhotoScratch(){
 function bakePdfCanvasFilter(context,filter){
   const canvas=context.canvas;
   if(!canvas.width||!canvas.height) return;
-  const scratch=pdfPhotoScratch(canvas.width,canvas.height);
-  const scratchContext=scratch.getContext('2d',{alpha:false});
+  // WebKit (including current iOS) can store ctx.filter and still draw the
+  // source unchanged. The scratch blit is the fast path where the filter
+  // actually bakes; otherwise the same invert or brightness is written
+  // into the bitmap and dropped with the ImageData.
+  if(pdfCssFilterBakes()){
+    const scratch=pdfPhotoScratch(canvas.width,canvas.height);
+    const scratchContext=scratch.getContext('2d',{alpha:false});
+    try{
+      scratchContext.setTransform(1,0,0,1,0,0);
+      scratchContext.drawImage(canvas,0,0);
+      context.save();
+      context.setTransform(1,0,0,1,0,0);
+      context.filter=filter;
+      context.drawImage(scratch,0,0);
+      context.filter='none';
+      context.restore();
+    }finally{releasePdfPhotoScratch();}
+    return;
+  }
+  const image=context.getImageData(0,0,canvas.width,canvas.height);
+  pdfBakeFilterPixels(image.data,filter);
+  context.putImageData(image,0,0);
+}
+// invert(1) hue-rotate(180deg): invert, then the CSS hue-rotate(180) matrix
+// (cos -1, sin 0). Black and white match a plain invert.
+const PDF_HUE180=[-0.574,1.43,0.144, 0.426,0.43,0.144, 0.426,1.43,-0.856];
+function pdfBakeFilterPixels(data,filter){
+  const brightness=/^brightness\(([\d.]+)\)/.exec(filter);
+  if(brightness){
+    const amount=Number(brightness[1]);
+    for(let i=0;i<data.length;i+=4){
+      data[i]=Math.max(0,Math.min(255,Math.round(data[i]*amount)));
+      data[i+1]=Math.max(0,Math.min(255,Math.round(data[i+1]*amount)));
+      data[i+2]=Math.max(0,Math.min(255,Math.round(data[i+2]*amount)));
+    }
+    return;
+  }
+  const m=PDF_HUE180;
+  for(let i=0;i<data.length;i+=4){
+    const r=(255-data[i])/255,g=(255-data[i+1])/255,b=(255-data[i+2])/255;
+    data[i]=Math.max(0,Math.min(255,Math.round(255*(m[0]*r+m[1]*g+m[2]*b))));
+    data[i+1]=Math.max(0,Math.min(255,Math.round(255*(m[3]*r+m[4]*g+m[5]*b))));
+    data[i+2]=Math.max(0,Math.min(255,Math.round(255*(m[6]*r+m[7]*g+m[8]*b))));
+  }
+}
+let pdfCssFilterBakesCache;
+function pdfCssFilterBakes(){
+  if(pdfCssFilterBakesCache!=null) return pdfCssFilterBakesCache;
+  pdfCssFilterBakesCache=false;
   try{
-    scratchContext.setTransform(1,0,0,1,0,0);
-    scratchContext.drawImage(canvas,0,0);
-    context.save();
-    context.setTransform(1,0,0,1,0,0);
-    context.filter=filter;
-    context.drawImage(scratch,0,0);
+    if(typeof CanvasRenderingContext2D!=='function'||!('filter' in CanvasRenderingContext2D.prototype)) return false;
+    const source=document.createElement('canvas');
+    source.width=source.height=2;
+    const sourceContext=source.getContext('2d',{alpha:false});
+    sourceContext.fillStyle='#fff';
+    sourceContext.fillRect(0,0,2,2);
+    const canvas=document.createElement('canvas');
+    canvas.width=canvas.height=2;
+    const context=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
+    context.filter='invert(1)';
+    context.drawImage(source,0,0);
     context.filter='none';
-    context.restore();
-  }finally{releasePdfPhotoScratch();}
+    const pixel=context.getImageData(0,0,1,1).data;
+    source.width=source.height=canvas.width=canvas.height=0;
+    pdfCssFilterBakesCache=pixel[0]<48;
+  }catch(error){pdfCssFilterBakesCache=false;}
+  return pdfCssFilterBakesCache;
 }
 let pdfSvgFilterAppliesCache;
 function pdfSvgFilterApplies(){
