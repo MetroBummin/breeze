@@ -345,12 +345,39 @@ function endNavigationGesture(gesture){
   closePdfNavigation();
 }
 
+/* 카드 바깥에서 시작한 팬은 탭이 아닙니다. iPad 는 스크롤을 가져가면서
+   pointermove 를 건너뛰므로, 스크롤이 먼저 와도 이 손짓은 SCROLL 로 끝나고
+   뒤의 click 은 preventDefault 하지 않습니다. 임자는 바꾸지 않습니다. */
+let sentenceOutsidePanHandoff = false;
+function sentenceOutsidePanActive(){ return sentenceOutsidePanHandoff; }
+function consumeSentenceOutsidePan(){
+  const active = sentenceOutsidePanHandoff;
+  sentenceOutsidePanHandoff = false;
+  return active;
+}
+function clearSentenceOutsidePan(){ sentenceOutsidePanHandoff = false; }
+function noteSentenceOutsideScroll(gesture){
+  if(!gesture || gesture.owner !== OWNER_SENTENCE_MODAL || !gesture.dismisses || gesture.pulls) return;
+  gesture.readerScrolled = true;
+  // Only the anchored glass card defers its layer teardown. Sheets still close
+  // in the scroll event, and a parked card must not arm the next lookup.
+  if(typeof sentenceResultAnchored === 'function' && sentenceResultAnchored()) sentenceOutsidePanHandoff = true;
+}
+function sentenceOutsidePan(gesture){
+  return !!gesture && (gesture.readerScrolled || (gesture.moved > GESTURE_SLOP && gesture.dismisses && !gesture.pulls));
+}
+
 /* ---- 창의 손짓이 끝나는 자리 ----
    바깥을 제자리에서 눌렀거나, 좁은 시트의 grabber/header를 충분히 아래로
-   끌었을 때 닫습니다. 어느 길도 Reader로 내려가지 않습니다. */
+   끌었을 때 닫습니다. 바깥을 민 손짓은 스크롤이라 여기서 닫지 않습니다. */
 function endSentenceModalGesture(gesture){
-  const tapped = gesture.dismisses && gesture.moved <= GESTURE_SLOP;
+  if(sentenceOutsidePan(gesture)){
+    noteSentenceOutsideScroll(gesture);
+    finishGesture(gesture, GESTURE_SCROLL);
+    return;
+  }
   const pulled = gesture.pulls && gesture.dy > SHEET_PULL_DISMISS;
+  const tapped = gesture.dismisses && gesture.moved <= GESTURE_SLOP;
   if(!tapped && !pulled){
     finishGesture(gesture, GESTURE_MODAL_UI);
     return;
@@ -430,11 +457,14 @@ function moveGesture(event){
   /* 아래로 얼마나 왔는지는 부호가 있어야 압니다 — 시트를 끌어내리는 손짓만
      닫고, 올리는 손짓은 시트 안의 스크롤이기 때문입니다. */
   gesture.dy = event.clientY - gesture.y;
-  /* 움직였다는 사실은 누구의 손짓이든 적어 둡니다. 다만 그것을 "밀었다"로
-     읽는 것은 종이의 손짓일 때뿐입니다. */
+  /* 움직였다는 사실은 누구의 손짓이든 적어 둡니다. 종이 위에서는 읽는 중이고,
+     해석 카드 바깥에서 문턱을 넘기면 그것도 탭이 아니라 스크롤입니다. */
   if(gesture.moved > GESTURE_SLOP && gesture.owner === OWNER_READER){
     finishGesture(gesture, GESTURE_SCROLL);
     if(gesture.navigation&&gesture.navigation===pdfNavigation?.generation)closePdfNavigation();
+  }else if(gesture.moved > GESTURE_SLOP && gesture.owner === OWNER_SENTENCE_MODAL && gesture.dismisses && !gesture.pulls){
+    noteSentenceOutsideScroll(gesture);
+    finishGesture(gesture, GESTURE_SCROLL);
   }
 }
 
@@ -592,6 +622,7 @@ function clickGesture(event){
    (`readerScrollTo` 가 적어 둡니다 — scripts/reader/reader-scroll.js). */
 function scrollGesture(){
   const userScroll=!(typeof readerScrollWasProgrammatic==='function'&&readerScrollWasProgrammatic());
+  if(userScroll) noteSentenceOutsideScroll(activeGesture);
   if(typeof sentenceReaderScrolled==='function') sentenceReaderScrolled(userScroll);
   /* Mini pills wait for scroll idle, preserving the same lookup/result. Expanded
      detail keeps its existing scroll dismissal. Only real position changes reset idle. */
@@ -630,6 +661,8 @@ function attachReaderGestures(doc){
   doc.addEventListener('pointerup', endGesture, true);
   doc.addEventListener('pointercancel', event=>{
     releaseSentenceHoldPointer(event);
+    if(!activeGesture || event.pointerId == null || event.pointerId === activeGesture.pointerId)
+      noteSentenceOutsideScroll(activeGesture);
     cancelGesture('pointercancel');
     if(typeof cancelOriginalNavigation==='function')cancelOriginalNavigation();
   }, true);
