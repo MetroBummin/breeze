@@ -146,8 +146,13 @@ claiming Jev approval. Saved material is unchanged; Jev stays OFF.
 The recommendation rail stays the external RSS row by default. An explicit
 segmented control beside the 추천 heading can replace that same rail with the
 bundled Project Gutenberg catalog: the five Holmes Text books and the classic
-EPUBs that are actually in the app (Alice, Gatsby, Odyssey). The last choice
-is stored locally at `breeze.home-recommend` and is not ranked or uploaded.
+EPUBs that are actually in the app (Alice and Gatsby). The Odyssey is not
+registered in that catalog, so it is absent from the Home 책 rail, the 추천
+row, the preview sheet, and the bundled asset list. A book already saved in
+the long-form library keeps its stored text and cover. Looking up a missing
+catalog id returns nothing and does not throw; a cloud-only record falls back
+to reconnecting the reader's own file. The last choice is stored locally at
+`breeze.home-recommend` and is not ranked or uploaded.
 
 Holmes cards open through `openLongReadPreviewOrReader`. An owned classic
 opens like its library card; an unowned classic uses `importClassic` and then
