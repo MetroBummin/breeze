@@ -11,8 +11,11 @@ did not call R2 or the book-cloud function.
 A file book (PDF, EPUB, or TXT with its original bytes) can be linked from the
 long-press sheet. Only that book is uploaded to the private R2 bucket
 `breeze-books`. The object key is `${userId}/${sha256}` and is built on the
-server. Reading position uses the existing `public.positions` row through
-`breeze_put_book_position`. Another signed-in device of the same account can
+server. Reading position is one row per device in `public.book_device_positions`.
+This device writes only its own row through `breeze_put_device_book_position`.
+Older builds still call `breeze_put_book_position`, which keeps
+`public.positions` and mirrors an accepted write onto the `legacy` device
+row. Another signed-in device of the same account can
 download the original with a 10-minute signed URL, check the full SHA-256, and
 open it with the existing importers. Caps are 40 books and 2 GiB
 (2,147,483,648 bytes). Turning the link off, deleting the book, or deleting the
@@ -63,24 +66,28 @@ platform. The link type, a data-saver flag, and `navigator.storage.estimate`
 do not choose. The native shell does not consult Capacitor Network for this
 decision.
 
-The saved place is the `public.positions` row whose `book_id` is the file
-SHA-256, not the local book id. Turning the link on publishes the place
-already stored on this device, and a later sync publishes it even when the
-reader has not moved again. While the reader stays open, a changed place is
-published 1500ms after the change. Hiding the app or leaving the page
-publishes that place in the same turn: a timer does not run once the web view
-is suspended. The other device copies that locator onto its
-local book id before the reader opens. A device that stays on Home does not
-wait for that open. While Home is visible, one `positions` read is armed for
-the end of the 45s library quiet period and armed again after each read. A
-Home reload that the quiet period skips keeps that single wait. The read is
-the existing position fetch: it does not list `book_cloud`, upload a book, or
-advance the recommendation rail. A newer locator is copied into local
-`breeze.pos`, and Home's continue percent and shelf label repaint. An open
-book is left alone, so a newer remote place cannot scroll the page already on
-screen; that open still applies its place once. Hiding the app or leaving
-Home cancels the wait. Coming back uses the existing visibility sync, then
-waits another quiet period. PDF, EPUB, and TXT each wait until
+The saved place is the device row whose `book_id` is the file SHA-256, not
+the local book id. Turning the link on publishes the place already stored on
+this device, with the timestamp that place already has. Opening a book or
+restoring a place does not bump that timestamp. While the reader stays open,
+a changed place is published at once, then at most once every 30 seconds.
+Hiding the app or leaving the page publishes that place in the same turn.
+The native shell begins a background task so iOS does not suspend the web
+view before that request finishes. A place that is still unsent stays in the
+local outbox and uploads on the next launch. Because the row belongs to this
+device, that late upload cannot erase another device.
+
+Opening a book uses the cached place with the newest real-reading timestamp
+across this account's devices. Front or back of the book does not matter.
+The cache is filled at launch, when the app returns to the foreground, and
+while Home or a library shelf stays visible. Those reads do not list
+`book_cloud`, upload a book, or advance the recommendation rail. There is no
+open-time timeout and no quiet flag. A newer place that arrives after the
+book is open moves the page only when this device has not moved yet. If it
+has moved, the newer place waits for the next open. A newer locator is copied
+into local `breeze.pos`, and Home's continue percent and shelf label
+repaint. Hiding the app or leaving Home or a library shelf cancels the
+waiting refresh. Coming back fetches places immediately. PDF, EPUB, and TXT each wait until
 their own layout can place that anchor. A PDF place is the page and the
 position on that page. Restore gives every page up through that page its own
 aspect ratio before it scrolls, and a page with no height is not saved. An
@@ -97,22 +104,18 @@ the place. A cover or a first paragraph shown before layout is not saved over
 the remote place. A hand scroll, a page change, or a key move releases the
 hold. A touch or a key that does not change the scroll position does not
 release it, and neither does the scroll the reader applies while opening the
-saved page, so that page can still settle. That release happens once. A later layout retry, a sync refresh, or a
-remote place with a newer stamp does not scroll the open book again. The
-place this device just made is the one stored and sent, including when the
-other device's stamp is newer. The next open uses whichever place is newer.
-Before the reader moves, a newer remote place is still applied once.
-Opening a downloaded book at the start does not count as a newer place, so
-that stamp cannot replace the remote locator or be written back over it. A
-newer place that is no longer the start still wins on the device where it
-was made.
+saved page, so that page can still settle. That release happens once. A later
+layout retry does not scroll the open book again. A remote place with a newer
+reading timestamp still does, until this device moves. The place this device
+made is stored on this device's row. The next open uses whichever device row
+has the newer reading timestamp. Copying that place locally does not publish
+it again and does not change its timestamp.
 
-The reader does not paint one page and then jump. A linked open copies a
-newer locator before the first paint, including when this device already has
-a page. A locator this device already fetched is written first, then one
-short read can replace it. If the read is slow, the book opens at the place
-already stored and a late reply is kept for the next open. It does
-not move the page already on screen. PDF paints the saved page, with that
+The reader does not paint one page and then jump when the newer place is
+already cached. A linked open copies that locator before the first paint,
+including when this device already has a page. A reply that was not cached
+yet can still move the page after paint, and only if this device has not
+moved. PDF paints the saved page, with that
 page's aspect ratio, instead of painting page 1 first. The preparing surface
 stays up until the saved page, chapter, or paragraph has been scrolled into
 place. If that layout does not arrive in time, the surface is shown where it
@@ -148,8 +151,20 @@ frame. Notes share one animation frame and do not read layout. Checkpoints
 stay at 1 MiB. Scanned-PDF preparation uses the same track and a label in the
 same place. The separate recognition bar under the card is unchanged.
 
-Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud` or `positions`
-as an automatic rollback.
+Rollback is to set `BOOK_CLOUD` false. Do not drop `book_cloud`,
+`book_device_positions`, or `positions` as an automatic rollback.
+
+## Deploying per-device positions
+
+Apply `server/sync/book-device-position.sql` before shipping the app build
+that calls `breeze_put_device_book_position`. The file adds
+`public.book_device_positions`, copies each current `public.positions`
+locator onto device id `legacy`, adds `breeze_put_device_book_position`, and
+replaces `breeze_put_book_position` so an accepted write from an older build
+also updates that legacy row. Older builds keep working. Their writes still
+share one legacy row with each other and cannot delete a newer device row.
+No edge function is part of this change. Do not apply the file from the app,
+and do not drop either table to roll back.
 
 ## Pen and highlighter (2026-10-16)
 

@@ -2,9 +2,9 @@
    books and recommendations; that boot starts a 45s quiet period for the
    screen that is showing. Coming back to the foreground, or opening a
    different library screen, reloads that screen. A finger pull does not.
-   While Home stays visible, one reading-position read waits out that same
-   quiet period, then waits again. A Home reload skipped inside the period
-   keeps that single wait. The read does not move the recommendation rail. */
+   Reading positions are fetched as soon as Home or a library shelf is
+   showing, again when the app returns to the foreground, and again while
+   that screen stays visible. The read does not move the recommendation rail. */
 const LIBRARY_REFRESH_GAP_MS=45000;
 var libraryRefreshRuns=0;
 var libraryRefreshLaunch=0;
@@ -13,14 +13,17 @@ let libraryRefreshTask=null;
 let libraryRefreshWork=null;
 let libraryRefreshWorkView='';
 let homePositionTimer=0;
-let homePositionAt=Date.now();
+let homePositionAt=0;
+function libraryPositionView(){
+  return typeof activeAppView==='function'&&['home','casuals','longform'].includes(activeAppView());
+}
 function armHomePositionRefresh(){
   if(homePositionTimer) return;
   if(typeof bookCloudEnabled!=='function'||!bookCloudEnabled()) return;
   if(typeof document!=='undefined'&&document.hidden) return;
-  if(typeof activeAppView!=='function'||activeAppView()!=='home') return;
+  if(!libraryPositionView()) return;
   if(!libraryRefreshAllowed()) return;
-  const wait=Math.max(0, LIBRARY_REFRESH_GAP_MS-(Date.now()-(homePositionAt||0)));
+  const wait=homePositionAt?Math.max(0, LIBRARY_REFRESH_GAP_MS-(Date.now()-homePositionAt)):0;
   homePositionTimer=setTimeout(()=>{
     homePositionTimer=0;
     void runHomePositionRefresh();
@@ -32,8 +35,8 @@ function stopHomePositionRefresh(){
 }
 async function runHomePositionRefresh(){
   if(typeof document!=='undefined'&&document.hidden) return;
-  if(typeof activeAppView!=='function'||activeAppView()!=='home'||!libraryRefreshAllowed()) return;
-  if(Date.now()-(homePositionAt||0)<LIBRARY_REFRESH_GAP_MS){
+  if(!libraryPositionView()||!libraryRefreshAllowed()) return;
+  if(homePositionAt&&Date.now()-homePositionAt<LIBRARY_REFRESH_GAP_MS){
     armHomePositionRefresh();
     return;
   }
@@ -98,7 +101,7 @@ function refreshLibrarySoon(){
   if(!libraryRefreshAllowed()) return Promise.resolve();
   const view=activeAppView();
   const now=Date.now();
-  if(view==='home') armHomePositionRefresh();
+  if(libraryPositionView()) armHomePositionRefresh();
   if(now-(libraryRefreshSeen[view]||0)<LIBRARY_REFRESH_GAP_MS) return Promise.resolve();
   libraryRefreshSeen[view]=now;
   // Home owns the recommendation rail. A shelf reload reads saved and synced
@@ -109,19 +112,19 @@ function noteLibraryLaunch(){
   if(!libraryRefreshAllowed()) return;
   libraryRefreshSeen[activeAppView()]=Date.now();
   libraryRefreshLaunch++;
-  if(activeAppView()==='home'){
-    homePositionAt=Date.now();
+  if(libraryPositionView()){
     stopHomePositionRefresh();
-    armHomePositionRefresh();
+    void runHomePositionRefresh();
   }
 }
 (()=>{
   const watch=()=>void refreshLibrarySoon();
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden){stopHomePositionRefresh();return;}
-    homePositionAt=Date.now();
+    homePositionAt=0;
     stopHomePositionRefresh();
     watch();
+    void runHomePositionRefresh();
   });
   let appStateAttached=false;
   function attachAppState(){
@@ -131,9 +134,10 @@ function noteLibraryLaunch(){
     appStateAttached=true;
     void app.addListener('appStateChange',state=>{
       if(!(state&&state.isActive)){stopHomePositionRefresh();return;}
-      homePositionAt=Date.now();
+      homePositionAt=0;
       stopHomePositionRefresh();
       watch();
+      void runHomePositionRefresh();
     });
   }
   attachAppState();
@@ -141,7 +145,7 @@ function noteLibraryLaunch(){
   const observer=new MutationObserver(()=>{
     const view=activeAppView();
     if(!libraryRefreshAllowed()){libraryRefreshView=view;return;}
-    if(view==='home') armHomePositionRefresh();
+    if(libraryPositionView()) armHomePositionRefresh();
     else stopHomePositionRefresh();
     if(view===libraryRefreshView) return;
     libraryRefreshView=view;

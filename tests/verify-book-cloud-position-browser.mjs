@@ -30,16 +30,17 @@ async function scenario(page,kind){
     const id='file-'+hash.slice(0,32);
     window.BREEZE_CONFIG={BOOK_CLOUD:true,SB_URL:'https://example.test',SB_KEY:'anon'};
     books=[{id,kind,title:'Sample',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:''}}];
-    positions={[id]:{p:0,t:Date.now(),mode:kind==='txt'?'text':'original',original:null}};
+    positions={[id]:{p:0,t:1,mode:kind==='txt'?'text':'original',original:null}};
     sbUser={id:'11111111-1111-1111-1111-111111111111'};
+    deviceId=()=>'device-a';
     const sent=[];
     const restored=[];
     sb={
       auth:{getSession:async()=>({data:{session:{access_token:'token'}}})},
-      from(table){return {select:async()=>table==='positions'
-        ? {data:[{book_id:hash,data:{v:1,revision:'rev-1',locator:place}}]}
+      from(table){return {select:async()=>table==='book_device_positions'
+        ? {data:[{book_id:hash,device_id:'other',locator:place,read_at:place.t}]}
         : {data:[{book_id:hash,title:'Sample',author:'Shelf',kind,status:'ready',byte_size:5,tombstone:''}]}};},
-      rpc:async(name,args)=>{sent.push({name,bookId:args.book_id,locator:args.locator});return {data:{ok:true,revision:args.next_revision,locator:args.locator}};}
+      rpc:async(name,args)=>{sent.push({name,bookId:args.book_id,deviceId:args.device_id,locator:args.locator});return {data:{ok:true,device_id:args.device_id,locator:args.locator}};}
     };
     bookCloudPost=async()=>({ok:true,ready:true});
     switchReaderMode=async(mode,options)=>{restored.push({mode,initial:!!(options&&options.initial),place:bookCloudLocator(positions[id])});};
