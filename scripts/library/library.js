@@ -538,6 +538,7 @@ function setHomeRecommendKind(kind){
   const rail=document.getElementById('casual-rail');
   if(rail){delete rail.dataset.homeUserScrolled;rail.scrollLeft=0;}
   renderHome();
+  if(next==='books'&&typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
 }
 function clearHomeRssCards(rail){
   if(typeof rssCoverCancel==='function'&&typeof rssCoverOwners!=='undefined')rssCoverCancel(rssCoverOwners.get(rail));

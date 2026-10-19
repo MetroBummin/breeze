@@ -506,7 +506,10 @@ function show(v,options){
   document.documentElement.classList.toggle('reading', v==='read');
   if(v==='home') renderHome();
   if(v==='casuals') renderCasualLibrary();
-  if(v==='longform') renderLongformLibrary();
+  if(v==='longform'){
+    renderLongformLibrary();
+    if(typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
+  }
   if(v==='memory'&&typeof renderStudySetsHome==='function')renderStudySetsHome();
   if(v==='vocab') renderVocab();
   if(v==='study'&&typeof resumeVocabularyReview==='function')resumeVocabularyReview();

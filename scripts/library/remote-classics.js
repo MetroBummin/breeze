@@ -88,27 +88,34 @@ function loadCachedRemoteClassics(){
   if(!cached||!Array.isArray(cached.books))return [];
   return remoteClassicEntries({books:cached.books});
 }
-async function refreshRemoteClassics(){
-  remoteClassicCatalog=loadCachedRemoteClassics();
-  if(remoteClassicCatalog.length&&typeof renderAllBookViews==='function')renderAllBookViews();
-  const url=remoteClassicsCatalogUrl();
-  if(!url)return remoteClassicCatalog;
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),8000);
-  try{
-    const response=await fetch(url,{cache:'no-cache',headers:remoteClassicHeaders(),signal:controller.signal});
-    if(!response.ok)throw new Error('HTTP '+response.status);
-    const manifest=await response.json();
-    const entries=remoteClassicEntries(manifest);
-    if(!entries.length&&!(manifest&&Array.isArray(manifest.books)&&manifest.books.length===0))throw new Error('Remote catalog is empty');
-    rememberRemoteClassics(entries);
-    if(typeof renderAllBookViews==='function')renderAllBookViews();
-  }catch(error){
-    console.warn('원격 고전 목록을 받지 못했습니다:',error&&error.message);
-  }finally{
-    clearTimeout(timer);
-  }
-  return remoteClassicCatalog;
+let remoteClassicsRefreshing=null;
+function refreshRemoteClassics(){
+  if(remoteClassicsRefreshing)return remoteClassicsRefreshing;
+  const pending=(async()=>{
+    remoteClassicCatalog=loadCachedRemoteClassics();
+    if(remoteClassicCatalog.length&&typeof renderAllBookViews==='function')renderAllBookViews();
+    const url=remoteClassicsCatalogUrl();
+    if(!url)return remoteClassicCatalog;
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),8000);
+    try{
+      const response=await fetch(url,{cache:'no-cache',headers:remoteClassicHeaders(),signal:controller.signal});
+      if(!response.ok)throw new Error('HTTP '+response.status);
+      const manifest=await response.json();
+      const entries=remoteClassicEntries(manifest);
+      if(!entries.length&&!(manifest&&Array.isArray(manifest.books)&&manifest.books.length===0))throw new Error('Remote catalog is empty');
+      rememberRemoteClassics(entries);
+      if(typeof renderAllBookViews==='function')renderAllBookViews();
+    }catch(error){
+      console.warn('원격 고전 목록을 받지 못했습니다:',error&&error.message);
+    }finally{
+      clearTimeout(timer);
+    }
+    return remoteClassicCatalog;
+  })();
+  const refreshing=pending.finally(()=>{if(remoteClassicsRefreshing===refreshing)remoteClassicsRefreshing=null;});
+  remoteClassicsRefreshing=refreshing;
+  return refreshing;
 }
 if(typeof window!=='undefined'&&window.addEventListener){
   const repaint=()=>{if(typeof renderAllBookViews==='function')renderAllBookViews();};

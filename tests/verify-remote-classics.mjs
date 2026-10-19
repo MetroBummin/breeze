@@ -45,6 +45,10 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   assert.equal(cover.length,166570);
   assert.doesNotMatch(text('scripts/library/longreads.js'),/pride-and-prejudice/);
   assert.doesNotMatch(text('tools/build-www.mjs'),/server\/classics/);
+  assert.doesNotMatch(text('scripts/main.js'),/homeReady\.then\(\(\)=>\{if\(typeof refreshRemoteClassics/);
+  assert.match(text('scripts/main.js'),/homeRecommendKind\(\)==='books'&&typeof refreshRemoteClassics==='function'/);
+  assert.match(text('scripts/library/library.js'),/next==='books'&&typeof refreshRemoteClassics==='function'/);
+  assert.match(text('scripts/core/state.js'),/v==='longform'\)\{[\s\S]*refreshRemoteClassics/);
 });
 
 function harness(fetchImpl){

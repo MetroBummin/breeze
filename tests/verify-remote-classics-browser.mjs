@@ -60,6 +60,8 @@ try {
 
   await page.goto(base);
   await page.evaluate(() => homeReady);
+  assert.equal(await page.evaluate(() => remoteClassicCatalogReads().length), 0, 'Article Home fetched the classics catalog');
+  await page.locator('#home-recommend-kind [data-kind="books"]').click();
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
   assert.equal(bookFetches, 0, 'The catalog fetch downloaded the novel');
 
@@ -154,33 +156,30 @@ try {
   await page.locator('#readback').click();
   await page.waitForFunction(() => activeAppView() === 'home');
   await context.setOffline(true);
-  await page.waitForFunction(selector => !document.querySelector(selector).classList.contains('is-offline'), card);
+  assert.equal(await page.locator(card).count(), 0, 'A started book stays off the 책 rail');
+  const savedId = await page.evaluate(bookId => books.find(item => item.longReadId === bookId).id, id);
   const before = bookFetches;
-  await page.locator(card).click();
-  await page.waitForFunction(() => {
-    const reader = document.querySelector('#rtext')?.textContent || '';
-    if (reader.includes('It is a truth universally acknowledged')) return true;
-    const start = document.querySelector('#article-preview .ap-start');
-    if (start && !start.disabled) start.click();
-    return false;
-  });
+  const openSaved = async () => {
+    await page.locator(`#shelf [data-local-book="${savedId}"]`).click();
+    await page.waitForFunction(() => {
+      const reader = document.querySelector('#rtext')?.textContent || '';
+      if (reader.includes('It is a truth universally acknowledged')) return true;
+      const start = document.querySelector('#article-preview .ap-start');
+      if (start && !start.disabled) start.click();
+      return false;
+    });
+  };
+  await openSaved();
   assert.equal(bookFetches, before, 'A saved book was downloaded again');
 
+  await page.evaluate(() => show('home'));
   await context.setOffline(false);
   catalogFails = true;
   await page.reload();
   await page.evaluate(() => homeReady);
   await page.locator('#home-recommend-kind [data-kind="books"]').click();
-  await page.locator(card).waitFor();
-  assert.equal(await page.locator(card).evaluate(node => node.classList.contains('is-offline')), false);
-  await page.locator(card).click();
-  await page.waitForFunction(() => {
-    const reader = document.querySelector('#rtext')?.textContent || '';
-    if (reader.includes('Chapter 1')) return true;
-    const start = document.querySelector('#article-preview .ap-start');
-    if (start && !start.disabled) start.click();
-    return false;
-  });
+  assert.equal(await page.locator(card).count(), 0, 'A saved book returns to the rail when the catalog cannot refresh');
+  await openSaved();
   assert.equal(bookFetches, before, 'A cached book was fetched again after the catalog failed');
   assert.deepEqual(pageErrors, []);
 } finally {
