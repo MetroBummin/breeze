@@ -113,15 +113,69 @@ test('a theme change repaints settled PDF pages',()=>{
   assert.ok(requests.every(item=>item.options.theme&&item.options.resharpen));
 });
 
-test('EPUB dark stylesheet recolors text and leaves pictures alone',()=>{
+function loadEpub(){
   const context={console,Map,Set,WeakMap,Math,Number,document:{getElementById:()=>null},window:{},registerReaderSurface(){}};
   vm.createContext(context);
   vm.runInContext(epub,context,{filename:'epub-original.js'});
-  const css=context.epubDarkStyleText({paper:'#2c2a26',ink:'#E7E1D4',link:'#78C9EA'});
+  return context;
+}
+function cssColorRules(css){
+  const rules=[];
+  for(const block of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
+    const color=block[2].match(/(?:^|;)color:([^;]+)/);
+    if(!color) continue;
+    const declared=color[1].trim();
+    const important=declared.endsWith('!important');
+    const paint=important?declared.slice(0,-'!important'.length).trim():declared;
+    for(const selector of block[1].split(',')){
+      rules.push({selector:selector.trim(),paint,important,index:rules.length});
+    }
+  }
+  return rules;
+}
+function colorSpecificity(selector){
+  const classes=(selector.match(/\.[A-Za-z0-9_-]+/g)||[]).length;
+  const pseudos=(selector.match(/:[A-Za-z-]+/g)||[]).length;
+  const elements=(selector.replace(/\.[A-Za-z0-9_-]+/g,'').replace(/:[A-Za-z-]+/g,'').match(/[A-Za-z]+/g)||[]).length;
+  return classes*1000+pseudos*1000+elements;
+}
+function colorRuleMatches(selector,el){
+  if(selector.startsWith('.')) return el.classes.includes(selector.slice(1));
+  const [name,pseudo]=selector.split(':');
+  return name===el.tag && (!pseudo || el.pseudo===pseudo);
+}
+function authorColor(rules,el){
+  const hits=rules.filter(rule=>colorRuleMatches(rule.selector,el));
+  const important=hits.some(rule=>rule.important);
+  const pool=(important?hits.filter(rule=>rule.important):hits)
+    .sort((a,b)=>colorSpecificity(a.selector)-colorSpecificity(b.selector)||a.index-b.index);
+  return pool.at(-1)?.paint||null;
+}
+function paintedColor(rules,el){
+  const authorImportant=rules.some(rule=>rule.important&&colorRuleMatches(rule.selector,el));
+  if(el.inline && (el.inlineImportant || !authorImportant)) return el.inline;
+  return authorColor(rules,el);
+}
+
+test('EPUB dark stylesheet recolors text and leaves pictures alone',()=>{
+  const css=loadEpub().epubDarkStyleText({paper:'#2c2a26',ink:'#E7E1D4',link:'#78C9EA'});
   assert.match(css,/html,body\{background:#2c2a26!important;color:#E7E1D4!important\}/);
   assert.match(css,/p,li,blockquote[\s\S]*\{color:#E7E1D4!important\}/);
   assert.match(css,/a,a:visited\{color:#78C9EA!important\}/);
   assert.doesNotMatch(css,/img|svg|video|filter/);
+});
+
+test('EPUB dark text color leaves the lookup copy transparent',()=>{
+  const css=loadEpub().epubDarkStyleText({paper:'#2c2a26',ink:'#E7E1D4',link:'#78C9EA'});
+  const rules=cssColorRules(css);
+  const marker={tag:'span',classes:['breeze-original-word','original-selection-marker','s1'],inline:'transparent'};
+  assert.equal(paintedColor(rules,marker),'transparent');
+  assert.equal(paintedColor(rules.filter(rule=>rule.selector!=='.original-selection-marker'),marker),'#E7E1D4');
+  assert.equal(paintedColor(rules,{tag:'span',classes:['breeze-original-word','s1']}),'#E7E1D4');
+  assert.equal(paintedColor(rules,{tag:'p',classes:[]}),'#E7E1D4');
+  assert.equal(paintedColor(rules,{tag:'a',classes:[],pseudo:'visited'}),'#78C9EA');
+  assert.doesNotMatch(css,/::highlight|breeze-saved|original-saved-marker/);
+  assert.match(epub,/marker\.style\.cssText=`[^`]*color:transparent/);
 });
 
 test('a canvas that ignores ctx.filter tints paper to the EPUB sheet and dims a scan',()=>{

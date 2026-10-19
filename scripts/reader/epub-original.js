@@ -116,9 +116,13 @@ function epubDarkColors(){
 function epubDarkStyleText(colors){
   const {paper,ink,link}=colors;
   // Publisher pictures keep their own pixels. No filter, no color override.
+  // The lookup marker is a fixed copy of the tapped word. Its text stays
+  // transparent so the highlight sits on the real glyphs. The span color
+  // rule is !important and would otherwise paint that copy a second time.
   return `html,body{background:${paper}!important;color:${ink}!important}`
     +`p,li,blockquote,h1,h2,h3,h4,h5,h6,dd,dt,td,th,div,span,figcaption,caption,cite,em,strong,b,i,u,small,pre,code,section,article,header,footer,nav,aside,ul,ol,dl,label,q{color:${ink}!important}`
-    +`a,a:visited{color:${link}!important}`;
+    +`a,a:visited{color:${link}!important}`
+    +`.original-selection-marker{color:transparent!important}`;
 }
 function sourceReaderIsDark(){
   return !!(document.body&&document.body.classList&&document.body.classList.contains('dark'));
