@@ -164,7 +164,7 @@ test('Alice and Gatsby move to the catalog and a saved copy keeps its text',asyn
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const hooks={
     'alice-in-wonderland':'회중시계를 보며 "늦었다!"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?',
-    'the-great-gatsby':'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까?',
+    'the-great-gatsby':'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?',
   };
   for(const id of Object.keys(hooks)){
     const entry=catalog.books.find(book=>book.id===id);

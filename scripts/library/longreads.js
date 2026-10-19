@@ -224,7 +224,7 @@ const CLASSIC_FALLBACKS = [
     license:'Public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/policy/license.html',
     series:'BREEZE ORIGINAL',
-    hook:'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까?',
+    hook:'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?',
     edition:'Public-domain text, typeset for Breeze', wordCount:48153,
     sha256:'a88b52c53fabbd19fa78bf4cee7da6b69e656cec8b97b273d26ab0d04baac675',
     editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
