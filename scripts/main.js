@@ -15,16 +15,23 @@ const homeReady=loadBooks().then(async()=>{
   await maybeShowOnboarding();
   // The first-time guide owns the visible overlay. Do not build hidden Home
   // recommendation cards or start their image/feed work behind the guide.
-  if(!onboardingSession)renderHome();
+  if(!onboardingSession)paintHome();
 }).catch(async error=>{
   console.error('첫 화면을 준비하지 못했습니다:',error);
   await bootDurableMigration();
   if(onboardingSession) endOnboarding(false);
-  renderHome();
+  paintHome();
 }).finally(()=>document.documentElement.classList.remove('boot-pending'));
 homeReady.then(()=>startSharedFileImports());
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
+/* Article Home must not request the classics catalog. RSS discovery treats any
+   other origin as a leak. The 책 rail and the longform library ask for it. */
+function paintHome(){
+  renderHome();
+  if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='books'&&typeof refreshRemoteClassics==='function')
+    void refreshRemoteClassics();
+}
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----
    무엇을 어떻게 담는지는 sw.js 맨 위에 적혀 있습니다. 여기서는 등록만 합니다.
 

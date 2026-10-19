@@ -189,6 +189,7 @@
   .bookcard.classic.has-cover{border-color:transparent;}
   .bookcard.classic.has-cover .get{color:var(--on-color); text-shadow:var(--cover-text-shadow);}
   .bookcard.classic.busy{opacity:.6; pointer-events:none;}
+  .bookcard.longread.is-offline{opacity:.45;}
   /* Backrooms covers already carry their source artwork title. Keep the branded
      Breeze name and series marker in separate edges so neither covers that art. */
   .bookcard.longread.has-cover .author{position:absolute; top:12px; right:14px; z-index:2;

@@ -335,10 +335,10 @@
   #rtext figure.story-illustration{margin:1.8em 0 2em;}
   #rtext figure.story-illustration img{display:block; width:100%; height:auto;}
   /* The source-led Holmes hierarchy stays within the existing Reader settings. */
-  #readwrap.holmes-reading #rtitle{font-size:clamp(1.35rem,3.4vw,1.85rem);line-height:1.35;
+  #readwrap.holmes-reading #rtitle,#readwrap.original-reading #rtitle{font-size:clamp(1.35rem,3.4vw,1.85rem);line-height:1.35;
     font-weight:600;letter-spacing:-.02em;border:0;margin-bottom:0;padding-bottom:.45em;}
   #readwrap.holmes-source-title #rtitle{display:none;}
-  #rtext.holmes-story .holmes-byline{font-size:.8em;color:var(--soft2);margin:.1em 0 1.8em;}
+  #rtext.holmes-story .holmes-byline,#rtext.original-story .original-byline{font-size:.8em;color:var(--soft2);margin:.1em 0 1.8em;}
   #rtext.holmes-story .holmes-title{font-size:min(1.35em,7vw);line-height:1.35;font-weight:600;
     text-align:center;letter-spacing:.015em;margin:1.2em 0 .8em;text-wrap:balance;
     overflow-wrap:normal;word-break:normal;border:0;padding-bottom:0;}
@@ -349,7 +349,8 @@
   #rtext.holmes-story .holmes-contents-heading{text-align:center;font-size:1.05em;margin:2em 0 1.2em;}
   #rtext.holmes-story .holmes-contents{font-size:.82em;line-height:1.7;margin:0;}
   #rtext.holmes-story .holmes-contents-line{display:block;margin:0 0 .65em;}
-  #rtext.holmes-story .holmes-chapter,#rtext.holmes-story .holmes-section{
+  #rtext.holmes-story .holmes-chapter,#rtext.holmes-story .holmes-section,
+  #rtext.original-story .original-chapter{
     text-align:center;font-size:1.15em;line-height:1.5;font-weight:600;letter-spacing:0;
     margin:1em 0 1.6em;text-wrap:balance;break-after:avoid;}
   #rtext.holmes-story .holmes-end{text-align:center;font-size:.82em;letter-spacing:.12em;margin:2em 0 1em;}

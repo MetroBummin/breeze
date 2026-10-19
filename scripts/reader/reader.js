@@ -126,11 +126,14 @@ function renderBookBody(b){
   rt.innerHTML='';
   const holmes=LONG_READS.find(read=>read.id===b.longReadId&&read.id.startsWith('sherlock-holmes-'));
   const story=holmes||LONG_READS.find(read=>read.id===b.longReadId&&read.presentation==='story');
+  const originalStory=!story && b.kind==='txt' && b.readingStyle==='original';
   rt.classList.toggle('holmes-story',!!story);
+  rt.classList.toggle('original-story',originalStory);
   const sourceTitle=!!holmes&&b.longReadId==='sherlock-holmes-hound-of-the-baskervilles'&&
     b.paras[0]===HOLMES_HOUND_FRONTMATTER[0].text&&b.title.toLowerCase()===holmes.title.toLowerCase();
   document.getElementById('readwrap').classList.toggle('holmes-source-title',sourceTitle);
   document.getElementById('readwrap').classList.toggle('holmes-reading',!!story);
+  document.getElementById('readwrap').classList.toggle('original-reading',originalStory);
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
   const wordSpanTargets=[];
@@ -173,9 +176,15 @@ function renderBookBody(b){
       r:['title'].includes(role)?'h1':['chapter','section','contents-heading'].includes(role)?'h2':block.r,
       before:['chapter','section'].includes(role)?'page':block.before}:block;
   });
+  if(originalStory)list=list.map(block=>/^Chapter \d+$/.test(String(block.t||'').trim())
+    ?{...block,bookRole:'chapter',r:'h2',before:'page'}:block);
   if(story&&b.longReadId!=='sherlock-holmes-hound-of-the-baskervilles'){
     const author=document.createElement('p');author.className='holmes-byline';
     author.textContent=b.author||story.author;frag.insertBefore(author,page);
+  }
+  if(originalStory){
+    const author=document.createElement('p');author.className='original-byline';
+    author.textContent=b.author||'';frag.insertBefore(author,page);
   }
   list.forEach(bl=>{
     if(b.longReadId==='backroom-homeward-bound'&&bl.t==='Chapter 2'&&pageChars>0)newPage();
@@ -278,7 +287,7 @@ function renderBookBody(b){
     if(bl.bookRole==='scene'||(b.longReadId==='backroom-homeward-bound'&&bl.t==='* * *'))el.classList.add('story-scene-break');
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
-    if(bl.bookRole)el.classList.add('holmes-'+bl.bookRole);
+    if(bl.bookRole)el.classList.add((originalStory?'original-':'holmes-')+bl.bookRole);
     if(bl.verseIndent)el.classList.add('verse-indent');
     if(bl.verseStanza)el.classList.add('verse-stanza');
     el.textContent = bl.v || bl.t;

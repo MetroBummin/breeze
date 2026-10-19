@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "books": [
+    {
+      "id": "pride-and-prejudice",
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/cover.webp",
+      "bytes": 693618,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/pride-and-prejudice/book.txt",
+      "contentVersion": "e697ed5afdaa7762e1b45913cef3b8838932414c7ce4f6acfd36f1597ce4e1de",
+      "wordCount": 121669,
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1342",
+      "site": "Project Gutenberg",
+      "license": "Original: public domain in the USA",
+      "licenseUrl": "https://www.gutenberg.org/policy/license.html",
+      "originalTitle": "Pride and Prejudice (1813)",
+      "series": "BREEZE ORIGINAL",
+      "hook": "시골 마을에 젊은 신사가 들어오자, 베넷 가의 딸들에게 시선이 모입니다. 엘리자베스는 다아시의 첫인상을 쉽게 믿지 않습니다.",
+      "edition": "Breeze Original text",
+      "editionNote": "Jane Austen’s Pride and Prejudice (1813), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #1342, retrieved 2026-10-18. Gutenberg boilerplate, title pages, preface, illustration captions, and the printer’s colophon are omitted. Chapter headings, paragraphs, curly quotes, and em dashes follow the long-read text format. Austen’s wording is not modernized. This is not a Project Gutenberg branded edition."
+    }
+  ]
+}
