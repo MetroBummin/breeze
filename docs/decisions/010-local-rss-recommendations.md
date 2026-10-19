@@ -159,9 +159,17 @@ opens like its library card; an unowned classic uses `importClassic` and then
 that open. Personal library cards still do not enter the article rail. The
 bundled Holmes offers are not placed on the Home 긴 글 shelf in either toggle
 state. That shelf is the reader's own long-form library, and only its add tile
-when nothing is saved. The same offers stay on the long-form library view and
-on the 책 rail. `pendingClassics()` stays empty, so the older classics are not
-restored to a default shelf.
+when nothing is saved. Unstarted offers stay on the long-form library view.
+`pendingClassics()` stays empty, so the older classics are not restored to a
+default shelf.
+
+The 책 rail is keyed by catalog id. A card leaves once any library entry has
+that id in `classicId` or `longReadId`: a bundled EPUB, a text long read, a
+copy migrated from EPUB, or a server-hosted catalog book that uses the same
+id. A device-hidden server row does not count. Removing the library entry
+paints the card again, because Home renders from the current library.
+When every offered book is already in the library, the rail is hidden and the
+recommendation status says the started books are on the shelf.
 
 The book card's outer box matches the article card, so the sections below do
 not move when the control appears or the choice changes. The picture ends above
