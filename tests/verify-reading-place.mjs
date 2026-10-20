@@ -353,8 +353,8 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
     sbUser:{id:user},
     sb:{
       auth:{getSession:async()=>({data:{session:{access_token:'token'}}})},
-      from(table){return {select:async()=>table==='positions'
-        ?{data:[{book_id:hash,data:{revision:'rev-phone',locator:remote}}]}
+      from(table){return {select:async()=>table==='book_device_positions'
+        ?{data:[{book_id:hash,device_id:'phone',locator:remote,read_at:remote&&remote.t}]}
         :{data:[]}};},
       rpc:async()=>({data:{ok:true}})
     },
@@ -505,8 +505,12 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   session.anchorMoved=false;
   session.pageLayout=null;
   context.resetBookCloudSession();
+  context.bookCloudRememberDevice(hash,'tablet',remote,remote.t);
+  const movesBeforeOpen=moves;
   await context.bookCloudPositionBeforeOpen(book);
+  assert.equal(moves,movesBeforeOpen,'opening copies the cached page without scrolling');
   assert.equal(positions[bookId].original.page,earlier,'the return open copies the newer page before paint');
+  assert.equal(positions[bookId].t,9000,'opening keeps the newer stamp');
   view.top=0;
   scrolls.length=0;moves=0;landing=null;
   assert.equal(await context.pdfPlaceBeforePaint(session,book),earlier);
@@ -517,6 +521,76 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
   assert.equal(moves,0,'a later refresh does not scroll again');
   assert.equal(scrolls.length,1);
   assert.equal(placeAt(context.topInset()+10).page,earlier);
+}
+
+{
+  const syncSource=readFileSync(resolve(root,'scripts/sync/sync.js'),'utf8');
+  const stateSource=readFileSync(resolve(root,'scripts/core/state.js'),'utf8');
+  function extractFunction(source,name){
+    const start=source.indexOf('function '+name+'(');
+    if(start<0)throw new Error(name);
+    let depth=0,seen=false;
+    for(let index=source.indexOf('{',start);index<source.length;index++){
+      if(source[index]==='{'){depth++;seen=true;}
+      else if(source[index]==='}'){depth--;if(seen&&depth===0)return source.slice(start,index+1);}
+    }
+    throw new Error(name);
+  }
+  const book={id:'book'};
+  const positions={book:{p:0.2,t:1000,mode:'original',original:{kind:'epub',href:'c.xhtml',spine:1,element:2,char:5}}};
+  let queued=0;
+  let anchor={kind:'epub',href:'c.xhtml',spine:1,element:2,char:5};
+  const context=createContext({
+    curBook:book,positions,LS_POS:'pos',currentReaderMode:'original',
+    readerPositionPending:()=>false,
+    epubRestoreOwnsPosition:()=>false,
+    pdfRestoreOwnsPosition:()=>false,
+    textRestoreOwnsPosition:()=>false,
+    captureOriginalAnchor:()=>anchor,
+    sourceProgressForBook:()=>positions.book.p,
+    readerProgressAtEnd:value=>value,
+    posOf:id=>positions[id]||{p:0,t:0,mode:'text'},
+    save(){},
+    queueReadingProgressSync(){queued++;}
+  });
+  new Script([
+    extractFunction(syncSource,'sameProgressLocation'),
+    extractFunction(syncSource,'readingOriginal'),
+    extractFunction(syncSource,'safePosition'),
+    extractFunction(stateSource,'saveReadingState')
+  ].join('\n'),{filename:'reading-stamp.js'}).runInContext(context);
+  context.saveReadingState();
+  assert.equal(positions.book.t,1000,'restoring the same EPUB offset does not bump the stamp');
+  assert.equal(queued,0,'restoring the same EPUB offset does not upload');
+  anchor={...anchor,char:9};
+  context.saveReadingState();
+  assert.ok(positions.book.t>1000,'moving inside one paragraph bumps the stamp');
+  assert.equal(positions.book.original.char,9);
+  assert.equal(queued,1);
+  const moved=positions.book.t;
+  anchor={...anchor,element:3};
+  context.saveReadingState();
+  assert.ok(positions.book.t>=moved);
+  assert.equal(positions.book.original.element,3);
+  assert.equal(queued,2);
+  positions.book={p:0.4,t:2000,mode:'original',original:{kind:'pdf',page:3,y:0.2}};
+  anchor={kind:'pdf',page:3,y:0.2};
+  queued=0;
+  context.saveReadingState();
+  assert.equal(positions.book.t,2000,'the same PDF page fraction does not bump the stamp');
+  assert.equal(queued,0);
+  anchor={kind:'pdf',page:3,ratio:0.2};
+  context.saveReadingState();
+  assert.equal(positions.book.t,2000,'a PDF y and the same ratio are one place');
+  assert.equal(queued,0);
+  anchor={kind:'pdf',page:3,y:0.8};
+  context.saveReadingState();
+  assert.ok(positions.book.t>2000,'moving down a PDF page bumps the stamp');
+  assert.equal(queued,1);
+  const epub=context.safePosition({p:0.2,t:1,mode:'original',original:{kind:'epub',href:'c.xhtml',spine:2,element:3,char:4}});
+  assert.equal(epub.original.char,4);
+  assert.equal(epub.original.element,3);
+  assert.equal(context.safePosition({p:0.4,t:1,mode:'original',original:{kind:'pdf',page:3,y:0.8}}).original.ratio,0.8);
 }
 
 console.log('Reading place contract verified');

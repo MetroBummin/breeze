@@ -305,6 +305,8 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var pdfRecentPencilRoles: [(at: TimeInterval, point: CGPoint, role: BreezePdfContactLedger<ObjectIdentifier>.Role)] = []
     // END PDF_ROUTING_STATE
     private static let themeMessageHandler = "breezeReaderTheme"
+    private static let positionSyncHandler = "breezePositionSync"
+    private var positionSyncTask: UIBackgroundTaskIdentifier = .invalid
     private static let speechMessageHandler = "breezeSpeech"
     private static let vocabularyExportHandler = "breezeVocabularyExport"
     private static let pencilAdmissionHandler = "breezePencilAdmission"
@@ -444,6 +446,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.scrollView.bounces = true
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
+        webView.configuration.userContentController.add(self, name: Self.positionSyncHandler)
         webView.configuration.userContentController.add(self, name: Self.speechMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.vocabularyExportHandler)
         webView.configuration.userContentController.add(self, name: Self.shareInboxHandler)
@@ -592,6 +595,20 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         if !session.start() { finishAuth(request: request, error: "로그인 창을 열지 못했어요.") }
     }
 
+    func beginPositionSyncTask() {
+        guard positionSyncTask == .invalid else { return }
+        positionSyncTask = UIApplication.shared.beginBackgroundTask(withName: "breeze.position-sync") { [weak self] in
+            self?.endPositionSyncTask()
+        }
+    }
+
+    func endPositionSyncTask() {
+        guard positionSyncTask != .invalid else { return }
+        let task = positionSyncTask
+        positionSyncTask = .invalid
+        UIApplication.shared.endBackgroundTask(task)
+    }
+
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == Self.readerSelectionHandler {
             guard message.frameInfo.isMainFrame,
@@ -715,6 +732,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
                   let id = request["id"] as? String,
                   let csv = request["csv"] as? String else { return }
             exportVocabulary(csv, id: id)
+            return
+        }
+        if message.name == Self.positionSyncHandler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any],
+                  let phase = request["phase"] as? String else { return }
+            if phase == "begin" { beginPositionSyncTask() }
+            else if phase == "end" { endPositionSyncTask() }
             return
         }
         if message.name == Self.themeMessageHandler {
@@ -1454,9 +1481,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
+    func sceneWillResignActive(_ scene: UIScene) {
+        (window?.rootViewController as? BreezeBridgeViewController)?.beginPositionSyncTask()
+    }
+
     func sceneDidBecomeActive(_ scene: UIScene) {
         (window?.rootViewController as? BreezeBridgeViewController)?.refreshReaderSelectionPolicy()
         (window?.rootViewController as? BreezeBridgeViewController)?.deliverSharedLinks()
+        (window?.rootViewController as? BreezeBridgeViewController)?.endPositionSyncTask()
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {

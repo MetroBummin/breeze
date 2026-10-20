@@ -622,6 +622,20 @@ function sameProgressLocation(left,right){
   const clean=value=>{ const safe=safePosition(value); if(safe) delete safe.t; return safe; };
   return JSON.stringify(clean(left))===JSON.stringify(clean(right));
 }
+function readingOriginal(original){
+  if(!original||typeof original!=='object')return null;
+  const kind=original.kind==='epub'?'epub':original.kind==='pdf'?'pdf':original.kind==='txt'?'txt':'';
+  const epub=kind==='epub'||original.href!=null||original.spine!=null||original.element!=null||original.char!=null;
+  if(epub&&kind!=='pdf'){
+    return {kind:kind||'epub',href:typeof original.href==='string'?original.href:'',
+      spine:Number(original.spine)||0,element:Number(original.element)||0,char:Number(original.char)||0};
+  }
+  if(kind==='pdf'||original.page!=null||original.ratio!=null||original.y!=null){
+    const ratio=original.ratio!=null?Number(original.ratio)||0:Number(original.y)||0;
+    return {kind:kind||'pdf',page:Number(original.page)||1,ratio};
+  }
+  return null;
+}
 const upOf=word=>word?(word.up||word.addedAt||0):0;
 function doSync(manual){
   if(!sb||!sbUser) return Promise.resolve(false);
@@ -656,9 +670,10 @@ function noteSyncFailure(error){
 function noteSyncSuccess(){ syncFailureCount=0; syncCooldownUntil=0; }
 function safePosition(position){
   if(!position) return null;
+  const pi=Number(position.pi);
   return {p:Number(position.p)||0,t:Number(position.t)||0,mode:position.mode==='original'?'original':'text',
-    pi:Number.isFinite(position.pi)?position.pi:null,dy:Number(position.dy)||0,
-    original:position.original?{page:Number(position.original.page)||1,ratio:Number(position.original.ratio)||0}:null};
+    pi:Number.isFinite(pi)?pi:null,dy:Number(position.dy)||0,
+    original:readingOriginal(position.original)};
 }
 async function vaultFileIdentity(rawHash){
   if(!vaultMaster||!rawHash) return '';

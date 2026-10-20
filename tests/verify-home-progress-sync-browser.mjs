@@ -41,9 +41,9 @@ async function seed(page){
     rememberLocalReading(book);
     sbUser={id:userId};
     sb={from(table){return {select:async()=>{
-      if(table==='positions')window.positionReads++;
+      if(table==='book_device_positions')window.positionReads++;
       if(table==='book_cloud')window.catalogReads++;
-      return table==='positions'?{data:[{book_id:hash,data:{v:1,revision:'rev-home',locator:window.remotePlace}}]}:{data:[]};
+      return table==='book_device_positions'?{data:[{book_id:hash,device_id:'other',locator:window.remotePlace,read_at:window.remotePlace.t}]}:{data:[]};
     }};}};
     readerScrollTo=()=>{window.readerMoves++;};
     restoreAnchor=()=>{window.readerMoves++;return true;};
@@ -117,6 +117,13 @@ try{
         assert.equal(await page.evaluate(()=>window.readerMoves),0,`${engineName} ${name} scrolled an open book`);
         assert.equal(await page.locator('#home-resume-percent').textContent(),'100%');
         assert.equal(await page.evaluate(()=>activeAppView()),'home');
+        const readsBeforeForeground=await page.evaluate(()=>window.positionReads);
+        await page.evaluate(()=>{libraryRefreshSeen.home=Date.now();});
+        await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+        await page.waitForFunction(start=>window.positionReads>start,readsBeforeForeground);
+        assert.equal(await page.evaluate(()=>positions['home-progress'].p),1,`${engineName} ${name} foreground read moved an open book`);
+        assert.equal(await page.evaluate(()=>window.readerMoves),0,`${engineName} ${name} foreground read scrolled an open book`);
+        assert.equal(await page.evaluate(()=>libraryRefreshRuns),0,`${engineName} ${name} foreground position read reloaded the shelf`);
         assert.deepEqual(errors,[],`${engineName} ${name} page errors`);
         console.log(`${engineName} ${name}: Home percent updated at 45s without opening the book.`);
         await page.close();

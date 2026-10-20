@@ -5,7 +5,9 @@ function bookCloudEnabled(){
 }
 var BOOK_CLOUD_BYTE_CAP=2147483648;
 var bookCloudCatalog=[];
-var bookCloudHeads={};
+var bookCloudDevices={};
+var bookCloudUploadedAt=0;
+var BOOK_CLOUD_POSITION_GAP=30000;
 var bookCloudTimer=0;
 var bookCloudFlight=null;
 var bookCloudLeaveNow=false;
@@ -23,11 +25,10 @@ function bookCloudResetNotes(){
   if(note)note.textContent='단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   if(choice)choice.textContent='다른 기기의 읽기자료는 건드리지 않아요';
 }
-var bookCloudRevealQuiet=null;
 function resetBookCloudSession(){
   bookCloudPullEpoch++;bookCloudPullAgain=false;
-  clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudFlight=null;bookCloudLeaveNow=false;bookCloudCatalog=[];bookCloudHeads={};
-  bookCloudRevealQuiet=null;bookCloudActivity.clear();bookCloudManual.clear();
+  clearTimeout(bookCloudTimer);bookCloudTimer=0;bookCloudFlight=null;bookCloudLeaveNow=false;bookCloudCatalog=[];
+  bookCloudDevices={};bookCloudUploadedAt=0;bookCloudActivity.clear();bookCloudManual.clear();
 }
 function bookCloudHash(book){
   const hash=String(book&&(book.sourceHash||(book.original&&book.original.hash))||'');
@@ -76,24 +77,66 @@ function bookCloudSamePlace(left,right){
   const clean=value=>{const locator=bookCloudLocator(value||{});delete locator.t;return JSON.stringify(locator);};
   return clean(left)===clean(right);
 }
-function bookCloudAtStart(position){
-  const locator=bookCloudLocator(position||{});
-  if((Number(locator.p)||0)>0.001)return false;
-  if(locator.pi!=null&&Number(locator.pi)>0)return false;
-  if((Number(locator.y)||0)>8)return false;
-  if((Number(locator.dy)||0)>8)return false;
-  const original=locator.original;
-  if(!original)return true;
-  if(original.kind==='pdf')return (Number(original.page)||1)<=1&&(Number(original.y)||0)<=0.02;
-  if(original.kind==='epub')return (Number(original.spine)||0)<=0&&(Number(original.element)||0)<=0&&(Number(original.char)||0)<=0;
-  return true;
+function bookCloudDeviceId(){
+  if(typeof deviceId==='function'){
+    try{const id=deviceId();if(id)return String(id).slice(0,80);}catch(error){}
+  }
+  try{
+    const saved=typeof load==='function'?load('breeze.device',''):'';
+    if(saved)return String(saved).slice(0,80);
+  }catch(error){}
+  const created=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'d'+Date.now().toString(36);
+  if(typeof save==='function')save('breeze.device',created);
+  return created;
 }
-function bookCloudPreferRemote(local,remote){
-  if(!remote||typeof remote!=='object')return false;
-  if(!local)return true;
-  if(bookCloudAtStart(local)&&!bookCloudAtStart(remote))return true;
-  const remoteTime=Number(remote.t)||0,localTime=Number(local.t)||0;
-  return remoteTime>localTime&&!bookCloudAtStart(remote);
+function bookCloudReadAt(locator){
+  const stamp=locator&&Number(locator.t);
+  return Number.isFinite(stamp)&&stamp>0?stamp:0;
+}
+function bookCloudWhen(row){
+  if(!row)return 0;
+  const fromLocator=bookCloudReadAt(row.locator);
+  if(fromLocator)return fromLocator;
+  const stamp=Number(row.readAt);
+  return Number.isFinite(stamp)&&stamp>0?stamp:0;
+}
+function bookCloudStamp(value,locator){
+  if(typeof value==='number'&&Number.isFinite(value)&&value>0)return value;
+  if(typeof value==='string'&&value){
+    const parsed=Date.parse(value);
+    if(Number.isFinite(parsed)&&parsed>0)return parsed;
+    const asNumber=Number(value);
+    if(Number.isFinite(asNumber)&&asNumber>0)return asNumber;
+  }
+  return bookCloudReadAt(locator);
+}
+function bookCloudRememberDevice(bookId,device,locator,readAt){
+  if(!bookId||!device||!locator)return;
+  if(!bookCloudDevices[bookId])bookCloudDevices[bookId]={};
+  bookCloudDevices[bookId][String(device)]={locator:bookCloudLocator(locator),readAt:bookCloudStamp(readAt,locator)};
+}
+function bookCloudLatestRemote(hash){
+  const devices=bookCloudDevices[hash];
+  if(!devices)return null;
+  let best=null,bestAt=-1;
+  for(const row of Object.values(devices)){
+    const at=bookCloudWhen(row);
+    if(!row||at<=bestAt)continue;
+    best={locator:row.locator,readAt:at};
+    bestAt=at;
+  }
+  return best;
+}
+function bookCloudAdoptedWithoutReading(hash,locator){
+  const devices=bookCloudDevices[hash];
+  if(!devices||!locator)return false;
+  const mine=bookCloudDeviceId();
+  const at=bookCloudReadAt(locator);
+  for(const [id,row] of Object.entries(devices)){
+    if(id===mine||!row)continue;
+    if(bookCloudSamePlace(row.locator,locator)&&bookCloudWhen(row)>=at)return true;
+  }
+  return false;
 }
 function bookCloudLibraryRows(){
   if(!bookCloudEnabled())return [];
@@ -101,8 +144,8 @@ function bookCloudLibraryRows(){
   const list=typeof books==='undefined'?[]:books;
   for(const book of list){const hash=bookCloudHash(book);if(hash)local.add(hash);}
   return bookCloudCatalog.filter(row=>row&&row.status==='ready'&&row.book_id&&!local.has(row.book_id)).map(row=>{
-    const head=bookCloudHeads[row.book_id];
-    return {bookId:row.book_id,title:row.title||'',author:row.author||'',kind:row.kind||'',size:Number(row.byte_size)||0,locator:head&&head.locator||null};
+    const latest=bookCloudLatestRemote(row.book_id);
+    return {bookId:row.book_id,title:row.title||'',author:row.author||'',kind:row.kind||'',size:Number(row.byte_size)||0,locator:latest&&latest.locator||null};
   });
 }
 function bookCloudLinkedNote(book){
@@ -220,85 +263,50 @@ async function bookCloudSendRemove(bookId,session){
 }
 async function bookCloudSendPosition(bookId,entry,session){
   const userId=bookCloudUserId();
-  const result=await sb.rpc('breeze_put_book_position',{
-    expected_user_id:userId,book_id:bookId,expected_revision:entry.base||null,next_revision:entry.revision,locator:entry.locator
+  const device=entry.deviceId||bookCloudDeviceId();
+  const result=await sb.rpc('breeze_put_device_book_position',{
+    expected_user_id:userId,book_id:bookId,device_id:device,locator:entry.locator
   });
   if(!bookCloudCurrent(session))return false;
   const error=result&&result.error;
   if(error&&String(error.code)==='42501'&&/not linked/i.test(String(error.message||''))){
-    delete bookCloudHeads[bookId];
+    delete bookCloudDevices[bookId];
     return 'gone';
   }
   const data=result&&result.data;
   if(data&&data.ok){
-    bookCloudHeads[bookId]={revision:data.revision||entry.revision,locator:data.locator||entry.locator||null};
+    bookCloudRememberDevice(bookId,data.device_id||device,data.locator||entry.locator,null);
     return 'ok';
   }
-  if(data&&data.ok===false&&data.revision){
-    bookCloudHeads[bookId]={revision:data.revision,locator:data.locator||null};
-    return 'conflict';
-  }
   return 'fail';
-}
-function bookCloudStorePositionRows(rows){
-  let changed=false;
-  for(const row of rows||[]){
-    if(!row||!row.book_id)continue;
-    const data=row.data||{};
-    const book=typeof books!=='undefined'?books.find(item=>bookCloudHash(item)===row.book_id):null;
-    const before=book&&typeof positions!=='undefined'?JSON.stringify(positions[book.id]||null):'';
-    bookCloudHeads[row.book_id]={revision:data.revision||'',locator:data.locator||null};
-    bookCloudAdoptPosition(row.book_id,data.locator);
-    const after=book&&typeof positions!=='undefined'?JSON.stringify(positions[book.id]||null):'';
-    if(before!==after)changed=true;
-  }
-  return changed;
-}
-async function bookCloudRefresh(session){
-  if(!sb||typeof sb.from!=='function')return;
-  const listed=await sb.from('book_cloud').select('book_id,title,author,kind,status,tombstone,byte_size');
-  const placed=await sb.from('positions').select('book_id,data');
-  if(!bookCloudCurrent(session))return;
-  bookCloudCatalog=listed&&listed.data||[];
-  bookCloudStorePositionRows(placed&&placed.data);
-  if(typeof renderAllBookViews==='function')renderAllBookViews();
-}
-/* Home can stay visible for a long time. One positions read copies a newer
-   locator into the local place and repaints that percent. An open book keeps
-   the place it already applied. */
-async function bookCloudRefreshPlaces(){
-  if(!bookCloudEnabled()||!bookCloudUserId())return false;
-  if(typeof navigator!=='undefined'&&navigator.onLine===false)return false;
-  const session=bookCloudSession();
-  const placed=await bookCloudReadPositionRows();
-  if(!bookCloudCurrent(session)||!placed)return false;
-  if(typeof curBook!=='undefined'&&curBook)return false;
-  if(typeof activeAppView==='function'&&activeAppView()==='read')return false;
-  const changed=bookCloudStorePositionRows(placed.data);
-  if(changed&&typeof activeAppView==='function'&&activeAppView()==='home'&&typeof renderHome==='function'&&!(typeof curBook!=='undefined'&&curBook))renderHome();
-  return changed;
 }
 function bookCloudReaderHoldsPlace(book){
   return !!(book&&typeof curBook!=='undefined'&&curBook===book&&typeof savedPlaceReleased==='function'&&savedPlaceReleased());
 }
-function bookCloudAdoptPosition(hash,locator){
-  if(!locator||typeof books==='undefined'||typeof positions==='undefined')return;
-  const book=books.find(item=>bookCloudHash(item)===hash);
-  if(!book||book.id===bookCloudRevealQuiet||!bookCloudPreferRemote(positions[book.id],locator))return;
-  if(bookCloudReaderHoldsPlace(book))return;
-  positions[book.id]={...bookCloudLocator(locator)};
+function bookCloudApplyLatest(book,show){
+  if(!book||typeof positions==='undefined')return false;
+  const hash=bookCloudHash(book);
+  const latest=hash?bookCloudLatestRemote(hash):null;
+  if(!latest)return false;
+  const local=positions[book.id];
+  if(local&&bookCloudReadAt(local)>=latest.readAt)return false;
+  if(bookCloudReaderHoldsPlace(book))return false;
+  const locator=bookCloudLocator(latest.locator);
+  if(!bookCloudReadAt(locator))locator.t=latest.readAt;
+  positions[book.id]=locator;
   if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
-  bookCloudShowAdopted(book);
+  if(show)bookCloudShowAdopted(book);
+  return true;
 }
 function bookCloudShowAdopted(book){
-  if(!book||book.id===bookCloudRevealQuiet)return;
+  if(!book)return;
   if(typeof curBook==='undefined'||curBook!==book)return;
   if(bookCloudReaderHoldsPlace(book))return;
   if(typeof readerPositionPending==='function'&&readerPositionPending())return;
   if(typeof pdfRestoreOwnsPosition==='function'&&pdfRestoreOwnsPosition())return;
   if(typeof epubRestoreOwnsPosition==='function'&&epubRestoreOwnsPosition())return;
   if(typeof textRestoreOwnsPosition==='function'&&textRestoreOwnsPosition())return;
-  const position=positions[book.id];
+  const position=typeof positions!=='undefined'?positions[book.id]:null;
   if(!position)return;
   if(position.mode==='original'&&position.original&&typeof switchReaderMode==='function'){
     void switchReaderMode('original',{initial:true});
@@ -307,84 +315,89 @@ function bookCloudShowAdopted(book){
   if(typeof restoreAnchor==='function'&&restoreAnchor(position))return;
   if(typeof readerScrollTo==='function')readerScrollTo(position.y||0);
 }
-/* A linked open copies a newer locator before the first paint, including when
-   this device already has a page. A locator already fetched is written first,
-   then one short read can replace it. If that read is slow, the book opens at
-   the place already stored and the late reply is kept for the next open. */
-function bookCloudRememberHead(row){
-  if(!row||!row.book_id)return null;
-  const data=row.data||{};
-  bookCloudHeads[row.book_id]={revision:data.revision||'',locator:data.locator||null};
-  return data.locator||null;
+function bookCloudStorePositionRows(rows){
+  let changed=false;
+  const seen=[];
+  for(const row of rows||[]){
+    if(!row||!row.book_id)continue;
+    const locator=row.locator||(row.data&&row.data.locator)||null;
+    if(!locator)continue;
+    const device=String(row.device_id||row.deviceId||(row.data&&row.data.device_id)||'legacy');
+    bookCloudRememberDevice(row.book_id,device,locator,row.read_at!=null?row.read_at:row.readAt);
+    if(!seen.includes(row.book_id))seen.push(row.book_id);
+  }
+  if(typeof books==='undefined')return changed;
+  for(const hash of seen){
+    const book=books.find(item=>bookCloudHash(item)===hash);
+    if(book&&bookCloudApplyLatest(book,true))changed=true;
+  }
+  return changed;
+}
+async function bookCloudRefresh(session){
+  if(!sb||typeof sb.from!=='function')return;
+  const listed=await sb.from('book_cloud').select('book_id,title,author,kind,status,tombstone,byte_size');
+  const placed=await bookCloudReadPositionRows();
+  if(!bookCloudCurrent(session))return;
+  bookCloudCatalog=listed&&listed.data||[];
+  bookCloudStorePositionRows(placed&&placed.data);
+  if(typeof renderAllBookViews==='function')renderAllBookViews();
+}
+/* Home and the library keep a fresh copy of every device's place. An open
+   book jumps only when that copy is newer and this device has not moved. */
+async function bookCloudRefreshPlaces(){
+  if(!bookCloudEnabled()||!bookCloudUserId())return false;
+  if(typeof navigator!=='undefined'&&navigator.onLine===false)return false;
+  const session=bookCloudSession();
+  const placed=await bookCloudReadPositionRows();
+  if(!bookCloudCurrent(session)||!placed)return false;
+  const changed=bookCloudStorePositionRows(placed.data);
+  if(changed&&typeof activeAppView==='function'&&activeAppView()==='home'&&typeof renderHome==='function'&&!(typeof curBook!=='undefined'&&curBook))renderHome();
+  return changed;
 }
 async function bookCloudReadPositionRows(){
   if(!sb||typeof sb.from!=='function')return null;
   try{
-    const query=sb.from('positions');
-    if(query&&typeof query.select==='function')return await query.select('book_id,data');
+    const query=sb.from('book_device_positions');
+    if(query&&typeof query.select==='function')return await query.select('book_id,device_id,locator,read_at');
     if(query&&typeof query.then==='function')return await query;
   }catch(error){}
   return null;
 }
-function bookCloudWriteLocator(book,locator){
-  if(!book||typeof positions==='undefined'||!bookCloudPreferRemote(positions[book.id],locator))return false;
-  positions[book.id]={...bookCloudLocator(locator)};
-  if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
-  return true;
-}
+/* The cached place is applied before the first paint. A reply that arrives
+   after the book is open jumps only when this device has not moved yet. */
 async function bookCloudPositionBeforeOpen(book){
   if(!bookCloudEnabled()||typeof positions==='undefined'||!book)return;
   const hash=bookCloudHash(book);
   if(!hash||!(book.bookCloudLink&&book.bookCloudLink.on))return;
-  const head=bookCloudHeads[hash];
-  if(head)bookCloudWriteLocator(book,head.locator);
-  if(!bookCloudUserId()){
-    if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
-    return;
-  }
+  bookCloudApplyLatest(book,false);
+  if(!bookCloudUserId())return;
   const session=bookCloudSession();
-  let timer=0;
-  const read=bookCloudReadPositionRows();
-  const winner=await Promise.race([
-    Promise.resolve(read).then(value=>({value})).catch(()=>({value:null})),
-    new Promise(resolve=>{timer=setTimeout(()=>resolve({timeout:true}),400);})
-  ]);
-  clearTimeout(timer);
-  if(!bookCloudCurrent(session))return;
-  const locatorFor=rows=>{
-    const list=rows&&rows.data||[];
-    for(const row of list){
-      if(row&&row.book_id===hash)return bookCloudRememberHead(row);
-    }
-    return null;
-  };
-  if(winner.timeout){
-    bookCloudRevealQuiet=book.id;
-    void Promise.resolve(read).then(rows=>{
-      if(bookCloudCurrent(session))locatorFor(rows);
-    }).catch(()=>{});
-    return;
-  }
-  const locator=locatorFor(winner.value);
-  if(locator)bookCloudWriteLocator(book,locator);
-  if(bookCloudRevealQuiet===book.id)bookCloudRevealQuiet=null;
+  void Promise.resolve(bookCloudReadPositionRows()).then(rows=>{
+    if(!bookCloudCurrent(session)||!rows)return;
+    bookCloudStorePositionRows(rows.data||[]);
+  }).catch(()=>{});
+}
+function bookCloudPositionToken(){
+  return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2);
 }
 function bookCloudQueuePosition(book){
-  if(!bookCloudEnabled())return;
+  if(!bookCloudEnabled())return false;
   const userId=bookCloudUserId();
-  if(!book||!userId||!(book.bookCloudLink&&book.bookCloudLink.on))return;
+  if(!book||!userId||!(book.bookCloudLink&&book.bookCloudLink.on))return false;
   const bookId=bookCloudHash(book);
-  if(!bookId||typeof positions==='undefined'||!positions[book.id])return;
+  if(!bookId||typeof positions==='undefined'||!positions[book.id])return false;
   const box=bookCloudReadOutbox(userId);
-  if(box.removes[bookId])return;
+  if(box.removes[bookId])return false;
   const locator=bookCloudLocator(positions[book.id]);
-  const head=bookCloudHeads[bookId];
-  if(head&&bookCloudPreferRemote(positions[book.id],head.locator)&&!bookCloudReaderHoldsPlace(book))return;
-  if(head&&bookCloudSamePlace(head.locator,locator))return;
-  const previous=box.positions[bookId];
-  if(previous&&bookCloudSamePlace(previous.locator,locator))return;
-  box.positions[bookId]={base:previous?previous.base:(head&&head.revision||null),revision:(previous&&previous.revision)||(crypto.randomUUID?crypto.randomUUID():String(Date.now())),locator};
+  if(bookCloudAdoptedWithoutReading(bookId,locator))return false;
+  const pending=box.positions[bookId];
+  if(pending&&bookCloudSamePlace(pending.locator,locator))return false;
+  const mine=bookCloudDeviceId();
+  const own=bookCloudDevices[bookId]&&bookCloudDevices[bookId][mine];
+  if(!pending&&own&&bookCloudSamePlace(own.locator,locator)&&bookCloudWhen(own)===bookCloudReadAt(locator))return false;
+  box.positions[bookId]={deviceId:mine,locator,token:bookCloudPositionToken()};
   bookCloudWriteOutbox(userId,box);
+  return true;
 }
 /* Forget writes the outbox while a pass is awaiting. Re-read at the end and
    remove only the keys this pass finished, so that write is not replaced. */
@@ -394,7 +407,8 @@ function bookCloudCommitOutbox(userId,done){
   for(const bookId of done.removes)delete latest.removes[bookId];
   for(const bookId of Object.keys(done.positions)){
     const entry=latest.positions[bookId];
-    if(entry&&entry.revision===done.positions[bookId])delete latest.positions[bookId];
+    const token=entry&&(entry.token||entry.revision);
+    if(entry&&token===done.positions[bookId])delete latest.positions[bookId];
   }
   bookCloudWriteOutbox(userId,latest);
 }
@@ -425,13 +439,13 @@ async function syncBookCloud(){
       const entry=box.positions[bookId];
       const row=bookCloudCatalog.find(item=>item&&item.book_id===bookId);
       if(!linkedNow.has(bookId)&&row&&row.status!=='pending'&&row.status!=='ready'){
-        done.positions[bookId]=entry&&entry.revision;
+        done.positions[bookId]=entry&&(entry.token||entry.revision);
         delete box.positions[bookId];
         continue;
       }
       const sent=await bookCloudSendPosition(bookId,entry,session);
-      if(sent==='ok'||sent==='conflict'||sent==='gone'){
-        done.positions[bookId]=entry&&entry.revision;
+      if(sent==='ok'||sent==='gone'){
+        done.positions[bookId]=entry&&(entry.token||entry.revision);
         delete box.positions[bookId];
       }
     }
@@ -454,26 +468,50 @@ function flushBookCloud(){
   bookCloudFlight=flight;
   return flight;
 }
+function bookCloudHasPendingPosition(){
+  const userId=bookCloudUserId();
+  if(!userId)return false;
+  const box=bookCloudReadOutbox(userId);
+  return !!(box.positions&&Object.keys(box.positions).length);
+}
+function bookCloudFlushPosition(force){
+  clearTimeout(bookCloudTimer);
+  bookCloudTimer=0;
+  const due=!bookCloudUploadedAt||Date.now()-bookCloudUploadedAt>=BOOK_CLOUD_POSITION_GAP;
+  const run=()=>{
+    bookCloudTimer=0;
+    bookCloudUploadedAt=Date.now();
+    void flushBookCloud();
+  };
+  if(force||due)run();
+  else bookCloudTimer=setTimeout(run,BOOK_CLOUD_POSITION_GAP-(Date.now()-bookCloudUploadedAt));
+}
 function scheduleBookCloudPosition(){
   if(!bookCloudEnabled())return;
   const book=typeof curBook!=='undefined'?curBook:null;
   bookCloudQueuePosition(book);
   if(!book||!bookCloudUserId()||!(book.bookCloudLink&&book.bookCloudLink.on)||!bookCloudHash(book))return;
-  clearTimeout(bookCloudTimer);
-  bookCloudTimer=0;
-  if(bookCloudLeaveNow)return;
-  if(typeof document!=='undefined'&&document.hidden){
-    void flushBookCloud();
-    return;
-  }
-  bookCloudTimer=setTimeout(()=>{bookCloudTimer=0;void syncBookCloud();},1500);
+  if(!bookCloudHasPendingPosition())return;
+  const leaving=bookCloudLeaveNow||(typeof document!=='undefined'&&document.hidden);
+  bookCloudFlushPosition(leaving);
+}
+function bookCloudNativeHold(phase){
+  try{
+    const handler=typeof window!=='undefined'&&Reflect.get(window,'webkit')?.messageHandlers?.breezePositionSync;
+    if(handler&&typeof handler.postMessage==='function')handler.postMessage({phase});
+  }catch(error){}
 }
 function bookCloudPublishLeave(){
   if(!bookCloudEnabled())return Promise.resolve(false);
   bookCloudLeaveNow=true;
+  bookCloudNativeHold('begin');
   try{if(typeof saveReadingState==='function')saveReadingState();}
   finally{bookCloudLeaveNow=false;}
-  return flushBookCloud();
+  const finished=Promise.resolve(flushBookCloud()).then(()=>{
+    if(!bookCloudHasPendingPosition())return false;
+    return flushBookCloud();
+  });
+  return finished.finally(()=>bookCloudNativeHold('end'));
 }
 if(typeof document!=='undefined'&&typeof document.addEventListener==='function'){
   document.addEventListener('visibilitychange',()=>{if(document.hidden)void bookCloudPublishLeave();});
@@ -835,7 +873,7 @@ async function bookCloudImportRemote(row,session,options){
   }
   await bookCloudDropPart(key);
   bookCloudShowManual(row.bookId, false);
-  if(row.locator&&typeof positions!=='undefined'&&bookCloudPreferRemote(positions[target.id],row.locator)){
+  if(row.locator&&typeof positions!=='undefined'&&(!positions[target.id]||bookCloudReadAt(row.locator)>bookCloudReadAt(positions[target.id]))){
     positions[target.id]={...bookCloudLocator(row.locator)};
     if(typeof save==='function')save(LS_POS,positions);
   }
