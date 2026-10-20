@@ -497,8 +497,7 @@ function scheduleBookCloudPosition(){
 }
 function bookCloudNativeHold(phase){
   try{
-    const handlers=typeof window!=='undefined'&&window.webkit&&window.webkit.messageHandlers;
-    const handler=handlers&&handlers.breezePositionSync;
+    const handler=typeof window!=='undefined'&&Reflect.get(window,'webkit')?.messageHandlers?.breezePositionSync;
     if(handler&&typeof handler.postMessage==='function')handler.postMessage({phase});
   }catch(error){}
 }
