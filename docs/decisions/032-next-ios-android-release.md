@@ -111,6 +111,14 @@ counters move from 295 to 296. The cloud bootstrap still replaces that baseline
 with `CI_BUILD_NUMBER`. Android `versionName` follows the same release. The
 checked-in Play version code stays 2.
 
+## Marketing version 1.9.6 (2026-10-20)
+
+App and Share Debug/Release `MARKETING_VERSION` move to 1.9.6, and their
+counters move from 296 to 297. The cloud bootstrap still replaces that baseline
+with `CI_BUILD_NUMBER`. Android `versionName` follows the same release. The
+checked-in Play version code stays 2. The last uploaded TestFlight build is 317;
+Xcode Cloud assigns the next counter, so this baseline is not that upload number.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports
