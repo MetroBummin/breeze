@@ -333,7 +333,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
  await page.evaluate(()=>{qaHidden=true;document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await page.locator('#onboard-carousel video[src]').evaluate(v=>v.paused),true);
  await page.evaluate(()=>{qaHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>!document.querySelector('#onboard-carousel video[src]').paused);
- await page.locator('#onboard-carousel').press('Space');assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
+ await page.locator('#onboard-carousel').press('Space');await page.waitForFunction(()=>{const img=document.querySelector('.onboard-slide:not([hidden]) img');if(!img)return false;const r=img.getBoundingClientRect();return getComputedStyle(img).display!=='none'&&r.width>0&&r.height>0;},null,{timeout:5000});assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
  await page.locator('#onboard-carousel').press('Space');await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
  assert.equal(await page.locator('#onboard-carousel video[src]').count(),2,'media retained beyond active and next scene');
  assert.equal(await page.locator('#onboard-carousel video[src]').evaluateAll(vs=>vs.some(v=>v.getAttribute('src').includes('word-'))),false,'previous scene decoder retained');
