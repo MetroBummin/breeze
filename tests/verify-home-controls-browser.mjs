@@ -61,21 +61,21 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   assert.equal(await page.locator('#am-close').count(),1,'Add modal has an explicit accessible close action');
   await page.locator('#am-card .am-step.on h2').click();assert.equal(await page.locator('#add-modal').isVisible(),true,'Tapping the sheet content closed it');
   await page.locator('#add-modal').click({position:{x:4,y:4}});await page.locator('#add-modal').waitFor({state:'hidden'});
-  await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-vocab').isVisible(),true);
-  assert.equal((await page.locator('#wordbook-review').innerText()).trim(),'학습하기');
-  assert.equal(await page.locator('.wordbook-brand #btn-export').count(),1);
-  assert.equal(await page.locator('#wordbook-controls #wordbook-add').getAttribute('aria-label'),'단어 추가');
+  await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-memory').isVisible(),true);
+  assert.equal((await page.locator('#memory-last-set-label').innerText()).trim(),'전체 단어');
+  assert.equal(await page.locator('#btn-export').count(),0);
+  assert.equal(await page.locator('#memory-home-controls #memory-add').getAttribute('aria-label'),'단어 추가');
   assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'no additional Memory entry row');
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);
   await page.mouse.move(0,0);
-  const wordbook=await capture(page,['wordbook-home','wordbook-review','wordbook-add']);
+  const wordbook=await capture(page,['memory-home','memory-last-set','memory-add']);
   assert.equal(wordbook[2].style.backgroundColor,dark?'rgba(40, 40, 42, 0.68)':'rgba(255, 255, 255, 0.82)','Wordbook add uses the denser glass fill');
   for(let i=0;i<home.length;i++){
     const expected={...wordbook[i],style:{...wordbook[i].style},highlight:{...wordbook[i].highlight},rect:{...wordbook[i].rect}};
     if(i===2)expected.style.backgroundColor=home[i].style.backgroundColor;
     assert.deepEqual(home[i],expected,`Wordbook/Home mismatch ${width} dark=${dark} slot ${i}`);
   }
-  await page.locator('#wordbook-home').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
+  await page.locator('#memory-home').click();assert.equal(await page.locator('#home-controls #primary-nav').count(),1);
   await page.mouse.move(0,0);
   assert.equal(await page.locator('#set-lang,#set-dark,[data-panel=general]').count(),0);
   await page.locator('#home-resume').click();

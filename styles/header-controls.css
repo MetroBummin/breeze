@@ -9,8 +9,10 @@ html body :is(
   #nav-home.control-circle,
   #nav-vocab,
   #wordbook-home,
+  #memory-home,
   #home-add,
   #wordbook-add,
+  #memory-add,
   #readback,
   #aafab,
   #btn-export,
@@ -68,16 +70,37 @@ html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close)::before,
 html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close)::after{display:none;}
 
 html body #review-close{align-self:flex-start;margin:0 0 12px;}
-html body #wordbook-controls #wordbook-add{background:var(--am-glass-strong);}
+html body :is(#wordbook-controls #wordbook-add,#memory-home-controls #memory-add){background:var(--am-glass-strong);}
 
-/* The edit surface owns the glass. Its button and menu stay clear. */
-html body #study-sets-edit{
+/* The edit surface owns the glass. Share and the menu icon stay clear inside it.
+   A stored set is two 44px targets; 전체 단어 keeps the single share target. */
+html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface{
+  display:block;
+  width:44px;
+  min-width:44px;
+  border-radius:22px;
+}
+html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface.is-pair{
+  width:88px;
+  min-width:88px;
+}
+html body #study-sets-header-actions{
   position:absolute;
   z-index:2;
   top:0;
   right:0;
+  display:flex;
+  height:var(--am-control-size);
+}
+html body :is(#study-sets-share,#study-sets-edit){
+  position:relative;
+  z-index:2;
+  top:auto;
+  right:auto;
   width:var(--am-control-size);
   height:var(--am-control-size);
+  min-width:var(--am-control-size);
+  min-height:var(--am-control-size);
   padding:0;
   border:0;
   border-radius:50%;
@@ -85,7 +108,7 @@ html body #study-sets-edit{
   box-shadow:none;
   color:inherit;
 }
-html body #study-sets-edit:is(:hover,:active){background:transparent;}
+html body :is(#study-sets-share,#study-sets-edit):is(:hover,:active){background:transparent;}
 /* The shared :is() glass rule carries an id, so it outranks a class. Drop the
    blur only while the surface scales; iPhone re-blurs every frame otherwise. */
 html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface.is-morphing{
@@ -95,7 +118,7 @@ html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface.is-morp
 
 /* Center pills. Height stays with the dock row so compact chrome and reader
    notices can still shrink or grow the capsule. */
-html body :is(#home-resume,#wordbook-review,#readpill){
+html body :is(#home-resume,#wordbook-review,#memory-last-set,#readpill){
   border:0;
   border-radius:22px;
   background:var(--am-glass);
@@ -126,7 +149,7 @@ html body :is(#pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modef
 }
 
 html body :is(
-  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#btn-export,
+  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#btn-export,#study-sets-share,
   #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-back,#study-sets-close,#study-sets-edit,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
@@ -140,7 +163,7 @@ html body :is(
   stroke-linejoin:round;
 }
 html body :is(
-  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#btn-export,
+  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#btn-export,#study-sets-share,
   #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-back,#study-sets-close,#study-sets-edit,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
@@ -161,7 +184,7 @@ html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close,#study-sets-d
   height:var(--am-icon-close);
   stroke-width:var(--am-stroke-close);
 }
-html body :is(#home-controls #home-add,#wordbook-add,.library-folder-controls .library-folder-add) svg{
+html body :is(#home-controls #home-add,#wordbook-add,#memory-add,.library-folder-controls .library-folder-add) svg{
   width:var(--am-icon-plus);
   height:var(--am-icon-plus);
   stroke-width:var(--am-stroke-plus);
@@ -179,7 +202,7 @@ html body #nav-vocab svg{
   height:var(--am-icon-mark);
   stroke-width:var(--am-stroke-complex);
 }
-html body :is(#home-controls #nav-home,#wordbook-home,#btn-export,#study-sets-edit,.library-folder-menu>summary) svg{
+html body :is(#home-controls #nav-home,#wordbook-home,#memory-home,#btn-export,#study-sets-share,#study-sets-edit,.library-folder-menu>summary) svg{
   width:var(--am-icon-complex);
   height:var(--am-icon-complex);
   stroke-width:var(--am-stroke-complex);
@@ -196,43 +219,43 @@ html body :is(#pdf-page-button,#pdf-navigation-toggle,#study-sets-edit,.library-
 }
 /* Original house and page drawings. The 60% is on the svg, so a crossing
    stays one weight instead of two translucent strokes stacking darker. */
-html body :is(#nav-home,#wordbook-home,#pdf-page-button,#pdf-navigation-toggle) svg{
+html body :is(#nav-home,#wordbook-home,#memory-home,#pdf-page-button,#pdf-navigation-toggle) svg{
   color:rgb(60,60,67);
   opacity:.6;
 }
-html.dark body :is(#nav-home,#wordbook-home,#pdf-page-button,#pdf-navigation-toggle) svg,
-html body.dark :is(#nav-home,#wordbook-home,#pdf-page-button,#pdf-navigation-toggle) svg{
+html.dark body :is(#nav-home,#wordbook-home,#memory-home,#pdf-page-button,#pdf-navigation-toggle) svg,
+html body.dark :is(#nav-home,#wordbook-home,#memory-home,#pdf-page-button,#pdf-navigation-toggle) svg{
   color:rgb(235,235,245);
 }
 html body :is(#v-memory-set #study-sets-edit,.library-folder-menu>summary) svg circle{r:1.15px;}
 html body .library-folder-menu>summary svg{fill:currentColor;stroke:none;}
 
 html body :is(
-  #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#aafab,#btn-export,
+  #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#aafab,#btn-export,
   #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-close,
   #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   .library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
-  #home-resume,#wordbook-review,#readpill
+  #home-resume,#wordbook-review,#memory-last-set,#readpill
 ):hover{filter:brightness(.98);}
 html body :is(
-  #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#aafab,#btn-export,
+  #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#aafab,#btn-export,
   #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-close,
   #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   .library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
-  #home-resume,#wordbook-review,#readpill
+  #home-resume,#wordbook-review,#memory-last-set,#readpill
 ):active{filter:brightness(.92);}
-html body .study-sets-edit-surface:has(#study-sets-edit:hover){filter:brightness(.98);}
-html body .study-sets-edit-surface:has(#study-sets-edit:active){filter:brightness(.92);}
+html body .study-sets-edit-surface:has(#study-sets-edit:hover,#study-sets-share:hover){filter:brightness(.98);}
+html body .study-sets-edit-surface:has(#study-sets-edit:active,#study-sets-share:active){filter:brightness(.92);}
 
 /* Opening a sheet focuses its close. Pointer and touch focus do not draw a ring. */
 html body :is(
-  #nav-settings,#nav-vocab,#wordbook-home,#home-add,#wordbook-add,#readback,#aafab,#btn-export,
-  #review-close,#vocabulary-test-close,#study-sets-back,#study-sets-close,#study-sets-edit,#study-sets-directory-back,
+  #nav-settings,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#aafab,#btn-export,
+  #review-close,#vocabulary-test-close,#study-sets-back,#study-sets-close,#study-sets-share,#study-sets-edit,#study-sets-directory-back,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
-  .library-folder-add,.library-folder-menu>summary,#home-resume,#wordbook-review,#readpill
+  .library-folder-add,.library-folder-menu>summary,#home-resume,#wordbook-review,#memory-last-set,#readpill
 ):focus:not(:focus-visible){outline:none;}
 
 /* Reader page controls share the same glass as every other Apple Music control.
@@ -263,12 +286,12 @@ html body :is(.pdf-thumbnail-actions,.pdf-thumbnail-more)::before{
 
 @media(prefers-reduced-transparency:reduce){
   html body :is(
-    #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#home-add,#readback,#aafab,#btn-export,
+    #nav-settings,#nav-home.control-circle,#nav-vocab,#wordbook-home,#memory-home,#home-add,#readback,#aafab,#btn-export,
     #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-close,
     #study-sets-dialog #study-sets-back,#v-memory-set #study-sets-back,
     #set-close,#am-close,#ed-close,.task-close,.ap-close,
     .study-sets-edit-surface,.library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
-    #home-resume,#wordbook-review,#readpill,#wordbook-add,#pdf-page-control
+    #home-resume,#wordbook-review,#memory-last-set,#readpill,#wordbook-add,#memory-add,#pdf-page-control
   ){
     background:var(--am-glass-solid);
     backdrop-filter:none;
@@ -276,5 +299,5 @@ html body :is(.pdf-thumbnail-actions,.pdf-thumbnail-more)::before{
   }
 }
 @media(prefers-reduced-motion:reduce){
-  html body :is(#nav-settings,#readback,#aafab,#home-resume,#wordbook-review,.study-sets-edit-surface){transition:none;}
+  html body :is(#nav-settings,#readback,#aafab,#home-resume,#wordbook-review,#memory-last-set,.study-sets-edit-surface){transition:none;}
 }

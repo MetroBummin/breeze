@@ -25,7 +25,7 @@ const studySetsUI={
   swipeClose:/** @type {null|(()=>void)} */(null),
   releaseClickId:/** @type {number|null} */(null),
   pageOpen:false,transitioning:false,homeScroll:0,detailEditing:false,detailScroll:0,
-  editSlot:/** @type {HTMLElement|null} */(null),editSurface:/** @type {HTMLElement|null} */(null),editOpen:false,editButton:/** @type {HTMLButtonElement|null} */(null),editMenu:/** @type {HTMLElement|null} */(null),editAnimation:/** @type {{cancel:()=>void}|null} */(null),editEpoch:0,
+  editSlot:/** @type {HTMLElement|null} */(null),editSurface:/** @type {HTMLElement|null} */(null),editOpen:false,editButton:/** @type {HTMLButtonElement|null} */(null),shareButton:/** @type {HTMLButtonElement|null} */(null),headerActions:/** @type {HTMLElement|null} */(null),editMenu:/** @type {HTMLElement|null} */(null),editAnimation:/** @type {{cancel:()=>void}|null} */(null),editEpoch:0,exporting:false,
   directoryOrigin:false,directoryDepth:0,directoryScroll:0,vocabScroll:0,createdSetId:'',
   directoryList:/** @type {HTMLElement|null} */(null),
   state:null
@@ -49,7 +49,8 @@ function studySetsIcon(kind){
     for(const x of [5,12,19]){const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('cx',String(x));dot.setAttribute('cy','12');dot.setAttribute('r','1.25');svg.append(dot);}return svg;
   }
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  path.setAttribute('d',kind==='close'?'M6 6l12 12M18 6L6 18':kind==='back'?'M14.5 4.5 7.5 12l7 7.5':kind==='chevron'?'M9 5l7 7-7 7':kind==='remove'?'M6 12h12':'M12 5v14M5 12h14');
+  // share is the former #btn-export glyph: a square with an arrow up.
+  path.setAttribute('d',kind==='close'?'M6 6l12 12M18 6L6 18':kind==='back'?'M14.5 4.5 7.5 12l7 7.5':kind==='chevron'?'M9 5l7 7-7 7':kind==='remove'?'M6 12h12':kind==='share'?'M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2':kind==='menu'?'M5 7h14M5 12h14M5 17h14':'M12 5v14M5 12h14');
   svg.append(path);return svg;
 }
 function studySetsIconButton(label,kind,action){
@@ -65,19 +66,24 @@ function ensureStudySetsDialog(){
   const back=studySetsIconButton('뒤로','back',studySetsBack);back.id='study-sets-back';
   const title=studySetsNode('h2','','학습 세트');title.id='study-sets-title';title.tabIndex=-1;
   const close=studySetsIconButton('학습 세트 닫기','close',()=>closeStudySets());close.id='study-sets-close';
-  const more=studySetsIconButton('세트 편집','more',event=>studySetsToggleEditMenu(event.detail===0));more.id='study-sets-edit';more.hidden=true;more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');
-  const editSlot=studySetsNode('span','study-sets-edit-slot');header.append(back,title,editSlot,close);
+  const actions=studySetsNode('div','study-sets-header-actions');actions.id='study-sets-header-actions';
+  const share=studySetsIconButton('보이는 단어를 공유','share',()=>{void studySetsShareVisible();});share.id='study-sets-share';share.hidden=true;
+  const more=studySetsIconButton('세트 편집','menu',event=>studySetsToggleEditMenu(event.detail===0));more.id='study-sets-edit';more.hidden=true;more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');
+  actions.append(share,more);
+  const editSlot=studySetsNode('span','study-sets-edit-slot');
+  const tools=studySetsNode('div','study-set-tools');tools.id='study-set-tools';tools.hidden=true;
+  header.append(back,title,editSlot,close,tools);
   const error=studySetsNode('div','study-sets-error');error.id='study-sets-error';error.hidden=true;error.setAttribute('role','alert');
   const body=studySetsNode('div','study-sets-body');body.id='study-sets-content';
   const footer=studySetsNode('footer','study-sets-footer');footer.hidden=true;
   sheet.addEventListener('keydown',event=>{if(studySetsUI.pageOpen)event.stopPropagation();});
   const editMenu=studySetsNode('div','study-sets-edit-menu');editMenu.id='study-sets-edit-menu';editMenu.hidden=true;editMenu.setAttribute('role','menu');editMenu.setAttribute('aria-label','세트 편집');more.setAttribute('aria-controls',editMenu.id);
   for(const [label,screen] of [['이름 변경','rename'],['책 추가','books'],['세트 삭제','delete']]){
-    const action=studySetsButton(label,()=>{studySetsCloseEditMenu(false,true);studySetsUI.detailScroll=body.scrollTop;studySetsUI.detailEditing=true;studySetsGo(screen);},screen==='delete'?'study-sets-danger-link':'');action.setAttribute('role','menuitem');action.tabIndex=-1;editMenu.append(action);
+    const action=studySetsButton(label,()=>{studySetsCloseEditMenu(false,true);studySetsUI.detailScroll=body.scrollTop;studySetsUI.detailEditing=true;studySetsGo(screen);},screen==='delete'?'study-sets-danger-link':'');action.dataset.action=screen;action.setAttribute('role','menuitem');action.tabIndex=-1;editMenu.append(action);
   }
-  const editSurface=studySetsNode('div','study-sets-edit-surface');editSurface.id='study-sets-edit-surface';editSurface.hidden=true;editSurface.append(more,editMenu);
+  const editSurface=studySetsNode('div','study-sets-edit-surface');editSurface.id='study-sets-edit-surface';editSurface.hidden=true;editSurface.append(actions,editMenu);
   sheet.append(header,error,body,footer,editSurface);dialog.append(sheet);document.body.append(dialog);
-  Object.assign(studySetsUI,{dialog,sheet,body,footer,error,title,back,editButton:more,editMenu,editSurface,editSlot});
+  Object.assign(studySetsUI,{dialog,sheet,body,footer,error,title,back,editButton:more,shareButton:share,headerActions:actions,editMenu,editSurface,editSlot});
   body.addEventListener('scroll',()=>{studySetsCloseEditMenu(false,true);if(studySetsUI.directoryOrigin&&studySetsUI.screen==='directory'){studySetsUI.directoryScroll=body.scrollTop;studySetsDirectoryPositions.set(studySetsUI.historyToken,body.scrollTop);}});
   let backdropDown=false;
   dialog.addEventListener('pointerdown',event=>{backdropDown=event.target===dialog;});
@@ -132,6 +138,81 @@ function studySetsListSummary(set){
   const total=session?.queue.length||0,completed=session?.index||0;
   return {active,total,completed,status:session?(completed<total?'active':'complete'):active?'idle':'empty'};
 }
+function studySetsStarBucket(status){const value=Number(status);return value===2||value===3?value:1;}
+function studySetsStarCounts(){return {words:0,1:0,2:0,3:0};}
+function studySetsCountStar(counts,status){counts.words++;counts[studySetsStarBucket(status)]++;}
+function studySetsGroupedStarStats(cards){
+  const counts=studySetsStarCounts();
+  for(const group of BreezeStudySets.groupedCards(cards))studySetsCountStar(counts,group.status);
+  return counts;
+}
+function studySetsFillMeta(node,counts){
+  node.append(document.createTextNode(`단어 ${counts.words}`));
+  for(const level of [1,2,3]){
+    node.append(document.createTextNode(' · '));
+    const star=studySetsNode('span','study-sets-home-star','★'.repeat(level));star.dataset.s=String(level);
+    node.append(star,document.createTextNode(` ${counts[level]}`));
+  }
+}
+// Last study time already lives on a set session. 전체 단어's simple session
+// stores outcomes without timestamps, so that card omits the clock.
+function studySetsLastStudiedAt(set){
+  let latest=0;
+  const take=session=>{
+    if(!session)return;
+    if(Number.isFinite(session.startedAt))latest=Math.max(latest,session.startedAt);
+    for(const answer of session.answers||[])if(Number.isFinite(answer.at))latest=Math.max(latest,answer.at);
+  };
+  take(set?.session);
+  for(const session of set?.archivedSessions||[])take(session);
+  return latest;
+}
+function studySetsRelativeTime(at,now=Date.now()){
+  if(!at)return '';
+  const delta=Math.max(0,now-at),minute=60000,hour=3600000,day=86400000;
+  if(delta<minute)return '방금';
+  if(delta<hour)return `${Math.floor(delta/minute)}분 전`;
+  if(delta<day)return `${Math.floor(delta/hour)}시간 전`;
+  if(delta<30*day)return `${Math.floor(delta/day)}일 전`;
+  const date=new Date(at);
+  return `${date.getMonth()+1}월 ${date.getDate()}일`;
+}
+function studySetsBookBadge(set,cards){
+  const counts=new Map();
+  for(const group of BreezeStudySets.groupedCards(cards)){
+    const book=typeof group.book==='string'?group.book.trim():'';
+    if(book)counts.set(book,(counts.get(book)||0)+1);
+  }
+  if(!counts.size)return '';
+  const order=Array.isArray(set?.bookTitles)?set.bookTitles:[];
+  const ranked=[...counts.entries()].sort((a,b)=>{
+    if(b[1]!==a[1])return b[1]-a[1];
+    const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]);
+    return (ai<0?order.length:ai)-(bi<0?order.length:bi)||a[0].localeCompare(b[0],'ko');
+  });
+  return {name:ranked[0][0],extra:ranked.length-1};
+}
+function studySetsAppendBadge(button,badge){
+  const node=studySetsNode('span','study-sets-home-badge');
+  if(typeof badge==='string')node.textContent=badge;
+  else{
+    const chars=[...badge.name],tail=chars.length>1?Math.min(6,Math.floor(chars.length/2)):0;
+    const title=studySetsNode('span','study-sets-home-badge-title');
+    title.append(studySetsNode('span','study-sets-home-badge-start',chars.slice(0,chars.length-tail).join('')),studySetsNode('span','study-sets-home-badge-end',chars.slice(chars.length-tail).join('')));
+    node.append(title);
+    if(badge.extra>0)node.append(studySetsNode('span','study-sets-home-badge-more',` 외 ${badge.extra}권`));
+  }
+  button.append(node);
+}
+function studySetsClockIcon(){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx','12');circle.setAttribute('cy','12');circle.setAttribute('r','8');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M12 8v4.5l3 2');
+  svg.append(circle,path);return svg;
+}
 async function renderStudySetsHome(state=null){
   const epoch=++studySetsHomeEpoch;let readError;
   if(!state){try{state=await loadStudySets();}catch(error){readError=error;}}
@@ -139,29 +220,34 @@ async function renderStudySetsHome(state=null){
   const container=studySetsUI.directoryList||document.getElementById('study-sets-home-list');if(!container)return;studySetsUI.directoryList=container;
   const focused=document.activeElement instanceof HTMLElement&&container.contains(document.activeElement)?document.activeElement:null;
   const list=studySetsNode('ul','study-sets-home-cards');list.setAttribute('aria-label','Memory 단어장과 학습 세트');
-  const card=(title,description,action,kind='chevron')=>{
+  const card=(title,action,options={})=>{
     const item=studySetsNode('li');const button=studySetsButton('',action,'study-sets-home-card');
     const copy=studySetsNode('span','study-sets-home-copy');
-    copy.append(studySetsNode('strong','',title));if(description)copy.append(studySetsNode('span','study-sets-home-caption',description));
-    button.append(copy,studySetsIcon(kind));item.append(button);list.append(item);return button;
+    copy.append(studySetsNode('strong','',title));
+    if(options.studied){const studied=studySetsNode('span','study-sets-home-studied');studied.append(studySetsClockIcon(),document.createTextNode(options.studied));copy.append(studied);}
+    button.append(copy);
+    if(options.counts){const caption=studySetsNode('span','study-sets-home-caption');studySetsFillMeta(caption,options.counts);button.append(caption);}
+    if(options.badge)studySetsAppendBadge(button,options.badge);
+    if(options.add)button.append(studySetsIcon('add'));
+    item.append(button);list.append(item);return button;
   };
-  // Match the existing wordbook's grouped count; its search/filter state stays
-  // with renderVocab and is neither copied nor reset by the directory.
-  const count=new Set(Object.entries(words).filter(([,item])=>validWordMeaning(item)).map(([key,item])=>item.root||key)).size;
-  const all=card('전체 단어',`${count}개`,openStudySetsAllWords);all.id='study-sets-all';all.classList.add('study-sets-home-default');
+  // Match the list the set page actually shows: one row per word, not per sense.
+  const catalog=studySetsAllWordsGroups(),allCounts=studySetsStarCounts();
+  for(const group of catalog.values)studySetsCountStar(allCounts,group[0][1].status);
+  const all=card('전체 단어',openStudySetsAllWords,{badge:'기본',counts:allCounts});all.id='study-sets-all';
   if(readError){
     const notice=studySetsNode('div','study-sets-home-error');notice.setAttribute('role','alert');
     notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',()=>renderStudySetsHome()));
     const item=studySetsNode('li');item.append(notice);list.append(item);
   }
   for(const set of state?.sets||[]){
-    const view=studySetsListSummary(set),active=view.active;
-    const progress=view.status==='active'?` · ${view.completed}/${view.total}`:'';
-    const button=card(set.name,`${active}개${progress}`,()=>openStudySet(set.id));
+    const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
+    const studiedAt=studySetsLastStudiedAt(set);
+    const button=card(set.name,()=>openStudySet(set.id),{badge:studySetsBookBadge(set,listed),counts:studySetsGroupedStarStats(listed),studied:studiedAt?studySetsRelativeTime(studiedAt):''});
     button.dataset.setId=set.id;
     button.setAttribute('aria-controls','v-memory-set');
   }
-  const create=card('세트 추가','',openStudySetsCreate,'add');
+  const create=card('세트 추가',openStudySetsCreate,{add:true});
   create.id='study-sets-home-create';create.setAttribute('aria-label','새 학습 세트');create.classList.add('study-sets-home-add');create.disabled=!state;
   create.setAttribute('aria-haspopup','dialog');create.setAttribute('aria-controls','study-sets-dialog');
   container.replaceChildren(list);
@@ -169,57 +255,135 @@ async function renderStudySetsHome(state=null){
     const replacement=focused.dataset.setId?[...list.querySelectorAll('[data-set-id]')].find(item=>item.dataset.setId===focused.dataset.setId):document.getElementById(focused.id);
     if(replacement instanceof HTMLElement)replacement.focus({preventScroll:true});
   }
+  refreshMemoryLastSetButton(state);
 }
 function studySetsCloseEditMenu(focus=false,immediate=false){
   studySetsSetEditMenu(false,focus,immediate);
 }
 function studySetsToggleEditMenu(focus=false){studySetsSetEditMenu(!studySetsUI.editOpen,focus);}
+function studySetsEditItems(){return [...(studySetsUI.editMenu?.querySelectorAll('button')||[])].filter(item=>!item.hidden);}
+function studySetsPillBox(){return {width:studySetsUI.editButton?.hidden?44:88,height:44};}
+function studySetsNormalizeStars(raw){
+  if(!Array.isArray(raw))return [];
+  const stars=[];
+  for(const value of raw)if([1,2,3].includes(value)&&!stars.includes(value))stars.push(value);
+  return stars.sort((a,b)=>a-b);
+}
+function studySetsChosenStars(){
+  if(typeof wordbookStars==='undefined'||!wordbookStars||typeof wordbookStars.has!=='function'||!wordbookStars.size)return [];
+  return [1,2,3].filter(level=>wordbookStars.has(level));
+}
+function studySetsStarsKey(stars){return studySetsNormalizeStars(stars).join(',');}
+function studySetsFilteredGroups(set,stars){
+  const grouped=BreezeStudySets.groupedCards(BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words));
+  const chosen=studySetsNormalizeStars(stars);
+  return chosen.length?grouped.filter(card=>chosen.includes(card.status||1)):grouped;
+}
+function studySetsFilteredStudyKeys(stars){
+  const chosen=studySetsNormalizeStars(stars);
+  // The list is newest-first. A study round keeps the first saved meaning of
+  // each visible word, in vocabulary order: the same representative Simple Study
+  // uses, so grouped answers stay attached to that word.
+  const visible=new Set(studySetsAllWordsGroups().values
+    .filter(group=>!chosen.length||chosen.includes(group[0][1].status||1))
+    .map(group=>group[0][1].root||group[0][0]));
+  const representatives=[],seen=new Set();
+  for(const key of Object.keys(words||{})){
+    const item=words[key];
+    if(!item||!validWordMeaning(item)||typeof item.word!=='string'||!item.word.trim())continue;
+    const root=item.root||key;
+    if(seen.has(root))continue;
+    seen.add(root);
+    if(visible.has(root))representatives.push(key);
+  }
+  return representatives;
+}
+function studySetsVisibleExportRecords(){
+  if(studySetsUI.screen==='all')return studySetsAllWordsVisible().entries.map(([,item])=>({word:item.word,ko:item.ko||'',defs:item.defs||[],example:item.example||'',status:item.status,book:item.book||'',addedAt:item.addedAt}));
+  const set=studySetsUI.state?.sets.find(item=>item.id===studySetsUI.setId);
+  if(!set)return [];
+  return studySetsFilteredGroups(set,studySetsChosenStars()).flatMap(card=>(card.senses||[card]).map(sense=>{
+    const saved=typeof words==='object'&&words?words[sense.key]:null;
+    return {word:sense.word,ko:sense.ko||'',defs:Array.isArray(saved?.defs)?saved.defs:[],example:sense.example||'',status:sense.status,book:sense.book||'',addedAt:sense.addedAt};
+  }));
+}
+async function studySetsShareVisible(){
+  if(studySetsUI.editOpen)studySetsCloseEditMenu(false,true);
+  const button=studySetsUI.shareButton;
+  if(!button||button.disabled||studySetsUI.exporting)return;
+  studySetsUI.exporting=true;button.disabled=true;
+  let restore=false;
+  try{
+    const list=studySetsVisibleExportRecords();
+    if(!list.length){if(typeof toast==='function')toast('내보낼 단어가 없어요');return;}
+    restore=!!(await deliverVocabularyCsv(vocabularyCsv(list)));
+  }catch(error){if(error?.name!=='AbortError'&&typeof toast==='function')toast('단어장을 내보내지 못했어요. 다시 시도해 주세요.');}
+  finally{
+    studySetsUI.exporting=false;
+    if(button.isConnected)button.disabled=false;
+    if(restore&&button.isConnected)button.focus({preventScroll:true});
+  }
+}
 function studySetsSetEditMenu(open,focus=false,immediate=false){
-  const ui=studySetsUI,panel=ui.editMenu,button=ui.editButton,surface=ui.editSurface;
-  if(!panel||!button||!surface||open&&(ui.screen!=='detail'||!ui.pageOpen||button.hidden))return;
+  const ui=studySetsUI,panel=ui.editMenu,button=ui.editButton,surface=ui.editSurface,actions=ui.headerActions,share=ui.shareButton;
+  if(!panel||!button||!surface||!actions||open&&(ui.screen!=='detail'||!ui.pageOpen||button.hidden))return;
   if(!open&&panel.hidden&&!ui.editAnimation)return;
   const epoch=++ui.editEpoch;
-  const layoutWidth=surface.offsetWidth;
+  const layoutWidth=surface.offsetWidth||studySetsPillBox().width,layoutHeight=surface.offsetHeight||44;
   ui.editAnimation?.cancel();ui.editAnimation=null;ui.editOpen=open;
   button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'편집 메뉴 닫기':'세트 편집');button.tabIndex=open?-1:0;
+  if(share)share.tabIndex=open?-1:0;
   panel.hidden=false;panel.style.pointerEvents='none';panel.style.opacity='0';
-  const items=[...panel.querySelectorAll('button')];items.forEach(item=>{item.tabIndex=open?0:-1;});
+  const items=studySetsEditItems();items.forEach(item=>{item.tabIndex=open?0:-1;});
   const width=Math.min(236,ui.sheet.clientWidth?ui.sheet.clientWidth-32:236);
   panel.style.width=(width-2)+'px';
   const height=panel.offsetHeight?panel.offsetHeight+2:150;
+  const resting=studySetsPillBox();
   // One layout. iPhone re-blurs a backdrop layer on every width change; iPad can
   // keep up. Scale and opacity stay on the compositor, and the filter is off
   // until the shape settles.
   surface.style.width=width+'px';surface.style.height=height+'px';surface.style.borderRadius='22px';
   surface.style.transformOrigin='100% 0';
+  const fadeIcons=shown=>{
+    const value=shown?'':'0';
+    actions.style.opacity=value;button.style.opacity=value;if(share)share.style.opacity=value;
+    // The menu button stays a target. A touch that opened the menu also emits
+    // a second click, and that click must not fall through onto 이름 변경.
+    button.style.pointerEvents='';if(share)share.style.pointerEvents=shown?'':'none';
+  };
   const finish=()=>{
     if(epoch!==ui.editEpoch)return;
     ui.editAnimation?.cancel();ui.editAnimation=null;surface.classList.remove('is-morphing');
-    surface.style.willChange='';surface.style.transform='none';button.style.transform='';
-    if(open){panel.hidden=false;panel.style.pointerEvents='auto';panel.style.opacity='1';button.style.opacity='0';}
-    else{surface.style.width='44px';surface.style.height='44px';surface.style.borderRadius='';panel.hidden=true;panel.style.pointerEvents='none';panel.style.opacity='0';button.style.opacity='1';}
-    button.style.transition='';
+    surface.style.willChange='';surface.style.transform='none';actions.style.transform='';button.style.transform='';
+    if(open){panel.hidden=false;panel.style.pointerEvents='auto';panel.style.opacity='1';fadeIcons(false);}
+    else{
+      const box=studySetsPillBox();
+      surface.style.width=box.width+'px';surface.style.height=box.height+'px';surface.style.borderRadius='22px';
+      surface.classList.toggle('is-pair',box.width===88);ui.editSlot?.classList.toggle('is-pair',box.width===88);
+      panel.hidden=true;panel.style.pointerEvents='none';panel.style.opacity='0';fadeIcons(true);
+    }
+    button.style.transition='';actions.style.transition='';
     if(focus){const targetControl=open?items[0]:button;targetControl?.focus({preventScroll:true});}
   };
   if(immediate||window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches||typeof getComputedStyle!=='function'){finish();return;}
   const previous=getComputedStyle(surface).transform;
   const matrix=previous==='none'?null:new DOMMatrix(previous);
-  let start=matrix?{x:matrix.a,y:matrix.d}:{x:1,y:1};
-  if(!matrix&&layoutWidth<=46)start={x:44/width,y:44/height};
-  const end=open?{x:1,y:1}:{x:44/width,y:44/height};
+  const start=matrix?{x:matrix.a,y:matrix.d}:{x:layoutWidth/width,y:layoutHeight/height};
+  const end=open?{x:1,y:1}:{x:resting.width/width,y:resting.height/height};
   surface.classList.add('is-morphing');surface.style.willChange='transform, opacity';
-  panel.style.transition='none';button.style.transition='none';
+  panel.style.transition='none';button.style.transition='none';actions.style.transition='none';
   const paint=t=>{
     if(epoch!==ui.editEpoch)return;
     const amount=Math.max(0,Math.min(1,t));
     const sx=start.x+(end.x-start.x)*amount,sy=start.y+(end.y-start.y)*amount;
     surface.style.transform=`scale(${sx},${sy})`;
-    // The corner control stays a 44px target. Scaling the shell alone would
-    // shrink it toward the origin and a second tap would miss.
-    button.style.transformOrigin='100% 0';button.style.transform=`scale(${sx?1/sx:1},${sy?1/sy:1})`;
+    // The pill stays at the top-right. Scaling the shell alone would shrink
+    // both icons toward the origin and a second tap would miss.
+    actions.style.transformOrigin='100% 0';actions.style.transform=`scale(${sx?1/sx:1},${sy?1/sy:1})`;
     const menu=open?Math.max(0,Math.min(1,(amount-.78)/.22)):Math.max(0,1-amount/.25);
+    const icons=open?Math.max(0,1-amount/.35):Math.max(0,(amount-.65)/.35);
     panel.style.opacity=String(menu);
-    button.style.opacity=String(open?Math.max(0,1-amount/.35):Math.max(0,(amount-.65)/.35));
+    actions.style.opacity=String(icons);button.style.opacity=String(icons);if(share)share.style.opacity=String(icons);
   };
   paint(0);
   const stop=studySpring(0,1,0,paint,()=>{if(epoch===ui.editEpoch)finish();});
@@ -257,6 +421,30 @@ function openStudySetsAllWords(){
 }
 async function startStudySetsAllWords(){
   replaceStudySetsHistory({studySetsAllWordsScroll:studySetsUI.body.scrollTop});
+  const chosen=studySetsChosenStars();
+  const origin=typeof activeAppView==='function'?activeAppView():'';
+  try{if(typeof loadSimpleStudySession==='function')await loadSimpleStudySession();}
+  catch(error){if(error?.syncCancelled)return;}
+  if(typeof activeAppView==='function'&&activeAppView()!==origin)return;
+  if(typeof SimpleStudySession==='undefined'||typeof commitSimpleStudySession!=='function'){
+    await openVocabularyReview();
+    if(typeof activeAppView==='function'&&activeAppView()==='study')replaceStudySetsHistory({studySetsAllWords:true});
+    return;
+  }
+  const session=typeof ensureSimpleStudySession==='function'?ensureSimpleStudySession():null;
+  const inProgress=!!session&&session.queue.length>0&&session.history.length>0;
+  if(inProgress&&studySetsStarsKey(session.stars)===studySetsStarsKey(chosen)){
+    await openVocabularyReview();
+    if(typeof activeAppView==='function'&&activeAppView()==='study')replaceStudySetsHistory({studySetsAllWords:true});
+    return;
+  }
+  const keys=studySetsFilteredStudyKeys(chosen);
+  if(!keys.length){if(typeof toast==='function')toast('학습할 단어가 없어요');return;}
+  try{
+    const next=SimpleStudySession.start(keys);
+    if(chosen.length)next.stars=chosen;
+    await commitSimpleStudySession(next);
+  }catch(error){if(error?.syncCancelled)return;if(typeof toast==='function')toast('학습을 시작하지 못했어요. 다시 시도해 주세요.');return;}
   await openVocabularyReview();
   if(typeof activeAppView==='function'&&activeAppView()==='study')replaceStudySetsHistory({studySetsAllWords:true});
 }
@@ -325,7 +513,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
   studySetsUI.homeEntry=fromHistory?!!history.state?.studySetsHome:homeEntry;
   studySetsUI.managementEntry=false;
   studySetsUI.notice='';studySetsUI.undo=null;
-  studySetsUI.state=null;studySetsUI.allWordsList?.dispose();studySetsUI.allWordsList=null;studySetsUI.body.replaceChildren();
+  studySetsUI.state=null;studySetsUI.allWordsList?.dispose();studySetsUI.allWordsList=null;studySetsParkSearch();studySetsParkStars();studySetsUI.body.replaceChildren();
   studySetsUI.title.textContent=studySetsUI.screen==='create'?'새 학습 세트':'학습 세트';
   studySetsUI.back.hidden=studySetsUI.screen==='list';
   if(!fromHistory){
@@ -339,7 +527,7 @@ function closeStudySets(fromHistory=false){
   studySetsCloseEditMenu(false,true);
   studySetsUI.swipeClose?.();
   studySetsUI.allWordsList?.dispose();studySetsUI.allWordsList=null;
-  if(studySetsUI.screen==='all')studySetsUI.body.replaceChildren();
+  studySetsParkSearch();studySetsParkStars();if(studySetsUI.screen==='all')studySetsUI.body.replaceChildren();
   studySetsUnlockScroll();
   if(studySetsUI.pageOpen){studySetsUI.pageOpen=false;studySetsReturnHomeFocus();}
   else studySetsUI.dialog.close();
@@ -547,11 +735,11 @@ function studySetsPlaceWordUndo(){
   studySetsUI.footer.hidden=false;
 }
 function studySetsRefreshAllWordsCount(){
-  const catalog=studySetsAllWordsGroups(),caption=studySetsUI.body?.querySelector('.study-sets-caption');
-  if(caption)caption.textContent=`${catalog.values.length}단어 · ${catalog.entries.length}개 뜻 카드`;
+  const visible=studySetsAllWordsVisible(),caption=studySetsUI.body?.querySelector('.study-sets-caption');
+  if(caption)caption.textContent=studySetsAllWordsCaption(visible);
   const list=document.getElementById('study-all-words-list');
   if(!list)return;
-  list.dataset.total=String(catalog.values.length);list.setAttribute('aria-label',`전체 ${catalog.values.length}단어`);
+  list.dataset.total=String(visible.values.length);list.setAttribute('aria-label',visible.query?`검색 결과 ${visible.values.length}단어`:`전체 ${visible.catalog.values.length}단어`);
 }
 function studySetsFinishRowExit(row){
   if(!row.isConnected||!studySetsIsOpen())return;
@@ -559,8 +747,15 @@ function studySetsFinishRowExit(row){
   const focused=row.contains(document.activeElement),next=row.nextElementSibling||row.previousElementSibling;
   const selector=all?'.study-all-words-row':'.study-sets-word-row';
   const empty=()=>{
-    studySetsUI.body.replaceChildren(studySetsEmpty(all?'저장된 단어가 없어요':'세트에 학습할 단어가 없어요',all?'읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.':''));
-    if(all){const start=/** @type {HTMLButtonElement|null} */(document.getElementById('study-all-words-start'));if(start)start.disabled=true;const test=/** @type {HTMLButtonElement|null} */(document.getElementById('study-all-words-test'));if(test)test.disabled=true;}
+    studySetsParkSearch();
+    const message=studySetsEmpty(all?'저장된 단어가 없어요':'세트에 학습할 단어가 없어요',all?'읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.':'');
+    studySetsUI.body.replaceChildren(message);
+    if(all){
+      studySetsPlaceStarFilter();
+      const caption=studySetsNode('p','study-sets-caption',studySetsAllWordsCaption(studySetsAllWordsVisible()));
+      studySetsUI.body.insertBefore(caption,message);
+      const start=/** @type {HTMLButtonElement|null} */(document.getElementById('study-all-words-start'));if(start)start.disabled=true;const test=/** @type {HTMLButtonElement|null} */(document.getElementById('study-all-words-test'));if(test)test.disabled=true;
+    }
   };
   // A windowed list owns indexes and spacers. Drop this row there so offscreen
   // words are not rebuilt, and reuse cached heights instead of remeasuring.
@@ -658,8 +853,12 @@ function renderStudySets(focus=true){
     ui.screen=ui.directoryOrigin?'directory':'list';ui.setId='';ui.notice='이 학습 세트가 삭제되었어요.';
   }
   studySetsAttachSurface();
-  ui.sheet.dataset.screen=ui.screen;ui.editButton.hidden=ui.screen!=='detail'||!ui.pageOpen||!set;ui.editSurface.hidden=ui.editButton.hidden;ui.editSlot.hidden=ui.editButton.hidden;
-  ui.swipeClose?.();ui.allWordsList?.dispose();ui.allWordsList=null;ui.body.classList.remove('study-session-body','study-set-test-body');ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
+  ui.sheet.dataset.screen=ui.screen;
+  const showShare=(ui.screen==='detail'&&!!set||ui.screen==='all')&&ui.pageOpen,showMenu=ui.screen==='detail'&&!!set&&ui.pageOpen;
+  ui.shareButton.hidden=!showShare;ui.editButton.hidden=!showMenu;ui.editSurface.hidden=!showShare;ui.editSlot.hidden=!showShare;
+  ui.editSlot.classList.toggle('is-pair',showMenu);ui.editSurface.classList.toggle('is-pair',showMenu);
+  if(!ui.editOpen){ui.editButton.setAttribute('aria-label','세트 편집');ui.editSurface.style.width=(showMenu?88:44)+'px';ui.editSurface.style.height='44px';ui.editSurface.style.borderRadius='22px';}
+  ui.swipeClose?.();ui.allWordsList?.dispose();ui.allWordsList=null;ui.body.classList.remove('study-session-body','study-set-test-body');studySetsParkSearch();studySetsParkStars();ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
   const titles={all:'전체 단어',directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제','test-setup':'테스트',test:'테스트','test-result':'결과'};
   ui.title.textContent=titles[ui.screen]||set?.name||'학습 세트';
   if(ui.notice){const notice=studySetsNode('p','study-sets-notice',ui.notice);notice.setAttribute('role','status');ui.body.append(notice);}
@@ -698,7 +897,10 @@ function renderStudySets(focus=true){
     else if(nearby instanceof HTMLElement)nearby.focus({preventScroll:true});
     else if(focusedIndex>=0)ui.title.focus({preventScroll:true});
   }
+  studySetsPlaceStarFilter();
   ui.allWordsList?.refresh();
+  if(ui.screen==='all'){if(memoryLastSetId()!=='@all')rememberMemorySet('@all');}
+  else if(ui.screen==='detail'&&set?.id&&memoryLastSetId()!==set.id)rememberMemorySet(set.id);
   if(typeof studySetTestPlaceKeyboard==='function')studySetTestPlaceKeyboard();
   if(typeof studySetTestSyncSystemBack==='function')studySetTestSyncSystemBack();
 }
@@ -720,6 +922,94 @@ function renderStudySetsList(){
   }
   body.append(list);
 }
+const MEMORY_LAST_SET_KEY='breeze.memory-last-set';
+function memoryLastSetId(){try{return localStorage.getItem(MEMORY_LAST_SET_KEY)||'';}catch{return '';}}
+function rememberMemorySet(id){
+  if(!id)return;
+  try{localStorage.setItem(MEMORY_LAST_SET_KEY,id);}catch{}
+  refreshMemoryLastSetButton();
+}
+function refreshMemoryLastSetButton(state=studySetsUI.state){
+  const label=document.getElementById('memory-last-set-label'),button=document.getElementById('memory-last-set');
+  if(!label||!button)return;
+  const id=memoryLastSetId();
+  const set=id&&id!=='@all'&&state?.sets?.find(item=>item.id===id);
+  const name=set?set.name:'전체 단어';
+  label.textContent=name;
+  button.setAttribute('aria-label',set?`${name} 세트로 이동`:'전체 단어로 이동');
+}
+async function openMemoryLastSet(){
+  let state=studySetsUI.state;
+  try{state=await loadStudySets();}catch{state=null;}
+  const id=memoryLastSetId();
+  const set=id&&id!=='@all'&&state?.sets?.find(item=>item.id===id);
+  refreshMemoryLastSetButton(state);
+  if(set)openStudySet(set.id);else openStudySetsAllWords();
+}
+function studySetsParkNode(node){
+  if(!node)return;
+  if(node.parentElement!==document.body)document.body.append(node);
+  node.hidden=true;
+}
+function studySetsParkSearch(){studySetsParkNode(document.getElementById('vocab-search-field'));}
+function studySetsStarFilter(){return document.getElementById('vocab-star-filter')||document.getElementById('vstars');}
+function studySetsParkStars(){
+  studySetsParkNode(studySetsStarFilter());
+  const tools=document.getElementById('study-set-tools');if(tools)tools.hidden=true;
+}
+function studySetsPlaceSearch(host){
+  const field=document.getElementById('vocab-search-field');
+  if(!field||!host)return;
+  field.hidden=false;
+  if(field.parentElement!==host)host.prepend(field);
+}
+function studySetsStatusMatches(status){
+  const stars=typeof wordbookStars!=='undefined'?wordbookStars:null;
+  if(!stars||!stars.size)return true;
+  const value=[1,2,3].includes(Number(status))?Number(status):1;
+  return stars.has(value);
+}
+function studySetsPlaceStarFilter(){
+  const tools=document.getElementById('study-set-tools'),stars=studySetsStarFilter();
+  const show=studySetsUI.screen==='all'||studySetsUI.screen==='detail';
+  if(!tools||!show){studySetsParkStars();if(studySetsUI.screen!=='all')studySetsParkSearch();return;}
+  tools.hidden=false;
+  if(studySetsUI.screen==='all')studySetsPlaceSearch(tools);else studySetsParkSearch();
+  if(!stars)return;
+  stars.hidden=false;
+  if(stars.parentElement!==tools)tools.append(stars);
+}
+function studySetsRefreshStarFilter(){
+  if(typeof studySetsIsOpen!=='function'||!studySetsIsOpen())return;
+  if(studySetsUI.screen==='all')studySetsRenderAllWordsBody();
+  else if(studySetsUI.screen==='detail')renderStudySets(false);
+}
+function studySetsAllWordsQuery(){const field=/** @type {HTMLInputElement|null} */(document.getElementById('vsearch'));return (field?.value||'').trim().toLowerCase();}
+function studySetsAllWordsVisible(catalog=studySetsAllWordsGroups()){
+  const query=studySetsAllWordsQuery();
+  const stars=typeof wordbookStars!=='undefined'&&wordbookStars.size>0;
+  const values=catalog.values.filter(group=>{
+    if(!studySetsStatusMatches(group[0][1].status))return false;
+    if(!query)return true;
+    return group.some(([,item])=>{
+      const word=String(item.word||'').toLowerCase(),ko=String(item.ko||'').toLowerCase(),book=String(item.book||'').toLowerCase();
+      return word.includes(query)||ko.includes(query)||book.includes(query);
+    });
+  });
+  return {catalog,values,entries:values.flat(),query,stars};
+}
+function studySetsAllWordsCaption(visible){
+  const total=visible.catalog.values.length;
+  return visible.query||visible.stars?`${total}단어 · ${visible.values.length}개 표시`:`${total}단어 · ${visible.catalog.entries.length}개 뜻 카드`;
+}
+function studySetsRateSavedWord(key,status){
+  if(!words[key]||![1,2,3].includes(status))return;
+  if(typeof setStatus==='function'){setStatus(key,status);return;}
+  words[key].status=status;words[key].up=Date.now();
+  if(typeof saveWords==='function')saveWords(key);
+  if(typeof paintWord==='function')paintWord(key);
+  if(typeof queueSync==='function')queueSync(true);
+}
 let studySetsAllWordsCatalog=null;
 function studySetsAllWordsGroups(){
   const revision=typeof wordPaintRevision==='number'?wordPaintRevision:0;
@@ -731,25 +1021,46 @@ function studySetsAllWordsGroups(){
   return studySetsAllWordsCatalog;
 }
 function renderStudySetsAllWords(){
-  const ui=studySetsUI,catalog=studySetsAllWordsGroups(),entries=catalog.entries,values=catalog.values;
-  ui.body.append(studySetsNode('p','study-sets-caption',`${values.length}단어 · ${entries.length}개 뜻 카드`));
-  ui.footer.hidden=false;const start=studySetsButton('학습 시작하기',startStudySetsAllWords,'study-sets-primary');start.id='study-all-words-start';start.disabled=!entries.length;ui.footer.append(start);
+  const ui=studySetsUI,catalog=studySetsAllWordsGroups();
+  ui.body.append(studySetsNode('p','study-sets-caption',''));
+  ui.footer.hidden=false;const start=studySetsButton('학습 시작하기',startStudySetsAllWords,'study-sets-primary');start.id='study-all-words-start';start.disabled=!catalog.entries.length;ui.footer.append(start);
   // Reading the saved session changes only the entry label, never its progress.
   if(typeof loadSimpleStudySession==='function')void loadSimpleStudySession().then(session=>{
     if(start.isConnected&&session.queue.length&&session.history.length)start.textContent=`이어서 학습 · ${session.passed.length}/${session.initial.length}`;
   }).catch(error=>{vocabularyReviewLastError=error;});
-  if(BreezeVocabularyTest.ENABLED){const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'all'}));test.id='study-all-words-test';test.disabled=!entries.length;ui.footer.append(test);}
+  if(BreezeVocabularyTest.ENABLED){const test=studySetsButton('단어 테스트',()=>openVocabularyTest({kind:'all'}));test.id='study-all-words-test';test.disabled=!catalog.entries.length;ui.footer.append(test);}
   studySetsPlaceWordUndo();
-  if(!entries.length){ui.body.append(studySetsEmpty('저장된 단어가 없어요','읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));return;}
+  studySetsRenderAllWordsBody();
+}
+function studySetsRenderAllWordsBody(){
+  const ui=studySetsUI;
+  if(!ui.body||ui.screen!=='all'||!studySetsIsOpen())return;
+  const visible=studySetsAllWordsVisible(),values=visible.values;
+  const caption=ui.body.querySelector('.study-sets-caption');
+  if(caption)caption.textContent=studySetsAllWordsCaption(visible);
+  ui.allWordsList?.dispose();ui.allWordsList=null;
+  ui.body.querySelector('#study-all-words-list')?.remove();
+  ui.body.querySelector('.study-sets-empty')?.remove();
+  if(!values.length){
+    const filtered=visible.query||visible.stars;
+    ui.body.append(studySetsEmpty(visible.query?'검색에 맞는 단어가 없어요':visible.stars?'선택한 별점의 단어가 없어요':'저장된 단어가 없어요',filtered?'':'읽다가 뜻을 저장하거나 Memory에서 단어를 추가해 주세요.'));
+    return;
+  }
   const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id='study-all-words-list';
   if(!studySetsOpened.has('@all'))studySetsOpened.set('@all',new Set());
-  list.setAttribute('aria-label',`전체 ${values.length}단어`);list.dataset.total=String(values.length);
+  list.setAttribute('aria-label',visible.query?`검색 결과 ${values.length}단어`:`전체 ${visible.catalog.values.length}단어`);list.dataset.total=String(values.length);
   const createRow=index=>{
-    const group=values[index],row=studySetsNode('li','study-all-words-row'),copy=createVocabularyGroup(group,{ordinal:index+1,opened:studySetsOpened.get('@all')});
+    const group=values[index],row=studySetsNode('li','study-all-words-row');
+    const copy=createVocabularyGroup(group,{ordinal:index+1,opened:studySetsOpened.get('@all'),      onStatus:status=>{
+      studySetsRateSavedWord(group[0][0],status);
+      if(!studySetsStatusMatches(status)){studySetsRenderAllWordsBody();return;}
+      const chip=copy.querySelector('.chip');
+      if(!(chip instanceof HTMLElement))return;
+      chip.classList.remove('s1','s2','s3');chip.classList.add('s'+status);chip.textContent='★'.repeat(status);
+      chip.setAttribute('aria-label',`${group[0][1].word} 별점 ${status}개`);
+    }});
     const groupId=group[0][1].root||group[0][0];
     row.dataset.cardId=groupId;row.dataset.index=String(index);row.setAttribute('aria-posinset',String(index+1));row.setAttribute('aria-setsize',String(values.length));
-    // Meanings and stars stay read-only. A left swipe deletes the saved word.
-    const chip=copy.querySelector('.chip');if(chip){const rating=studySetsNode('span',chip.className,chip.textContent);rating.setAttribute('role','img');rating.setAttribute('aria-label',chip.getAttribute('aria-label'));chip.replaceWith(rating);}
     copy.querySelector('.vordinal')?.classList.add('study-sets-number');
     const clip=studySetsNode('div','study-sets-word-clip'),surface=studySetsNode('div','study-sets-word-surface');
     const action=studySetsButton('',()=>studySetsDeleteSavedGroup(row,group),'study-sets-row-action');
@@ -1091,10 +1402,10 @@ function renderStudySetsDetail(set,excluded){
   const body=studySetsUI.body;
   const cards=BreezeStudySets.listedCards(set,words,excluded);
   if(!excluded)renderStudySetsDetailFooter(set);
-  if(!cards.length){body.append(studySetsEmpty(excluded?'제외한 단어가 없어요':'세트에 학습할 단어가 없어요',''));return;}
-  const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id=excluded?'study-sets-excluded-list':'study-sets-word-list';
   if(!studySetsOpened.has(set.id))studySetsOpened.set(set.id,new Set());
-  const opened=studySetsOpened.get(set.id),grouped=BreezeStudySets.groupedCards(cards);
+  const opened=studySetsOpened.get(set.id),grouped=BreezeStudySets.groupedCards(cards).filter(card=>excluded||studySetsStatusMatches(card.status));
+  if(!grouped.length){body.append(studySetsEmpty(!cards.length?(excluded?'제외한 단어가 없어요':'세트에 학습할 단어가 없어요'):'선택한 별점의 단어가 없어요',''));return;}
+  const list=studySetsNode('ul','study-sets-word-list vocabulary-rows');list.id=excluded?'study-sets-excluded-list':'study-sets-word-list';
   const createRow=index=>{
     const card=grouped[index],item=studySetsNode('li','study-sets-word-row');item.dataset.cardId=card.id;item.dataset.index=String(index);
     item.setAttribute('aria-posinset',String(index+1));item.setAttribute('aria-setsize',String(grouped.length));
@@ -1209,11 +1520,20 @@ document.addEventListener('click',event=>{
 },true);
 document.addEventListener('pointerdown',event=>{
   studySetsUI.releaseClickId=null;
-  if(studySetsUI.editOpen&&event.target instanceof Node&&!studySetsUI.editMenu?.contains(event.target)&&!studySetsUI.editButton?.contains(event.target)&&!studySetsUI.back?.contains(event.target)){studySetsCloseEditMenu(false);studySetsUI.releaseClickId=event.pointerId;event.stopPropagation();}
+  if(studySetsUI.editOpen&&event.target instanceof Node&&!studySetsUI.editMenu?.contains(event.target)&&!studySetsUI.headerActions?.contains(event.target)&&!studySetsUI.back?.contains(event.target)){studySetsCloseEditMenu(false);studySetsUI.releaseClickId=event.pointerId;event.stopPropagation();}
   const revealed=document.querySelector(':is(.study-sets-word-row,.study-all-words-row,.wordbook-swipe).study-sets-revealed:not(.study-sets-exiting)');
   if(revealed&&event.target instanceof Node&&!revealed.contains(event.target))studySetsUI.swipeClose?.();
 },true);
-function studySetsStart(id,restart=false){
+async function studySetsStart(id,restart=false){
+  const chosen=studySetsChosenStars();
+  const current=BreezeStudySets.view(studySetsUI.state,id);
+  const creating=restart||current.status==='complete'||current.status==='idle'||current.status==='empty';
+  const replacing=!restart&&current.status==='active'&&studySetsStarsKey(current.set?.session?.stars)!==studySetsStarsKey(chosen);
+  if((replacing||creating&&current.set)&&chosen.length&&!studySetsFilteredGroups(current.set,chosen).length){if(typeof toast==='function')toast('학습할 단어가 없어요');return;}
+  if(replacing)return studySetsBegin(id,true,chosen);
+  return studySetsBegin(id,restart,chosen);
+}
+function studySetsBegin(id,restart,stars){
   const expectedSession=restart?studySetsUI.state?.sets.find(set=>set.id===id)?.session?.id:null;
   return studySetsMutate(state=>{
     const current=BreezeStudySets.view(state,id);
@@ -1222,7 +1542,8 @@ function studySetsStart(id,restart=false){
     // retains that same identity and can still be retried.
     if(restart&&current.set?.session?.id!==expectedSession)return {...current,accepted:false};
     const replacing=restart||current.status==='complete';
-    return BreezeStudySets.start(state,id,Date.now(),{restart:replacing,words:replacing?words:undefined});
+    const creating=replacing||!current.set?.session;
+    return BreezeStudySets.start(state,id,Date.now(),{restart:replacing,words:replacing?words:undefined,stars:creating?stars:undefined});
   },()=>{
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
     if(entering){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
@@ -1283,7 +1604,7 @@ window.addEventListener('storage',event=>studySetsStorageChanged(event.key));
 window.addEventListener('breeze-study-storage',event=>studySetsStorageChanged(/** @type {CustomEvent} */(event).detail));
 refreshStudySetsEntry();
 
-document.addEventListener('keydown',event=>{if(!studySetsUI.editOpen)return;const items=[...(studySetsUI.editMenu?.querySelectorAll('button')||[])];if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();studySetsCloseEditMenu(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const at=items.findIndex(item=>item===document.activeElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(at+(event.key==='ArrowUp'?-1:1)+items.length)%items.length;items[next]?.focus({preventScroll:true});}else if(event.key==='Tab'){studySetsCloseEditMenu(false,true);}},true);
+document.addEventListener('keydown',event=>{if(!studySetsUI.editOpen)return;const items=studySetsEditItems();if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();studySetsCloseEditMenu(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const at=items.findIndex(item=>item===document.activeElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(at+(event.key==='ArrowUp'?-1:1)+items.length)%items.length;items[next]?.focus({preventScroll:true});}else if(event.key==='Tab'){studySetsCloseEditMenu(false,true);}},true);
 
 window.addEventListener('breeze-learning-scope',()=>{
   resetStudyVocabularyIndex();studyVocabularyPending.clear();studyVocabularyFull=false;

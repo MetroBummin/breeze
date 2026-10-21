@@ -41,7 +41,7 @@ try{
  await page.evaluate(async ()=>{closeVocabularyReview();words=Object.fromEntries(Array.from({length:2400},(_,i)=>['k'+i,{word:'word'+i,ko:'뜻 '+i,example:('The reader observes the evidence, takes notes, and considers the surrounding context. ').repeat(4)+'A saved example with word'+i+'.',book:'Saved',status:i%3+1,addedAt:i}]));saveWords();renderVocab();document.getElementById('vsearch').value='word99';renderVocab();await openVocabularyReview();});
  assert.equal(await page.locator('#review-progress').innerText(),'0 / 2400');const wordsBefore=await page.evaluate(()=>JSON.stringify(words));
  await studyAction(page.locator('#review-flip').click(),page);await studyAction(page.keyboard.press('ArrowRight'),page);await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(220);assert.equal(await page.locator('#review-expression').innerText(),'word1');assert.equal(await page.locator('#review-progress').innerText(),'1 / 2400');
- await studyAction(page.locator('#review-close').click(),page);await studyAction(page.locator('#wordbook-review').click(),page);await studyAction(page.locator('#study-sets-all').click(),page);await studyAction(page.locator('#study-all-words-start').click(),page);
+ await studyAction(page.locator('#review-close').click(),page);await studyAction(page.evaluate(()=>openStudySetsDirectory()),page);await studyAction(page.locator('#study-sets-all').click(),page);await studyAction(page.locator('#study-all-words-start').click(),page);
  // Opening reads IDB before entering study. The old hidden progress label can
  // already contain1/2400 while navigation/resume is still in flight; Back at
  // that point cancels the opening rather than returning from the study page.

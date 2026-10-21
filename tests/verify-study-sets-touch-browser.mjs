@@ -67,10 +67,10 @@ try{
  const openSet=async()=>{await tap(page.locator('.study-sets-home-card[data-set-id]').first());await page.waitForFunction(()=>activeAppView()==='memory-set');};
  const menu=async(midName='')=>{
   if(await page.evaluate(()=>studySetsUI.screen==='directory'))await openSet();
-  if(midName){const p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');const shell=await page.locator('#study-sets-edit-surface').boundingBox();assert.ok(shell.width>44&&shell.width<236,'the shared surface grows continuously');await capture(midName);}
+  if(midName){const before=await page.locator('#study-sets-edit-surface').boundingBox();const p=await point(page.locator('#study-sets-edit'));await send('touchStart',p.x,p.y);await send('touchEnd');const shell=await page.locator('#study-sets-edit-surface').boundingBox();assert.ok(shell.width>before.width+1&&shell.width<236,'the shared surface grows continuously');await capture(midName);}
   else await tap(page.locator('#study-sets-edit'));
   await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation&&Number(getComputedStyle(studySetsUI.editMenu).opacity)>.99);
-  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0','no duplicate ellipsis remains visible');
+  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0','the header icons fade while the menu is open');
   await page.getByRole('menuitem',{name:'책 추가',exact:true}).waitFor();
  };
 
@@ -90,11 +90,11 @@ try{
   materialSamples.push(...samples);
  };
  const checkHeaderIcons=async()=>{
-  const icons=await page.evaluate(()=>['study-sets-back','study-sets-edit'].map(id=>{
+  const icons=await page.evaluate(()=>['study-sets-back','study-sets-share','study-sets-edit'].map(id=>{
    const button=document.getElementById(id),svg=button.querySelector('svg'),b=button.getBoundingClientRect(),r=svg.getBoundingClientRect(),s=getComputedStyle(svg);
    return {id,width:r.width,height:r.height,stroke:s.strokeWidth,cap:s.strokeLinecap,join:s.strokeLinejoin,centerX:r.x+r.width/2-b.x-b.width/2,centerY:r.y+r.height/2-b.y-b.height/2,ink:s.color};
   }));
-  assert.equal(icons[0].width,26);assert.equal(icons[0].height,26);assert.equal(icons[0].stroke,'3.6px','back roles share the approved chevron weight');assert.equal(icons[1].width,24);assert.equal(icons[1].height,24);assert.equal(icons[1].stroke,'2.6px','ellipsis retains its own silhouette');assert.equal(icons[0].cap,'round');assert.equal(icons[0].join,'round');assert.equal(icons[0].ink,icons[1].ink);for(const icon of icons){assert.ok(Math.abs(icon.centerX)<.1&&Math.abs(icon.centerY)<.1,'header icons centered inside circle');}
+  assert.equal(icons[0].width,26);assert.equal(icons[0].height,26);assert.equal(icons[0].stroke,'3.6px','back roles share the approved chevron weight');assert.equal(icons[1].width,24);assert.equal(icons[1].height,24);assert.equal(icons[1].stroke,'2.6px','share keeps the export glyph');assert.equal(icons[2].width,24);assert.equal(icons[2].height,24);assert.equal(icons[2].stroke,'2.6px','the menu icon keeps the complex stroke');assert.equal(icons[0].cap,'round');assert.equal(icons[0].join,'round');assert.equal(icons[0].ink,icons[1].ink);assert.equal(icons[1].ink,icons[2].ink);for(const icon of icons){assert.ok(Math.abs(icon.centerX)<.1&&Math.abs(icon.centerY)<.1,'header icons centered inside their buttons');}
   return icons;
  };
  const headerIcons=[];

@@ -29,12 +29,16 @@ try{
   const group=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
   const style=await vocabularyStyle(group),geometry=await vocabularyGeometry(group);
   if(captureEntry){await page.evaluate(()=>window.scrollTo(0,0));await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-entry-${engine.name()}-phone-light.png`,fullPage:false});}
-  await studyAction(page.locator('#wordbook-review').click(),page);return {style,geometry};
+  await studyAction(page.evaluate(()=>openStudySetsDirectory()),page);return {style,geometry};
  };
  const assertNumbers=async()=>{const count=await rows().count();assert.deepEqual(await page.locator('#study-sets-word-list .vordinal').allTextContents(),Array.from({length:count},(_,i)=>String(i+1)),'row numbers follow current active order');};
  const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
  const waitTranslation=(row,x)=>row.locator('.study-sets-word-surface').evaluate(async(node,target)=>{for(let i=0;i<60;i++){const t=getComputedStyle(node).transform,actual=t==='none'?0:new DOMMatrixReadOnly(t).m41;if(Math.abs(actual-target)<1)return;await new Promise(resolve=>requestAnimationFrame(resolve));}throw Error('row translation did not settle at '+target);},x);
  const wordRow=word=>rows().filter({has:page.locator('.vword',{hasText:new RegExp(`${word}$`)})});
+ const openDirectoryFromVocabulary=async()=>{
+  await studyAction(page.evaluate(()=>{show('vocab');document.getElementById('wordbook-review').focus({preventScroll:true});openStudySetsDirectory();}),page);
+  await assertDirectory();
+ };
  const assertDirectory=async()=>{
   await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog')?.open);
   // Browser history opens the dialog before its IndexedDB read renders the
@@ -95,7 +99,10 @@ try{
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
  await page.goto(url);await page.evaluate(()=>homeReady);await studyAction(page.locator('#nav-vocab').click(),page);
- assert.equal(await page.evaluate(()=>activeAppView()),'vocab','Memory dock preserves the original vocabulary entry');
+ assert.equal(await page.evaluate(()=>activeAppView()),'memory','단어장 opens the set list');
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks,#vfilter-clear').count(),0);
+ assert.equal(await page.locator('#vstars').isVisible(),false);
+ await page.evaluate(()=>show('vocab'));
  await page.evaluate(()=>{
   words={a:{word:'wind',ko:'바람',book:'A',example:'A cold wind blew.',addedAt:1,status:1},
    duplicate:{word:'wind',ko:'바람',book:'B',example:'The wind rose.',addedAt:2,status:3},
@@ -118,10 +125,17 @@ try{
  await studyAction(originalQuiet.locator('.vword').click(),page);assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'false');
  const entry=page.locator('#wordbook-review');assert.equal(await entry.innerText(),'학습하기');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'default vocabulary adds no top row or breadcrumb');
- await studyAction(entry.click(),page);await assertDirectory();
+ await studyAction(entry.click(),page);
+ await page.waitForFunction(()=>activeAppView()==='memory');
+ assert.equal(await page.locator('#study-sets-home-list').isVisible(),true,'학습하기 opens the set list');
+ assert.equal(await page.locator('dialog[open]').count(),0,'학습하기 leaves the directory sheet closed');
+ await openDirectoryFromVocabulary();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
  assert.equal(await page.locator('#study-all-words-list > li').count(),5);
- assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable],#study-all-words-list button.chip').count(),0);
+ assert.equal(await page.locator('#vstars').isVisible(),true);
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks').count(),0);
+ assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable]').count(),0);
+ assert.ok(await page.locator('#study-all-words-list button.chip').count()>0,'stars stay tappable on 전체 단어');
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').count(),5);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');
  const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode));
@@ -148,7 +162,10 @@ try{
  await page.locator('#study-sets-back').click();await assertDirectory();
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word detail returns focus to the directory card');
  await dismissDirectory();
- await entry.focus();await studyAction(page.keyboard.press('Enter'),page);await assertDirectory();
+ await entry.focus();await studyAction(page.keyboard.press('Enter'),page);
+ await page.waitForFunction(()=>activeAppView()==='memory'&&document.getElementById('v-memory').classList.contains('on'));
+ assert.equal(await page.locator('dialog[open]').count(),0,'keyboard 학습하기 leaves the directory sheet closed');
+ await openDirectoryFromVocabulary();
  await page.evaluate(()=>{window.qaDirectoryDialog=document.getElementById('study-sets-dialog');window.qaDirectorySheet=studySetsUI.sheet;window.qaDirectoryVocabScroll=window.scrollY;window.qaDirectoryCloseEvents=0;window.qaDirectoryDialog.addEventListener('close',()=>{window.qaDirectoryCloseEvents++;});});
  await studyAction(page.locator('#study-sets-home-create').click(),page);assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
  assert.equal(await page.locator('dialog[open]').count(),1);
@@ -457,7 +474,7 @@ try{
  for(const width of [390,320,820]){
   await page.setViewportSize({width,height:844});await page.evaluate(()=>{show('vocab');window.scrollTo(0,0);});
   const original=await vocabularyGeometry(page.locator('#v-vocab .vgroup').first());
-  await studyAction(page.locator('#wordbook-review').click(),page);
+  await studyAction(page.evaluate(()=>openStudySetsDirectory()),page);
   await studyAction(page.locator('.study-sets-home-card[data-set-id]').filter({hasText:'숫자 너비 확인'}).click(),page);await assertSetPage();
   assert.equal(await page.evaluate(()=>studySetsUI.setId),largeSetId);
   assert.equal(await page.locator('#study-sets-word-list').getAttribute('data-total'),'1001');

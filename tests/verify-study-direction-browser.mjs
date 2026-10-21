@@ -22,10 +22,10 @@ try{
  const before=await page.evaluate(()=>JSON.stringify(words));
  for(const mode of ['all','set']){
   if(mode==='all'){
-   await page.locator('#wordbook-review').click();await page.locator('#study-sets-all').click();await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);
+   await page.evaluate(()=>openStudySetsDirectory());await page.locator('#study-sets-all').click();await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);
   }else{
    await page.evaluate(async()=>{show('vocab');const made=BreezeStudySets.create(await loadStudySets(),{name:'읽던 단어',bookTitles:['Reading']},words,100);await commitStudySets(made.state);});
-   await page.locator('#wordbook-review').click();await page.locator('.study-sets-home-card[data-set-id]').first().click();await page.locator('#study-sets-word-list >li').first().waitFor();assert.equal(await page.locator('#study-sets-word-list >li').count(),2,'one row per word with all original senses');await page.locator('#study-sets-start').click();
+   await page.evaluate(()=>openStudySetsDirectory());await page.locator('.study-sets-home-card[data-set-id]').first().click();await page.locator('#study-sets-word-list >li').first().waitFor();assert.equal(await page.locator('#study-sets-word-list >li').count(),2,'one row per word with all original senses');await page.locator('#study-sets-start').click();
   }
   const ids=mode==='all'?{card:'#review-flip',answer:'#review-meaning',word:'#review-expression',progress:'#review-progress',repeat:'#simple-word-again',known:'#simple-word-next'}:{card:'#study-sets-flashcard',answer:'#study-sets-answer',word:'#study-sets-expression',progress:'#study-sets-progress',repeat:'#study-sets-grade-repeat',known:'#study-sets-grade-remembered'};
   const card=page.locator(ids.card),progress=()=>page.locator(ids.progress).innerText();
