@@ -215,7 +215,11 @@ try{
  await page.locator('#fileinput').setInputFiles({name:'Existing Reading.txt',mimeType:'text/plain',buffer:Buffer.from('Reading should feel easy.\n\n'.repeat(60))});
  await page.waitForFunction(()=>books.some(b=>b.kind==='txt'));await page.evaluate(()=>openBook(books.find(b=>b.kind==='txt')));
  await page.waitForFunction(()=>document.querySelectorAll('#rtext .w').length>20);
- await page.evaluate(()=>{readerScroller().scrollTop=100;});const before=await dataSnapshot(page),scroll=await page.evaluate(()=>readerScrollTop());
+ await page.evaluate(()=>{readerScroller().scrollTop=100;});
+ // The reader commits a scroll 800ms later. Snapshot after that write: a slower
+ // 책 Home made the guide outlast the timer, so the assertion was racing it.
+ await page.waitForFunction(()=>positions[curBook.id]&&positions[curBook.id].y===100);
+ const before=await dataSnapshot(page),scroll=await page.evaluate(()=>readerScrollTop());
  await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length+1));await page.locator('#onboard-skip').tap();
  assert.equal(await page.evaluate(()=>activeAppView()),'read');assert.equal(await dataSnapshot(page),before);assert.equal(await page.evaluate(()=>readerScrollTop()),scroll);
  assert.equal(await page.locator('#v-read').getAttribute('inert'),null);

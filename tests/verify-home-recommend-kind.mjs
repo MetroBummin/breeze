@@ -91,7 +91,13 @@ function harness(){
 }
 
 test('articles stay on the rail and the home shelf does not offer the catalog',()=>{
-  const {context:c,rss,document}=harness();
+  const {context:c,rss,store,document}=harness();
+  assert.equal(c.homeRecommendKind(),'books');
+  c.renderHome();
+  assert.equal(document.querySelector('#home-recommend-kind [data-kind="books"]').getAttribute('aria-pressed'),'true');
+  assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,0);
+  assert.ok(document.querySelectorAll('#casual-rail .home-recommend-book').length>0);
+  store.set('breeze.home-recommend','articles');
   c.renderHome();
   assert.equal(c.homeRecommendKind(),'articles');
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,1);
@@ -111,8 +117,8 @@ test('books replace the rail, keep saved books on the shelf, and open like the l
   books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
   books.push({id:'saved-other',kind:'txt',title:'Notebook',author:'Me'});
   books.push({id:'saved-odyssey',kind:'epub',title:'The Odyssey',author:'Homer',classicId:'odyssey'});
-  c.setHomeRecommendKind('books');
-  assert.equal(store.get('breeze.home-recommend'),'books');
+  c.renderHome();
+  assert.equal(store.has('breeze.home-recommend'),false);
   assert.equal(document.querySelector('#home-recommend-kind [data-kind="books"]').getAttribute('aria-pressed'),'true');
   assert.equal(document.querySelector('#home-recommend-kind [data-kind="articles"]').getAttribute('aria-pressed'),'false');
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,0);
@@ -149,7 +155,7 @@ function railTitles(document){
 
 test('a started book leaves the 책 rail and returns when it leaves the library',()=>{
   const {context:c,books,document}=harness();
-  c.setHomeRecommendKind('books');
+  c.renderHome();
   assert.ok(railTitles(document).includes('A Scandal in Bohemia'));
   books.unshift({id:'bohemia',kind:'txt',title:'A Scandal in Bohemia',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-scandal-in-bohemia'});
   c.renderHome();
@@ -168,7 +174,7 @@ test('EPUB classicId and a migrated copy match the same catalog id',()=>{
   books.push({id:'gatsby-text',kind:'txt',title:'The Great Gatsby',author:'F. Scott Fitzgerald',classicId:'the-great-gatsby',longReadId:'the-great-gatsby'});
   books.push({id:'bohemia-epub',kind:'epub',title:'A Scandal in Bohemia',author:'Arthur Conan Doyle',classicId:'sherlock-holmes-scandal-in-bohemia'});
   books.push({id:'notebook',kind:'txt',title:'The Odyssey',author:'Homer'});
-  c.setHomeRecommendKind('books');
+  c.renderHome();
   const shown=railTitles(document);
   assert.equal(shown.includes("Alice's Adventures in Wonderland"),false);
   assert.equal(shown.includes('The Great Gatsby'),false);
@@ -187,7 +193,7 @@ test('a server library row hides the same id unless this device hid that row',()
   const hidden={};
   c.activeServerBooks=()=>rows;
   c.hiddenBookIds=()=>hidden;
-  c.setHomeRecommendKind('books');
+  c.renderHome();
   assert.equal(railTitles(document).includes('The Odyssey'),false);
   assert.equal(railTitles(document).includes("Alice's Adventures in Wonderland"),false);
   assert.equal(railTitles(document).includes('A Scandal in Bohemia'),false);
@@ -205,7 +211,7 @@ test('a server library row hides the same id unless this device hid that row',()
 test('a remote catalog book uses the same id, and an empty rail says the books are in the library',()=>{
   const {context:c,books,document}=harness();
   c.remoteClassicCatalogReads=()=>[{id:'pride-and-prejudice',title:'Pride and Prejudice',author:'Jane Austen',cover:'cover.webp'}];
-  c.setHomeRecommendKind('books');
+  c.renderHome();
   assert.ok(railTitles(document).includes('Pride and Prejudice'));
   const ids=[
     'sherlock-holmes-speckled-band','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league',

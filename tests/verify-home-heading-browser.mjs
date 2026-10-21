@@ -62,6 +62,20 @@ try{
      await page.evaluate(({dark,lang})=>{darkMode=dark;applyDark();setLang(lang);show('home');}, {dark,lang});
      await page.evaluate(()=>document.fonts.ready);
      await page.waitForFunction(()=>!rssLoading&&!document.querySelector('#casual-rail .rss-loading'));
+     // Book cards transition every property for .18s, including the width a
+     // viewport change just set. The 책 rail is on screen for a new reader, so
+     // that animation moves the Books heading until it lands. Measure only after
+     // the heading has held still; the +1px control is not a layout change.
+     await page.evaluate(()=>{delete window.__homeHeadingSettle;});
+     await page.waitForFunction(()=>{
+      const card=document.querySelector('#casual-rail > .home-recommend-book, #casual-rail > .rss-card, #casual-rail > .casual');
+      const button=document.querySelector('#longform .section-link');
+      if(!button)return false;
+      const stamp=`${button.getBoundingClientRect().y}|${card?card.getBoundingClientRect().width:0}`;
+      const now=performance.now();
+      if(window.__homeHeadingSettle!==stamp){window.__homeHeadingSettle=stamp;window.__homeHeadingSettleAt=now;return false;}
+      return now-window.__homeHeadingSettleAt>=220;
+     });
      const key=`${engine.name()}-${width}x${height}-${dark?'dark':'light'}-${lang}`;
      // The control changes only the removed declaration, leaving actual fonts,
      // DOM, layout, cards and theme untouched. It must reproduce the displacement.

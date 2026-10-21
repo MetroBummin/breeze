@@ -28,7 +28,7 @@ try{
     const browser=await engine.launch(engine===chromium && process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
     try{
       const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
-      await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+      await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await page.route('**/*',route=>{
         const url=route.request().url();
         if(url.startsWith(base))return route.continue();

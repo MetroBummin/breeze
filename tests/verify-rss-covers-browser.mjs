@@ -67,7 +67,7 @@ try{
       const requests=[],failures=[],consoleErrors=[];
       page.on('requestfailed',request=>failures.push({url:request.url(),method:request.method(),resourceType:request.resourceType(),error:request.failure()?.errorText}));
       page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
-      await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+      await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await page.route('**/*',async route=>{
         const request=route.request(),url=request.url(),parsed=new URL(url);
         const receipt=(kind,target=url)=>({kind,url:target,method:request.method(),resourceType:request.resourceType()});

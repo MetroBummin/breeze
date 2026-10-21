@@ -66,7 +66,7 @@ const browser=await engine.launch(engine===chromium&&process.env.CHROMIUM_EXECUT
 async function contextFor(version,profile,storage={}){
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),calls=[],attempts=[],errors=[];
  await context.addInitScript(values=>{
-  localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));for(const [key,value] of Object.entries(values))localStorage.setItem(key,value);
+  localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));for(const [key,value] of Object.entries(values))localStorage.setItem(key,value);
   window.benchTimes={firstCard:null};
   addEventListener('DOMContentLoaded',()=>{
    const observer=new MutationObserver(()=>{

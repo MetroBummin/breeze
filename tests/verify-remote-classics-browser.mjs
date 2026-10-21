@@ -60,7 +60,12 @@ try {
 
   await page.goto(base);
   await page.evaluate(() => homeReady);
-  assert.equal(await page.evaluate(() => remoteClassicCatalogReads().length), 0, 'Article Home fetched the classics catalog');
+  assert.equal(await page.evaluate(() => homeRecommendKind()), 'books', 'a new reader opens on 책');
+  await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
+  await page.evaluate(() => save('breeze.home-recommend', 'articles'));
+  await page.reload();
+  await page.evaluate(() => homeReady);
+  assert.equal(await page.evaluate(() => remoteClassicCatalogReads().length), 0, 'A saved 기사 choice fetched the classics catalog');
   await page.locator('#home-recommend-kind [data-kind="books"]').click();
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
   assert.equal(bookFetches, 0, 'The catalog fetch downloaded the novel');
