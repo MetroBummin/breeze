@@ -193,7 +193,7 @@ function drawOnboarding(){
   document.getElementById('onboard-pages').hidden=page===0||finish;
   document.getElementById('onboard-finish').hidden=!finish;
   const study=onboardingStudyActive(session);
-  document.getElementById('onboard-skip').hidden=false;
+  document.getElementById('onboard-skip').hidden=page===0;
   document.getElementById('onboard-back').hidden=page===0;
   document.getElementById('onboard-step').textContent=finish?'책 넣기':page?`${page} / ${session.pages.length}`:'';
   document.getElementById('onboard-prompt').textContent=finish?'읽고 싶은 책을 넣어보세요.':page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';

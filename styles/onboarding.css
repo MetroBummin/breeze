@@ -14,7 +14,7 @@ body.dark.onboarding-active{--onboard-paper:#20211e;--onboard-ink:#f3f6f4;--onbo
 #onboarding #onboard-next{flex:1;width:100%;margin-top:0;border-radius:16px;min-height:52px;font-weight:650;color:var(--sentence-glass-ink);}
 #onboard-next:disabled{opacity:.5;cursor:wait;}
 #onboard-coach{touch-action:pan-y;}
-#onboarding #onboard-skip{flex:none;display:flex;align-items:flex-start;justify-content:center;margin-top:2px;padding-top:3px;border:0;background:transparent;font-size:13px;font-weight:500;color:var(--onboard-muted);}
+#onboarding #onboard-skip{flex:none;display:flex;align-items:flex-start;justify-content:center;margin-top:10px;padding-top:4px;border:0;background:transparent;font-size:13px;font-weight:500;color:var(--onboard-muted);}
 #onboard-finish{display:flex;flex:1;min-height:184px;width:100%;align-items:center;justify-content:center;}
 /* The finish shelf reuses the landing carousel mechanism: two identical sets,
    one 30s linear loop to -50%, edge fade, no pointer input. */

@@ -165,12 +165,12 @@ try{
  const requests=[];page.on('request',r=>{if(/assets\/onboarding/.test(r.url()))requests.push(r.url());});
  await page.goto(url);await page.evaluate(()=>homeReady);await page.locator('#onboarding').waitFor({state:'visible'});
  assert.equal(await page.locator('#onboard-prompt').textContent(),'브리즈에 오신 걸 환영해요');
- assert.equal(await page.locator('#onboard-next').textContent(),'시작하기');assert.equal(await page.locator('#onboard-skip').isVisible(),true);
+ assert.equal(await page.locator('#onboard-next').textContent(),'시작하기');assert.equal(await page.locator('#onboard-skip').isVisible(),false);
  assert.equal(requests.length,0,'welcome prefetched guide media');
  const before=await dataSnapshot(page);assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
  await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
  assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),native,'PDF guide does not follow native capability');
- const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?109:96);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,692);
+ const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?109:96);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,684);
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
  assert.ok(requests.filter(u=>u.endsWith('.mp4')).every(u=>u.includes('word-light')),'offscreen media downloaded');
  const media=page.locator('#onboard-carousel');const b=await media.boundingBox();

@@ -86,9 +86,10 @@ Explanation pages now expose two concise 52px Previous/Next buttons. Seven progr
 18px active mark, 8px gaps), matching the selected original. Dots are indicators,
 not seven 44px buttons. Previous/Next, horizontal swipe over media or captions, and keyboard arrows own
 navigation. Swipe returns from the first explanation to welcome and clamps at
-both ends. The final non-video page offers “책 넣기” and “건너뛰기”. Every page,
-welcome included, also offers Skip in a visually minimal form (13px, muted);
-on the study page Skip advances to the final import page, and on every other
+both ends. The final non-video page offers “책 넣기” and “건너뛰기”. Every page
+except the welcome also offers Skip in a visually minimal form (13px, muted);
+the welcome keeps only the wordmark and its start button (owner review).
+On the study page Skip advances to the final import page, and on every other
 page it ends the guide like the final page's Skip. Above the final page's
 prompt, a decorative shelf reuses the landing carousel mechanism — the same
 book/article cards in two identical sets on one 30s linear loop with edge
