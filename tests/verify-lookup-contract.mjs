@@ -105,7 +105,9 @@ async function hedgeOf(response){
 run(`providerKeys=()=>({oKey:'fixture',gKey:'fixture'});globalThis.calls=[];globalThis.prompts=[];globalThis.hedges=[];globalThis.signals=[];`);
 // An invalid primary answer is one failure. The hedge uses the same prompt; there is no correction retry.
 run(`calls=[];prompts=[];hedges=[];signals=[];callOpenRouter=${arm('primary',0,new Error('invalid'))};callGemini=${arm('fallback',0,bankAnswer)};`);
+const fastFailAt=clock.now();
 let response=await clock.settle(box.opLook(lookBody,null,true));
+assert.equal(clock.now()-fastFailAt,0,'a failed primary waited for the hedge timer');
 assert.equal(response.status,200);
 let settled=await hedgeOf(response);
 assert.equal(settled.body.ko,'둑');
@@ -118,6 +120,26 @@ assert.deepEqual(Array.from(box.calls),['primary','fallback']);
 assert.equal(box.prompts[0],box.prompts[1]);
 assert.doesNotMatch(box.prompts[0],/Correction:/);
 assert.equal(settled.hedge.hedged,true);
+assert.equal(settled.hedge.winner,'gemini');
+assert.equal(settled.hedge.loser,'failed');
+// A primary HTTP failure at 400ms starts Gemini then, not at 2000ms.
+run(`calls=[];prompts=[];hedges=[];signals=[];callOpenRouter=${arm('primary',400,new Error('openrouter_429'))};callGemini=${arm('fallback',50,bankAnswer)};`);
+const earlyFailAt=clock.now();
+response=await clock.settle(box.opLook(lookBody,null,true));
+assert.equal(clock.now()-earlyFailAt,450);
+settled=await hedgeOf(response);
+assert.equal(settled.body.provider,'gemini');
+assert.deepEqual(Array.from(box.calls),['primary','fallback']);
+assert.equal(settled.hedge.hedged,true);
+assert.equal(settled.hedge.loser,'failed');
+// DeepSeek fails after Gemini is already running. Wait on that Gemini call; do not start another.
+run(`calls=[];hedges=[];callOpenRouter=${arm('primary',2500,new Error('openrouter_500'))};callGemini=${arm('fallback',1000,bankAnswer)};`);
+const lateFailAt=clock.now();
+response=await clock.settle(box.opLook(lookBody,null,true));
+assert.equal(clock.now()-lateFailAt,3000);
+assert.equal(Array.from(box.calls).filter(call=>call==='fallback').length,1);
+settled=await hedgeOf(response);
+assert.equal(settled.body.provider,'gemini');
 assert.equal(settled.hedge.winner,'gemini');
 assert.equal(settled.hedge.loser,'failed');
 // Invalid lexical members must never be silently relabeled as a word meaning.

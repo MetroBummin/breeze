@@ -306,7 +306,8 @@ function ms(value){return String(Math.round(value))}
 
 async function runLookup(rng,scenario){
   const id=crypto.randomUUID();
-  plans.set(id,scenarioPlan(scenario,rng));
+  const plan=scenarioPlan(scenario,rng);
+  plans.set(id,plan);
   const started=performance.now();
   let watchdog=false;
   const lookup=box.opLook({
@@ -328,7 +329,15 @@ async function runLookup(rng,scenario){
     body:outcome.body,
     watchdog,
     thrown:outcome.thrown===true,
+    plan,
   };
+}
+function callLabel(call,provider){
+  if(call.mode==='hang')return 'hang';
+  if(call.mode==='stall-body')return 'stall-body';
+  if(call.status!==200)return 'HTTP '+call.status;
+  const expected=provider==='deepseek'?openrouterBody(ANSWER_TEXT):geminiBody(ANSWER_TEXT);
+  return call.body===expected?'valid':'invalid body';
 }
 
 async function pool(count,width,fn){
@@ -409,7 +418,16 @@ async function runScenario(name){
     leakedTimers:pendingTimers.size,
     openRequests:openRequests.size,
     receiptDups,telemetryDups,
+    failureCauses:failureBreakdown(results.filter(result=>!(result.status===200&&result.body?.ko==='둑'))),
   };
+}
+function failureBreakdown(failed){
+  const counts=new Map();
+  for(const result of failed){
+    const key=`${callLabel(result.plan.deepseek,'deepseek')} + ${callLabel(result.plan.gemini,'gemini')}`;
+    counts.set(key,(counts.get(key)||0)+1);
+  }
+  return [...counts.entries()].sort((a,b)=>b[1]-a[1]);
 }
 
 const selected=only?SCENARIOS.filter(([name])=>name===only):SCENARIOS;
@@ -455,6 +473,7 @@ console.log('Winner and loser columns are telemetry traces. Hedge is the share o
 for(const [name,detail] of SCENARIOS)if(selected.some(([id])=>id===name))console.log(`- ${name}: ${detail}`);
 for(const row of rows){
   console.log(`${row.name} detail: loser failed ${row.loserFailed}, late ${row.loserLate}, none ${row.loserNone}; wall clock >8000ms ${row.overNominal}; scenario took ${Math.round(row.elapsed/1000)}s`);
+  if(row.failureCauses.length)console.log(`${row.name} failures: ${row.failureCauses.map(([cause,count])=>`${count} ${cause}`).join('; ')}`);
 }
 if(failures.length){
   console.error('\nInvariant failures:');

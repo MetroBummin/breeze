@@ -52,9 +52,9 @@ function abortedError(error:unknown){
   const name=error&&typeof error==="object"?(error as {name?:string}).name:"";
   return name==="AbortError"||name==="TimeoutError";
 }
-// Word lookups have one deadline. DeepSeek starts immediately; Gemini starts
-// only if no valid answer has arrived after HEDGE_DELAY_MS. The first valid
-// answer wins and aborts the other request.
+// Word lookups have one deadline. DeepSeek starts immediately. Gemini starts
+// with the same prompt if DeepSeek fails, or if no valid answer has arrived
+// after HEDGE_DELAY_MS. The first valid answer wins and aborts the other request.
 async function askHedgedWord(input:Ask){
   const trace=newAiTrace(input.action);
   let releaseHedge=()=>{};
@@ -116,9 +116,20 @@ async function askHedgedWord(input:Ask){
         pending--;
         lastError=error;
         note(provider,abortedError(error)?"aborted":"failed");
+        // A primary failure starts Gemini now. The 2s timer stays the only delay,
+        // and only for a primary attempt that is still running.
+        if(provider==="openrouter"&&!winner&&!input.signal?.aborted&&!deadline.signal.aborted)fireHedge();
       }
       afterSettle();
     })());
+  };
+  const fireHedge=()=>{
+    if(!willHedge)return;
+    willHedge=false;
+    if(hedgeTimer!==undefined){clearTimeout(hedgeTimer);hedgeTimer=undefined;}
+    if(winner||input.signal?.aborted||deadline.signal.aborted){afterSettle();return;}
+    hedgeStarted=true;
+    start("gemini");
   };
   try{
     if(!oKey&&!gKey)throw new Error("server_not_configured");
@@ -138,13 +149,7 @@ async function askHedgedWord(input:Ask){
     },{once:true});
     willHedge=!!(oKey&&gKey);
     if(oKey)start("openrouter");else start("gemini");
-    if(willHedge)hedgeTimer=setTimeout(()=>{
-      hedgeTimer=undefined;
-      willHedge=false;
-      if(winner||input.signal?.aborted||deadline.signal.aborted){afterSettle();return;}
-      hedgeStarted=true;
-      start("gemini");
-    },HEDGE_DELAY_MS);
+    if(willHedge)hedgeTimer=setTimeout(()=>{hedgeTimer=undefined;fireHedge();},HEDGE_DELAY_MS);
     await lookupDone;
     if(input.signal?.aborted&&!winner)throw lastError instanceof Error?lastError:providerAbort(input.signal);
     if(!winner)throw lastError instanceof Error?lastError:new Error("lookup_failed");

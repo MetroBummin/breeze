@@ -235,13 +235,16 @@ It still does not guess which occurrence was tapped.
 ## Hedged word lookup (2026-10-21)
 
 Word lookups (`look` and `look_v2`, including seed) no longer use a per-provider
-timer. OpenRouter DeepSeek starts immediately. If no complete valid answer has
-arrived after `HEDGE_DELAY_MS` (2000), Gemini starts with the same prompt and
-DeepSeek is left running. The first valid answer is the response; the other
-request is aborted with `AbortController`. A failure or invalid answer keeps
-the lookup waiting on the request that is still running. One 8 second deadline
-bounds the whole word lookup, so the client 9 second cutoff still holds. There
-is no second call to the same provider and no correction prompt on this path.
+timer. OpenRouter DeepSeek starts immediately. If that attempt fails before a
+valid answer — an HTTP or network error, or a malformed or invalid body —
+Gemini starts at once with the same prompt. Otherwise Gemini starts when no
+valid answer has arrived after `HEDGE_DELAY_MS` (2000), and DeepSeek is left
+running. A DeepSeek failure after Gemini is already running just waits on
+Gemini. A Gemini failure while DeepSeek is still pending waits on DeepSeek.
+The first valid answer is the response; the other request is aborted with
+`AbortController`. One 8 second deadline bounds the whole word lookup, so the
+client 9 second cutoff still holds. There is no second call to the same
+provider and no correction prompt on this path.
 
 Sentence explanation (`explain`) and its 25 second / 15 second provider budgets
 are unchanged. Response fields, `word_lookup_receipts`, and the existing
