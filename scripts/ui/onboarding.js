@@ -6,7 +6,7 @@ const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
 const ONBOARD_WELCOME_KEY='breeze.onboarding.welcome-seen';
 // Apple macOS hello's runtime hold is 750ms; writing/fade are Breeze's
 // review candidate, not a claimed frame-for-frame match to Apple's animation.
-const ONBOARD_WELCOME_TIMING={write:4200,hold:750,fade:900};
+const ONBOARD_WELCOME_TIMING={write:3000,hold:750,fade:900};
 function onboardingPdfAvailable(){
   // PR128 owns native classification and the safe input adapter.
   const availability=typeof BreezePdfInk!=='undefined'?Reflect.get(BreezePdfInk,'availability'):null;
@@ -193,7 +193,7 @@ function drawOnboarding(){
   document.getElementById('onboard-pages').hidden=page===0||finish;
   document.getElementById('onboard-finish').hidden=!finish;
   const study=onboardingStudyActive(session);
-  document.getElementById('onboard-skip').hidden=!finish&&!study;
+  document.getElementById('onboard-skip').hidden=false;
   document.getElementById('onboard-back').hidden=page===0;
   document.getElementById('onboard-step').textContent=finish?'책 넣기':page?`${page} / ${session.pages.length}`:'';
   document.getElementById('onboard-prompt').textContent=finish?'읽고 싶은 책을 넣어보세요.':page?session.pages[page-1][1]:'브리즈에 오신 걸 환영해요';

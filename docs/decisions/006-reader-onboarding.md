@@ -28,16 +28,23 @@ and [Scribble](https://scribble.app/cursive/b); school capital B differs and
 Scribble explicitly lifts before the next letter. This brand adaptation keeps
 the required connected hand instead of claiming one universal B form.
 A single inherited pen timeline traverses its geometric length
-with one cubic-bezier(.35,.02,.25,1) envelope, without resetting speed per letter.
-The review candidate writes for 4.2s, holds the complete word for 750ms, then
+with one linear envelope, without resetting speed per letter.
+The pen writes for 3.0s, holds the complete word for 750ms, then
 shows the existing caption, note and Start button together over 900ms (opacity
-and 8px translation). Total: 5.85s. This replaces the rejected 2s preview.
+and 8px translation). Total: 4.65s. This replaces the rejected 2s preview.
 No Apple glyph, logo, font, path or shader is included in the app.
 
+The welcome viewBox carries 20 units of padding on every side. The authored
+centerline itself reaches the old viewBox edges and its 26-unit stroke was
+clipped by up to ~3 units at the first letter's extremes; the letterforms and
+centerline are unchanged.
+
 The 750ms hold follows the installed Apple macOS HelloMetrics writeInHold
-runtime value. Apple's actual full English hello playback could not be measured
-without launching a visible setup screen; writing duration and easing are
-Breeze's review candidate, not a claim of identical Apple speed.
+runtime value. A 2026-10-21 frame analysis of recorded macOS setup-assistant
+hello cycles has since measured the Apple pen directly: normalized progress
+stays within ±0.04 of linear and writing time scales with path length
+(correlation 0.95). The timeline now follows that measurement — linear easing
+at a comparable pen speed (Apple writes 5–7 letter words in 2.5–2.9s).
 
 A tap anywhere completes the reveal immediately and consumes that tap without
 navigating. The independent `breeze.onboarding.welcome-seen` marker is set on
@@ -59,10 +66,12 @@ web/phones do not receive a pen lesson based on viewport or touch guesses.
 Each scene uses a silent H264 Baseline/AVC MP4 of the real production UI, plus a
 high-resolution JPEG poster. The approved 2026-10-08 refresh renders one new
 production frame at each 1/30s timeline sample, without old-video input, pixel
-upscaling or duplicated motion frames. Phone UI clips are captured at device
+upscaling or duplicated motion frames. The 2026-10-21 refresh supersedes the
+sampling rate: one new production frame at each 1/60s timeline sample, encoded
+at 60fps under the same no-reuse, no-upscale and no-duplicated-frame rules. Phone UI clips are captured at device
 scale2; the existing 820×1180 PDF viewport is encoded directly at its native
 resolution instead of the former 410×590 downsample. Encoding preserves each
-source frame once at30fps with adequate bitrate and fast-start metadata.
+source frame once at60fps with adequate bitrate and fast-start metadata.
 Word/sentence clips contain a single authored sentence and the real
 result surfaces, cropped at capture time. Settings/PDF/Home retain their actual
 controls to teach their locations. No user, student or private document is used.
@@ -75,8 +84,13 @@ Explanation pages now expose two concise 52px Previous/Next buttons. Seven progr
 18px active mark, 8px gaps), matching the selected original. Dots are indicators,
 not seven 44px buttons. Previous/Next, horizontal swipe over media or captions, and keyboard arrows own
 navigation. Swipe returns from the first explanation to welcome and clamps at
-both ends. The final non-video page offers “책 넣기” and “건너뛰기”; explanation
-pages do not offer Skip. Escape/browser Back cancels
+both ends. The final non-video page offers “책 넣기” and “건너뛰기”. Every page,
+welcome included, also offers Skip in a visually minimal form (13px, muted);
+on the study page Skip advances to the final import page, and on every other
+page it ends the guide like the final page's Skip. Above the final page's
+prompt, a decorative shelf reuses the landing carousel mechanism — the same
+book/article cards in two identical sets on one 30s linear loop with edge
+fade and no pointer input. Escape/browser Back cancels
 without recording completion; returning from Settings replays from welcome.
 
 The overlay never opens a book or changes its appearance, scroll, words, sync,
@@ -125,7 +139,7 @@ Settings social login is documented in [016](016-social-auth.md). Its request/se
 
 ## Welcome timeline ownership correction
 
-The welcome's CSS animations own writing4200ms, hold750ms and caption fade900ms.
+The welcome's CSS animations own writing3000ms, hold750ms and caption fade900ms.
 The former JS wall timer could remove those animations before a delayed WebKit
 animation timeline reached pen===1. Complete on the actual next-caption
 `onboard-welcome-copy` animationend instead, guarded by the current session and
