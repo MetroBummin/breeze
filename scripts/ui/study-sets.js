@@ -1258,12 +1258,13 @@ function renderStudySetsEdit(set){
   });input.addEventListener('input',()=>input.setCustomValidity(''));body.append(form);
 }
 function renderStudySetsBooks(set){
-  const form=studySetsNode('form','study-sets-form'),field=studySetsNode('fieldset','study-sets-books');
+  const body=studySetsUI.body,form=studySetsNode('form','study-sets-form');form.id='study-sets-add-books-form';
+  const field=studySetsNode('fieldset','study-sets-books');
   field.append(studySetsNode('legend','','책 선택'));
   const counts=BreezeStudySets.countsByBook(words);
   const names=[...new Set(Object.values(words).filter(validWordMeaning).map(item=>typeof item.book==='string'?item.book:''))]
-    .filter(title=>!set.bookTitles.includes(title)).sort((a,b)=>a.localeCompare(b));
-  const selection=new Set(),count=studySetsNode('p','study-sets-selection-count');count.setAttribute('aria-live','polite');
+    .filter(title=>!set.bookTitles.includes(title)).sort((a,b)=>(counts.get(b)||0)-(counts.get(a)||0));
+  const selection=new Set(),count=studySetsNode('p','study-sets-selection-count');count.id='study-sets-selection-count';count.setAttribute('aria-live','polite');
   const save=studySetsButton('추가',()=>{},'study-sets-primary');save.type='submit';save.id='study-sets-add-books';save.disabled=true;
   for(const title of names){
     const row=studySetsNode('label','study-sets-book'),checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=title;
@@ -1276,13 +1277,14 @@ function renderStudySetsBooks(set){
       studySetsNode('span','study-sets-caption',`${counts.get(title)||0}개`));field.append(row);
   }
   if(!names.length)field.append(studySetsEmpty('추가할 책이 없어요',''));
-  form.append(field,count,save);form.addEventListener('submit',event=>{
+  form.append(field);save.setAttribute('form',form.id);studySetsUI.footer.hidden=false;studySetsUI.footer.append(count,save);
+  form.addEventListener('submit',event=>{
     event.preventDefault();if(!selection.size)return;
     studySetsMutate(state=>BreezeStudySets.addBooks(state,set.id,[...selection],words,Date.now()),()=>{
       if(studySetsUI.directoryOrigin){studySetsUI.pendingClose=true;history.back();return;}
       studySetsUI.screen='detail';studySetsUI.notice='';
     });
-  });studySetsUI.body.append(form);
+  });body.append(form);
 }
 // Undo owns a touch release directly: browsers can omit its compatibility click
 // while the surrounding list is animating. Mouse and keyboard retain click.

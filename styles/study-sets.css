@@ -47,7 +47,7 @@ body.dark .study-sets-home-card:not(.study-sets-home-add):active{filter:brightne
 :is(#study-sets-dialog,#v-memory-set) .study-sets-icon>svg,.study-sets-home-menu-trigger>svg,.study-sets-vocab-back>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 #study-sets-dialog #study-sets-back>svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);stroke-width:var(--am-stroke-chevron);transform:none;}
 .study-sets-header{flex-wrap:wrap;}
-.study-set-tools{display:flex;flex-direction:column;align-items:stretch;gap:10px;flex:1 0 100%;min-width:0;margin-top:4px;}
+.study-set-tools{display:flex;flex-direction:column;align-items:stretch;gap:10px;flex:1 0 100%;min-width:0;margin-top:24px;}
 .study-set-tools[hidden]{display:none!important;}
 #v-memory-set .study-set-tools .wordbook-search,:is(#study-sets-dialog,#v-memory-set) .study-set-tools .wordbook-search{flex:none;width:100%;min-width:0;margin:0;}
 .study-set-tools .wordbook-filter-row{width:100%;min-width:0;}
@@ -66,8 +66,8 @@ html.study-sets-modal-open body{position:fixed;top:var(--study-sets-scroll-top);
 .study-sets-sheet{display:flex;flex-direction:column;width:100%;max-width:680px;max-height:100%;min-height:0;overflow:hidden;border:1px solid var(--sentence-glass-line);border-bottom:0;border-radius:24px 24px 0 0;background:var(--home-background);color:var(--settings-ink);box-shadow:none;}
 .study-sets-sheet[data-screen=detail],.study-sets-sheet[data-screen=excluded]{height:min(720px,100%);}
 .study-sets-sheet[data-screen=detail] .study-sets-body,.study-sets-sheet[data-screen=excluded] .study-sets-body{flex:1;}
-.study-sets-header{display:flex;align-items:center;gap:8px;flex:none;padding:12px 20px 8px;}
-#study-sets-title{flex:1;min-width:0;margin:0;padding:0 4px;font:600 20px/1.4 var(--ui);letter-spacing:-.25px;overflow-wrap:anywhere;}
+.study-sets-header{display:flex;align-items:flex-start;gap:8px;flex:none;padding:12px 20px 8px;}
+#study-sets-title{flex:1;align-self:center;min-width:0;margin:0;padding:0 4px;font:600 20px/1.4 var(--ui);letter-spacing:-.25px;overflow-wrap:anywhere;}
 #study-sets-title:focus{outline:none;}
 .study-sets-footer{flex:none;padding:12px 24px max(16px,env(safe-area-inset-bottom));border-top:1px solid var(--wordbook-toolbar-line);background:var(--home-background);}
 .study-sets-menu{display:grid;gap:0;}
@@ -157,6 +157,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set [hidden]{display:none!important;}
 #v-memory-set .study-sets-sheet{height:100%;max-height:none;min-height:0;max-width:none;border:0;border-radius:0;box-shadow:none;background:var(--home-background);}
 #v-memory-set .study-sets-header{padding:16px 16px 12px;}
+#v-memory-set .study-sets-header:has(.study-set-tools:not([hidden])){padding-bottom:0;}
 #v-memory-set .study-sets-body{flex:1;padding:8px 20px 24px;}
 #v-memory-set .study-sets-footer{padding-bottom:max(16px,env(safe-area-inset-bottom));}
 @media(max-height:500px){#v-memory-set .study-sets-header{padding-top:4px;padding-bottom:4px;}}
@@ -211,12 +212,12 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set .study-session-body{padding-bottom:max(16px,env(safe-area-inset-bottom));}
 
 
-/* Creation keeps actions above the safe area; only the book choices scroll. */
-.study-sets-sheet[data-screen=create]{height:min(720px,100%);}
-.study-sets-sheet[data-screen=create] .study-sets-body{display:flex;flex:1;overflow:hidden;padding-bottom:8px;}
-#study-sets-create-form{display:flex;flex:1;flex-direction:column;min-height:0;}
+/* Creation and 책 추가 keep the action above the safe area; only the book choices scroll. */
+.study-sets-sheet[data-screen=create],.study-sets-sheet[data-screen=books]{height:min(720px,100%);}
+.study-sets-sheet[data-screen=create] .study-sets-body,.study-sets-sheet[data-screen=books] .study-sets-body{display:flex;flex:1;overflow:hidden;padding-bottom:8px;}
+#study-sets-create-form,#study-sets-add-books-form{display:flex;flex:1;flex-direction:column;min-height:0;}
 #study-sets-create-form>.study-sets-field{flex:none;}
-#study-sets-create-form>.study-sets-books{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;}
+#study-sets-create-form>.study-sets-books,#study-sets-add-books-form>.study-sets-books{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;}
 
 .study-sets-sheet[data-screen=all]{height:min(720px,100%);}
 .study-sets-sheet[data-screen=all] .study-sets-body{flex:1;}
