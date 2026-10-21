@@ -581,15 +581,16 @@ that saved word's status. Meanings on 전체 단어 stay read-only. The chips
 filter the list on screen. They do not change a set's stored cards. Studying
 and a set's test use the words that filter leaves on screen. A set keeps one
 saved round. Starting study while that round is still open and was saved with
-a different star filter asks once, in the existing task dialog, 「처음부터
-할까?」. 처음부터 replaces the round and continues with the new filter. 취소
-leaves the round and restores the filter it was saved with. A missing
+a different star filter replaces the round with the new filter at once. A
+filter that matches no words leaves the saved round in place. A missing
 `session.stars` array means every star, the same as no chip pressed. Tests
 always draw a fresh sample from the current filter and do not resume. The set
-list has no share control. 공유 is the first item in the … menu inside a set,
-before 이름 변경, 책 추가, and 세트 삭제, and it is the only item on 전체
-단어. It exports the rows on screen through the existing CSV share path,
-including that screen's star filter and, on 전체 단어, the current search.
+list header is the wordmark. Inside a set, the top-right pill is the same
+height as Back and holds the share icon beside a menu icon. That menu is
+이름 변경, 책 추가, and 세트 삭제. 전체 단어 uses the same pill with only
+the share icon. Share exports the rows on screen through the existing CSV
+share path, including that screen's star filter and, on 전체 단어, the
+current search.
 Set cards do not swipe and do not open a menu on a long press. The old
 학습하기 sheet is not the way in: the vocabulary dock's 학습하기 opens the
 set list, and study starts from inside the set.

@@ -57,17 +57,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       show('memory');
     });
     await page.evaluate(()=>openStudySetsAllWords());
-    await page.waitForFunction(()=>studySetsUI.screen==='all'&&document.getElementById('study-sets-edit')&&!document.getElementById('study-sets-edit').hidden);
-    const button=page.locator('#study-sets-edit'),dialog=page.locator('#task-dialog'),submit=page.locator('#task-submit');
+    await page.waitForFunction(()=>studySetsUI.screen==='all'&&document.getElementById('study-sets-share')&&!document.getElementById('study-sets-share').hidden&&document.getElementById('study-sets-edit').hidden);
+    const button=page.locator('#study-sets-share'),dialog=page.locator('#task-dialog'),submit=page.locator('#task-submit');
     const share=async()=>{
       if(await button.isDisabled()){await page.evaluate(()=>studySetsShareVisible());return;}
-      if(!await page.evaluate(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation)){
-        await button.tap();
-        await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
-      }
-      await page.getByRole('menuitem',{name:'공유',exact:true}).tap();
+      await button.tap();
     };
-    const idle=()=>page.waitForFunction(()=>!document.getElementById('study-sets-edit').disabled);
+    const idle=()=>page.waitForFunction(()=>!document.getElementById('study-sets-share').disabled);
     const opened=()=>page.waitForFunction(()=>document.getElementById('task-dialog').open);
     const record=name=>{checks.push(name);console.log(`${engine.name()}: ${name}`)};
     const reset=async mode=>{
@@ -82,7 +78,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       assert.equal(download.suggestedFilename(),'breeze_vocab.csv');assert.equal(await download.failure(),null);
       await idle();return readFileSync(await download.path());
     };
-    const focusReturned=async()=>{await idle();assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-edit');};
+    const focusReturned=async()=>{await idle();assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-share');};
 
     const originalWords=await page.evaluate(()=>JSON.stringify(words));
     const csv=await nextDownload(()=>share());

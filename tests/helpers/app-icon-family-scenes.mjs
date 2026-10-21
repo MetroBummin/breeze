@@ -12,9 +12,9 @@ export const appFamilyScenes=Object.freeze({
  'add-sheet':{visible:['#am-close'],hidden:['#set-close']},
  wordbook:{visible:['#memory-add'],hidden:['#wordbook-add-form .task-close','#btn-export']},
  'word-add':{visible:['#wordbook-add-form .task-close'],hidden:['#study-sets-close']},
- 'study-directory':{visible:['#study-sets-close','#study-sets-all','#study-sets-home-create'],hidden:['#study-sets-back','#study-sets-edit']},
- 'study-create':{visible:['#study-sets-back','#study-sets-close','#study-sets-name'],hidden:['#study-sets-edit','#study-sets-all']},
- 'study-detail':{visible:['#study-sets-back','#study-sets-edit','#study-sets-start'],hidden:['#study-sets-close','#study-sets-edit-menu']},
+ 'study-directory':{visible:['#study-sets-close','#study-sets-all','#study-sets-home-create'],hidden:['#study-sets-back','#study-sets-edit','#study-sets-share']},
+ 'study-create':{visible:['#study-sets-back','#study-sets-close','#study-sets-name'],hidden:['#study-sets-edit','#study-sets-share','#study-sets-all']},
+ 'study-detail':{visible:['#study-sets-back','#study-sets-share','#study-sets-edit','#study-sets-start'],hidden:['#study-sets-close','#study-sets-edit-menu']},
  'study-more':{visible:['#study-sets-back','#study-sets-edit-menu','#study-sets-edit-menu [role="menuitem"]:nth-child(1)','#study-sets-edit-menu [role="menuitem"]:nth-child(2)','#study-sets-edit-menu [role="menuitem"]:nth-child(3)'],hidden:['#study-sets-close']},
  'study-front':{visible:['#study-sets-back','#study-sets-expression','#study-sets-flashcard'],hidden:studyHidden.filter(s=>s!=='#study-sets-reveal'),accessible:['#study-sets-reveal']},
  'study-revealed':{visible:['#study-sets-back','#study-sets-answer','#study-sets-flashcard','#study-sets-grade-repeat','#study-sets-grade-remembered'],accessible:['#study-sets-grade-repeat','#study-sets-grade-remembered'],hidden:['#study-sets-close','#study-sets-reveal','.study-sets-complete']},
@@ -50,16 +50,16 @@ export async function captureAppFamilyStudy(page,capture){
  await page.evaluate(()=>openStudySetsDirectory());await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('.study-sets-home-card[data-set-id]').first().tap();
  await page.waitForFunction(()=>studySetsUI.screen==='detail'&&studySetsUI.pageOpen);
- await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:26,stroke:'3.6px'},'#study-sets-edit':{size:24,stroke:'2.6px',dots:'1.15px'}});
+ await capture('study-detail',['#study-sets-back','#study-sets-share','#study-sets-edit'],{'#study-sets-back':{size:26,stroke:'3.6px'},'#study-sets-share':{size:24,stroke:'2.6px'},'#study-sets-edit':{size:24,stroke:'2.6px'}});
  await page.locator('#study-sets-edit').focus();await page.keyboard.press('Enter');
  await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
  assert.equal(await page.evaluate(()=>document.activeElement===studySetsUI.editMenu.querySelector('button')),true,'keyboard opens menu on its first action');
  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0');
  await capture('study-more',['#study-sets-back'],{'#study-sets-back':{size:26,stroke:'3.6px'}});
  await page.keyboard.press('End');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'세트 삭제');
- await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'공유');
- await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
- await page.keyboard.press('ArrowUp');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'공유');
+ await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
+ await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'책 추가');
+ await page.keyboard.press('ArrowUp');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
  await page.keyboard.press('Escape');await page.waitForFunction(()=>!studySetsUI.editOpen&&!studySetsUI.editAnimation);
  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>n===document.activeElement),true,'Escape returns focus to more');
  await page.emulateMedia({reducedMotion:'reduce'});

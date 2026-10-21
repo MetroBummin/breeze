@@ -80,7 +80,7 @@ try{
  await page.evaluate(()=>show('memory'));
  await page.locator('#memory-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');await page.locator('#wordbook-add-form button[type=submit]').click();
  assert.equal(await page.evaluate(()=>words.breeze.ko),'산들바람');
- const download=page.waitForEvent('download');await page.evaluate(()=>openStudySetsAllWords());await page.locator('#study-sets-edit').click();await page.getByRole('menuitem',{name:'공유',exact:true}).click();assert.ok((await download).suggestedFilename().endsWith('.csv'));
+ const download=page.waitForEvent('download');await page.evaluate(()=>openStudySetsAllWords());await page.locator('#study-sets-share').click();assert.ok((await download).suggestedFilename().endsWith('.csv'));
  await page.evaluate(()=>{vocabOpen.clear();show('vocab');renderVocab();});
  for(const dark of [false,true]){
   await page.evaluate(d=>{darkMode=d;applyDark();document.getElementById('toast').style.display='none'},dark);

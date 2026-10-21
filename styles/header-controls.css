@@ -72,14 +72,35 @@ html body :is(#set-close,#am-close,#ed-close,.task-close,.ap-close)::after{displ
 html body #review-close{align-self:flex-start;margin:0 0 12px;}
 html body :is(#wordbook-controls #wordbook-add,#memory-home-controls #memory-add){background:var(--am-glass-strong);}
 
-/* The edit surface owns the glass. Its button and menu stay clear. */
-html body #study-sets-edit{
+/* The edit surface owns the glass. Share and the menu icon stay clear inside it.
+   A stored set is two 44px targets; 전체 단어 keeps the single share target. */
+html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface{
+  display:block;
+  width:44px;
+  min-width:44px;
+  border-radius:22px;
+}
+html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface.is-pair{
+  width:88px;
+  min-width:88px;
+}
+html body #study-sets-header-actions{
   position:absolute;
   z-index:2;
   top:0;
   right:0;
+  display:flex;
+  height:var(--am-control-size);
+}
+html body :is(#study-sets-share,#study-sets-edit){
+  position:relative;
+  z-index:2;
+  top:auto;
+  right:auto;
   width:var(--am-control-size);
   height:var(--am-control-size);
+  min-width:var(--am-control-size);
+  min-height:var(--am-control-size);
   padding:0;
   border:0;
   border-radius:50%;
@@ -87,7 +108,7 @@ html body #study-sets-edit{
   box-shadow:none;
   color:inherit;
 }
-html body #study-sets-edit:is(:hover,:active){background:transparent;}
+html body :is(#study-sets-share,#study-sets-edit):is(:hover,:active){background:transparent;}
 /* The shared :is() glass rule carries an id, so it outranks a class. Drop the
    blur only while the surface scales; iPhone re-blurs every frame otherwise. */
 html body :is(#v-memory-set,#study-sets-dialog) #study-sets-edit-surface.is-morphing{
@@ -181,7 +202,7 @@ html body #nav-vocab svg{
   height:var(--am-icon-mark);
   stroke-width:var(--am-stroke-complex);
 }
-html body :is(#home-controls #nav-home,#wordbook-home,#memory-home,#btn-export,#study-sets-edit,.library-folder-menu>summary) svg{
+html body :is(#home-controls #nav-home,#wordbook-home,#memory-home,#btn-export,#study-sets-share,#study-sets-edit,.library-folder-menu>summary) svg{
   width:var(--am-icon-complex);
   height:var(--am-icon-complex);
   stroke-width:var(--am-stroke-complex);
@@ -225,13 +246,13 @@ html body :is(
   .library-folder-controls .library-folder-add,.library-folder-controls .library-folder-menu>summary,
   #home-resume,#wordbook-review,#memory-last-set,#readpill
 ):active{filter:brightness(.92);}
-html body .study-sets-edit-surface:has(#study-sets-edit:hover){filter:brightness(.98);}
-html body .study-sets-edit-surface:has(#study-sets-edit:active){filter:brightness(.92);}
+html body .study-sets-edit-surface:has(#study-sets-edit:hover,#study-sets-share:hover){filter:brightness(.98);}
+html body .study-sets-edit-surface:has(#study-sets-edit:active,#study-sets-share:active){filter:brightness(.92);}
 
 /* Opening a sheet focuses its close. Pointer and touch focus do not draw a ring. */
 html body :is(
   #nav-settings,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#aafab,#btn-export,
-  #review-close,#vocabulary-test-close,#study-sets-back,#study-sets-close,#study-sets-edit,#study-sets-directory-back,
+  #review-close,#vocabulary-test-close,#study-sets-back,#study-sets-close,#study-sets-share,#study-sets-edit,#study-sets-directory-back,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
   .library-folder-add,.library-folder-menu>summary,#home-resume,#wordbook-review,#memory-last-set,#readpill
