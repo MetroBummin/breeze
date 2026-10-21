@@ -27,11 +27,9 @@ rule. A concurrent request that loses the last quota slot receives the quota
 error, not a meaning that exceeded the cap. Failed attempts can still incur
 provider cost; telemetry records them independently of user quota.
 
-The server falls back inside one lookup. A compact validated word lookup gives
-OpenRouter about 4 seconds; a timeout or network error goes to Gemini inside the
-same 8 second budget. A second OpenRouter call happens only after a validation
-failure (`invalid_*` or `missing_fixed_word`), and only when enough time remains
-for Gemini to keep about 2.5 seconds. The client does not automatically repeat
+The server recovers inside one lookup. Word lookups use the hedged request in
+"Hedged word lookup" below: one 8 second deadline, no per-provider cap, and no
+second call to the same provider. The client does not automatically repeat
 the HTTP request. Each lookup still has a nine-second abort controller linked to
 the existing opening lifetime. Quota/login/trial/offline/4xx are not retried.
 Cancellation never starts recovery or revives a surface; an already arrived
@@ -233,3 +231,22 @@ weakness. When the tapped surface matches more than one sentence token, or is
 several words such as "smoke and mirrors", the index stays negative and the
 lookup stops before `fetch`. That path now reports `clicked_index_missing`.
 It still does not guess which occurrence was tapped.
+
+## Hedged word lookup (2026-10-21)
+
+Word lookups (`look` and `look_v2`, including seed) no longer use a per-provider
+timer. OpenRouter DeepSeek starts immediately. If no complete valid answer has
+arrived after `HEDGE_DELAY_MS` (2000), Gemini starts with the same prompt and
+DeepSeek is left running. The first valid answer is the response; the other
+request is aborted with `AbortController`. A failure or invalid answer keeps
+the lookup waiting on the request that is still running. One 8 second deadline
+bounds the whole word lookup, so the client 9 second cutoff still holds. There
+is no second call to the same provider and no correction prompt on this path.
+
+Sentence explanation (`explain`) and its 25 second / 15 second provider budgets
+are unchanged. Response fields, `word_lookup_receipts`, and the existing
+`dict_events.meta` telemetry keys are unchanged. Word attempts also carry
+`hedged`, `winner`, and `loser` (`aborted`, `failed`, or `late`) inside that
+same meta object. `supabase/migrations/20261021120000_dict_lookup_hedge_meta.sql`
+teaches `record_dict_ai_usage` to copy those fields out of the usage payload.
+This change does not apply that migration or deploy `dict`.

@@ -61,7 +61,7 @@ try{
   }};
   const edge=readFileSync(new URL('../server/dict/index.ts',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
   runInNewContext(transpileModule(edge,{compilerOptions:{target:99,module:99}}).outputText,{
-    ...lookup,logicalLookup,lookupFingerprint,crypto,TextEncoder,AbortSignal,Response,console,
+    ...lookup,logicalLookup,lookupFingerprint,crypto,TextEncoder,AbortSignal,AbortController,setTimeout,clearTimeout,Response,console,
     createClient:()=>sr,newAiTrace:()=>({}),
     meteredFetch:async()=>{providerCalls++;return Response.json({choices:[{message:{content:broken?'invalid JSON':JSON.stringify(providerAnswer)}}]});},
     Deno:{env:{get:key=>key==='OPENROUTER_API_KEY'?'fixture':key==='SUPABASE_URL'?'fixture':null},serve:fn=>handler=fn}
