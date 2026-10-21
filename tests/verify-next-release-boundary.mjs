@@ -253,7 +253,7 @@ const expected={
     "tests/verify-memory-edit-filter-browser.mjs": "e7b45b6d9f6ed80b5772ea6401d8b44d5d419de395ff9f73a6303c07d4d071e3",
     "tests/verify-native-package.mjs": "9864957d72d6052f8d014fd6ed682834fa58a0c2629cb89b3b64a4968dc6e4db",
     "tests/verify-offline-import-browser.mjs": "ecd7314e5affecd5850ec61e3835766c0c2cedbef8f40bac0e6c8fe540af2ee5",
-    "tests/verify-onboarding-browser.mjs": "372ba029cae758eea0ac2587850d863cdacfe0bc8d54fe6513b2f3f6180a6a8d",
+    "tests/verify-onboarding-browser.mjs": "f8cd195902f2efad3270f668a1d00082a1d1a5afad792c25f2c376c5c30ba936",
     "tests/verify-onboarding-study-browser.mjs": "9e6a9bd5c99e6b9b719581a2a096b6fcaae13d92b01bcd016770be8f846d44f7",
     "tests/verify-pdf-ocr-browser.mjs": "c7ae7abc6ae06894eaf75ea663cfc5b9a6ae2110632c8dae92aca013c26fa503",
     "tests/verify-pdf-ocr-cover-browser.mjs": "4d45c95b6504ac3a8db300c239141cb725771c74e3e8463a8353fd65fe2747b7",
