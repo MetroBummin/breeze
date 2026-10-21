@@ -47,7 +47,7 @@ body.dark .study-sets-home-card:not(.study-sets-home-add):active{filter:brightne
 :is(#study-sets-dialog,#v-memory-set) .study-sets-icon>svg,.study-sets-home-menu-trigger>svg,.study-sets-vocab-back>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 #study-sets-dialog #study-sets-back>svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);stroke-width:var(--am-stroke-chevron);transform:none;}
 .study-sets-header{flex-wrap:wrap;}
-.study-set-tools{display:flex;flex-direction:column;align-items:stretch;gap:10px;flex:1 0 100%;min-width:0;margin-top:8px;}
+.study-set-tools{display:flex;flex-direction:column;align-items:stretch;gap:10px;flex:1 0 100%;min-width:0;margin-top:24px;}
 .study-set-tools[hidden]{display:none!important;}
 #v-memory-set .study-set-tools .wordbook-search,:is(#study-sets-dialog,#v-memory-set) .study-set-tools .wordbook-search{flex:none;width:100%;min-width:0;margin:0;}
 .study-set-tools .wordbook-filter-row{width:100%;min-width:0;}
@@ -157,6 +157,7 @@ body:has(#v-memory-set.on)::before,body:has(#v-memory-set.on) #topbar,body:has(#
 #v-memory-set [hidden]{display:none!important;}
 #v-memory-set .study-sets-sheet{height:100%;max-height:none;min-height:0;max-width:none;border:0;border-radius:0;box-shadow:none;background:var(--home-background);}
 #v-memory-set .study-sets-header{padding:16px 16px 12px;}
+#v-memory-set .study-sets-header:has(.study-set-tools:not([hidden])){padding-bottom:0;}
 #v-memory-set .study-sets-body{flex:1;padding:8px 20px 24px;}
 #v-memory-set .study-sets-footer{padding-bottom:max(16px,env(safe-area-inset-bottom));}
 @media(max-height:500px){#v-memory-set .study-sets-header{padding-top:4px;padding-bottom:4px;}}

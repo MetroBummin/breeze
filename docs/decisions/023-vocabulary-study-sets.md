@@ -577,8 +577,10 @@ still excludes it from that set only. Search exists only inside 전체 단어. T
 sort and book filter card stays gone. The original star-filter row — the
 별점 label and the same chips, classes, and sizes — returns on every word-set
 page. Search and that row stack in one column, search above the row. A set
-without search shows only the row. A word is shown when its visible star count
-is one of the pressed chips; no pressed chip shows every word. A word's star
+without search shows only the row. The row belongs to the word list: 32px
+below the header controls and 8px above the first word. A word is shown when
+its visible star count is one of the pressed chips; no pressed chip shows every
+word. A word's star
 stays visible and tappable on every set row, including 전체 단어, and writes
 that saved word's status. Meanings on 전체 단어 stay read-only. The chips
 filter the list on screen. They do not change a set's stored cards. Studying
