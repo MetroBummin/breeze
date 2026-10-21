@@ -571,13 +571,22 @@ the saved-word count, and cannot be deleted. Other sets follow, then 세트 추�
 전체 단어 lists every saved word, newest first. Swiping a word out of 전체 단어
 still deletes that word, tombstone included. Swiping a word out of another set
 still excludes it from that set only. Search exists only inside 전체 단어. The
-sort and book filter card stays gone. The existing star chips return on every
-word-set page, in the header, and beside search on 전체 단어. A word is shown
-when its visible star count is one of the pressed chips; no pressed chip shows
-every word. A word's star stays visible and tappable on every set row, including
-전체 단어, and writes that saved word's status. Meanings on 전체 단어 stay
-read-only. The chips filter the list on screen. They do not change a set's
-stored cards or its study queue.
+sort and book filter card stays gone. The original star-filter row — the
+별점 label and the same chips, classes, and sizes — returns on every word-set
+page. Search and that row stack in one column, search above the row. A set
+without search shows only the row. A word is shown when its visible star count
+is one of the pressed chips; no pressed chip shows every word. A word's star
+stays visible and tappable on every set row, including 전체 단어, and writes
+that saved word's status. Meanings on 전체 단어 stay read-only. The chips
+filter the list on screen. They do not change a set's stored cards or its
+study queue.
+
+Set-list cards show the set name, the grouped word count, how many of those
+words show three stars, and the linked book title when the set has one. 전체
+단어's badge says 기본. A relative last-studied time is shown only when a study
+session or answer timestamp already exists on that set. 전체 단어's simple
+session stores outcomes without a time, so that line is omitted. No new
+study-time field is stored. The cards reuse the existing pastel tokens.
 
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set

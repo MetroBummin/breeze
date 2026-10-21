@@ -7,7 +7,7 @@ body:has(:is(#v-vocab,#v-study).on)::before,body:has(:is(#v-vocab,#v-study).on) 
 #v-vocab .wordbook-brand .memory-wordmark{position:relative;display:block;flex:none;width:132px;aspect-ratio:841/258;font-size:0;line-height:0;color:transparent;background:url(../assets/brand/wordmarks/breeze-neutral-light.svg) center/contain no-repeat;}
 body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmarks/breeze-neutral-dark.svg);}
 #v-vocab .memory-wordmark::before{content:"";position:absolute;inset:0;display:none;background:var(--settings-ink);mask:url(../assets/brand/wordmark-mask.svg) center/contain no-repeat;-webkit-mask:url(../assets/brand/wordmark-mask.svg) center/contain no-repeat;}
-#vocab-search-field[hidden],#vstars[hidden]{display:none!important;}
+#vocab-search-field[hidden],#vstars[hidden],#vocab-star-filter[hidden]{display:none!important;}
 @media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more){:is(#v-vocab .memory-wordmark,.memory-home-header .memory-wordmark){background-image:none!important;}:is(#v-vocab .memory-wordmark,.memory-home-header .memory-wordmark)::before{display:block;}}
 #v-vocab h1{font:700 26px/32px var(--ui);letter-spacing:-.4px;}
 #v-vocab .cnt{font:600 13px/20px var(--ui);color:var(--settings-muted);font-variant-numeric:tabular-nums;}

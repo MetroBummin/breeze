@@ -49,8 +49,8 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=e8263cbe">
   <link rel="stylesheet" href="styles/components.css?v=e01f9d18">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=bd53c6cc">
-  <link rel="stylesheet" href="styles/study-sets.css?v=52d5e733">
+  <link rel="stylesheet" href="styles/wordbook.css?v=50b031d0">
+  <link rel="stylesheet" href="styles/study-sets.css?v=587efa3d">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
@@ -116,7 +116,7 @@
   <script defer src="scripts/ui/wordbook.js?v=30f0964f"></script>
   <script defer src="scripts/core/study-sets.js?v=13c27671"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=6b6f1495"></script>
-  <script defer src="scripts/ui/study-sets.js?v=f972c099"></script>
+  <script defer src="scripts/ui/study-sets.js?v=7ed6c495"></script>
   <script defer src="scripts/core/study-set-test.js?v=3b3ced09"></script>
   <script defer src="scripts/ui/study-set-test.js?v=10f226d6"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
@@ -471,7 +471,7 @@
 <!-- ================= VOCAB ================= -->
 <section class="view" id="v-memory-set" aria-label="학습 세트"></section>
 <label class="wordbook-search" id="vocab-search-field" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="vsearch" aria-label="단어, 뜻, 책 검색" placeholder="단어 · 뜻 · 책 검색"></label>
-<div id="vstars" role="group" aria-label="별점 필터" hidden><button class="stbtn" type="button" data-s="1" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button class="stbtn" type="button" data-s="2" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button class="stbtn" type="button" data-s="3" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div>
+<div id="vocab-star-filter" hidden><div class="wordbook-filter-row"><span>별점</span><div id="vstars" role="group" aria-label="별점 필터"><button class="stbtn" type="button" data-s="1" data-status="1" aria-label="별 1개 필터" aria-pressed="false">★</button><button class="stbtn" type="button" data-s="2" data-status="2" aria-label="별 2개 필터" aria-pressed="false">★★</button><button class="stbtn" type="button" data-s="3" data-status="3" aria-label="별 3개 필터" aria-pressed="false">★★★</button></div></div></div>
 <div class="view" id="v-vocab">
   <div id="wordbook-review-entry" class="wordbook-review-entry" hidden><button id="review-use-daily" type="button" hidden onclick="openVocabularyReview(true)">전체 범위 정규 학습</button></div>
   <section id="review-setup" aria-label="학습량" hidden>

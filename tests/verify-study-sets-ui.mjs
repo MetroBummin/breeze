@@ -216,7 +216,11 @@ test('Memory directory keeps all words first, appends sets and add, and enters t
   await afterAction(createFromHome('시험 준비'));
   const cards=[...document.querySelectorAll('.study-sets-home-card')];
   assert.equal(cards[0].id,'study-sets-all');assert.equal(cards[1].querySelector('strong').textContent,'시험 준비');
-  assert.equal(cards[2].id,'study-sets-home-create');assert.match(cards[1].textContent,/2개/);
+  assert.equal(cards[2].id,'study-sets-home-create');assert.match(cards[1].querySelector('.study-sets-home-caption').textContent,/단어 1 · ★★★ 0/);
+  assert.match(cards[1].querySelector('.study-sets-home-badge').textContent,/외 1/);
+  assert.equal(cards[0].querySelector('.study-sets-home-badge').textContent,'기본');
+  assert.equal(cards[0].querySelector('.study-sets-home-studied'),null);
+  assert.equal(cards[1].querySelector('.study-sets-home-studied'),null);
   await afterAction(click('#study-sets-back'));assert.equal(query('#study-sets-dialog').open,false);
   assert.equal(context.currentView,'memory');assert.equal(document.activeElement.id,'study-sets-home-create');
 });
@@ -226,9 +230,9 @@ test('direct set cards preserve detail, nested Back, updated counts and focus af
   const card=query('.study-sets-home-card[data-set-id]');card.focus();await afterAction(card.click());
   assert.equal(query('#study-sets-title').textContent,'Exam set');assert.equal(context.history.state.studySetsHome,true);
   assert.equal(context.history.state.studySetsScreen,'detail');assert.equal(document.querySelector('.study-sets-list'),null);
-  await afterAction(click('.study-sets-row-action'));assert.match(query('.study-sets-home-card[data-set-id]').textContent,/1개/);
+  await afterAction(click('.study-sets-row-action'));assert.match(query('.study-sets-home-card[data-set-id] .study-sets-home-caption').textContent,/단어 1 ·/);
   await afterAction(run("studySetsGo('excluded')"));await afterAction(click('.study-sets-row-action'));await afterAction(click('#study-sets-back'));
-  assert.equal(query('#study-sets-title').textContent,'Exam set');assert.match(query('.study-sets-home-card[data-set-id]').textContent,/2개/);
+  assert.equal(query('#study-sets-title').textContent,'Exam set');assert.match(query('.study-sets-home-card[data-set-id] .study-sets-home-caption').textContent,/단어 2 ·/);
   await afterAction(run('studySetsToggleEditMenu()'));await afterAction(button('이름 변경'));query('#study-sets-rename-input').value='Midterm';await afterAction(submit('form'));
   assert.equal(query('.study-sets-home-card[data-set-id] strong').textContent,'Midterm');
   await afterAction(click('#study-sets-back'));assert.equal(query('#study-sets-dialog').open,false);
@@ -787,18 +791,25 @@ test('전체 단어 cannot be deleted and the filter card is gone',async()=>{
 
 test('star chips filter 전체 단어 and a saved set, and none pressed shows every word',async()=>{
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  assert.match(html,/id="vstars"[^>]*aria-label="별점 필터"/);
+  assert.match(html,/id="vocab-star-filter"[^>]*hidden><div class="wordbook-filter-row"><span>별점<\/span><div id="vstars"[^>]*aria-label="별점 필터"/);
   assert.match(html,/data-status="1"[^>]*aria-label="별 1개 필터"/);
   assert.match(html,/data-status="3"[^>]*aria-label="별 3개 필터"/);
   assert.doesNotMatch(html,/wordbook-filters|id="vsort"|id="vbooks"|id="vfilter-clear"/);
+  const starCss=readFileSync(new URL('../styles/study-sets.css',import.meta.url),'utf8');
+  assert.doesNotMatch(starCss,/\.study-set-tools #vstars\{[^}]*flex:\s*none/);
+  assert.match(starCss,/flex-direction:column/);
   assert.match(readFileSync(new URL('../scripts/ui/wordbook.js',import.meta.url),'utf8'),/studySetsRefreshStarFilter/);
   const h=harness();
-  h.document.body.insertAdjacentHTML('beforeend','<label class="wordbook-search" id="vocab-search-field" hidden><input id="vsearch"></label><div id="vstars" hidden><button class="stbtn" type="button" data-status="1" aria-pressed="false">★</button><button class="stbtn" type="button" data-status="3" aria-pressed="false">★★★</button></div>');
+  h.document.body.insertAdjacentHTML('beforeend','<label class="wordbook-search" id="vocab-search-field" hidden><input id="vsearch"></label><div id="vocab-star-filter" hidden><div class="wordbook-filter-row"><span>별점</span><div id="vstars"><button class="stbtn" type="button" data-status="1" aria-pressed="false">★</button><button class="stbtn" type="button" data-status="3" aria-pressed="false">★★★</button></div></div></div>');
   h.context.words.a.status=1;h.context.words.c.status=3;h.context.words.d.status=2;
   await afterAction(h.run('openStudySetsAllWords()'));
   assert.equal(h.query('#vstars').hidden,false);
-  assert.equal(h.query('#vstars').parentElement.id,'study-set-tools');
+  assert.equal(h.query('#vocab-star-filter').parentElement.id,'study-set-tools');
+  assert.equal(h.query('#vstars').parentElement.className,'wordbook-filter-row');
+  assert.equal(h.query('#vocab-star-filter .wordbook-filter-row > span').textContent,'별점');
   assert.equal(h.query('#vocab-search-field').parentElement.id,'study-set-tools');
+  assert.equal(h.query('#study-set-tools').firstElementChild.id,'vocab-search-field');
+  assert.equal(h.query('#study-set-tools').lastElementChild.id,'vocab-star-filter');
   assert.equal(h.query('#study-set-tools').parentElement.classList.contains('study-sets-header'),true);
   assert.equal(h.document.querySelectorAll('.study-all-words-row').length,4);
   h.run('wordbookStars=new Set([3])');
@@ -812,7 +823,9 @@ test('star chips filter 전체 단어 and a saved set, and none pressed shows ev
   await afterAction(h.createSet('Stars',['Two']));
   assert.equal(h.run('studySetsUI.screen'),'detail');
   assert.equal(h.query('#vstars').hidden,false);
+  assert.equal(h.query('#vocab-star-filter').parentElement.id,'study-set-tools');
   assert.equal(h.query('#vocab-search-field').hidden,true);
+  assert.equal(h.query('#vocab-search-field').parentElement,h.document.body);
   assert.equal(h.document.querySelectorAll('.study-sets-word-row').length,2);
   h.run('wordbookStars=new Set([1])');
   await afterAction(h.run('studySetsRefreshStarFilter()'));
@@ -820,6 +833,21 @@ test('star chips filter 전체 단어 and a saved set, and none pressed shows ev
   h.run('wordbookStars.clear()');
   await afterAction(h.run('studySetsRefreshStarFilter()'));
   assert.equal(h.document.querySelectorAll('.study-sets-word-row').length,2);
+});
+
+test('set cards count grouped words and three-star words, and show last study time only when a session already has one',async()=>{
+  const h=harness();
+  h.context.words.a.status=3;
+  await afterAction(h.createFromHome('Exam set',['One']));
+  await afterAction(h.run('closeStudySets()'));
+  const at=Date.now()-3*86400000-3600000;
+  await afterAction(h.run(`(()=>{const set=studySetsUI.state.sets[0];set.archivedSessions=[{startedAt:${at},answers:[{at:${at}}]}];return renderStudySetsHome(studySetsUI.state);})()`));
+  const card=h.query('.study-sets-home-card[data-set-id]');
+  assert.equal(card.querySelector('.study-sets-home-caption').textContent,'단어 1 · ★★★ 1');
+  assert.equal(card.querySelector('.study-sets-home-badge').textContent,'One');
+  assert.match(card.querySelector('.study-sets-home-studied').textContent,/3일 전/);
+  assert.equal(h.document.querySelector('#study-sets-all .study-sets-home-studied'),null);
+  assert.equal(h.query('#study-sets-all .study-sets-home-badge').textContent,'기본');
 });
 
 test('the last-viewed set button opens that set and falls back to 전체 단어',async()=>{

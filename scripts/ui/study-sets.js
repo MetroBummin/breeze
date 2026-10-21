@@ -134,6 +134,49 @@ function studySetsListSummary(set){
   const total=session?.queue.length||0,completed=session?.index||0;
   return {active,total,completed,status:session?(completed<total?'active':'complete'):active?'idle':'empty'};
 }
+function studySetsMetaLine(wordCount,threeCount){return `단어 ${wordCount} · ★★★ ${threeCount}`;}
+function studySetsGroupedStarStats(cards){
+  const groups=BreezeStudySets.groupedCards(cards);let three=0;
+  for(const group of groups)if(Number(group.status)===3)three++;
+  return {words:groups.length,three};
+}
+// Last study time already lives on a set session. 전체 단어's simple session
+// stores outcomes without timestamps, so that card omits the clock.
+function studySetsLastStudiedAt(set){
+  let latest=0;
+  const take=session=>{
+    if(!session)return;
+    if(Number.isFinite(session.startedAt))latest=Math.max(latest,session.startedAt);
+    for(const answer of session.answers||[])if(Number.isFinite(answer.at))latest=Math.max(latest,answer.at);
+  };
+  take(set?.session);
+  for(const session of set?.archivedSessions||[])take(session);
+  return latest;
+}
+function studySetsRelativeTime(at,now=Date.now()){
+  if(!at)return '';
+  const delta=Math.max(0,now-at),minute=60000,hour=3600000,day=86400000;
+  if(delta<minute)return '방금';
+  if(delta<hour)return `${Math.floor(delta/minute)}분 전`;
+  if(delta<day)return `${Math.floor(delta/hour)}시간 전`;
+  if(delta<30*day)return `${Math.floor(delta/day)}일 전`;
+  const date=new Date(at);
+  return `${date.getMonth()+1}월 ${date.getDate()}일`;
+}
+function studySetsBookLabel(set){
+  const titles=[...new Set((set?.bookTitles||[]).filter(title=>typeof title==='string'&&title.trim()))];
+  if(!titles.length)return '';
+  return titles.length===1?titles[0]:`${titles[0]} 외 ${titles.length-1}`;
+}
+function studySetsClockIcon(){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx','12');circle.setAttribute('cy','12');circle.setAttribute('r','8');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M12 8v4.5l3 2');
+  svg.append(circle,path);return svg;
+}
 async function renderStudySetsHome(state=null){
   const epoch=++studySetsHomeEpoch;let readError;
   if(!state){try{state=await loadStudySets();}catch(error){readError=error;}}
@@ -141,29 +184,40 @@ async function renderStudySetsHome(state=null){
   const container=studySetsUI.directoryList||document.getElementById('study-sets-home-list');if(!container)return;studySetsUI.directoryList=container;
   const focused=document.activeElement instanceof HTMLElement&&container.contains(document.activeElement)?document.activeElement:null;
   const list=studySetsNode('ul','study-sets-home-cards');list.setAttribute('aria-label','Memory 단어장과 학습 세트');
-  const card=(title,description,action,kind='chevron')=>{
+  const card=(title,meta,action,options={})=>{
     const item=studySetsNode('li');const button=studySetsButton('',action,'study-sets-home-card');
+    if(options.tone!==undefined)button.dataset.tone=String(options.tone);
+    if(!options.add){const shape=studySetsNode('span','study-sets-home-shape');shape.setAttribute('aria-hidden','true');button.append(shape);}
     const copy=studySetsNode('span','study-sets-home-copy');
-    copy.append(studySetsNode('strong','',title));if(description)copy.append(studySetsNode('span','study-sets-home-caption',description));
-    button.append(copy,studySetsIcon(kind));item.append(button);list.append(item);return button;
+    copy.append(studySetsNode('strong','',title));
+    if(meta||options.studied){
+      const lines=studySetsNode('span','study-sets-home-meta');
+      if(meta)lines.append(studySetsNode('span','study-sets-home-caption',meta));
+      if(options.studied){const studied=studySetsNode('span','study-sets-home-studied');studied.append(studySetsClockIcon(),document.createTextNode(options.studied));lines.append(studied);}
+      copy.append(lines);
+    }
+    button.append(copy);
+    if(options.badge)button.append(studySetsNode('span','study-sets-home-badge',options.badge));
+    if(options.add)button.append(studySetsIcon('add'));
+    item.append(button);list.append(item);return button;
   };
-  // Match the existing wordbook's grouped count; its search/filter state stays
-  // with renderVocab and is neither copied nor reset by the directory.
-  const count=new Set(Object.entries(words).filter(([,item])=>validWordMeaning(item)).map(([key,item])=>item.root||key)).size;
-  const all=card('전체 단어',`${count}개`,openStudySetsAllWords);all.id='study-sets-all';all.classList.add('study-sets-home-default');
+  // Match the list the set page actually shows: one row per word, not per sense.
+  const catalog=studySetsAllWordsGroups();let three=0;
+  for(const group of catalog.values)if(Number(group[0][1].status)===3)three++;
+  const all=card('전체 단어',studySetsMetaLine(catalog.values.length,three),openStudySetsAllWords,{tone:0,badge:'기본'});all.id='study-sets-all';
   if(readError){
     const notice=studySetsNode('div','study-sets-home-error');notice.setAttribute('role','alert');
     notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',()=>renderStudySetsHome()));
     const item=studySetsNode('li');item.append(notice);list.append(item);
   }
-  for(const set of state?.sets||[]){
-    const view=studySetsListSummary(set),active=view.active;
-    const progress=view.status==='active'?` · ${view.completed}/${view.total}`:'';
-    const button=card(set.name,`${active}개${progress}`,()=>openStudySet(set.id));
+  for(const [index,set] of (state?.sets||[]).entries()){
+    const stats=studySetsGroupedStarStats(BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words));
+    const studiedAt=studySetsLastStudiedAt(set);
+    const button=card(set.name,studySetsMetaLine(stats.words,stats.three),()=>openStudySet(set.id),{tone:(index+1)%4,badge:studySetsBookLabel(set),studied:studiedAt?studySetsRelativeTime(studiedAt):''});
     button.dataset.setId=set.id;
     button.setAttribute('aria-controls','v-memory-set');
   }
-  const create=card('세트 추가','',openStudySetsCreate,'add');
+  const create=card('세트 추가','',openStudySetsCreate,{add:true});
   create.id='study-sets-home-create';create.setAttribute('aria-label','새 학습 세트');create.classList.add('study-sets-home-add');create.disabled=!state;
   create.setAttribute('aria-haspopup','dialog');create.setAttribute('aria-controls','study-sets-dialog');
   container.replaceChildren(list);
@@ -763,8 +817,9 @@ function studySetsParkNode(node){
   node.hidden=true;
 }
 function studySetsParkSearch(){studySetsParkNode(document.getElementById('vocab-search-field'));}
+function studySetsStarFilter(){return document.getElementById('vocab-star-filter')||document.getElementById('vstars');}
 function studySetsParkStars(){
-  studySetsParkNode(document.getElementById('vstars'));
+  studySetsParkNode(studySetsStarFilter());
   const tools=document.getElementById('study-set-tools');if(tools)tools.hidden=true;
 }
 function studySetsPlaceSearch(host){
@@ -780,7 +835,7 @@ function studySetsStatusMatches(status){
   return stars.has(value);
 }
 function studySetsPlaceStarFilter(){
-  const tools=document.getElementById('study-set-tools'),stars=document.getElementById('vstars');
+  const tools=document.getElementById('study-set-tools'),stars=studySetsStarFilter();
   const show=studySetsUI.screen==='all'||studySetsUI.screen==='detail';
   if(!tools||!show){studySetsParkStars();if(studySetsUI.screen!=='all')studySetsParkSearch();return;}
   tools.hidden=false;

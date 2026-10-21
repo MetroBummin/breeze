@@ -51,8 +51,12 @@ try{
  assert.equal(await page.locator('#vsearch').isVisible(),true);
  assert.equal(await page.locator('#vstars').isVisible(),true);
  assert.equal(await page.locator('#vstars button').count(),3);
- const beside=await page.evaluate(()=>{const search=document.getElementById('vocab-search-field').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect();return stars.left>=search.right-1&&Math.abs((search.top+search.height/2)-(stars.top+stars.height/2))<16;});
- assert.equal(beside,true,'star chips sit on the same row as search');
+ const stacked=await page.evaluate(()=>{
+  const search=document.getElementById('vocab-search-field').getBoundingClientRect(),row=document.getElementById('vocab-star-filter').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect(),chip=document.querySelector('#vstars .stbtn').getBoundingClientRect();
+  return {below:row.top>=search.bottom-1,aligned:Math.abs(row.left-search.left)<4,wide:stars.width>180&&chip.width>70,label:document.querySelector('.wordbook-filter-row > span')?.textContent||''};
+ });
+ assert.equal(stacked.below&&stacked.aligned&&stacked.wide,true,'original star row sits under search and is not compacted: '+JSON.stringify(stacked));
+ assert.equal(stacked.label,'별점');
  await page.locator('#vstars button[data-status="3"]').click();
  assert.equal(await page.locator('#vstars button[data-status="3"]').getAttribute('aria-pressed'),'true');
  assert.equal(await page.locator('.study-all-words-row').count(),1);
