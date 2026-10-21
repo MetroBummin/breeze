@@ -40,4 +40,90 @@ const abortedBody=()=>new ReadableStream({start(controller){controller.error(Obj
 assert.equal(await outcomeForBody(abortedBody,{signal:AbortSignal.abort()}),'timeout');
 assert.equal(await outcomeForBody(()=>new ReadableStream({start(controller){controller.error(new SyntaxError('bad json'));}}),{}),'api_ok');
 
+const hedgeTrace=newAiTrace('look');
+let releaseHedge;
+hedgeTrace.hedge={settled:new Promise(resolve=>{releaseHedge=resolve;}),hedged:false,winner:null,loser:null};
+let hedgedArgs;
+const hedgedClient={rpc(_name,args){hedgedArgs=args;return{abortSignal(){return Promise.resolve({data:'metric-id',error:null});}};}};
+globalThis.fetch=async()=>new Response(JSON.stringify({usage:{prompt_tokens:3,completion_tokens:2,total_tokens:5}}),{status:200});
+const hedgedResponse=meteredFetch(hedgedClient,hedgeTrace,'openrouter','deepseek/deepseek-v4-flash-0731','https://provider.test',{});
+const hedgedWinner=await Promise.race([hedgedResponse.then(()=>'response'),new Promise(resolve=>setTimeout(()=>resolve('blocked'),50))]);
+assert.equal(hedgedWinner,'response','hedge telemetry blocked the provider response');
+assert.equal(hedgedArgs,undefined,'hedge fields were written before the race settled');
+hedgeTrace.hedge.hedged=true;hedgeTrace.hedge.winner='gemini';hedgeTrace.hedge.loser='aborted';
+releaseHedge();
+await backgroundTask;
+assert.equal(hedgedArgs.p_outcome,'api_ok');
+assert.equal(hedgedArgs.p_usage.input_tokens,3);
+assert.equal(hedgedArgs.p_usage.output_tokens,2);
+assert.equal(hedgedArgs.p_usage.hedged,true);
+assert.equal(hedgedArgs.p_usage.winner,'gemini');
+assert.equal(hedgedArgs.p_usage.loser,'aborted');
+
+let failureArgs;
+const failureClient={rpc(_name,args){failureArgs=args;return{abortSignal(){return Promise.resolve({data:'metric-id',error:null});}};}};
+const failureTrace=newAiTrace('look');
+failureTrace.hedge={settled:Promise.resolve(),hedged:true,winner:null,loser:'failed'};
+globalThis.fetch=async()=>{throw new TypeError('fetch failed');};
+await assert.rejects(()=>meteredFetch(failureClient,failureTrace,'gemini','gemini-3.5-flash-lite','https://provider.test',{}));
+await backgroundTask;
+assert.equal(failureArgs.p_outcome,'network_error');
+assert.equal(failureArgs.p_usage.hedged,true);
+assert.equal(failureArgs.p_usage.winner,null);
+assert.equal(failureArgs.p_usage.loser,'failed');
+assert.equal(failureArgs.p_usage.input_tokens,undefined);
+
+const plain=newAiTrace('explain');
+let plainArgs;
+const plainClient={rpc(_name,args){plainArgs=args;return{abortSignal(){return Promise.resolve({data:'metric-id',error:null});}};}};
+globalThis.fetch=async()=>new Response(JSON.stringify({usage:{prompt_tokens:1,completion_tokens:1,total_tokens:2}}),{status:200});
+await meteredFetch(plainClient,plain,'openrouter','deepseek/deepseek-v4-flash-0731','https://provider.test',{});
+await backgroundTask;
+assert.equal(plainArgs.p_usage.hedged,undefined,'sentence telemetry gained hedge fields');
+assert.equal(plainArgs.p_usage.input_tokens,1);
+
+const {PGlite}=await import('@electric-sql/pglite');
+const {readFileSync}=await import('node:fs');
+const db=new PGlite();
+await db.exec(`create table public.dict_events (
+  id bigserial primary key,
+  user_id uuid,
+  at timestamptz not null default now(),
+  action text not null,
+  word text not null default '',
+  provider text,
+  meta jsonb not null default '{}'::jsonb
+);
+create unique index dict_events_telemetry_request_attempt
+  on public.dict_events ((meta->>'request_id'), (meta->>'attempt'))
+  where meta->>'telemetry_version' = '2';`);
+await db.exec(readFileSync(new URL('../supabase/migrations/20261021120000_dict_lookup_hedge_meta.sql',import.meta.url),'utf8'));
+const request='11111111-1111-4111-8111-111111111111';
+const usage={input_tokens:3,output_tokens:2,thinking_tokens:0,total_tokens:5,cached_input_tokens:0,cache_creation_input_tokens:0,tool_input_tokens:0,hedged:true,winner:'openrouter',loser:'failed'};
+const stored=await db.query(`select public.record_dict_ai_usage($1,1,'look','openrouter','deepseek/deepseek-v4-flash-0731',200,1200,'api_ok',$2::jsonb) as id`,[request,JSON.stringify(usage)]);
+assert.equal(Number(stored.rows[0].id)>0,true);
+const row=(await db.query(`select meta from public.dict_events where id=$1`,[stored.rows[0].id])).rows[0].meta;
+assert.equal(row.telemetry_version,2);
+assert.equal(row.outcome,'api_ok');
+assert.equal(row.usage_available,true);
+assert.equal(row.hedged,true);
+assert.equal(row.winner,'openrouter');
+assert.equal(row.loser,'failed');
+assert.equal(row.ai_usage.input_tokens,3);
+assert.equal(row.ai_usage.hedged,undefined);
+const sentence=await db.query(`select public.record_dict_ai_usage($1,1,'explain','openrouter','deepseek/deepseek-v4-flash-0731',200,400,'api_ok',$2::jsonb) as id`,['22222222-2222-4222-8222-222222222222',JSON.stringify({input_tokens:4,output_tokens:1,thinking_tokens:0,total_tokens:5,cached_input_tokens:0,cache_creation_input_tokens:0,tool_input_tokens:0})]);
+const sentenceMeta=(await db.query(`select meta from public.dict_events where id=$1`,[sentence.rows[0].id])).rows[0].meta;
+assert.equal(Object.hasOwn(sentenceMeta,'hedged'),false);
+assert.equal(sentenceMeta.usage_available,true);
+assert.equal(sentenceMeta.ai_usage.input_tokens,4);
+const failed=await db.query(`select public.record_dict_ai_usage($1,2,'look','gemini','gemini-3.5-flash-lite',null,8000,'timeout',$2::jsonb) as id`,[request,JSON.stringify({hedged:true,winner:null,loser:'aborted'})]);
+const failedMeta=(await db.query(`select meta from public.dict_events where id=$1`,[failed.rows[0].id])).rows[0].meta;
+assert.equal(failedMeta.usage_available,false);
+assert.equal(failedMeta.ai_usage,null);
+assert.equal(failedMeta.hedged,true);
+assert.equal(failedMeta.winner,null);
+assert.equal(failedMeta.loser,'aborted');
+await assert.rejects(db.query(`select public.record_dict_ai_usage($1,3,'look','gemini','gemini-3.5-flash-lite',null,10,'timeout',$2::jsonb)`,[request,JSON.stringify({hedged:true,winner:'openrouter',loser:'dropped'})]));
+await db.close();
+
 console.log('Dictionary telemetry persists behind the provider response');
