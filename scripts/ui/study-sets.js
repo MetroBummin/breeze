@@ -49,6 +49,7 @@ function studySetsIcon(kind){
     for(const x of [5,12,19]){const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('cx',String(x));dot.setAttribute('cy','12');dot.setAttribute('r','1.25');svg.append(dot);}return svg;
   }
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  // share is the former #btn-export glyph: a square with an arrow up.
   path.setAttribute('d',kind==='close'?'M6 6l12 12M18 6L6 18':kind==='back'?'M14.5 4.5 7.5 12l7 7.5':kind==='chevron'?'M9 5l7 7-7 7':kind==='remove'?'M6 12h12':kind==='share'?'M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2':kind==='menu'?'M5 7h14M5 12h14M5 17h14':'M12 5v14M5 12h14');
   svg.append(path);return svg;
 }

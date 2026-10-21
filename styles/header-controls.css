@@ -149,7 +149,7 @@ html body :is(#pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modef
 }
 
 html body :is(
-  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#btn-export,
+  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#btn-export,#study-sets-share,
   #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-back,#study-sets-close,#study-sets-edit,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
@@ -163,7 +163,7 @@ html body :is(
   stroke-linejoin:round;
 }
 html body :is(
-  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#btn-export,
+  #nav-settings,#nav-home,#nav-vocab,#wordbook-home,#memory-home,#home-add,#wordbook-add,#memory-add,#readback,#btn-export,#study-sets-share,
   #review-close,#vocabulary-test-close,#study-sets-directory-back,#study-sets-back,#study-sets-close,#study-sets-edit,
   #set-close,#am-close,#ed-close,.task-close,.ap-close,
   #pdf-page-button,#pdf-bookmarks-only,#pdf-navigation-toggle,#modefab,.ink-pill-control,
