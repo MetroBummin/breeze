@@ -57,6 +57,7 @@ async function session({storage={},fail=false}={}){
   const h={context,fail,catalogGate:deferred(),bodyGate:deferred(),bodyStarted:deferred(),failedImage:deferred(),dictReady:deferred(),dictRequests:[],selectedReadUrl:'',calls:[],direct:[],images:[],unexpected:[],errors:[]};sessions.push(h);
   await context.addInitScript(values=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));
     for(const [key,value] of Object.entries(values))localStorage.setItem(key,value);
     window.hybridReadIntents=[];
     document.addEventListener('click',event=>{

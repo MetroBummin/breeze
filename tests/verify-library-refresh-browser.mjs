@@ -26,6 +26,7 @@ try{
    await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
    await page.addInitScript(()=>{
      localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+     localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));
      window.capacitorResumes=[];
      window.Capacitor={Plugins:{App:{addListener(name,callback){
        window.capacitorResumes.push(name);

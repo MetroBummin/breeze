@@ -25,8 +25,8 @@ const homeReady=loadBooks().then(async()=>{
 homeReady.then(()=>startSharedFileImports());
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
-/* Article Home must not request the classics catalog. RSS discovery treats any
-   other origin as a leak. The 책 rail and the longform library ask for it. */
+/* A saved 기사 choice must not request the classics catalog. RSS discovery
+   treats any other origin as a leak. The 책 rail and the longform library ask for it. */
 function paintHome(){
   renderHome();
   if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='books'&&typeof refreshRemoteClassics==='function')

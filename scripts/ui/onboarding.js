@@ -244,7 +244,7 @@ function endOnboarding(remember,returnToPrevious=true){
   document.body.classList.remove('onboarding-active');
   for(const [node,inert] of session.inert)node.inert=inert;
   if(remember){save(ONBOARD_KEY,'done');localStorage.removeItem(ONBOARD_PROGRESS_KEY);}
-  if(activeAppView()==='home')renderHome();
+  if(activeAppView()==='home'){if(typeof paintHome==='function')paintHome();else renderHome();}
   if(session.focus instanceof HTMLElement&&session.focus.getClientRects().length)session.focus.focus({preventScroll:true});
 }
 function maybeShowOnboarding(){

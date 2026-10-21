@@ -485,7 +485,7 @@ function homeBookSpec(book,casual){
     }};
 }
 function homeRecommendKind(){
-  return load('breeze.home-recommend','articles')==='books'?'books':'articles';
+  return load('breeze.home-recommend','books')==='books'?'books':'articles';
 }
 /* A started catalog book is one library record. Bundled text keeps the catalog
    id on longReadId, a bundled EPUB keeps it on classicId, and a copy migrated

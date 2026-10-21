@@ -22,7 +22,7 @@ try{
     try{
       const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
       await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
-      await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+      await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await page.goto(url);
       await page.evaluate(()=>homeReady);
       await page.evaluate(async()=>{

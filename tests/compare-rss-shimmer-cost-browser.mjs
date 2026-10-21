@@ -81,6 +81,7 @@ async function start(browser,test){
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
   await context.addInitScript(options=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));
     window.coverReaderEvidence=[];
     window.coverPrefixEvidence=[];
     if(options.fastTimeout){

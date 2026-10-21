@@ -143,10 +143,10 @@ claiming Jev approval. Saved material is unchanged; Jev stays OFF.
 
 ## Home articles / books toggle (2026-10-18)
 
-The recommendation rail stays the external RSS row by default. An explicit
-segmented control beside the 추천 heading can replace that same rail with the
+A reader with no saved choice opens on the book rail. That rail is the
 bundled Project Gutenberg catalog: the five Holmes Text books, plus Alice
-and Gatsby as Breeze Original text. The Odyssey is not registered in that
+and Gatsby as Breeze Original text. An explicit segmented control beside the
+추천 heading can replace that same rail with the external RSS row. The Odyssey is not registered in that
 catalog, so it is absent from the Home 책 rail, the 추천 row, the preview
 sheet, and the bundled asset list. Alice and Gatsby are not bundled EPUBs;
 their text and covers live with the other Text books. A book already saved in

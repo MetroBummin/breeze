@@ -20,7 +20,7 @@ try{for(const engine of engines){
   const browser=await engine.launch(engine===chromium && process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
   try{
     const page=await browser.newPage({serviceWorkers:'block'});
-    await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));
       const original=window.setTimeout;window.setTimeout=(fn,delay,...args)=>original(fn,delay===20000?1000:delay,...args);
     });
     await page.route('**/*',route=>{

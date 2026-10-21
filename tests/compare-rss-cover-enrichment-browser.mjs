@@ -57,7 +57,7 @@ try{
     const html=fixture.html;
     const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),calls=[];
     try{
-      await context.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+      await context.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await context.route('**/*',async route=>{
         const raw=route.request().url(),url=new URL(raw);
         if(raw.startsWith(base)||raw.startsWith('blob:'))return route.continue();

@@ -97,6 +97,7 @@ async function start(browser,test,{waitForFeeds=true}={}){
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
   await context.addInitScript(options=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+    localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));
     if(options.legacyCache)localStorage.setItem('breeze.rss-cover-metadata.v1',JSON.stringify(options.legacyCache));
     window.coverReaderEvidence=[];
     window.coverPrefixEvidence=[];

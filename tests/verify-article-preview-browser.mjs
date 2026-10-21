@@ -22,7 +22,7 @@ try{
     try{
       for(const [width,height] of [[320,568],[390,844],[820,1024],[1280,800]]){
         const page=await browser.newPage({viewport:{width,height},serviceWorkers:'block'});
-        await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+        await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
         let calls=0;
         await page.route('**/*',route=>{
           const url=route.request().url();
