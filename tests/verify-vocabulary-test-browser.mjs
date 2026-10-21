@@ -88,7 +88,7 @@ try{
  });
  await scenario('real user set uses captured meanings after source deletion',async page=>{
   await seed(page);await page.evaluate(async()=>{const created=BreezeStudySets.create(await loadStudySets(),{name:'문맥 테스트',bookTitles:['Reading']},words,100);await commitStudySets(created.state);words={};saveWords();renderVocab();});
-  await page.locator('#wordbook-review').click();await page.locator('.study-sets-home-card[data-set-id]').first().click();await page.locator('#study-sets-test').click();await page.waitForFunction(()=>!vocabularyTestUI.loading);
+  await page.evaluate(()=>openStudySetsDirectory());await page.locator('.study-sets-home-card[data-set-id]').first().click();await page.locator('#study-sets-test').click();await page.waitForFunction(()=>!vocabularyTestUI.loading);
   assert.ok(Number(await page.locator('#vocabulary-test-count').getAttribute('max'))>=10);await start(page,3);for(let i=0;i<3;i++)await answer(page,'뜻');
   await page.locator('#vocabulary-test-close').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&document.querySelector('#study-sets-title')?.textContent==='문맥 테스트');assert.equal(await page.locator('#study-sets-title').innerText(),'문맥 테스트');
  });

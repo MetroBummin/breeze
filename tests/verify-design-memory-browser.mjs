@@ -27,7 +27,7 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
  await page.locator('#nav-vocab').click();await page.evaluate(()=>document.fonts.ready);
  assert.equal(await page.evaluate(()=>activeAppView()),'memory');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0);
- const title=await page.locator('.memory-home-header h1').boundingBox(),button=await page.locator('#btn-export').boundingBox();
+ const title=await page.locator('.memory-home-header h1').boundingBox();
  const titleInk=await page.locator('.memory-home-header h1').evaluate(async e=>{
   if(e.classList.contains('memory-wordmark')){
    const rect=e.getBoundingClientRect(),style=getComputedStyle(e);
@@ -43,7 +43,7 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   const baseline=marker.getBoundingClientRect().top;marker.remove();return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent,baseline,font:ctx.font};
  });
  const opticalCenterDelta=(titleInk.top+titleInk.bottom-homeInk.top-homeInk.bottom)/2;
- measurements.push({key,safe,home,title,button,homeInk,titleInk,opticalCenterDelta});
+ measurements.push({key,safe,home,title,homeInk,titleInk,opticalCenterDelta});
  writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
  await page.screenshot({path:`${out}/${key}-memory.png`});await page.locator('.memory-home-header h1').screenshot({path:`${out}/${key}-memory-ink.png`});
  if(phase==='after'){
@@ -51,7 +51,7 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   assert.equal(await page.locator('.memory-home-header img').count(),0);
   assert.equal(await page.locator('.memory-home-header h1').textContent(),'Breeze Memory');
   assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
-  assert.ok(titleInk.left>=title.x&&titleInk.right<=button.x-10,'Lettering fits with the existing button gap');
+  assert.ok(titleInk.left>=title.x&&titleInk.right<=title.x+title.width+1,'Lettering stays inside the wordmark');
   assert.equal(titleInk.asset,homeInk.asset,'Use the exact same light/dark SVG as Home');
   assert.equal(title.width,home.width);assert.equal(title.height,home.height);
   assert.equal(title.y,home.y,'Match Home logo vertical placement exactly');
@@ -59,24 +59,16 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   if(title.x===home.x)assert.ok(readFileSync(`${out}/${key}-memory-ink.png`).equals(readFileSync(`${out}/${key}-home-ink.png`)),'Home and Memory logo pixels must match exactly');
   const column=await page.locator('#v-memory').boundingBox();assert.equal(title.x-column.x,20,'Keep Home 20px inset within the Memory content column');
   const header=await page.locator('.memory-home-header').boundingBox();assert.equal(header.height,44);
-  assert.equal(button.width,44);assert.equal(button.height,44);assert.ok(Math.abs(button.y-(24+safe))<1);
+  assert.equal(await page.locator('#btn-export').count(),0);
   assert.equal(await page.locator('#memory-add').getAttribute('aria-label'),'단어 추가');
-  assert.equal(await page.locator('.memory-home-header #btn-export').getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');
   assert.equal(await page.locator('#memory-home-controls #memory-add').count(),1);
-  const style=await page.locator('#btn-export').evaluate(e=>{const s=getComputedStyle(e);return {radius:s.borderRadius,background:s.backgroundColor,backgroundImage:s.backgroundImage,border:s.borderTopWidth}});
-  assert.equal(style.radius,'50%');
-  // The approved header now paints its shared gradient. A transparent base
-  // color does not imply no surface; require visible paint in every stop.
-  assert.equal(style.backgroundImage,'none','export uses the flat Apple Music glass fill');
-  assert.equal(style.background,dark?'rgba(40, 40, 42, 0.55)':'rgba(255, 255, 255, 0.72)');
-  assert.equal(style.border,'0px');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const dock=await page.locator('#memory-home-controls button').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {id:node.id,x:r.x,y:r.y,width:r.width,height:r.height};}));
   assert.deepEqual(dock.map(node=>node.id),['memory-home','memory-last-set','memory-add']);
   for(const item of dock)assert.ok(item.x>=0&&item.y>=0&&item.x+item.width<=width+1&&item.y+item.height<=height-(safe?34:0)+1,JSON.stringify({key,item}));
   assert.ok(dock[0].x+dock[0].width<=dock[1].x&&dock[1].x+dock[1].width<=dock[2].x,'dock controls must not overlap');
   const addButton=await page.locator('#memory-add').boundingBox();
-  assert.ok(button.x>titleInk.right+9&&button.y+button.height<addButton.y,'share remains top-right; add remains bottom-right');
+  assert.ok(addButton.y>titleInk.bottom,'add remains in the bottom dock');
   measurements[measurements.length-1].dock=dock;writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
   await page.locator('#memory-add').focus();await page.keyboard.press('Enter');
   assert.equal(await page.locator('#wordbook-add-dialog').evaluate(e=>e.open),true);

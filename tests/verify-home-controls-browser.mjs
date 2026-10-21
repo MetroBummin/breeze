@@ -63,7 +63,7 @@ for(const [width,height] of [[320,740],[390,844],[768,1024],[1024,768],[1440,900
   await page.locator('#add-modal').click({position:{x:4,y:4}});await page.locator('#add-modal').waitFor({state:'hidden'});
   await page.locator('#nav-vocab').click();assert.equal(await page.locator('#v-memory').isVisible(),true);
   assert.equal((await page.locator('#memory-last-set-label').innerText()).trim(),'전체 단어');
-  assert.equal(await page.locator('.memory-home-header #btn-export').count(),1);
+  assert.equal(await page.locator('#btn-export').count(),0);
   assert.equal(await page.locator('#memory-home-controls #memory-add').getAttribute('aria-label'),'단어 추가');
   assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'no additional Memory entry row');
 assert.equal(await page.locator('#topbar #primary-nav').count(),1);

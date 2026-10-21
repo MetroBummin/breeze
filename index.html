@@ -107,18 +107,18 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=849992d6"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=bf0e5dc5"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=916c3ed8"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=fc76e90e"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/study-motion.js?v=6ba528d8"></script>
   <script defer src="scripts/ui/study-example.js?v=c3f22f9a"></script>
   <script defer src="scripts/ui/vocabulary-review.js?v=9c80dddb"></script>
   <script defer src="scripts/ui/wordbook.js?v=3efa429b"></script>
-  <script defer src="scripts/core/study-sets.js?v=13c27671"></script>
+  <script defer src="scripts/core/study-sets.js?v=e8bfd72e"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=6b6f1495"></script>
-  <script defer src="scripts/ui/study-sets.js?v=0fe41441"></script>
+  <script defer src="scripts/ui/study-sets.js?v=5e18c31a"></script>
   <script defer src="scripts/core/study-set-test.js?v=3b3ced09"></script>
-  <script defer src="scripts/ui/study-set-test.js?v=10f226d6"></script>
+  <script defer src="scripts/ui/study-set-test.js?v=ee87c6ce"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
   <script defer src="scripts/core/vocabulary-test-storage.js?v=a2969347"></script>
   <script defer src="scripts/dictionary/vocabulary-test-grading.js?v=83c32b98"></script>
@@ -459,7 +459,7 @@
 
 <!-- ================= MEMORY SETS ================= -->
 <section class="view" id="v-memory" aria-label="Breeze Memory 학습 세트">
-  <header class="memory-home-header wordbook-brand"><h1 class="memory-home-wordmark memory-wordmark">Breeze Memory</h1><button id="btn-export" class="control-glass" type="button" aria-label="저장한 단어를 CSV로 내보내기" title="CSV 내보내기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M6 11H4v10h16V11h-2"/></svg></button></header>
+  <header class="memory-home-header wordbook-brand"><h1 class="memory-home-wordmark memory-wordmark">Breeze Memory</h1></header>
   <main id="study-sets-home-list" aria-label="학습 세트 목록"></main>
   <div id="memory-home-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="memory-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M3 11.2 12 3.8l9 7.4"/><path d="M5.5 9.5v9.3a1.7 1.7 0 0 0 1.7 1.7H10v-5.3h4v5.3h2.8a1.7 1.7 0 0 0 1.7-1.7V9.5"/></svg></button>
@@ -487,7 +487,7 @@
   <p class="wordbook-hint">단어를 누르면 뜻·저장한 책을 확인하고 수정할 수 있어요.</p>
   <div id="wordbook-controls" class="control-dock"><nav class="control-bar" aria-label="단어장 메뉴">
     <button id="wordbook-home" class="control-glass control-circle" type="button" aria-label="홈" onclick="show('home')"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M3 11.2 12 3.8l9 7.4"/><path d="M5.5 9.5v9.3a1.7 1.7 0 0 0 1.7 1.7H10v-5.3h4v5.3h2.8a1.7 1.7 0 0 0 1.7-1.7V9.5"/></svg></button>
-    <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="openStudySetsDirectory()">학습하기</button>
+    <button id="wordbook-review" class="control-glass control-pill" type="button" onclick="show('memory')">학습하기</button>
     <button id="wordbook-add" class="control-glass control-circle" type="button" aria-label="단어 추가" onclick="openWordbookAdd()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   </nav></div>
 </div>

@@ -34,7 +34,7 @@ try{
  const capture=async name=>page.screenshot({path:`${proof}/ui-set-${name}-${engine.name()}-phone-light.png`,fullPage:false});
  const originalGeometry=await geometry(page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})}));
  await capture('entry');
- await studyAction(page.locator('#wordbook-review').click(),page);await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog').open);
+ await studyAction(page.evaluate(()=>openStudySetsDirectory()),page);await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog').open);
  assert.equal(await page.locator('dialog[open]').count(),1);
  await page.evaluate(()=>{window.qaCaptureSheet=studySetsUI.sheet;window.qaCaptureDialog=studySetsUI.dialog;window.qaCaptureCloseEvents=0;studySetsUI.dialog.addEventListener('close',()=>{window.qaCaptureCloseEvents++;});});
  await capture('home');

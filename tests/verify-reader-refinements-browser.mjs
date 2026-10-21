@@ -74,23 +74,25 @@ try{for(const engine of [chromium,webkit].filter(engine=>!process.env.BREEZE_QA_
    const percent=p===1?'100%':`${Math.floor(p*100)}%`;
    assert.equal(labels.pill,percent);assert.ok(labels.card.includes(percent+' 읽음'));
   }
-  // Native export sends actual CSV and owns the button until completion/cancel.
-  await page.evaluate(()=>{
-   words={test:{word:'test',ko:'시험, 검사',status:2,addedAt:1,example:'A "test".'}};show('vocab');
+  // Native export sends actual CSV and owns the menu until completion/cancel.
+  await page.evaluate(async ()=>{
+   words={test:{word:'test',ko:'시험, 검사',status:2,addedAt:1,example:'A "test".'}};
    window.exportRequests=[];window.webkit={messageHandlers:{breezeVocabularyExport:{postMessage:request=>exportRequests.push(request)}}};
+   await openStudySetsAllWords();
   });
-  await page.locator('#btn-export').click();
-  assert.equal(await page.locator('#btn-export').isDisabled(),true);
+  const shareVisible=async()=>{await page.locator('#study-sets-edit').click();await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);await page.getByRole('menuitem',{name:'공유',exact:true}).click();};
+  await shareVisible();
+  assert.equal(await page.locator('#study-sets-edit').isDisabled(),true);
   const csv=await page.evaluate(()=>exportRequests[0].csv);
   assert.equal(csv.charCodeAt(0),0xfeff);assert.ok(csv.includes('"시험, 검사"'));assert.ok(csv.includes('"A ""test""."'));
   await page.evaluate(()=>window.dispatchEvent(new CustomEvent('breeze-vocabulary-export',{detail:{id:exportRequests[0].id,error:''}})));
-  await page.waitForFunction(()=>!document.getElementById('btn-export').disabled);
+  await page.waitForFunction(()=>!document.getElementById('study-sets-edit').disabled);
   await page.evaluate(()=>{delete window.webkit;Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('Cancelled','AbortError')}});document.getElementById('toast').classList.remove('on');});
-  await page.locator('#btn-export').click();await page.waitForFunction(()=>document.getElementById('task-dialog').open);
-  await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('btn-export').disabled);
+  await shareVisible();await page.waitForFunction(()=>document.getElementById('task-dialog').open);
+  await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('study-sets-edit').disabled);
   assert.equal(await page.locator('#toast').evaluate(n=>n.classList.contains('on')),false,'Cancelling export showed an error');
   await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false});});
-  const download=page.waitForEvent('download');await page.locator('#btn-export').click();
+  const download=page.waitForEvent('download');await shareVisible();
   assert.equal((await download).suggestedFilename(),'breeze_vocab.csv');
   assert.deepEqual(errors,[]);
   console.log(`${engine.name()}: stable expression tokens at 3 depths, expandable pill bounds, reverse/resume, fractional progress, native CSV, cancellation and download passed`);

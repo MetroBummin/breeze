@@ -578,8 +578,21 @@ without search shows only the row. A word is shown when its visible star count
 is one of the pressed chips; no pressed chip shows every word. A word's star
 stays visible and tappable on every set row, including 전체 단어, and writes
 that saved word's status. Meanings on 전체 단어 stay read-only. The chips
-filter the list on screen. They do not change a set's stored cards or its
-study queue.
+filter the list on screen. They do not change a set's stored cards. Studying
+and a set's test use the words that filter leaves on screen. A set keeps one
+saved round. Starting study while that round is still open and was saved with
+a different star filter asks once, in the existing task dialog, 「처음부터
+할까?」. 처음부터 replaces the round and continues with the new filter. 취소
+leaves the round and restores the filter it was saved with. A missing
+`session.stars` array means every star, the same as no chip pressed. Tests
+always draw a fresh sample from the current filter and do not resume. The set
+list has no share control. 공유 is the first item in the … menu inside a set,
+before 이름 변경, 책 추가, and 세트 삭제, and it is the only item on 전체
+단어. It exports the rows on screen through the existing CSV share path,
+including that screen's star filter and, on 전체 단어, the current search.
+Set cards do not swipe and do not open a menu on a long press. The old
+학습하기 sheet is not the way in: the vocabulary dock's 학습하기 opens the
+set list, and study starts from inside the set.
 
 Set-list cards use the plain wordbook field (`--wordbook-field`), the same
 surface as other list cards, with no tint and no decorative shape. The name
@@ -598,4 +611,5 @@ stored.
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set
 is deleted, it opens 전체 단어. The id is stored only in localStorage
-(`breeze.memory-last-set`). No study-set schema change and no server change.
+(`breeze.memory-last-set`). The only study-set schema addition is the optional
+`session.stars` list on a saved round. There is no server change.

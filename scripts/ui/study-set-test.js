@@ -7,7 +7,8 @@ let studySetTestPumping=false,studySetTestKeyboardBound=false,studySetTestLeaveC
 
 function studySetTestPool(set){
   const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
-  return BreezeStudySets.groupedCards(listed);
+  const grouped=BreezeStudySets.groupedCards(listed);
+  return typeof studySetsStatusMatches==='function'?grouped.filter(card=>studySetsStatusMatches(card.status)):grouped;
 }
 function studySetTestHistoryKey(){return typeof studyTestsKey==='function'?studyTestsKey():BreezeStudySetTest.KEY;}
 function studySetTestStorage(){return BreezeStudySetTest.records(localStorage.getItem(studySetTestHistoryKey()),studySetsUI.setId);}

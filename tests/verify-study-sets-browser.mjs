@@ -29,7 +29,7 @@ try{
   const group=page.locator('#v-vocab .vgroup').filter({has:page.locator('.vword',{hasText:'remarkable'})});
   const style=await vocabularyStyle(group),geometry=await vocabularyGeometry(group);
   if(captureEntry){await page.evaluate(()=>window.scrollTo(0,0));await page.mouse.move(0,0);await page.screenshot({path:`${proof}/ui-set-entry-${engine.name()}-phone-light.png`,fullPage:false});}
-  await studyAction(page.locator('#wordbook-review').click(),page);return {style,geometry};
+  await studyAction(page.evaluate(()=>openStudySetsDirectory()),page);return {style,geometry};
  };
  const assertNumbers=async()=>{const count=await rows().count();assert.deepEqual(await page.locator('#study-sets-word-list .vordinal').allTextContents(),Array.from({length:count},(_,i)=>String(i+1)),'row numbers follow current active order');};
  const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
@@ -463,7 +463,7 @@ try{
  for(const width of [390,320,820]){
   await page.setViewportSize({width,height:844});await page.evaluate(()=>{show('vocab');window.scrollTo(0,0);});
   const original=await vocabularyGeometry(page.locator('#v-vocab .vgroup').first());
-  await studyAction(page.locator('#wordbook-review').click(),page);
+  await studyAction(page.evaluate(()=>openStudySetsDirectory()),page);
   await studyAction(page.locator('.study-sets-home-card[data-set-id]').filter({hasText:'숫자 너비 확인'}).click(),page);await assertSetPage();
   assert.equal(await page.evaluate(()=>studySetsUI.setId),largeSetId);
   assert.equal(await page.locator('#study-sets-word-list').getAttribute('data-total'),'1001');

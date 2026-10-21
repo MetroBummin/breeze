@@ -91,7 +91,7 @@ try{
   assert.ok(starred<=starredTotal);
   await page.locator('#vstars button[data-status="3"]').click({force:true});
 
-  await page.locator('#wordbook-review').click();
+  await page.evaluate(()=>openStudySetsDirectory());
   await page.waitForSelector('#study-sets-all');
   assert.ok(await page.locator('#v-vocab .vgroup').count()<100,'학습하기 does not lay out every Memory row');
   await page.locator('#study-sets-all').click();

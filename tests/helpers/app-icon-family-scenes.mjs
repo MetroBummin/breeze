@@ -10,7 +10,7 @@ export const appFamilyScenes=Object.freeze({
  home:{visible:['#nav-settings','#home-add'],hidden:['#set-close','#am-close']},
  settings:{visible:['#set-close'],hidden:['#am-close']},
  'add-sheet':{visible:['#am-close'],hidden:['#set-close']},
- wordbook:{visible:['#btn-export','#memory-add'],hidden:['#wordbook-add-form .task-close']},
+ wordbook:{visible:['#memory-add'],hidden:['#wordbook-add-form .task-close','#btn-export']},
  'word-add':{visible:['#wordbook-add-form .task-close'],hidden:['#study-sets-close']},
  'study-directory':{visible:['#study-sets-close','#study-sets-all','#study-sets-home-create'],hidden:['#study-sets-back','#study-sets-edit']},
  'study-create':{visible:['#study-sets-back','#study-sets-close','#study-sets-name'],hidden:['#study-sets-edit','#study-sets-all']},
@@ -47,7 +47,7 @@ export async function createAppFamilyFolder(page){
 }
 
 export async function captureAppFamilyStudy(page,capture){
- await page.locator('#wordbook-review').tap();await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
+ await page.evaluate(()=>openStudySetsDirectory());await page.waitForFunction(()=>studySetsUI.screen==='directory'&&studySetsUI.dialog.open);
  await page.locator('.study-sets-home-card[data-set-id]').first().tap();
  await page.waitForFunction(()=>studySetsUI.screen==='detail'&&studySetsUI.pageOpen);
  await capture('study-detail',['#study-sets-back','#study-sets-edit'],{'#study-sets-back':{size:26,stroke:'3.6px'},'#study-sets-edit':{size:24,stroke:'2.6px',dots:'1.15px'}});
@@ -57,9 +57,9 @@ export async function captureAppFamilyStudy(page,capture){
  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>getComputedStyle(n).opacity),'0');
  await capture('study-more',['#study-sets-back'],{'#study-sets-back':{size:26,stroke:'3.6px'}});
  await page.keyboard.press('End');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'세트 삭제');
- await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
- await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'책 추가');
- await page.keyboard.press('ArrowUp');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
+ await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'공유');
+ await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'이름 변경');
+ await page.keyboard.press('ArrowUp');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'공유');
  await page.keyboard.press('Escape');await page.waitForFunction(()=>!studySetsUI.editOpen&&!studySetsUI.editAnimation);
  assert.equal(await page.locator('#study-sets-edit').evaluate(n=>n===document.activeElement),true,'Escape returns focus to more');
  await page.emulateMedia({reducedMotion:'reduce'});

@@ -2460,25 +2460,11 @@ async function deliverVocabularyCsv(csv){
   try{downloadVocabularyFile(file);}
   catch(error){return offerVocabularyDownload(file,'다운로드를 시작하지 못했어요. 다시 시도하거나 창을 닫아 주세요.');}
 }
-document.getElementById('btn-export').onclick = async ()=>{
-  const button=/** @type {HTMLButtonElement} */(document.getElementById('btn-export'));
-  if(button.disabled) return;
-  button.disabled=true;
-  let restoreFocus=false;
-  try{
-    const list = Object.values(words).filter(validWordMeaning).sort((a,b)=>b.addedAt-a.addedAt);
-    if(!list.length){ toast('내보낼 단어가 없어요'); return; }
-    const stName = {1:'★',2:'★★',3:'★★★'};
-    const rows = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
-      ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
-        w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
-    /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
-    const csv = '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
-    restoreFocus=!!(await deliverVocabularyCsv(csv));
-  }
-  catch(error){if(error.name!=='AbortError') toast('단어장을 내보내지 못했어요. 다시 시도해 주세요.');}
-  finally{
-    button.disabled=false;
-    if(restoreFocus&&activeAppView()==='memory')button.focus({preventScroll:true});
-  }
-};
+function vocabularyCsv(list){
+  const stName={1:'★',2:'★★',3:'★★★'};
+  const rows=[['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
+    ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
+      w.example||'', stName[w.status]||'', w.book||'', w.addedAt?new Date(w.addedAt).toLocaleDateString('ko-KR'):''])];
+  /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
+  return '\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+}

@@ -35,11 +35,10 @@ try{
   assert.equal(await page.locator('#topbar').isVisible(),false);
   assert.equal(await page.locator('.memory-home-header img').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  const exportBox=await page.locator('#btn-export').boundingBox();
   const header=await page.locator('.memory-home-header').boundingBox(),brand=await page.locator('.memory-home-header h1').boundingBox(),addBox=await page.locator('#memory-add').boundingBox();
-  assert.equal(await page.locator('.memory-home-header #btn-export').count(),1);assert.equal(await page.locator('#memory-home-controls #memory-add').count(),1);
-  assert.equal(await page.locator('#btn-export').getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(await page.locator('#memory-add').getAttribute('aria-label'),'단어 추가');
-  assert.ok(exportBox.x>=brand.x+brand.width&&exportBox.x+exportBox.width<=header.x+header.width+1&&exportBox.y>=header.y&&exportBox.y+exportBox.height<=header.y+header.height+1,'share stays inside header without overlapping wordmark');
+  assert.equal(await page.locator('#btn-export').count(),0);assert.equal(await page.locator('#memory-home-controls #memory-add').count(),1);
+  assert.equal(await page.locator('#memory-add').getAttribute('aria-label'),'단어 추가');
+  assert.ok(brand.x>=header.x&&brand.x+brand.width<=header.x+header.width+1&&brand.y>=header.y&&brand.y+brand.height<=header.y+header.height+1,'wordmark stays inside the header');
   assert.ok(addBox.y>header.y+header.height,'add stays in bottom dock');
   for(const button of await page.locator('#memory-home-controls button').all()){
    const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width);
@@ -81,7 +80,7 @@ try{
  await page.evaluate(()=>show('memory'));
  await page.locator('#memory-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');await page.locator('#wordbook-add-form button[type=submit]').click();
  assert.equal(await page.evaluate(()=>words.breeze.ko),'산들바람');
- const download=page.waitForEvent('download');await page.locator('#btn-export').click();assert.ok((await download).suggestedFilename().endsWith('.csv'));
+ const download=page.waitForEvent('download');await page.evaluate(()=>openStudySetsAllWords());await page.locator('#study-sets-edit').click();await page.getByRole('menuitem',{name:'공유',exact:true}).click();assert.ok((await download).suggestedFilename().endsWith('.csv'));
  await page.evaluate(()=>{vocabOpen.clear();show('vocab');renderVocab();});
  for(const dark of [false,true]){
   await page.evaluate(d=>{darkMode=d;applyDark();document.getElementById('toast').style.display='none'},dark);

@@ -56,8 +56,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       };
       show('memory');
     });
-    const button=page.locator('#btn-export'),dialog=page.locator('#task-dialog'),submit=page.locator('#task-submit');
-    const idle=()=>page.waitForFunction(()=>!document.getElementById('btn-export').disabled);
+    await page.evaluate(()=>openStudySetsAllWords());
+    await page.waitForFunction(()=>studySetsUI.screen==='all'&&document.getElementById('study-sets-edit')&&!document.getElementById('study-sets-edit').hidden);
+    const button=page.locator('#study-sets-edit'),dialog=page.locator('#task-dialog'),submit=page.locator('#task-submit');
+    const share=async()=>{
+      if(await button.isDisabled()){await page.evaluate(()=>studySetsShareVisible());return;}
+      if(!await page.evaluate(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation)){
+        await button.tap();
+        await page.waitForFunction(()=>studySetsUI.editOpen&&!studySetsUI.editAnimation);
+      }
+      await page.getByRole('menuitem',{name:'공유',exact:true}).tap();
+    };
+    const idle=()=>page.waitForFunction(()=>!document.getElementById('study-sets-edit').disabled);
     const opened=()=>page.waitForFunction(()=>document.getElementById('task-dialog').open);
     const record=name=>{checks.push(name);console.log(`${engine.name()}: ${name}`)};
     const reset=async mode=>{
@@ -72,10 +82,10 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       assert.equal(download.suggestedFilename(),'breeze_vocab.csv');assert.equal(await download.failure(),null);
       await idle();return readFileSync(await download.path());
     };
-    const focusReturned=async()=>{await idle();assert.equal(await page.evaluate(()=>document.activeElement.id),'btn-export');};
+    const focusReturned=async()=>{await idle();assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-edit');};
 
     const originalWords=await page.evaluate(()=>JSON.stringify(words));
-    const csv=await nextDownload(()=>button.tap());
+    const csv=await nextDownload(()=>share());
     assert.equal(csv.subarray(0,3).toString('hex'),'efbbbf');
     const dates=await page.evaluate(()=>[1704153600000,1704067200000].map(n=>new Date(n).toLocaleDateString('ko-KR')));
     assert.equal(csv.toString('utf8'),'\uFEFF단어,뜻,영어 뜻,예문,모르는 정도,책,저장일\r\nbreeze,"산들바람, 미풍","(n.) a gentle ""wind""","A ""breeze"".\n두 번째 줄",★★,"Synthetic, Book",'+dates[0]+'\r\napple,사과,,,★,,'+dates[1]);
@@ -87,20 +97,20 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     assert.deepEqual(await page.evaluate(()=>exportTest.revoked),await page.evaluate(()=>exportTest.urls));
     writeFileSync(resolve(out,`${engine.name()}-synthetic.csv`),csv);record('unsupported share: exact CSV bytes, trusted download, cleanup');
 
-    await reset('success');let count=downloads.length;await button.tap();await idle();
+    await reset('success');let count=downloads.length;await share();await idle();
     assert.equal(downloads.length,count);assert.equal(await dialog.isVisible(),false);
     assert.deepEqual(await page.evaluate(()=>exportTest.shares.map(s=>({active:s.active,type:s.file.type,name:s.file.name}))),[{active:true,type:'text/csv',name:'breeze_vocab.csv'}]);
     assert.deepEqual(await page.evaluate(async()=>Array.from(new Uint8Array(await exportTest.shares[0].file.arrayBuffer()))),Array.from(csv));
     record('successful share: bare CSV MIME, original bytes and trusted activation');
 
-    await reset('pending');count=downloads.length;await button.tap();
+    await reset('pending');count=downloads.length;await share();
     assert.equal(await button.isDisabled(),true);
     const box=await button.boundingBox();await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
-    await page.evaluate(()=>document.getElementById('btn-export').onclick());
+    await page.evaluate(()=>studySetsShareVisible());
     assert.equal(await page.evaluate(()=>exportTest.shares.length),1);
     await page.evaluate(()=>exportTest.reject(new DOMException('No targets or cancelled','AbortError')));await opened();
     assert.equal(downloads.length,count);assert.equal(await button.isDisabled(),true);
-    await page.evaluate(()=>document.getElementById('btn-export').onclick());assert.equal(await page.evaluate(()=>exportTest.shares.length),1);
+    await page.evaluate(()=>studySetsShareVisible());assert.equal(await page.evaluate(()=>exportTest.shares.length),1);
     assert.equal(await page.locator('dialog[open]').count(),1);
     // Playwright evaluate itself supplies a gesture, so observe expiry inside
     // the delayed callback without another evaluate refreshing it.
@@ -114,13 +124,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     record('pending/repeated taps: one share; explicit fresh gesture downloads the original snapshot');
 
     for(const mode of ['NotAllowedError','DataError','InvalidStateError','canShare-throws']){
-      await reset(mode);count=downloads.length;await button.tap();await opened();
+      await reset(mode);count=downloads.length;await share();await opened();
       assert.equal(downloads.length,count);assert.match(await page.locator('#task-description').textContent(),/공유하지 못했어요/);
       assert.deepEqual(await nextDownload(()=>submit.tap()),csv);await focusReturned();
       record(`${mode}: explicit recovery download`);
     }
     for(const close of ['Escape','cancel','X']){
-      await reset('AbortError');count=downloads.length;await button.tap();await opened();
+      await reset('AbortError');count=downloads.length;await share();await opened();
       assert.equal(downloads.length,count);assert.match(await page.locator('#task-description').textContent(),/공유를 마치지 않았어요/);
       assert.deepEqual(await page.evaluate(()=>exportTest.toasts),[]);
       if(close==='Escape')await page.keyboard.press('Escape');
@@ -130,7 +140,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
 
     for(const failure of ['failURL','failClick']){
       await reset('unsupported');count=downloads.length;await page.evaluate(key=>{exportTest[key]=2},failure);
-      await button.tap();await opened();assert.equal(downloads.length,count);
+      await share();await opened();assert.equal(downloads.length,count);
       await submit.tap();await opened();assert.equal(downloads.length,count);
       assert.match(await page.locator('#task-description').textContent(),/다운로드를 시작하지 못했어요/);
       assert.equal(await button.isDisabled(),true);
@@ -145,9 +155,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
       window.webkit={messageHandlers:{breezeVocabularyExport:{postMessage:request=>nativeExports.push(request)}}};
     });
     for(const outcome of ['success','cancel','failure']){
-      count=downloads.length;await button.tap();assert.equal(await button.isDisabled(),true);
+      count=downloads.length;await share();assert.equal(await button.isDisabled(),true);
       assert.equal(await page.evaluate(()=>nativeExports.at(-1).csv),csv.toString('utf8'));
-      await page.evaluate(()=>document.getElementById('btn-export').onclick());
+      await page.evaluate(()=>studySetsShareVisible());
       await page.evaluate(()=>window.dispatchEvent(new CustomEvent('breeze-vocabulary-export',{detail:{id:'wrong-id',error:''}})));
       assert.equal(await button.isDisabled(),true);
       await page.evaluate(outcome=>window.dispatchEvent(new CustomEvent('breeze-vocabulary-export',{detail:{id:nativeExports.at(-1).id,error:outcome==='failure'?'Synthetic native failure':''}})),outcome);
@@ -158,11 +168,11 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     await page.evaluate(()=>{delete window.webkit;delete window.Capacitor});record('iOS bridge: exact CSV, one request, matching completion, unchanged cancel/error behavior');
 
     await reset('unsupported');count=downloads.length;await page.evaluate(()=>{window.Capacitor={isNativePlatform:()=>true}});
-    await button.tap();await idle();assert.equal(downloads.length,count);assert.equal(await dialog.isVisible(),false);
+    await share();await idle();assert.equal(downloads.length,count);assert.equal(await dialog.isVisible(),false);
     assert.equal(await page.evaluate(()=>exportTest.toasts.length),1);await page.evaluate(()=>{delete window.Capacitor});
     record('unsupported native shell: no web download fallback');
 
-    await reset('AbortError');await button.tap();await opened();
+    await reset('AbortError');await share();await opened();
     for(const [width,height] of [[320,568],[390,844],[820,1180],[1440,900],[844,390],[390,300]])for(const dark of [false,true]){
       await page.setViewportSize({width,height});await page.evaluate(dark=>{darkMode=dark;applyDark()},dark);
       const bounds=await dialog.boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width+1&&bounds.y+bounds.height<=height+1);
@@ -175,13 +185,13 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
     }
     await page.keyboard.press('Escape');await focusReturned();record('shared recovery dialog: light/dark phone, tablet, desktop, landscape and short viewport');
     await page.setViewportSize({width:390,height:844});
-    await reset('AbortError');await button.tap();await opened();
+    await reset('AbortError');await share();await opened();
     assert.equal(await page.evaluate(()=>document.activeElement.hasAttribute('data-task-cancel')),true);
     await page.keyboard.press('Tab');assert.equal(await submit.evaluate(e=>e===document.activeElement),true);
     assert.deepEqual(await nextDownload(()=>page.keyboard.press('Enter')),csv);record('keyboard confirmation retains activation and restores focus');
 
     await reset('unsupported');await page.evaluate(()=>{words={}});count=downloads.length;
-    await button.tap();await idle();assert.equal(downloads.length,count);assert.deepEqual(await page.evaluate(()=>exportTest.toasts),['내보낼 단어가 없어요']);
+    await share();await idle();assert.equal(downloads.length,count);assert.deepEqual(await page.evaluate(()=>exportTest.toasts),['내보낼 단어가 없어요']);
     record('empty vocabulary: no download, button released');
     assert.deepEqual(errors,[]);reports.push({engine:engine.name(),version:browser.version(),checks,unexpectedErrors:errors,scope:'Desktop browser tests and simulated native/share responses; no Android or iOS device validation.'});
   }finally{await browser.close()}

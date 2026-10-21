@@ -4,7 +4,7 @@ const BreezeStudySets = (() => {
   const VERSION=2;
   /** @typedef {{id:string,key:string,word:string,ko:string,example:string,book:string,addedAt:number,status:number,root?:string,group?:string,acceptedMeanings?:string[],senses?:Card[]}} Card */
   /** @typedef {{id:string,outcome:string,at:number}} Answer */
-  /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean,format:number,serial:number}} Session */
+  /** @typedef {{id:string,startedAt:number,round:number,queue:Card[],index:number,answers:Answer[],revealed:boolean,format:number,serial:number,stars?:number[]}} Session */
   /** @typedef {{at:number,id:string}} Change */
   /** @typedef {{id:string,name:string,bookTitles:string[],createdAt:number,updatedAt:number,cards:Card[],excludedIds:string[],session:Session|null,archivedSessions?:Session[],nameChange?:Change,cardChanges?:Object<string,Change & {present:boolean}>,exclusionChanges?:Object<string,Change & {excluded:boolean}>,statusChanges?:Object<string,Change & {status:number}>}} StudySet */
   /** @typedef {{version:number,sequence:number,sets:StudySet[],deletedSetIds?:string[]}} State */
@@ -72,7 +72,16 @@ const BreezeStudySets = (() => {
     });
     if(!legacy&&(!count(raw.serial)||raw.serial<answers.length||raw.index!==passed.length))fail();
     if(raw.revealed&&!pending.length)fail();
-    return {id:raw.id,startedAt:raw.startedAt,round:raw.round,queue,index:passed.length,answers,revealed:raw.revealed,format:2,serial:legacy?answers.length:raw.serial};
+    const session={id:raw.id,startedAt:raw.startedAt,round:raw.round,queue,index:passed.length,answers,revealed:raw.revealed,format:2,serial:legacy?answers.length:raw.serial};
+    const stars=sessionStars(raw.stars);
+    if(stars.length)session.stars=stars;
+    return session;
+  }
+  function sessionStars(raw){
+    if(!Array.isArray(raw))return [];
+    const stars=[];
+    for(const value of raw)if([1,2,3].includes(value)&&!stars.includes(value))stars.push(value);
+    return stars.sort((a,b)=>a-b);
   }
   /** Strictly decode one known schema. Corruption and future versions must stop
       writes instead of being silently replaced with an empty collection.
@@ -452,9 +461,11 @@ const BreezeStudySets = (() => {
       remembered:completed,repeat:repeatIds.length,repeatIds,round:session?session.round:0,pendingIds:pending};
   }
   function view(raw,id){return snapshot(normalize(raw),id);}
-  function session(state,set,queue,now,round=1){
+  function session(state,set,queue,now,round=1,stars=[]){
     set.session={id:allocate(state,'session'),startedAt:now,round,
       queue:queue.map(copyCard),index:0,answers:[],revealed:false,format:2,serial:0};
+    const chosen=sessionStars(stars);
+    if(chosen.length)set.session.stars=chosen;
     set.updatedAt=Math.max(set.updatedAt,now);
   }
   function start(raw,id,now,options={restart:false}){
@@ -466,7 +477,9 @@ const BreezeStudySets = (() => {
     }
     // The round being replaced kept deleted words so its own queue stayed valid.
     if(record(options.words))dropMissingCards(set,options.words,options,at);
-    const queue=groupedCards(set);
+    const stars=sessionStars(options.stars);
+    let queue=groupedCards(set);
+    if(stars.length)queue=queue.filter(card=>stars.includes(card.status||1));
     if(!queue.length){
       // Explicit restart of an all-excluded set ends the old completed/active
       // session without inventing progress or reintroducing excluded cards.
@@ -474,7 +487,7 @@ const BreezeStudySets = (() => {
       if(cleared){set.session=null;set.updatedAt=Math.max(set.updatedAt,at);}
       return {...snapshot(state,id),accepted:cleared};
     }
-    session(state,set,queue,at);
+    session(state,set,queue,at,1,stars);
     return {...snapshot(state,id),accepted:true};
   }
   function reveal(raw,id,token){

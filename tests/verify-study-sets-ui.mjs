@@ -420,7 +420,8 @@ test('bottom study entry keeps its directory sheet over vocabulary and all-word 
   await afterAction(run('closeStudySetsDirectory()'));assert.equal(context.currentView,'vocab');assert.equal(query('#study-sets-dialog').open,false);assert.equal(restored,250);
   context.openVocabularyReview();await afterAction(run('closeVocabularyReview()'));assert.equal(context.currentView,'vocab');assert.equal(document.activeElement.id,'wordbook-review');
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  assert.match(html,/id="wordbook-review"[^>]*onclick="openStudySetsDirectory\(\)">학습하기/);
+  assert.match(html,/id="wordbook-review"[^>]*onclick="show\('memory'\)">학습하기/);
+  assert.equal(html.includes('id="btn-export"'),false);
   assert.equal(html.includes('id="wordbook-sets-back"'),false);assert.equal(html.includes('id="wordbook-study-sets-entry"'),false);
 });
 
@@ -489,17 +490,20 @@ test('ordinal uses a separate clipped leading gutter without becoming a fourth v
   assert.match(style,/study-sets-word-clip\{[^}]*margin-left:-20px;[^}]*width:calc\(100% \+ 20px\)/);
 });
 
-test('vocabulary share is top-right and add is bottom-right with original handlers and dock order',async ()=>{
+test('vocabulary share is the first set-menu action and add stays in the bottom dock',async ()=>{
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),{document}=parseHTML(html).window;
   const header=document.querySelector('#v-memory .memory-home-header'),dock=document.querySelector('#wordbook-controls .control-bar'),memoryDock=document.querySelector('#memory-home-controls .control-bar');
-  assert.equal(header.querySelectorAll('#btn-export').length,1);assert.equal(header.querySelector('#wordbook-add,#memory-add'),null);
+  assert.equal(header.querySelector('#btn-export'),null);assert.equal(header.querySelector('#wordbook-add,#memory-add'),null);
   assert.deepEqual([...dock.querySelectorAll('button')].map(button=>button.id),['wordbook-home','wordbook-review','wordbook-add']);
   assert.deepEqual([...memoryDock.querySelectorAll('button')].map(button=>button.id),['memory-home','memory-last-set','memory-add']);
-  const add=document.getElementById('wordbook-add'),share=document.getElementById('btn-export');
+  const add=document.getElementById('wordbook-add');
   assert.equal(add.getAttribute('onclick'),'openWordbookAdd()');assert.equal(add.getAttribute('aria-label'),'단어 추가');assert.equal(add.classList.contains('control-circle'),true);
-  assert.equal(share.getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(document.querySelectorAll('#btn-export').length,1);assert.equal(document.querySelectorAll('#wordbook-add').length,1);
-  assert.match(readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8'),/document\.getElementById\('btn-export'\)\.onclick = async/);
-  assert.match(readFileSync(new URL('../styles/wordbook.css',import.meta.url),'utf8'),/\.wordbook-brand #btn-export\{[^}]*width:44px;height:44px/);
+  assert.equal(document.querySelectorAll('#btn-export').length,0);assert.equal(document.querySelectorAll('#wordbook-add').length,1);
+  const dictionary=readFileSync(new URL('../scripts/dictionary/dictionary.js',import.meta.url),'utf8');
+  assert.match(dictionary,/function vocabularyCsv\(list\)/);assert.match(dictionary,/function deliverVocabularyCsv\(csv\)/);
+  assert.doesNotMatch(dictionary,/getElementById\('btn-export'\)/);
+  const sets=readFileSync(new URL('../scripts/ui/study-sets.js',import.meta.url),'utf8');
+  assert.match(sets,/dataset\.action='share'/);assert.match(sets,/deliverVocabularyCsv\(vocabularyCsv\(list\)\)/);
 });
 
 test('directory, create, cancel and save reuse one continuously open native sheet',async ()=>{
@@ -592,7 +596,7 @@ test('detail adopts a new book word once without restoring exclusions or changin
   assert.equal(document.querySelector('#study-sets-import'),null);assert.equal(query('#study-sets-start').closest('.study-sets-footer')?.contains(query('#study-sets-start')),true);
   await afterAction(run('studySetsToggleEditMenu()'));
   assert.equal(document.querySelector('.study-sets-menu #study-sets-import'),null);
-  assert.deepEqual([...document.querySelectorAll('.study-sets-edit-menu button')].map(n=>n.textContent),['이름 변경','책 추가','세트 삭제']);
+  assert.deepEqual([...document.querySelectorAll('.study-sets-edit-menu button')].map(n=>n.textContent),['공유','이름 변경','책 추가','세트 삭제']);
 });
 
 test('a save while the set is open appears in the list and leaves the current round unchanged',async ()=>{
@@ -780,9 +784,9 @@ test('전체 단어 cannot be deleted and the filter card is gone',async()=>{
   assert.equal(all.parentElement.querySelector('button:not(#study-sets-all)'),null);
   assert.equal([...h.document.querySelectorAll('button')].some(button=>button.textContent.includes('삭제')),false);
   await afterAction(h.run('openStudySetsAllWords()'));
-  assert.equal(h.run('studySetsUI.editButton.hidden'),true);
+  assert.equal(h.run('studySetsUI.editButton.hidden'),false);
+  assert.deepEqual([...h.document.querySelectorAll('.study-sets-edit-menu button')].filter(node=>!node.hidden).map(node=>node.textContent),['공유']);
   assert.equal(h.query('#study-sets-edit-menu').hidden,true);
-  assert.equal(h.query('#study-sets-edit-surface').hidden,true);
   const saved=JSON.stringify(h.context.words);
   await afterAction(h.run("studySetsGo('delete','')"));
   assert.equal(JSON.stringify(h.context.words),saved);
@@ -803,6 +807,9 @@ test('star chips filter 전체 단어 and a saved set, and none pressed shows ev
   h.document.body.insertAdjacentHTML('beforeend','<label class="wordbook-search" id="vocab-search-field" hidden><input id="vsearch"></label><div id="vocab-star-filter" hidden><div class="wordbook-filter-row"><span>별점</span><div id="vstars"><button class="stbtn" type="button" data-status="1" aria-pressed="false">★</button><button class="stbtn" type="button" data-status="3" aria-pressed="false">★★★</button></div></div></div>');
   h.context.words.a.status=1;h.context.words.c.status=3;h.context.words.d.status=2;
   await afterAction(h.run('openStudySetsAllWords()'));
+  assert.equal(h.query('#study-sets-edit').hidden,false);
+  assert.equal(h.query('#study-sets-edit').getAttribute('aria-label'),'더보기');
+  assert.deepEqual([...h.document.querySelectorAll('.study-sets-edit-menu button')].filter(node=>!node.hidden).map(node=>node.textContent),['공유']);
   assert.equal(h.query('#vstars').hidden,false);
   assert.equal(h.query('#vocab-star-filter').parentElement.id,'study-set-tools');
   assert.equal(h.query('#vstars').parentElement.className,'wordbook-filter-row');
@@ -833,6 +840,26 @@ test('star chips filter 전체 단어 and a saved set, and none pressed shows ev
   h.run('wordbookStars.clear()');
   await afterAction(h.run('studySetsRefreshStarFilter()'));
   assert.equal(h.document.querySelectorAll('.study-sets-word-row').length,2);
+});
+
+test('a different star filter asks once before replacing the one saved round',async()=>{
+  const h=harness();
+  h.context.words.a.status=1;h.context.words.c.status=3;
+  await afterAction(h.createSet());
+  await afterAction(h.run('studySetsStart(studySetsUI.setId)'));
+  assert.equal(h.query('#study-sets-progress').textContent,'0 / 2');
+  assert.equal(h.run('readStudySets().sets[0].session.stars'),undefined);
+  await afterAction(h.run("studySetsGo('detail')"));
+  h.run('wordbookStars=new Set([3]);breezeTaskDialog=async()=>null');
+  await afterAction(h.run('studySetsStart(studySetsUI.setId)'));
+  assert.equal(h.run('studySetsUI.screen'),'detail');
+  assert.equal(h.run('wordbookStars.size'),0);
+  assert.equal(h.run('readStudySets().sets[0].session.queue.length'),2);
+  assert.equal(h.run('readStudySets().sets[0].session.stars'),undefined);
+  h.run('wordbookStars=new Set([3]);breezeTaskDialog=async()=>"confirmed"');
+  await afterAction(h.run('studySetsStart(studySetsUI.setId)'));
+  assert.equal(h.query('#study-sets-progress').textContent,'0 / 1');
+  assert.equal(JSON.stringify(h.run('readStudySets().sets[0].session.stars')),'[3]');
 });
 
 test('set cards count each star level, name the book with the most words, and show last study time only when a session already has one',async()=>{
