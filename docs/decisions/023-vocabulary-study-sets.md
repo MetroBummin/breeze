@@ -140,7 +140,10 @@ keeps its starting list until that round ends. See the book-link section below.
 `책 추가` explicitly extends a set with selected additional source titles and
 captures only unseen, non-excluded identities from those new titles. It never
 rewrites captured cards, exclusions, source vocabulary, or an active learning
-queue. A previously selected title cannot be added twice.
+queue. A previously selected title cannot be added twice. That list scrolls
+the same way as set creation: the choices scroll inside the sheet and the add
+action stays put, so the page does not clip a long list. Both screens order
+titles by saved word count, most first.
 
 Book selection uses the existing vocabulary `book` title field, as Memory's
 filter does. Vocabulary currently lacks a durable source-book ID. Two distinct
