@@ -7,7 +7,7 @@ import {holdout} from '../benchmarks/lookup-quality/holdout.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const receipts=new Map();let charged=0,providerCalls=0,answer,transientFailures=0;
-const box={console,Response,AbortSignal,crypto,TextEncoder,Deno:{env:{get:()=>''},serve(){}},
+const box={console,Response,AbortSignal,AbortController,setTimeout,clearTimeout,crypto,TextEncoder,Deno:{env:{get:()=>''},serve(){}},
   newAiTrace:()=>({}),createClient:()=>({rpc:async(name,p)=>{
     const old=receipts.get(p.p_request);
     if(old)return {data:{status:'replay',answer:old,left:3000-charged},error:null};

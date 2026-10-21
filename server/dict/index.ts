@@ -1,4 +1,4 @@
-// Breeze — dictionary Edge Function (OpenRouter/DeepSeek primary, Gemini fallback)
+// Breeze — dictionary Edge Function (OpenRouter/DeepSeek primary, Gemini hedge for words)
 import { runVocabularyTestGrading, VOCABULARY_TEST_GRADING_ENABLED } from "./vocabulary-test.ts";
 import { runStudySetTestGrade } from "./study-set-test.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -15,6 +15,8 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 
 const OPENROUTER_MODEL="deepseek/deepseek-v4-flash-0731";
 const GEMINI_MODEL="gemini-3.5-flash-lite";
+const HEDGE_DELAY_MS=2000;
+const WORD_LOOKUP_DEADLINE_MS=8000;
 const DEFAULT_DAILY_LIMIT=3000;
 const ANON_SENT_FREE=50;
 const ANON_FREE=50;
@@ -37,15 +39,149 @@ async function callGemini(key:string,ask:Ask){
   if(!r.ok){console.error("gemini error",r.status,(await r.text()).slice(0,300));throw new Error(`gemini_${r.status}`)}const d=await r.json();const text=d?.candidates?.[0]?.content?.parts?.map((p:{text?:string})=>p?.text??"").join("")??"";return{text:text.trim(),usage:d?.usageMetadata??null};
 }
 function providerKeys(){return{oKey:Deno.env.get("OPENROUTER_API_KEY"),gKey:Deno.env.get("GEMINI_API_KEY")}}
+type WordProvider="openrouter"|"gemini";
+type LoserState="aborted"|"failed"|"late";
+function providerAbort(signal?:AbortSignal){
+  const reason=signal?.reason;
+  if(reason instanceof Error)return reason;
+  const error=new Error("The operation was aborted");
+  error.name="AbortError";
+  return error;
+}
+function abortedError(error:unknown){
+  const name=error&&typeof error==="object"?(error as {name?:string}).name:"";
+  return name==="AbortError"||name==="TimeoutError";
+}
+// Word lookups have one deadline. DeepSeek starts immediately. Gemini starts
+// with the same prompt if DeepSeek fails, or if no valid answer has arrived
+// after HEDGE_DELAY_MS. The first valid answer wins and aborts the other request.
+async function askHedgedWord(input:Ask){
+  const trace=newAiTrace(input.action);
+  let releaseHedge=()=>{};
+  let published=false;
+  const hedge={settled:new Promise<void>(resolve=>{releaseHedge=resolve;}),hedged:false,winner:null as WordProvider|null,loser:null as LoserState|null};
+  const release=()=>{if(published)return;published=true;releaseHedge();};
+  trace.hedge=hedge;
+  const inflight:Promise<void>[]=[];
+  const states=new Map<WordProvider,LoserState>();
+  const calls=new Map<WordProvider,AbortController>();
+  const deadline=new AbortController();
+  let hedgeTimer:ReturnType<typeof setTimeout>|undefined;
+  let deadlineTimer:ReturnType<typeof setTimeout>|undefined;
+  let hedgeStarted=false;
+  let willHedge=false;
+  let pending=0;
+  let winner:{text:string;usage:unknown;provider:WordProvider}|null=null;
+  let lastError:unknown=new Error("lookup_failed");
+  let closed=false;
+  let resolveLookup=()=>{};
+  const lookupDone=new Promise<void>(resolve=>{resolveLookup=resolve;});
+  const close=()=>{if(!closed){closed=true;resolveLookup();}};
+  const note=(provider:WordProvider,state:LoserState)=>{if(!states.has(provider))states.set(provider,state);};
+  const loserFor=(winning:WordProvider|null):LoserState=>{
+    if(!winning){
+      const seen=[...states.values()];
+      if(seen.includes("failed"))return "failed";
+      if(seen.includes("aborted"))return "aborted";
+      return "failed";
+    }
+    const other:WordProvider=winning==="openrouter"?"gemini":"openrouter";
+    return states.get(other)??"aborted";
+  };
+  const afterSettle=()=>{
+    if(winner||input.signal?.aborted||deadline.signal.aborted)close();
+    else if(pending===0&&!willHedge)close();
+  };
+  const {oKey,gKey}=providerKeys();
+  const start=(provider:WordProvider)=>{
+    const controller=new AbortController();
+    calls.set(provider,controller);
+    const signal=input.signal?AbortSignal.any([deadline.signal,controller.signal,input.signal]):AbortSignal.any([deadline.signal,controller.signal]);
+    const ask={...input,trace,signal};
+    pending++;
+    inflight.push((async()=>{
+      try{
+        const out=provider==="openrouter"?await callOpenRouter(oKey!,ask):await callGemini(gKey!,ask);
+        if(input.validate)input.validate(parseJson(out.text));
+        pending--;
+        if(winner)note(provider,"late");
+        else if(input.signal?.aborted){note(provider,"aborted");lastError=providerAbort(input.signal);}
+        else{
+          winner={text:out.text,usage:out.usage,provider};
+          willHedge=false;
+          if(hedgeTimer!==undefined){clearTimeout(hedgeTimer);hedgeTimer=undefined;}
+          for(const [name,control] of calls)if(name!==provider)control.abort();
+        }
+      }catch(error){
+        pending--;
+        lastError=error;
+        note(provider,abortedError(error)?"aborted":"failed");
+        // A primary failure starts Gemini now. The 2s timer stays the only delay,
+        // and only for a primary attempt that is still running.
+        if(provider==="openrouter"&&!winner&&!input.signal?.aborted&&!deadline.signal.aborted)fireHedge();
+      }
+      afterSettle();
+    })());
+  };
+  const fireHedge=()=>{
+    if(!willHedge)return;
+    willHedge=false;
+    if(hedgeTimer!==undefined){clearTimeout(hedgeTimer);hedgeTimer=undefined;}
+    if(winner||input.signal?.aborted||deadline.signal.aborted){afterSettle();return;}
+    hedgeStarted=true;
+    start("gemini");
+  };
+  try{
+    if(!oKey&&!gKey)throw new Error("server_not_configured");
+    if(input.signal?.aborted)throw providerAbort(input.signal);
+    deadlineTimer=setTimeout(()=>deadline.abort(),WORD_LOOKUP_DEADLINE_MS);
+    deadline.signal.addEventListener("abort",()=>{
+      willHedge=false;
+      if(hedgeTimer!==undefined){clearTimeout(hedgeTimer);hedgeTimer=undefined;}
+      if(!winner)lastError=providerAbort(deadline.signal);
+      close();
+    },{once:true});
+    input.signal?.addEventListener("abort",()=>{
+      willHedge=false;
+      if(hedgeTimer!==undefined){clearTimeout(hedgeTimer);hedgeTimer=undefined;}
+      if(!winner)lastError=providerAbort(input.signal);
+      close();
+    },{once:true});
+    willHedge=!!(oKey&&gKey);
+    if(oKey)start("openrouter");else start("gemini");
+    if(willHedge)hedgeTimer=setTimeout(()=>{hedgeTimer=undefined;fireHedge();},HEDGE_DELAY_MS);
+    await lookupDone;
+    if(input.signal?.aborted&&!winner)throw lastError instanceof Error?lastError:providerAbort(input.signal);
+    if(!winner)throw lastError instanceof Error?lastError:new Error("lookup_failed");
+    return {text:winner.text,usage:winner.usage,provider:winner.provider,attempts:trace.attempt};
+  }finally{
+    if(hedgeTimer!==undefined)clearTimeout(hedgeTimer);
+    if(deadlineTimer!==undefined)clearTimeout(deadlineTimer);
+    const hedged=hedgeStarted;
+    const winning=winner?.provider??null;
+    void Promise.all(inflight).then(()=>{
+      hedge.hedged=hedged;
+      hedge.winner=winning;
+      hedge.loser=hedged?loserFor(winning):null;
+      release();
+    },()=>{
+      hedge.hedged=hedged;
+      hedge.winner=winning;
+      hedge.loser=hedged?loserFor(winning):null;
+      release();
+    });
+  }
+}
 async function ask(input:Ask){
+  if(input.validate)return askHedgedWord(input);
   const a={...input,trace:newAiTrace(input.action)};const{oKey,gKey}=providerKeys();
   const providers:Array<"openrouter"|"gemini">=[];if(oKey)providers.push("openrouter");if(gKey)providers.push("gemini");
   if(!providers.length)throw new Error("server_not_configured");
   let lastError:unknown=new Error("server_not_configured");
   const compact=input.maxTokens<=120;
   const deadline=Date.now()+(compact?8000:25000);
-  // A short lookup keeps about 4s for OpenRouter so Gemini still has a turn inside 8s.
-  const openRouterLimit=compact&&input.validate?4000:compact?5000:15000;
+  // Sentence and other non-word calls keep their per-provider caps. Word lookups never enter this loop.
+  const openRouterLimit=compact?5000:15000;
   const geminiReserve=2500;
   let attempts=0;
   for(const provider of providers){
@@ -57,13 +193,12 @@ async function ask(input:Ask){
         if(provider!=="openrouter"||!validationRetry)break;
         if(gKey&&remaining<openRouterLimit+geminiReserve)break;
       }
-      const cap=provider==="openrouter"?openRouterLimit:(compact&&input.validate?remaining:compact?5000:15000);
+      const cap=provider==="openrouter"?openRouterLimit:(compact?5000:15000);
       const timeout=AbortSignal.timeout(Math.min(cap,remaining));
       a.signal=input.signal?AbortSignal.any([input.signal,timeout]):timeout;
       attempts++;
       try{
         const out=provider==="openrouter"?await callOpenRouter(oKey!,a):await callGemini(gKey!,a);
-        if(input.validate)input.validate(parseJson(out.text));
         return {...out,provider,attempts};
       }catch(error){
         lastError=error;if(input.signal?.aborted)throw error;
