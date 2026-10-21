@@ -253,3 +253,37 @@ are unchanged. Response fields, `word_lookup_receipts`, and the existing
 same meta object. `supabase/migrations/20261021120000_dict_lookup_hedge_meta.sql`
 teaches `record_dict_ai_usage` to copy those fields out of the usage payload.
 This change does not apply that migration or deploy `dict`.
+
+## Slot fillers and alignment downgrade (2026-10-21)
+
+`validateLook` counts `one's`, `someone's`, `somebody's`, `someone`, `somebody`,
+and `something` as variable slots. A possessive or object in the sentence fills
+that slot and is not an extra fixed word: `my`, `your`, `his`, `her`, `its`,
+`our`, `their`, `me`, `him`, `us`, `them`, and a possessive token such as
+`John's` or `man's`. A noun phrase that ends in that possessive (`the old man's`)
+is the same slot, including its article and modifiers. Those member indexes are
+dropped. The stored members are the fixed words. A headword with no variable
+slot is checked exactly as before. The prompt tells the model to omit the filler.
+
+A lookup still does not fail when the only problem is alignment. If `canonical`
+and `ko` pass the text checks but the kind or member alignment does not,
+`recoverableLook` builds a word answer: `members` is the tapped index, `kind` is
+`word`, and a single-word canonical is kept as written. A multi-word canonical
+is replaced by the tapped token, because a word headword cannot contain a space.
+The Korean gloss is kept either way. It is already one short sense, and this
+path has no second gloss. The response shape is otherwise unchanged.
+
+That fallback does not win ahead of a clean answer. The attempt is still a
+hedge failure, so the other provider can return a valid expression. The fallback
+is the response only when the deadline arrives, or both attempts finish, with
+no clean answer. A malformed body, empty `ko`, or other shape error still
+rejects the lookup.
+
+Each provider row records `meta.reject_reason` (`parse_failed` or the validator
+code) when that attempt's body was rejected. The row whose fallback is returned
+also records `meta.downgraded: true`. `record_dict_ai_usage` as deployed for the
+hedge only copies `hedged`, `winner`, and `loser`, so
+`supabase/migrations/20261021193000_dict_lookup_reject_meta.sql` copies the two
+new keys into the same meta object. Until that migration is applied the insert
+still succeeds and the new keys are dropped. This change does not apply the
+migration or deploy `dict`.

@@ -5,7 +5,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { deleteAccountBookCloud } from "../books/handler.ts";
 import { runEasyExplanation, easyPrompt, type EasyInput } from "./easy-explanation.ts";
 import { runSentenceEasyExplanation, sentenceEasyPrompt, type SentenceEasyInput } from "./sentence-easy-explanation.ts";
-import { LOOK_SCHEMA, lookupInput, miniPrompt, validateLook } from "./lookup.ts";
+import { LOOK_SCHEMA, lookupInput, miniPrompt, recoverableLook, validateLook } from "./lookup.ts";
 import { meteredFetch, newAiTrace, type AiAction, type AiTrace } from "./telemetry.ts";
 import { logicalLookup, lookupFingerprint } from "./logical-lookup.ts";
 import { clientLookupFailureResponse } from "./client-failure.ts";
@@ -52,9 +52,19 @@ function abortedError(error:unknown){
   const name=error&&typeof error==="object"?(error as {name?:string}).name:"";
   return name==="AbortError"||name==="TimeoutError";
 }
+function noteProvider(trace:AiTrace,provider:WordProvider,note:{rejectReason?:string;downgraded?:boolean}){
+  const notes=trace.providerNotes??={};
+  const prev=notes[provider]??{};
+  const rejectReason=note.rejectReason??prev.rejectReason;
+  const downgraded=note.downgraded||prev.downgraded?true:undefined;
+  notes[provider]=downgraded?{rejectReason,downgraded}:{rejectReason};
+  trace.providerNotes=notes;
+}
 // Word lookups have one deadline. DeepSeek starts immediately. Gemini starts
 // with the same prompt if DeepSeek fails, or if no valid answer has arrived
 // after HEDGE_DELAY_MS. The first valid answer wins and aborts the other request.
+// A body that fails only member alignment is kept as a tapped-word fallback and
+// used when no provider returns a clean answer. A malformed body is not a fallback.
 async function askHedgedWord(input:Ask){
   const trace=newAiTrace(input.action);
   let releaseHedge=()=>{};
@@ -72,6 +82,7 @@ async function askHedgedWord(input:Ask){
   let willHedge=false;
   let pending=0;
   let winner:{text:string;usage:unknown;provider:WordProvider}|null=null;
+  let fallback:{text:string;usage:unknown;provider:WordProvider}|null=null;
   let lastError:unknown=new Error("lookup_failed");
   let closed=false;
   let resolveLookup=()=>{};
@@ -100,9 +111,15 @@ async function askHedgedWord(input:Ask){
     const ask={...input,trace,signal};
     pending++;
     inflight.push((async()=>{
+      let produced:{text:string;usage:unknown}|undefined;
       try{
         const out=provider==="openrouter"?await callOpenRouter(oKey!,ask):await callGemini(gKey!,ask);
-        if(input.validate)input.validate(parseJson(out.text));
+        produced=out;
+        if(input.validate){
+          const parsed=parseJson(out.text);
+          if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("parse_failed");
+          input.validate(parsed);
+        }
         pending--;
         if(winner)note(provider,"late");
         else if(input.signal?.aborted){note(provider,"aborted");lastError=providerAbort(input.signal);}
@@ -115,6 +132,10 @@ async function askHedgedWord(input:Ask){
       }catch(error){
         pending--;
         lastError=error;
+        const reason=error instanceof Error?error.message:"";
+        if(/^(?:parse_failed|invalid_|missing_fixed_word)/.test(reason))noteProvider(trace,provider,{rejectReason:reason});
+        const downgrade=error&&typeof error==="object"?(error as {downgrade?:{kind:string;canonical:string;members:number[];ko:string}}).downgrade:undefined;
+        if(downgrade&&produced&&!fallback)fallback={text:JSON.stringify(downgrade),usage:produced.usage,provider};
         note(provider,abortedError(error)?"aborted":"failed");
         // A primary failure starts Gemini now. The 2s timer stays the only delay,
         // and only for a primary attempt that is still running.
@@ -152,6 +173,10 @@ async function askHedgedWord(input:Ask){
     if(willHedge)hedgeTimer=setTimeout(()=>{hedgeTimer=undefined;fireHedge();},HEDGE_DELAY_MS);
     await lookupDone;
     if(input.signal?.aborted&&!winner)throw lastError instanceof Error?lastError:providerAbort(input.signal);
+    if(!winner&&fallback){
+      noteProvider(trace,fallback.provider,{downgraded:true});
+      winner=fallback;
+    }
     if(!winner)throw lastError instanceof Error?lastError:new Error("lookup_failed");
     return {text:winner.text,usage:winner.usage,provider:winner.provider,attempts:trace.attempt};
   }finally{
@@ -222,7 +247,16 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
   const fingerprint=await lookupFingerprint(input);
   try{
     const generate=async()=>{
-      const out=await ask({action:seeding?"seed":input.retry?"retry":"look",prompt:miniPrompt(input),maxTokens:120,schema:LOOK_SCHEMA,temperature:0.2,signal,validate:value=>validateLook(value,input)});
+      const out=await ask({action:seeding?"seed":input.retry?"retry":"look",prompt:miniPrompt(input),maxTokens:120,schema:LOOK_SCHEMA,temperature:0.2,signal,validate:value=>{
+        try{return validateLook(value,input);}
+        catch(error){
+          const reason=error instanceof Error?error.message:"invalid_fields";
+          const downgrade=recoverableLook(value,input,reason);
+          const wrapped=new Error(reason);
+          if(downgrade)(wrapped as Error&{downgrade?:unknown}).downgrade=downgrade;
+          throw wrapped;
+        }
+      }});
       const result=validateLook(parseJson(out.text),input);
       return {...result,lemma:result.canonical,pos:"",phrase:"",alts:[],provider:out.provider};
     };
