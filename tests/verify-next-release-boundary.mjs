@@ -210,7 +210,7 @@ const expected={
     "tests/verify-breeze16-browser.mjs": "85be057cf3a2cd6a270015bf7614da0ae6fa7ad7f61a4f06e3ddfb887529a76e",
     "tests/verify-casual-rails-browser.mjs": "75484a9a267dcc989148509f9f1186eb8d6035064b68d029ebac7e5c0538ed84",
     "tests/verify-client-polish-browser.mjs": "67665888c3808d6cc379c93dc09f8db421c9d78148d8e3a01e66eb632be2a329",
-    "tests/verify-control-optics-browser.mjs": "0233866aab44dcbbede12582d9783ec789cfed34773b7ac1efc29183371d307c",
+    "tests/verify-control-optics-browser.mjs": "bcd2953fcb66fd64c3c82b4b9f49e464a59172964d412168d0e6c0e9dbf5217e",
     "tests/verify-cover-chooser-browser.mjs": "b4555628cf5762995a71556ac04d8850890bf274a520f8b72e5f32811e2fddc7",
     "tests/verify-device-polish-browser.mjs": "e07872407c8df8b64fa97fc55166453ef38bf8d7c63ded6181ec407f13b53f5b",
     "tests/verify-dict-client-failure.mjs": "dfe6175769ff794334708a3708566c1a9b3c3b5ef7018e549e52c9a4710e2be2",
