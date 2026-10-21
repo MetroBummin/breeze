@@ -80,7 +80,24 @@ globalThis.fetch=async()=>new Response(JSON.stringify({usage:{prompt_tokens:1,co
 await meteredFetch(plainClient,plain,'openrouter','deepseek/deepseek-v4-flash-0731','https://provider.test',{});
 await backgroundTask;
 assert.equal(plainArgs.p_usage.hedged,undefined,'sentence telemetry gained hedge fields');
+assert.equal(plainArgs.p_usage.reject_reason,undefined,'sentence telemetry gained a reject reason');
+assert.equal(plainArgs.p_usage.downgraded,undefined,'sentence telemetry gained a downgrade flag');
 assert.equal(plainArgs.p_usage.input_tokens,1);
+const noted=newAiTrace('look');
+let releaseNoted;
+noted.hedge={settled:new Promise(resolve=>{releaseNoted=resolve;}),hedged:true,winner:'openrouter',loser:'failed'};
+noted.providerNotes={openrouter:{rejectReason:'missing_fixed_word',downgraded:true},gemini:{rejectReason:'parse_failed'}};
+let notedArgs;
+const notedClient={rpc(_name,args){notedArgs=args;return{abortSignal(){return Promise.resolve({data:'metric-id',error:null});}};}};
+globalThis.fetch=async()=>new Response(JSON.stringify({usage:{prompt_tokens:3,completion_tokens:2,total_tokens:5}}),{status:200});
+await meteredFetch(notedClient,noted,'openrouter','deepseek/deepseek-v4-flash-0731','https://provider.test',{});
+assert.equal(notedArgs,undefined,'reject telemetry was written before the race settled');
+releaseNoted();
+await backgroundTask;
+assert.equal(notedArgs.p_usage.reject_reason,'missing_fixed_word');
+assert.equal(notedArgs.p_usage.downgraded,true);
+assert.equal(notedArgs.p_usage.winner,'openrouter');
+assert.equal(notedArgs.p_usage.input_tokens,3);
 
 const {PGlite}=await import('@electric-sql/pglite');
 const {readFileSync}=await import('node:fs');
@@ -98,6 +115,7 @@ create unique index dict_events_telemetry_request_attempt
   on public.dict_events ((meta->>'request_id'), (meta->>'attempt'))
   where meta->>'telemetry_version' = '2';`);
 await db.exec(readFileSync(new URL('../supabase/migrations/20261021120000_dict_lookup_hedge_meta.sql',import.meta.url),'utf8'));
+await db.exec(readFileSync(new URL('../supabase/migrations/20261021193000_dict_lookup_reject_meta.sql',import.meta.url),'utf8'));
 const request='11111111-1111-4111-8111-111111111111';
 const usage={input_tokens:3,output_tokens:2,thinking_tokens:0,total_tokens:5,cached_input_tokens:0,cache_creation_input_tokens:0,tool_input_tokens:0,hedged:true,winner:'openrouter',loser:'failed'};
 const stored=await db.query(`select public.record_dict_ai_usage($1,1,'look','openrouter','deepseek/deepseek-v4-flash-0731',200,1200,'api_ok',$2::jsonb) as id`,[request,JSON.stringify(usage)]);
@@ -124,6 +142,18 @@ assert.equal(failedMeta.hedged,true);
 assert.equal(failedMeta.winner,null);
 assert.equal(failedMeta.loser,'aborted');
 await assert.rejects(db.query(`select public.record_dict_ai_usage($1,3,'look','gemini','gemini-3.5-flash-lite',null,10,'timeout',$2::jsonb)`,[request,JSON.stringify({hedged:true,winner:'openrouter',loser:'dropped'})]));
+const downgraded=await db.query(`select public.record_dict_ai_usage($1,4,'look','openrouter','deepseek/deepseek-v4-flash-0731',200,900,'api_ok',$2::jsonb) as id`,[request,JSON.stringify({input_tokens:3,output_tokens:2,thinking_tokens:0,total_tokens:5,cached_input_tokens:0,cache_creation_input_tokens:0,tool_input_tokens:0,hedged:true,winner:'openrouter',loser:'failed',reject_reason:'invalid_member_count',downgraded:true})]);
+const downgradedMeta=(await db.query(`select meta from public.dict_events where id=$1`,[downgraded.rows[0].id])).rows[0].meta;
+assert.equal(downgradedMeta.reject_reason,'invalid_member_count');
+assert.equal(downgradedMeta.downgraded,true);
+assert.equal(downgradedMeta.hedged,true);
+assert.equal(downgradedMeta.ai_usage.input_tokens,3);
+assert.equal(downgradedMeta.ai_usage.reject_reason,undefined);
+assert.equal(downgradedMeta.ai_usage.downgraded,undefined);
+assert.equal(Object.hasOwn(sentenceMeta,'reject_reason'),false);
+assert.equal(Object.hasOwn(sentenceMeta,'downgraded'),false);
+await assert.rejects(db.query(`select public.record_dict_ai_usage($1,5,'look','gemini','gemini-3.5-flash-lite',200,10,'api_ok',$2::jsonb)`,[request,JSON.stringify({reject_reason:'Not a code',downgraded:true})]));
+await assert.rejects(db.query(`select public.record_dict_ai_usage($1,5,'look','gemini','gemini-3.5-flash-lite',200,10,'api_ok',$2::jsonb)`,[request,JSON.stringify({reject_reason:'invalid_members',downgraded:false})]));
 await db.close();
 
 console.log('Dictionary telemetry persists behind the provider response');

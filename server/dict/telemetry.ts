@@ -1,6 +1,7 @@
 export type AiAction="look"|"retry"|"explain"|"seed";
 export type HedgeTelemetry={settled:Promise<void>;hedged:boolean;winner:"openrouter"|"gemini"|null;loser:"aborted"|"failed"|"late"|null};
-export type AiTrace={requestId:string;action:AiAction;attempt:number;hedge?:HedgeTelemetry};
+export type ProviderNote={rejectReason?:string;downgraded?:true};
+export type AiTrace={requestId:string;action:AiAction;attempt:number;hedge?:HedgeTelemetry;providerNotes?:Partial<Record<Provider,ProviderNote>>};
 type Provider="openrouter"|"gemini"|"claude";
 type RpcClient={rpc:(name:string,args:Record<string,unknown>)=>any};
 type Usage=Record<string,number|null>;
@@ -20,11 +21,16 @@ export function tokenUsage(provider:Provider,raw:any):Usage|null{
   }
   const input=token(raw.input_tokens),output=token(raw.output_tokens);if(input===null&&output===null)return null;const cached=token(raw.cache_read_input_tokens??0),created=token(raw.cache_creation_input_tokens??0);return{input_tokens:input,output_tokens:output,thinking_tokens:null,total_tokens:input!==null&&output!==null&&cached!==null&&created!==null?input+output+cached+created:null,cached_input_tokens:cached,cache_creation_input_tokens:created,tool_input_tokens:0};
 }
-async function hedgedUsage(trace:AiTrace,usage:Usage|null):Promise<Record<string,unknown>|null>{
-  const hedge=trace.hedge;if(!hedge)return usage;
-  await hedge.settled;
-  return {...(usage??{}),hedged:hedge.hedged,winner:hedge.winner,loser:hedge.loser};
+async function hedgedUsage(trace:AiTrace,usage:Usage|null,provider:Provider):Promise<Record<string,unknown>|null>{
+  const hedge=trace.hedge,note=trace.providerNotes?.[provider];
+  if(!hedge&&!note?.rejectReason&&!note?.downgraded)return usage;
+  if(hedge)await hedge.settled;
+  const extra:Record<string,unknown>={};
+  if(hedge){extra.hedged=hedge.hedged;extra.winner=hedge.winner;extra.loser=hedge.loser;}
+  if(note?.rejectReason)extra.reject_reason=note.rejectReason;
+  if(note?.downgraded)extra.downgraded=true;
+  return {...(usage??{}),...extra};
 }
 async function persist(client:RpcClient,args:Record<string,unknown>):Promise<void>{for(let i=0;i<2;i++){try{const{data,error}=await client.rpc("record_dict_ai_usage",args).abortSignal(AbortSignal.timeout(3000));if(!error&&data!==null&&data!==undefined)return;if(i===1)console.error("ai_metric_write_failed",JSON.stringify({request_id:args.p_request_id,attempt:args.p_attempt,code:error?.code??"missing_insert_id"}))}catch{if(i===1)console.error("ai_metric_write_failed",JSON.stringify({request_id:args.p_request_id,attempt:args.p_attempt,code:"transport_error"}))}}}
 function background(task:Promise<void>):void{const safe=task.catch(()=>{});const runtime=(globalThis as any).EdgeRuntime;if(typeof runtime?.waitUntil==="function")runtime.waitUntil(safe)}
-export async function meteredFetch(client:RpcClient,trace:AiTrace,provider:Provider,model:string,input:string,init:RequestInit):Promise<Response>{const attempt=++trace.attempt,start=Date.now();let response:Response;try{response=await fetch(input,init)}catch(error){const timedOut=init.signal?.aborted===true||(error instanceof Error&&(error.name==="TimeoutError"||error.name==="AbortError"));background((async()=>{await persist(client,{p_request_id:trace.requestId,p_attempt:attempt,p_action:trace.action,p_provider:provider,p_model:model,p_http_status:null,p_duration_ms:Math.min(3600000,Math.max(0,Date.now()-start)),p_outcome:timedOut?"timeout":"network_error",p_usage:await hedgedUsage(trace,null)})})());throw error}background((async()=>{let body:any=null;let aborted=false;try{body=await response.clone().json()}catch(error){aborted=init.signal?.aborted===true||(error instanceof Error&&(error.name==="TimeoutError"||error.name==="AbortError"));}await persist(client,{p_request_id:trace.requestId,p_attempt:attempt,p_action:trace.action,p_provider:provider,p_model:model,p_http_status:response.status,p_duration_ms:Math.min(3600000,Math.max(0,Date.now()-start)),p_outcome:aborted?"timeout":response.ok?"api_ok":"api_error",p_usage:await hedgedUsage(trace,tokenUsage(provider,provider==="gemini"?body?.usageMetadata:body?.usage))})})());return response}
+export async function meteredFetch(client:RpcClient,trace:AiTrace,provider:Provider,model:string,input:string,init:RequestInit):Promise<Response>{const attempt=++trace.attempt,start=Date.now();let response:Response;try{response=await fetch(input,init)}catch(error){const timedOut=init.signal?.aborted===true||(error instanceof Error&&(error.name==="TimeoutError"||error.name==="AbortError"));background((async()=>{await persist(client,{p_request_id:trace.requestId,p_attempt:attempt,p_action:trace.action,p_provider:provider,p_model:model,p_http_status:null,p_duration_ms:Math.min(3600000,Math.max(0,Date.now()-start)),p_outcome:timedOut?"timeout":"network_error",p_usage:await hedgedUsage(trace,null,provider)})})());throw error}background((async()=>{let body:any=null;let aborted=false;try{body=await response.clone().json()}catch(error){aborted=init.signal?.aborted===true||(error instanceof Error&&(error.name==="TimeoutError"||error.name==="AbortError"));}await persist(client,{p_request_id:trace.requestId,p_attempt:attempt,p_action:trace.action,p_provider:provider,p_model:model,p_http_status:response.status,p_duration_ms:Math.min(3600000,Math.max(0,Date.now()-start)),p_outcome:aborted?"timeout":response.ok?"api_ok":"api_error",p_usage:await hedgedUsage(trace,tokenUsage(provider,provider==="gemini"?body?.usageMetadata:body?.usage),provider)})})());return response}
