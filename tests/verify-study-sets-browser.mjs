@@ -35,6 +35,10 @@ try{
  const waitRows=async count=>{await page.waitForFunction(expected=>document.querySelectorAll('#study-sets-word-list > li').length===expected,count);await assertNumbers();};
  const waitTranslation=(row,x)=>row.locator('.study-sets-word-surface').evaluate(async(node,target)=>{for(let i=0;i<60;i++){const t=getComputedStyle(node).transform,actual=t==='none'?0:new DOMMatrixReadOnly(t).m41;if(Math.abs(actual-target)<1)return;await new Promise(resolve=>requestAnimationFrame(resolve));}throw Error('row translation did not settle at '+target);},x);
  const wordRow=word=>rows().filter({has:page.locator('.vword',{hasText:new RegExp(`${word}$`)})});
+ const openDirectoryFromVocabulary=async()=>{
+  await studyAction(page.evaluate(()=>{show('vocab');document.getElementById('wordbook-review').focus({preventScroll:true});openStudySetsDirectory();}),page);
+  await assertDirectory();
+ };
  const assertDirectory=async()=>{
   await page.waitForFunction(()=>activeAppView()==='vocab'&&studySetsUI.screen==='directory'&&document.getElementById('study-sets-dialog')?.open);
   // Browser history opens the dialog before its IndexedDB read renders the
@@ -121,7 +125,11 @@ try{
  await studyAction(originalQuiet.locator('.vword').click(),page);assert.equal(await originalQuiet.locator('.vword').getAttribute('aria-expanded'),'false');
  const entry=page.locator('#wordbook-review');assert.equal(await entry.innerText(),'학습하기');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0,'default vocabulary adds no top row or breadcrumb');
- await studyAction(entry.click(),page);await assertDirectory();
+ await studyAction(entry.click(),page);
+ await page.waitForFunction(()=>activeAppView()==='memory');
+ assert.equal(await page.locator('#study-sets-home-list').isVisible(),true,'학습하기 opens the set list');
+ assert.equal(await page.locator('dialog[open]').count(),0,'학습하기 leaves the directory sheet closed');
+ await openDirectoryFromVocabulary();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
  assert.equal(await page.locator('#study-all-words-list > li').count(),5);
  assert.equal(await page.locator('#vstars').isVisible(),true);
@@ -154,7 +162,10 @@ try{
  await page.locator('#study-sets-back').click();await assertDirectory();
  assert.equal(await page.evaluate(()=>document.activeElement.id),'study-sets-all','all-word detail returns focus to the directory card');
  await dismissDirectory();
- await entry.focus();await studyAction(page.keyboard.press('Enter'),page);await assertDirectory();
+ await entry.focus();await studyAction(page.keyboard.press('Enter'),page);
+ await page.waitForFunction(()=>activeAppView()==='memory'&&document.getElementById('v-memory').classList.contains('on'));
+ assert.equal(await page.locator('dialog[open]').count(),0,'keyboard 학습하기 leaves the directory sheet closed');
+ await openDirectoryFromVocabulary();
  await page.evaluate(()=>{window.qaDirectoryDialog=document.getElementById('study-sets-dialog');window.qaDirectorySheet=studySetsUI.sheet;window.qaDirectoryVocabScroll=window.scrollY;window.qaDirectoryCloseEvents=0;window.qaDirectoryDialog.addEventListener('close',()=>{window.qaDirectoryCloseEvents++;});});
  await studyAction(page.locator('#study-sets-home-create').click(),page);assert.equal(await page.locator('#study-sets-save').isDisabled(),true);
  assert.equal(await page.locator('dialog[open]').count(),1);

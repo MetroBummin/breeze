@@ -281,9 +281,22 @@ function studySetsFilteredGroups(set,stars){
 }
 function studySetsFilteredStudyKeys(stars){
   const chosen=studySetsNormalizeStars(stars);
-  return studySetsAllWordsGroups().values
+  // The list is newest-first. A study round keeps the first saved meaning of
+  // each visible word, in vocabulary order: the same representative Simple Study
+  // uses, so grouped answers stay attached to that word.
+  const visible=new Set(studySetsAllWordsGroups().values
     .filter(group=>!chosen.length||chosen.includes(group[0][1].status||1))
-    .map(group=>group[0][0]);
+    .map(group=>group[0][1].root||group[0][0]));
+  const representatives=[],seen=new Set();
+  for(const key of Object.keys(words||{})){
+    const item=words[key];
+    if(!item||!validWordMeaning(item)||typeof item.word!=='string'||!item.word.trim())continue;
+    const root=item.root||key;
+    if(seen.has(root))continue;
+    seen.add(root);
+    if(visible.has(root))representatives.push(key);
+  }
+  return representatives;
 }
 function studySetsVisibleExportRecords(){
   if(studySetsUI.screen==='all')return studySetsAllWordsVisible().entries.map(([,item])=>({word:item.word,ko:item.ko||'',defs:item.defs||[],example:item.example||'',status:item.status,book:item.book||'',addedAt:item.addedAt}));
