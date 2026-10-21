@@ -581,12 +581,14 @@ that saved word's status. Meanings on 전체 단어 stay read-only. The chips
 filter the list on screen. They do not change a set's stored cards or its
 study queue.
 
-Set-list cards show the set name, the grouped word count, how many of those
-words show three stars, and the linked book title when the set has one. 전체
-단어's badge says 기본. A relative last-studied time is shown only when a study
-session or answer timestamp already exists on that set. 전체 단어's simple
-session stores outcomes without a time, so that line is omitted. No new
-study-time field is stored. The cards reuse the existing pastel tokens.
+Set-list cards show the set name, the grouped word count, and how many of
+those words show one, two, and three stars. The badge names the book that
+contributes the most words, plus 「외 N권」 when other books also contribute.
+A long title truncates in the middle. 전체 단어's badge says 기본. A relative
+last-studied time is shown only when a study session or answer timestamp
+already exists on that set. 전체 단어's simple session stores outcomes without
+a time, so that line is omitted. No new study-time field is stored. Card fills
+use the existing home card colors.
 
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set

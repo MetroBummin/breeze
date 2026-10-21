@@ -216,8 +216,8 @@ test('Memory directory keeps all words first, appends sets and add, and enters t
   await afterAction(createFromHome('시험 준비'));
   const cards=[...document.querySelectorAll('.study-sets-home-card')];
   assert.equal(cards[0].id,'study-sets-all');assert.equal(cards[1].querySelector('strong').textContent,'시험 준비');
-  assert.equal(cards[2].id,'study-sets-home-create');assert.match(cards[1].querySelector('.study-sets-home-caption').textContent,/단어 1 · ★★★ 0/);
-  assert.match(cards[1].querySelector('.study-sets-home-badge').textContent,/외 1/);
+  assert.equal(cards[2].id,'study-sets-home-create');assert.match(cards[1].querySelector('.study-sets-home-caption').textContent,/단어 1 · ★ 1 · ★★ 0 · ★★★ 0/);
+  assert.equal(cards[1].querySelector('.study-sets-home-badge').textContent,'One');
   assert.equal(cards[0].querySelector('.study-sets-home-badge').textContent,'기본');
   assert.equal(cards[0].querySelector('.study-sets-home-studied'),null);
   assert.equal(cards[1].querySelector('.study-sets-home-studied'),null);
@@ -835,7 +835,7 @@ test('star chips filter 전체 단어 and a saved set, and none pressed shows ev
   assert.equal(h.document.querySelectorAll('.study-sets-word-row').length,2);
 });
 
-test('set cards count grouped words and three-star words, and show last study time only when a session already has one',async()=>{
+test('set cards count each star level, name the book with the most words, and show last study time only when a session already has one',async()=>{
   const h=harness();
   h.context.words.a.status=3;
   await afterAction(h.createFromHome('Exam set',['One']));
@@ -843,11 +843,26 @@ test('set cards count grouped words and three-star words, and show last study ti
   const at=Date.now()-3*86400000-3600000;
   await afterAction(h.run(`(()=>{const set=studySetsUI.state.sets[0];set.archivedSessions=[{startedAt:${at},answers:[{at:${at}}]}];return renderStudySetsHome(studySetsUI.state);})()`));
   const card=h.query('.study-sets-home-card[data-set-id]');
-  assert.equal(card.querySelector('.study-sets-home-caption').textContent,'단어 1 · ★★★ 1');
+  assert.equal(card.querySelector('.study-sets-home-caption').textContent,'단어 1 · ★ 0 · ★★ 0 · ★★★ 1');
   assert.equal(card.querySelector('.study-sets-home-badge').textContent,'One');
   assert.match(card.querySelector('.study-sets-home-studied').textContent,/3일 전/);
   assert.equal(h.document.querySelector('#study-sets-all .study-sets-home-studied'),null);
   assert.equal(h.query('#study-sets-all .study-sets-home-badge').textContent,'기본');
+  const longTitle='아주 긴 위대한 개츠비 원서 제목';
+  Object.assign(h.context.words,{
+    g1:{word:'gatsby',ko:'개츠비',book:longTitle,status:1,addedAt:10,example:''},
+    g2:{word:'daisy',ko:'데이지',book:longTitle,status:2,addedAt:11,example:''},
+    g3:{word:'nick',ko:'닉',book:longTitle,status:1,addedAt:12,example:''},
+    sea:{word:'sea',ko:'바다',book:'노인과 바다',status:3,addedAt:13,example:''},
+    demian:{word:'demian',ko:'데미안',book:'데미안',status:1,addedAt:14,example:''}
+  });
+  await afterAction(h.run(`(async()=>{let state=await loadStudySets();const made=BreezeStudySets.create(state,{name:'고전',bookTitles:['데미안','노인과 바다',${JSON.stringify(longTitle)}]},words,50);if(!made.accepted)throw Error('create failed');await commitStudySets(made.state);return renderStudySetsHome();})()`));
+  const classic=[...h.document.querySelectorAll('.study-sets-home-card[data-set-id]')].find(card=>card.querySelector('strong').textContent==='고전');
+  assert.ok(classic);
+  assert.equal(classic.querySelector('.study-sets-home-caption').textContent,'단어 5 · ★ 3 · ★★ 1 · ★★★ 1');
+  assert.equal(classic.querySelector('.study-sets-home-badge-start').textContent+classic.querySelector('.study-sets-home-badge-end').textContent,longTitle);
+  assert.equal(classic.querySelector('.study-sets-home-badge-end').textContent,longTitle.slice(-6));
+  assert.equal(classic.querySelector('.study-sets-home-badge-more').textContent,' 외 2권');
 });
 
 test('the last-viewed set button opens that set and falls back to 전체 단어',async()=>{

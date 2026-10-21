@@ -134,11 +134,21 @@ function studySetsListSummary(set){
   const total=session?.queue.length||0,completed=session?.index||0;
   return {active,total,completed,status:session?(completed<total?'active':'complete'):active?'idle':'empty'};
 }
-function studySetsMetaLine(wordCount,threeCount){return `단어 ${wordCount} · ★★★ ${threeCount}`;}
+function studySetsStarBucket(status){const value=Number(status);return value===2||value===3?value:1;}
+function studySetsStarCounts(){return {words:0,1:0,2:0,3:0};}
+function studySetsCountStar(counts,status){counts.words++;counts[studySetsStarBucket(status)]++;}
 function studySetsGroupedStarStats(cards){
-  const groups=BreezeStudySets.groupedCards(cards);let three=0;
-  for(const group of groups)if(Number(group.status)===3)three++;
-  return {words:groups.length,three};
+  const counts=studySetsStarCounts();
+  for(const group of BreezeStudySets.groupedCards(cards))studySetsCountStar(counts,group.status);
+  return counts;
+}
+function studySetsFillMeta(node,counts){
+  node.append(document.createTextNode(`단어 ${counts.words}`));
+  for(const [level,glyph] of [[1,'★'],[2,'★★'],[3,'★★★']]){
+    node.append(document.createTextNode(' · '));
+    const star=studySetsNode('span','study-sets-home-star',glyph);star.dataset.s=String(level);
+    node.append(star,document.createTextNode(` ${counts[level]}`));
+  }
 }
 // Last study time already lives on a set session. 전체 단어's simple session
 // stores outcomes without timestamps, so that card omits the clock.
@@ -163,10 +173,32 @@ function studySetsRelativeTime(at,now=Date.now()){
   const date=new Date(at);
   return `${date.getMonth()+1}월 ${date.getDate()}일`;
 }
-function studySetsBookLabel(set){
-  const titles=[...new Set((set?.bookTitles||[]).filter(title=>typeof title==='string'&&title.trim()))];
-  if(!titles.length)return '';
-  return titles.length===1?titles[0]:`${titles[0]} 외 ${titles.length-1}`;
+function studySetsBookBadge(set,cards){
+  const counts=new Map();
+  for(const group of BreezeStudySets.groupedCards(cards)){
+    const book=typeof group.book==='string'?group.book.trim():'';
+    if(book)counts.set(book,(counts.get(book)||0)+1);
+  }
+  if(!counts.size)return '';
+  const order=Array.isArray(set?.bookTitles)?set.bookTitles:[];
+  const ranked=[...counts.entries()].sort((a,b)=>{
+    if(b[1]!==a[1])return b[1]-a[1];
+    const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]);
+    return (ai<0?order.length:ai)-(bi<0?order.length:bi)||a[0].localeCompare(b[0],'ko');
+  });
+  return {name:ranked[0][0],extra:ranked.length-1};
+}
+function studySetsAppendBadge(button,badge){
+  const node=studySetsNode('span','study-sets-home-badge');
+  if(typeof badge==='string')node.textContent=badge;
+  else{
+    const chars=[...badge.name],tail=chars.length>1?Math.min(6,Math.floor(chars.length/2)):0;
+    const title=studySetsNode('span','study-sets-home-badge-title');
+    title.append(studySetsNode('span','study-sets-home-badge-start',chars.slice(0,chars.length-tail).join('')),studySetsNode('span','study-sets-home-badge-end',chars.slice(chars.length-tail).join('')));
+    node.append(title);
+    if(badge.extra>0)node.append(studySetsNode('span','study-sets-home-badge-more',` 외 ${badge.extra}권`));
+  }
+  button.append(node);
 }
 function studySetsClockIcon(){
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -190,30 +222,30 @@ async function renderStudySetsHome(state=null){
     if(!options.add){const shape=studySetsNode('span','study-sets-home-shape');shape.setAttribute('aria-hidden','true');button.append(shape);}
     const copy=studySetsNode('span','study-sets-home-copy');
     copy.append(studySetsNode('strong','',title));
-    if(meta||options.studied){
+    if(options.counts||options.studied){
       const lines=studySetsNode('span','study-sets-home-meta');
-      if(meta)lines.append(studySetsNode('span','study-sets-home-caption',meta));
+      if(options.counts){const caption=studySetsNode('span','study-sets-home-caption');studySetsFillMeta(caption,options.counts);lines.append(caption);}
       if(options.studied){const studied=studySetsNode('span','study-sets-home-studied');studied.append(studySetsClockIcon(),document.createTextNode(options.studied));lines.append(studied);}
       copy.append(lines);
     }
     button.append(copy);
-    if(options.badge)button.append(studySetsNode('span','study-sets-home-badge',options.badge));
+    if(options.badge)studySetsAppendBadge(button,options.badge);
     if(options.add)button.append(studySetsIcon('add'));
     item.append(button);list.append(item);return button;
   };
   // Match the list the set page actually shows: one row per word, not per sense.
-  const catalog=studySetsAllWordsGroups();let three=0;
-  for(const group of catalog.values)if(Number(group[0][1].status)===3)three++;
-  const all=card('전체 단어',studySetsMetaLine(catalog.values.length,three),openStudySetsAllWords,{tone:0,badge:'기본'});all.id='study-sets-all';
+  const catalog=studySetsAllWordsGroups(),allCounts=studySetsStarCounts();
+  for(const group of catalog.values)studySetsCountStar(allCounts,group[0][1].status);
+  const all=card('전체 단어','',openStudySetsAllWords,{tone:0,badge:'기본',counts:allCounts});all.id='study-sets-all';
   if(readError){
     const notice=studySetsNode('div','study-sets-home-error');notice.setAttribute('role','alert');
     notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',()=>renderStudySetsHome()));
     const item=studySetsNode('li');item.append(notice);list.append(item);
   }
   for(const [index,set] of (state?.sets||[]).entries()){
-    const stats=studySetsGroupedStarStats(BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words));
+    const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
     const studiedAt=studySetsLastStudiedAt(set);
-    const button=card(set.name,studySetsMetaLine(stats.words,stats.three),()=>openStudySet(set.id),{tone:(index+1)%4,badge:studySetsBookLabel(set),studied:studiedAt?studySetsRelativeTime(studiedAt):''});
+    const button=card(set.name,'',()=>openStudySet(set.id),{tone:(index+1)%4,badge:studySetsBookBadge(set,listed),counts:studySetsGroupedStarStats(listed),studied:studiedAt?studySetsRelativeTime(studiedAt):''});
     button.dataset.setId=set.id;
     button.setAttribute('aria-controls','v-memory-set');
   }
