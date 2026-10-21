@@ -6,7 +6,7 @@ const ONBOARD_PROGRESS_KEY='breeze.onboarding.carousel-progress';
 const ONBOARD_WELCOME_KEY='breeze.onboarding.welcome-seen';
 // Apple macOS hello's runtime hold is 750ms; writing/fade are Breeze's
 // review candidate, not a claimed frame-for-frame match to Apple's animation.
-const ONBOARD_WELCOME_TIMING={write:3000,hold:750,fade:900};
+const ONBOARD_WELCOME_TIMING={write:3800,hold:750,fade:900};
 function onboardingPdfAvailable(){
   // PR128 owns native classification and the safe input adapter.
   const availability=typeof BreezePdfInk!=='undefined'?Reflect.get(BreezePdfInk,'availability'):null;

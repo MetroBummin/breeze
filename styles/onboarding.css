@@ -14,7 +14,7 @@ body.dark.onboarding-active{--onboard-paper:#20211e;--onboard-ink:#f3f6f4;--onbo
 #onboarding #onboard-next{flex:1;width:100%;margin-top:0;border-radius:16px;min-height:52px;font-weight:650;color:var(--sentence-glass-ink);}
 #onboard-next:disabled{opacity:.5;cursor:wait;}
 #onboard-coach{touch-action:pan-y;}
-#onboarding #onboard-skip{flex:none;margin-top:8px;border:0;background:transparent;font-size:13px;font-weight:500;color:var(--onboard-muted);}
+#onboarding #onboard-skip{flex:none;display:flex;align-items:flex-start;justify-content:center;margin-top:2px;padding-top:3px;border:0;background:transparent;font-size:13px;font-weight:500;color:var(--onboard-muted);}
 #onboard-finish{display:flex;flex:1;min-height:184px;width:100%;align-items:center;justify-content:center;}
 /* The finish shelf reuses the landing carousel mechanism: two identical sets,
    one 30s linear loop to -50%, edge fade, no pointer input. */
@@ -29,6 +29,11 @@ body.dark.onboarding-active{--onboard-paper:#20211e;--onboard-ink:#f3f6f4;--onbo
 .onboard-shelf .casual::after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.62));pointer-events:none;}
 .onboard-shelf .casual .ct{position:absolute;z-index:1;left:12px;right:12px;bottom:24px;margin:0;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.4);}
 .onboard-shelf .casual .cm{position:absolute;z-index:1;left:12px;bottom:9px;margin:0;color:rgba(255,255,255,.88);}
+/* Shelf cards are covers only: at this size the author/title/source lines
+   sit on top of the cover art and collide with it. */
+.onboard-shelf .bookcard .author,.onboard-shelf .bookcard .bt{display:none;}
+.onboard-shelf .casual .ct,.onboard-shelf .casual .cm{display:none;}
+.onboard-shelf .casual::after{display:none;}
 @keyframes onboard-shelf{to{transform:translateX(-50%);}}
 @media(prefers-reduced-motion:reduce){.onboard-shelf-track{animation:none;}}
 #onboarding[data-finish="true"] #onboard-navigation{margin-top:16px;}

@@ -29,7 +29,7 @@ Scribble explicitly lifts before the next letter. This brand adaptation keeps
 the required connected hand instead of claiming one universal B form.
 A single inherited pen timeline traverses its geometric length
 with one linear envelope, without resetting speed per letter.
-The pen writes for 3.0s, holds the complete word for 750ms, then
+The pen writes for 3.8s, holds the complete word for 750ms, then
 shows the existing caption, note and Start button together over 900ms (opacity
 and 8px translation). Total: 4.65s. This replaces the rejected 2s preview.
 No Apple glyph, logo, font, path or shader is included in the app.
@@ -45,6 +45,8 @@ hello cycles has since measured the Apple pen directly: normalized progress
 stays within ±0.04 of linear and writing time scales with path length
 (correlation 0.95). The timeline now follows that measurement — linear easing
 at a comparable pen speed (Apple writes 5–7 letter words in 2.5–2.9s).
+Owner review of the first cut found the measured 3.0s write too fast in
+context, so the write is 3.8s; the envelope stays linear.
 
 A tap anywhere completes the reveal immediately and consumes that tap without
 navigating. The independent `breeze.onboarding.welcome-seen` marker is set on
@@ -90,7 +92,9 @@ on the study page Skip advances to the final import page, and on every other
 page it ends the guide like the final page's Skip. Above the final page's
 prompt, a decorative shelf reuses the landing carousel mechanism — the same
 book/article cards in two identical sets on one 30s linear loop with edge
-fade and no pointer input. Escape/browser Back cancels
+fade and no pointer input. In the shelf the cards show covers only — the
+author/title/source lines are hidden there because at shelf size they sit on
+top of the cover art and collide with it. Escape/browser Back cancels
 without recording completion; returning from Settings replays from welcome.
 
 The overlay never opens a book or changes its appearance, scroll, words, sync,
@@ -139,7 +143,7 @@ Settings social login is documented in [016](016-social-auth.md). Its request/se
 
 ## Welcome timeline ownership correction
 
-The welcome's CSS animations own writing3000ms, hold750ms and caption fade900ms.
+The welcome's CSS animations own writing3800ms, hold750ms and caption fade900ms.
 The former JS wall timer could remove those animations before a delayed WebKit
 animation timeline reached pen===1. Complete on the actual next-caption
 `onboard-welcome-copy` animationend instead, guarded by the current session and

@@ -8,7 +8,7 @@
     228
   ],
   "timing": {
-    "write": 3000,
+    "write": 3800,
     "hold": 750,
     "fade": 900
   }
