@@ -91,9 +91,13 @@ except the welcome also offers Skip in a visually minimal form (13px, muted);
 the welcome keeps only the wordmark and its start button (owner review).
 On the study page Skip advances to the final import page, and on every other
 page it ends the guide like the final page's Skip. Above the final page's
-prompt, a decorative shelf reuses the landing carousel mechanism — the same
-book/article cards in two identical sets on one 30s linear loop with edge
-fade and no pointer input. In the shelf the cards show covers only — the
+prompt, a decorative shelf reuses the landing carousel mechanism — two rows
+of book/article covers on 40s linear loops, the lower row reversed and
+phase-shifted, with edge fade and no pointer input. The rows share no title:
+nine covers (the Starship article, Backroom, Alice, Gatsby and five Holmes)
+are split five/four so the same cover never appears in both rows at once.
+On short viewports (≤700px) the cards step down a size so Skip stays on
+screen. In the shelf the cards show covers only — the
 author/title/source lines are hidden there because at shelf size they sit on
 top of the cover art and collide with it. Escape/browser Back cancels
 without recording completion; returning from Settings replays from welcome.
