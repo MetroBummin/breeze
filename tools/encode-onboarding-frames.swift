@@ -6,11 +6,11 @@ import ImageIO
 let args=CommandLine.arguments
 let dir=URL(fileURLWithPath:args[1]), output=URL(fileURLWithPath:args[2])
 let frames=try FileManager.default.contentsOfDirectory(at:dir,includingPropertiesForKeys:nil).filter{$0.pathExtension=="png"}.sorted{$0.lastPathComponent<$1.lastPathComponent}
-let width=Int(args[3])!,height=Int(args[4])!,fps:Int32=30
+let width=Int(args[3])!,height=Int(args[4])!,fps:Int32=60
 let bitrate=Int(args.count>5 ? args[5] : "5000000")!
 let writer=try AVAssetWriter(outputURL:output,fileType:.mp4)
 writer.shouldOptimizeForNetworkUse=true
-let input=AVAssetWriterInput(mediaType:.video,outputSettings:[AVVideoCodecKey:AVVideoCodecType.h264,AVVideoWidthKey:width,AVVideoHeightKey:height,AVVideoCompressionPropertiesKey:[AVVideoAverageBitRateKey:bitrate,AVVideoMaxKeyFrameIntervalKey:30,AVVideoExpectedSourceFrameRateKey:30,AVVideoAllowFrameReorderingKey:false,AVVideoProfileLevelKey:AVVideoProfileLevelH264BaselineAutoLevel]])
+let input=AVAssetWriterInput(mediaType:.video,outputSettings:[AVVideoCodecKey:AVVideoCodecType.h264,AVVideoWidthKey:width,AVVideoHeightKey:height,AVVideoCompressionPropertiesKey:[AVVideoAverageBitRateKey:bitrate,AVVideoMaxKeyFrameIntervalKey:60,AVVideoExpectedSourceFrameRateKey:60,AVVideoAllowFrameReorderingKey:false,AVVideoProfileLevelKey:AVVideoProfileLevelH264BaselineAutoLevel]])
 input.expectsMediaDataInRealTime=false
 let adaptor=AVAssetWriterInputPixelBufferAdaptor(assetWriterInput:input,sourcePixelBufferAttributes:[kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32ARGB,kCVPixelBufferWidthKey as String:width,kCVPixelBufferHeightKey as String:height,kCVPixelBufferCGImageCompatibilityKey as String:true,kCVPixelBufferCGBitmapContextCompatibilityKey as String:true])
 writer.add(input);guard writer.startWriting() else{fatalError(String(describing:writer.error))};writer.startSession(atSourceTime:.zero)

@@ -170,9 +170,10 @@ try{
  const before=await dataSnapshot(page);assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
  await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();await page.waitForFunction(()=>document.querySelector('#onboarding').dataset.stage==='1');
  assert.equal(await page.evaluate(()=>onboardingSession.pages.some(p=>p[0]==='pdf')),native,'PDF guide does not follow native capability');
- const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?109:96);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,738);
+ const progress=await page.locator('#onboard-pages').boundingBox();assert.equal(progress.width,native?109:96);assert.equal(progress.x,(390-progress.width)/2);assert.equal(progress.y,684);
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
- assert.ok(requests.filter(u=>u.endsWith('.mp4')).every(u=>u.includes('word-light')),'offscreen media downloaded');
+ assert.ok(requests.filter(u=>u.endsWith('.mp4')).every(u=>u.includes('word-light')||u.includes('details-light')),'media beyond the next scene downloaded');
+ assert.ok(requests.some(u=>u.includes('details-light')),'next scene was not primed');
  const media=page.locator('#onboard-carousel');const b=await media.boundingBox();
  await page.dispatchEvent('#onboard-carousel','pointerdown',{pointerId:1,isPrimary:true,clientX:b.x+b.width-10,clientY:b.y+100});
  await page.dispatchEvent('#onboard-carousel','pointerup',{pointerId:1,isPrimary:true,clientX:b.x+10,clientY:b.y+100});
@@ -332,9 +333,10 @@ try{
  await page.waitForFunction(()=>document.querySelector('#onboard-carousel video[src]')?.readyState>=2);
  await page.evaluate(()=>{qaHidden=true;document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await page.locator('#onboard-carousel video[src]').evaluate(v=>v.paused),true);
  await page.evaluate(()=>{qaHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>!document.querySelector('#onboard-carousel video[src]').paused);
- await page.locator('#onboard-carousel').press('Space');assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
+ await page.locator('#onboard-carousel').press('Space');await page.waitForFunction(()=>{const img=document.querySelector('.onboard-slide:not([hidden]) img');if(!img)return false;const r=img.getBoundingClientRect();return getComputedStyle(img).display!=='none'&&r.width>0&&r.height>0;},null,{timeout:5000});assert.equal(await page.locator('.onboard-slide:not([hidden]) img').isVisible(),true);
  await page.locator('#onboard-carousel').press('Space');await page.waitForFunction(()=>document.getElementById('onboarding').dataset.welcome!=='drawing');await page.locator('#onboard-next').tap();
- assert.equal(await page.locator('#onboard-carousel video[src]').count(),1,'offscreen decoder retained');
+ assert.equal(await page.locator('#onboard-carousel video[src]').count(),2,'media retained beyond active and next scene');
+ assert.equal(await page.locator('#onboard-carousel video[src]').evaluateAll(vs=>vs.some(v=>v.getAttribute('src').includes('word-'))),false,'previous scene decoder retained');
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.waitForFunction(()=>document.querySelector('.onboard-slide:not([hidden]) video')?.paused===true,null,{timeout:2000});
  assert.equal(await page.locator('.onboard-slide:not([hidden]) video').evaluate(v=>v.paused),true);
