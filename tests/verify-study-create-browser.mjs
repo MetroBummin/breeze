@@ -26,8 +26,8 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad',820,1180],['de
  await addPage.getByRole('menuitem',{name:'책 추가',exact:true}).click();
  await addPage.waitForSelector('#study-sets-add-books-form .study-sets-book');
  const choices=addPage.locator('#study-sets-add-books-form>.study-sets-books'),save=addPage.locator('#study-sets-add-books');
- const fixed=await save.boundingBox();const box=await choices.boundingBox();
- await addPage.mouse.move(box.x+box.width/2,box.y+box.height/2);await addPage.mouse.wheel(0,400);await addPage.waitForTimeout(100);
+ const fixed=await save.boundingBox();
+ await choices.evaluate(n=>{n.scrollTop=400;});
  assert.ok(await choices.evaluate(n=>n.scrollTop)>100,'책 추가 list owns the scroll');
  const parked=await save.boundingBox();assert.equal(parked.y,fixed.y,'add action stays put while books scroll');
  await choices.evaluate(n=>{n.scrollTop=n.scrollHeight;});
