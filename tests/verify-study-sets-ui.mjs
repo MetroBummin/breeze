@@ -618,6 +618,20 @@ test('a save while the set is open appears in the list and leaves the current ro
   assert.equal(labels.includes('during'),true);assert.equal(labels.includes('live'),true,'a deleted word stays until this round ends');
 });
 
+test('adding books scrolls the same list as creation and orders remaining titles by word count',async ()=>{
+  const h=harness();
+  h.context.words.z1={word:'zebra',ko:'얼룩말',book:'Zebra',addedAt:11};
+  h.context.words.z2={word:'stripe',ko:'줄무늬',book:'Zebra',addedAt:12};
+  h.context.words.z3={word:'herd',ko:'무리',book:'Zebra',addedAt:13};
+  h.context.words.ap={word:'apple',ko:'사과',book:'Apple',addedAt:14};
+  await afterAction(h.createSet('Order',['One']));
+  await afterAction(h.run("studySetsUI.detailEditing=true; studySetsGo('books')"));
+  assert.equal(h.query('#study-sets-add-books').getAttribute('form'),'study-sets-add-books-form');
+  assert.equal(h.query('#study-sets-add-books').closest('footer, .study-sets-footer')!=null,true);
+  assert.equal(h.query('.study-sets-books').contains(h.query('#study-sets-add-books')),false);
+  assert.deepEqual([...h.document.querySelectorAll('.study-sets-book input')].map(node=>node.value),['Zebra','Two','','Apple']);
+});
+
 test('create quota failure preserves prior bytes and retries once; selection order is stable by card count',async ()=>{
   const h=harness(),{context,storage,run,query,click,document,submit}=h;
   await afterAction(h.createSet('Existing'));await afterAction(run("studySetsGo('create')"));
