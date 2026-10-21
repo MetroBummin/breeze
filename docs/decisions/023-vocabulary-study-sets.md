@@ -587,7 +587,9 @@ and, when a study time already exists, the relative last-studied line sit at
 the top left. The grouped word count and the one-, two-, and three-star counts
 sit at the bottom left. The badge stays at the top right and names the book
 that contributes the most words, plus 「외 N권」 when other books also
-contribute. A long title truncates in the middle. 전체 단어's badge says 기본.
+contribute. It is one tonal step from the card (`--settings-close`) with
+muted type (`--settings-muted`), in light and in dark. A long title truncates
+in the middle. 전체 단어's badge says 기본.
 A relative last-studied time is shown only when a study session or answer
 timestamp already exists on that set. 전체 단어's simple session stores
 outcomes without a time, so that line is omitted. No new study-time field is

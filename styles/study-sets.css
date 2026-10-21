@@ -21,7 +21,7 @@ body.dark .study-sets-home-star[data-s="1"]{color:var(--s1);}
 body.dark .study-sets-home-star[data-s="2"]{color:var(--s2);}
 body.dark .study-sets-home-star[data-s="3"]{color:var(--s3);}
 .study-sets-home-studied{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%;color:var(--settings-muted);font:400 13px/1.45 var(--ui);}
-.study-sets-home-badge{position:absolute;z-index:1;top:14px;right:14px;display:inline-flex;align-items:center;max-width:46%;min-width:0;padding:4px 10px;border-radius:999px;background:#fff;color:#1C1C1E;font:600 12px/1.4 var(--ui);}
+.study-sets-home-badge{position:absolute;z-index:1;top:14px;right:14px;display:inline-flex;align-items:center;max-width:46%;min-width:0;padding:4px 10px;border-radius:999px;background:var(--settings-close);color:var(--settings-muted);font:600 12px/1.4 var(--ui);}
 .study-sets-home-badge-title{display:inline-flex;flex:1 1 auto;min-width:0;overflow:hidden;}
 .study-sets-home-badge-start{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .study-sets-home-badge-end{flex:none;white-space:nowrap;}
