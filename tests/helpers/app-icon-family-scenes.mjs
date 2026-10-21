@@ -10,7 +10,7 @@ export const appFamilyScenes=Object.freeze({
  home:{visible:['#nav-settings','#home-add'],hidden:['#set-close','#am-close']},
  settings:{visible:['#set-close'],hidden:['#am-close']},
  'add-sheet':{visible:['#am-close'],hidden:['#set-close']},
- wordbook:{visible:['#btn-export','#wordbook-add'],hidden:['#wordbook-add-form .task-close']},
+ wordbook:{visible:['#btn-export','#memory-add'],hidden:['#wordbook-add-form .task-close']},
  'word-add':{visible:['#wordbook-add-form .task-close'],hidden:['#study-sets-close']},
  'study-directory':{visible:['#study-sets-close','#study-sets-all','#study-sets-home-create'],hidden:['#study-sets-back','#study-sets-edit']},
  'study-create':{visible:['#study-sets-back','#study-sets-close','#study-sets-name'],hidden:['#study-sets-edit','#study-sets-all']},

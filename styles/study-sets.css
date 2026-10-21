@@ -10,13 +10,6 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-home-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;list-style:none;margin:0;padding:0;}
 .study-sets-home-cards>li{position:relative;min-width:0;}
 .study-sets-home-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;box-sizing:border-box;width:100%;min-height:112px;padding:16px;border:0;border-radius:20px;background:var(--wordbook-field);box-shadow:var(--shadow-card);color:var(--settings-ink);font-family:var(--ui);text-align:left;cursor:pointer;}
-/* Comparison only. The list stays plain unless data-accent="edge" is set. */
-.study-sets-home-cards[data-accent="edge"] .study-sets-home-card[data-tone="0"]{--study-set-accent:var(--mint);}
-.study-sets-home-cards[data-accent="edge"] .study-sets-home-card[data-tone="1"]{--study-set-accent:var(--s1);}
-.study-sets-home-cards[data-accent="edge"] .study-sets-home-card[data-tone="2"]{--study-set-accent:var(--s2);}
-.study-sets-home-cards[data-accent="edge"] .study-sets-home-card[data-tone="3"]{--study-set-accent:var(--s3);}
-.study-sets-home-cards[data-accent="edge"] .study-sets-home-card[data-tone]::before{content:"";position:absolute;z-index:1;left:16px;top:23px;width:8px;height:8px;border-radius:50%;background:var(--study-set-accent);}
-.study-sets-home-cards[data-accent="edge"] .study-sets-home-card[data-tone] .study-sets-home-copy{padding-left:16px;}
 .study-sets-home-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;max-width:100%;}
 .study-sets-home-copy strong{display:block;max-width:100%;padding-right:84px;font:600 17px/1.35 var(--ui);letter-spacing:-.25px;overflow-wrap:anywhere;}
 .study-sets-home-caption{margin-top:auto;max-width:100%;padding-top:12px;overflow-wrap:anywhere;color:var(--settings-muted);font:400 13px/1.45 var(--ui);}

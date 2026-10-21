@@ -591,9 +591,7 @@ contribute. A long title truncates in the middle. 전체 단어's badge says 기
 A relative last-studied time is shown only when a study session or answer
 timestamp already exists on that set. 전체 단어's simple session stores
 outcomes without a time, so that line is omitted. No new study-time field is
-stored. A comparison treatment, not the default, places an 8px dot beside the
-title from `--mint`, `--s1`, `--s2`, and `--s3` when the list has
-`data-accent="edge"`. It does not change the card fill.
+stored.
 
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set

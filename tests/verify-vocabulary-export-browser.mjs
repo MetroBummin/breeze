@@ -54,7 +54,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
         apple:{word:'apple',ko:'사과',status:1,addedAt:1704067200000},
         pending:{word:'pending',ko:'  ',status:1,addedAt:1704240000000}
       };
-      show('vocab');
+      show('memory');
     });
     const button=page.locator('#btn-export'),dialog=page.locator('#task-dialog'),submit=page.locator('#task-submit');
     const idle=()=>page.waitForFunction(()=>!document.getElementById('btn-export').disabled);

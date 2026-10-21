@@ -36,7 +36,7 @@ function updateWordbookFilteredCatalog(catalog,roots){
 }
 function filterWordbookGroups(groups,q){
   const sortEl=document.getElementById('vsort');
-  const sort=sortEl instanceof HTMLInputElement?sortEl.value:'recent';
+  const sort=/** @type {HTMLInputElement|null} */(sortEl)?.value||'recent';
   if(!q&&!wordbookStars.size&&!wordbookBooks.size&&sort==='recent'){wordbookFilteredCache=null;return groups;}
   // A changed filter intentionally scans once. Subsequent saves update only
   // their affected groups through updateWordbookFilteredCatalog().

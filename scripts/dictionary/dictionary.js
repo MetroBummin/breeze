@@ -2479,6 +2479,6 @@ document.getElementById('btn-export').onclick = async ()=>{
   catch(error){if(error.name!=='AbortError') toast('단어장을 내보내지 못했어요. 다시 시도해 주세요.');}
   finally{
     button.disabled=false;
-    if(restoreFocus&&activeAppView()==='vocab')button.focus({preventScroll:true});
+    if(restoreFocus&&activeAppView()==='memory')button.focus({preventScroll:true});
   }
 };
