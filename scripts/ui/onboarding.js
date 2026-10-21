@@ -210,8 +210,21 @@ function syncOnboardingMedia(){
   document.getElementById('onboard-carousel').setAttribute('aria-label','브리즈 기능 안내 · 좌우로 넘기기 · 영상을 누르면 '+(session.paused?'재생':'일시정지'));
   for(const [i,video] of [...document.querySelectorAll(/** @type {'video'} */('#onboard-carousel video'))].entries()){
     video.pause();
-    if(i!==session.page-1){if(video.hasAttribute('src')){video.removeAttribute('src');video.load();}continue;}
     const base=`assets/onboarding/${session.pages[i][0]}-${theme}`;
+    if(i!==session.page-1){
+      // Prime only the next scene, and only while the active scene is really
+      // playing: a forward turn then starts without the load hitch, scenes
+      // farther ahead stay unloaded, and poster-only states (reduced motion,
+      // paused, hidden) fetch nothing.
+      const primeNext=i===session.page&&session.page>=1&&!session.motion.matches&&!session.paused&&!document.hidden;
+      if(primeNext){
+        if(video.getAttribute('src')!==base+'.mp4'){video.preload='auto';video.src=base+'.mp4';video.load();}
+        continue;
+      }
+      if(video.hasAttribute('src')){video.removeAttribute('src');video.load();}
+      video.preload='none';
+      continue;
+    }
     video.poster=base+'.jpg';if(video.nextElementSibling instanceof HTMLImageElement)video.nextElementSibling.src=base+'.jpg';
     const shouldPlay=!session.motion.matches&&!session.paused&&!document.hidden;
     video.classList.toggle('poster-only',!shouldPlay);

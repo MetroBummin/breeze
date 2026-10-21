@@ -112,8 +112,11 @@ callback. The importer owns durable commits; the guide does not roll back a
 book already committed. An interrupted fresh final page resumes on reload.
 Settings replay always starts from welcome and does not replace existing data.
 
-Only the visible video receives a source. Navigation pauses and unloads every
-other video; session cancellation invalidates outstanding play promises. Nothing
+Only the visible video plays. While a scene plays, the next scene's video also
+receives a source and loads (primed), so a forward turn starts without the
+load hitch; navigation pauses and unloads every video beyond the active and
+next scenes, and priming stops in poster-only states (reduced motion, paused,
+hidden). Session cancellation invalidates outstanding play promises. Nothing
 is loaded during welcome. Background/pagehide pauses playback, pageshow resumes.
 Reduced motion shows posters without downloading video; autoplay/codec failures
 fall back to the poster. Media tap or Space/Enter pauses/replays without adding
@@ -164,4 +167,6 @@ in the media are isolated authored data captured from the real production card
 UI, with no AI/network lookup or changes to live vocabulary/study data. Muted
 inline loop playback, tap pause, reduced-motion poster and playback-error poster
 are shared with prior slides. No physical iOS playback claim follows from browser
-verification.
+verification. The 2026-10-21 refresh re-renders the study media with the same
+stepped 1/60s method as the other scenes (780×1280 at deviceScaleFactor 2,
+60fps), replacing the earlier real-time 30fps recording.
