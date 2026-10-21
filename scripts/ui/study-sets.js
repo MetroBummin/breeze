@@ -333,7 +333,9 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
   const fadeIcons=shown=>{
     const value=shown?'':'0';
     actions.style.opacity=value;button.style.opacity=value;if(share)share.style.opacity=value;
-    actions.style.pointerEvents=shown?'':'none';
+    // The menu button stays a target. A touch that opened the menu also emits
+    // a second click, and that click must not fall through onto 이름 변경.
+    button.style.pointerEvents='';if(share)share.style.pointerEvents=shown?'':'none';
   };
   const finish=()=>{
     if(epoch!==ui.editEpoch)return;
