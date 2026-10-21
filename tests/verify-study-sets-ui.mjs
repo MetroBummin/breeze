@@ -487,9 +487,10 @@ test('ordinal uses a separate clipped leading gutter without becoming a fourth v
 
 test('vocabulary share is top-right and add is bottom-right with original handlers and dock order',async ()=>{
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),{document}=parseHTML(html).window;
-  const header=document.querySelector('#v-vocab .wordbook-brand'),dock=document.querySelector('#wordbook-controls .control-bar');
-  assert.equal(header.querySelectorAll('#btn-export').length,1);assert.equal(header.querySelector('#wordbook-add'),null);
+  const header=document.querySelector('#v-memory .memory-home-header'),dock=document.querySelector('#wordbook-controls .control-bar'),memoryDock=document.querySelector('#memory-home-controls .control-bar');
+  assert.equal(header.querySelectorAll('#btn-export').length,1);assert.equal(header.querySelector('#wordbook-add,#memory-add'),null);
   assert.deepEqual([...dock.querySelectorAll('button')].map(button=>button.id),['wordbook-home','wordbook-review','wordbook-add']);
+  assert.deepEqual([...memoryDock.querySelectorAll('button')].map(button=>button.id),['memory-home','memory-last-set','memory-add']);
   const add=document.getElementById('wordbook-add'),share=document.getElementById('btn-export');
   assert.equal(add.getAttribute('onclick'),'openWordbookAdd()');assert.equal(add.getAttribute('aria-label'),'단어 추가');assert.equal(add.classList.contains('control-circle'),true);
   assert.equal(share.getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(document.querySelectorAll('#btn-export').length,1);assert.equal(document.querySelectorAll('#wordbook-add').length,1);
@@ -763,12 +764,63 @@ test('a saved set uses the same bounded window as 전체 단어 after 100 words'
   assert.ok(Math.min(...indexes)>0,'scrolling a saved set mounts a later window');
 });
 
+test('전체 단어 cannot be deleted and the filter card is gone',async()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.doesNotMatch(html,/wordbook-filters|id="vsort"|id="vstars"|id="vbooks"|id="vfilter-clear"/);
+  assert.match(html,/id="nav-vocab"[^>]*onclick="show\('memory'\)"/);
+  assert.match(html,/id="memory-last-set"/);
+  const h=harness();
+  await afterAction(h.run('renderStudySetsHome()'));
+  const all=h.query('#study-sets-all');
+  assert.equal(all.parentElement.querySelector('button:not(#study-sets-all)'),null);
+  assert.equal([...h.document.querySelectorAll('button')].some(button=>button.textContent.includes('삭제')),false);
+  await afterAction(h.run('openStudySetsAllWords()'));
+  assert.equal(h.run('studySetsUI.editButton.hidden'),true);
+  assert.equal(h.query('#study-sets-edit-menu').hidden,true);
+  assert.equal(h.query('#study-sets-edit-surface').hidden,true);
+  const saved=JSON.stringify(h.context.words);
+  await afterAction(h.run("studySetsGo('delete','')"));
+  assert.equal(JSON.stringify(h.context.words),saved);
+  assert.equal(h.context.dead.c,undefined);
+});
+
+test('the last-viewed set button opens that set and falls back to 전체 단어',async()=>{
+  const h=harness();
+  const button=h.document.createElement('button');button.id='memory-last-set';button.setAttribute('aria-label','전체 단어로 이동');
+  const label=h.document.createElement('span');label.id='memory-last-set-label';label.textContent='전체 단어';
+  button.append(label);h.document.body.append(button);
+  await afterAction(h.run('openMemoryLastSet()'));
+  assert.equal(h.run('studySetsUI.screen'),'all');
+  assert.equal(h.run('memoryLastSetId()'),'@all');
+  assert.equal(label.textContent,'전체 단어');
+  await afterAction(h.run('closeStudySets()'));
+  await afterAction(h.createSet('Evening'));
+  const id=h.run('studySetsUI.setId');
+  assert.equal(h.run('memoryLastSetId()'),id);
+  await afterAction(h.run('closeStudySets()'));
+  h.run('refreshMemoryLastSetButton()');
+  assert.equal(label.textContent,'Evening');
+  assert.equal(button.getAttribute('aria-label'),'Evening 세트로 이동');
+  await afterAction(h.run('openMemoryLastSet()'));
+  assert.equal(h.run('studySetsUI.screen'),'detail');
+  assert.equal(h.run('studySetsUI.setId'),id);
+  await afterAction(h.run(`(async()=>{const state=await loadStudySets();await commitStudySets(BreezeStudySets.remove(state,${JSON.stringify(id)}).state);})()`));
+  await afterAction(h.run('closeStudySets()'));
+  await afterAction(h.run('openMemoryLastSet()'));
+  assert.equal(h.run('studySetsUI.screen'),'all');
+  assert.equal(h.run('memoryLastSetId()'),'@all');
+  assert.equal(label.textContent,'전체 단어');
+});
+
 test('전체 단어 swipe deletes the saved word, keeps book sets in step, and reuses undo',async()=>{
   const h=harness();await afterAction(h.createSet());
   assert.deepEqual([...h.context.readStudySets().sets[0].cards].map(card=>card.word).sort(),['calm','quiet']);
   await afterAction(h.run("studySetsGo('all')"));
   const row=[...h.document.querySelectorAll('.study-all-words-row')].find(item=>item.querySelector('.vword')?.textContent==='calm');
-  assert.ok(row);assert.equal(row.querySelector('[contenteditable],button.chip,.rowdel'),null);assert.equal(row.querySelector('.chip').getAttribute('role'),'img');
+  assert.ok(row);assert.equal(row.querySelector('[contenteditable],.rowdel'),null);
+  const star=row.querySelector('button.chip');assert.ok(star);
+  await afterAction(star.click());
+  assert.equal(h.context.words.c.status,2);assert.equal(h.context.words.c.word,'calm');
   await afterAction(row.querySelector('.study-sets-row-action').click());
   assert.equal(h.context.words.c,undefined);assert.ok(h.context.dead.c);
   assert.equal(h.document.querySelector('.study-sets-undo span').textContent,'“calm” 삭제됨');

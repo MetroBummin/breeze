@@ -47,7 +47,7 @@ try{
     await cell.tap();record.focused=await sample();
     await page.screenshot({path:`${out}/${key}-meaning-focused.png`});
     await cell.fill('항구와 부두 — 저장 확인');
-    await page.locator('#vsearch').focus();record.blurred=await sample();
+    await page.locator('#wordbook-home').focus();record.blurred=await sample();
     assert.equal(await page.evaluate(()=>words.port.ko),'항구와 부두 — 저장 확인');
     await page.locator('.vword').first().click();record.closed=await sample();
     assert.equal(record.closed.editable,null);
@@ -55,79 +55,14 @@ try{
     for(const state of [record.focused,record.blurred,record.closed])assert.equal(state.visualViewport.scale,record.collapsed.visualViewport.scale,'Engine focus/blur/close changed viewport scale');
     assert.equal(record.collapsed.fontSize,'14px');
 
-    const books=page.locator('#vbooks'),trigger=page.locator('#vbooks summary');
-    await trigger.click();
-    await page.getByLabel('Book B',{exact:true}).check();
-    assert.equal(await books.getAttribute('open')!==null,true,'Inside selection must keep multi-select menu open');
-    assert.equal(await page.locator('.vgroup').count(),1);
-    assert.equal(await page.locator('#vbook-label').textContent(),'책 1권');
-    await page.screenshot({path:`${out}/${key}-book-menu.png`});
-    await page.locator('#vsearch').tap();
-    record.bookOutsideTapClosed=await books.getAttribute('open')===null;
-    await page.screenshot({path:`${out}/${key}-book-outside-tap.png`});
-    if(!record.bookOutsideTapClosed)await trigger.click();
-    await trigger.click();
-    assert.equal(await page.getByLabel('Book B',{exact:true}).isChecked(),true,'Closing must preserve selection');
-    await page.getByLabel('Book B',{exact:true}).focus();await page.keyboard.press('Escape');
-    record.bookEscapeClosed=await books.getAttribute('open')===null;
+    assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vstars,#vfilter-clear').count(),0,'the filter card is gone');
     if(phase!=='before'){
-      assert.equal(await trigger.evaluate(e=>e===document.activeElement),true,'Escape returns focus to summary');
-      await trigger.click();await trigger.click();
-      assert.equal(await books.getAttribute('open'),null,'Summary toggles close');
-      await trigger.click();await page.locator('#vsort-menu summary').click();
-      assert.equal(await books.getAttribute('open'),null,'Only one disclosure may remain open');
-      await page.getByLabel('알파벳순',{exact:true}).check();
-      assert.equal(await page.locator('#vsort-menu').getAttribute('open'),null,'Sort still closes on selection');
-      await trigger.click();await page.goBack();
-      await page.waitForFunction(()=>activeAppView()==='home');
-      assert.equal(await books.getAttribute('open'),null,'Back follows existing Home navigation and closes hidden menu');
-      await page.goForward();await page.waitForFunction(()=>activeAppView()==='vocab');
-      assert.equal(await books.getAttribute('open'),null,'Forward must not resurrect an open menu');
-      assert.equal(await page.locator('#vbook-label').textContent(),'책 1권');
-      await trigger.click();assert.equal(await page.getByLabel('Book B',{exact:true}).isChecked(),true);
-      await page.locator('#wordbook-home').click();await page.evaluate(()=>show('vocab'));
-      assert.equal(await books.getAttribute('open'),null,'Navigation/reopen closes disclosure');
-      await page.evaluate(()=>clearWordbookFilters());
-      await page.evaluate(()=>{
-        const keys=[];
-        for(let i=0;i<40;i++){
-          const key='fixture'+i;keys.push(key);
-          words[key]={word:key,ko:'긴 뜻과 한글 입력 확인 '.repeat(8),status:1,book:'ZZ '+i+' 아주 긴 책 제목 '.repeat(6),addedAt:i+3};
-        }
-        // Production writes notify the incremental catalog through this keyed
-        // persistence API; render alone does not discover arbitrary mutations.
-        saveWords(keys);
-        renderVocab();
-      });
-      await trigger.click();
-      const options=page.locator('#vbook-options');
-      assert.equal(await options.locator('label').count(),42,'Every saved source book is present before scroll verification');
-      assert.ok(await options.evaluate(e=>e.scrollHeight>e.clientHeight),'Long book list is internally scrollable');
-      // Locator hover can first scroll the short viewport to reveal the menu.
-      await options.hover();
-      const bodyScroll=await page.evaluate(()=>scrollY);
-      // Playwright mobile WebKit rejects mouse.wheel before dispatch. Keep
-      // wheel coverage on supported contexts and label the mobile simulation.
-      if(engine==='webkit'&&width<500){
-        record.bookListScrollInput='DOM scrollBy; mobile WebKit wheel unsupported';
-        await options.evaluate(e=>e.scrollBy(0,600));
-      }else{
-        record.bookListScrollInput='mouse wheel';
-        await page.mouse.wheel(0,600);
-      }
-      await page.waitForFunction(()=>document.getElementById('vbook-options').scrollTop>0);
-      assert.equal(await page.evaluate(()=>scrollY),bodyScroll,'Menu wheel scroll stays inside the book list');
-      assert.equal(await books.getAttribute('open')!==null,true,'Scrolling does not dismiss the menu');
-      await options.evaluate(e=>e.scrollTop=e.scrollHeight);
-      await page.getByLabel('Book B',{exact:true}).check();
-      assert.equal(await books.getAttribute('open')!==null,true,'Scroll/selection remain inside');
-      await trigger.click();await page.evaluate(()=>clearWordbookFilters());
       await page.locator('.vword').first().click();
       await page.evaluate(()=>document.documentElement.style.fontSize='20px');
       record.largeText=await sample();
       assert.ok(parseFloat(record.largeText.fontSize)>=20,'Editable text follows larger root font preference');
       await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));
-      await cell.fill('긴 한글 뜻 '.repeat(30));await page.locator('#vsearch').focus();
+      await cell.fill('긴 한글 뜻 '.repeat(30));await page.locator('#wordbook-home').focus();
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
       await page.locator('#wordbook-add').click();
       const add=page.locator('#wordbook-add-dialog');
@@ -135,14 +70,13 @@ try{
       assert.equal(await page.locator('#wordbook-new-meaning').evaluate(e=>getComputedStyle(e).fontSize),'16px');
       await add.getByRole('button',{name:'취소',exact:true}).click();
       assert.equal(await page.locator('dialog[open]').count(),0,'Cancel releases native dialog');
-      assert.equal(await page.locator('#vbook-options').count(),1,'No duplicate menu or overlay');
       await page.screenshot({path:`${out}/${key}-closed.png`});
       if(engine==='chromium'&&key==='phone-light'){
         // CDP scale is a simulation, not evidence of a physical pinch gesture.
         const cdp=await context.newCDPSession(page);
         await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:1.5});
         await cell.focus();record.simulatedUserZoomFocused=await sample();
-        await page.locator('#vsearch').focus();record.simulatedUserZoomBlurred=await sample();
+        await page.locator('#wordbook-home').focus();record.simulatedUserZoomBlurred=await sample();
         assert.equal(record.simulatedUserZoomFocused.visualViewport.scale,1.5);
         assert.equal(record.simulatedUserZoomBlurred.visualViewport.scale,1.5,'Editing must not force an existing page zoom back to 1');
         await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await cdp.detach();
@@ -151,11 +85,9 @@ try{
     measurements.push(record);writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2)+'\n');
     if(phase==='before'){
       assert.equal(record.focused.fontSize,'14px');
-      assert.equal(record.bookOutsideTapClosed,false);assert.equal(record.bookEscapeClosed,false);
     }else{
       assert.ok(parseFloat(record.expanded.fontSize)>=16,'Editable meaning must reach the focus font floor before focus');
-      assert.equal(record.bookOutsideTapClosed,true,'Outside tap must dismiss book disclosure');
-      assert.equal(record.bookEscapeClosed,true,'Escape must dismiss book disclosure');
+      assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vstars,#vfilter-clear').count(),0);
     }
     assert.deepEqual(errors,[]);await context.close();
   }

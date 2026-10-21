@@ -35,7 +35,8 @@ function updateWordbookFilteredCatalog(catalog,roots){
   }
 }
 function filterWordbookGroups(groups,q){
-  const sort=/** @type {HTMLInputElement} */(document.getElementById('vsort')).value;
+  const sortEl=document.getElementById('vsort');
+  const sort=sortEl instanceof HTMLInputElement?sortEl.value:'recent';
   if(!q&&!wordbookStars.size&&!wordbookBooks.size&&sort==='recent'){wordbookFilteredCache=null;return groups;}
   // A changed filter intentionally scans once. Subsequent saves update only
   // their affected groups through updateWordbookFilteredCatalog().
@@ -52,8 +53,9 @@ function filterWordbookGroups(groups,q){
   return wordbookFilteredCache.groups;
 }
 function renderWordbookBookOptions(list,cachedNames=null){
-  const names=cachedNames||[...new Set(list.map(([,w])=>w.book||''))].sort();
   const options=document.getElementById('vbook-options');
+  if(!options)return;
+  const names=cachedNames||[...new Set(list.map(([,w])=>w.book||''))].sort();
   if(cachedNames&&cachedNames===wordbookRenderedBookNames&&options.dataset.names!==undefined)return;
   wordbookRenderedBookNames=cachedNames;
   const signature=JSON.stringify(names);
@@ -115,22 +117,23 @@ document.getElementById('wordbook-add-form').addEventListener('submit',event=>{
   }
   createMeaning(root,meaning,{});
   /** @type {HTMLDialogElement} */(document.getElementById('wordbook-add-dialog')).close();
-  /** @type {HTMLInputElement} */(document.getElementById('vsearch')).value='';
+  const search=document.getElementById('vsearch');if(search instanceof HTMLInputElement)search.value='';
   wordbookStars.clear();wordbookBooks.clear();
   document.querySelectorAll('#vstars button').forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('on');});
-  document.getElementById('vbook-options').removeAttribute('data-names');
+  document.getElementById('vbook-options')?.removeAttribute('data-names');
   renderVocab();toast('단어를 저장했어요');
 });
 
 function syncWordbookFilterLabels(){
-  document.getElementById('vbook-label').textContent=wordbookBooks.size ? `책 ${wordbookBooks.size}권` : '모든 책';
-  document.getElementById('vbooks').classList.toggle('filtered',wordbookBooks.size>0);
-  document.getElementById('vfilter-clear').hidden=!(wordbookStars.size||wordbookBooks.size||/** @type {HTMLInputElement} */(document.getElementById('vsearch')).value.trim());
+  const label=document.getElementById('vbook-label'),books=document.getElementById('vbooks'),clear=document.getElementById('vfilter-clear'),search=document.getElementById('vsearch');
+  if(label)label.textContent=wordbookBooks.size ? `책 ${wordbookBooks.size}권` : '모든 책';
+  if(books)books.classList.toggle('filtered',wordbookBooks.size>0);
+  if(clear)clear.hidden=!(wordbookStars.size||wordbookBooks.size||(search instanceof HTMLInputElement&&search.value.trim()));
 }
 function clearWordbookFilters(){
   wordbookStars.clear();wordbookBooks.clear();
-  /** @type {HTMLInputElement} */(document.getElementById('vsearch')).value='';
+  const search=document.getElementById('vsearch');if(search instanceof HTMLInputElement)search.value='';
   document.querySelectorAll('#vstars button').forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('on');});
-  document.getElementById('vbook-options').removeAttribute('data-names');
+  document.getElementById('vbook-options')?.removeAttribute('data-names');
   renderVocab();
 }

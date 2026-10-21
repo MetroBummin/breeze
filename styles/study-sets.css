@@ -27,10 +27,13 @@ body.dark .memory-home-header .memory-home-wordmark{background-image:url(../asse
 .study-sets-home-error p{margin:0 0 12px;}
 .study-sets-home-error .study-sets-button{min-height:44px;padding:8px 14px;border:1px solid var(--settings-line);border-radius:12px;background:var(--wordbook-field);color:var(--settings-ink);font:500 13px/1.5 var(--ui);cursor:pointer;}
 .study-sets-vocab-back{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin:0 0 12px;padding:8px 12px 8px 0;border:0;border-radius:12px;background:transparent;color:var(--settings-muted);font:500 13px/1.5 var(--ui);cursor:pointer;}
-.study-sets-home-card svg,.study-sets-home-menu-trigger svg,.study-sets-vocab-back svg,:is(#study-sets-dialog,#v-memory-set) svg,#memory-home-controls svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+.study-sets-home-card svg,.study-sets-home-menu-trigger svg,.study-sets-vocab-back svg,:is(#study-sets-dialog,#v-memory-set) svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
 /* Interactive icon roles only; row disclosure/decorative SVGs keep their scale. */
-:is(#study-sets-dialog,#v-memory-set) .study-sets-icon>svg,.study-sets-home-menu-trigger>svg,.study-sets-vocab-back>svg,#memory-home-controls .control-circle>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
-#study-sets-dialog #study-sets-back>svg,#memory-home-controls #study-sets-directory-back>svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);stroke-width:var(--am-stroke-chevron);transform:none;}
+:is(#study-sets-dialog,#v-memory-set) .study-sets-icon>svg,.study-sets-home-menu-trigger>svg,.study-sets-vocab-back>svg{width:var(--control-icon-size);height:var(--control-icon-size);stroke-width:var(--control-icon-stroke);stroke-linecap:round;stroke-linejoin:round;}
+#study-sets-dialog #study-sets-back>svg{width:var(--am-icon-chevron);height:var(--am-icon-chevron);stroke-width:var(--am-stroke-chevron);transform:none;}
+#v-memory-set .wordbook-search{margin:0 0 12px;}
+#v-memory-set .wordbook-search svg{width:18px;height:18px;stroke-width:calc(var(--control-inline-icon-stroke) * 24 / 18);}
+#memory-last-set-label{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 :is(#study-sets-edit,.study-sets-home-menu-trigger) svg circle{r:var(--control-more-dot-radius);}
 #v-memory button:focus-visible,.study-sets-vocab-back:focus-visible,:is(#study-sets-dialog,#v-memory-set) :is(button,input):focus-visible{outline:2px solid var(--selection-ink,var(--blue));outline-offset:3px;}
 #study-sets-dialog{position:fixed;inset:0;box-sizing:border-box;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:max(12px,env(safe-area-inset-top)) 0 0;border:0;background:var(--sentence-glass-scrim);color:var(--sentence-glass-ink);overflow:hidden;overscroll-behavior:contain;font:400 14px/1.6 var(--ui);}

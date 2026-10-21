@@ -25,10 +25,10 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   return {top:rect.top+top*rect.height/258,bottom:rect.top+bottom*rect.height/258,asset:getComputedStyle(e).backgroundImage};
  });await page.screenshot({path:`${out}/${key}-home.png`});await page.locator('#logo .mark').screenshot({path:`${out}/${key}-home-ink.png`});
  await page.locator('#nav-vocab').click();await page.evaluate(()=>document.fonts.ready);
- assert.equal(await page.evaluate(()=>activeAppView()),'vocab');
+ assert.equal(await page.evaluate(()=>activeAppView()),'memory');
  assert.equal(await page.locator('#wordbook-study-sets-entry,#wordbook-sets-back').count(),0);
- const title=await page.locator('.wordbook-brand h1').boundingBox(),button=await page.locator('#btn-export').boundingBox();
- const titleInk=await page.locator('.wordbook-brand h1').evaluate(async e=>{
+ const title=await page.locator('.memory-home-header h1').boundingBox(),button=await page.locator('#btn-export').boundingBox();
+ const titleInk=await page.locator('.memory-home-header h1').evaluate(async e=>{
   if(e.classList.contains('memory-wordmark')){
    const rect=e.getBoundingClientRect(),style=getComputedStyle(e);
    const image=new Image();image.src=style.backgroundImage.match(/url\(["']?(.*?)["']?\)/)[1];await image.decode();
@@ -45,11 +45,11 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
  const opticalCenterDelta=(titleInk.top+titleInk.bottom-homeInk.top-homeInk.bottom)/2;
  measurements.push({key,safe,home,title,button,homeInk,titleInk,opticalCenterDelta});
  writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
- await page.screenshot({path:`${out}/${key}-memory.png`});await page.locator('.wordbook-brand h1').screenshot({path:`${out}/${key}-memory-ink.png`});
+ await page.screenshot({path:`${out}/${key}-memory.png`});await page.locator('.memory-home-header h1').screenshot({path:`${out}/${key}-memory-ink.png`});
  if(phase==='after'){
   assert.ok(Math.abs(opticalCenterDelta)<=2,`Visible header ink centers differ by ${opticalCenterDelta}px: ${JSON.stringify(titleInk)}`);
-  assert.equal(await page.locator('.wordbook-brand img').count(),0);
-  assert.equal(await page.locator('.wordbook-brand h1').textContent(),'Breeze Memory');
+  assert.equal(await page.locator('.memory-home-header img').count(),0);
+  assert.equal(await page.locator('.memory-home-header h1').textContent(),'Breeze Memory');
   assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
   assert.ok(titleInk.left>=title.x&&titleInk.right<=button.x-10,'Lettering fits with the existing button gap');
   assert.equal(titleInk.asset,homeInk.asset,'Use the exact same light/dark SVG as Home');
@@ -57,12 +57,12 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   assert.equal(title.y,home.y,'Match Home logo vertical placement exactly');
   // Same-origin crops must match; wide Wordbook columns have a different raster origin.
   if(title.x===home.x)assert.ok(readFileSync(`${out}/${key}-memory-ink.png`).equals(readFileSync(`${out}/${key}-home-ink.png`)),'Home and Memory logo pixels must match exactly');
-  const column=await page.locator('#v-vocab').boundingBox();assert.equal(title.x-column.x,20,'Keep Home 20px inset within the Wordbook content column');
-  const header=await page.locator('.wordbook-brand').boundingBox();assert.equal(header.height,44);
+  const column=await page.locator('#v-memory').boundingBox();assert.equal(title.x-column.x,20,'Keep Home 20px inset within the Memory content column');
+  const header=await page.locator('.memory-home-header').boundingBox();assert.equal(header.height,44);
   assert.equal(button.width,44);assert.equal(button.height,44);assert.ok(Math.abs(button.y-(24+safe))<1);
-  assert.equal(await page.locator('#wordbook-add').getAttribute('aria-label'),'단어 추가');
-  assert.equal(await page.locator('.wordbook-brand #btn-export').getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');
-  assert.equal(await page.locator('#wordbook-controls #wordbook-add').count(),1);
+  assert.equal(await page.locator('#memory-add').getAttribute('aria-label'),'단어 추가');
+  assert.equal(await page.locator('.memory-home-header #btn-export').getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');
+  assert.equal(await page.locator('#memory-home-controls #memory-add').count(),1);
   const style=await page.locator('#btn-export').evaluate(e=>{const s=getComputedStyle(e);return {radius:s.borderRadius,background:s.backgroundColor,backgroundImage:s.backgroundImage,border:s.borderTopWidth}});
   assert.equal(style.radius,'50%');
   // The approved header now paints its shared gradient. A transparent base
@@ -71,25 +71,25 @@ try{for(const [name,width,height,safe] of [['iphone',390,844,0],['iphone-safe',3
   assert.equal(style.background,dark?'rgba(40, 40, 42, 0.55)':'rgba(255, 255, 255, 0.72)');
   assert.equal(style.border,'0px');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {id:node.id,x:r.x,y:r.y,width:r.width,height:r.height};}));
-  assert.deepEqual(dock.map(node=>node.id),['wordbook-home','wordbook-review','wordbook-add']);
+  const dock=await page.locator('#memory-home-controls button').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {id:node.id,x:r.x,y:r.y,width:r.width,height:r.height};}));
+  assert.deepEqual(dock.map(node=>node.id),['memory-home','memory-last-set','memory-add']);
   for(const item of dock)assert.ok(item.x>=0&&item.y>=0&&item.x+item.width<=width+1&&item.y+item.height<=height-(safe?34:0)+1,JSON.stringify({key,item}));
   assert.ok(dock[0].x+dock[0].width<=dock[1].x&&dock[1].x+dock[1].width<=dock[2].x,'dock controls must not overlap');
-  const addButton=await page.locator('#wordbook-add').boundingBox();
+  const addButton=await page.locator('#memory-add').boundingBox();
   assert.ok(button.x>titleInk.right+9&&button.y+button.height<addButton.y,'share remains top-right; add remains bottom-right');
   measurements[measurements.length-1].dock=dock;writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
-  await page.locator('#wordbook-add').focus();await page.keyboard.press('Enter');
+  await page.locator('#memory-add').focus();await page.keyboard.press('Enter');
   assert.equal(await page.locator('#wordbook-add-dialog').evaluate(e=>e.open),true);
   await page.locator('#wordbook-new-word').fill('keep');
   // Rapid trusted taps on the opener are blocked by the modal; preserve typed input.
   await page.mouse.click(addButton.x+addButton.width/2,addButton.y+addButton.height/2,{clickCount:3,delay:20});
   assert.equal(await page.locator('#wordbook-new-word').inputValue(),'keep');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#wordbook-add-dialog').evaluate(e=>e.open),false);
-  await page.locator('#wordbook-add').click();assert.equal(await page.locator('#wordbook-new-word').inputValue(),'');
+  await page.locator('#memory-add').click();assert.equal(await page.locator('#wordbook-new-word').inputValue(),'');
   await page.locator('#wordbook-add-form .task-close').click();
-  await page.locator('#wordbook-add').click();await page.locator('#wordbook-add-form button').filter({hasText:'취소'}).click();
-  await page.locator('#wordbook-home').click();await page.locator('#nav-vocab').click();
-  await page.locator('#wordbook-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');
+  await page.locator('#memory-add').click();await page.locator('#wordbook-add-form button').filter({hasText:'취소'}).click();
+  await page.locator('#memory-home').click();await page.locator('#nav-vocab').click();
+  await page.locator('#memory-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');
   await page.locator('#wordbook-add-form button[type=submit]').click();assert.equal(await page.locator('#wordbook-add-dialog').evaluate(e=>e.open),false);
   assert.equal(await page.evaluate(()=>words.breeze.ko),'산들바람');
   assert.deepEqual(errors,[]);
@@ -107,11 +107,11 @@ if(phase==='after')for(const dark of [false,true]){
   return route.continue();
  });
  const page=await context.newPage();await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
- await page.evaluate(()=>{endOnboarding(true);show('vocab')});
- const before=await page.locator('.wordbook-brand').boundingBox();
+ await page.evaluate(()=>{endOnboarding(true);show('memory')});
+ const before=await page.locator('.memory-home-header').boundingBox();
  assert.equal(await page.getByRole('heading',{name:'Breeze Memory',exact:true}).count(),1);
  release();await page.locator('.memory-wordmark').evaluate(async()=>{const img=new Image();img.src=document.body.classList.contains('dark')?'assets/brand/wordmarks/breeze-neutral-dark.svg':'assets/brand/wordmarks/breeze-neutral-light.svg';await img.decode()});
- assert.deepEqual(await page.locator('.wordbook-brand').boundingBox(),before,'Delayed lettering and missing fonts must not move the header');
+ assert.deepEqual(await page.locator('.memory-home-header').boundingBox(),before,'Delayed lettering and missing fonts must not move the header');
  await context.close();
 }
 if(phase==='after')for(const preference of ['reduce','more'])for(const dark of [false,true]){

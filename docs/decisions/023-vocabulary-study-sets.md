@@ -34,6 +34,7 @@ Page Back reopens the directory sheet and restores its internal scroll position;
 directory when launched there, while existing direct study callers retain their
 normal return target. Detail has no modal semantics, scrim, or X-close control.
 Existing search, filters and saved-Meaning editing retain their ownership.
+Superseded on 2026-10-21: the set list is the front door, and the filter card is gone. See the last section of this record.
 
 The card home and set detail are a UI review candidate: real screenshots must
 be shown to the user before main merge or TestFlight integration.
@@ -532,7 +533,7 @@ haptic plugin when it is present. A right swipe still does not act. The same
 left swipe on 전체 단어 deletes that saved word, tombstone
 included, so a book-linked set drops it and does not take it back. That screen
 reuses the set's existing undo notice and 실행 취소 button, and hides the
-notice after a few seconds. Meanings stay read-only and stars do not write.
+notice after a few seconds. Meanings stay read-only. Stars on 전체 단어 were read-only here; as of 2026-10-21 they write the saved word's status.
 The wordbook shown on entering 단어장 (`v-vocab`, the list headed 전체 N단어) uses that same left swipe to remove the saved word, tombstone included, with the same undo. Expanding a row still deletes one meaning. Stars and meaning edits stay on that screen.
 Lists over 100 words remove the row from the same window without measuring
 every remaining row.
@@ -558,3 +559,23 @@ only. Existing score summaries are preserved across devices, including unions
 with more than forty extant summaries; no missing answers are reconstructed.
 Concurrent frozen sessions remain intact in archives. Cloud session projection
 is deterministic while the local current session stays on its original branch.
+
+## Set list is the front door (2026-10-21)
+
+This supersedes the 2026-10-13 note that Memory opens on the full wordbook
+(`v-vocab`) and that search and filters stay on that screen. It also supersedes
+the 2026-10-14 note that stars on 전체 단어 do not write.
+
+단어장 opens on the existing set-card list. 전체 단어 is always first, shows
+the saved-word count, and cannot be deleted. Other sets follow, then 세트 추가.
+전체 단어 lists every saved word, newest first. Swiping a word out of 전체 단어
+still deletes that word, tombstone included. Swiping a word out of another set
+still excludes it from that set only. Search exists only inside 전체 단어. The
+sort, book, and star filter card is gone. A word's star stays visible and
+tappable on every set row, including 전체 단어, and writes that saved word's
+status. Meanings on 전체 단어 stay read-only.
+
+The shared bottom dock stays. On the set list its center pill opens the set
+viewed most recently on this device. With no remembered set, or after that set
+is deleted, it opens 전체 단어. The id is stored only in localStorage
+(`breeze.memory-last-set`). No study-set schema change and no server change.

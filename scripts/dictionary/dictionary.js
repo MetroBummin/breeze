@@ -2373,11 +2373,13 @@ function renderVocab(){
   if(typeof refreshStudySetsEntry==='function')refreshStudySetsEntry();
   disposeVocabWindow();
   const catalog=vocabCatalog();
-  const q=document.getElementById('vsearch').value.trim().toLowerCase();
+  const search=document.getElementById('vsearch');
+  const q=(search instanceof HTMLInputElement?search.value:'').trim().toLowerCase();
   const groups=filterWordbookGroups(catalog.groups,q);
   renderWordbookBookOptions(null,catalog.bookNames);
-  document.getElementById('vcnt').textContent=groups.length===catalog.groups.length?`전체 ${catalog.groups.length}단어`:`전체 ${catalog.groups.length}단어 · ${groups.length}개 표시`;
-  syncWordbookFilterLabels();
+  const count=document.getElementById('vcnt');
+  if(count)count.textContent=groups.length===catalog.groups.length?`전체 ${catalog.groups.length}단어`:`전체 ${catalog.groups.length}단어 · ${groups.length}개 표시`;
+  if(typeof syncWordbookFilterLabels==='function')syncWordbookFilterLabels();
   const wrap=document.getElementById('vtablewrap');
   if(!groups.length){
     wrap.style.overflowAnchor='';
@@ -2393,7 +2395,10 @@ function renderVocab(){
   vocabWindow=mountVocabWindow(wrap,groups);
   refreshVocabularyReviewEntry();
 }
-document.getElementById('vsearch').addEventListener('input', renderVocab);
+document.getElementById('vsearch').addEventListener('input', ()=>{
+  if(typeof studySetsIsOpen==='function'&&studySetsIsOpen()&&studySetsUI.screen==='all'&&typeof studySetsRenderAllWordsBody==='function')studySetsRenderAllWordsBody();
+  if(document.getElementById('vtablewrap'))renderVocab();
+});
 /* 내보내기는 CSV 입니다. 엑셀·넘버스·구글 시트가 전부 그냥 엽니다.
    예전에는 이 버튼 하나 때문에 xlsx 라이브러리 881KB를 모든 사용자가 매번
    받았습니다 — 앱 전체 코드의 세 배가 넘는 짐이었습니다. */

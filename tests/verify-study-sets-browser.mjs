@@ -95,7 +95,9 @@ try{
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
  await page.goto(url);await page.evaluate(()=>homeReady);await studyAction(page.locator('#nav-vocab').click(),page);
- assert.equal(await page.evaluate(()=>activeAppView()),'vocab','Memory dock preserves the original vocabulary entry');
+ assert.equal(await page.evaluate(()=>activeAppView()),'memory','단어장 opens the set list');
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vstars,#vbooks,#vfilter-clear').count(),0);
+ await page.evaluate(()=>show('vocab'));
  await page.evaluate(()=>{
   words={a:{word:'wind',ko:'바람',book:'A',example:'A cold wind blew.',addedAt:1,status:1},
    duplicate:{word:'wind',ko:'바람',book:'B',example:'The wind rose.',addedAt:2,status:3},
@@ -121,7 +123,8 @@ try{
  await studyAction(entry.click(),page);await assertDirectory();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
  assert.equal(await page.locator('#study-all-words-list > li').count(),5);
- assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable],#study-all-words-list button.chip').count(),0);
+ assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable]').count(),0);
+ assert.ok(await page.locator('#study-all-words-list button.chip').count()>0,'stars stay tappable on 전체 단어');
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').count(),5);
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');
  const allWordsBytes=await page.evaluate(()=>JSON.stringify(Object.keys(words).sort().map(id=>[id,words[id]]))),allSetBytes=await page.evaluate(()=>readStudyStorage(STUDY_SETS_STORAGE,BreezeStudySets.decode));
