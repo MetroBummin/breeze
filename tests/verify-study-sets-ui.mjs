@@ -844,6 +844,9 @@ test('set cards count each star level, name the book with the most words, and sh
   await afterAction(h.run(`(()=>{const set=studySetsUI.state.sets[0];set.archivedSessions=[{startedAt:${at},answers:[{at:${at}}]}];return renderStudySetsHome(studySetsUI.state);})()`));
   const card=h.query('.study-sets-home-card[data-set-id]');
   assert.equal(card.querySelector('.study-sets-home-caption').textContent,'단어 1 · ★ 0 · ★★ 0 · ★★★ 1');
+  assert.equal(card.querySelector('.study-sets-home-copy').contains(card.querySelector('.study-sets-home-studied')),true);
+  assert.equal(card.querySelector('.study-sets-home-caption').previousElementSibling,card.querySelector('.study-sets-home-copy'));
+  assert.equal(card.querySelector('.study-sets-home-shape'),null);
   assert.equal(card.querySelector('.study-sets-home-badge').textContent,'One');
   assert.match(card.querySelector('.study-sets-home-studied').textContent,/3일 전/);
   assert.equal(h.document.querySelector('#study-sets-all .study-sets-home-studied'),null);

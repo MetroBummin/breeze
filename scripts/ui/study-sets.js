@@ -216,19 +216,14 @@ async function renderStudySetsHome(state=null){
   const container=studySetsUI.directoryList||document.getElementById('study-sets-home-list');if(!container)return;studySetsUI.directoryList=container;
   const focused=document.activeElement instanceof HTMLElement&&container.contains(document.activeElement)?document.activeElement:null;
   const list=studySetsNode('ul','study-sets-home-cards');list.setAttribute('aria-label','Memory 단어장과 학습 세트');
-  const card=(title,meta,action,options={})=>{
+  const card=(title,action,options={})=>{
     const item=studySetsNode('li');const button=studySetsButton('',action,'study-sets-home-card');
     if(options.tone!==undefined)button.dataset.tone=String(options.tone);
-    if(!options.add){const shape=studySetsNode('span','study-sets-home-shape');shape.setAttribute('aria-hidden','true');button.append(shape);}
     const copy=studySetsNode('span','study-sets-home-copy');
     copy.append(studySetsNode('strong','',title));
-    if(options.counts||options.studied){
-      const lines=studySetsNode('span','study-sets-home-meta');
-      if(options.counts){const caption=studySetsNode('span','study-sets-home-caption');studySetsFillMeta(caption,options.counts);lines.append(caption);}
-      if(options.studied){const studied=studySetsNode('span','study-sets-home-studied');studied.append(studySetsClockIcon(),document.createTextNode(options.studied));lines.append(studied);}
-      copy.append(lines);
-    }
+    if(options.studied){const studied=studySetsNode('span','study-sets-home-studied');studied.append(studySetsClockIcon(),document.createTextNode(options.studied));copy.append(studied);}
     button.append(copy);
+    if(options.counts){const caption=studySetsNode('span','study-sets-home-caption');studySetsFillMeta(caption,options.counts);button.append(caption);}
     if(options.badge)studySetsAppendBadge(button,options.badge);
     if(options.add)button.append(studySetsIcon('add'));
     item.append(button);list.append(item);return button;
@@ -236,7 +231,7 @@ async function renderStudySetsHome(state=null){
   // Match the list the set page actually shows: one row per word, not per sense.
   const catalog=studySetsAllWordsGroups(),allCounts=studySetsStarCounts();
   for(const group of catalog.values)studySetsCountStar(allCounts,group[0][1].status);
-  const all=card('전체 단어','',openStudySetsAllWords,{tone:0,badge:'기본',counts:allCounts});all.id='study-sets-all';
+  const all=card('전체 단어',openStudySetsAllWords,{tone:0,badge:'기본',counts:allCounts});all.id='study-sets-all';
   if(readError){
     const notice=studySetsNode('div','study-sets-home-error');notice.setAttribute('role','alert');
     notice.append(studySetsNode('p','','학습 세트를 불러오지 못했어요. 저장된 데이터는 바꾸지 않았어요.'),studySetsButton('다시 시도',()=>renderStudySetsHome()));
@@ -245,11 +240,11 @@ async function renderStudySetsHome(state=null){
   for(const [index,set] of (state?.sets||[]).entries()){
     const listed=BreezeStudySets.listedCards(set,typeof words==='undefined'?null:words);
     const studiedAt=studySetsLastStudiedAt(set);
-    const button=card(set.name,'',()=>openStudySet(set.id),{tone:(index+1)%4,badge:studySetsBookBadge(set,listed),counts:studySetsGroupedStarStats(listed),studied:studiedAt?studySetsRelativeTime(studiedAt):''});
+    const button=card(set.name,()=>openStudySet(set.id),{tone:(index+1)%4,badge:studySetsBookBadge(set,listed),counts:studySetsGroupedStarStats(listed),studied:studiedAt?studySetsRelativeTime(studiedAt):''});
     button.dataset.setId=set.id;
     button.setAttribute('aria-controls','v-memory-set');
   }
-  const create=card('세트 추가','',openStudySetsCreate,{add:true});
+  const create=card('세트 추가',openStudySetsCreate,{add:true});
   create.id='study-sets-home-create';create.setAttribute('aria-label','새 학습 세트');create.classList.add('study-sets-home-add');create.disabled=!state;
   create.setAttribute('aria-haspopup','dialog');create.setAttribute('aria-controls','study-sets-dialog');
   container.replaceChildren(list);

@@ -581,14 +581,19 @@ that saved word's status. Meanings on 전체 단어 stay read-only. The chips
 filter the list on screen. They do not change a set's stored cards or its
 study queue.
 
-Set-list cards show the set name, the grouped word count, and how many of
-those words show one, two, and three stars. The badge names the book that
-contributes the most words, plus 「외 N권」 when other books also contribute.
-A long title truncates in the middle. 전체 단어's badge says 기본. A relative
-last-studied time is shown only when a study session or answer timestamp
-already exists on that set. 전체 단어's simple session stores outcomes without
-a time, so that line is omitted. No new study-time field is stored. Card fills
-use the existing home card colors.
+Set-list cards use the plain wordbook field (`--wordbook-field`), the same
+surface as other list cards, with no tint and no decorative shape. The name
+and, when a study time already exists, the relative last-studied line sit at
+the top left. The grouped word count and the one-, two-, and three-star counts
+sit at the bottom left. The badge stays at the top right and names the book
+that contributes the most words, plus 「외 N권」 when other books also
+contribute. A long title truncates in the middle. 전체 단어's badge says 기본.
+A relative last-studied time is shown only when a study session or answer
+timestamp already exists on that set. 전체 단어's simple session stores
+outcomes without a time, so that line is omitted. No new study-time field is
+stored. A comparison treatment, not the default, places an 8px dot beside the
+title from `--mint`, `--s1`, `--s2`, and `--s3` when the list has
+`data-accent="edge"`. It does not change the card fill.
 
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set
