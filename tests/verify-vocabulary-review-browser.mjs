@@ -61,7 +61,7 @@ async function scenario(name,records,run){
 // The real bottom-pill -> directory -> all-words route and keyboard entry are
 // exercised separately by verify-study-sets-browser.mjs (plus simple cards).
 async function launchLegacyReview(page){
-  await page.locator('#wordbook-review').focus();
+  await page.evaluate(()=>{const button=document.getElementById('wordbook-review');try{button.focus();}catch{}});
   await page.evaluate(()=>openVocabularyReview());
 }
 async function openReview(page){
@@ -314,7 +314,7 @@ try{
     assert.equal(await page.locator('dialog:modal').count(),0);
     await page.locator('#nav-vocab').click();await openReview(page);await assertHiddenAnswer(page);
     await page.goBack();
-    await page.waitForFunction(()=>activeAppView()==='vocab');
+    await page.waitForFunction(()=>activeAppView()==='memory');
     assert.equal(await page.locator('dialog:modal').count(),0);
     await page.goForward();await page.waitForFunction(()=>activeAppView()==='study');await assertHiddenAnswer(page);
     await page.evaluate(()=>show('vocab'));await openReview(page);
@@ -331,11 +331,9 @@ try{
   },async page=>{
     const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(n=>n.id));
     assert.deepEqual(dock,['wordbook-home','wordbook-review','wordbook-add']);
-    await page.locator('#vbooks summary').click();
-    await page.locator('#vbook-options label').filter({hasText:'Book B'}).locator('input').check();
-    await page.locator('#vbooks summary').click();
-    assert.deepEqual(await page.locator('.vsense').evaluateAll(nodes=>nodes.map(n=>n.dataset.k).sort()),['river','tree']);
+    assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vfilter-clear').count(),0);
     assert.equal(await page.locator('#review-select-toggle, .wordbook-selection, .review-pick').count(),0);
+    await page.evaluate(()=>openStudySetsAllWords());
     await page.locator('#vsearch').fill('강둑');
     await openReview(page);
     assert.equal(await page.locator('#review-source').innerText(),'Book B');
@@ -416,6 +414,8 @@ try{
 
   await scenario('filters preserve practice and empty scopes never expand',uniqueWords(8),async page=>{
     assert.equal(await page.locator('.wordbook-selection, .review-pick').count(),0);
+    assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks').count(),0);
+    await page.evaluate(()=>openStudySetsAllWords());
     await page.locator('#vsearch').fill('Word');
     await openReview(page);
     assert.equal((await progress(page)).at(-1),8);
@@ -424,6 +424,7 @@ try{
     const saved=JSON.parse(await reviewState(page));
     assert.deepEqual(saved.progress,{});assert.equal(saved.history[0].kind,'practice');
     await closeReview(page);
+    await page.evaluate(()=>openStudySetsAllWords());
     await page.locator('#vsearch').fill('no such saved meaning');
     assert.equal(await page.locator('#wordbook-review').isDisabled(),false,'directory entry remains available even when a vocabulary filter has no matches');
     await page.locator('#vsearch').fill('');
@@ -456,6 +457,7 @@ try{
   });
 
   await scenario('practice continues without five-card stops and resumes after reload',uniqueWords(8),async page=>{
+    await page.evaluate(()=>openStudySetsAllWords());
     await page.locator('#vsearch').fill('Word');await openReview(page);
     for(let i=0;i<5;i++){await reveal(page);await page.locator('#review-remember').click();}
     assert.equal(await page.locator('#review-reveal').isVisible(),true);

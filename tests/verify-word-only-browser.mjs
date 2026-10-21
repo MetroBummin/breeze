@@ -29,8 +29,7 @@ try{
  await page.waitForFunction(()=>Number.isFinite(words.quiet.pickedAt));
  assert.deepEqual(await page.evaluate(()=>{const {pickedAt,...stored}=words.quiet;return stored;}),data.quiet);
  before=await page.evaluate(()=>JSON.stringify(words));
- await page.evaluate(()=>{closePanel();window.qaExport='';deliverVocabularyCsv=async csv=>{window.qaExport=csv;return false;};});
- await page.evaluate(()=>document.getElementById('btn-export').onclick());
+ await page.evaluate(async ()=>{closePanel();window.qaExport='';deliverVocabularyCsv=async csv=>{window.qaExport=csv;return false;};await openStudySetsAllWords();await studySetsShareVisible();});
  const csv=await page.evaluate(()=>window.qaExport);assert.ok(csv.includes(example));assert.ok(csv.includes('Original Reading'));assert.ok(csv.includes('조용한'));
  for(const scope of ['all','set']){
   await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});

@@ -28,7 +28,7 @@ try{
       {name:'search-alpha',sort:'alpha',q:'word',stars:[1],books:['Saved']}
     ]){
     await page.evaluate(mode=>{
-      document.getElementById('vsort').value=mode.sort;document.getElementById('vsearch').value=mode.q;
+      const sort=document.getElementById('vsort');if(sort)sort.value=mode.sort;document.getElementById('vsearch').value=mode.q;
       wordbookStars.clear();wordbookBooks.clear();mode.stars.forEach(value=>wordbookStars.add(value));mode.books.forEach(value=>wordbookBooks.add(value));
       renderVocab();
     },mode);

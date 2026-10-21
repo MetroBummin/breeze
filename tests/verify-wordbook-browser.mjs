@@ -25,60 +25,63 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>homeReady);
  await page.evaluate(()=>{
   words={and:{word:'and',ko:'그리고',status:2,book:'Book A',addedAt:1},port:{word:'port',ko:'항구',status:1,book:'Book B',addedAt:2},cognitive:{word:'cognitive',ko:'인지적인',status:3,book:'Book A',addedAt:3}};
-  show('vocab');
+  saveWords();show('memory');
  });
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks,#vfilter-clear').count(),0);
+ assert.equal(await page.locator('#vstars').isVisible(),false);
  for(const width of [320,390,768,1024,1440]) for(const dark of [false,true]){
   await page.setViewportSize({width,height:844});
   await page.evaluate(d=>{darkMode=d;applyDark()},dark);
   assert.equal(await page.locator('#topbar').isVisible(),false);
-  const colors=await page.evaluate(()=>[1,2,3].map(n=>{
-   const reader=document.querySelector(`.stbtn[data-s="${n}"]`),chip=document.querySelector(`#v-vocab .chip.s${n}`),filter=document.querySelector(`#vstars button[data-status="${n}"]`);
-   const wasOn=reader.classList.contains('on');reader.classList.add('on');filter.classList.add('on');filter.setAttribute('aria-pressed','true');
-   const color=e=>{const s=getComputedStyle(e);return [s.backgroundColor,s.color]};
-   const result=[color(reader),color(chip),color(filter)];
-   reader.classList.toggle('on',wasOn);filter.classList.remove('on');filter.setAttribute('aria-pressed','false');return result;
-  }));
-  for(const [reader,chip,filter] of colors){
-    assert.deepEqual(filter,reader);
-    assert.notEqual(reader[0],chip[0],'Reader detail should use the softer selected fill');
-    if(!dark)assert.equal(reader[1],chip[1]);
-  }
-  const alignment=await page.evaluate(()=>{
-   const label=document.querySelector('.wordbook-sort>span').getBoundingClientRect(),sort=document.getElementById('vsort-menu').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect(),books=document.getElementById('vbooks').getBoundingClientRect();
-   return {sortGap:sort.left-label.right,bookGap:books.left-stars.right};
-  });
-  assert.ok(alignment.sortGap<=16);assert.ok(alignment.bookGap<=12);
-  assert.equal(await page.locator('.wordbook-brand img').count(),0);
+  assert.equal(await page.locator('.memory-home-header img').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  const exportBox=await page.locator('#btn-export').boundingBox();
-  const header=await page.locator('.wordbook-brand').boundingBox(),brand=await page.locator('.wordbook-brand h1').boundingBox(),addBox=await page.locator('#wordbook-add').boundingBox();
-  assert.equal(await page.locator('.wordbook-brand #btn-export').count(),1);assert.equal(await page.locator('#wordbook-controls #wordbook-add').count(),1);
-  assert.equal(await page.locator('#btn-export').getAttribute('aria-label'),'저장한 단어를 CSV로 내보내기');assert.equal(await page.locator('#wordbook-add').getAttribute('aria-label'),'단어 추가');
-  assert.ok(exportBox.x>=brand.x+brand.width&&exportBox.x+exportBox.width<=header.x+header.width+1&&exportBox.y>=header.y&&exportBox.y+exportBox.height<=header.y+header.height+1,'share stays inside header without overlapping wordmark');
+  const header=await page.locator('.memory-home-header').boundingBox(),brand=await page.locator('.memory-home-header h1').boundingBox(),addBox=await page.locator('#memory-add').boundingBox();
+  assert.equal(await page.locator('#btn-export').count(),0);assert.equal(await page.locator('#memory-home-controls #memory-add').count(),1);
+  assert.equal(await page.locator('#memory-add').getAttribute('aria-label'),'단어 추가');
+  assert.ok(brand.x>=header.x&&brand.x+brand.width<=header.x+header.width+1&&brand.y>=header.y&&brand.y+brand.height<=header.y+header.height+1,'wordmark stays inside the header');
   assert.ok(addBox.y>header.y+header.height,'add stays in bottom dock');
-  for(const button of await page.locator('#wordbook-controls button').all()){
+  for(const button of await page.locator('#memory-home-controls button').all()){
    const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width);
   }
  }
  await page.setViewportSize({width:390,height:844});
- assert.equal(await page.locator('#vcnt').isVisible(),true);
- assert.equal(await page.locator('#vcnt').textContent(),'전체 3단어');
- await page.locator('#vsearch').fill('항구');assert.equal(await page.locator('.vgroup').count(),1);
- assert.equal(await page.locator('#vcnt').textContent(),'전체 3단어 · 1개 표시');
- await page.locator('#vfilter-clear').click();assert.equal(await page.locator('.vgroup').count(),3);
+ await page.locator('#study-sets-all').click();
+ await page.waitForFunction(()=>studySetsUI.screen==='all');
+ assert.equal(await page.locator('#vsearch').isVisible(),true);
+ assert.equal(await page.locator('#vstars').isVisible(),true);
+ assert.equal(await page.locator('#vstars button').count(),3);
+ const stacked=await page.evaluate(()=>{
+  const search=document.getElementById('vocab-search-field').getBoundingClientRect(),row=document.getElementById('vocab-star-filter').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect(),chip=document.querySelector('#vstars .stbtn').getBoundingClientRect();
+  return {below:row.top>=search.bottom-1,aligned:Math.abs(row.left-search.left)<4,wide:stars.width>180&&chip.width>70,label:document.querySelector('.wordbook-filter-row > span')?.textContent||''};
+ });
+ assert.equal(stacked.below&&stacked.aligned&&stacked.wide,true,'original star row sits under search and is not compacted: '+JSON.stringify(stacked));
+ assert.equal(stacked.label,'별점');
+ await page.locator('#vstars button[data-status="3"]').click();
+ assert.equal(await page.locator('#vstars button[data-status="3"]').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('.study-all-words-row').count(),1);
+ assert.equal(await page.locator('.vword').first().innerText(),'cognitive');
+ await page.locator('#vstars button[data-status="3"]').click();
+ assert.equal(await page.locator('.study-all-words-row').count(),3);
+ assert.equal(await page.locator('.vword').first().innerText(),'cognitive');
+ await page.locator('#vsearch').fill('항구');
+ assert.equal(await page.locator('.study-all-words-row').count(),1);
+ assert.match(await page.locator('.study-sets-caption').first().innerText(),/1개 표시/);
  await page.locator('#vsearch').fill('');
- await page.locator('#vsort-menu summary').click();await page.locator('#vsort-options input[value=alpha]').check();assert.equal(await page.locator('.vword').first().textContent(),'and');
- await page.locator('#vstars button[data-status="2"]').click();assert.equal(await page.locator('.vgroup').count(),1);
- await page.locator('#vstars button[data-status="2"]').click();
- await page.locator('#vbooks summary').click();await page.getByLabel('Book B',{exact:true}).check();assert.equal(await page.locator('.vgroup').count(),1);
- await page.getByLabel('Book B',{exact:true}).uncheck();await page.locator('#vbooks summary').click();
- await page.locator('.vword').first().click();assert.equal(await page.locator('.vgroup.open').count(),1);
- await page.locator('.vgroup.open .vko').fill('그리고 또한');await page.locator('#vsearch').focus();
+ assert.equal(await page.locator('.study-all-words-row').count(),3);
+ const star=page.locator('.study-all-words-row').first().locator('button.chip');
+ await star.click();
+ assert.equal(await page.evaluate(()=>words.cognitive.status),1);
+ await page.evaluate(()=>closeStudySets(true));
+ await page.evaluate(()=>show('vocab'));
+ const and=page.locator('.vgroup').filter({has:page.locator('.vword',{hasText:'and'})});
+ await and.locator('.vword').click();assert.equal(await page.locator('.vgroup.open').count(),1);
+ await and.locator('.vko').fill('그리고 또한');await page.locator('#wordbook-home').focus();
  assert.equal(await page.evaluate(()=>words.and.ko),'그리고 또한');
- await page.locator('#wordbook-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');await page.locator('#wordbook-add-form button[type=submit]').click();
+ await page.evaluate(()=>show('memory'));
+ await page.locator('#memory-add').click();await page.locator('#wordbook-new-word').fill('breeze');await page.locator('#wordbook-new-meaning').fill('산들바람');await page.locator('#wordbook-add-form button[type=submit]').click();
  assert.equal(await page.evaluate(()=>words.breeze.ko),'산들바람');
- const download=page.waitForEvent('download');await page.locator('#btn-export').click();assert.ok((await download).suggestedFilename().endsWith('.csv'));
- await page.evaluate(()=>{vocabOpen.clear();clearWordbookFilters()});
+ const download=page.waitForEvent('download');await page.evaluate(()=>openStudySetsAllWords());await page.locator('#study-sets-share').click();assert.ok((await download).suggestedFilename().endsWith('.csv'));
+ await page.evaluate(()=>{vocabOpen.clear();show('vocab');renderVocab();});
  for(const dark of [false,true]){
   await page.evaluate(d=>{darkMode=d;applyDark();document.getElementById('toast').style.display='none'},dark);
   await page.locator('.vrow').first().hover();
@@ -88,5 +91,5 @@ try{
   await page.screenshot({path:`/tmp/breeze-home-proof/wordbook-${dark?'dark':'light'}.png`});
  }
  await page.locator('#wordbook-home').click();assert.equal(await page.evaluate(()=>activeAppView()),'home');
- assert.deepEqual(errors,[]);console.log('Wordbook responsive themes, search, sort, filters, edit, add, export and Home passed.');
+ assert.deepEqual(errors,[]);console.log('Memory set list, 전체 단어 search, stars, edit, add, export and Home passed.');
 }finally{await browser.close();await new Promise(done=>server.close(done))}

@@ -2373,11 +2373,13 @@ function renderVocab(){
   if(typeof refreshStudySetsEntry==='function')refreshStudySetsEntry();
   disposeVocabWindow();
   const catalog=vocabCatalog();
-  const q=document.getElementById('vsearch').value.trim().toLowerCase();
+  const search=document.getElementById('vsearch');
+  const q=(search instanceof HTMLInputElement?search.value:'').trim().toLowerCase();
   const groups=filterWordbookGroups(catalog.groups,q);
   renderWordbookBookOptions(null,catalog.bookNames);
-  document.getElementById('vcnt').textContent=groups.length===catalog.groups.length?`전체 ${catalog.groups.length}단어`:`전체 ${catalog.groups.length}단어 · ${groups.length}개 표시`;
-  syncWordbookFilterLabels();
+  const count=document.getElementById('vcnt');
+  if(count)count.textContent=groups.length===catalog.groups.length?`전체 ${catalog.groups.length}단어`:`전체 ${catalog.groups.length}단어 · ${groups.length}개 표시`;
+  if(typeof syncWordbookFilterLabels==='function')syncWordbookFilterLabels();
   const wrap=document.getElementById('vtablewrap');
   if(!groups.length){
     wrap.style.overflowAnchor='';
@@ -2393,7 +2395,10 @@ function renderVocab(){
   vocabWindow=mountVocabWindow(wrap,groups);
   refreshVocabularyReviewEntry();
 }
-document.getElementById('vsearch').addEventListener('input', renderVocab);
+document.getElementById('vsearch').addEventListener('input', ()=>{
+  if(typeof studySetsIsOpen==='function'&&studySetsIsOpen()&&studySetsUI.screen==='all'&&typeof studySetsRenderAllWordsBody==='function')studySetsRenderAllWordsBody();
+  if(document.getElementById('vtablewrap'))renderVocab();
+});
 /* 내보내기는 CSV 입니다. 엑셀·넘버스·구글 시트가 전부 그냥 엽니다.
    예전에는 이 버튼 하나 때문에 xlsx 라이브러리 881KB를 모든 사용자가 매번
    받았습니다 — 앱 전체 코드의 세 배가 넘는 짐이었습니다. */
@@ -2455,25 +2460,11 @@ async function deliverVocabularyCsv(csv){
   try{downloadVocabularyFile(file);}
   catch(error){return offerVocabularyDownload(file,'다운로드를 시작하지 못했어요. 다시 시도하거나 창을 닫아 주세요.');}
 }
-document.getElementById('btn-export').onclick = async ()=>{
-  const button=/** @type {HTMLButtonElement} */(document.getElementById('btn-export'));
-  if(button.disabled) return;
-  button.disabled=true;
-  let restoreFocus=false;
-  try{
-    const list = Object.values(words).filter(validWordMeaning).sort((a,b)=>b.addedAt-a.addedAt);
-    if(!list.length){ toast('내보낼 단어가 없어요'); return; }
-    const stName = {1:'★',2:'★★',3:'★★★'};
-    const rows = [['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
-      ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
-        w.example||'', stName[w.status], w.book||'', new Date(w.addedAt).toLocaleDateString('ko-KR')])];
-    /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
-    const csv = '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
-    restoreFocus=!!(await deliverVocabularyCsv(csv));
-  }
-  catch(error){if(error.name!=='AbortError') toast('단어장을 내보내지 못했어요. 다시 시도해 주세요.');}
-  finally{
-    button.disabled=false;
-    if(restoreFocus&&activeAppView()==='vocab')button.focus({preventScroll:true});
-  }
-};
+function vocabularyCsv(list){
+  const stName={1:'★',2:'★★',3:'★★★'};
+  const rows=[['단어','뜻','영어 뜻','예문','모르는 정도','책','저장일'],
+    ...list.map(w=>[w.word, w.ko||'', (w.defs||[]).map(d=>`(${d.pos}) ${d.def}`).join(' / '),
+      w.example||'', stName[w.status]||'', w.book||'', w.addedAt?new Date(w.addedAt).toLocaleDateString('ko-KR'):''])];
+  /* 엑셀은 BOM 이 없으면 CSV 를 라틴1로 읽어 한글을 깹니다. */
+  return '﻿' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+}

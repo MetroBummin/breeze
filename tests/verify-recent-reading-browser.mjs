@@ -48,8 +48,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.deepEqual(after,before,'Reopen changed canonical progress');
   snapshots.push({id,before,after,order:await check(id)});
  }
- // Sort preference belongs to Memory; book shelves have no alternate sort.
- await page.evaluate(()=>document.getElementById('vsort').value='alpha');await open(ids[2]);await check(ids[2]);assert.equal(await page.locator('#vsort').inputValue(),'alpha');
+ // Memory no longer has a sort control. Opening a book still leads the shelves.
+ await open(ids[2]);await check(ids[2]);
  await page.reload();await page.evaluate(()=>homeReady);await check(ids[2]);
  // An async open cancelled before presentation must not promote its book.
  await page.evaluate(async id=>{const repair=repairBookLigatures;let release;repairBookLigatures=()=>new Promise(r=>release=r);const pending=openBook(books.find(b=>b.id===id));show('home');release();await pending;repairBookLigatures=repair;},ids[0]);await check(ids[2]);

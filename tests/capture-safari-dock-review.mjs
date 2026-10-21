@@ -34,7 +34,7 @@ try{
    }
    await page.evaluate(()=>setReaderChrome(true));await page.waitForTimeout(400);assert.equal(await page.locator('#readback').evaluate(n=>n.inert),true);assert.equal(await page.locator('#readpill').evaluate(n=>n.getBoundingClientRect().height),34);await page.locator('#readpill-title').click();await page.waitForTimeout(400);assert.equal(await page.locator('#aafab').evaluate(n=>n.inert),false);
    await page.evaluate(()=>{commitStudySets(BreezeStudySets.create(null,{name:'Sherlock Holmes',bookTitles:['A Study in Scarlet']},words,100).state);show('vocab');});
-   await page.locator('#wordbook-review').click();await page.locator('.study-sets-home-card[data-set-id]').first().click();await page.waitForFunction(()=>activeAppView()==='memory-set');await page.waitForTimeout(350);
+   await page.evaluate(()=>openStudySetsDirectory());await page.locator('.study-sets-home-card[data-set-id]').first().click();await page.waitForFunction(()=>activeAppView()==='memory-set');await page.waitForTimeout(350);
    const header=await page.locator('#study-sets-back').evaluate(n=>{const c=getComputedStyle(n),i=getComputedStyle(n.querySelector('svg')),r=n.getBoundingClientRect();return {line:c.borderTopColor,shadow:c.boxShadow,width:r.width,height:r.height,stroke:i.strokeWidth};});
    assert.deepEqual({line:header.line,shadow:header.shadow},material,'Study header shares the dock glass rim and shadow');assert.equal(header.width,44);assert.equal(header.height,44);assert.equal(header.stroke,'3.6px');
    if(!['narrow','desktop'].includes(device))await page.screenshot({path:`${proof}/web-preview-${device}-study-set-${dark?'dark':'light'}.png`});

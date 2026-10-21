@@ -11,5 +11,5 @@ const ink=await button.locator('svg').evaluate(n=>({stroke:getComputedStyle(n).s
 const label=await button.locator('span').boundingBox();if(label.width>1||label.height>1)throw Error('Visible Home text label');
 if(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Viewport overflow');
 await p.screenshot({path:`${out}/${name}-${theme}-home.png`});await button.screenshot({path:`${out}/${name}-${theme}-button.png`});
-await button.focus();await p.keyboard.press('Enter');if(!await p.locator('#v-vocab').isVisible())throw Error('Keyboard wordbook navigation failed');await p.locator('#wordbook-home').click();if(!await p.locator('#v-home').isVisible())throw Error('Return Home failed');await c.close();
+await button.focus();await p.keyboard.press('Enter');if(!await p.locator('#v-memory').isVisible())throw Error('Keyboard wordbook navigation failed');await p.locator('#memory-home').click();if(!await p.locator('#v-home').isVisible())throw Error('Return Home failed');await c.close();
 } }finally{await b.close();await new Promise(r=>server.close(r));}console.log('Selected bookmark: ten actual layouts, hidden label, accessibility name/tooltip, keyboard navigation, return and 44px geometry passed.');
