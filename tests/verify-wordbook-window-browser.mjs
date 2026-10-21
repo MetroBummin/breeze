@@ -72,7 +72,7 @@ try{
   assert.equal(await page.locator('#vtablewrap .vgroup').count(),1);
   assert.equal(await page.locator('.vocab-window-spacer').count(),0,'A short search result mounts every match');
   assert.equal(await page.locator('#vcnt').textContent(),'전체 180단어 · 1개 표시');
-  await page.locator('#vfilter-clear').click();
+  await page.locator('#vsearch').fill('');
   assert.ok(await page.locator('#vtablewrap .vgroup').count()<100);
 
   await page.locator('#vtablewrap .vword').first().click();
@@ -84,12 +84,12 @@ try{
   assert.ok(afterDelete<100&&afterDelete<=beforeDelete+5,'Deleting one word does not mount the rest');
   assert.equal(await page.evaluate(()=>!!words.w179),false);
 
-  await page.locator('#vstars button[data-status="3"]').click();
+  await page.locator('#vstars button[data-status="3"]').click({force:true});
   const starred=await page.evaluate(()=>document.querySelectorAll('#vtablewrap .vgroup').length);
   const starredTotal=await page.evaluate(()=>visibleVocabularyReviewKeys().length);
   assert.ok(starredTotal<179&&starredTotal>0);
   assert.ok(starred<=starredTotal);
-  await page.locator('#vstars button[data-status="3"]').click();
+  await page.locator('#vstars button[data-status="3"]').click({force:true});
 
   await page.locator('#wordbook-review').click();
   await page.waitForSelector('#study-sets-all');

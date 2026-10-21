@@ -55,7 +55,8 @@ try{
     for(const state of [record.focused,record.blurred,record.closed])assert.equal(state.visualViewport.scale,record.collapsed.visualViewport.scale,'Engine focus/blur/close changed viewport scale');
     assert.equal(record.collapsed.fontSize,'14px');
 
-    assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vstars,#vfilter-clear').count(),0,'the filter card is gone');
+    assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vfilter-clear').count(),0,'sort and book filters stay removed');
+    assert.equal(await page.locator('#vstars').isVisible(),false);
     if(phase!=='before'){
       await page.locator('.vword').first().click();
       await page.evaluate(()=>document.documentElement.style.fontSize='20px');
@@ -87,7 +88,7 @@ try{
       assert.equal(record.focused.fontSize,'14px');
     }else{
       assert.ok(parseFloat(record.expanded.fontSize)>=16,'Editable meaning must reach the focus font floor before focus');
-      assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vstars,#vfilter-clear').count(),0);
+      assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vfilter-clear').count(),0);
     }
     assert.deepEqual(errors,[]);await context.close();
   }

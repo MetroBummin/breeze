@@ -571,9 +571,13 @@ the saved-word count, and cannot be deleted. Other sets follow, then 세트 추�
 전체 단어 lists every saved word, newest first. Swiping a word out of 전체 단어
 still deletes that word, tombstone included. Swiping a word out of another set
 still excludes it from that set only. Search exists only inside 전체 단어. The
-sort, book, and star filter card is gone. A word's star stays visible and
-tappable on every set row, including 전체 단어, and writes that saved word's
-status. Meanings on 전체 단어 stay read-only.
+sort and book filter card stays gone. The existing star chips return on every
+word-set page, in the header, and beside search on 전체 단어. A word is shown
+when its visible star count is one of the pressed chips; no pressed chip shows
+every word. A word's star stays visible and tappable on every set row, including
+전체 단어, and writes that saved word's status. Meanings on 전체 단어 stay
+read-only. The chips filter the list on screen. They do not change a set's
+stored cards or its study queue.
 
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set

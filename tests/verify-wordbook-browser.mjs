@@ -27,7 +27,8 @@ try{
   words={and:{word:'and',ko:'그리고',status:2,book:'Book A',addedAt:1},port:{word:'port',ko:'항구',status:1,book:'Book B',addedAt:2},cognitive:{word:'cognitive',ko:'인지적인',status:3,book:'Book A',addedAt:3}};
   saveWords();show('memory');
  });
- assert.equal(await page.locator('.wordbook-filters,#vsort,#vstars,#vbooks,#vfilter-clear').count(),0);
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks,#vfilter-clear').count(),0);
+ assert.equal(await page.locator('#vstars').isVisible(),false);
  for(const width of [320,390,768,1024,1440]) for(const dark of [false,true]){
   await page.setViewportSize({width,height:844});
   await page.evaluate(d=>{darkMode=d;applyDark()},dark);
@@ -48,6 +49,16 @@ try{
  await page.locator('#study-sets-all').click();
  await page.waitForFunction(()=>studySetsUI.screen==='all');
  assert.equal(await page.locator('#vsearch').isVisible(),true);
+ assert.equal(await page.locator('#vstars').isVisible(),true);
+ assert.equal(await page.locator('#vstars button').count(),3);
+ const beside=await page.evaluate(()=>{const search=document.getElementById('vocab-search-field').getBoundingClientRect(),stars=document.getElementById('vstars').getBoundingClientRect();return stars.left>=search.right-1&&Math.abs((search.top+search.height/2)-(stars.top+stars.height/2))<16;});
+ assert.equal(beside,true,'star chips sit on the same row as search');
+ await page.locator('#vstars button[data-status="3"]').click();
+ assert.equal(await page.locator('#vstars button[data-status="3"]').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('.study-all-words-row').count(),1);
+ assert.equal(await page.locator('.vword').first().innerText(),'cognitive');
+ await page.locator('#vstars button[data-status="3"]').click();
+ assert.equal(await page.locator('.study-all-words-row').count(),3);
  assert.equal(await page.locator('.vword').first().innerText(),'cognitive');
  await page.locator('#vsearch').fill('항구');
  assert.equal(await page.locator('.study-all-words-row').count(),1);

@@ -766,7 +766,8 @@ test('a saved set uses the same bounded window as 전체 단어 after 100 words'
 
 test('전체 단어 cannot be deleted and the filter card is gone',async()=>{
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  assert.doesNotMatch(html,/wordbook-filters|id="vsort"|id="vstars"|id="vbooks"|id="vfilter-clear"/);
+  assert.doesNotMatch(html,/wordbook-filters|id="vsort"|id="vbooks"|id="vfilter-clear"/);
+  assert.match(html,/id="vstars"/);
   assert.match(html,/id="nav-vocab"[^>]*onclick="show\('memory'\)"/);
   assert.match(html,/id="memory-last-set"/);
   const h=harness();
@@ -782,6 +783,43 @@ test('전체 단어 cannot be deleted and the filter card is gone',async()=>{
   await afterAction(h.run("studySetsGo('delete','')"));
   assert.equal(JSON.stringify(h.context.words),saved);
   assert.equal(h.context.dead.c,undefined);
+});
+
+test('star chips filter 전체 단어 and a saved set, and none pressed shows every word',async()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(html,/id="vstars"[^>]*aria-label="별점 필터"/);
+  assert.match(html,/data-status="1"[^>]*aria-label="별 1개 필터"/);
+  assert.match(html,/data-status="3"[^>]*aria-label="별 3개 필터"/);
+  assert.doesNotMatch(html,/wordbook-filters|id="vsort"|id="vbooks"|id="vfilter-clear"/);
+  assert.match(readFileSync(new URL('../scripts/ui/wordbook.js',import.meta.url),'utf8'),/studySetsRefreshStarFilter/);
+  const h=harness();
+  h.document.body.insertAdjacentHTML('beforeend','<label class="wordbook-search" id="vocab-search-field" hidden><input id="vsearch"></label><div id="vstars" hidden><button class="stbtn" type="button" data-status="1" aria-pressed="false">★</button><button class="stbtn" type="button" data-status="3" aria-pressed="false">★★★</button></div>');
+  h.context.words.a.status=1;h.context.words.c.status=3;h.context.words.d.status=2;
+  await afterAction(h.run('openStudySetsAllWords()'));
+  assert.equal(h.query('#vstars').hidden,false);
+  assert.equal(h.query('#vstars').parentElement.id,'study-set-tools');
+  assert.equal(h.query('#vocab-search-field').parentElement.id,'study-set-tools');
+  assert.equal(h.query('#study-set-tools').parentElement.classList.contains('study-sets-header'),true);
+  assert.equal(h.document.querySelectorAll('.study-all-words-row').length,4);
+  h.run('wordbookStars=new Set([3])');
+  await afterAction(h.run('studySetsRefreshStarFilter()'));
+  assert.deepEqual([...h.document.querySelectorAll('.study-all-words-row .vword')].map(node=>node.textContent),['calm']);
+  assert.match(h.query('.study-sets-caption').textContent,/1개 표시/);
+  h.run('wordbookStars.clear()');
+  await afterAction(h.run('studySetsRefreshStarFilter()'));
+  assert.equal(h.document.querySelectorAll('.study-all-words-row').length,4);
+  await afterAction(h.run('closeStudySets()'));
+  await afterAction(h.createSet('Stars',['Two']));
+  assert.equal(h.run('studySetsUI.screen'),'detail');
+  assert.equal(h.query('#vstars').hidden,false);
+  assert.equal(h.query('#vocab-search-field').hidden,true);
+  assert.equal(h.document.querySelectorAll('.study-sets-word-row').length,2);
+  h.run('wordbookStars=new Set([1])');
+  await afterAction(h.run('studySetsRefreshStarFilter()'));
+  assert.deepEqual([...h.document.querySelectorAll('.study-sets-word-row .vword')].map(node=>node.textContent),['quiet']);
+  h.run('wordbookStars.clear()');
+  await afterAction(h.run('studySetsRefreshStarFilter()'));
+  assert.equal(h.document.querySelectorAll('.study-sets-word-row').length,2);
 });
 
 test('the last-viewed set button opens that set and falls back to 전체 단어',async()=>{

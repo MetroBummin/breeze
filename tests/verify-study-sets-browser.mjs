@@ -96,7 +96,8 @@ try{
  await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));});
  await page.goto(url);await page.evaluate(()=>homeReady);await studyAction(page.locator('#nav-vocab').click(),page);
  assert.equal(await page.evaluate(()=>activeAppView()),'memory','단어장 opens the set list');
- assert.equal(await page.locator('.wordbook-filters,#vsort,#vstars,#vbooks,#vfilter-clear').count(),0);
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks,#vfilter-clear').count(),0);
+ assert.equal(await page.locator('#vstars').isVisible(),false);
  await page.evaluate(()=>show('vocab'));
  await page.evaluate(()=>{
   words={a:{word:'wind',ko:'바람',book:'A',example:'A cold wind blew.',addedAt:1,status:1},
@@ -123,6 +124,8 @@ try{
  await studyAction(entry.click(),page);await assertDirectory();
  await page.locator('#study-sets-all').click();await page.waitForFunction(()=>activeAppView()==='memory-set'&&studySetsUI.screen==='all');
  assert.equal(await page.locator('#study-all-words-list > li').count(),5);
+ assert.equal(await page.locator('#vstars').isVisible(),true);
+ assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks').count(),0);
  assert.equal(await page.locator('#study-all-words-list .rowdel,#study-all-words-list [contenteditable]').count(),0);
  assert.ok(await page.locator('#study-all-words-list button.chip').count()>0,'stars stay tappable on 전체 단어');
  assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').count(),5);

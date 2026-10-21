@@ -331,7 +331,7 @@ try{
   },async page=>{
     const dock=await page.locator('#wordbook-controls button').evaluateAll(nodes=>nodes.map(n=>n.id));
     assert.deepEqual(dock,['wordbook-home','wordbook-review','wordbook-add']);
-    assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vstars,#vfilter-clear').count(),0);
+    assert.equal(await page.locator('.wordbook-filters,#vbooks,#vsort,#vfilter-clear').count(),0);
     assert.equal(await page.locator('#review-select-toggle, .wordbook-selection, .review-pick').count(),0);
     await page.evaluate(()=>openStudySetsAllWords());
     await page.locator('#vsearch').fill('강둑');
@@ -414,7 +414,7 @@ try{
 
   await scenario('filters preserve practice and empty scopes never expand',uniqueWords(8),async page=>{
     assert.equal(await page.locator('.wordbook-selection, .review-pick').count(),0);
-    assert.equal(await page.locator('.wordbook-filters,#vsort,#vstars,#vbooks').count(),0);
+    assert.equal(await page.locator('.wordbook-filters,#vsort,#vbooks').count(),0);
     await page.evaluate(()=>openStudySetsAllWords());
     await page.locator('#vsearch').fill('Word');
     await openReview(page);
