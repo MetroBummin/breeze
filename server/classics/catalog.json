@@ -550,6 +550,682 @@
       "hook": "아내가 사라진 뒤, 제임스는 사진과 붉은 실로 뒤덮인 작업실에서 단서를 찾습니다. 노트북 속 낯선 노란 방은 그를 어디로 데려갈까요?",
       "edition": "English original · Chapters 1–2",
       "editionNote": "“Homeward Bound: Chapters 1–2” by DivineAtlas, from the Backrooms Wiki (https://backrooms-wiki.wikidot.com/homewardbound-ch-1 and https://backrooms-wiki.wikidot.com/homewardbound-ch-2). Licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/). The story text was extracted from the wiki pages with paragraph breaks and Chapter 2 scene transitions kept; wiki page chrome, comments and images are omitted. The cover is a separate image made for Breeze and is not from the Backrooms Wiki."
+    },
+    {
+      "id": "sherlock-holmes-a-study-in-scarlet",
+      "title": "A Study in Scarlet",
+      "author": "Arthur Conan Doyle",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/cover.webp",
+      "coverPosition": "center top",
+      "bytes": 243967,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/book.txt",
+      "contentVersion": "6dd5f5b526d39a3c4b33d82bdd0f56047ead8d3519d89746ddb92a7dc8373005",
+      "wordCount": 43423,
+      "sourceUrl": "https://www.gutenberg.org/ebooks/244",
+      "site": "Project Gutenberg",
+      "license": "Original: public domain in the USA",
+      "licenseUrl": "https://www.gutenberg.org/ebooks/244",
+      "originalTitle": "A Study in Scarlet (1887)",
+      "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
+      "presentation": "story",
+      "sourceTitle": true,
+      "hook": "런던의 빈집에서 피 묻은 단어 하나만 남은 밤. 실험실에서 처음 만난 홈즈는, 이 살인에서 무엇을 읽어 낼까?",
+      "edition": "Lightly modernized English edition",
+      "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s A Study in Scarlet (1887), complete in two parts. Source text: Project Gutenberg eBook #244, retrieved 2026-10-22. Closed spellings, polite forms and a few archaic words are modernized in the same way as the bundled Holmes stories. This is not Doyle’s verbatim text. Plot, dialogue meaning, paragraph order, clues and the period setting are preserved. Gutenberg boilerplate and italic markers are omitted. Chapter headings use the Hound long-read form.",
+      "glossary": "Period terms: hansom — a horse-drawn cab; Jezail — a heavy Afghan musket; enteric fever — typhoid. Historical money, places, names and clue-bearing language are retained.",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "A STUDY IN SCARLET",
+          "role": "title"
+        },
+        {
+          "paragraph": 1,
+          "text": "By A. Conan Doyle",
+          "role": "subtitle"
+        },
+        {
+          "paragraph": 2,
+          "text": "Contents",
+          "role": "contents-heading"
+        },
+        {
+          "paragraph": 3,
+          "text": "Part I",
+          "role": "label"
+        },
+        {
+          "paragraph": 4,
+          "text": "Chapter 1 Mr. Sherlock Holmes Chapter 2 The Science of Deduction Chapter 3 The Lauriston Gardens Mystery Chapter 4 What John Rance Had to Tell Chapter 5 Our Advertisement Brings a Visitor Chapter 6 Tobias Gregson Shows What He Can Do Chapter 7 Light in the Darkness",
+          "role": "contents"
+        },
+        {
+          "paragraph": 5,
+          "text": "Part II. The Country of the Saints",
+          "role": "label"
+        },
+        {
+          "paragraph": 6,
+          "text": "Chapter 1 On the Great Alkali Plain Chapter 2 The Flower of Utah Chapter 3 John Ferrier Talks with the Prophet Chapter 4 A Flight for Life Chapter 5 The Avenging Angels Chapter 6 A Continuation of the Reminiscences of John Watson, M.D. Chapter 7 The Conclusion",
+          "role": "contents"
+        },
+        {
+          "paragraph": 7,
+          "text": "Part I",
+          "role": "section"
+        },
+        {
+          "paragraph": 8,
+          "text": "Being a reprint from the Reminiscences of John H. Watson, M.D., late of the Army Medical Department.",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 9,
+          "text": "Chapter 1. Mr. Sherlock Holmes",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 79,
+          "text": "Chapter 2. The Science of Deduction",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 131,
+          "text": "Chapter 3. The Lauriston Gardens Mystery",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 233,
+          "text": "Chapter 4. What John Rance Had to Tell",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 291,
+          "text": "Chapter 5. Our Advertisement Brings a Visitor",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 346,
+          "text": "Chapter 6. Tobias Gregson Shows What He Can Do",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 435,
+          "text": "Chapter 7. Light in the Darkness",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 494,
+          "text": "Part II. The Country of the Saints",
+          "role": "section"
+        },
+        {
+          "paragraph": 495,
+          "text": "Chapter 1. On the Great Alkali Plain",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 564,
+          "text": "Chapter 2. The Flower of Utah",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 596,
+          "text": "Chapter 3. John Ferrier Talks with the Prophet",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 635,
+          "text": "Chapter 4. A Flight for Life",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 700,
+          "text": "Chapter 5. The Avenging Angels",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 732,
+          "text": "Chapter 6. A Continuation of the Reminiscences of John Watson, M.D.",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 789,
+          "text": "Chapter 7. The Conclusion",
+          "role": "chapter"
+        }
+      ],
+      "illustrations": [
+        {
+          "id": "scarlet-01",
+          "before": "“Whatever have you been doing with yourself, Watson?” he asked in undisguised wonder, as we rattled through the crowded London streets. “You are as thin as a la",
+          "after": "On the very day that I had come to this conclusion, I was standing at the Criterion Bar, when some one tapped me on the shoulder, and turning round I recognized",
+          "paragraph": 15,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-01.webp",
+          "alt": "Watson and Stamford ride through gaslit London",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-02",
+          "before": "“How on earth did you know that?” I asked in astonishment.",
+          "after": "“How are you?” he said cordially, gripping my hand with a strength for which I should hardly have given him credit. “You have been in Afghanistan, I perceive.”",
+          "paragraph": 46,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-02.webp",
+          "alt": "Holmes meets Watson in the laboratory",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-03",
+          "before": "“I have had so much to do inside the house,” the detective said evasively. “My colleague, Mr. Lestrade, is here. I had relied upon him to look after this.”",
+          "after": "“Except that!” my friend answered, pointing at the pathway. “If a herd of buffaloes had passed along there could not be a greater mess. No doubt, however, you h",
+          "paragraph": 167,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-03.webp",
+          "alt": "Holmes studies the trampled path at Lauriston Gardens",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-04",
+          "before": "“What do you think of that?” cried the detective, with the air of a showman exhibiting his show. “This was overlooked because it was in the darkest corner of th",
+          "after": "RACHE.",
+          "paragraph": 217,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-04.webp",
+          "alt": "Holmes examines the bare wall by lantern light",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-05",
+          "before": "“They say that genius is an infinite capacity for taking pains,” he remarked with a smile. “It’s a very bad definition, but it does apply to detective work.”",
+          "after": "As he spoke, he whipped a tape measure and a large round magnifying glass from his pocket. With these two implements he trotted noiselessly about the room, some",
+          "paragraph": 222,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-05.webp",
+          "alt": "Holmes studies the floor with a magnifying glass",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-08",
+          "before": "This last statement appeared to me to be so startling, that I could hardly believe that he was in his sober senses. There was the dead dog, however, to prove th",
+          "after": "Sherlock Holmes drew a long breath, and wiped the perspiration from his forehead. “I should have more faith,” he said; “I ought to know by this time that when a",
+          "paragraph": 476,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-08.webp",
+          "alt": "Holmes looks at two pillboxes by the fire",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-06",
+          "before": "“We have his cab,” said Sherlock Holmes. “It will serve to take him to Scotland Yard. And now, gentlemen,” he continued, with a pleasant smile, “we have reached",
+          "after": "The whole thing occurred in a moment—so quickly that I had no time to realize it. I have a vivid recollection of that instant, of Holmes’ triumphant expression ",
+          "paragraph": 493,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-06.webp",
+          "alt": "Jefferson Hope is held in the Baker Street room",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-07",
+          "before": "There are no inhabitants of this land of despair. A band of Pawnees or of Blackfeet may occasionally traverse it in order to reach other hunting-grounds, but th",
+          "after": "In the central portion of the great North American Continent there lies an arid and repulsive desert, which for many a long year served as a barrier against the",
+          "paragraph": 497,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-07.webp",
+          "alt": "Riders pause in the alkali desert at dawn",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "scarlet-09",
+          "before": "During the whole of that day they struggled on through the defiles, and by evening they calculated that they were more than thirty miles from their enemies. At ",
+          "after": "As the sun rose slowly above the eastern horizon, the caps of the great mountains lit up one after the other, like lamps at a festival, until they were all rudd",
+          "paragraph": 703,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-a-study-in-scarlet/illustrations/scarlet-09.webp",
+          "alt": "Three riders look back across the night desert",
+          "width": 1400,
+          "height": 700
+        }
+      ]
+    },
+    {
+      "id": "sherlock-holmes-the-sign-of-the-four",
+      "title": "The Sign of the Four",
+      "author": "Arthur Conan Doyle",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/cover.webp",
+      "coverPosition": "center top",
+      "bytes": 236634,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/book.txt",
+      "contentVersion": "191e3bae3eb2134184a6e92fbba498ebb7de1e1a1c83a5eaca42c415c541de50",
+      "wordCount": 43099,
+      "sourceUrl": "https://www.gutenberg.org/ebooks/2097",
+      "site": "Project Gutenberg",
+      "license": "Original: public domain in the USA",
+      "licenseUrl": "https://www.gutenberg.org/ebooks/2097",
+      "originalTitle": "The Sign of the Four (1890)",
+      "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
+      "presentation": "story",
+      "sourceTitle": true,
+      "hook": "안개 낀 밤, 진주 한 알과 함께 도착한 편지. 여섯 해를 기다린 메리 모스턴은 그 보물을 찾을 수 있을까?",
+      "edition": "Lightly modernized English edition",
+      "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s The Sign of the Four (1890), complete in twelve chapters. Source text: Project Gutenberg eBook #2097, retrieved 2026-10-22. Closed spellings, polite forms and a few archaic words are modernized in the same way as the bundled Holmes stories. This is not Doyle’s verbatim text. Plot, dialogue meaning, paragraph order, clues and the period setting are preserved. Gutenberg boilerplate and italic markers are omitted. A quoted French sentence is unchanged. Chapter headings use the Hound long-read form.",
+      "glossary": "Period terms: hansom and four-wheeler — horse-drawn carriages; morocco case — a leather case; half-pay — reduced pay for an officer not on active service. Historical money, objects, names and clue-bearing language are retained.",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "The Sign of the Four",
+          "role": "title"
+        },
+        {
+          "paragraph": 1,
+          "text": "by Arthur Conan Doyle",
+          "role": "subtitle"
+        },
+        {
+          "paragraph": 2,
+          "text": "Contents",
+          "role": "contents-heading"
+        },
+        {
+          "paragraph": 3,
+          "text": "Chapter 1 The Science of Deduction Chapter 2 The Statement of the Case Chapter 3 In Quest of a Solution Chapter 4 The Story of the Bald-Headed Man Chapter 5 The Tragedy of Pondicherry Lodge Chapter 6 Sherlock Holmes Gives a Demonstration Chapter 7 The Episode of the Barrel Chapter 8 The Baker Street Irregulars Chapter 9 A Break in the Chain Chapter 10 The End of the Islander Chapter 11 The Great Agra Treasure Chapter 12 The Strange Story of Jonathan Small",
+          "role": "contents"
+        },
+        {
+          "paragraph": 4,
+          "text": "Chapter 1. The Science of Deduction",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 60,
+          "text": "Chapter 2. The Statement of the Case",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 101,
+          "text": "Chapter 3. In Quest of a Solution",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 130,
+          "text": "Chapter 4. The Story of the Bald-Headed Man",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 171,
+          "text": "Chapter 5. The Tragedy of Pondicherry Lodge",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 230,
+          "text": "Chapter 6. Sherlock Holmes Gives a Demonstration",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 307,
+          "text": "Chapter 7. The Episode of the Barrel",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 387,
+          "text": "Chapter 8. The Baker Street Irregulars",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 470,
+          "text": "Chapter 9. A Break in the Chain",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 569,
+          "text": "Chapter 10. The End of the Islander",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 618,
+          "text": "Chapter 11. The Great Agra Treasure",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 660,
+          "text": "Chapter 12. The Strange Story of Jonathan Small",
+          "role": "chapter"
+        }
+      ],
+      "illustrations": [
+        {
+          "id": "sign-01",
+          "before": "Three times a day for many months I had witnessed this performance, but custom had not reconciled my mind to it. On the contrary, from day to day I had become m",
+          "after": "Sherlock Holmes took his bottle from the corner of the mantel-piece and his hypodermic syringe from its neat morocco case. With his long, white, nervous fingers",
+          "paragraph": 6,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-01.webp",
+          "alt": "Holmes sits back with the leather case while Watson watches",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-02",
+          "before": "“I have come to you, Mr. Holmes,” she said, “because you once enabled my employer, Mrs. Cecil Forrester, to unravel a little domestic complication. She was much",
+          "after": "Miss Morstan entered the room with a firm step and an outward composure of manner. She was a blonde young lady, small, dainty, well gloved, and dressed in the m",
+          "paragraph": 62,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-02.webp",
+          "alt": "Mary Morstan arrives at Baker Street",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-03",
+          "before": "“Are you the parties who come with Miss Morstan?” he asked.",
+          "after": "At the Lyceum Theatre the crowds were already thick at the side-entrances. In front a continuous stream of hansoms and four-wheelers were rattling up, dischargi",
+          "paragraph": 119,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-03.webp",
+          "alt": "Holmes, Watson and Mary reach the foggy theatre",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-04",
+          "before": "“Mr. Thaddeus Sholto,” said the little man, still jerking and smiling. “That is my name. You are Miss Morstan, of course. And these gentlemen—”",
+          "after": "We were all astonished by the appearance of the apartment into which he invited us. In that sorry house it looked as out of place as a diamond of the first wate",
+          "paragraph": 134,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-04.webp",
+          "alt": "Thaddeus Sholto shows his crowded room",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-05",
+          "before": "“Ah, that is the housekeeper’s room. That is where old Mrs. Bernstone sits. She can tell us all about it. But perhaps you would not mind waiting here for a minu",
+          "after": "“None,” said Holmes. “But I see the glint of a light in that little window beside the door.”",
+          "paragraph": 191,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-05.webp",
+          "alt": "A light shows in the window of Pondicherry Lodge",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-06",
+          "before": "“He wanted a dog of yours.”",
+          "after": "“A friend of Mr. Sherlock is always welcome,” said he. “Step in, sir. Keep clear of the badger; for he bites. Ah, naughty, naughty, would you take a nip at the ",
+          "paragraph": 319,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-06.webp",
+          "alt": "Holmes asks after the tracking dog",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-07",
+          "before": "“Got your message, sir,” said he, “and brought ’em on sharp. Three bob and a tanner for tickets.”",
+          "after": "As he spoke, there came a swift pattering of naked feet upon the stairs, a clatter of high voices, and in rushed a dozen dirty and ragged little street-Arabs. T",
+          "paragraph": 454,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-07.webp",
+          "alt": "The Baker Street irregulars rush upstairs",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-08",
+          "before": "“I think we gain a little,” said Jones, with his eyes on the Aurora.",
+          "after": "“Pile it on, men, pile it on!” cried Holmes, looking down into the engine-room, while the fierce glow from below beat upon his eager, aquiline face. “Get every ",
+          "paragraph": 612,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-08.webp",
+          "alt": "The steam launch chase on the river",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "sign-09",
+          "before": "As I listened to the words and realised what they meant, a great shadow seemed to pass from my soul. I did not know how this Agra treasure had weighed me down, ",
+          "after": "“The treasure is lost,” said Miss Morstan, calmly.",
+          "paragraph": 656,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-sign-of-the-four/illustrations/sign-09.webp",
+          "alt": "The open treasure chest is empty",
+          "width": 1400,
+          "height": 700
+        }
+      ]
+    },
+    {
+      "id": "sherlock-holmes-the-valley-of-fear",
+      "title": "The Valley of Fear",
+      "author": "Arthur Conan Doyle",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/cover.webp",
+      "coverPosition": "center top",
+      "bytes": 321066,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/book.txt",
+      "contentVersion": "2e20b5dc89647a95ddca4977873bd283e4b77883d500c7d60698ef582ddc46d7",
+      "wordCount": 57608,
+      "sourceUrl": "https://www.gutenberg.org/ebooks/3289",
+      "site": "Project Gutenberg",
+      "license": "Original: public domain in the USA",
+      "licenseUrl": "https://www.gutenberg.org/ebooks/3289",
+      "originalTitle": "The Valley of Fear (1915)",
+      "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
+      "presentation": "story",
+      "sourceTitle": true,
+      "hook": "아침 식탁 위의 암호 한 장, 그리고 해자 저택의 죽음. 모리아티의 그림자는 이 사건과 어떻게 이어질까?",
+      "edition": "Lightly modernized English edition",
+      "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s The Valley of Fear (1915), complete in two parts and an epilogue. Source text: Project Gutenberg eBook #3289, retrieved 2026-10-22. Closed spellings, polite forms and a few archaic words are modernized in the same way as the bundled Holmes stories. This is not Doyle’s verbatim text. Plot, dialogue meaning, paragraph order, clues and the period setting are preserved. Gutenberg boilerplate, the illustration-caption list and italic markers are omitted. Chapter headings use the Hound long-read form.",
+      "glossary": "Period terms: dumb-bell — a hand weight; moat — a water-filled ditch around a house; Bodymaster — the head of a local lodge. Historical money, places, names, the cipher and clue-bearing language are retained.",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "THE VALLEY OF FEAR",
+          "role": "title"
+        },
+        {
+          "paragraph": 1,
+          "text": "By Sir Arthur Conan Doyle",
+          "role": "subtitle"
+        },
+        {
+          "paragraph": 2,
+          "text": "Contents",
+          "role": "contents-heading"
+        },
+        {
+          "paragraph": 3,
+          "text": "Part I. The Tragedy of Birlstone",
+          "role": "label"
+        },
+        {
+          "paragraph": 4,
+          "text": "Chapter 1 The Warning Chapter 2 Sherlock Holmes Discourses Chapter 3 The Tragedy of Birlstone Chapter 4 Darkness Chapter 5 The People of the Drama Chapter 6 A Dawning Light Chapter 7 The Solution",
+          "role": "contents"
+        },
+        {
+          "paragraph": 5,
+          "text": "Part II. The Scowrers",
+          "role": "label"
+        },
+        {
+          "paragraph": 6,
+          "text": "Chapter 1 The Man Chapter 2 The Bodymaster Chapter 3 Lodge 341, Vermissa Chapter 4 The Valley of Fear Chapter 5 The Darkest Hour Chapter 6 Danger Chapter 7 The Trapping of Birdy Edwards",
+          "role": "contents"
+        },
+        {
+          "paragraph": 7,
+          "text": "Epilogue",
+          "role": "label"
+        },
+        {
+          "paragraph": 8,
+          "text": "Part I. The Tragedy of Birlstone",
+          "role": "section"
+        },
+        {
+          "paragraph": 9,
+          "text": "Chapter 1. The Warning",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 87,
+          "text": "Chapter 2. Sherlock Holmes Discourses",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 176,
+          "text": "Chapter 3. The Tragedy of Birlstone",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 248,
+          "text": "Chapter 4. Darkness",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 356,
+          "text": "Chapter 5. The People of the Drama",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 490,
+          "text": "Chapter 6. A Dawning Light",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 583,
+          "text": "Chapter 7. The Solution",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 703,
+          "text": "Part II. The Scowrers",
+          "role": "section"
+        },
+        {
+          "paragraph": 704,
+          "text": "Chapter 1. The Man",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 798,
+          "text": "Chapter 2. The Bodymaster",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1004,
+          "text": "Chapter 3. Lodge 341, Vermissa",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1142,
+          "text": "Chapter 4. The Valley of Fear",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1238,
+          "text": "Chapter 5. The Darkest Hour",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1337,
+          "text": "Chapter 6. Danger",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1438,
+          "text": "Chapter 7. The Trapping of Birdy Edwards",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1505,
+          "text": "Epilogue",
+          "role": "chapter"
+        }
+      ],
+      "illustrations": [
+        {
+          "id": "valley-01",
+          "before": "“It is a cipher that Dr. Watson and I have had occasion to solve. But why—what’s amiss with the names?”",
+          "after": "“Douglas!” he stammered. “Birlstone! What’s this, Mr. Holmes? Man, it’s witchcraft! Where in the name of all that is wonderful did you get those names?”",
+          "paragraph": 85,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-01.webp",
+          "alt": "The inspector stares at the cipher",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-02",
+          "before": "The only approach to the house was over a drawbridge, the chains and windlass of which had long been rusted and broken. The latest tenants of the Manor House ha",
+          "after": "The Manor House, with its many gables and its small diamond-paned windows, was still much as the builder had left it in the early seventeenth century. Of the do",
+          "paragraph": 181,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-02.webp",
+          "alt": "Birlstone Manor stands beyond its moat",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-03",
+          "before": "“I really cannot tell,” she answered. “It is certainly a most extraordinary thing.”",
+          "after": "For an instant I could have sworn that the faintest shadow of a smile flickered over the woman’s lips.",
+          "paragraph": 469,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-03.webp",
+          "alt": "A faint smile crosses the woman’s face",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-04",
+          "before": "“Not in the least,” I answered in astonishment.",
+          "after": "He stood beside me in silence, his candle in his hand. Then the tall, lean figure inclined towards me. “I say, Watson,” he whispered, “would you be afraid to sl",
+          "paragraph": 581,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-04.webp",
+          "alt": "Holmes whispers to Watson by candlelight",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-09",
+          "before": "“Well, you figured it out about right,” said Douglas approvingly. “I thought I’d dodge your British law; for I was not sure how I stood under it, and also I saw",
+          "after": "“Not one instant, my dear Mr. Mac. Only last night did I form my views of the case. As they could not be put to the proof until this evening, I invited you and ",
+          "paragraph": 683,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-09.webp",
+          "alt": "Holmes finds a bundle of clothes by the moat",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-05",
+          "before": "“By Gar! you’ve got an Irish tongue in your head anyhow,” cried the saloon-keeper, not quite certain whether to humour this audacious visitor or to stand upon h",
+          "after": "“Well, it’s early days. If your heart is as big as your body, and your soul as fine as your face, then I’d ask for nothing better,” said McMurdo.",
+          "paragraph": 913,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-05.webp",
+          "alt": "McMurdo faces the saloon keeper",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-06",
+          "before": "“I can take more than that,” said he.",
+          "after": "It was all he could do to keep himself from screaming out, for an agonizing pain shot through his forearm. He nearly fainted at the sudden shock of it; but he b",
+          "paragraph": 1059,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-06.webp",
+          "alt": "A man clutches his arm in the lodge",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-07",
+          "before": "He raised her and soothed her with her head against his breast.",
+          "after": "Ettie threw her arms round her lover’s neck. “Give it up, Jack! For my sake, for God’s sake, give it up! It was to ask you that I came here today. Oh, Jack, see",
+          "paragraph": 1262,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-07.webp",
+          "alt": "Ettie begs Jack to stop",
+          "width": 1400,
+          "height": 700
+        },
+        {
+          "id": "valley-08",
+          "before": "With strained ears the murderers waited. They counted the steps of their comrade down the passage. Then they heard him open the outer door. There were a few wor",
+          "after": "“Not a sound, for your lives!” McMurdo whispered, as he went from the room, closing the door carefully behind him.",
+          "paragraph": 1482,
+          "file": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-the-valley-of-fear/illustrations/valley-08.webp",
+          "alt": "McMurdo signals for silence at the door",
+          "width": 1400,
+          "height": 700
+        }
+      ]
     }
   ]
 }
