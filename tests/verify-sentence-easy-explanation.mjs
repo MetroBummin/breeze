@@ -45,7 +45,7 @@ test('real Edge route authenticates owner, shares anonymous/account quota and ad
   assert.equal((await (await invoke({op:'warm'})).json()).sentenceEasyExplanation,true);assert.equal(providerCalls,0);assert.equal(quotaCalls.length,0);
   const res=await invoke({op:'sentence_easy_explanation',...input,userId:'forged'},'valid');assert.equal(res.status,200);assert.equal(res.headers.get('cache-control'),'no-store');assert.equal((await res.json()).suggestedMeaning,undefined);
   assert.equal(quotaCalls[0].p.p_user,'verified-user');assert.equal(quotaCalls[0].p.p_cost,1);assert.equal(providerCalls,1);
-  const anon=await invoke({op:'sentence_easy_explanation',...input,device:'device-fixture',userId:'forged'},'invalid');assert.equal(anon.status,200);assert.equal(quotaCalls.at(-1).name,'take_anon_quota');assert.equal(quotaCalls.at(-1).p.p_device,'device-fixture');
+  const anon=await invoke({op:'sentence_easy_explanation',...input,device:'device-fixture',userId:'forged'},'invalid');assert.equal(anon.status,200);assert.equal(quotaCalls.at(-1).name,'take_anon_quota');assert.equal(quotaCalls.at(-1).p.p_device,'device-fixture');assert.equal(quotaCalls.at(-1).p.p_limit,1_000_000_000);assert.equal(quotaCalls.at(-1).p.p_daily_cap,2000);
   denied=true;const before=providerCalls;assert.equal((await invoke({op:'sentence_easy_explanation',...input},'valid')).status,429);assert.equal(providerCalls,before);
   quotaError=true;assert.equal((await invoke({op:'sentence_easy_explanation',...input},'valid')).status,503);assert.equal(providerCalls,before);
   assert.equal((await invoke({op:'sentence_easy_explanation',...input,sentence:''},'valid')).status,400);
