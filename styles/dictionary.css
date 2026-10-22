@@ -393,10 +393,10 @@ body.sentence-result-anchored #ps-easy{margin:12px 0 0;}
 #panel #p-highlight-row{order:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 0 8px;font:12px var(--ui);color:var(--sentence-glass-secondary);}
 #p-highlight-row small{display:block;font-size:10px;margin-top:3px;opacity:.8;}
 #panel #p-mark{display:flex;align-items:center;gap:9px;min-height:44px;min-width:76px;justify-content:flex-end;flex:none;padding:0;border:0;background:none;color:var(--sentence-glass-secondary);font:11px var(--ui);cursor:pointer;}
-#p-mark i{display:block;box-sizing:border-box;width:42px;height:26px;border-radius:16px;background:var(--sentence-glass-line);padding:3px;}
-#p-mark i::after{content:'';display:block;width:20px;height:20px;border-radius:50%;background:var(--sentence-glass-secondary);transition:transform .15s;}
-#panel #p-mark.on i{background:color-mix(in srgb,var(--sentence-glass-ink) 25%,transparent);}
-#p-mark.on i::after{transform:translateX(16px);background:var(--sentence-glass-ink);}
+#p-mark i{display:block;box-sizing:border-box;width:42px;height:26px;border-radius:16px;background:var(--switch-off);box-shadow:inset 0 0 0 1.5px var(--switch-off-edge);padding:3px;}
+#p-mark i::after{content:'';display:block;width:20px;height:20px;border-radius:50%;background:var(--switch-off-knob);transition:transform .15s;}
+#panel #p-mark.on i{background:var(--switch-on);box-shadow:none;}
+#p-mark.on i::after{transform:translateX(16px);background:var(--switch-on-knob);}
 /* Keep scrolling inside the glass surface without a protruding scroll indicator. */
 #panel,#panel.anchored,body.sentence-result-anchored #p-sentence{scrollbar-width:none;overscroll-behavior:contain;}
 #panel::-webkit-scrollbar,body.sentence-result-anchored #p-sentence::-webkit-scrollbar{display:none;width:0;height:0;}
