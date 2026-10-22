@@ -167,6 +167,8 @@ function extract(dir){
       }
       if(node.localName==='hr'){ push({role:'scene', text:'* * *'}); continue; }
       if(node.localName==='div'){
+        /* One paragraph per print line. The reader joins inscription lines
+           before the first chapter into a single dedication. */
         const {raw}=marked(node);
         for(const line of raw.split('\n')){
           const text=line.replace(/\s+/g,' ').trim();

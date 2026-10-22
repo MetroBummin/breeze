@@ -117,6 +117,16 @@ function releaseReaderBodyImages(){
   readerBodyImageUrls.forEach(url=>URL.revokeObjectURL(url));
   readerBodyImageUrls.clear();
 }
+/* The author line under the title. Hound already names the author in its
+   own title page, so it does not get a second synthetic line. */
+function readerOpeningByline(book){
+  const defined=typeof longReadDefinition==='function'?longReadDefinition(book.longReadId):null;
+  const holmes=!!(defined&&defined.id.startsWith('sherlock-holmes-'));
+  const story=holmes||!!(defined&&defined.presentation==='story');
+  const originalStory=!story&&book.kind==='txt'&&book.readingStyle==='original';
+  if(book.longReadId==='sherlock-holmes-hound-of-the-baskervilles') return false;
+  return (story||originalStory)&&!!(book.author||(defined&&defined.author));
+}
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
   releaseReaderBodyImages();
@@ -138,9 +148,9 @@ function renderBookBody(b){
   const frag = document.createDocumentFragment();
   const PAGE_CHARS = 1700;
   const wordSpanTargets=[];
-  let page=null, pageChars=0, pageNo=0, box=null, boxKind='';
+  let page=null, pageChars=0, pageNo=0, box=null, boxKind='', dedicationLine=null;
   const newPage = ()=>{
-    box = null; boxKind = '';
+    box = null; boxKind = ''; dedicationLine=null;
     if(page){
       const no = document.createElement('div');
       no.className='pageno'; no.textContent = '— '+pageNo+' —';
@@ -179,13 +189,12 @@ function renderBookBody(b){
   });
   if(originalStory)list=list.map(block=>/^Chapter \d+$/.test(String(block.t||'').trim())
     ?{...block,bookRole:'chapter',r:'h2',before:'page'}:block);
-  if(story&&b.longReadId!=='sherlock-holmes-hound-of-the-baskervilles'){
-    const author=document.createElement('p');author.className='holmes-byline';
-    author.textContent=b.author||story.author;frag.insertBefore(author,page);
-  }
-  if(originalStory){
-    const author=document.createElement('p');author.className='original-byline';
-    author.textContent=b.author||'';frag.insertBefore(author,page);
+  if((story||originalStory)&&typeof composeBookOpening==='function') composeBookOpening(list);
+  if(readerOpeningByline(b)){
+    const author=document.createElement('p');
+    author.className=story?'holmes-byline':'original-byline';
+    author.textContent=b.author||(story&&story.author)||'';
+    frag.insertBefore(author,page);
   }
   list.forEach(bl=>{
     if(b.longReadId==='backroom-homeward-bound'&&bl.t==='Chapter 2'&&pageChars>0)newPage();
@@ -272,6 +281,24 @@ function renderBookBody(b){
     const cont = inBox && box && boxKind === bl.g;
     if(!cont && bl.before === 'page' && pageChars > 0) newPage();
     else if(!cont && (pageChars >= PAGE_CHARS || (isHead && lvl <= 2 && pageChars > PAGE_CHARS*0.55))) newPage();
+    if(bl.openingDedication){
+      if(!dedicationLine){
+        dedicationLine=document.createElement('div');
+        dedicationLine.className='book-opening-dedication';
+        page.classList.add('book-opening-dedication-page');
+        page.appendChild(dedicationLine);
+      }
+      const dedication=document.createElement('p');
+      dedication.className='book-opening-dedication-part';
+      dedication.dataset.pi=bl.f;
+      dedication.textContent=bl.v||bl.t;
+      dedicationLine.appendChild(dedication);
+      wordSpanTargets.push(dedication);
+      pageChars+=bl.t.length;
+      box=null; boxKind='';
+      return;
+    }
+    dedicationLine=null;
     /* 인용문·활동 상자는 본문과 다른 덩어리로 묶어 그립니다.
        원서에서 테두리 상자나 작은 글씨로 따로 조판되던 것들입니다. */
     if(inBox){
@@ -289,6 +316,7 @@ function renderBookBody(b){
     if(bl.before === 'section') el.classList.add('section-break');
     el.dataset.pi = bl.f;
     if(bl.bookRole)el.classList.add((originalStory?'original-':'holmes-')+bl.bookRole);
+    if(bl.openingAttribution)el.classList.add('book-opening-attribution');
     if(bl.verseIndent)el.classList.add('verse-indent');
     if(bl.verseStanza)el.classList.add('verse-stanza');
     el.textContent = bl.v || bl.t;
@@ -481,7 +509,10 @@ async function openBook(b,options={}){
   source.hidden = !b.sourceUrl;
   if(b.sourceUrl){
     source.href = b.sourceUrl;
-    source.textContent = [b.site,b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
+    const hideAuthor=typeof openingRepeatsAuthor==='function'&&openingRepeatsAuthor({
+      author:b.author, byline:readerOpeningByline(b), front:(b.paras||[]).slice(0,8),
+    });
+    source.textContent = [b.site,hideAuthor?'':b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
   }
   renderReaderAttribution(b);
   const discovery = /** @type {HTMLAnchorElement} */(document.getElementById('rdiscovery'));
