@@ -1,33 +1,36 @@
 name: PDF pointer ink
 on:
   pull_request:
-    paths:
-      - 'scripts/reader/**'
-      - 'scripts/library/ink-sync.js'
-      - 'server/sync/book-ink.sql'
-      - 'styles/reader.css'
-      - 'tests/verify-pdf*'
-      - 'tests/verify-ink-sync*'
-      - 'tests/verify-device-polish-browser.mjs'
-      - 'tests/helpers/pdf-geometry-fixture.mjs'
-      - '.github/workflows/pdf-pointer-ink.yml'
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: pdf-pointer-ink-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   chromium:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit firefox
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit firefox
       - run: node --test tests/verify-pdf-ink-regressions.mjs
       - run: node tests/verify-pdf-pointer-ink-browser.mjs
       - run: node tests/verify-pdf-availability-browser.mjs
@@ -57,3 +60,28 @@ jobs:
             /tmp/breeze-pdf-palette/
           if-no-files-found: ignore
           retention-days: 7
+
+  suite-status:
+    needs: [changes, chromium]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

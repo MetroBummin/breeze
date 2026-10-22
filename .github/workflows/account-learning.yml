@@ -1,18 +1,23 @@
 name: Account learning isolation
 on:
   pull_request:
-    paths:
-      - 'scripts/**'
-      - 'tests/**'
-      - 'server/sync/**'
-      - 'package.json'
-      - '.github/workflows/account-learning.yml'
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   account-contracts:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -27,7 +32,9 @@ jobs:
       - run: npm run test:account
       - run: npm run test:sync
       - run: npm run typecheck
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - run: npm run test:account:browser
         env:
           BROWSER: ${{ matrix.engine }}
@@ -39,7 +46,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
   web-storage:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -59,8 +71,35 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - run: node tests/verify-storage-migration-web.mjs
         env:
           BROWSER: ${{ matrix.engine }}
           MOBILE: ${{ matrix.mobile }}
+
+  suite-status:
+    needs: [changes, account-contracts, web-storage]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

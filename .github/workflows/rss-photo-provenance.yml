@@ -2,14 +2,23 @@ name: Public RSS photo provenance
 on:
   pull_request:
     types: [opened, reopened, synchronize]
-    paths: ['tools/audit-rss-photo-provenance.mjs', '.github/workflows/rss-photo-provenance.yml']
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   public-get:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.body, '[verify-live-rss-photos]')
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true' && (github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.body, '[verify-live-rss-photos]'))
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +29,9 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
       - run: node tools/audit-rss-photo-provenance.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -28,3 +39,28 @@ jobs:
           name: public-rss-photo-provenance
           path: /tmp/breeze-rss-photo-provenance/
           retention-days: 7
+
+  suite-status:
+    needs: [changes, public-get]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

@@ -1,19 +1,21 @@
 name: Xcode Cloud bootstrap
 on:
   pull_request:
-    paths:
-      - 'ios/App/ci_scripts/**'
-      - 'tests/verify-ios-bootstrap.mjs'
-      - 'tools/verify-ios-release.mjs'
-      - 'package*.json'
-      - '.github/workflows/ios-bootstrap.yml'
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: ios-bootstrap-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   bootstrap:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
       - name: Execute the production hook against runtime/install/lock/failure fixtures
         run: node --test tests/verify-ios-bootstrap.mjs
       - name: Run the complete post-clone chain on macOS without archiving or uploading
@@ -37,3 +40,28 @@ jobs:
         env:
           CI_BUILD_NUMBER: '900'
         run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+  suite-status:
+    needs: [changes, bootstrap]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

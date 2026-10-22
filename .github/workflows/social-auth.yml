@@ -2,33 +2,27 @@ name: Social auth draft
 
 on:
   pull_request:
-    paths:
-      - 'index.html'
-      - 'scripts/**'
-      - 'styles/**'
-      - 'assets/**'
-      - 'ios/**'
-      - 'package*.json'
-      - 'tests/verify-email-login-browser.mjs'
-      - 'tests/verify-provider-artwork.mjs'
-      - 'tests/verify-social-login-browser.mjs'
-      - 'tests/verify-apple-login.mjs'
-      - 'tests/verify-auth-native-policy.mjs'
-      - 'tests/auth-native-policy-checks.swift'
-      - 'docs/qa/social-auth-only.md'
-      - 'tests/verify-social-auth-boundary.mjs'
-      - '.github/workflows/social-auth.yml'
+  push:
+    branches: [main]
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: social-auth-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   browser:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -47,7 +41,9 @@ jobs:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
       - run: node --test tests/verify-apple-login.mjs tests/verify-provider-artwork.mjs
       - run: node tests/verify-next-release-boundary.mjs
       - run: node tests/verify-email-login-browser.mjs
@@ -61,6 +57,8 @@ jobs:
           retention-days: 7
 
   ios-compile:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: macos-26
     timeout-minutes: 20
     steps:
@@ -82,3 +80,28 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           -derivedDataPath /tmp/breeze-social-auth-ios
           CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+
+  suite-status:
+    needs: [changes, browser, ios-compile]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

@@ -1,0 +1,126 @@
+name: Playwright browsers
+description: >
+  Cache Playwright browsers at ~/.cache/ms-playwright, keyed by OS and the
+  Playwright version resolved from package-lock.json. Skip the download on a
+  cache hit. Linux jobs on the official Playwright image already have system
+  libraries, so install-deps is not repeated there.
+inputs:
+  browsers:
+    description: Browser names for this job, for example "chromium" or "chromium webkit"
+    required: true
+  working-directory:
+    description: Directory that contains package-lock.json, relative to the workspace
+    required: false
+    default: '.'
+runs:
+  using: composite
+  steps:
+    - name: Resolve Playwright version
+      id: version
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        if [ ! -f package-lock.json ]; then
+          echo "package-lock.json not found in $PWD" >&2
+          exit 1
+        fi
+        version="$(node --input-type=module -e '
+          import {readFileSync} from "node:fs";
+          const lock = JSON.parse(readFileSync("package-lock.json", "utf8"));
+          const pkgs = lock.packages || {};
+          const names = ["node_modules/@playwright/test", "node_modules/playwright", "node_modules/playwright-core"];
+          for (const name of names) {
+            if (pkgs[name] && pkgs[name].version) {
+              console.error("Resolved " + name + " " + pkgs[name].version);
+              process.stdout.write(pkgs[name].version);
+              process.exit(0);
+            }
+          }
+          console.error("package-lock.json has no @playwright/test, playwright, or playwright-core package");
+          process.exit(1);
+        ')"
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "Playwright ${version}"
+        cache_dir="${HOME}/.cache/ms-playwright"
+        mkdir -p "${cache_dir}"
+        echo "PLAYWRIGHT_BROWSERS_PATH=${cache_dir}" >> "$GITHUB_ENV"
+        if [ -d /ms-playwright ]; then
+          echo "deps=image" >> "$GITHUB_OUTPUT"
+          echo "System libraries are already installed in the Playwright image."
+        else
+          echo "deps=apt" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Restore Playwright browser cache
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}
+
+    - name: Install browsers on cache miss
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        cache_dir="${PLAYWRIGHT_BROWSERS_PATH}"
+        if [ -d /ms-playwright ]; then
+          cp -a /ms-playwright/. "${cache_dir}/"
+          echo "Cache miss. Seeded ${cache_dir} from the Playwright image instead of downloading."
+        else
+          echo "Cache miss. Downloading Playwright browsers."
+        fi
+        # Install every browser this version ships. The cache key is OS plus
+        # version, with no browser name, so a partial save would be a false hit
+        # for the next job.
+        log="$(npx playwright install 2>&1)" || { printf '%s\n' "${log}"; exit 1; }
+        printf '%s\n' "${log}"
+        if printf '%s' "${log}" | grep -qi 'Downloading'; then
+          echo "Installed browser revisions that were not already present."
+          if [ -d /ms-playwright ]; then
+            echo "Lockfile browsers differ from the image. Installing system dependencies."
+            npx playwright install-deps
+          fi
+        else
+          echo "Browser download skipped; revisions were already present."
+        fi
+
+    - name: Save Playwright browser cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      continue-on-error: true
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}
+
+    - name: Browser cache hit
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: echo "Playwright browser cache hit for ${{ runner.os }} / ${{ steps.version.outputs.version }}. Download skipped."
+
+    - name: Restore apt package cache
+      if: steps.version.outputs.deps == 'apt'
+      id: apt
+      uses: actions/cache/restore@v4
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-playwright-apt-${{ steps.version.outputs.version }}-${{ inputs.browsers }}
+
+    - name: Install system dependencies
+      if: steps.version.outputs.deps == 'apt'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99keep-debs >/dev/null
+        sudo npx playwright install-deps ${{ inputs.browsers }}
+
+    - name: Save apt package cache
+      if: steps.version.outputs.deps == 'apt' && steps.apt.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      continue-on-error: true
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-playwright-apt-${{ steps.version.outputs.version }}-${{ inputs.browsers }}

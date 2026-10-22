@@ -1,19 +1,19 @@
 name: Vocabulary test prototype
 on:
   pull_request:
-    paths:
-      - 'scripts/**'
-      - 'styles/**'
-      - 'server/dict/**'
-      - 'tests/**'
-      - 'index.html'
-      - 'package*.json'
-      - '.github/workflows/vocabulary-test.yml'
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   local-contracts:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,7 +25,12 @@ jobs:
       - run: node --experimental-strip-types --test tests/verify-vocabulary-test.mjs tests/verify-vocabulary-test-storage.mjs tests/verify-vocabulary-test-grading.mjs tests/verify-study-sets.mjs tests/verify-study-sets-storage.mjs tests/verify-study-sets-ui.mjs tests/verify-study-example.mjs tests/verify-vocabulary-review.mjs tests/verify-vocabulary-review-highlight.mjs
       - run: npm run typecheck
   browser:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -39,7 +44,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - name: Shipping release exclusion and study completion states
         run: node tests/verify-study-completion-browser.mjs
       - name: Word-only display with retained source examples and CSV
@@ -58,3 +65,28 @@ jobs:
             /tmp/breeze-study-completion-proof/
             /tmp/breeze-word-only-proof/
           retention-days: 14
+
+  suite-status:
+    needs: [changes, local-contracts, browser]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

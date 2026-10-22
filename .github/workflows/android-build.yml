@@ -2,33 +2,24 @@ name: Android build
 
 on:
   pull_request:
-    paths:
-      - 'android/**'
-      - 'capacitor.config.json'
-      - 'package*.json'
-      - 'index.html'
-      - 'config.js'
-      - 'scripts/**'
-      - 'styles/**'
-      - 'assets/**'
-      - 'modules/**'
-      - 'public/**'
-      - 'tools/**'
-      - 'tests/verify-android-build.mjs'
-      - '.github/workflows/android-build.yml'
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: android-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   android:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -80,3 +71,28 @@ jobs:
           path: android/app/build/reports/lint-results-debug.*
           if-no-files-found: ignore
           retention-days: 7
+
+  suite-status:
+    needs: [changes, android]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

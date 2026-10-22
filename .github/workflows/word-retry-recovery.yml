@@ -1,24 +1,26 @@
 name: Word retry recovery
 on:
   pull_request:
-    paths:
-      - 'modules/lexical/**'
-      - 'scripts/dictionary/**'
-      - 'server/dict/**'
-      - 'tests/verify-word-*.mjs'
-      - 'tests/verify-lookup-contract.mjs'
-      - '.github/workflows/word-retry-recovery.yml'
-      - 'package.json'
-      - 'package-lock.json'
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: word-retry-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   recovery:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     env:
       NODE_OPTIONS: --experimental-strip-types
@@ -31,7 +33,9 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
       - name: Server morphology, logical recovery, quota and stale-context contracts
         run: |
           node tests/verify-word-lemma-validation.mjs
@@ -93,3 +97,28 @@ jobs:
           path: /tmp/breeze-dict-warm.json
           if-no-files-found: warn
           retention-days: 7
+
+  suite-status:
+    needs: [changes, recovery]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

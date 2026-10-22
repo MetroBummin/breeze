@@ -15,11 +15,38 @@ const base='fd67f0a0f6f09be247f371d085ad097aea304784';
 const historicalBase='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
-    ".github/workflows/account-learning.yml": "2ccb4333a9bd32286dac7d08149b1779caeb1d0651ea4c4780f5503e30450d3c",
-    ".github/workflows/pdf-ocr-native-stress.yml": "89fff87f69323391aec38c997516a0e4e26853c3e1cc5576ae6289c541936102",
-    ".github/workflows/pdf-pointer-ink.yml": "0995ff0bbdbb117291cf89c34c8592b15217f29527e2d611ceb42bc9d91640ea",
-    ".github/workflows/preview-intent-check.yml": "d3c51892b973779530516ba725b239d47354054bd7fd3c384276041393654153",
-    ".github/workflows/social-import.yml": "b5a749685790947297724b74a44e4b2e3ae827c20826cb6935be90ef34dc4111",
+    ".github/actions/playwright-browsers/action.yml": "5db55c911d4f1d579e5ea9738c9b4f508ecf179a582ca9cf55c0212f710a2527",
+    ".github/ci-path-filters.yml": "4964b88f6e45d4e789721dfdb3925dff4b61ae343e09a80f5b28df2eb6cdc9a5",
+    ".github/workflows/account-learning.yml": "f07c7a17345b88948d7f0b944419d7e1283959524b19f49a1d1e90fe010ea241",
+    ".github/workflows/all-words-picker.yml": "1bc5d249e4b55941b8e3e1fec393ab6dcd7d756b998692f2cd38d8960c97bec1",
+    ".github/workflows/android-build.yml": "babe30efc685a406d89e72eb0288959f4ef5ec610d310abe66ab75a0902e2b3c",
+    ".github/workflows/ci-changes.yml": "f2c1d44281748eb48aa7061d24dd85e5a96793a108e7a3a55b7bf3df1aea08ea",
+    ".github/workflows/design-brand.yml": "240a9bdeaaf5d8073fc5b5ee81e0b835c768068f04b257fd6543c63ae65a4a9c",
+    ".github/workflows/gesture-followup.yml": "39c0232215de08c06dce3c056dd5ced3cac226cf8987ddfb759bc3e9d738fe8b",
+    ".github/workflows/integrity.yml": "96f99b1e3dc5809fb522572aeafea2ca87deaf7b8cba2db6868280197f5833ed",
+    ".github/workflows/ios-bootstrap.yml": "e08dd494054af435ee7c11a30c7c28f38cfeffacf063cf4b4c1969134e88c635",
+    ".github/workflows/landing.yml": "d0ad56db6e094f79960453aca4644ea31a09454d74b465c73d0619190a34d565",
+    ".github/workflows/memory-edit-filter.yml": "ab577153c7e51106c93fb059d705499f27ea4fd645d9c20795109aa489023a0d",
+    ".github/workflows/onboarding-carousel.yml": "6fb27b77af8d124ea995cee017861cb498202563f7f1eafcf378754ccd0ea19b",
+    ".github/workflows/pdf-input-ownership.yml": "8df6a23b651d3c37c46775f0130efc632349e4e2b483aec5e85bf4d51c3430e4",
+    ".github/workflows/pdf-ocr-native-stress.yml": "fcb7c41b717280530afa2e6438572b1c5667912d37cc5530f09d26fc95d71607",
+    ".github/workflows/pdf-ocr.yml": "2c5d77e2ca9d51c7b2c5f5ca6377f2deda435f113cf9d3964d1403285f92916d",
+    ".github/workflows/pdf-pending-pinch.yml": "a15c1a30579fd7885133bf48baa3ac0923832888723152b2c206f40a10bbe465",
+    ".github/workflows/pdf-pointer-ink.yml": "1bd67824f3bf11903d7528353d83e28e6da5eb7be5334b64186fea1d8eed6e29",
+    ".github/workflows/pdf-tap-feedback.yml": "52bd9f3f3900b438f5397868f8e055f46a6e7e27a5d7a6ffec6e4bdc24fc80cc",
+    ".github/workflows/pdf-visible-repaint.yml": "042d84ee39580751c9e53fa74ee2d6fa212a4bda551c92bc97cb92a97df2a613",
+    ".github/workflows/preview-intent-check.yml": "c9d854e420dc5bfbf40432350b682e112bcfc6da88702256952113fa49ab0c25",
+    ".github/workflows/rss-photo-provenance.yml": "1b6b692ec50470124b8cc4a2e2b84a14f480f7871327cbbe9810ca069041a8c6",
+    ".github/workflows/rss-selected-body.yml": "c1233a0370baa1fad7a2e1bb2f9ae2cc2fd8692e24aa90bd9a12a536c0c04b7c",
+    ".github/workflows/sentence-inline-feedback.yml": "2e0fefd726ebb71edcf6aa0aabd7009fce24902f1248f587448cfd8f474a8576",
+    ".github/workflows/sentence-success-pill.yml": "5fc3841dfe77d309d4652f18519ba2ceb10ee08042938311f6879cb0d8cb0d95",
+    ".github/workflows/social-auth.yml": "ce967e7cf4b3b8a2112ec482496a73408bbfa4642d4961560eedbe83bcc70700",
+    ".github/workflows/social-import.yml": "362f7517ca905600dbc56bc788c945d74d7f9ad021d4a13ceda59c32c01df6f1",
+    ".github/workflows/study-sets.yml": "b8a0e907fd96ba77c367b5ddbdf488a92ab39d41c1a7f95ee18eed81ac665260",
+    ".github/workflows/text-rotation.yml": "60a6393ed67810cdd5f0c6d9485ef6b734f8cfa6301be61e583953a0323c0726",
+    ".github/workflows/vocabulary-export.yml": "f5f6b46e47c68e4b8966ae4e987c77c9eea81f5cfc246980ee9b45f042c72d05",
+    ".github/workflows/vocabulary-test.yml": "3ab97108d3f0b9714e0390e56b87e72084f748d890dc32b76f19fb21aaf1b911",
+    ".github/workflows/word-retry-recovery.yml": "1ee234e43bb3a9261fc2bbb5c2e43fe7d60e4622af3ad26a5678de3fcc8fdfd7",
     "DESIGN.md": "43df909ef30c087998b4c78855badd306de8566225e0e0d2d90e0430dcb7788e",
     "PRIVACY.md": "bdee7e68a9aa3eb4570fdec496c8cf3088dd4a41b38e7b4603f59db31db5025f",
     "SYNC.md": "c9ca7c313aabd8b82db71393510e725719a85da7c590d43ab180f9a545c36161",
@@ -370,7 +397,7 @@ const blob=bytes=>createHash('sha1').update('blob '+bytes.length+'\0').update(by
 const baseline=new Map(git('ls-tree','-rz',base).toString().split('\0').filter(Boolean).map(line=>{
  const [meta,file]=line.split('\t'),[mode,type,hash]=meta.split(' ');assert.equal(type,'blob');return [file,{mode,hash}];
 }));
-for(const file of runners)expected[file]=sha(Buffer.from(git('show',base+':'+file).toString().replaceAll('tests/verify-vocabulary-export-boundary.mjs',guard)));
+// Runner workflows are pinned in expected, like the other workflow files.
 const removed=new Set([
  'assets/classics/odyssey.epub','assets/classics/odyssey.jpg',
  'assets/classics/alice-in-wonderland.epub','assets/classics/alice-in-wonderland.jpg',

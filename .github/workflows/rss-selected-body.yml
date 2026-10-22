@@ -1,19 +1,25 @@
 name: RSS selected body recovery
 on:
   pull_request:
-    paths:
-      - 'scripts/importers/rss.js'
-      - 'scripts/importers/article.js'
-      - 'tests/verify-rss-selected-body*'
-      - '.github/workflows/rss-selected-body.yml'
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: rss-selected-body-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   verify:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -25,5 +31,32 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node --test tests/verify-rss-selected-body.mjs
-      - run: npx playwright install --with-deps chromium webkit
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
       - run: node tests/verify-rss-selected-body-browser.mjs
+
+  suite-status:
+    needs: [changes, verify]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY
