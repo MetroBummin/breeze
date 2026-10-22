@@ -124,7 +124,14 @@ await platePage.waitForFunction(() => {
 });
 await platePage.waitForTimeout(400);
 await platePage.evaluate(() => {
-  document.getElementById('readchrome').style.visibility = 'hidden';
+  // visibility:hidden on the dock is not enough: the handwriting toggle sets
+  // visibility:visible on itself and would stay painted into the plate.
+  const chrome = document.getElementById('readchrome');
+  chrome.style.setProperty('display', 'none', 'important');
+  for (const el of chrome.querySelectorAll('*')) {
+    el.style.setProperty('visibility', 'hidden', 'important');
+    el.style.setProperty('display', 'none', 'important');
+  }
 });
 await platePage.screenshot({path: platePath});
 await platePage.close();

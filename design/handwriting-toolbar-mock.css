@@ -2,7 +2,7 @@
    Moves the whole writing-mode row: page pill, ink tools, and Aa.
    Icons and glass stay the production rules. */
 
-html body :is(#readpill, #reader-navigation, #aafab, #pdf-page-control, #readback, #pdf-page-button){
+html body :is(#readpill, #readpill *, #reader-navigation, #reader-navigation *, #aafab, #pdf-page-control, #readback, #pdf-page-button){
   transition:none !important;
 }
 

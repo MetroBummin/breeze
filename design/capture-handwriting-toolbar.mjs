@@ -129,12 +129,13 @@ await page.waitForTimeout(400);
 await page.addStyleTag({content: css});
 
 const geometry = await page.evaluate(() => {
-  const box = element => element.getBoundingClientRect().toJSON();
+  const box = element => element ? element.getBoundingClientRect().toJSON() : null;
   const pill = document.getElementById('readpill');
   return {
     pill: box(pill),
     nav: box(document.getElementById('reader-navigation')),
     aa: box(document.getElementById('aafab')),
+    entry: box(pill.querySelector('.ink-pill-entry')),
     chrome: box(document.getElementById('readchrome')),
     page: box(document.querySelector('.pdf-source-page')),
     dark: document.body.classList.contains('dark'),
@@ -214,7 +215,23 @@ async function layout(spec){
       const rect = el.getBoundingClientRect();
       return {x: rect.x, y: rect.y, width: rect.width, height: rect.height};
     };
-    return {nav: read(nav), pill: read(pill), aa: read(aa)};
+    const shown = [];
+    const controls = document.querySelectorAll('#reader-navigation, #readpill, #aafab, #pdf-page-control, #readback, #pdf-page-button, .ink-pill-entry, .ink-pill-control, .ink-pill-mini, #modefab');
+    const painted = el => {
+      for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+      }
+      return true;
+    };
+    for (const el of controls) {
+      if (!painted(el)) continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 8 || rect.height < 8) continue;
+      const name = el.id || (el.classList.contains('ink-pill-entry') ? 'ink-pill-entry' : el.getAttribute('aria-label') || el.className?.toString?.().split(' ')[0] || el.tagName);
+      shown.push({id: name, x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.width), h: Math.round(rect.height)});
+    }
+    return {nav: read(nav), pill: read(pill), aa: read(aa), shown};
   }, spec);
   await page.waitForTimeout(40);
   return placed;
@@ -227,6 +244,21 @@ const union = boxes => {
   return {x, y, width: right - x, height: bottom - y};
 };
 const shift = (box, dx, dy) => ({x: box.x + dx, y: box.y + dy, width: box.width, height: box.height});
+function assertClear(label, placed, dock) {
+  const hits = (placed.shown || []).filter(box => {
+    const right = box.x + box.w;
+    const bottom = box.y + box.h;
+    const overlaps = right > dock.x && box.x < dock.x + dock.width && bottom > dock.y && box.y < dock.y + dock.height;
+    return overlaps;
+  });
+  if (hits.length) {
+    console.error('LEFT BEHIND', label, JSON.stringify(hits));
+    throw new Error(`${label} still has ${hits.length} controls in the bottom dock`);
+  }
+  const entry = (placed.shown || []).find(box => String(box.id).includes('ink-pill-entry'));
+  console.log('CLEAR', label, 'visible', (placed.shown || []).map(box => box.id).join(','));
+  if (label !== 'moving' && !entry) throw new Error(`${label} is missing the handwriting toggle`);
+}
 
 await page.screenshot({path: `${outDir}/handwriting-current.png`});
 
@@ -260,6 +292,7 @@ const sideUnion = union([sidePlaced.nav, sidePlaced.pill, sidePlaced.aa]);
 console.log('SIDE SIZES', JSON.stringify(sideSizes));
 console.log('SIDE', JSON.stringify(sidePlaced));
 await page.screenshot({path: `${outDir}/handwriting-side.png`});
+assertClear('side', sidePlaced, natural.chrome);
 
 const dy = 12 - natural.chrome.y;
 const topPlaced = await layout({
@@ -270,6 +303,7 @@ const topPlaced = await layout({
 const topUnion = union([topPlaced.nav, topPlaced.pill, topPlaced.aa]);
 console.log('TOP', JSON.stringify(topPlaced));
 await page.screenshot({path: `${outDir}/handwriting-top.png`});
+assertClear('top', topPlaced, natural.chrome);
 
 const mergeT = 0.68;
 const slide = (box, scaleX, scaleY) => {
@@ -277,13 +311,20 @@ const slide = (box, scaleX, scaleY) => {
   const cy = box.y + box.height / 2;
   return {...box, z: 84, transform: `translate(${(rowCenter.x - cx) * mergeT}px, ${(rowCenter.y - cy) * mergeT}px) scale(${scaleX}, ${scaleY})`};
 };
-await layout({
+const merging = await layout({
   merging: true,
   lift: true,
   nav: slide(natural.nav, 0.72, 0.64),
   pill: {...natural.pill, transform: 'scale(0.42, 0.94)'},
   aa: slide(natural.aa, 0.72, 0.64),
 });
+const mergingEntry = (merging.shown || []).find(box => String(box.id).includes('ink-pill-entry'));
+const naturalEntryCenter = natural.entry.x + natural.entry.width / 2;
+if (!mergingEntry || Math.abs((mergingEntry.x + mergingEntry.w / 2) - naturalEntryCenter) < 24) {
+  console.error('MERGE ENTRY', JSON.stringify(mergingEntry), 'natural', naturalEntryCenter);
+  throw new Error('handwriting toggle did not slide inward while merging');
+}
+console.log('MERGE', JSON.stringify(merging.shown));
 await page.screenshot({path: `${outDir}/handwriting-merging.png`});
 
 const start = rowCenter;
@@ -300,7 +341,7 @@ await page.evaluate(value => {
   document.documentElement.style.setProperty('--ink-mock-puck-sy', '1.32');
 }, {angle});
 const leftUnion = {x: 1180 - (sideUnion.x + sideUnion.width), y: sideUnion.y, width: sideUnion.width, height: sideUnion.height};
-await layout({
+const moving = await layout({
   hideSides: true,
   puck,
   trail: {x: puck.x - vx / length * 36, y: puck.y - vy / length * 36},
@@ -310,6 +351,7 @@ await layout({
   outlines: [topUnion, sideUnion, leftUnion],
 });
 await page.screenshot({path: `${outDir}/handwriting-moving.png`});
+assertClear('moving', moving, natural.chrome);
 
 const split = 0.7;
 const emerge = box => {
@@ -319,14 +361,17 @@ const emerge = box => {
   const y = end.y + (cy - end.y) * split;
   return {x: x - box.width / 2, y: y - box.height / 2, width: box.width, height: box.height, z: 84, transform: 'scale(0.82, 0.9)'};
 };
-const inkWidth = 44 + (natural.pill.width - 44) * split;
-await layout({
+// Scale the whole pill, including the handwriting toggle. Shrinking its width
+// clips that toggle out of the glass.
+const pillScale = 44 / natural.pill.width + (1 - 44 / natural.pill.width) * split;
+const landing = await layout({
   lift: true,
   nav: emerge(topPlaced.nav),
-  pill: {x: end.x - inkWidth / 2, y: topPlaced.pill.y, width: inkWidth, height: natural.pill.height, transform: 'scaleY(1.08)'},
+  pill: {...topPlaced.pill, transform: `scale(${pillScale.toFixed(3)}, 1.06)`},
   aa: emerge(topPlaced.aa),
 });
 await page.screenshot({path: `${outDir}/handwriting-landing.png`});
+assertClear('landing', landing, natural.chrome);
 
 await browser.close();
 server.close();
