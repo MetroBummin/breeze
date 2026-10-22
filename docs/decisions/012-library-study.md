@@ -330,6 +330,21 @@ reader’s repeated page title is hidden only for the unchanged catalog title.
 Custom saved titles remain visible. The existing Reader font-size/margin/theme
 settings own body metrics; no global reader typography is changed.
 
+## Book opening (2026-10-22)
+
+Front matter was painted one source line at a time, and the reader also
+printed the author under a source line that already named them. The opening
+composer now keeps saved paragraphs and indices. A run of inscription lines
+before the first chapter is one centered italic dedication on its own page.
+Verse before that chapter is one epigraph with a single indent; the signature
+under it stays right-aligned. Verse inside a chapter, including Alice’s poems
+and Gatsby’s songs, keeps its printed indent. Holmes source blocks are not
+restyled: Hound’s title, subtitle, letter, signatures and contents stay as
+they are, and the four short stories keep the author line under the title.
+The source line omits the author only when that opening already shows the
+same name. Backrooms has no synthetic byline and no title-page front matter,
+so its opening is unchanged.
+
 ## Holmes-first 1.7 offering; Backrooms dormant (2026-10-04)
 
 The existing recommendation shelves now offer only the five illustrated Holmes

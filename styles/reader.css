@@ -357,6 +357,12 @@
   #rtext.holmes-story .holmes-verse.verse-stanza{margin-top:1em;}
   #rtext.holmes-story .holmes-label{text-align:center;font-size:.86em;letter-spacing:.06em;margin:1.1em 0 .35em;font-weight:600;}
   #rtext.holmes-story .holmes-inscription{text-align:center;font-size:.95em;line-height:1.6;margin:.15em 0;}
+  /* A title-page dedication is several short source lines. Show them as one
+     centered italic line. The source paragraphs stay separate for lookup. */
+  #rtext .book-opening-dedication{text-align:center;font-style:italic;margin:1.35em 0 .45em;}
+  #rtext .book-opening-dedication-part{display:inline;margin:0;font-style:italic;font-size:.98em;line-height:1.7;}
+  #rtext .book-opening-dedication-part + .book-opening-dedication-part::before{content:" ";}
+  #rtext .holmes-signature.book-opening-attribution{display:block;margin-top:.9em;}
   #rtext.holmes-story .holmes-paragraph-part{display:block;}
   #rtext.holmes-story .holmes-paragraph-part + .holmes-paragraph-part{margin-top:1.2em;}
   #rtext.holmes-story figure.story-illustration{margin:1.6em 0 1.8em;}
