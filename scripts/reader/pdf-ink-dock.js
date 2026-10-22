@@ -200,7 +200,7 @@ function bootInkDock(){
     pending=null;
     activeId=start.id;
     const open=document.querySelector('#pdf-ink-tools [aria-expanded="true"]');
-    if(open)open.click();
+    if(open instanceof HTMLElement)open.click();
     if(typeof closeAa==='function')closeAa();
     swallow=true;
     const visible=pieces().filter(shown);
