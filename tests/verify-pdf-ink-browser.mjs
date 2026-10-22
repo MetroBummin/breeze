@@ -576,3 +576,4 @@ try{
   }finally{await browser.close();rmSync(profile,{recursive:true,force:true});}
  }
 }finally{server.close();}
+await import('./verify-pdf-ink-dock-browser.mjs');

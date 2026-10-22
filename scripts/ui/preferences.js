@@ -60,14 +60,26 @@ function toggleAa(e){
   if(e) e.stopPropagation();
   const p = document.getElementById('aa-pop');
   const btn = document.getElementById('aafab');
-  /* 창은 단추의 실제 자리에서 매답니다 — Aa 가 화면 위로 올라갔으므로 아래로
-     펼칩니다. 넓은 화면에서 낱말 칸이 열리면 단추가 글 쪽으로 물러나는데, 여기서
-     재는 것이 단추 자신이라 창도 함께 따라갑니다. */
+  /* 창은 단추의 실제 자리에서 매답니다. 단추가 화면 위쪽이면 아래로, 왼쪽이면
+     오른쪽으로 펼치고, 평소의 오른쪽 아래 단추는 위로·왼쪽으로 그대로 엽니다. */
   if(btn){
     const r = btn.getBoundingClientRect();
-    p.style.top = 'auto';
-    p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
-    p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
+    const below = r.top < window.innerHeight / 2;
+    const rightward = r.left < window.innerWidth / 2;
+    if(below){
+      p.style.top = Math.round(r.bottom + 10) + 'px';
+      p.style.bottom = 'auto';
+    }else{
+      p.style.top = 'auto';
+      p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
+    }
+    if(rightward){
+      p.style.left = Math.max(10, Math.round(r.left)) + 'px';
+      p.style.right = 'auto';
+    }else{
+      p.style.left = 'auto';
+      p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
+    }
   }
   p.classList.toggle('on');
   if(p.classList.contains('on') && typeof onboardingAppearanceOpened==='function') onboardingAppearanceOpened();
