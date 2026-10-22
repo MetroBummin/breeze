@@ -18,8 +18,8 @@ try{
   await db.exec('grant usage on schema public to service_role;grant execute on function public.take_ai_quota(uuid,integer,integer) to service_role;');
   const user='00000000-0000-0000-0000-000000000001',id=crypto.randomUUID(),fp='a'.repeat(64);
   const answer={kind:'word',canonical:'patient',members:[0],ko:'참을성 있는'};
-  const receipt=async({u=user,device='',request=id,fingerprint=fp,result=null,cap=2000,kind='word'}={})=>
-    (await db.query(`select public.${kind}_lookup_receipt($1,$2,$3,$4,$5,3000,50,$6) as r`,[u,device,request,fingerprint,result,cap])).rows[0].r;
+  const receipt=async({u=user,device='',request=id,fingerprint=fp,result=null,cap=2000,kind='word',limit=50}={})=>
+    (await db.query(`select public.${kind}_lookup_receipt($1,$2,$3,$4,$5,3000,$6,$7) as r`,[u,device,request,fingerprint,result,limit,cap])).rows[0].r;
   const calls=async()=>Number((await db.query('select coalesce(sum(calls),0) as n from public.ai_usage where user_id=$1',[user])).rows[0].n);
   assert.equal((await receipt()).status,'ok');assert.equal(await calls(),0);
   await assert.rejects(logicalLookup(result=>receipt({result}),async()=>{throw Error('timeout');}));
@@ -56,10 +56,19 @@ try{
   let handler,providerCalls=0,broken=false,providerAnswer=answer;
   const sr={auth:{getUser:async token=>({data:{user:token==='fixture'?{id:user}:null}})},rpc:async(name,p)=>{
     assert.ok(['word_lookup_receipt','sentence_lookup_receipt'].includes(name));
+    assert.equal(p.p_limit,3000);
+    assert.equal(p.p_anon_limit,1_000_000_000);
+    assert.equal(p.p_anon_cap,2000);
     const data=await receipt({u:p.p_user,device:p.p_device,request:p.p_request,fingerprint:p.p_fingerprint,result:p.p_answer,kind:name.startsWith('sentence')?'sentence':'word'});
     return {data,error:null};
   }};
-  const edge=readFileSync(new URL('../server/dict/index.ts',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
+  const edgeSource=readFileSync(new URL('../server/dict/index.ts',import.meta.url),'utf8');
+  assert.match(edgeSource,/const ANON_SENT_FREE=1_000_000_000;/);
+  assert.match(edgeSource,/const ANON_FREE=1_000_000_000;/);
+  assert.match(edgeSource,/const DEFAULT_DAILY_LIMIT=3000;/);
+  assert.match(edgeSource,/AI_ANON_DAILY_CAP"\)\?\?2000/);
+  assert.match(edgeSource,/p_limit:ANON_FREE,p_daily_cap:ANON_DAILY_CAP/);
+  const edge=edgeSource.replace(/^import .*;$/gm,'');
   runInNewContext(transpileModule(edge,{compilerOptions:{target:99,module:99}}).outputText,{
     ...lookup,logicalLookup,lookupFingerprint,crypto,TextEncoder,AbortSignal,AbortController,setTimeout,clearTimeout,Response,console,
     createClient:()=>sr,newAiTrace:()=>({}),
@@ -111,6 +120,13 @@ try{
   assert.equal((await receipt({u:null,device:'new-device',kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}})).status,'anon_exhausted');
   await receipt({u:null,device:'new-device',request:crypto.randomUUID(),result:answer});
   assert.equal((await db.query("select calls from public.anon_usage where device='new-device'")).rows[0].calls,50);
+  // The edge passes 1e9. int4 accepts it, and a device already at 50 is not exhausted.
+  assert.equal((await receipt({u:null,device:'new-device',request:crypto.randomUUID(),limit:1_000_000_000})).status,'ok');
+  assert.equal((await receipt({u:null,device:'new-device',kind:'sentence',request:crypto.randomUUID(),limit:1_000_000_000})).status,'ok');
+  assert.equal((await db.query("select calls from public.anon_usage where device='new-device'")).rows[0].calls,50);
+  const wide=await db.query(`select public.take_anon_quota('device-wide',1000000000,2000) as r`);
+  assert.equal(wide.rows[0].r.status,'ok');
+  assert.equal(wide.rows[0].r.calls,1);
   const beforeSentence=await calls();
   await receipt({kind:'sentence',request:crypto.randomUUID(),result:{ko:'문장 해석'}});
   assert.equal(await calls(),beforeSentence+2);

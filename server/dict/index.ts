@@ -18,8 +18,10 @@ const GEMINI_MODEL="gemini-3.5-flash-lite";
 const HEDGE_DELAY_MS=2000;
 const WORD_LOOKUP_DEADLINE_MS=8000;
 const DEFAULT_DAILY_LIMIT=3000;
-const ANON_SENT_FREE=50;
-const ANON_FREE=50;
+// Per-device ceiling only. anon_usage.calls is int4 (max 2_147_483_647); 1e9
+// leaves room for the +1 and +2 updates. The shared Seoul-day cap is unchanged.
+const ANON_SENT_FREE=1_000_000_000;
+const ANON_FREE=1_000_000_000;
 const ANON_DAILY_CAP=Number(Deno.env.get("AI_ANON_DAILY_CAP")??2000);
 
 const SYSTEM="You are a precise bilingual dictionary for Korean learners reading English books. Reply with ONLY minified JSON. No markdown, no code fence, no commentary.";
