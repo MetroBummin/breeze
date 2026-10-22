@@ -633,3 +633,34 @@ test('availability: injected Android proxy works without npm registerPlugin',asy
  f.resolveCapabilities({tablet:true});
  assert.equal(await f.engine.availability(),true);
 });
+
+test('writing dock: nearest edge, touch hold, and Pencil exclusion',()=>{
+ const sandbox={window:{},document:{getElementById(){return null;},documentElement:{}}};
+ vm.runInNewContext(readFileSync(resolve(root,'scripts/reader/pdf-ink-dock.js'),'utf8'),sandbox);
+ const slots={left:{x:38,y:410},right:{x:1142,y:410},top:{x:590,y:34},bottom:{x:590,y:790}};
+ assert.equal(sandbox.inkDockNearest({x:1100,y:420},slots),'right');
+ assert.equal(sandbox.inkDockNearest({x:590,y:50},slots),'top');
+ assert.equal(sandbox.inkDockNearest({x:50,y:420},slots),'left');
+ assert.equal(sandbox.inkDockNearest({x:600,y:760},slots),'bottom');
+ const dock=readFileSync(resolve(root,'scripts/reader/pdf-ink-dock.js'),'utf8');
+ assert.match(dock,/pointerType!=='touch'/);
+ assert.match(dock,/INK_DOCK_HOLD=400/);
+ assert.match(dock,/INK_DOCK_SLOP=8/);
+ assert.match(dock,/breeze\.pdfInk\.dock/);
+ assert.doesNotMatch(dock,/__breeze_pdf_ink_tools_v1__/);
+ assert.match(source,/#ink-dock-puck/);
+ const css=readFileSync(resolve(root,'styles/pdf-ink.css'),'utf8');
+ assert.doesNotMatch(css,/dashed/);
+  assert.match(css,/ink-dock-stack/);
+  assert.match(dock,/--ink-icon-x/);
+  assert.match(dock,/inkDockMoveAllowed/);
+  assert.match(css,/#ink-dock-puck \.ink-dock-face svg\{[^}]*var\(--am-icon-toolbar\)[^}]*var\(--ink-icon-x/);
+ const prefs=readFileSync(resolve(root,'scripts/ui/preferences.js'),'utf8');
+ assert.match(prefs,/window\.innerHeight \/ 2/);
+ assert.match(prefs,/breeze\.inkDockMove/);
+ assert.match(prefs,/kind==='pdf'/);
+ const pageHtml=readFileSync(resolve(root,'index.html'),'utf8');
+ assert.match(pageHtml,/id="aa-ink-dock" hidden/);
+ assert.match(pageHtml,/필기모드 컨트롤 이동/);
+ assert.match(readFileSync(resolve(root,'scripts/reader/pdf-navigation.js'),'utf8'),/dataset\.inkDock/);
+});

@@ -683,8 +683,23 @@ async function deletePdfPage(session,n){
 function positionPdfInkSettings(){
   const panel=document.getElementById('pdf-ink-settings');
   if(!panel||panel.hidden)return;
+  const edge=document.body.dataset.inkDock||'bottom';
+  if(edge!=='bottom'){
+    panel.style.position='';
+    panel.style.top='';
+    panel.style.left='';
+    panel.style.right='';
+    panel.style.bottom='';
+    panel.style.transform='';
+    return;
+  }
   const chrome=document.getElementById('readchrome'),pill=document.getElementById('readpill');
   if(!chrome||!pill)return;
+  panel.style.position='';
+  panel.style.top='';
+  panel.style.left='';
+  panel.style.right='';
+  panel.style.transform='';
   const bottom=chrome.getBoundingClientRect().bottom-pill.getBoundingClientRect().top+12;
   const value=`${Math.max(56,bottom)}px`;
   if(panel.style.bottom!==value)panel.style.bottom=value;

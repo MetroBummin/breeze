@@ -46,6 +46,7 @@ function updateReaderModeControls(){
   fab.setAttribute('aria-label', label);
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
+  if(typeof applyInkDockMove==='function')applyInkDockMove();
 }
 
 function rememberReaderMode(mode){

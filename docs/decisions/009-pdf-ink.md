@@ -913,3 +913,13 @@ Single-finger scrolling, ink/lookup input and navigation settle presentation
 before querying geometry; stale animation completion cannot cancel new input.
 Reduced motion settles immediately. Browser matrix/anchor/rotation evidence and
 physical-device limitations are recorded in `docs/reviews/breeze-post270-gestures/`.
+
+## Movable writing dock (2026-10-22)
+
+On a supported iPad or Android tablet, writing mode can park the whole bottom row on another edge. The gesture stays off until the reader turns on 필기모드 컨트롤 이동 in the Aa panel. That switch is hidden except while a supported device is reading a PDF, defaults to off, and is stored on the device with the other reader settings (`breeze.inkDockMove`). Turning it off returns the row to the bottom, and a later long-press does nothing until it is on again.
+
+A finger long-press (about 400ms; moving more than about 8px cancels it; touch pointers only) on any control in that row — the page pill, the read/write switch, pen, highlighter, eraser, undo, redo, and Aa — gathers every one of them into a single circle. Nothing from that row stays at the old place. Apple Pencil taps still activate the tool under the pencil. Mouse input does not move the dock.
+
+While the finger is down the circle follows with a short spring and a slight stretch along the motion. Two faint discs sit just behind it so it reads as several controls being carried; they are not extra copies left along the path. Reduced motion turns the stretch and the spring lag off and snaps immediately. Release chooses the nearest of the left, right, top, and bottom edges from the finger, the way Picture in Picture chooses a side, then the row unfolds along that edge. Side edges stack the same controls vertically. The bottom edge is the original row. There is no snap outline. The choice is remembered in `localStorage` under `breeze.pdfInk.dock`, separate from the tool preference record, so a color change cannot clear it.
+
+The ink settings popover opens away from the parked edge. The page sidebar still opens from the left screen edge. Aa opens downward when its button is in the top half of the screen and rightward when its button is in the left half; the ordinary bottom-right button still opens upward and leftward. Native Pencil hit testing excludes the moving circle.

@@ -44,7 +44,7 @@
   <link rel="stylesheet" href="styles/base.css?v=4d0c83fb">
   <link rel="stylesheet" href="styles/home.css?v=564359c0">
   <link rel="stylesheet" href="styles/article-preview.css?v=6f944b5a">
-  <link rel="stylesheet" href="styles/pdf-ink.css?v=7804083f">
+  <link rel="stylesheet" href="styles/pdf-ink.css?v=6b94f72c">
   <link rel="stylesheet" href="styles/reader.css?v=15b1ab3b">
   <link rel="stylesheet" href="styles/dictionary.css?v=e8263cbe">
   <link rel="stylesheet" href="styles/components.css?v=e01f9d18">
@@ -128,17 +128,18 @@
   <script defer src="scripts/reader/original-session.js?v=08a077c1"></script>
   <script defer src="scripts/reader/pdf-ink-geometry.js?v=ae44ddd8"></script>
   <script defer src="scripts/reader/pdf-ink-store.js?v=5159b552"></script>
-  <script defer src="scripts/reader/pdf-ink.js?v=83a7db3a"></script>
+  <script defer src="scripts/reader/pdf-ink.js?v=b40591ce"></script>
+  <script defer src="scripts/reader/pdf-ink-dock.js?v=46817a2c"></script>
   <script defer src="scripts/reader/pdf-ocr.js?v=01155e31"></script>
   <script defer src="scripts/reader/pdf-ocr-library.js?v=fe311045"></script>
   <script defer src="scripts/reader/pdf-original.js?v=764b35cd"></script>
   <script defer src="scripts/reader/epub-original.js?v=282bb301"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=9a4b6488"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=9f19b5f7"></script>
   <script defer src="scripts/reader/gesture-diag.js?v=7245bb14"></script>
   <script defer src="scripts/reader/reader.js?v=71686148"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
-  <script defer src="scripts/ui/preferences.js?v=605490b3"></script>
+  <script defer src="scripts/ui/preferences.js?v=0016cea7"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
@@ -147,7 +148,7 @@
   <script defer src="scripts/ui/onboarding.js?v=4954f7e4"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=814b25b0"></script>
-  <script defer src="scripts/reader/pdf-navigation.js?v=084e3fef"></script>
+  <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
   <script defer src="scripts/main.js?v=4297fe8c"></script>
@@ -711,6 +712,10 @@
   <div class="aa-row">
     <span class="aa-label">다크 모드</span>
     <button id="aa-dark" aria-label="다크 모드" class="aa-toggle" onclick="toggleDark()"><i></i></button>
+  </div>
+  <div class="aa-row" id="aa-ink-dock" hidden>
+    <span class="aa-label">필기모드 컨트롤 이동</span>
+    <button id="aa-ink-dock-move" type="button" aria-label="필기모드 컨트롤 이동" aria-pressed="false" class="aa-toggle" onclick="toggleInkDockMove()"><i></i></button>
   </div>
   <div class="aa-row" id="aa-pdf-direction" hidden><span class="aa-label">페이지 넘김</span><div class="aa-seg"><button type="button" data-pdf-direction="vertical" onclick="setPdfReadDirection('vertical')">세로</button><button type="button" data-pdf-direction="horizontal" onclick="setPdfReadDirection('horizontal')">가로</button></div></div>
   <div class="aa-star-settings"><div class="aa-star-heading"><span class="aa-label">단어 색칠</span><span id="aa-star-hint">탭해서 켜고 끄기</span></div><div class="aa-legend" role="group" aria-label="별점별 단어 색칠 켜기와 끄기" aria-describedby="aa-star-hint"></div></div>

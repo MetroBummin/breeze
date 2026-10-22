@@ -58,16 +58,29 @@ applyReadMargin();
    (scripts/reader/gesture.js). */
 function toggleAa(e){
   if(e) e.stopPropagation();
+  applyInkDockMove();
   const p = document.getElementById('aa-pop');
   const btn = document.getElementById('aafab');
-  /* 창은 단추의 실제 자리에서 매답니다 — Aa 가 화면 위로 올라갔으므로 아래로
-     펼칩니다. 넓은 화면에서 낱말 칸이 열리면 단추가 글 쪽으로 물러나는데, 여기서
-     재는 것이 단추 자신이라 창도 함께 따라갑니다. */
+  /* 창은 단추의 실제 자리에서 매답니다. 단추가 화면 위쪽이면 아래로, 왼쪽이면
+     오른쪽으로 펼치고, 평소의 오른쪽 아래 단추는 위로·왼쪽으로 그대로 엽니다. */
   if(btn){
     const r = btn.getBoundingClientRect();
-    p.style.top = 'auto';
-    p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
-    p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
+    const below = r.top < window.innerHeight / 2;
+    const rightward = r.left < window.innerWidth / 2;
+    if(below){
+      p.style.top = Math.round(r.bottom + 10) + 'px';
+      p.style.bottom = 'auto';
+    }else{
+      p.style.top = 'auto';
+      p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
+    }
+    if(rightward){
+      p.style.left = Math.max(10, Math.round(r.left)) + 'px';
+      p.style.right = 'auto';
+    }else{
+      p.style.left = 'auto';
+      p.style.right = Math.max(10, Math.round(window.innerWidth - r.right)) + 'px';
+    }
   }
   p.classList.toggle('on');
   if(p.classList.contains('on') && typeof onboardingAppearanceOpened==='function') onboardingAppearanceOpened();
@@ -93,6 +106,33 @@ function applyDark(){
 }
 function toggleDark(){ darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark(); }
 applyDark();
+
+/* 필기 줄을 옮기는 기능은 기본으로 꺼 둡니다. 다크 모드와 같은 기기 저장이고,
+   지원되는 기기에서 PDF 를 읽을 때만 Aa 에 나타납니다. */
+let inkDockMove = load('breeze.inkDockMove', false);
+function inkDockMoveAllowed(){ return !!inkDockMove; }
+function applyInkDockMove(){
+  const row = document.getElementById('aa-ink-dock');
+  const button = document.getElementById('aa-ink-dock-move');
+  if(button){
+    button.classList.toggle('on', !!inkDockMove);
+    button.setAttribute('aria-pressed', inkDockMove ? 'true' : 'false');
+  }
+  if(row){
+    const api = typeof BreezePdfInk==='undefined' ? null : BreezePdfInk;
+    const kind = curBook && (curBook.kind || (curBook.original && curBook.original.kind));
+    const show = !!(api && api.available && api.available() && document.body.classList.contains('reading') && kind==='pdf');
+    row.hidden = !show;
+  }
+  if(typeof syncInkDock==='function') syncInkDock();
+}
+function toggleInkDockMove(){
+  inkDockMove = !inkDockMove;
+  if(!curBook || !curBook.transient) save('breeze.inkDockMove', inkDockMove);
+  applyInkDockMove();
+}
+applyInkDockMove();
+window.addEventListener('breeze-ink-platform', applyInkDockMove);
 
 /* ---- 설정 ----------------------------------------------------------------
    설정은 계정과 동기화 옵션을 보여 주는 시트 하나입니다. 계정 상태 렌더링은

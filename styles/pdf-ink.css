@@ -103,3 +103,181 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 @keyframes ink-settings-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){#pdf-ink-settings{animation:none;}}
 .pdf-ink-eraser-cursor{fill:rgba(255,255,255,.35);stroke:#666;stroke-width:.8;pointer-events:none;}
+
+/* Writing dock. Read mode and the shared Home/Memory dock never get these classes.
+   Bottom is the ordinary row: no extra class. */
+html body.ink-dock-away :is(#reader-navigation,#readpill,#aafab),
+html body.ink-dock-away :is(#reader-navigation,#readpill,#aafab) *{
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+html body.ink-dock-top #readchrome{
+  top:max(12px,env(safe-area-inset-top));
+  bottom:auto;
+}
+html body.ink-dock-side #readchrome{
+  position:fixed;
+  top:50%;
+  bottom:auto;
+  left:max(16px,env(safe-area-inset-left));
+  right:auto;
+  width:44px;
+  height:auto;
+  margin:0;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+}
+html body.ink-dock-right #readchrome{
+  left:auto;
+  right:max(16px,env(safe-area-inset-right));
+}
+html body.ink-dock-side :is(#reader-navigation,#readpill,#aafab){
+  position:relative !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  transform:none !important;
+  transition:none !important;
+}
+html body.ink-dock-side #reader-navigation{
+  width:44px !important;
+  height:88px !important;
+}
+html body.ink-dock-side #pdf-page-control{
+  position:absolute !important;
+  inset:0 !important;
+  width:44px !important;
+  height:88px !important;
+  left:0 !important;
+  top:0 !important;
+  bottom:auto !important;
+  border-radius:22px !important;
+}
+html body.ink-dock-side #readback,
+html body.ink-dock-side #pdf-page-button{
+  position:absolute !important;
+  left:0 !important;
+  right:auto !important;
+  width:44px !important;
+  height:44px !important;
+}
+html body.ink-dock-side #readback{top:0 !important;}
+html body.ink-dock-side #pdf-page-button{top:44px !important;bottom:auto !important;}
+html body.ink-dock-side #readpill.ink-pill-active{
+  width:44px !important;
+  height:auto !important;
+  max-width:none !important;
+  min-height:0 !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  gap:4px !important;
+  padding:0 !important;
+  border-radius:22px !important;
+  overflow:visible !important;
+}
+html body.ink-dock-side #readpill.ink-pill-active .ink-pill-toolbar{
+  flex-direction:column !important;
+  flex:none !important;
+  width:44px !important;
+  height:auto !important;
+  max-width:none !important;
+  overflow:visible !important;
+  gap:4px !important;
+}
+html body:is(.ink-dock-side,.ink-dock-top) #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){
+  position:fixed !important;
+  left:0 !important;
+  right:auto !important;
+  top:0 !important;
+  bottom:auto !important;
+  width:var(--pdf-navigation-width) !important;
+  height:100dvh !important;
+  transform:none !important;
+  z-index:80;
+  border-radius:0 18px 18px 0 !important;
+}
+html body:is(.ink-dock-side,.ink-dock-top) #readchrome:has(#pdf-page-button[aria-expanded=true]) > :not(#reader-navigation){
+  visibility:hidden;
+}
+html body[data-ink-dock="top"] #pdf-ink-settings{
+  top:calc(100% + 12px);
+  bottom:auto;
+  left:50%;
+  right:auto;
+  transform:translateX(-50%);
+  animation:none;
+}
+html body[data-ink-dock="left"] #pdf-ink-settings{
+  top:50%;
+  bottom:auto;
+  left:calc(100% + 12px);
+  right:auto;
+  transform:translateY(-50%);
+  animation:none;
+}
+html body[data-ink-dock="right"] #pdf-ink-settings{
+  top:50%;
+  bottom:auto;
+  left:auto;
+  right:calc(100% + 12px);
+  transform:translateY(-50%);
+  animation:none;
+}
+html body #ink-dock-puck{
+  position:fixed;
+  z-index:80;
+  left:0;
+  top:0;
+  width:44px;
+  height:44px;
+  margin:0;
+  padding:0;
+  pointer-events:auto;
+  overflow:visible;
+}
+html body #ink-dock-puck[hidden]{display:none !important;}
+html body #ink-dock-puck .ink-dock-stack{
+  position:absolute;
+  left:0;
+  top:0;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:rgba(255,255,255,.7);
+  box-shadow:0 0 0 .5px rgba(0,0,0,.06);
+  opacity:calc(var(--ink-stack, 1) * .55);
+}
+html body #ink-dock-puck .ink-dock-stack:nth-child(1){transform:translate(0, 3px);}
+html body #ink-dock-puck .ink-dock-stack:nth-child(2){transform:translate(0, 6px);opacity:calc(var(--ink-stack, 1) * .32);}
+html body.dark #ink-dock-puck .ink-dock-stack,
+html.dark body #ink-dock-puck .ink-dock-stack{background:rgba(255,255,255,.16);}
+html body #ink-dock-puck .ink-dock-face{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  color:var(--brand-strong);
+}
+html body #ink-dock-puck .ink-dock-face svg{
+  width:var(--am-icon-toolbar);
+  height:var(--am-icon-toolbar);
+  fill:none;
+  stroke:currentColor;
+  stroke-width:var(--am-stroke-complex);
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  transform:scale(var(--ink-icon-x, 1), var(--ink-icon-y, 1));
+  transform-origin:center;
+}
+@media (prefers-reduced-motion:no-preference){
+  html body.ink-dock-settle :is(#reader-navigation,#readpill,#aafab){animation:ink-dock-unfold .22s ease;}
+}
+@keyframes ink-dock-unfold{from{opacity:.01}to{opacity:1}}

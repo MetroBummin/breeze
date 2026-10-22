@@ -119,7 +119,7 @@ const BreezePdfInk = (()=>{
       const bounds=element=>{
         const r=element.getBoundingClientRect();return [r.x,r.y,r.width,r.height];
       };
-      const excluded=Array.from(document.querySelectorAll('button,input,select,textarea,[role="dialog"],#pdf-ink-tools,#readpill,#word-modal-scrim,#sentence-scrim,#aa-pop'))
+      const excluded=Array.from(document.querySelectorAll('button,input,select,textarea,[role="dialog"],#pdf-ink-tools,#readpill,#ink-dock-puck,#word-modal-scrim,#sentence-scrim,#aa-pop'))
         .filter(scopeControlVisible)
         .map(bounds);
       const layout=pdfPageLayout(session);
