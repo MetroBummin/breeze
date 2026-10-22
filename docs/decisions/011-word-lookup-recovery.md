@@ -61,7 +61,9 @@ separate project; do not blindly push all repository migrations.
 It must not fall back to unprotected legacy look and automatically retry there.
 Old clients still use look, which the new Edge handles with success-only debit
 and a generated request ID, but cannot recover a lost response by ID. Seed stays
-unmetered. Anonymous devices have one shared lifetime 50-quota balance in anon_usage, preserving existing consumption: words cost 1 and sentences cost 2. Sentence receipt replay shares that balance and only charges usable translations. Login defaults to 3000/day with the same costs. Existing account overrides remain. Anonymous global safety cap remains in place.
+unmetered. Anonymous devices share one balance in anon_usage: words cost 1 and sentences cost 2. Sentence receipt replay shares that balance and only charges usable translations. Login defaults to 3000/day with the same costs. Existing account overrides remain. Anonymous global safety cap remains in place.
+
+The dict function no longer passes the old per-device lifetime of 50. `ANON_FREE` and `ANON_SENT_FREE` are 1_000_000_000, inside PostgreSQL int4, so word lookups, sentence lookups, easy explanations, and saved-set grading are not stopped per device. They still share `anon_usage` and the unchanged `anon_daily` cap of 2,000 calls per Seoul day. No migration: the receipt functions already take the limit as an argument.
 
 ## Verification
 `npm run test:word-recovery` executes the real migration/RPC with PGlite, the real
