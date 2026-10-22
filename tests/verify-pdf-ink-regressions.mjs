@@ -653,7 +653,14 @@ test('writing dock: nearest edge, touch hold, and Pencil exclusion',()=>{
  assert.doesNotMatch(css,/dashed/);
   assert.match(css,/ink-dock-stack/);
   assert.match(dock,/--ink-icon-x/);
+  assert.match(dock,/inkDockMoveAllowed/);
   assert.match(css,/#ink-dock-puck \.ink-dock-face svg\{[^}]*var\(--am-icon-toolbar\)[^}]*var\(--ink-icon-x/);
- assert.match(readFileSync(resolve(root,'scripts/ui/preferences.js'),'utf8'),/window\.innerHeight \/ 2/);
+ const prefs=readFileSync(resolve(root,'scripts/ui/preferences.js'),'utf8');
+ assert.match(prefs,/window\.innerHeight \/ 2/);
+ assert.match(prefs,/breeze\.inkDockMove/);
+ assert.match(prefs,/kind==='pdf'/);
+ const pageHtml=readFileSync(resolve(root,'index.html'),'utf8');
+ assert.match(pageHtml,/id="aa-ink-dock" hidden/);
+ assert.match(pageHtml,/필기모드 컨트롤 이동/);
  assert.match(readFileSync(resolve(root,'scripts/reader/pdf-navigation.js'),'utf8'),/dataset\.inkDock/);
 });

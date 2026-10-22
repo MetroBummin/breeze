@@ -83,6 +83,22 @@ try{
    await pointer('pointerup',again.x,again.y,'pen');
    if(await page.locator('#pdf-ink-settings').isVisible())await page.locator('[data-ink-mode="pen"]').click();
 
+   await page.locator('#aafab').click();
+   assert.equal(await page.locator('#aa-ink-dock').isVisible(),true,'the move switch shows for a supported PDF');
+   assert.equal(await page.locator('#aa-ink-dock-move').getAttribute('aria-pressed'),'false');
+   await page.evaluate(()=>closeAa());
+   const parked=await center('#readpill');
+   await pointer('pointerdown',parked.x,parked.y,'touch',3);
+   await page.waitForTimeout(460);
+   assert.equal(await page.locator('#ink-dock-puck').evaluate(node=>node.hidden),true,'a long-press does nothing while moving is off');
+   assert.equal(await page.evaluate(()=>document.body.dataset.inkDock),'bottom');
+   await pointer('pointerup',parked.x,parked.y,'touch',3);
+   await page.locator('#aafab').click();
+   await page.locator('#aa-ink-dock-move').click();
+   assert.equal(await page.locator('#aa-ink-dock-move').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.inkDockMove')),'true');
+   await page.evaluate(()=>closeAa());
+
    const origin=await center('#readpill');
    await pointer('pointerdown',origin.x,origin.y,'touch',7);
    await page.waitForTimeout(460);
@@ -191,7 +207,14 @@ try{
    });
    assert.equal(leftAa.rightward,true);
    assert.ok(leftAa.popLeft>=leftAa.buttonLeft-2,'Aa on the left edge opens rightward');
+   await page.locator('#aa-ink-dock-move').click();
    await page.evaluate(()=>closeAa());
+   await page.waitForFunction(()=>document.body.dataset.inkDock==='bottom'&&!document.body.classList.contains('ink-dock-left'));
+   const returned=await center('#readpill');
+   await pointer('pointerdown',returned.x,returned.y,'touch',10);
+   await page.waitForTimeout(460);
+   assert.equal(await page.locator('#ink-dock-puck').evaluate(node=>node.hidden),true,'turning the switch off parks the row at the bottom');
+   await pointer('pointerup',returned.x,returned.y,'touch',10);
    assert.deepEqual(errors.filter(message=>!message.includes('ResizeObserver loop')),[]);
    console.log(engine.name()+': writing dock long-press, snap, settings, and Aa passed');
   }finally{await browser.close();rmSync(profile,{recursive:true,force:true});}

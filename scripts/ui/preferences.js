@@ -58,6 +58,7 @@ applyReadMargin();
    (scripts/reader/gesture.js). */
 function toggleAa(e){
   if(e) e.stopPropagation();
+  applyInkDockMove();
   const p = document.getElementById('aa-pop');
   const btn = document.getElementById('aafab');
   /* 창은 단추의 실제 자리에서 매답니다. 단추가 화면 위쪽이면 아래로, 왼쪽이면
@@ -105,6 +106,33 @@ function applyDark(){
 }
 function toggleDark(){ darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark(); }
 applyDark();
+
+/* 필기 줄을 옮기는 기능은 기본으로 꺼 둡니다. 다크 모드와 같은 기기 저장이고,
+   지원되는 기기에서 PDF 를 읽을 때만 Aa 에 나타납니다. */
+let inkDockMove = load('breeze.inkDockMove', false);
+function inkDockMoveAllowed(){ return !!inkDockMove; }
+function applyInkDockMove(){
+  const row = document.getElementById('aa-ink-dock');
+  const button = document.getElementById('aa-ink-dock-move');
+  if(button){
+    button.classList.toggle('on', !!inkDockMove);
+    button.setAttribute('aria-pressed', inkDockMove ? 'true' : 'false');
+  }
+  if(row){
+    const api = typeof BreezePdfInk==='undefined' ? null : BreezePdfInk;
+    const kind = curBook && (curBook.kind || (curBook.original && curBook.original.kind));
+    const show = !!(api && api.available && api.available() && document.body.classList.contains('reading') && kind==='pdf');
+    row.hidden = !show;
+  }
+  if(typeof syncInkDock==='function') syncInkDock();
+}
+function toggleInkDockMove(){
+  inkDockMove = !inkDockMove;
+  if(!curBook || !curBook.transient) save('breeze.inkDockMove', inkDockMove);
+  applyInkDockMove();
+}
+applyInkDockMove();
+window.addEventListener('breeze-ink-platform', applyInkDockMove);
 
 /* ---- 설정 ----------------------------------------------------------------
    설정은 계정과 동기화 옵션을 보여 주는 시트 하나입니다. 계정 상태 렌더링은

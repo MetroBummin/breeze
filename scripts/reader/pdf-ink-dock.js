@@ -17,6 +17,7 @@ function inkDockNearest(point,slots){
   return best;
 }
 
+let syncInkDock=function(){};
 function bootInkDock(){
   if(typeof document==='undefined'||!document.getElementById||!document.getElementById('readchrome'))return;
   const reducedQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -32,6 +33,7 @@ function bootInkDock(){
   function reduced(){return reducedQuery.matches;}
   function inkApi(){return typeof BreezePdfInk==='undefined'?null:BreezePdfInk;}
   function writing(){const api=inkApi();return !!(api&&api.writing&&api.writing());}
+  function moveEnabled(){return typeof inkDockMoveAllowed==='function'&&!!inkDockMoveAllowed();}
   function loadEdge(){
     try{
       const value=localStorage.getItem(INK_DOCK_KEY);
@@ -98,18 +100,19 @@ function bootInkDock(){
     }
   }
   function applyEdge(){
-    const on=writing(),next=on?edge:'bottom';
+    const on=writing()&&moveEnabled(),next=on?edge:'bottom';
     document.body.classList.toggle('ink-dock-side',on&&(next==='left'||next==='right'));
     document.body.classList.toggle('ink-dock-left',on&&next==='left');
     document.body.classList.toggle('ink-dock-right',on&&next==='right');
     document.body.classList.toggle('ink-dock-top',on&&next==='top');
-    if(on)document.body.dataset.inkDock=next;
+    if(writing())document.body.dataset.inkDock=next;
     else delete document.body.dataset.inkDock;
     releaseDockTransform();
   }
   function sync(){
-    if(!writing()&&phase){
-      phase=null;pending=null;
+    if((!writing()||!moveEnabled())&&(phase||pending)){
+      if(pending){window.clearTimeout(pending.timer);pending=null;}
+      phase=null;
       document.body.classList.remove('ink-dock-away','ink-dock-settle');
       puck.hidden=true;
     }
@@ -195,7 +198,7 @@ function bootInkDock(){
     frame=window.requestAnimationFrame(tick);
   }
   function commit(start){
-    if(!writing()||(inkApi()&&inkApi().busy&&inkApi().busy()))return;
+    if(!writing()||!moveEnabled()||(inkApi()&&inkApi().busy&&inkApi().busy()))return;
     if(document.getElementById('pdf-page-button')?.getAttribute('aria-expanded')==='true')return;
     pending=null;
     activeId=start.id;
@@ -242,7 +245,7 @@ function bootInkDock(){
     if(pending&&event.pointerId!==pending.id){window.clearTimeout(pending.timer);pending=null;}
     if(event.pointerType!=='touch'||event.isPrimary===false)return;
     if(phase||pending)return;
-    if(!writing()||(inkApi()&&inkApi().busy&&inkApi().busy()))return;
+    if(!writing()||!moveEnabled()||(inkApi()&&inkApi().busy&&inkApi().busy()))return;
     if(document.getElementById('pdf-page-button')?.getAttribute('aria-expanded')==='true')return;
     if(!rowTarget(event))return;
     const start={id:event.pointerId,x:event.clientX,y:event.clientY,target:event.target};
@@ -285,6 +288,7 @@ function bootInkDock(){
   if(pageButton)new MutationObserver(releaseDockTransform).observe(pageButton,{attributes:true,attributeFilter:['aria-expanded']});
   if(pageControl)new MutationObserver(releaseDockTransform).observe(pageControl,{attributes:true,attributeFilter:['class']});
   window.addEventListener('breeze-ink-platform',sync);
+  syncInkDock=sync;
   sync();
 }
 bootInkDock();
