@@ -1,5 +1,5 @@
 /* Design-only capture. Serves the app, opens a real PDF page, turns handwriting
-   mode on, and writes the four dock mockups. Does not change app behavior. */
+   mode on, and writes dock mockups. Does not change app behavior. */
 import {createServer} from 'node:http';
 import {readFileSync} from 'node:fs';
 import {extname, resolve} from 'node:path';
@@ -129,18 +129,14 @@ await page.waitForTimeout(400);
 await page.addStyleTag({content: css});
 
 const geometry = await page.evaluate(() => {
+  const box = element => element.getBoundingClientRect().toJSON();
   const pill = document.getElementById('readpill');
-  const pageBox = document.querySelector('.pdf-source-page')?.getBoundingClientRect();
-  const rect = pill.getBoundingClientRect();
-  const buttons = [...pill.querySelectorAll('.ink-pill-control, .ink-pill-entry')].filter(node => getComputedStyle(node).display !== 'none').map(node => ({
-    label: node.getAttribute('aria-label'),
-    pressed: node.getAttribute('aria-pressed'),
-    box: node.getBoundingClientRect().toJSON(),
-  }));
   return {
-    pill: rect.toJSON(),
-    page: pageBox ? pageBox.toJSON() : null,
-    buttons,
+    pill: box(pill),
+    nav: box(document.getElementById('reader-navigation')),
+    aa: box(document.getElementById('aafab')),
+    chrome: box(document.getElementById('readchrome')),
+    page: box(document.querySelector('.pdf-source-page')),
     dark: document.body.classList.contains('dark'),
     writing: pill.classList.contains('ink-pill-active'),
   };
@@ -148,102 +144,188 @@ const geometry = await page.evaluate(() => {
 console.log('CURRENT', JSON.stringify(geometry, null, 2));
 console.log('ERRORS', errors);
 
-function clearMocks(){
-  return page.evaluate(() => {
+async function layout(spec){
+  const placed = await page.evaluate(spec => {
+    const nav = document.getElementById('reader-navigation');
     const pill = document.getElementById('readpill');
-    pill.classList.remove('ink-mock-dock', 'ink-mock-side', 'ink-mock-top', 'ink-mock-puck', 'ink-mock-landing');
-    document.body.classList.remove('ink-mock-goo');
-    document.getElementById('ink-mock-goo')?.remove();
+    const aa = document.getElementById('aafab');
+    const clearProps = ['position','left','top','right','bottom','width','height','margin','transform','z-index','max-width'];
+    for(const el of [nav, pill, aa]) for(const prop of clearProps) el.style.removeProperty(prop);
+    document.body.classList.toggle('ink-mock-vertical', !!spec.vertical);
+    document.body.classList.toggle('ink-mock-lift', !!spec.lift);
+    document.body.classList.toggle('ink-mock-merging', !!spec.merging);
+    document.body.classList.toggle('ink-mock-hide-sides', !!spec.hideSides);
+    pill.classList.toggle('ink-mock-dock', !!spec.puck);
+    pill.classList.toggle('ink-mock-puck', !!spec.puck);
     document.querySelectorAll('.ink-mock-target').forEach(node => node.remove());
-    pill.querySelector('.ink-mock-hint')?.remove();
-  });
+    document.getElementById('ink-mock-goo')?.remove();
+    const pin = (el, box) => {
+      if(!box) return;
+      el.style.setProperty('transition', 'none', 'important');
+      el.style.setProperty('position', 'fixed', 'important');
+      el.style.setProperty('min-width', '0', 'important');
+      el.style.setProperty('margin', '0', 'important');
+      el.style.setProperty('left', box.x + 'px', 'important');
+      el.style.setProperty('top', box.y + 'px', 'important');
+      el.style.setProperty('right', 'auto', 'important');
+      el.style.setProperty('bottom', 'auto', 'important');
+      el.style.setProperty('width', box.width + 'px', 'important');
+      el.style.setProperty('height', box.height == null ? 'auto' : box.height + 'px', 'important');
+      el.style.setProperty('max-width', 'none', 'important');
+      el.style.setProperty('transform', box.transform || 'none', 'important');
+      el.style.setProperty('z-index', String(box.z || 80), 'important');
+    };
+    pin(nav, spec.nav);
+    pin(pill, spec.pill);
+    pin(aa, spec.aa);
+    if(spec.puck){
+      if(!pill.querySelector('.ink-mock-hint')){
+        const hint = document.createElement('span');
+        hint.className = 'ink-mock-hint';
+        const pen = pill.querySelector('[data-ink-mode="pen"] svg');
+        if(pen) hint.append(pen.cloneNode(true));
+        pill.append(hint);
+      }
+      pill.style.setProperty('left', spec.puck.x + 'px', 'important');
+      pill.style.setProperty('top', spec.puck.y + 'px', 'important');
+      pill.style.setProperty('width', '44px', 'important');
+      pill.style.setProperty('height', '44px', 'important');
+      // Inline important beats the stylesheet stretch, so the spring lives here.
+      pill.style.setProperty('transform', 'translate(-50%, -50%) rotate(var(--ink-mock-puck-angle, 0deg)) scale(var(--ink-mock-puck-sx, .84), var(--ink-mock-puck-sy, 1.32))', 'important');
+    }else pill.querySelector('.ink-mock-hint')?.remove();
+    if(spec.trail){
+      const trail = document.createElement('div');
+      trail.id = 'ink-mock-goo';
+      document.body.append(trail);
+      document.documentElement.style.setProperty('--ink-mock-trail-x', spec.trail.x + 'px');
+      document.documentElement.style.setProperty('--ink-mock-trail-y', spec.trail.y + 'px');
+    }
+    for(const outline of spec.outlines || []){
+      const node = document.createElement('div');
+      node.className = 'ink-mock-target';
+      node.style.left = outline.x + 'px';
+      node.style.top = outline.y + 'px';
+      node.style.width = outline.width + 'px';
+      node.style.height = outline.height + 'px';
+      node.style.borderRadius = (outline.radius || 26) + 'px';
+      document.body.append(node);
+    }
+    const read = el => {
+      const rect = el.getBoundingClientRect();
+      return {x: rect.x, y: rect.y, width: rect.width, height: rect.height};
+    };
+    return {nav: read(nav), pill: read(pill), aa: read(aa)};
+  }, spec);
+  await page.waitForTimeout(40);
+  return placed;
 }
-async function dock(kind){
-  await clearMocks();
-  await page.evaluate(name => {
-    document.getElementById('readpill').classList.add('ink-mock-dock', 'ink-mock-' + name);
-  }, kind);
-  await page.waitForTimeout(50);
-}
+const union = boxes => {
+  const x = Math.min(...boxes.map(box => box.x));
+  const y = Math.min(...boxes.map(box => box.y));
+  const right = Math.max(...boxes.map(box => box.x + box.width));
+  const bottom = Math.max(...boxes.map(box => box.y + box.height));
+  return {x, y, width: right - x, height: bottom - y};
+};
+const shift = (box, dx, dy) => ({x: box.x + dx, y: box.y + dy, width: box.width, height: box.height});
 
 await page.screenshot({path: `${outDir}/handwriting-current.png`});
 
-const natural = geometry.pill;
-await page.evaluate(width => {
-  document.documentElement.style.setProperty('--ink-mock-bar-width', Math.round(width) + 'px');
-}, natural.width);
+const natural = geometry;
+const rowCenter = {x: natural.chrome.x + natural.chrome.width / 2, y: natural.chrome.y + natural.chrome.height / 2};
 
-await dock('side');
-const sideBox = await page.evaluate(() => document.getElementById('readpill').getBoundingClientRect().toJSON());
-console.log('SIDE', JSON.stringify(sideBox));
+await layout({
+  vertical: true,
+  nav: {x: 1120, y: 0, width: 44, height: 88, z: 81},
+  pill: {x: 1120, y: 120, width: 44, height: null},
+  aa: {x: 1120, y: 520, width: 44, height: 44, z: 81},
+});
+const sideSizes = await page.evaluate(() => {
+  const read = id => {
+    const rect = document.getElementById(id).getBoundingClientRect();
+    return {width: rect.width, height: rect.height};
+  };
+  return {nav: read('reader-navigation'), pill: read('readpill'), aa: read('aafab')};
+});
+const gap = 8;
+const sideWidth = Math.max(sideSizes.nav.width, sideSizes.pill.width, sideSizes.aa.width);
+const sideHeight = sideSizes.nav.height + gap + sideSizes.pill.height + gap + sideSizes.aa.height;
+const sideTop = (820 - sideHeight) / 2;
+const sideRight = 1180 - 16;
+const sideX = width => sideRight - width;
+const sideNav = {x: sideX(sideSizes.nav.width), y: sideTop, width: sideSizes.nav.width, height: sideSizes.nav.height, z: 81};
+const sidePill = {x: sideX(sideSizes.pill.width), y: sideTop + sideSizes.nav.height + gap, width: sideSizes.pill.width, height: sideSizes.pill.height};
+const sideAa = {x: sideX(sideSizes.aa.width), y: sidePill.y + sideSizes.pill.height + gap, width: sideSizes.aa.width, height: sideSizes.aa.height, z: 81};
+const sidePlaced = await layout({vertical: true, nav: sideNav, pill: sidePill, aa: sideAa});
+const sideUnion = union([sidePlaced.nav, sidePlaced.pill, sidePlaced.aa]);
+console.log('SIDE SIZES', JSON.stringify(sideSizes));
+console.log('SIDE', JSON.stringify(sidePlaced));
 await page.screenshot({path: `${outDir}/handwriting-side.png`});
 
-await dock('top');
-const topBox = await page.evaluate(() => document.getElementById('readpill').getBoundingClientRect().toJSON());
-console.log('TOP', JSON.stringify(topBox));
+const dy = 12 - natural.chrome.y;
+const topPlaced = await layout({
+  nav: {...shift(natural.nav, 0, dy), z: 81},
+  pill: shift(natural.pill, 0, dy),
+  aa: {...shift(natural.aa, 0, dy), z: 81},
+});
+const topUnion = union([topPlaced.nav, topPlaced.pill, topPlaced.aa]);
+console.log('TOP', JSON.stringify(topPlaced));
 await page.screenshot({path: `${outDir}/handwriting-top.png`});
 
-await page.evaluate(({natural, topBox, sideBox}) => {
-  const pill = document.getElementById('readpill');
-  const pen = pill.querySelector('[data-ink-mode="pen"] svg');
-  const hint = document.createElement('span');
-  hint.className = 'ink-mock-hint';
-  hint.append(pen.cloneNode(true));
-  pill.append(hint);
-  const start = {x: natural.x + natural.width / 2, y: natural.y + natural.height / 2};
-  const end = {x: topBox.x + topBox.width / 2, y: topBox.y + topBox.height / 2};
-  const t = 0.58;
-  const x = start.x + (end.x - start.x) * t;
-  const y = start.y + (end.y - start.y) * t;
-  const vx = end.x - start.x;
-  const vy = end.y - start.y;
-  const angle = Math.atan2(vy, vx) * 180 / Math.PI + 90;
-  document.documentElement.style.setProperty('--ink-mock-puck-x', x + 'px');
-  document.documentElement.style.setProperty('--ink-mock-puck-y', y + 'px');
-  document.documentElement.style.setProperty('--ink-mock-puck-angle', angle.toFixed(2) + 'deg');
+const mergeT = 0.68;
+const slide = (box, scaleX, scaleY) => {
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  return {...box, z: 84, transform: `translate(${(rowCenter.x - cx) * mergeT}px, ${(rowCenter.y - cy) * mergeT}px) scale(${scaleX}, ${scaleY})`};
+};
+await layout({
+  merging: true,
+  lift: true,
+  nav: slide(natural.nav, 0.72, 0.64),
+  pill: {...natural.pill, transform: 'scale(0.42, 0.94)'},
+  aa: slide(natural.aa, 0.72, 0.64),
+});
+await page.screenshot({path: `${outDir}/handwriting-merging.png`});
+
+const start = rowCenter;
+const end = {x: topUnion.x + topUnion.width / 2, y: topUnion.y + topUnion.height / 2};
+const travel = 0.58;
+const puck = {x: start.x + (end.x - start.x) * travel, y: start.y + (end.y - start.y) * travel};
+const vx = end.x - start.x;
+const vy = end.y - start.y;
+const length = Math.hypot(vx, vy) || 1;
+const angle = Math.atan2(vy, vx) * 180 / Math.PI + 90;
+await page.evaluate(value => {
+  document.documentElement.style.setProperty('--ink-mock-puck-angle', value.angle.toFixed(2) + 'deg');
   document.documentElement.style.setProperty('--ink-mock-puck-sx', '0.84');
   document.documentElement.style.setProperty('--ink-mock-puck-sy', '1.32');
-  const length = Math.hypot(vx, vy) || 1;
-  // Puck half-height is about 29px after the stretch. Park the lobe just
-  // past that edge so it stays attached and still trails the motion.
-  const trail = document.createElement('div');
-  trail.id = 'ink-mock-goo';
-  document.body.append(trail);
-  document.documentElement.style.setProperty('--ink-mock-trail-x', (x - vx / length * 36) + 'px');
-  document.documentElement.style.setProperty('--ink-mock-trail-y', (y - vy / length * 36) + 'px');
-  pill.classList.remove('ink-mock-side', 'ink-mock-top', 'ink-mock-landing');
-  pill.classList.add('ink-mock-dock', 'ink-mock-puck');
-  const outline = (box, radius) => {
-    const node = document.createElement('div');
-    node.className = 'ink-mock-target';
-    node.style.left = box.x + 'px';
-    node.style.top = box.y + 'px';
-    node.style.width = box.width + 'px';
-    node.style.height = box.height + 'px';
-    node.style.borderRadius = radius;
-    document.body.append(node);
-  };
-  outline(topBox, '22px');
-  outline(sideBox, '26px');
-  outline({x: 16, y: sideBox.y, width: sideBox.width, height: sideBox.height}, '26px');
-}, {natural, topBox, sideBox});
-await page.waitForTimeout(50);
+}, {angle});
+const leftUnion = {x: 1180 - (sideUnion.x + sideUnion.width), y: sideUnion.y, width: sideUnion.width, height: sideUnion.height};
+await layout({
+  hideSides: true,
+  puck,
+  trail: {x: puck.x - vx / length * 36, y: puck.y - vy / length * 36},
+  nav: sideNav,
+  pill: {x: puck.x, y: puck.y, width: 44, height: 44},
+  aa: sideAa,
+  outlines: [topUnion, sideUnion, leftUnion],
+});
 await page.screenshot({path: `${outDir}/handwriting-moving.png`});
 
-await page.evaluate(box => {
-  document.documentElement.style.setProperty('--ink-mock-land-width', Math.round(box.width * 0.8) + 'px');
-}, topBox);
-await dock('landing');
-await page.evaluate(box => {
-  const outline = document.createElement('div');
-  outline.className = 'ink-mock-target';
-  outline.style.left = box.x + 'px';
-  outline.style.top = box.y + 'px';
-  outline.style.width = box.width + 'px';
-  outline.style.height = box.height + 'px';
-  outline.style.borderRadius = '22px';
-  document.body.append(outline);
-}, topBox);
+const split = 0.7;
+const emerge = box => {
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const x = end.x + (cx - end.x) * split;
+  const y = end.y + (cy - end.y) * split;
+  return {x: x - box.width / 2, y: y - box.height / 2, width: box.width, height: box.height, z: 84, transform: 'scale(0.82, 0.9)'};
+};
+const inkWidth = 44 + (natural.pill.width - 44) * split;
+await layout({
+  lift: true,
+  nav: emerge(topPlaced.nav),
+  pill: {x: end.x - inkWidth / 2, y: topPlaced.pill.y, width: inkWidth, height: natural.pill.height, transform: 'scaleY(1.08)'},
+  aa: emerge(topPlaced.aa),
+});
 await page.screenshot({path: `${outDir}/handwriting-landing.png`});
 
 await browser.close();
