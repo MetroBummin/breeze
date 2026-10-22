@@ -124,3 +124,12 @@ runs:
       with:
         path: /var/cache/apt/archives
         key: ${{ runner.os }}-playwright-apt-${{ steps.version.outputs.version }}-${{ inputs.browsers }}
+
+    - name: Give Firefox a home directory it owns
+      shell: bash
+      run: |
+        if [ "$(id -u)" -eq 0 ] && [ -n "${HOME:-}" ] && [ ! -O "${HOME}" ]; then
+          mkdir -p /root
+          echo "HOME=/root" >> "$GITHUB_ENV"
+          echo "Container HOME is not owned by root. Later steps use /root so Firefox can launch."
+        fi

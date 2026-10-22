@@ -312,7 +312,7 @@ jobs:
           cache: npm
           cache-dependency-path: current/package-lock.json
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - uses: ./.github/actions/playwright-browsers
+      - uses: ./current/.github/actions/playwright-browsers
         with:
           browsers: webkit
           working-directory: current
