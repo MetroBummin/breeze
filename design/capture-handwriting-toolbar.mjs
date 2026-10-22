@@ -159,7 +159,7 @@ async function layout(spec){
     pill.classList.toggle('ink-mock-dock', !!spec.puck);
     pill.classList.toggle('ink-mock-puck', !!spec.puck);
     document.querySelectorAll('.ink-mock-target').forEach(node => node.remove());
-    document.getElementById('ink-mock-goo')?.remove();
+    document.getElementById('ink-mock-stack')?.remove();
     const pin = (el, box) => {
       if(!box) return;
       el.style.setProperty('transition', 'none', 'important');
@@ -194,12 +194,15 @@ async function layout(spec){
       // Inline important beats the stylesheet stretch, so the spring lives here.
       pill.style.setProperty('transform', 'translate(-50%, -50%) rotate(var(--ink-mock-puck-angle, 0deg)) scale(var(--ink-mock-puck-sx, .84), var(--ink-mock-puck-sy, 1.32))', 'important');
     }else pill.querySelector('.ink-mock-hint')?.remove();
-    if(spec.trail){
-      const trail = document.createElement('div');
-      trail.id = 'ink-mock-goo';
-      document.body.append(trail);
-      document.documentElement.style.setProperty('--ink-mock-trail-x', spec.trail.x + 'px');
-      document.documentElement.style.setProperty('--ink-mock-trail-y', spec.trail.y + 'px');
+    if(spec.stack){
+      const stack = document.createElement('div');
+      stack.id = 'ink-mock-stack';
+      stack.innerHTML = '<i></i><i></i>';
+      stack.style.left = spec.stack.x + 'px';
+      stack.style.top = spec.stack.y + 'px';
+      stack.style.opacity = String(spec.stack.opacity == null ? 1 : spec.stack.opacity);
+      stack.style.transform = `translate(-50%, -50%) rotate(${spec.stack.angle || 0}deg) scale(${spec.stack.sx == null ? 1 : spec.stack.sx}, ${spec.stack.sy == null ? 1 : spec.stack.sy})`;
+      document.body.append(stack);
     }
     for(const outline of spec.outlines || []){
       const node = document.createElement('div');
@@ -317,6 +320,7 @@ const merging = await layout({
   nav: slide(natural.nav, 0.72, 0.64),
   pill: {...natural.pill, transform: 'scale(0.42, 0.94)'},
   aa: slide(natural.aa, 0.72, 0.64),
+  stack: {x: rowCenter.x, y: rowCenter.y, angle: 0, sx: 1, sy: 1, opacity: 1},
 });
 const mergingEntry = (merging.shown || []).find(box => String(box.id).includes('ink-pill-entry'));
 const naturalEntryCenter = natural.entry.x + natural.entry.width / 2;
@@ -344,7 +348,7 @@ const leftUnion = {x: 1180 - (sideUnion.x + sideUnion.width), y: sideUnion.y, wi
 const moving = await layout({
   hideSides: true,
   puck,
-  trail: {x: puck.x - vx / length * 36, y: puck.y - vy / length * 36},
+  stack: {x: puck.x, y: puck.y, angle, sx: 0.84, sy: 1.32},
   nav: sideNav,
   pill: {x: puck.x, y: puck.y, width: 44, height: 44},
   aa: sideAa,

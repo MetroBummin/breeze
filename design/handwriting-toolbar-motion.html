@@ -20,9 +20,16 @@
   .tool svg, .hint svg, .page svg { width: 23px; height: 23px; stroke-width: 2.6px; }
   .back svg { width: 26px; height: 26px; stroke-width: 3.6px; }
   .page svg circle { fill: currentColor; stroke: none; }
-  #nav, #aa, #tools, #lobe { z-index: 3; overflow: hidden; }
-  #lobe { z-index: 2; border-radius: 50%; pointer-events: none; }
+  #nav, #aa, #tools { z-index: 3; overflow: hidden; }
   #tools { z-index: 4; border-radius: 22px; }
+  #stack { position: fixed; z-index: 2; width: 44px; height: 44px; pointer-events: none; opacity: 0; }
+  #stack i {
+    position: absolute; left: 0; top: 0; width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,.7);
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.06);
+  }
+  #stack i:nth-child(1) { transform: translate(0, 3px); opacity: .55; }
+  #stack i:nth-child(2) { transform: translate(0, 6px); opacity: .32; }
   #nav { border-radius: 22px; }
   #nav .back, #nav .page { width: 44px; height: 44px; display: grid; place-items: center; flex: none; }
   #aa { border-radius: 50%; font: 600 17px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; letter-spacing: -.2px; }
@@ -46,7 +53,7 @@
 <div class="outline" id="out-top"></div>
 <div class="outline" id="out-left"></div>
 <div class="outline" id="out-right"></div>
-<div class="glass" id="lobe"></div>
+<div id="stack" aria-hidden="true"><i></i><i></i></div>
 <div class="glass" id="nav">
   <span class="back"></span><span class="page"></span>
 </div>
@@ -98,7 +105,6 @@ function springAxis(pos, vel, target, dt, freq, zeta) {
 }
 
 const puck = {x: ROW_CX, y: ROW_CY, vx: 0, vy: 0};
-const lobe = {x: ROW_CX, y: ROW_CY, vx: 0, vy: 0};
 const spread = {x: 0, v: 0};
 let dragged = false;
 
@@ -112,13 +118,10 @@ function integrate(t, dt) {
     targetY = lerp(ROW_CY, TOP_CY, dragT);
     if (!dragged) {
       puck.x = ROW_CX; puck.y = ROW_CY; puck.vx = puck.vy = 0;
-      lobe.x = ROW_CX; lobe.y = ROW_CY + 8; lobe.vx = lobe.vy = 0;
       dragged = true;
     }
     [puck.x, puck.vx] = springAxis(puck.x, puck.vx, targetX, dt, 2.5, 0.66);
     [puck.y, puck.vy] = springAxis(puck.y, puck.vy, targetY, dt, 2.5, 0.66);
-    [lobe.x, lobe.vx] = springAxis(lobe.x, lobe.vx, puck.x, dt, 1.65, 0.8);
-    [lobe.y, lobe.vy] = springAxis(lobe.y, lobe.vy, puck.y, dt, 1.65, 0.8);
   }
   if (t >= UNFOLD) [spread.x, spread.v] = springAxis(spread.x, spread.v, 1, dt, 1.7, 0.58);
 }
@@ -130,7 +133,6 @@ for (let t = 0; t <= END + dt; t += dt) {
   frames.push({
     t,
     puck: {x: puck.x, y: puck.y, vx: puck.vx, vy: puck.vy},
-    lobe: {x: lobe.x, y: lobe.y, vx: lobe.vx, vy: lobe.vy},
     spread: spread.x,
   });
 }
@@ -143,7 +145,7 @@ function sample(t) {
 const navEl = document.getElementById('nav');
 const toolsEl = document.getElementById('tools');
 const aaEl = document.getElementById('aa');
-const lobeEl = document.getElementById('lobe');
+const stackEl = document.getElementById('stack');
 const iconsEl = document.querySelector('#tools .icons');
 const bookEl = document.querySelector('#tools .book');
 const hintEl = document.querySelector('#tools .hint');
@@ -173,7 +175,7 @@ function place(el, x, y, w, h, opts = {}) {
 function render(t) {
   const frame = sample(t);
   const lift = ' , 0 16px 28px rgba(30,64,76,.20)';
-  let nav, tools, aa, lobeBox, outlineOpacity = 0;
+  let nav, tools, aa, stack, outlineOpacity = 0;
 
   if (t < PRESS) {
     const p = t < HOLD ? 0 : smooth((t - HOLD) / (PRESS - HOLD));
@@ -182,7 +184,7 @@ function render(t) {
     nav = {x: NAV.x + pull, y: ROW_Y, w: NAV.w, h: H, sx: s, sy: s, opacity: 1};
     aa = {x: AA.x - pull, y: ROW_Y, w: AA.w, h: H, sx: s, sy: s, opacity: 1, radius: 22};
     tools = {x: TOOLS.x, y: ROW_Y, w: TOOLS.w, h: H, sx: s, sy: s, opacity: 1, icon: 1, hint: 0, radius: 22};
-    lobeBox = {opacity: 0};
+    stack = {opacity: 0};
   } else if (t < MERGE) {
     const m = smoother((t - PRESS) / (MERGE - PRESS));
     const squash = Math.sin(clamp01(m) * Math.PI);
@@ -198,7 +200,7 @@ function render(t) {
       icon: 1 - smooth((m - 0.28) / 0.5), hint: smooth((m - 0.4) / 0.45),
       radius: lerp(22, 22, m), shadow: m > 0.7 ? lift : '',
     };
-    lobeBox = {opacity: 0};
+    stack = {x: ROW_CX, y: ROW_CY, sx: 1, sy: 1, rot: 0, opacity: smooth(clamp01((m - 0.55) / 0.35))};
   } else if (t < UNFOLD) {
     const speed = Math.hypot(frame.puck.vx, frame.puck.vy);
     const mag = Math.min(0.34, speed / 1280);
@@ -212,12 +214,7 @@ function render(t) {
       sx: 1 - mag * 0.72, sy: 1 + mag, rot, opacity: 1, icon: 0, hint: 1, radius: 22,
       shadow: lift,
     };
-    const lmag = Math.min(0.4, Math.hypot(frame.lobe.vx, frame.lobe.vy) / 1100);
-    const lrot = Math.atan2(frame.puck.vy, frame.puck.vx) * 180 / Math.PI + 90;
-    lobeBox = {
-      x: frame.lobe.x - 16, y: frame.lobe.y - 16, w: 32, h: 32,
-      sx: 0.9 - lmag * 0.3, sy: 1.25 + lmag, rot: lrot, opacity: 0.8 * fade,
-    };
+    stack = {x: frame.puck.x, y: frame.puck.y, sx: tools.sx, sy: tools.sy, rot, opacity: fade};
   } else {
     const u = frame.spread;
     const shown = clamp(u, 0, 1.12);
@@ -234,7 +231,7 @@ function render(t) {
       icon: smooth(clamp01((u - 0.18) / 0.4)), hint: 1 - smooth(clamp01(u / 0.32)),
       radius: 22, shadow: u < 0.85 ? lift : '',
     };
-    lobeBox = {opacity: 0};
+    stack = {x: ROW_CX, y: TOP_CY, sx: 1, sy: 1, rot: 0, opacity: 1 - smooth(clamp01(frame.spread / 0.22))};
     outlineOpacity = 1 - smooth(clamp01((t - UNFOLD) / 0.22));
   }
 
@@ -244,8 +241,12 @@ function render(t) {
   iconsEl.style.opacity = tools.icon == null ? 1 : tools.icon;
   bookEl.style.opacity = tools.icon == null ? 1 : tools.icon;
   hintEl.style.opacity = tools.hint || 0;
-  if (lobeBox.opacity) place(lobeEl, lobeBox.x, lobeBox.y, lobeBox.w, lobeBox.h, lobeBox);
-  else lobeEl.style.opacity = 0;
+  if (stack && stack.opacity) {
+    stackEl.style.left = (stack.x - 22) + 'px';
+    stackEl.style.top = (stack.y - 22) + 'px';
+    stackEl.style.opacity = stack.opacity;
+    stackEl.style.transform = `rotate(${stack.rot || 0}deg) scale(${stack.sx}, ${stack.sy})`;
+  } else stackEl.style.opacity = 0;
   for (const node of Object.values(outlines)) node.style.opacity = outlineOpacity;
 }
 

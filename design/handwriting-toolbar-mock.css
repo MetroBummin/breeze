@@ -86,25 +86,29 @@ html body #readpill .ink-mock-hint svg{
   stroke-width:var(--am-stroke-complex);
 }
 
-/* Trailing lobe. Same glass as the pill; a parent filter would flatten the blur. */
-html body #ink-mock-goo{
+/* Two faint discs tucked behind the puck. They share its transform, so they
+   read as a stack, not a trail. No blur: a second glass copy looks like an afterimage. */
+html body #ink-mock-stack{
   position:fixed;
-  z-index:79;
-  width:36px;
-  height:36px;
+  z-index:78;
+  width:44px;
+  height:44px;
   margin:0;
   padding:0;
-  border:0;
-  border-radius:50%;
   pointer-events:none;
-  left:var(--ink-mock-trail-x);
-  top:var(--ink-mock-trail-y);
-  background:var(--am-glass);
-  box-shadow:var(--am-glass-shadow);
-  backdrop-filter:var(--am-blur);
-  -webkit-backdrop-filter:var(--am-blur);
-  transform:translate(-50%, -50%) rotate(var(--ink-mock-puck-angle, 0deg)) scale(.9, 1.35);
 }
+html body #ink-mock-stack i{
+  position:absolute;
+  left:0;
+  top:0;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:rgba(255,255,255,.7);
+  box-shadow:0 0 0 .5px rgba(0,0,0,.06);
+}
+html body #ink-mock-stack i:nth-child(1){transform:translate(0, 3px); opacity:.55;}
+html body #ink-mock-stack i:nth-child(2){transform:translate(0, 6px); opacity:.32;}
 
 html body.ink-mock-lift :is(#readpill, #aafab),
 html body.ink-mock-lift #pdf-page-control{
