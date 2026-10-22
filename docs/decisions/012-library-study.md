@@ -344,7 +344,9 @@ restyled: Hound’s title, subtitle, letter, signatures and contents stay as
 they are, and the four short stories keep the author line under the title.
 The source line omits the author only when that opening already shows the
 same name. Backrooms has no synthetic byline and no title-page front matter,
-so its opening is unchanged.
+so its opening is unchanged. The three remote novels carry those same roles
+as catalog `sections`: chapter headings, and Gatsby’s title-page lines. A
+legacy `headings` entry is read as `sections`.
 
 ## Holmes-first 1.7 offering; Backrooms dormant (2026-10-04)
 
@@ -356,6 +358,19 @@ new shelf layout or saved-book filtering is added. Previously saved copies remai
 visible and readable with their custom cover and reading progress; removing a
 saved Backrooms copy does not make it a new recommendation again. FSRS stays
 dormant and Jev stays OFF. Public release numbering is coordinated separately.
+
+## A dormant bundled book can return from the remote catalog (2026-10-22)
+
+Backroom / Homeward Bound stays dormant inside the app bundle. Its local text,
+ten scenes, translated lookup data, attribution, and saved copies are unchanged.
+When the remote classics catalog contains that same id, the 책 list offers the
+bundled book again. The remote object does not replace the local text or
+scenes. A non-dormant bundled id still hides a remote duplicate. Removing the
+catalog entry hides the new recommendation; a saved copy remains.
+
+Remote Holmes stories are not bundled. Their catalog entry carries the
+illustrations and section headings the reader used to hard-code, and the app
+stores the scene images with the imported book for offline reading.
 
 ## EPUB queued-frame clock boundary (1.7 / 234)
 

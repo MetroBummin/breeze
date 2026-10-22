@@ -234,7 +234,32 @@ const CLASSIC_FALLBACKS = [
    yet, the fetch failed, or the device is offline. A saved book keeps its own
    text and reading position; importing again does not replace it. */
 function longReadDefinition(id){
-  return LONG_READS.find(read=>read.id===id)||CLASSIC_FALLBACKS.find(read=>read.id===id)||null;
+  return LONG_READS.find(read=>read.id===id)||CLASSIC_FALLBACKS.find(read=>read.id===id)
+    ||(typeof remoteClassicCatalogReads==='function'&&remoteClassicCatalogReads().find(read=>read&&read.id===id))
+    ||null;
+}
+function longReadHolmesDefinition(book){
+  const id=book&&book.longReadId;
+  const defined=longReadDefinition(id);
+  if(defined&&(defined.style==='holmes'||String(defined.id||'').startsWith('sherlock-holmes-')))return defined;
+  if(book&&book.longReadStyle==='holmes')return {
+    id, style:'holmes', title:book.title, author:book.author,
+    sourceTitle:!!book.longReadSourceTitle, sections:book.sections, illustrations:book.illustrations,
+  };
+  return null;
+}
+function longReadSourceTitleActive(book,defined){
+  const read=defined||longReadHolmesDefinition(book);
+  if(!read||!book)return false;
+  if(read.id==='sherlock-holmes-hound-of-the-baskervilles')
+    return !!(book.paras&&book.paras[0]===HOLMES_HOUND_FRONTMATTER[0].text&&String(book.title||'').toLowerCase()===String(read.title||'').toLowerCase());
+  if(!read.sourceTitle)return false;
+  const title=(read.sections||[]).find(section=>section.role==='title');
+  if(title)return !!(book.paras&&book.paras[title.paragraph]===title.text&&String(book.title||'').toLowerCase()===String(read.title||'').toLowerCase());
+  return String(book.title||'').toLowerCase()===String(read.title||'').toLowerCase();
+}
+function longReadSceneKey(book,image){
+  return (book&&book.id||'')+'|scene|'+(image&&image.id||'');
 }
 /* A catalog entry replaces the bundled copy, so a later server edit of the
    text or hook does not wait for an app release. Offline, the local file
@@ -779,12 +804,20 @@ const HOLMES_ILLUSTRATIONS = {
     }
   ]
 };
+function longReadSceneList(book){
+  const bundled=HOLMES_ILLUSTRATIONS[book.longReadId];
+  if(bundled)return bundled;
+  if(Array.isArray(book.illustrations)&&book.illustrations.length)return book.illustrations;
+  const defined=longReadDefinition(book.longReadId);
+  return defined&&Array.isArray(defined.illustrations)?defined.illustrations:[];
+}
 function longReadIllustrationBefore(book,text,paragraph){
+  if(!book)return null;
   if(book.longReadId==='backroom-homeward-bound')
     return HOMEWARD_ILLUSTRATIONS.find(image=>String(text||'').startsWith(image.before))||null;
-  return (HOLMES_ILLUSTRATIONS[book.longReadId]||[]).find(image=>
+  return longReadSceneList(book).find(image=>
     image.paragraph===paragraph && String(text||'').startsWith(image.before) &&
-    String(book.paras[paragraph-1]||'').startsWith(image.after))||null;
+    String((book.paras||[])[paragraph-1]||'').startsWith(image.after))||null;
 }
 /* Source-led roles change presentation only, including the long Chapter 9 title.
    Exact source blocks guard user-edited copies; no invented subtitles or blocks. */
@@ -855,6 +888,11 @@ function longReadBlockRole(book,block){
     if(block.t==='THE END'&&block.f===book.paras.length-1)return 'end';
   }
   if(book.longReadId==='sherlock-holmes-scandal-in-bohemia'&&/^(I|II|III)\.$/.test(block.t))return 'section';
+  const sections=Array.isArray(book.sections)&&book.sections.length?book.sections:longReadDefinition(book.longReadId)?.sections;
+  if(Array.isArray(sections)){
+    const hit=sections.find(section=>section.paragraph===block.f&&section.text===block.t);
+    if(hit)return hit.role;
+  }
   return '';
 }
 const longReadAttribution = read => ({
@@ -996,6 +1034,28 @@ async function longReadDownloadText(response,options){
   return new TextDecoder().decode(bytes);
 }
 
+async function cacheLongReadIllustrations(read,book,options={}){
+  const images=read&&read.illustrations;
+  if(!book||!Array.isArray(images)||!images.length||typeof imgPut!=='function')return 0;
+  let stored=0;
+  for(const image of images){
+    if(!image||!/^https:/i.test(image.file||''))continue;
+    if(options.signal?.aborted)return stored;
+    try{
+      const response=await fetch(image.file,{signal:options.signal,headers:read.remote&&typeof remoteClassicHeaders==='function'?remoteClassicHeaders():undefined});
+      if(!response.ok)continue;
+      const blob=await response.blob();
+      if(!blob.size||!/^image\/(jpeg|png|gif|webp)$/i.test(blob.type))continue;
+      if(typeof books!=='undefined'&&!books.includes(book))return stored;
+      await imgPut(longReadSceneKey(book,image),blob);
+      stored++;
+    }catch(error){
+      if(options.signal?.aborted||error?.name==='AbortError')return stored;
+      console.warn('긴 글 삽화를 저장하지 못했습니다:',error&&error.message);
+    }
+  }
+  return stored;
+}
 let longReadBusy=false;
 async function importLongRead(read,card,options={}){
   if(longReadBusy)return;
@@ -1029,10 +1089,16 @@ async function importLongRead(read,card,options={}){
       title:read.title, author:read.author, longReadId:read.id,
       originalTitle:read.originalTitle, sourceUrl:read.sourceUrl, site:read.site,
       attribution:longReadAttribution(read), coverPosition:read.coverPosition,
+      ...(read.illustrations?{illustrations:read.illustrations}:{}),
+      ...(read.sections?{sections:read.sections}:{}),
+      ...(read.style?{longReadStyle:read.style}:{}),
+      ...(read.sourceTitle?{longReadSourceTitle:true}:{}),
       ...(read.remote?{readingStyle:'original'}:{}),
     },{preserveParagraphs:true,signal:options.signal});
     await applyLongReadCover(read,options);
-    return imported&&books.find(book=>book.id===imported.bookId)||null;
+    const saved=imported&&books.find(book=>book.id===imported.bookId)||null;
+    if(saved)await cacheLongReadIllustrations(read,saved,options);
+    return saved;
   }catch(error){
     if(options.signal?.aborted)return null;
     console.error(error);
