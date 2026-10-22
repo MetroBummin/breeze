@@ -201,7 +201,6 @@
   --shadow-tab:0 1px 4px rgba(23,55,71,.10);
   --shadow-panel:-8px 0 30px rgba(24,54,74,.08);     /* 옆에 서는 낱말 창 */
   --shadow-sheet:0 -10px 40px rgba(24,54,74,.18);    /* 아래에서 올라오는 시트 */
-  --shadow-knob:0 1px 4px rgba(0,0,0,.25);           /* 토글 손잡이 */
   --shadow-phrase:0 3px 10px rgba(37,137,190,.08);
 
   /* ---- 덮개 ---- */
@@ -246,7 +245,12 @@
   --sec-act-hover-ink:var(--brand-strong);
   --rss-thumb:#FDFBF6;                   /* 방금 도착한 글의 표지 바탕 */
   --cloud-line:#D7E1DE;                  /* 아직 이 기기에 없는 것의 테두리 */
-  --toggle-off:#D8D4C8;
+  /* 켜기/끄기. 본문 색칠과 같은 알약이고, 파랑을 쓰지 않는다. */
+  --switch-off:#D0D6D8;
+  --switch-off-edge:rgba(41,48,52,.62);
+  --switch-off-knob:#293034;
+  --switch-on:#3E494D;
+  --switch-on-knob:#F3F4F3;
   --placeholder:#C8D7D6;                 /* 아직 안 채운 칸의 흐린 글씨 */
   --speak-bg:#fff;                       /* 발음 단추 */
   --speak-line:#E4E8DF;
@@ -260,7 +264,6 @@
   --retry-hover:var(--brand-strong);
   --seg-on:#E7F1F4;                      /* 세 칸짜리 띠에서 고른 칸 */
   --seg-on-ink:var(--brand-strong);
-  --toggle-knob:#fff;
   --stbtn-bg:#fff;                       /* 모르는 정도 단추 — 두 화면 모두 흰 칸 */
   --chrome-line:rgba(23,55,71,.09);      /* 읽는 동안 떠 있는 조각 */
   --chrome-ink:#667D87;
@@ -374,6 +377,11 @@ body.dark{
   --sentence-glass-shadow-pill:0 6px 18px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.10);
   --sentence-glass-shadow:0 18px 46px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.10);
   --sentence-glass-scrim:rgba(0,0,0,.18);
+  --switch-off:#565C60;
+  --switch-off-edge:rgba(241,241,238,.62);
+  --switch-off-knob:#F1F1EE;
+  --switch-on:#C6C9C4;
+  --switch-on-knob:#293034;
   --brand-signature:#D7ECE8;
   --study-remember-wash:20%;
   --brand:#4DAED6;

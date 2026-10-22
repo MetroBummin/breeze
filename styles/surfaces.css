@@ -26,10 +26,6 @@ dialog:is(#add-modal,#edit-modal)::backdrop{background:transparent;}
 #ed-cloud .ed-cloud-title{font:600 15px/1.3 var(--ui);}
 #ed-cloud .ed-cloud-note{font:400 13px/1.45 var(--ui);color:var(--sentence-glass-secondary);}
 #ed-cloud .aa-toggle{width:46px;height:44px;border:none;background:transparent;position:relative;flex:none;padding:0;cursor:pointer;}
-#ed-cloud .aa-toggle::before{content:'';position:absolute;left:0;right:0;top:9px;height:26px;border-radius:13px;background:var(--toggle-off);}
-#ed-cloud .aa-toggle.on::before{background:var(--brand);}
-#ed-cloud .aa-toggle i{position:absolute;top:12px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s ease;}
-#ed-cloud .aa-toggle.on i{left:23px;}
 #ed-cloud .aa-toggle:disabled{opacity:.45;cursor:default;}
 #am-card .am-back,#ed-card .am-back{min-height:44px;padding:8px 0;}
 #am-card .task-close,#ed-card .task-close,#settings-modal #set-close,#wordbook-add-form .task-close,#task-form .task-close,#pdf-page-navigation .task-close{position:absolute;z-index:2;top:16px;right:16px;display:grid;place-items:center;float:none;cursor:pointer;}
@@ -66,9 +62,12 @@ body.dark #aa-pop::before{background:linear-gradient(145deg,rgba(255,255,255,.15
 #aa-pop #aa-pdf-direction .aa-seg button:hover::before{background:var(--sentence-glass-action);}
 #aa-pop #aa-pdf-direction .aa-seg button[aria-pressed=true]::before{background:var(--sentence-glass-action-hover);}
 #aa-pop .aa-toggle{height:44px;background:transparent;flex:none;position:relative;}
-#aa-pop .aa-toggle::before{content:'';position:absolute;inset:9px 0;border-radius:13px;background:var(--toggle-off);}
-#aa-pop .aa-toggle.on::before{background:var(--brand);}
-#aa-pop .aa-toggle i{top:12px;}
+/* 본문 색칠과 같은 42×26 알약. 46px 누름 칸의 오른쪽에 둔다. */
+:is(#aa-pop .aa-toggle,#ed-cloud .aa-toggle,#ink-two-finger-undo)::before{content:"";position:absolute;inset:auto;top:9px;right:0;left:auto;width:42px;height:26px;border-radius:16px;background:var(--switch-off);box-shadow:inset 0 0 0 1.5px var(--switch-off-edge);transition:background .2s,box-shadow .2s;}
+:is(#aa-pop .aa-toggle,#ed-cloud .aa-toggle,#ink-two-finger-undo).on::before{background:var(--switch-on);box-shadow:none;}
+:is(#aa-pop .aa-toggle,#ed-cloud .aa-toggle,#pdf-ink-settings #ink-two-finger-undo)>i{position:absolute;left:7px;top:12px;width:20px;height:20px;border-radius:50%;background:var(--switch-off-knob);box-shadow:none;transition:left .2s,background .2s;}
+:is(#aa-pop .aa-toggle,#ed-cloud .aa-toggle,#pdf-ink-settings #ink-two-finger-undo).on>i{left:23px;background:var(--switch-on-knob);}
+@media(prefers-reduced-motion:reduce){:is(#aa-pop .aa-toggle,#ed-cloud .aa-toggle,#ink-two-finger-undo)::before,:is(#aa-pop .aa-toggle,#ed-cloud .aa-toggle,#pdf-ink-settings #ink-two-finger-undo)>i{transition:none;}}
 #aa-pop .aa-row .sm-mini{max-width:160px;padding:0 10px;background:var(--sentence-glass-action);}
 #v-vocab h1{font-size:clamp(22px,5.8vw,26px);overflow-wrap:anywhere;}
 .wordbook-brand img{width:38px;height:38px;}
