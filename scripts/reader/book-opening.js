@@ -1,9 +1,9 @@
 /* A book opening is presentation, not a new copy of the text.
    Paragraphs, lookup indices and saved positions stay as imported.
    The story renderer used to paint every source line on its own, so a
-   title-page dedication kept its print line breaks, an epigraph kept the
-   print poem's alternating indent, and the author was printed again under
-   a source line that already named them. This composes those lines. */
+   title-page dedication stayed as separate lines on the same card as the
+   epigraph, and the author was printed again under a source line that
+   already named them. Printed verse indent stays as published. */
 
 function composeBookOpening(blocks){
   if(!Array.isArray(blocks)) return blocks;
@@ -21,7 +21,6 @@ function composeBookOpening(blocks){
     if(!block) continue;
     const previous=index>0?blocks[index-1]:null;
     if(block.bookRole==='verse'){
-      block.verseIndent=false;
       if(previous&&previous.bookRole!=='verse') block.before='page';
     }else if(block.bookRole==='signature'&&previous&&previous.bookRole==='verse'){
       block.openingAttribution=true;

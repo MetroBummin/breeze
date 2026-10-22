@@ -7,7 +7,7 @@ const context={};
 new Script(readFileSync(new URL('../scripts/reader/book-opening.js',import.meta.url),'utf8')).runInNewContext(context);
 const {composeBookOpening,openingRepeatsAuthor}=context;
 
-test('a title-page dedication and epigraph compose without touching later verse',()=>{
+test('a title-page dedication is one page and the printed verse indent stays',()=>{
   const blocks=[
     {bookRole:'inscription',t:'Once again'},
     {bookRole:'inscription',t:'to'},
@@ -25,7 +25,7 @@ test('a title-page dedication and epigraph compose without touching later verse'
   assert.equal(blocks[0].openingDedicationLead,true);
   assert.equal(blocks[1].openingDedicationLead,false);
   assert.equal(blocks[2].before,undefined);
-  for(const block of blocks.slice(3,7)) assert.equal(block.verseIndent,false);
+  assert.deepEqual(blocks.slice(3,7).map(block=>block.verseIndent),[false,true,false,true]);
   assert.equal(blocks[3].before,'page');
   assert.equal(blocks[4].before,undefined);
   assert.equal(blocks[7].openingAttribution,true);

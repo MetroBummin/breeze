@@ -335,10 +335,11 @@ settings own body metrics; no global reader typography is changed.
 Front matter was painted one source line at a time, and the reader also
 printed the author under a source line that already named them. The opening
 composer now keeps saved paragraphs and indices. A run of inscription lines
-before the first chapter is one centered italic dedication on its own page.
-Verse before that chapter is one epigraph with a single indent; the signature
-under it stays right-aligned. Verse inside a chapter, including Alice’s poems
-and Gatsby’s songs, keeps its printed indent. Holmes source blocks are not
+before the first chapter is one small centered italic dedication on its own page.
+The epigraph stays on the next page and keeps the printed verse indent, including
+Fitzgerald’s alternating lines. The signature under it stays right-aligned.
+Verse inside a chapter, including Alice’s poems and Gatsby’s songs, keeps that
+same printed indent. Holmes source blocks are not
 restyled: Hound’s title, subtitle, letter, signatures and contents stay as
 they are, and the four short stories keep the author line under the title.
 The source line omits the author only when that opening already shows the

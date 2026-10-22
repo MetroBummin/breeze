@@ -285,6 +285,7 @@ function renderBookBody(b){
       if(!dedicationLine){
         dedicationLine=document.createElement('div');
         dedicationLine.className='book-opening-dedication';
+        page.classList.add('book-opening-dedication-page');
         page.appendChild(dedicationLine);
       }
       const dedication=document.createElement('p');
