@@ -90,6 +90,13 @@ try{
    assert.deepEqual(carried,{nav:'hidden',pill:'hidden',aa:'hidden',entry:'hidden'});
    assert.equal(await page.locator('#ink-dock-puck').evaluate(node=>node.hidden),false);
    assert.equal(await page.locator('#ink-dock-puck').count(),1);
+   const formed=await page.locator('#ink-dock-puck .ink-dock-face svg').evaluate(node=>{
+    const icon=node.getBoundingClientRect();
+    const puck=document.getElementById('ink-dock-puck').getBoundingClientRect();
+    return {w:icon.width,h:icon.height,puckW:puck.width};
+   });
+   assert.ok(formed.w>=18&&formed.w<=30&&formed.h>=18&&formed.h<=30,'the pen icon stays at toolbar size while the row collapses');
+   assert.ok(formed.puckW>formed.w+8,'the circle forms around the icon');
    for(const point of [{x:590,y:80},{x:590,y:40}])await pointer('pointermove',point.x,point.y,'touch',7);
    await page.waitForTimeout(260);
    const moving=await page.locator('#ink-dock-puck').evaluate(node=>{

@@ -118,12 +118,15 @@ function bootInkDock(){
     applyEdge();
     refreshScope();
   }
-  function place(x,y,angle,sx,sy,stack){
+  function place(x,y,angle,sx,sy,stack,holdIcon){
     puck.hidden=false;
     puck.style.left=x+'px';
     puck.style.top=y+'px';
     puck.style.transform='translate(-50%,-50%) rotate('+angle+'deg) scale('+sx+','+sy+')';
     puck.style.setProperty('--ink-stack',String(stack));
+    /* The circle may start as large as the row. The glyph stays at toolbar size. */
+    puck.style.setProperty('--ink-icon-x',holdIcon&&sx?String(1/sx):'1');
+    puck.style.setProperty('--ink-icon-y',holdIcon&&sy?String(1/sy):'1');
   }
   function stepToward(x,y,dt,freq,zeta,direct){
     if(direct||!(dt>0)){pos.x=x;pos.y=y;vel.x=0;vel.y=0;return;}
@@ -163,7 +166,7 @@ function bootInkDock(){
       stepToward(finger.x,finger.y,dt,2.5,0.66,direct);
       const sx=direct?1:merge.sx+(1-merge.sx)*ease;
       const sy=direct?1:merge.sy+(1-merge.sy)*ease;
-      place(pos.x,pos.y,0,sx,sy,direct?1:Math.max(0,(t-0.55)/0.45));
+      place(pos.x,pos.y,0,sx,sy,direct?1:Math.max(0,(t-0.55)/0.45),true);
       if(t>=1)phase='drag';
     }else if(phase==='drag'){
       if(direct){pos.x=finger.x;pos.y=finger.y;vel.x=0;vel.y=0;place(pos.x,pos.y,0,1,1,1);}

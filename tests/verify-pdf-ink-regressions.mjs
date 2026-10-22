@@ -651,7 +651,9 @@ test('writing dock: nearest edge, touch hold, and Pencil exclusion',()=>{
  assert.match(source,/#ink-dock-puck/);
  const css=readFileSync(resolve(root,'styles/pdf-ink.css'),'utf8');
  assert.doesNotMatch(css,/dashed/);
- assert.match(css,/ink-dock-stack/);
+  assert.match(css,/ink-dock-stack/);
+  assert.match(dock,/--ink-icon-x/);
+  assert.match(css,/#ink-dock-puck \.ink-dock-face svg\{[^}]*var\(--am-icon-toolbar\)[^}]*var\(--ink-icon-x/);
  assert.match(readFileSync(resolve(root,'scripts/ui/preferences.js'),'utf8'),/window\.innerHeight \/ 2/);
  assert.match(readFileSync(resolve(root,'scripts/reader/pdf-navigation.js'),'utf8'),/dataset\.inkDock/);
 });

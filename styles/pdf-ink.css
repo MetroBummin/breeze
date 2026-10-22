@@ -267,13 +267,15 @@ html body #ink-dock-puck .ink-dock-face{
   color:var(--brand-strong);
 }
 html body #ink-dock-puck .ink-dock-face svg{
-  width:20px;
-  height:20px;
+  width:var(--am-icon-toolbar);
+  height:var(--am-icon-toolbar);
   fill:none;
   stroke:currentColor;
   stroke-width:var(--am-stroke-complex);
   stroke-linecap:round;
   stroke-linejoin:round;
+  transform:scale(var(--ink-icon-x, 1), var(--ink-icon-y, 1));
+  transform-origin:center;
 }
 @media (prefers-reduced-motion:no-preference){
   html body.ink-dock-settle :is(#reader-navigation,#readpill,#aafab){animation:ink-dock-unfold .22s ease;}
