@@ -24,7 +24,10 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const entry=catalog.books[0];
   assert.equal(catalog.version,1);
-  assert.deepEqual(catalog.books.map(book=>book.id),['pride-and-prejudice','alice-in-wonderland','the-great-gatsby','backroom-homeward-bound']);
+  assert.deepEqual(catalog.books.map(book=>book.id),[
+    'pride-and-prejudice','alice-in-wonderland','the-great-gatsby','backroom-homeward-bound',
+    'sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear',
+  ]);
   assert.equal(entry.id,'pride-and-prejudice');
   assert.equal(entry.hook,'첫 만남부터 오만하게 구는 부자 신사 다아시, 그런 그를 단번에 싫어하게 된 엘리자베스. 첫인상과 편견을 넘어, 두 사람은 서로를 제대로 보게 될까?');
   assert.equal(entry.title,'Pride and Prejudice');
@@ -404,13 +407,20 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
   assert.equal(read('server/classics/backroom-homeward-bound/cover.png').equals(cover),true);
   const {classicUploadPlan}=await import('../server/classics/upload.mjs');
   const plan=classicUploadPlan(catalog).map(object=>object.path);
-  assert.deepEqual(plan,[
+  assert.deepEqual(plan.slice(0,9),[
     'catalog.json',
     'pride-and-prejudice/book.txt','pride-and-prejudice/cover.webp',
     'alice-in-wonderland/book.txt','alice-in-wonderland/cover.webp',
     'the-great-gatsby/book.txt','the-great-gatsby/cover.webp',
     'backroom-homeward-bound/book.txt','backroom-homeward-bound/cover.png',
   ]);
+  const novelPaths=[];
+  for(const id of ['sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear']){
+    const entry=catalog.books.find(book=>book.id===id);
+    novelPaths.push(`${id}/book.txt`,`${id}/cover.webp`);
+    for(const image of entry.illustrations)novelPaths.push(`${id}/illustrations/${image.id}.webp`);
+  }
+  assert.deepEqual(plan.slice(9),novelPaths);
   const illustrated=classicUploadPlan({books:[{
     id:'sherlock-holmes-blue-carbuncle',
     content:'https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-blue-carbuncle/book.txt',
@@ -426,6 +436,49 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
   assert.throws(()=>classicUploadPlan({books:[{id:'x',content:'https://example.supabase.co/storage/v1/object/public/classics/x/book.txt'}]}),/outside/);
 });
 
+test('the three Holmes novels are remote illustrated books with opening sections',()=>{
+  const catalog=JSON.parse(text('server/classics/catalog.json'));
+  const expected=[
+    ['sherlock-holmes-a-study-in-scarlet','A Study in Scarlet',43423,'런던의 빈집에서 피 묻은 단어 하나만 남은 밤. 실험실에서 처음 만난 홈즈는, 이 살인에서 무엇을 읽어 낼까?',14],
+    ['sherlock-holmes-the-sign-of-the-four','The Sign of the Four',43099,'안개 낀 밤, 진주 한 알과 함께 도착한 편지. 여섯 해를 기다린 메리 모스턴은 그 보물을 찾을 수 있을까?',12],
+    ['sherlock-holmes-the-valley-of-fear','The Valley of Fear',57608,'아침 식탁 위의 암호 한 장, 그리고 해자 저택의 죽음. 모리아티의 그림자는 이 사건과 어떻게 이어질까?',15],
+  ];
+  for(const [id,title,words,hook,chapters] of expected){
+    const entry=catalog.books.find(book=>book.id===id);
+    const file=read(`server/classics/${id}/book.txt`);
+    const cover=read(`server/classics/${id}/cover.webp`);
+    const paragraphs=file.toString('utf8').trim().split(/\n\s*\n+/);
+    assert.equal(entry.title,title);
+    assert.equal(entry.author,'Arthur Conan Doyle');
+    assert.equal(entry.series,'SHERLOCK HOLMES · LIGHTLY MODERNIZED');
+    assert.equal(entry.presentation,'story');
+    assert.equal(entry.sourceTitle,true);
+    assert.equal(entry.hook,hook);
+    assert.equal(entry.bytes,file.length);
+    assert.equal(entry.wordCount,words);
+    assert.equal(paragraphs.join(' ').split(/\s+/).length,words);
+    assert.equal(entry.contentVersion,createHash('sha256').update(file).digest('hex'));
+    assert.equal(entry.sections.every(section=>paragraphs[section.paragraph]===section.text),true);
+    assert.equal(entry.sections.filter(section=>section.role==='chapter').length,chapters);
+    assert.equal(entry.sections.some(section=>section.role==='title'),true);
+    assert.equal(entry.illustrations.length,9);
+    assert.deepEqual(webpSize(cover),{width:768,height:1152});
+    assert.doesNotMatch(file.toString('utf8'),/Project Gutenberg|\[Illustration|_/);
+    assert.doesNotMatch(file.toString('utf8'),/\b(to-day|to-night|to-morrow|ejaculated|\bwhence\b)\b/i);
+    for(const image of entry.illustrations){
+      const scene=read(`server/classics/${id}/illustrations/${image.id}.webp`);
+      assert.deepEqual(webpSize(scene),{width:1400,height:700});
+      assert.equal(image.file.endsWith(`/classics/${id}/illustrations/${image.id}.webp`),true);
+      assert.equal(paragraphs[image.paragraph].startsWith(image.before),true);
+      assert.equal(paragraphs[image.paragraph-1].startsWith(image.after),true);
+    }
+  }
+  const sign=read('server/classics/sherlock-holmes-the-sign-of-the-four/book.txt').toString('utf8');
+  assert.match(sign,/incommodes que ceux qui ont de l’esprit/);
+  const valley=read('server/classics/sherlock-holmes-the-valley-of-fear/book.txt').toString('utf8');
+  assert.match(valley,/534 C2 13 127 36 31 4 17 21 41 DOUGLAS/);
+});
+
 test('the upload script stays a dry run and refuses any other Supabase project',()=>{
   const plan=spawnSync(process.execPath,['server/classics/upload.mjs'],{cwd:root,encoding:'utf8'});
   assert.equal(plan.status,0,plan.stderr);
@@ -433,6 +486,8 @@ test('the upload script stays a dry run and refuses any other Supabase project',
   assert.match(plan.stdout,/hrtfhojbhqvaoiulspto/);
   assert.match(plan.stdout,/alice-in-wonderland\/book\.txt/);
   assert.match(plan.stdout,/the-great-gatsby\/cover\.webp/);
+  assert.match(plan.stdout,/sherlock-holmes-a-study-in-scarlet\/illustrations\/scarlet-01\.webp/);
+  assert.match(plan.stdout,/sherlock-holmes-the-valley-of-fear\/book\.txt/);
   assert.doesNotMatch(plan.stdout,/SERVICE_ROLE_KEY=/);
   const wrong=spawnSync(process.execPath,['server/classics/upload.mjs','--apply'],{
     cwd:root,encoding:'utf8',env:{...process.env,SUPABASE_URL:'https://example.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'secret'},

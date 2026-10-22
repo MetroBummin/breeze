@@ -159,4 +159,18 @@ An illustration or section that fails those checks is dropped. The book still lo
 
 Pride and Prejudice, Alice, and Gatsby keep their original wording. Their chapter headings are `sections` with role `chapter` (Alice also keeps `THE END`). Gatsby’s title-page lines are sections too (`inscription`, `verse`, `signature`) so the opening composer can join the dedication and keep the epigraph on the next page. The prose itself is unchanged.
 
+## Sherlock Holmes novels
+
+Three public-domain novels are remote classics, lightly modernized in the same way as the five bundled Holmes stories. The reading text keeps Doyle’s plot, dialogue meaning, paragraph order, clues and chapter structure. Edits are closed spellings (`to-day` to `today`), polite `Pray` to `please`, and a few archaic words (`whence`, `fain`, `ejaculated`, `clinched`). British spelling, Watson’s voice and period objects stay. This is not a graded reader and not a Project Gutenberg branded edition.
+
+| Book | Gutenberg | Published words |
+| --- | --- | --- |
+| A Study in Scarlet | eBook #244, retrieved 2026-10-22 | 43,423 |
+| The Sign of the Four | eBook #2097, retrieved 2026-10-22 | 43,099 |
+| The Valley of Fear | eBook #3289, retrieved 2026-10-22 | 57,608 |
+
+Each book has its own title page (`sourceTitle`) and `sections`: `title`, `subtitle`, `contents-heading`, `contents`, part `label`s where the novel has parts, part `section`s, and `chapter`. A Study in Scarlet also has the Watson reminiscence as an `inscription`. Valley’s epilogue is a `label` in the contents and a `chapter` in the story. Chapter headings use the Hound form, `Chapter 1. Title`. Part numbers restart, as in the source.
+
+Covers are 768×1152 WebP. Each novel has nine interior scenes, 1400×700 WebP, placed after the passage they show. They are original cinematic illustrations in the same photographic treatment as the bundled Holmes art, not film or television stills and not copies of the period plates. Gutenberg’s Valley of Fear caption list is omitted from the reading text; those moments are the scenes instead.
+
 There is no SQL migration. `ready/` and `server/ready/` are not part of this.
