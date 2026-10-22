@@ -93,8 +93,7 @@ points at a different project. This script refuses any host other than
    ```
 
 4. Create the public `classics` bucket if it is missing, and upsert
-   `catalog.json` plus `book.txt` and `cover.webp` for
-   `pride-and-prejudice`, `alice-in-wonderland`, and `the-great-gatsby`.
+   `catalog.json` plus each book's `book.txt`, cover, and illustration files.
 
    ```
    node server/classics/upload.mjs --apply
@@ -106,11 +105,58 @@ points at a different project. This script refuses any host other than
    curl -fsS 'https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/catalog.json'
    ```
 
-No app release is required after that. The next Home open reads the catalog.
-Another book is a new object plus one new entry in `catalog.json`, then the
-same upload. Alice and Gatsby keep the same ids as the previously bundled
-copies. Until those catalog entries are public, the app still offers the
-bundled files. Once the entries are public, Home uses the catalog text, cover,
-and hook. The bucket is public read. The service-role key is the only writer.
+No app release is required for a new classic's text and cover. Illustrations
+and Holmes presentation need the app build that understands the fields below.
+The next Home open reads the catalog. Alice and Gatsby keep the same ids as
+the previously bundled copies. Until those catalog entries are public, the app
+still offers the bundled files. Once the entries are public, Home uses the
+catalog text, cover, and hook. The bucket is public read. The service-role key
+is the only writer.
+
+## Adding a book
+
+`upload.mjs` reads `catalog.json`. It does not keep its own book list. For
+each entry it uploads:
+
+| Catalog field | Local file |
+| --- | --- |
+| `content` | `<id>/book.txt` |
+| `cover` | `<id>/<cover filename>` |
+| `illustrations[].file` | `<id>/illustrations/<filename>` |
+
+`book.txt` bytes and SHA-256 must equal `bytes` and `contentVersion`. A dry
+run (`node server/classics/upload.mjs`) prints that plan and checks the hash.
+`--apply` writes, and only after the owner approves. URLs must stay on
+`hrtfhojbhqvaoiulspto` under `classics/<id>/`.
+
+`backroom-homeward-bound` is the dormant bundled Homeward story. Its folder
+matches the objects already in the bucket. The app offers the bundled text,
+cover, and ten local scenes when this id is in the catalog. It does not
+replace a saved copy.
+
+## Catalog fields for a remote Holmes story
+
+Required on every book: `id`, `title`, `author`, `content`, `contentVersion`
+(64-hex SHA-256 of `book.txt`). `id` is a lowercase slug.
+
+Holmes presentation is automatic when `id` starts with `sherlock-holmes-`, or
+when `style` is `"holmes"`. The reader then uses the same story type, byline,
+and series/hook card fields as the bundled Holmes books. `series` and `hook`
+are the existing card fields (`series` max 80, `hook` max 400).
+
+Optional:
+
+| Field | Meaning |
+| --- | --- |
+| `presentation` | `"story"` for the story reader (byline, chapter pages). |
+| `style` | `"holmes"` if the id does not already start with `sherlock-holmes-`. |
+| `sourceTitle` | `true` when the text contains its own title page. Hides the repeated reader title and the byline, the way Hound does. |
+| `sections` | Up to 200 exact headings. Each item is `{paragraph, text, role}`. `paragraph` is the 0-based block index. `text` must match that block or the heading is skipped. `role` is `title`, `subtitle`, `dedication`, `signature`, `contents-heading`, `contents`, `chapter`, `section`, `end`, `scene`, `verse`, `label`, or `inscription`. `chapter` and `section` start a new page. A legacy `headings` array is read as `sections`, and a role of `heading` is stored as `section`. |
+| `illustrations` | Up to 30 scenes. Each item is `{id, before, after, paragraph, file, alt, width, height}`. Placement matches bundled Holmes: the picture sits before block `paragraph` only when that block starts with `before` and the previous block starts with `after`. `file` is the public https URL. `width` and `height` are the pixel size (Holmes scenes are 1400×700). The app downloads these at import and keeps them for offline reading. |
+| `cover`, `coverPosition`, `bytes`, `wordCount`, `sourceUrl`, `site`, `license`, `licenseUrl`, `originalTitle`, `edition`, `editionNote`, `glossary`, `sources` | Same metadata the bundled long reads already carry. |
+
+An illustration or section that fails those checks is dropped. The book still loads.
+
+Pride and Prejudice, Alice, and Gatsby keep their original wording. Their chapter headings are `sections` with role `chapter` (Alice also keeps `THE END`). Gatsby’s title-page lines are sections too (`inscription`, `verse`, `signature`) so the opening composer can join the dedication and keep the epigraph on the next page. The prose itself is unchanged.
 
 There is no SQL migration. `ready/` and `server/ready/` are not part of this.

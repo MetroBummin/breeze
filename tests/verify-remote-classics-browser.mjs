@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {mkdirSync, readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {extname, resolve} from 'node:path';
@@ -80,6 +81,23 @@ try {
   assert.ok(titles.includes('Pride and Prejudice'), titles.join(' | '));
   assert.ok(titles.includes('The Adventure of the Speckled Band'));
   assert.ok(titles.includes("Alice's Adventures in Wonderland"));
+  assert.ok(titles.includes('Backroom - Homeward Bound'), titles.join(' | '));
+  const homeward = '#casual-rail .longread[data-longread-id="backroom-homeward-bound"]';
+  assert.equal(await page.locator(homeward).count(), 1, 'Homeward Bound is offered once from the remote catalog');
+  const surfaced = await page.evaluate(() => {
+    const read = remoteClassicCatalogReads().find(item => item.id === 'backroom-homeward-bound');
+    const bundled = LONG_READS.find(item => item.id === 'backroom-homeward-bound');
+    return {
+      file: read && read.file,
+      remote: !!(read && read.remote),
+      dormantBundled: !!(bundled && bundled.dormant),
+      offered: classicCatalogOffers().some(item => item.id === 'backroom-homeward-bound' && item.file === 'assets/longreads/homewardbound.txt'),
+    };
+  });
+  assert.equal(surfaced.file, 'assets/longreads/homewardbound.txt');
+  assert.equal(surfaced.remote, false);
+  assert.equal(surfaced.dormantBundled, true);
+  assert.equal(surfaced.offered, true);
   assert.equal(await page.locator(card).evaluate(node => node.classList.contains('is-offline')), false);
 
   for (const [width, height, name] of [[390, 844, 'phone'], [820, 1024, 'tablet'], [1440, 900, 'desktop'], [844, 390, 'short']]) {
@@ -97,6 +115,7 @@ try {
 
   await page.locator('#longform .section-link').click();
   await page.locator(libraryCard).waitFor();
+  assert.equal(await page.locator('#longform-recommend-rail .longread[data-longread-id="backroom-homeward-bound"]').count(), 1);
   assert.equal(bookFetches, 0, 'Opening the library downloaded the novel');
   await page.locator('#nav-home').click();
   await page.locator(card).waitFor();
@@ -184,8 +203,141 @@ try {
   await page.evaluate(() => homeReady);
   await page.locator('#home-recommend-kind [data-kind="books"]').click();
   assert.equal(await page.locator(card).count(), 0, 'A saved book returns to the rail when the catalog cannot refresh');
+  await page.locator(homeward).waitFor();
+  assert.equal(await page.locator(homeward).count(), 1, 'A cached dormant book stays on the 책 rail when the catalog cannot refresh');
   await openSaved();
   assert.equal(bookFetches, before, 'A cached book was fetched again after the catalog failed');
+
+  const holmesText = [
+    'I had called upon my friend Sherlock Holmes upon the second morning after Christmas, with the intention of wishing him the compliments of the season.',
+    '“You are engaged,” said I; “perhaps I interrupt you.”',
+    'II.',
+    'Holmes waved me toward the chair beside the fire.',
+    'Chapter 2. The Goose',
+    'The salesman opened his ledger under the market lamp and named the goose that had carried the stone.',
+  ].join('\n\n') + '\n';
+  const holmesHash = createHash('sha256').update(holmesText).digest('hex');
+  const holmesId = 'sherlock-holmes-blue-carbuncle';
+  const sceneFile = 'blue-carbuncle-01.webp';
+  const sceneBytes = readFileSync(resolve(root, 'assets/longreads/illustrations/speckled-band-01.webp'));
+  const holmesCover = readFileSync(resolve(root, 'assets/longreads/covers/speckled-band.webp'));
+  const holmesCatalog = JSON.stringify({version: 1, books: [{
+    id: holmesId,
+    title: 'The Adventure of the Blue Carbuncle',
+    author: 'Arthur Conan Doyle',
+    cover: `https://cdn.example/classics/${holmesId}/cover.webp`,
+    coverPosition: 'center top',
+    bytes: Buffer.byteLength(holmesText),
+    content: `https://cdn.example/classics/${holmesId}/book.txt`,
+    contentVersion: holmesHash,
+    wordCount: 70,
+    sourceUrl: 'https://www.gutenberg.org/ebooks/1661',
+    site: 'Project Gutenberg',
+    license: 'Original: public domain in the USA',
+    licenseUrl: 'https://www.gutenberg.org/ebooks/1661',
+    originalTitle: 'The Adventure of the Blue Carbuncle (1892)',
+    series: 'SHERLOCK HOLMES · LIGHTLY MODERNIZED',
+    presentation: 'story',
+    hook: '크리스마스 아침, 길에서 주운 낡은 모자 하나와 거위 한 마리.',
+    edition: 'Lightly modernized English edition',
+    sections: [
+      {paragraph: 2, text: 'II.', role: 'section'},
+      {paragraph: 4, text: 'Chapter 2. The Goose', role: 'chapter'},
+    ],
+    illustrations: [{
+      id: 'blue-carbuncle-01',
+      before: '“You are engaged,” said I; “perhaps I interrupt you.”',
+      after: 'I had called upon my friend Sherlock Holmes upon the second morning after Christmas, with the',
+      paragraph: 1,
+      file: `https://cdn.example/classics/${holmesId}/illustrations/${sceneFile}`,
+      alt: 'A battered felt hat hangs on a chair beside Holmes',
+      width: 1400,
+      height: 700,
+    }],
+  }]});
+  let sceneFetches = 0, sceneOffline = false;
+  const holmesContext = await browser.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await holmesContext.addInitScript(() => localStorage.setItem('breeze.onboarding.v1', JSON.stringify('done')));
+  const holmesPage = await holmesContext.newPage();
+  holmesPage.on('pageerror', error => pageErrors.push(error.message));
+  await holmesPage.route('**/*', async route => {
+    const url = route.request().url().split('#')[0].split('?')[0];
+    if (url.startsWith(base) || route.request().url().startsWith('blob:')) return route.continue();
+    if (url.endsWith('/classics/catalog.json'))
+      return route.fulfill({status: 200, contentType: 'application/json; charset=utf-8', body: holmesCatalog});
+    if (url.endsWith(`/classics/${holmesId}/book.txt`))
+      return route.fulfill({status: 200, contentType: 'text/plain; charset=utf-8', body: holmesText});
+    if (url.endsWith(`/classics/${holmesId}/cover.webp`))
+      return route.fulfill({status: 200, contentType: 'image/webp', body: holmesCover});
+    if (url.endsWith(`/illustrations/${sceneFile}`)) {
+      sceneFetches++;
+      if (sceneOffline) return route.fulfill({status: 503, body: 'offline'});
+      return route.fulfill({status: 200, contentType: 'image/webp', body: sceneBytes});
+    }
+    return route.abort();
+  });
+  const holmesCard = `#casual-rail .longread[data-longread-id="${holmesId}"]`;
+  await holmesPage.goto(base);
+  await holmesPage.evaluate(() => homeReady);
+  await holmesPage.locator('#home-recommend-kind [data-kind="books"]').click();
+  await holmesPage.locator(holmesCard).waitFor();
+  await holmesPage.locator(holmesCard).click();
+  assert.equal(await holmesPage.locator('#article-preview .ap-summary').textContent(), '크리스마스 아침, 길에서 주운 낡은 모자 하나와 거위 한 마리.');
+  assert.equal(await holmesPage.locator('#article-preview .ap-start').textContent(), '읽기 시작');
+  await holmesPage.locator('#article-preview .ap-start').click();
+  await holmesPage.waitForFunction(() => (document.querySelector('#rtext')?.textContent || '').includes('perhaps I interrupt you'));
+  const holmesReader = await holmesPage.evaluate(bookId => {
+    const book = books.find(item => item.longReadId === bookId);
+    const image = document.querySelector('#rtext figure.story-illustration img');
+    return {
+      story: document.querySelector('#rtext').classList.contains('holmes-story'),
+      reading: document.querySelector('#readwrap').classList.contains('holmes-reading'),
+      byline: document.querySelector('#rtext .holmes-byline')?.textContent || '',
+      section: document.querySelector('#rtext .holmes-section')?.textContent || '',
+      chapter: document.querySelector('#rtext .holmes-chapter')?.textContent || '',
+      scene: document.querySelector('#rtext figure.story-illustration')?.dataset.scene || '',
+      alt: image?.alt || '',
+      stored: !!(book && book.illustrations && book.illustrations.length === 1 && book.longReadStyle === 'holmes' && book.sections.length === 2),
+    };
+  }, holmesId);
+  assert.equal(holmesReader.story, true);
+  assert.equal(holmesReader.reading, true);
+  assert.equal(holmesReader.byline, 'Arthur Conan Doyle');
+  assert.equal(holmesReader.section, 'II.');
+  assert.equal(holmesReader.chapter, 'Chapter 2. The Goose');
+  assert.equal(holmesReader.scene, sceneFile);
+  assert.equal(holmesReader.alt, 'A battered felt hat hangs on a chair beside Holmes');
+  assert.equal(holmesReader.stored, true);
+  await holmesPage.locator('#rtext figure.story-illustration img').scrollIntoViewIfNeeded();
+  await holmesPage.waitForFunction(() => {
+    const image = document.querySelector('#rtext figure.story-illustration img');
+    return image && image.naturalWidth >= 1400;
+  });
+  assert.equal(await holmesPage.locator('#rtext figure.story-illustration img').evaluate(image => image.naturalWidth >= 1400), true);
+  assert.ok(sceneFetches >= 1, 'The scene file was fetched with the book');
+  const sceneFetchesAfterImport = sceneFetches;
+  await holmesPage.screenshot({animations: 'disabled', path: `${proof}/reader-holmes-illustration-light.png`});
+  const savedHolmes = await holmesPage.evaluate(bookId => books.find(item => item.longReadId === bookId).id, holmesId);
+  await holmesPage.locator('#readback').click();
+  await holmesPage.waitForFunction(() => activeAppView() === 'home');
+  sceneOffline = true;
+  await holmesPage.reload();
+  await holmesPage.evaluate(() => homeReady);
+  await holmesPage.waitForFunction(id => {
+    const image = document.querySelector('#rtext figure.story-illustration img');
+    if (image) {
+      image.scrollIntoView();
+      return image.naturalWidth >= 1400 && String(image.src || '').startsWith('blob:');
+    }
+    const shelf = document.querySelector(`#shelf [data-local-book="${id}"]`);
+    if (shelf) { shelf.click(); return false; }
+    const start = document.querySelector('#article-preview .ap-start');
+    if (start && !start.disabled) start.click();
+    return false;
+  }, savedHolmes);
+  assert.equal(sceneFetches, sceneFetchesAfterImport, 'A saved illustration was downloaded again after the scene file went offline');
+  assert.equal(await holmesPage.locator('#rtext .holmes-byline').textContent(), 'Arthur Conan Doyle');
+  await holmesContext.close();
   assert.deepEqual(pageErrors, []);
 } finally {
   await browser.close();

@@ -31,20 +31,78 @@ function remoteClassicSources(value){
   }).filter(Boolean);
   return sources.length?sources:undefined;
 }
+function remoteClassicAnchor(value,max){
+  const text=String(value||'').replace(/\s+/g,' ').trim();
+  if(!text||text.length>max)return '';
+  return text;
+}
+const REMOTE_SECTION_ROLES=new Set(['title','subtitle','dedication','signature','contents-heading','contents','chapter','section','end','scene','verse','label','inscription']);
+function remoteClassicSections(value){
+  if(!Array.isArray(value))return undefined;
+  const sections=[];
+  for(const item of value){
+    if(sections.length>=200)break;
+    if(!item||typeof item!=='object')continue;
+    const paragraph=Number(item.paragraph);
+    const text=remoteClassicAnchor(item.text,500);
+    const named=String(item.role||'').trim();
+    const role=named==='heading'?'section':named;
+    if(!Number.isInteger(paragraph)||paragraph<0||paragraph>100000||!text||!REMOTE_SECTION_ROLES.has(role))continue;
+    sections.push({paragraph,text,role});
+  }
+  return sections.length?sections:undefined;
+}
+function remoteClassicIllustrations(value){
+  if(!Array.isArray(value))return undefined;
+  const seen=new Set(),images=[];
+  for(const item of value){
+    if(images.length>=30)break;
+    if(!item||typeof item!=='object')continue;
+    const id=remoteClassicText(item.id,80);
+    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)||seen.has(id))continue;
+    const before=remoteClassicAnchor(item.before,500);
+    const after=remoteClassicAnchor(item.after,500);
+    const paragraph=Number(item.paragraph);
+    const file=remoteClassicUrl(item.file);
+    const alt=remoteClassicText(item.alt,300);
+    const width=Number(item.width),height=Number(item.height);
+    if(!before||!after||!file||!alt)continue;
+    if(!Number.isInteger(paragraph)||paragraph<1||paragraph>100000)continue;
+    if(!Number.isInteger(width)||width<1||width>8000)continue;
+    if(!Number.isInteger(height)||height<1||height>8000)continue;
+    seen.add(id);
+    images.push({id,before,after,paragraph,file,alt,width,height});
+  }
+  return images.length?images:undefined;
+}
+function bundledLongRead(id){
+  return typeof LONG_READS!=='undefined'&&LONG_READS.find(read=>read.id===id)||null;
+}
 function remoteClassicEntry(raw){
   if(!raw||typeof raw!=='object')return null;
   const id=remoteClassicText(raw.id,80);
   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))return null;
-  if(typeof LONG_READS!=='undefined'&&LONG_READS.some(read=>read.id===id))return null;
+  const bundled=bundledLongRead(id);
+  if(bundled&&!bundled.dormant)return null;
   if(typeof CLASSICS!=='undefined'&&CLASSICS.some(classic=>classic.id===id))return null;
   const title=remoteClassicText(raw.title,200);
   const author=remoteClassicText(raw.author,200);
   const content=remoteClassicUrl(raw.content||raw.contentUrl||raw.file);
   const version=String(raw.contentVersion||raw.sha256||'').replace(/^sha256:/i,'').trim().toLowerCase();
   if(!title||!author||!content||!/^[a-f0-9]{64}$/.test(version))return null;
+  /* A dormant bundled id is offered again from the copy already in the app.
+     Remote text is not substituted, so its scenes, lookups and saved copies
+     stay on the bundled paragraphs. content/contentVersion keep the cache
+     entry parsable on the next launch. */
+  if(bundled&&bundled.dormant){
+    return {...bundled,dormant:false,surfacedDormant:true,remote:false,content,contentVersion:version};
+  }
   const bytes=Number(raw.bytes??raw.size);
   const words=Number(raw.wordCount);
   const sources=remoteClassicSources(raw.sources);
+  const illustrations=remoteClassicIllustrations(raw.illustrations);
+  const sections=remoteClassicSections(raw.sections||raw.headings);
+  const style=raw.style==='holmes'||id.startsWith('sherlock-holmes-')?'holmes':'';
   return {
     id, remote:true, title, author, file:content, sha256:version, contentVersion:version,
     cover:remoteClassicUrl(raw.cover||raw.coverUrl),
@@ -63,6 +121,10 @@ function remoteClassicEntry(raw){
     glossary:remoteClassicText(raw.glossary,400),
     ...(raw.presentation==='story'?{presentation:'story'}:{}),
     ...(sources?{sources}:{}),
+    ...(illustrations?{illustrations}:{}),
+    ...(sections?{sections}:{}),
+    ...(style?{style}:{}),
+    ...(raw.sourceTitle===true?{sourceTitle:true}:{}),
   };
 }
 function remoteClassicEntries(manifest){

@@ -120,12 +120,12 @@ function releaseReaderBodyImages(){
 /* The author line under the title. Hound already names the author in its
    own title page, so it does not get a second synthetic line. */
 function readerOpeningByline(book){
-  const defined=typeof longReadDefinition==='function'?longReadDefinition(book.longReadId):null;
-  const holmes=!!(defined&&defined.id.startsWith('sherlock-holmes-'));
-  const story=holmes||!!(defined&&defined.presentation==='story');
-  const originalStory=!story&&book.kind==='txt'&&book.readingStyle==='original';
-  if(book.longReadId==='sherlock-holmes-hound-of-the-baskervilles') return false;
-  return (story||originalStory)&&!!(book.author||(defined&&defined.author));
+  const holmes=typeof longReadHolmesDefinition==='function'?longReadHolmesDefinition(book):null;
+  const defined=holmes||(typeof longReadDefinition==='function'?longReadDefinition(book.longReadId):null);
+  const story=!!(holmes||(defined&&(defined.presentation==='story'||defined.style==='holmes'||String(defined.id||'').startsWith('sherlock-holmes-'))));
+  const originalStory=!story&&book&&book.kind==='txt'&&book.readingStyle==='original';
+  if(book&&(book.longReadId==='sherlock-holmes-hound-of-the-baskervilles'||(holmes&&holmes.sourceTitle))) return false;
+  return (story||originalStory)&&!!((book&&book.author)||(defined&&defined.author));
 }
 /* Render source text using formatting metadata without changing the source. */
 function renderBookBody(b){
@@ -135,13 +135,13 @@ function renderBookBody(b){
   const rt = document.getElementById('rtext');
   rt.innerHTML='';
   const defined=typeof longReadDefinition==='function'?longReadDefinition(b.longReadId):LONG_READS.find(read=>read.id===b.longReadId);
-  const holmes=defined&&defined.id.startsWith('sherlock-holmes-')?defined:null;
+  const holmes=typeof longReadHolmesDefinition==='function'?longReadHolmesDefinition(b):(defined&&defined.id.startsWith('sherlock-holmes-')?defined:null);
   const story=holmes||(defined&&defined.presentation==='story'?defined:null);
   const originalStory=!story && b.kind==='txt' && b.readingStyle==='original';
   rt.classList.toggle('holmes-story',!!story);
   rt.classList.toggle('original-story',originalStory);
-  const sourceTitle=!!holmes&&b.longReadId==='sherlock-holmes-hound-of-the-baskervilles'&&
-    b.paras[0]===HOLMES_HOUND_FRONTMATTER[0].text&&b.title.toLowerCase()===holmes.title.toLowerCase();
+  const sourceTitle=typeof longReadSourceTitleActive==='function'?longReadSourceTitleActive(b,holmes):(!!holmes&&b.longReadId==='sherlock-holmes-hound-of-the-baskervilles'&&
+    b.paras[0]===HOLMES_HOUND_FRONTMATTER[0].text&&b.title.toLowerCase()===holmes.title.toLowerCase());
   document.getElementById('readwrap').classList.toggle('holmes-source-title',sourceTitle);
   document.getElementById('readwrap').classList.toggle('holmes-reading',!!story);
   document.getElementById('readwrap').classList.toggle('original-reading',originalStory);
@@ -187,8 +187,14 @@ function renderBookBody(b){
       r:['title'].includes(role)?'h1':['chapter','section','contents-heading'].includes(role)?'h2':block.r,
       before:['chapter','section'].includes(role)?'page':block.before}:block;
   });
-  if(originalStory)list=list.map(block=>/^Chapter \d+$/.test(String(block.t||'').trim())
-    ?{...block,bookRole:'chapter',r:'h2',before:'page'}:block);
+  if(originalStory)list=list.map(block=>{
+    const role=typeof longReadBlockRole==='function'?longReadBlockRole(b,block):'';
+    if(role)return {...block,bookRole:role,
+      r:['title'].includes(role)?'h1':['chapter','section','contents-heading'].includes(role)?'h2':block.r,
+      before:['chapter','section'].includes(role)?'page':block.before};
+    return /^Chapter \d+$/.test(String(block.t||'').trim())
+      ?{...block,bookRole:'chapter',r:'h2',before:'page'}:block;
+  });
   if((story||originalStory)&&typeof composeBookOpening==='function') composeBookOpening(list);
   if(readerOpeningByline(b)){
     const author=document.createElement('p');
@@ -207,10 +213,11 @@ function renderBookBody(b){
       fig.className='story-illustration';
       fig.dataset.scene=illustration.file.split('/').pop();
       const img=document.createElement('img');
-      img.src=illustration.file;
       img.alt=illustration.alt;
       img.width=illustration.width||1536; img.height=illustration.height||1024;
       img.loading='lazy'; img.decoding='async';
+      const remoteScene=/^https:/i.test(String(illustration.file||''));
+      const sceneKey=remoteScene&&typeof longReadSceneKey==='function'?longReadSceneKey(b,illustration):'';
       // Unloaded art keeps its width/height box, then WebKit can drop that box
       // before `error`. Sampling the viewport at that point locks the shifted
       // paragraph on engines with no scroll anchoring. Remember the intact box
@@ -233,6 +240,28 @@ function renderBookBody(b){
         lastAnchor=landed&&Math.abs(landed.pi-anchor.pi)<=1?landed:anchor;
       };
       requestAnimationFrame(noteBox);
+      const showSceneBlob=blob=>{
+        if(imageGeneration!==readerBodyImageGeneration||!fig.isConnected||!blob)return false;
+        const url=URL.createObjectURL(blob);
+        readerBodyImageUrls.add(url);
+        img.src=url;
+        return true;
+      };
+      if(sceneKey&&typeof imgGet==='function'){
+        imgGet(sceneKey).then(blob=>{
+          if(showSceneBlob(blob)||imageGeneration!==readerBodyImageGeneration||!fig.isConnected)return;
+          img.src=illustration.file;
+        });
+        img.addEventListener('load',()=>{
+          if(!String(img.currentSrc||img.src||'').startsWith('https:')||typeof imgPut!=='function')return;
+          imgGet(sceneKey).then(existing=>{
+            if(existing)return;
+            fetch(illustration.file).then(response=>response.ok?response.blob():null).then(blob=>{
+              if(blob&&blob.size&&/^image\/(jpeg|png|gif|webp)$/i.test(blob.type))return imgPut(sceneKey,blob);
+            }).catch(()=>{});
+          });
+        },{once:true});
+      }else img.src=illustration.file;
       fig.appendChild(img);
       page.appendChild(fig);
       pageChars+=400;

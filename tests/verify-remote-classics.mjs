@@ -24,7 +24,7 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const entry=catalog.books[0];
   assert.equal(catalog.version,1);
-  assert.deepEqual(catalog.books.map(book=>book.id),['pride-and-prejudice','alice-in-wonderland','the-great-gatsby']);
+  assert.deepEqual(catalog.books.map(book=>book.id),['pride-and-prejudice','alice-in-wonderland','the-great-gatsby','backroom-homeward-bound']);
   assert.equal(entry.id,'pride-and-prejudice');
   assert.equal(entry.hook,'첫 만남부터 오만하게 구는 부자 신사 다아시, 그런 그를 단번에 싫어하게 된 엘리자베스. 첫인상과 편견을 넘어, 두 사람은 서로를 제대로 보게 될까?');
   assert.equal(entry.title,'Pride and Prejudice');
@@ -216,6 +216,214 @@ test('a failed catalog still offers the bundled Alice and Gatsby files',async()=
   assert.equal(cached.remote,true);
   assert.equal(cached.hook,'server hook');
   assert.equal(context.classicCatalogOffers().some(read=>read.id==='the-great-gatsby'&&read.fallback),true);
+});
+
+const blueCarbuncle={
+  id:'sherlock-holmes-blue-carbuncle',
+  title:'The Adventure of the Blue Carbuncle',
+  author:'Arthur Conan Doyle',
+  cover:'https://cdn.example/classics/sherlock-holmes-blue-carbuncle/cover.webp',
+  coverPosition:'center top',
+  bytes:120,
+  content:'https://cdn.example/classics/sherlock-holmes-blue-carbuncle/book.txt',
+  contentVersion:'cd'.repeat(32),
+  wordCount:40,
+  sourceUrl:'https://www.gutenberg.org/ebooks/1661',
+  site:'Project Gutenberg',
+  license:'Original: public domain in the USA',
+  licenseUrl:'https://www.gutenberg.org/ebooks/1661',
+  originalTitle:'The Adventure of the Blue Carbuncle (1892)',
+  series:'SHERLOCK HOLMES · LIGHTLY MODERNIZED',
+  presentation:'story',
+  hook:'크리스마스 아침, 길에서 주운 낡은 모자 하나와 거위 한 마리.',
+  edition:'Lightly modernized English edition',
+  sections:[
+    {paragraph:2, text:'II.', role:'section'},
+    {paragraph:4, text:'Chapter 2. The Goose', role:'chapter'},
+    {paragraph:0, text:'Not the real opening', role:'title'},
+  ],
+  illustrations:[
+    {
+      id:'blue-carbuncle-01',
+      before:'“You are engaged,” said I; “perhaps I interrupt you.”',
+      after:'I had called upon my friend Sherlock Holmes upon the second morning after Christmas, with the',
+      paragraph:1,
+      file:'https://cdn.example/classics/sherlock-holmes-blue-carbuncle/illustrations/blue-carbuncle-01.webp',
+      alt:'A battered felt hat hangs on a chair beside Holmes',
+      width:1400,
+      height:700,
+    },
+    {id:'blue-carbuncle-01', before:'duplicate', after:'duplicate', paragraph:2, file:'https://cdn.example/dup.webp', alt:'dup', width:10, height:10},
+    {id:'broken', before:'x', after:'y', paragraph:1, file:'http://insecure.example/a.webp', alt:'no', width:10, height:10},
+    {id:'short', before:'x', after:'y', paragraph:0, file:'https://cdn.example/a.webp', alt:'no', width:10, height:10},
+  ],
+};
+const blueParagraphs=[
+  'I had called upon my friend Sherlock Holmes upon the second morning after Christmas, with the intention of wishing him the compliments of the season.',
+  '“You are engaged,” said I; “perhaps I interrupt you.”',
+  'II.',
+  'Holmes waved me toward the chair beside the fire.',
+  'Chapter 2. The Goose',
+  'The salesman opened his ledger under the market lamp.',
+];
+
+test('a remote Holmes entry keeps illustrations, Holmes style, and exact section headings',async()=>{
+  const {context}=harness(async()=>new Response(JSON.stringify({version:1,books:[blueCarbuncle]}),{status:200,headers:{'content-type':'application/json'}}));
+  const loaded=await context.refreshRemoteClassics();
+  const read=loaded.find(item=>item.id==='sherlock-holmes-blue-carbuncle');
+  assert.equal(read.remote,true);
+  assert.equal(read.style,'holmes');
+  assert.equal(read.presentation,'story');
+  assert.equal(read.series,'SHERLOCK HOLMES · LIGHTLY MODERNIZED');
+  assert.equal(read.hook,'크리스마스 아침, 길에서 주운 낡은 모자 하나와 거위 한 마리.');
+  assert.equal(read.illustrations.length,1);
+  assert.equal(read.illustrations[0].id,'blue-carbuncle-01');
+  assert.equal(read.illustrations[0].width,1400);
+  assert.deepEqual([...read.sections.map(section=>section.role)],['section','chapter','title']);
+  const book={id:'saved-blue',longReadId:read.id,title:read.title,author:read.author,paras:blueParagraphs,illustrations:read.illustrations,sections:read.sections};
+  assert.equal(context.longReadHolmesDefinition(book).id,read.id);
+  assert.equal(context.longReadIllustrationBefore(book,blueParagraphs[1],1).id,'blue-carbuncle-01');
+  assert.equal(context.longReadIllustrationBefore(book,blueParagraphs[1],2),null);
+  const edited={...book,paras:blueParagraphs.slice()};
+  edited.paras[0]='User edited this passage.';
+  assert.equal(context.longReadIllustrationBefore(edited,edited.paras[1],1),null);
+  assert.equal(context.longReadBlockRole(book,{f:2,t:'II.'}),'section');
+  assert.equal(context.longReadBlockRole(book,{f:4,t:'Chapter 2. The Goose'}),'chapter');
+  assert.equal(context.longReadBlockRole(book,{f:4,t:'User edited this chapter'}),'');
+  assert.equal(context.longReadSourceTitleActive({...book,title:'Other title'},{...read,sourceTitle:true}),false);
+  const titled={...read,sourceTitle:true,sections:[{paragraph:0,text:blueParagraphs[0],role:'title'}]};
+  assert.equal(context.longReadSourceTitleActive(book,titled),true);
+  assert.equal(JSON.stringify(book.paras),JSON.stringify(blueParagraphs));
+});
+
+test('remote scene files are stored with the saved book for offline reading',async()=>{
+  const blobs=[];
+  const {context}=harness(async()=>new Response(Uint8Array.from([1,2,3]),{status:200,headers:{'content-type':'image/webp'}}));
+  context.imgPut=async(key,blob)=>{blobs.push([key,blob.type,blob.size]);};
+  const book={id:'saved-blue',longReadId:'sherlock-holmes-blue-carbuncle'};
+  context.books.push(book);
+  const stored=await context.cacheLongReadIllustrations({
+    remote:true,
+    illustrations:[{id:'blue-carbuncle-01',file:'https://cdn.example/blue-carbuncle-01.webp'}],
+  },book);
+  assert.equal(stored,1);
+  assert.deepEqual(blobs,[['saved-blue|scene|blue-carbuncle-01','image/webp',3]]);
+  context.books.length=0;
+  const skipped=await context.cacheLongReadIllustrations({
+    illustrations:[{id:'blue-carbuncle-02',file:'https://cdn.example/blue-carbuncle-02.webp'}],
+  },book);
+  assert.equal(skipped,0);
+  assert.equal(blobs.length,1);
+});
+
+test('a dormant bundled book is offered from the remote catalog without replacing its local text',async()=>{
+  const saved={id:'saved-backrooms',longReadId:'backroom-homeward-bound',paras:['My saved text'],cover:'custom-cover'};
+  const before=JSON.stringify(saved);
+  let failed=false;
+  const {context,store}=harness(async()=>{
+    if(failed)throw new Error('offline');
+    return new Response(JSON.stringify({version:1,books:[
+      {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',author:'DivineAtlas',
+        content:'https://cdn.example/backrooms/book.txt',contentVersion:'ab'.repeat(32),
+        cover:'https://cdn.example/backrooms/cover.png'},
+      {id:'sherlock-holmes-speckled-band',title:'Duplicate',author:'Nobody',
+        content:'https://cdn.example/no.txt',contentVersion:'cd'.repeat(32)},
+      {id:'backroom-homeward-bound'},
+    ]}),{status:200,headers:{'content-type':'application/json'}});
+  });
+  context.books.push(saved);
+  const loaded=await context.refreshRemoteClassics();
+  assert.deepEqual([...loaded.map(read=>read.id)],['backroom-homeward-bound']);
+  const offer=loaded[0];
+  assert.equal(offer.surfacedDormant,true);
+  assert.equal(offer.remote,false);
+  assert.equal(offer.dormant,false);
+  assert.equal(offer.file,'assets/longreads/homewardbound.txt');
+  assert.equal(offer.cover,'assets/longreads/covers/backroom-homeward-bound.png');
+  assert.equal(offer.series,'BACKROOMS TALE SERIES');
+  assert.equal(new Script("LONG_READS.find(read=>read.id==='backroom-homeward-bound').dormant").runInNewContext(context),true);
+  assert.equal(context.pendingLongReads().some(read=>read.id==='backroom-homeward-bound'),false);
+  assert.equal(context.classicCatalogOffers().some(read=>read.id==='backroom-homeward-bound'&&read.file==='assets/longreads/homewardbound.txt'),true);
+  assert.equal(JSON.stringify(saved),before);
+  const paras=['I sat stunned as the police arrived.'];
+  assert.equal(context.longReadIllustrationBefore({longReadId:'backroom-homeward-bound',paras},paras[0],0).file.endsWith('homeward-01-police-search.jpg'),true);
+  failed=true;
+  const cached=await context.refreshRemoteClassics();
+  assert.equal(cached[0].file,'assets/longreads/homewardbound.txt');
+  assert.equal(store.has('breeze.remote-classics'),true);
+});
+
+test('the novels publish chapter headings as sections for the opening composer',async()=>{
+  const catalog=JSON.parse(text('server/classics/catalog.json'));
+  const paragraphs=file=>text('server/classics/'+file+'/book.txt').replace(/\r/g,'').trim().split(/\n\s*\n+/);
+  const pp=catalog.books.find(book=>book.id==='pride-and-prejudice');
+  const ppText=paragraphs('pride-and-prejudice');
+  assert.equal(pp.sections.length,61);
+  assert.deepEqual(pp.sections.map(section=>section.role),Array.from({length:61},()=>'chapter'));
+  assert.equal(pp.sections.every(section=>ppText[section.paragraph]===section.text&&section.text===`Chapter ${pp.sections.indexOf(section)+1}`),true);
+  assert.equal(ppText[1].startsWith('It is a truth universally acknowledged'),true);
+  const alice=catalog.books.find(book=>book.id==='alice-in-wonderland');
+  const aliceText=paragraphs('alice-in-wonderland');
+  assert.equal(alice.sections.filter(section=>section.role==='chapter').length,12);
+  assert.equal(alice.sections.at(-1).role,'end');
+  assert.equal(alice.sections.every(section=>aliceText[section.paragraph]===section.text),true);
+  const gatsby=catalog.books.find(book=>book.id==='the-great-gatsby');
+  const gatsbyText=paragraphs('the-great-gatsby');
+  assert.deepEqual(gatsby.sections.slice(0,8).map(section=>section.role),['inscription','inscription','inscription','verse','verse','verse','verse','signature']);
+  assert.equal(gatsby.sections.filter(section=>section.role==='chapter').length,9);
+  assert.equal(gatsby.sections.every(section=>gatsbyText[section.paragraph]===section.text),true);
+  const opening={};
+  new Script(text('scripts/reader/book-opening.js')).runInNewContext(opening);
+  const blocks=gatsby.sections.slice(0,9).map(section=>({bookRole:section.role,t:section.text,f:section.paragraph}));
+  opening.composeBookOpening(blocks);
+  assert.deepEqual(blocks.slice(0,3).map(block=>block.openingDedication),[true,true,true]);
+  assert.equal(blocks[3].before,'page');
+  assert.equal(blocks[7].openingAttribution,true);
+  assert.equal(blocks[8].bookRole,'chapter');
+  assert.equal(blocks[8].openingDedication,undefined);
+  const {context}=harness(async()=>new Response(JSON.stringify({version:1,books:[{
+    id:'sample-novel',title:'Sample Novel',author:'A Writer',
+    content:'https://cdn.example/sample-novel/book.txt',contentVersion:'ab'.repeat(32),
+    headings:[{paragraph:0,text:'Part I',role:'heading'},{paragraph:4,text:'Chapter 1',role:'chapter'}],
+  }]}),{status:200,headers:{'content-type':'application/json'}}));
+  const loaded=await context.refreshRemoteClassics();
+  assert.deepEqual([...loaded[0].sections.map(section=>section.role)],['section','chapter']);
+  const book={id:'saved-novel',longReadId:'sample-novel',kind:'txt',readingStyle:'original',title:'Sample Novel',author:'A Writer',paras:['Part I','Opening.','More.','Still.','Chapter 1'],sections:loaded[0].sections};
+  assert.equal(context.longReadBlockRole(book,{f:0,t:'Part I'}),'section');
+  assert.equal(context.longReadBlockRole(book,{f:4,t:'Chapter 1'}),'chapter');
+});
+
+test('Backrooms in the repo catalog matches the bundled text and the upload plan',async()=>{
+  const catalog=JSON.parse(text('server/classics/catalog.json'));
+  const entry=catalog.books.find(book=>book.id==='backroom-homeward-bound');
+  const bundled=read('assets/longreads/homewardbound.txt');
+  const cover=read('assets/longreads/covers/backroom-homeward-bound.png');
+  assert.equal(entry.bytes,bundled.length);
+  assert.equal(entry.contentVersion,createHash('sha256').update(bundled).digest('hex'));
+  assert.equal(read('server/classics/backroom-homeward-bound/book.txt').equals(bundled),true);
+  assert.equal(read('server/classics/backroom-homeward-bound/cover.png').equals(cover),true);
+  const {classicUploadPlan}=await import('../server/classics/upload.mjs');
+  const plan=classicUploadPlan(catalog).map(object=>object.path);
+  assert.deepEqual(plan,[
+    'catalog.json',
+    'pride-and-prejudice/book.txt','pride-and-prejudice/cover.webp',
+    'alice-in-wonderland/book.txt','alice-in-wonderland/cover.webp',
+    'the-great-gatsby/book.txt','the-great-gatsby/cover.webp',
+    'backroom-homeward-bound/book.txt','backroom-homeward-bound/cover.png',
+  ]);
+  const illustrated=classicUploadPlan({books:[{
+    id:'sherlock-holmes-blue-carbuncle',
+    content:'https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-blue-carbuncle/book.txt',
+    cover:'https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-blue-carbuncle/cover.webp',
+    illustrations:[{file:'https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-blue-carbuncle/illustrations/blue-carbuncle-01.webp'}],
+  }]});
+  assert.deepEqual(illustrated.map(object=>object.path),[
+    'catalog.json',
+    'sherlock-holmes-blue-carbuncle/book.txt',
+    'sherlock-holmes-blue-carbuncle/cover.webp',
+    'sherlock-holmes-blue-carbuncle/illustrations/blue-carbuncle-01.webp',
+  ]);
+  assert.throws(()=>classicUploadPlan({books:[{id:'x',content:'https://example.supabase.co/storage/v1/object/public/classics/x/book.txt'}]}),/outside/);
 });
 
 test('the upload script stays a dry run and refuses any other Supabase project',()=>{

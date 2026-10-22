@@ -18,7 +18,314 @@
       "series": "BREEZE ORIGINAL",
       "hook": "첫 만남부터 오만하게 구는 부자 신사 다아시, 그런 그를 단번에 싫어하게 된 엘리자베스. 첫인상과 편견을 넘어, 두 사람은 서로를 제대로 보게 될까?",
       "edition": "Breeze Original text",
-      "editionNote": "Jane Austen’s Pride and Prejudice (1813), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #1342, retrieved 2026-10-18. Gutenberg boilerplate, title pages, preface, illustration captions, and the printer’s colophon are omitted. Chapter headings, paragraphs, curly quotes, and em dashes follow the long-read text format. Austen’s wording is not modernized. This is not a Project Gutenberg branded edition."
+      "editionNote": "Jane Austen’s Pride and Prejudice (1813), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #1342, retrieved 2026-10-18. Gutenberg boilerplate, title pages, preface, illustration captions, and the printer’s colophon are omitted. Chapter headings, paragraphs, curly quotes, and em dashes follow the long-read text format. Austen’s wording is not modernized. This is not a Project Gutenberg branded edition.",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "Chapter 1",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 35,
+          "text": "Chapter 2",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 63,
+          "text": "Chapter 3",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 85,
+          "text": "Chapter 4",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 102,
+          "text": "Chapter 5",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 126,
+          "text": "Chapter 6",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 181,
+          "text": "Chapter 7",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 231,
+          "text": "Chapter 8",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 291,
+          "text": "Chapter 9",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 331,
+          "text": "Chapter 10",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 398,
+          "text": "Chapter 11",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 433,
+          "text": "Chapter 12",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 441,
+          "text": "Chapter 13",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 472,
+          "text": "Chapter 14",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 491,
+          "text": "Chapter 15",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 505,
+          "text": "Chapter 16",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 566,
+          "text": "Chapter 17",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 582,
+          "text": "Chapter 18",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 660,
+          "text": "Chapter 19",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 683,
+          "text": "Chapter 20",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 719,
+          "text": "Chapter 21",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 748,
+          "text": "Chapter 22",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 769,
+          "text": "Chapter 23",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 795,
+          "text": "Chapter 24",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 827,
+          "text": "Chapter 25",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 848,
+          "text": "Chapter 26",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 879,
+          "text": "Chapter 27",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 903,
+          "text": "Chapter 28",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 924,
+          "text": "Chapter 29",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 967,
+          "text": "Chapter 30",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 981,
+          "text": "Chapter 31",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1012,
+          "text": "Chapter 32",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1044,
+          "text": "Chapter 33",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1086,
+          "text": "Chapter 34",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1118,
+          "text": "Chapter 35",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1125,
+          "text": "Chapter 36",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1140,
+          "text": "Chapter 37",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1161,
+          "text": "Chapter 38",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1179,
+          "text": "Chapter 39",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1206,
+          "text": "Chapter 40",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1242,
+          "text": "Chapter 41",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1283,
+          "text": "Chapter 42",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1302,
+          "text": "Chapter 43",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1382,
+          "text": "Chapter 44",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1401,
+          "text": "Chapter 45",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1422,
+          "text": "Chapter 46",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1455,
+          "text": "Chapter 47",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1530,
+          "text": "Chapter 48",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1566,
+          "text": "Chapter 49",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1622,
+          "text": "Chapter 50",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1646,
+          "text": "Chapter 51",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1687,
+          "text": "Chapter 52",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1727,
+          "text": "Chapter 53",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1788,
+          "text": "Chapter 54",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1824,
+          "text": "Chapter 55",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1881,
+          "text": "Chapter 56",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1958,
+          "text": "Chapter 57",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1980,
+          "text": "Chapter 58",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 2027,
+          "text": "Chapter 59",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 2076,
+          "text": "Chapter 60",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 2106,
+          "text": "Chapter 61",
+          "role": "chapter"
+        }
+      ]
     },
     {
       "id": "alice-in-wonderland",
@@ -38,7 +345,74 @@
       "presentation": "story",
       "hook": "회중시계를 보며 \"늦었다!\"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?",
       "edition": "Public-domain text, typeset for Breeze",
-      "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #11. This is Lewis Carroll’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and the verse lines of the poems are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credits: Arthur DiBianca and David Widger. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html"
+      "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #11. This is Lewis Carroll’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and the verse lines of the poems are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credits: Arthur DiBianca and David Widger. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "Chapter I. Down the Rabbit-Hole",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 27,
+          "text": "Chapter II. The Pool of Tears",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 59,
+          "text": "Chapter III. A Caucus-Race and a Long Tale",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 107,
+          "text": "Chapter IV. The Rabbit Sends in a Little Bill",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 150,
+          "text": "Chapter V. Advice from a Caterpillar",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 251,
+          "text": "Chapter VI. Pig and Pepper",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 339,
+          "text": "Chapter VII. A Mad Tea-Party",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 448,
+          "text": "Chapter VIII. The Queen’s Croquet-Ground",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 520,
+          "text": "Chapter IX. The Mock Turtle’s Story",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 613,
+          "text": "Chapter X. The Lobster Quadrille",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 740,
+          "text": "Chapter XI. Who Stole the Tarts?",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 818,
+          "text": "Chapter XII. Alice’s Evidence",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 909,
+          "text": "THE END",
+          "role": "end"
+        }
+      ]
     },
     {
       "id": "the-great-gatsby",
@@ -58,7 +432,124 @@
       "presentation": "story",
       "hook": "1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?",
       "edition": "Public-domain text, typeset for Breeze",
-      "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html"
+      "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "Once again",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 1,
+          "text": "to",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 2,
+          "text": "Zelda",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 3,
+          "text": "Then wear the gold hat, if that will move her;",
+          "role": "verse"
+        },
+        {
+          "paragraph": 4,
+          "text": "If you can bounce high, bounce for her too,",
+          "role": "verse"
+        },
+        {
+          "paragraph": 5,
+          "text": "Till she cry “Lover, gold-hatted, high-bouncing lover,",
+          "role": "verse"
+        },
+        {
+          "paragraph": 6,
+          "text": "I must have you!”",
+          "role": "verse"
+        },
+        {
+          "paragraph": 7,
+          "text": "Thomas Parke d’Invilliers",
+          "role": "signature"
+        },
+        {
+          "paragraph": 8,
+          "text": "Chapter I",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 163,
+          "text": "Chapter II",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 301,
+          "text": "Chapter III",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 474,
+          "text": "Chapter IV",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 652,
+          "text": "Chapter V",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 812,
+          "text": "Chapter VI",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 949,
+          "text": "Chapter VII",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1369,
+          "text": "Chapter VIII",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1490,
+          "text": "Chapter IX",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "backroom-homeward-bound",
+      "title": "Backroom - Homeward Bound",
+      "author": "DivineAtlas",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/backroom-homeward-bound/cover.png",
+      "coverPosition": "center top",
+      "bytes": 22638,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/backroom-homeward-bound/book.txt",
+      "contentVersion": "f59669722ea53355943625768ec9e2b7aa0c01b94b826db8022471cb72c55b65",
+      "wordCount": 4035,
+      "sourceUrl": "https://backrooms-wiki.wikidot.com/homewardbound-ch-1",
+      "sources": [
+        {
+          "title": "Homeward Bound: Chapter 1",
+          "url": "https://backrooms-wiki.wikidot.com/homewardbound-ch-1"
+        },
+        {
+          "title": "Homeward Bound: Chapter 2",
+          "url": "https://backrooms-wiki.wikidot.com/homewardbound-ch-2"
+        }
+      ],
+      "site": "Backrooms Wiki",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "originalTitle": "Homeward Bound: Chapters 1–2",
+      "series": "BACKROOMS TALE SERIES",
+      "hook": "아내가 사라진 뒤, 제임스는 사진과 붉은 실로 뒤덮인 작업실에서 단서를 찾습니다. 노트북 속 낯선 노란 방은 그를 어디로 데려갈까요?",
+      "edition": "English original · Chapters 1–2",
+      "editionNote": "“Homeward Bound: Chapters 1–2” by DivineAtlas, from the Backrooms Wiki (https://backrooms-wiki.wikidot.com/homewardbound-ch-1 and https://backrooms-wiki.wikidot.com/homewardbound-ch-2). Licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/). The story text was extracted from the wiki pages with paragraph breaks and Chapter 2 scene transitions kept; wiki page chrome, comments and images are omitted. The cover is a separate image made for Breeze and is not from the Backrooms Wiki."
     }
   ]
 }
