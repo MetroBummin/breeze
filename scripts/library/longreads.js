@@ -96,7 +96,7 @@ const LONG_READS = [
     site:'Backrooms Wiki', license:'CC BY-SA 3.0',
     licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
     series:'BACKROOMS TALE SERIES',
-    hook:'아내가 사라진 뒤, 제임스는 사진과 붉은 실로 뒤덮인 작업실에서 단서를 찾습니다. 노트북 속 낯선 노란 방은 그를 어디로 데려갈까요?',
+    hook:'아내 미아가 사라지고 하루. 제임스의 집은 수색으로 어수선하고, 그녀의 작업실은 실종자들의 사진과 붉은 실로 이미 가득합니다. 노트북에는 끝나지 않는 노란 복도가 열려 있습니다. 현실의 주소가 없는 그 방을 따라가면, 문을 닫아도 같은 벽지가 이어집니다. 사랑하는 사람을 찾으려다 제임스는 그 복도의 안쪽으로 들어섭니다.',
     edition:'English original · Chapters 1–2', wordCount:4035,
   },
   {
@@ -109,7 +109,7 @@ const LONG_READS = [
     license:'Original: public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/ebooks/1661',
     series:'SHERLOCK HOLMES · LIGHTLY MODERNIZED',
-    hook:'결혼을 앞둔 줄리아에게 밤마다 들려오던 낮은 휘파람. 2년 뒤, 같은 방에서 그 소리를 들은 쌍둥이 자매 헬렌 스토너가 이른 아침 베이커가를 찾아옵니다.',
+    hook:'결혼을 앞둔 줄리아는 밤마다 낮은 휘파람을 듣다 죽었습니다. 마지막 말은 얼룩무늬 띠. 2년이 지나 쌍둥이 동생 헬렌 스토너가 같은 방에 눕게 되고, 같은 소리를 듣습니다. 의붓아버지 로일럿 박사는 치타와 개코원숭이를 마당에 풀어 두는 사람입니다. 이른 아침, 헬렌은 베이커가의 문을 두드립니다. 오늘 밤을 넘기지 못하면 언니의 방이 곧 자신의 방이 됩니다.',
     edition:'Lightly modernized English edition', wordCount:9804,
     sha256:'9b9b230612dc39e67f18e86d1c71d4146adce8a677a15444938d619396ff50e2',
     editionNote:'Lightly modernized English edition. Adapted from Arthur Conan Doyle’s “The Adventure of the Speckled Band,” in The Adventures of Sherlock Holmes (1892). Source text: Project Gutenberg, eBook #1661. Language lightly modernized for Breeze; this is not Doyle’s verbatim text. The story, paragraph order, period setting and clues are preserved.',
@@ -128,7 +128,7 @@ const LONG_READS = [
     "license": "Original: public domain in the USA",
     "licenseUrl": "https://www.gutenberg.org/ebooks/1661",
     "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
-    "hook": "가면을 쓴 의뢰인이 되찾으려는 사진 한 장. 몇 번을 뒤져도 찾지 못한 사진을 홈즈는 어떻게 찾아낼까?",
+    "hook": "한밤중, 가면을 쓴 손님이 베이커가를 찾습니다. 되찾아야 할 것은 왕가를 흔들 사진 한 장. 그 사진을 가진 아이린 애들러는 홈즈가 쉽게 읽어 내지 못하는 사람입니다. 변장과 함정이 오가는 밤, 왓슨은 좀처럼 흔들리지 않던 친구가 달라지는 것을 옆에서 봅니다.",
     "edition": "Lightly modernized English edition",
     "wordCount": 8522,
     "sha256": "ec92ace7eccf6e9b93cadbba6be46ef6d19bb27c0d183a44b094219c62e3b50e",
@@ -148,7 +148,7 @@ const LONG_READS = [
     "license": "Original: public domain in the USA",
     "licenseUrl": "https://www.gutenberg.org/ebooks/1661",
     "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
-    "hook": "붉은 머리라는 이유만으로, 백과사전을 베끼면 주급 4파운드. 이렇게 좋은 일자리에는 왜 자리를 비워선 안 된다는 조건이 붙었을까?",
+    "hook": "붉은 머리라는 이유만으로 주급 4파운드. 전당포 주인 제이베즈 윌슨은 하루 몇 시간씩 백과사전을 베끼며 그 돈을 받았습니다. 조건은 하나, 자리를 비우지 말 것. 어느 아침 사무실은 닫히고 리그는 흔적도 없습니다. 너무 후한 보수 뒤에는, 그 시간을 일부러 비워 둔 사람이 있었습니다. 홈즈는 그 지나치게 좋은 자리의 빈틈을 읽기 시작합니다.",
     "edition": "Lightly modernized English edition",
     "wordCount": 9106,
     "sha256": "0fbd9ec3d94403182d7b441c1d7456ac967b487fc1878218cb0322ffd736278c",
@@ -168,7 +168,7 @@ const LONG_READS = [
     "license": "Original: public domain in the USA",
     "licenseUrl": "https://www.gutenberg.org/ebooks/834",
     "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
-    "hook": "런던에서 홈즈를 위협하는 보이지 않는 손. 왓슨과 함께 유럽으로 떠난 그는 모리아티의 추적을 벗어날 수 있을까요?",
+    "hook": "런던이 더 이상 안전하지 않습니다. 홈즈를 노리는 것은 사건 하나가 아니라, 도시 아래에 깔린 한 사람의 그물입니다. 왓슨은 그날 그 이름의 무게를 처음 실감합니다. 모리아티. 두 사람은 유럽행 기차에 오르고, 창밖에는 같은 모자가 다시 나타납니다. 추격은 산길까지 이어집니다. 왓슨이 적는 이 기록이, 친구에 대한 마지막 이야기처럼 보이기 시작합니다.",
     "edition": "Lightly modernized English edition",
     "wordCount": 7150,
     "sha256": "9d1f3c4140d80894937695add3b1ca60e6054ac03bbd081d4dedc55733556b90",
@@ -188,7 +188,7 @@ const LONG_READS = [
     "license": "Original: public domain in the USA",
     "licenseUrl": "https://www.gutenberg.org/ebooks/2852",
     "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
-    "hook": "황야의 오래된 저택과 가문에 전해 내려오는 무서운 전설. 새 상속인을 지키기 위해 왓슨은 바스커빌 홀로 향합니다.",
+    "hook": "데번셔의 황야에는 바스커빌 가문을 쫓아온 거대한 개의 전설이 남아 있습니다. 그 전설과 닮은 죽음 뒤, 캐나다에서 온 새 상속인 헨리 경이 저택의 문을 엽니다. 홈즈는 런던에 남고, 왓슨이 안개 속의 홀로 향합니다. 밤의 발소리, 창가의 불빛, 황야를 걷는 낯선 사람. 누군가를 지킨다는 일이 얼마나 가까운 공포인지, 왓슨은 그곳에서 혼자 적습니다.",
     "edition": "Lightly modernized English edition",
     "wordCount": 59266,
     "sha256": "19906dcd8bd6e3127bfd6676361901199dd10ba6bf3077963e6de2768d08b2c4",
@@ -208,7 +208,7 @@ const CLASSIC_FALLBACKS = [
     license:'Public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/policy/license.html',
     series:'BREEZE ORIGINAL',
-    hook:'회중시계를 보며 "늦었다!"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?',
+    hook:'강둑에서 졸던 앨리스 앞에, 회중시계를 들여다보며 늦었다고 중얼거리는 흰 토끼가 지나갑니다. 토끼를 따라 굴속으로 떨어진 그녀는 작은 문을 열려고 몸이 커졌다 작아졌다 합니다. 웃는 고양이는 나타나더니 이내 사라지고, 규칙은 자꾸 바뀌는데 앨리스의 질문만 남습니다. 이상한 나라의 끝에서 그녀는 제 이름을 아직 기억하고 있을까요.',
     edition:'Public-domain text, typeset for Breeze', wordCount:26302,
     sha256:'e82881f1db2fbd796e7630eb641ae8c48206988371098f0cd198801d9c485496',
     editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #11. This is Lewis Carroll’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and the verse lines of the poems are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credits: Arthur DiBianca and David Widger. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
@@ -224,7 +224,7 @@ const CLASSIC_FALLBACKS = [
     license:'Public domain in the USA',
     licenseUrl:'https://www.gutenberg.org/policy/license.html',
     series:'BREEZE ORIGINAL',
-    hook:'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?',
+    hook:'1922년 여름, 롱아일랜드. 닉은 만 건너 저택에서 밤마다 쏟아지는 음악과 불빛을 봅니다. 파티의 주인 제이 개츠비는 좀처럼 모습을 드러내지 않습니다. 사람들은 그의 돈이 어디서 왔는지 수군거리고, 그는 초록 불빛이 닿는 건너편만 바라봅니다. 그곳에는 옛사랑 데이지가 있습니다. 이미 가 버린 한 시절을, 사람은 어디까지 다시 살 수 있을까요.',
     edition:'Public-domain text, typeset for Breeze', wordCount:48153,
     sha256:'a88b52c53fabbd19fa78bf4cee7da6b69e656cec8b97b273d26ab0d04baac675',
     editionNote:'Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html',
@@ -260,6 +260,40 @@ function longReadSourceTitleActive(book,defined){
 }
 function longReadSceneKey(book,image){
   return (book&&book.id||'')+'|scene|'+(image&&image.id||'');
+}
+/* Holmes stays one block, in the order printed on originalTitle. A later
+   book cannot land between them. Dated books from before the first Holmes
+   story stay in front; later books and books without a year follow the block.
+   Same year keeps title order, which puts Scandal ahead of the Red-Headed League. */
+function classicPublicationYear(read){
+  const match=String(read&&read.originalTitle||'').match(/\((\d{4})\)/);
+  return match?Number(match[1]):null;
+}
+function classicIsHolmes(read){
+  return !!(read&&(read.style==='holmes'||String(read.id||'').startsWith('sherlock-holmes-')));
+}
+function compareClassics(a,b){
+  const ya=classicPublicationYear(a), yb=classicPublicationYear(b);
+  if(ya!=null&&yb!=null&&ya!==yb) return ya-yb;
+  if(ya!=null&&yb==null) return -1;
+  if(ya==null&&yb!=null) return 1;
+  return String(a.title||'').localeCompare(String(b.title||''));
+}
+function orderClassicReads(reads){
+  const list=(reads||[]).filter(Boolean);
+  const holmes=list.filter(classicIsHolmes).sort(compareClassics);
+  const others=list.filter(read=>!classicIsHolmes(read));
+  const anchor=holmes.reduce((year,read)=>{
+    const published=classicPublicationYear(read);
+    return published==null?year:(year==null?published:Math.min(year,published));
+  }, null);
+  const before=[], after=[];
+  for(const read of others.sort(compareClassics)){
+    const published=classicPublicationYear(read);
+    if(anchor!=null&&published!=null&&published<anchor) before.push(read);
+    else after.push(read);
+  }
+  return before.concat(holmes, after);
 }
 /* A catalog entry replaces the bundled copy, so a later server edit of the
    text or hook does not wait for an app release. Offline, the local file

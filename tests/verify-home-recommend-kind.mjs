@@ -125,18 +125,21 @@ test('books replace the rail, keep saved books on the shelf, and open like the l
   const cards=[...document.querySelectorAll('#casual-rail .home-recommend-book')];
   assert.equal(document.querySelector('#casual-rail [data-longread-id="sherlock-holmes-speckled-band"]'),null);
   assert.deepEqual(cards.map(card=>card.querySelector('.bt').textContent),[
+    "Alice's Adventures in Wonderland",
     'A Scandal in Bohemia','The Red-Headed League','The Final Problem','The Hound of the Baskervilles',
-    "Alice's Adventures in Wonderland",'The Great Gatsby',
+    'The Great Gatsby',
   ]);
   assert.equal(cards.some(card=>card.dataset.classicId==='odyssey'),false);
   assert.equal(c.classicForMeta({classicId:'odyssey',title:'The Odyssey',author:'Homer'}),null);
   assert.ok(document.querySelector('#shelf [data-book-id="saved-odyssey"]'));
-  assert.equal(cards[0].querySelector('.author').textContent,'Arthur Conan Doyle');
-  assert.equal(cards[0].querySelector('.author').textContent.includes('SHERLOCK'),false);
+  assert.equal(cards[0].querySelector('.author').textContent,'Lewis Carroll');
+  const scandal=cards.find(card=>card.dataset.longreadId==='sherlock-holmes-scandal-in-bohemia');
+  assert.equal(scandal.querySelector('.author').textContent,'Arthur Conan Doyle');
+  assert.equal(scandal.querySelector('.author').textContent.includes('SHERLOCK'),false);
   assert.ok(document.querySelector('#shelf [data-book-id="saved-holmes"]'));
   assert.equal(document.querySelectorAll('#shelf [data-home-key^="longread:"]').length,0);
   assert.ok(document.querySelector('#shelf [data-book-id="saved-other"]'));
-  cards[0].click();
+  scandal.click();
   assert.deepEqual(opened,['sherlock-holmes-scandal-in-bohemia']);
   const gatsby=cards.find(card=>card.dataset.longreadId==='the-great-gatsby');
   gatsby.click();

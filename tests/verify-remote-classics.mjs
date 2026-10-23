@@ -25,11 +25,12 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   const entry=catalog.books[0];
   assert.equal(catalog.version,1);
   assert.deepEqual(catalog.books.map(book=>book.id),[
-    'pride-and-prejudice','alice-in-wonderland','the-great-gatsby','backroom-homeward-bound',
+    'pride-and-prejudice','alice-in-wonderland',
     'sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear',
+    'the-great-gatsby','backroom-homeward-bound',
   ]);
   assert.equal(entry.id,'pride-and-prejudice');
-  assert.equal(entry.hook,'첫 만남부터 오만하게 구는 부자 신사 다아시, 그런 그를 단번에 싫어하게 된 엘리자베스. 첫인상과 편견을 넘어, 두 사람은 서로를 제대로 보게 될까?');
+  assert.equal(entry.hook,'시골 무도회에 부유한 총각이 나타나자 베넷 부인의 머릿속은 혼처 계산으로 가득 찹니다. 둘째 딸 엘리자베스는 첫눈에 오만해 보이는 다아시를 단박에 밀어냅니다. 소문과 편지는 오해를 키우고, 집안은 체면과 재산 사이에서 흔들립니다. 사람을 그렇게 쉽게 판단해 버린 뒤, 다시 본다는 일은 얼마나 늦어질 수 있을까요.');
   assert.equal(entry.title,'Pride and Prejudice');
   assert.equal(entry.author,'Jane Austen');
   assert.equal(entry.bytes,book.length);
@@ -166,8 +167,8 @@ test('읽기 시작 downloads once, reports progress, and rejects a changed file
 test('Alice and Gatsby move to the catalog and a saved copy keeps its text',async()=>{
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const hooks={
-    'alice-in-wonderland':'회중시계를 보며 "늦었다!"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?',
-    'the-great-gatsby':'1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?',
+    'alice-in-wonderland':'강둑에서 졸던 앨리스 앞에, 회중시계를 들여다보며 늦었다고 중얼거리는 흰 토끼가 지나갑니다. 토끼를 따라 굴속으로 떨어진 그녀는 작은 문을 열려고 몸이 커졌다 작아졌다 합니다. 웃는 고양이는 나타나더니 이내 사라지고, 규칙은 자꾸 바뀌는데 앨리스의 질문만 남습니다. 이상한 나라의 끝에서 그녀는 제 이름을 아직 기억하고 있을까요.',
+    'the-great-gatsby':'1922년 여름, 롱아일랜드. 닉은 만 건너 저택에서 밤마다 쏟아지는 음악과 불빛을 봅니다. 파티의 주인 제이 개츠비는 좀처럼 모습을 드러내지 않습니다. 사람들은 그의 돈이 어디서 왔는지 수군거리고, 그는 초록 불빛이 닿는 건너편만 바라봅니다. 그곳에는 옛사랑 데이지가 있습니다. 이미 가 버린 한 시절을, 사람은 어디까지 다시 살 수 있을까요.',
   };
   for(const id of Object.keys(hooks)){
     const entry=catalog.books.find(book=>book.id===id);
@@ -187,6 +188,14 @@ test('Alice and Gatsby move to the catalog and a saved copy keeps its text',asyn
   context.positions={'saved-alice':position};
   const before=JSON.stringify(book);
   await context.refreshRemoteClassics();
+  const localHooks=new Script('Object.fromEntries([...LONG_READS,...CLASSIC_FALLBACKS].map(read=>[read.id,read.hook]))').runInNewContext(context);
+  assert.equal(localHooks['alice-in-wonderland'],hooks['alice-in-wonderland']);
+  assert.equal(localHooks['the-great-gatsby'],hooks['the-great-gatsby']);
+  assert.equal(localHooks['backroom-homeward-bound'],catalog.books.find(item=>item.id==='backroom-homeward-bound').hook);
+  for(const [id,hook] of Object.entries(localHooks)){
+    assert.equal(hook.length<=400,true,`${id} preview is longer than the catalog allows`);
+    assert.equal(hook.length>80,true,`${id} preview is still a one-line teaser`);
+  }
   const offer=context.classicCatalogOffers().find(read=>read.id==='alice-in-wonderland');
   assert.equal(offer.remote,true);
   assert.equal(offer.hook,hooks['alice-in-wonderland']);
@@ -407,20 +416,18 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
   assert.equal(read('server/classics/backroom-homeward-bound/cover.png').equals(cover),true);
   const {classicUploadPlan}=await import('../server/classics/upload.mjs');
   const plan=classicUploadPlan(catalog).map(object=>object.path);
-  assert.deepEqual(plan.slice(0,9),[
-    'catalog.json',
-    'pride-and-prejudice/book.txt','pride-and-prejudice/cover.webp',
-    'alice-in-wonderland/book.txt','alice-in-wonderland/cover.webp',
-    'the-great-gatsby/book.txt','the-great-gatsby/cover.webp',
-    'backroom-homeward-bound/book.txt','backroom-homeward-bound/cover.png',
-  ]);
-  const novelPaths=[];
-  for(const id of ['sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear']){
+  const shelfOrder=[
+    'pride-and-prejudice','alice-in-wonderland',
+    'sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear',
+    'the-great-gatsby','backroom-homeward-bound',
+  ];
+  const expectedPaths=['catalog.json'];
+  for(const id of shelfOrder){
     const entry=catalog.books.find(book=>book.id===id);
-    novelPaths.push(`${id}/book.txt`,`${id}/cover-v2.webp`);
-    for(const image of entry.illustrations)novelPaths.push(`${id}/illustrations/${image.id}.webp`);
+    expectedPaths.push(`${id}/book.txt`, `${id}/${entry.cover.split('/').pop()}`);
+    for(const image of entry.illustrations||[])expectedPaths.push(`${id}/illustrations/${image.id}.webp`);
   }
-  assert.deepEqual(plan.slice(9),novelPaths);
+  assert.deepEqual(plan,expectedPaths);
   const illustrated=classicUploadPlan({books:[{
     id:'sherlock-holmes-blue-carbuncle',
     content:'https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/sherlock-holmes-blue-carbuncle/book.txt',
@@ -439,9 +446,9 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
 test('the three Holmes novels are remote illustrated books with opening sections',()=>{
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const expected=[
-    ['sherlock-holmes-a-study-in-scarlet','A Study in Scarlet',43423,'런던의 빈집에서 피 묻은 단어 하나만 남은 밤. 실험실에서 처음 만난 홈즈는, 이 살인에서 무엇을 읽어 낼까?',14],
-    ['sherlock-holmes-the-sign-of-the-four','The Sign of the Four',43099,'안개 낀 밤, 진주 한 알과 함께 도착한 편지. 여섯 해를 기다린 메리 모스턴은 그 보물을 찾을 수 있을까?',12],
-    ['sherlock-holmes-the-valley-of-fear','The Valley of Fear',57608,'아침 식탁 위의 암호 한 장, 그리고 해자 저택의 죽음. 모리아티의 그림자는 이 사건과 어떻게 이어질까?',15],
+    ['sherlock-holmes-a-study-in-scarlet','A Study in Scarlet',43423,'런던의 빈집, 시체 하나, 그리고 벽에 남은 피 묻은 글자. 겉으로 다친 곳이 없어 보이는 죽음 앞에서 경찰은 발을 멈춥니다. 실험실에서 왓슨이 처음 만난 남자, 셜록 홈즈는 진흙과 재와 반지에서 사람이 지운 이야기를 읽어 냅니다. 베이커가의 첫 사건입니다. 방 안에 남은 것들은 경찰이 지나친 바로 그것을 가리키고 있습니다.',14],
+    ['sherlock-holmes-the-sign-of-the-four','The Sign of the Four',43099,'여섯 해 동안 생일이면 진주 한 알이 도착했습니다. 보낸 사람은 없고, 아버지 모스턴 대위는 인도에서 사라진 채입니다. 어느 안개 낀 밤, 메리에게 드디어 편지가 옵니다. 낯선 이를 따라오라는 그 편지 끝에는 네 사람의 표식이 있습니다. 홈즈와 왓슨은 보물을 좇아 나서고, 템스강의 밤은 더 오래된 약속을 숨기고 있습니다.',12],
+    ['sherlock-holmes-the-valley-of-fear','The Valley of Fear',57608,'아침 식탁 위에 암호 한 장이 놓입니다. 풀리기도 전에, 해자로 둘러싸인 저택에서 한 남자가 죽습니다. 얼굴은 알아보기 어렵고 집 안은 지나치게 조용합니다. 홈즈는 암호 뒤에서 오래된 경고를 읽고, 그 경고가 교수 모리아티의 그림자와 닿아 있음을 느낍니다. 영국의 저택과 아메리카의 계곡, 두 이야기가 하나의 문을 공유합니다.',15],
   ];
   for(const [id,title,words,hook,chapters] of expected){
     const entry=catalog.books.find(book=>book.id===id);
@@ -478,6 +485,26 @@ test('the three Holmes novels are remote illustrated books with opening sections
   assert.match(sign,/incommodes que ceux qui ont de l’esprit/);
   const valley=read('server/classics/sherlock-holmes-the-valley-of-fear/book.txt').toString('utf8');
   assert.match(valley,/534 C2 13 127 36 31 4 17 21 41 DOUGLAS/);
+});
+
+test('the shelf groups Holmes by publication year',async()=>{
+  const catalog=JSON.parse(text('server/classics/catalog.json'));
+  const {context}=harness(async()=>new Response(JSON.stringify(catalog),{status:200,headers:{'content-type':'application/json'}}));
+  await context.refreshRemoteClassics();
+  assert.deepEqual(Array.from(context.orderClassicReads(context.pendingLongReads().concat(context.classicCatalogOffers())), read=>read.title),[
+    'Pride and Prejudice',
+    "Alice's Adventures in Wonderland",
+    'A Study in Scarlet',
+    'The Sign of the Four',
+    'A Scandal in Bohemia',
+    'The Red-Headed League',
+    'The Adventure of the Speckled Band',
+    'The Final Problem',
+    'The Hound of the Baskervilles',
+    'The Valley of Fear',
+    'The Great Gatsby',
+    'Backroom - Homeward Bound',
+  ]);
 });
 
 test('the upload script stays a dry run and refuses any other Supabase project',()=>{

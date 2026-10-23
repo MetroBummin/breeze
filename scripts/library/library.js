@@ -502,13 +502,13 @@ function homeRecommendReads(){
   const bundled=typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
   const extra=typeof classicCatalogOffers==='function'?classicCatalogOffers():
     (typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[]);
-  return bundled.concat(extra).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
+  return orderClassicReads(bundled.concat(extra).filter(read=>read&&!homeRecommendCatalogOwned(read.id)));
 }
 function offeredLongReads(){
   const bundled=typeof pendingLongReads==='function'?pendingLongReads():[];
   const extra=typeof classicCatalogOffers==='function'?classicCatalogOffers():
     (typeof remoteClassicOffers==='function'?remoteClassicOffers():[]);
-  return bundled.concat(extra).filter(read=>read&&!homeRecommendCatalogOwned(read.id));
+  return orderClassicReads(bundled.concat(extra).filter(read=>read&&!homeRecommendCatalogOwned(read.id)));
 }
 function longReadOfferStamp(read){
   const offline=read.remote&&typeof navigator!=='undefined'&&navigator.onLine===false?':offline':'';

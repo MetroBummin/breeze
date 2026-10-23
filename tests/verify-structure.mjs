@@ -1131,6 +1131,19 @@ assert.deepEqual(Array.from(longReadsContext.classicCatalogOffers(), read => rea
   "Alice's Adventures in Wonderland",
   'The Great Gatsby',
 ], 'Alice and Gatsby stay reachable when the remote catalog has not loaded');
+assert.deepEqual(Array.from(longReadsContext.orderClassicReads(offered.concat(longReadsContext.classicCatalogOffers())), read => read.title), [
+  "Alice's Adventures in Wonderland",
+  'A Scandal in Bohemia',
+  'The Red-Headed League',
+  'The Adventure of the Speckled Band',
+  'The Final Problem',
+  'The Hound of the Baskervilles',
+  'The Great Gatsby',
+], 'Offline classics keep Holmes together, in publication order');
+for(const read of [...offered, ...longReadsContext.classicCatalogOffers(), ...new Script('LONG_READS').runInNewContext(longReadsContext)]){
+  assert.equal(read.hook.length<=400, true, `${read.id} preview is longer than the catalog allows`);
+  assert.equal(read.hook.length>80, true, `${read.id} preview is still a one-line teaser`);
+}
 assert.equal(longReadsContext.pendingClassics().length, 0,
   'Removed classics are still shown in the default recommendation list');
 const bundledClassics=new Script('CLASSICS').runInNewContext(longReadsContext);

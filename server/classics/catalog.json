@@ -16,7 +16,7 @@
       "licenseUrl": "https://www.gutenberg.org/policy/license.html",
       "originalTitle": "Pride and Prejudice (1813)",
       "series": "BREEZE ORIGINAL",
-      "hook": "첫 만남부터 오만하게 구는 부자 신사 다아시, 그런 그를 단번에 싫어하게 된 엘리자베스. 첫인상과 편견을 넘어, 두 사람은 서로를 제대로 보게 될까?",
+      "hook": "시골 무도회에 부유한 총각이 나타나자 베넷 부인의 머릿속은 혼처 계산으로 가득 찹니다. 둘째 딸 엘리자베스는 첫눈에 오만해 보이는 다아시를 단박에 밀어냅니다. 소문과 편지는 오해를 키우고, 집안은 체면과 재산 사이에서 흔들립니다. 사람을 그렇게 쉽게 판단해 버린 뒤, 다시 본다는 일은 얼마나 늦어질 수 있을까요.",
       "edition": "Breeze Original text",
       "editionNote": "Jane Austen’s Pride and Prejudice (1813), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #1342, retrieved 2026-10-18. Gutenberg boilerplate, title pages, preface, illustration captions, and the printer’s colophon are omitted. Chapter headings, paragraphs, curly quotes, and em dashes follow the long-read text format. Austen’s wording is not modernized. This is not a Project Gutenberg branded edition.",
       "sections": [
@@ -343,7 +343,7 @@
       "originalTitle": "Alice's Adventures in Wonderland (1865)",
       "series": "BREEZE ORIGINAL",
       "presentation": "story",
-      "hook": "회중시계를 보며 \"늦었다!\"를 외치는 흰 토끼를 따라 굴속으로 떨어진 앨리스. 몸이 커졌다 작아졌다 하는 이상한 나라에서, 앨리스는 집으로 돌아갈 수 있을까?",
+      "hook": "강둑에서 졸던 앨리스 앞에, 회중시계를 들여다보며 늦었다고 중얼거리는 흰 토끼가 지나갑니다. 토끼를 따라 굴속으로 떨어진 그녀는 작은 문을 열려고 몸이 커졌다 작아졌다 합니다. 웃는 고양이는 나타나더니 이내 사라지고, 규칙은 자꾸 바뀌는데 앨리스의 질문만 남습니다. 이상한 나라의 끝에서 그녀는 제 이름을 아직 기억하고 있을까요.",
       "edition": "Public-domain text, typeset for Breeze",
       "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #11. This is Lewis Carroll’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and the verse lines of the poems are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credits: Arthur DiBianca and David Widger. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html",
       "sections": [
@@ -415,143 +415,6 @@
       ]
     },
     {
-      "id": "the-great-gatsby",
-      "title": "The Great Gatsby",
-      "author": "F. Scott Fitzgerald",
-      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/the-great-gatsby/cover.webp",
-      "bytes": 277404,
-      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/the-great-gatsby/book.txt",
-      "contentVersion": "a88b52c53fabbd19fa78bf4cee7da6b69e656cec8b97b273d26ab0d04baac675",
-      "wordCount": 48153,
-      "sourceUrl": "https://www.gutenberg.org/ebooks/64317",
-      "site": "Project Gutenberg",
-      "license": "Public domain in the USA",
-      "licenseUrl": "https://www.gutenberg.org/policy/license.html",
-      "originalTitle": "The Great Gatsby (1925)",
-      "series": "BREEZE ORIGINAL",
-      "presentation": "story",
-      "hook": "1922년 뉴욕 롱아일랜드. 매주 화려한 파티를 여는 수수께끼의 부자 개츠비는, 사실 만 건너편에 사는 옛사랑 데이지를 되찾으려고 모든 걸 걸었습니다. 그 사랑은 이루어질까요?",
-      "edition": "Public-domain text, typeset for Breeze",
-      "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html",
-      "sections": [
-        {
-          "paragraph": 0,
-          "text": "Once again",
-          "role": "inscription"
-        },
-        {
-          "paragraph": 1,
-          "text": "to",
-          "role": "inscription"
-        },
-        {
-          "paragraph": 2,
-          "text": "Zelda",
-          "role": "inscription"
-        },
-        {
-          "paragraph": 3,
-          "text": "Then wear the gold hat, if that will move her;",
-          "role": "verse"
-        },
-        {
-          "paragraph": 4,
-          "text": "If you can bounce high, bounce for her too,",
-          "role": "verse"
-        },
-        {
-          "paragraph": 5,
-          "text": "Till she cry “Lover, gold-hatted, high-bouncing lover,",
-          "role": "verse"
-        },
-        {
-          "paragraph": 6,
-          "text": "I must have you!”",
-          "role": "verse"
-        },
-        {
-          "paragraph": 7,
-          "text": "Thomas Parke d’Invilliers",
-          "role": "signature"
-        },
-        {
-          "paragraph": 8,
-          "text": "Chapter I",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 163,
-          "text": "Chapter II",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 301,
-          "text": "Chapter III",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 474,
-          "text": "Chapter IV",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 652,
-          "text": "Chapter V",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 812,
-          "text": "Chapter VI",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 949,
-          "text": "Chapter VII",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 1369,
-          "text": "Chapter VIII",
-          "role": "chapter"
-        },
-        {
-          "paragraph": 1490,
-          "text": "Chapter IX",
-          "role": "chapter"
-        }
-      ]
-    },
-    {
-      "id": "backroom-homeward-bound",
-      "title": "Backroom - Homeward Bound",
-      "author": "DivineAtlas",
-      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/backroom-homeward-bound/cover.png",
-      "coverPosition": "center top",
-      "bytes": 22638,
-      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/backroom-homeward-bound/book.txt",
-      "contentVersion": "f59669722ea53355943625768ec9e2b7aa0c01b94b826db8022471cb72c55b65",
-      "wordCount": 4035,
-      "sourceUrl": "https://backrooms-wiki.wikidot.com/homewardbound-ch-1",
-      "sources": [
-        {
-          "title": "Homeward Bound: Chapter 1",
-          "url": "https://backrooms-wiki.wikidot.com/homewardbound-ch-1"
-        },
-        {
-          "title": "Homeward Bound: Chapter 2",
-          "url": "https://backrooms-wiki.wikidot.com/homewardbound-ch-2"
-        }
-      ],
-      "site": "Backrooms Wiki",
-      "license": "CC BY-SA 3.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-      "originalTitle": "Homeward Bound: Chapters 1–2",
-      "series": "BACKROOMS TALE SERIES",
-      "hook": "아내가 사라진 뒤, 제임스는 사진과 붉은 실로 뒤덮인 작업실에서 단서를 찾습니다. 노트북 속 낯선 노란 방은 그를 어디로 데려갈까요?",
-      "edition": "English original · Chapters 1–2",
-      "editionNote": "“Homeward Bound: Chapters 1–2” by DivineAtlas, from the Backrooms Wiki (https://backrooms-wiki.wikidot.com/homewardbound-ch-1 and https://backrooms-wiki.wikidot.com/homewardbound-ch-2). Licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/). The story text was extracted from the wiki pages with paragraph breaks and Chapter 2 scene transitions kept; wiki page chrome, comments and images are omitted. The cover is a separate image made for Breeze and is not from the Backrooms Wiki."
-    },
-    {
       "id": "sherlock-holmes-a-study-in-scarlet",
       "title": "A Study in Scarlet",
       "author": "Arthur Conan Doyle",
@@ -569,7 +432,7 @@
       "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
       "presentation": "story",
       "sourceTitle": true,
-      "hook": "런던의 빈집에서 피 묻은 단어 하나만 남은 밤. 실험실에서 처음 만난 홈즈는, 이 살인에서 무엇을 읽어 낼까?",
+      "hook": "런던의 빈집, 시체 하나, 그리고 벽에 남은 피 묻은 글자. 겉으로 다친 곳이 없어 보이는 죽음 앞에서 경찰은 발을 멈춥니다. 실험실에서 왓슨이 처음 만난 남자, 셜록 홈즈는 진흙과 재와 반지에서 사람이 지운 이야기를 읽어 냅니다. 베이커가의 첫 사건입니다. 방 안에 남은 것들은 경찰이 지나친 바로 그것을 가리키고 있습니다.",
       "edition": "Lightly modernized English edition",
       "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s A Study in Scarlet (1887), complete in two parts. Source text: Project Gutenberg eBook #244, retrieved 2026-10-22. Closed spellings, polite forms and a few archaic words are modernized in the same way as the bundled Holmes stories. This is not Doyle’s verbatim text. Plot, dialogue meaning, paragraph order, clues and the period setting are preserved. Gutenberg boilerplate and italic markers are omitted. Chapter headings use the Hound long-read form.",
       "glossary": "Period terms: hansom — a horse-drawn cab; Jezail — a heavy Afghan musket; enteric fever — typhoid. Historical money, places, names and clue-bearing language are retained.",
@@ -806,7 +669,7 @@
       "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
       "presentation": "story",
       "sourceTitle": true,
-      "hook": "안개 낀 밤, 진주 한 알과 함께 도착한 편지. 여섯 해를 기다린 메리 모스턴은 그 보물을 찾을 수 있을까?",
+      "hook": "여섯 해 동안 생일이면 진주 한 알이 도착했습니다. 보낸 사람은 없고, 아버지 모스턴 대위는 인도에서 사라진 채입니다. 어느 안개 낀 밤, 메리에게 드디어 편지가 옵니다. 낯선 이를 따라오라는 그 편지 끝에는 네 사람의 표식이 있습니다. 홈즈와 왓슨은 보물을 좇아 나서고, 템스강의 밤은 더 오래된 약속을 숨기고 있습니다.",
       "edition": "Lightly modernized English edition",
       "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s The Sign of the Four (1890), complete in twelve chapters. Source text: Project Gutenberg eBook #2097, retrieved 2026-10-22. Closed spellings, polite forms and a few archaic words are modernized in the same way as the bundled Holmes stories. This is not Doyle’s verbatim text. Plot, dialogue meaning, paragraph order, clues and the period setting are preserved. Gutenberg boilerplate and italic markers are omitted. A quoted French sentence is unchanged. Chapter headings use the Hound long-read form.",
       "glossary": "Period terms: hansom and four-wheeler — horse-drawn carriages; morocco case — a leather case; half-pay — reduced pay for an officer not on active service. Historical money, objects, names and clue-bearing language are retained.",
@@ -1003,7 +866,7 @@
       "series": "SHERLOCK HOLMES · LIGHTLY MODERNIZED",
       "presentation": "story",
       "sourceTitle": true,
-      "hook": "아침 식탁 위의 암호 한 장, 그리고 해자 저택의 죽음. 모리아티의 그림자는 이 사건과 어떻게 이어질까?",
+      "hook": "아침 식탁 위에 암호 한 장이 놓입니다. 풀리기도 전에, 해자로 둘러싸인 저택에서 한 남자가 죽습니다. 얼굴은 알아보기 어렵고 집 안은 지나치게 조용합니다. 홈즈는 암호 뒤에서 오래된 경고를 읽고, 그 경고가 교수 모리아티의 그림자와 닿아 있음을 느낍니다. 영국의 저택과 아메리카의 계곡, 두 이야기가 하나의 문을 공유합니다.",
       "edition": "Lightly modernized English edition",
       "editionNote": "Lightly modernized English edition. Adapted from Arthur Conan Doyle’s The Valley of Fear (1915), complete in two parts and an epilogue. Source text: Project Gutenberg eBook #3289, retrieved 2026-10-22. Closed spellings, polite forms and a few archaic words are modernized in the same way as the bundled Holmes stories. This is not Doyle’s verbatim text. Plot, dialogue meaning, paragraph order, clues and the period setting are preserved. Gutenberg boilerplate, the illustration-caption list and italic markers are omitted. Chapter headings use the Hound long-read form.",
       "glossary": "Period terms: dumb-bell — a hand weight; moat — a water-filled ditch around a house; Bodymaster — the head of a local lodge. Historical money, places, names, the cipher and clue-bearing language are retained.",
@@ -1226,6 +1089,143 @@
           "height": 700
         }
       ]
+    },
+    {
+      "id": "the-great-gatsby",
+      "title": "The Great Gatsby",
+      "author": "F. Scott Fitzgerald",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/the-great-gatsby/cover.webp",
+      "bytes": 277404,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/the-great-gatsby/book.txt",
+      "contentVersion": "a88b52c53fabbd19fa78bf4cee7da6b69e656cec8b97b273d26ab0d04baac675",
+      "wordCount": 48153,
+      "sourceUrl": "https://www.gutenberg.org/ebooks/64317",
+      "site": "Project Gutenberg",
+      "license": "Public domain in the USA",
+      "licenseUrl": "https://www.gutenberg.org/policy/license.html",
+      "originalTitle": "The Great Gatsby (1925)",
+      "series": "BREEZE ORIGINAL",
+      "presentation": "story",
+      "hook": "1922년 여름, 롱아일랜드. 닉은 만 건너 저택에서 밤마다 쏟아지는 음악과 불빛을 봅니다. 파티의 주인 제이 개츠비는 좀처럼 모습을 드러내지 않습니다. 사람들은 그의 돈이 어디서 왔는지 수군거리고, 그는 초록 불빛이 닿는 건너편만 바라봅니다. 그곳에는 옛사랑 데이지가 있습니다. 이미 가 버린 한 시절을, 사람은 어디까지 다시 살 수 있을까요.",
+      "edition": "Public-domain text, typeset for Breeze",
+      "editionNote": "Public-domain text, typeset for Breeze from Project Gutenberg eBook #64317. This is F. Scott Fitzgerald’s wording, not a modernization. Chapter titles, paragraph breaks, quotation marks and dashes follow the source. Italics and song lines are presentation only. The Gutenberg header, contents list and license stay out of the reading text. Transcription credit from the source edition: produced by Alex Cabal for the Standard Ebooks project, based on a transcription produced for Project Gutenberg Australia. Public domain in the United States. Trademark and license terms: https://www.gutenberg.org/policy/license.html",
+      "sections": [
+        {
+          "paragraph": 0,
+          "text": "Once again",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 1,
+          "text": "to",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 2,
+          "text": "Zelda",
+          "role": "inscription"
+        },
+        {
+          "paragraph": 3,
+          "text": "Then wear the gold hat, if that will move her;",
+          "role": "verse"
+        },
+        {
+          "paragraph": 4,
+          "text": "If you can bounce high, bounce for her too,",
+          "role": "verse"
+        },
+        {
+          "paragraph": 5,
+          "text": "Till she cry “Lover, gold-hatted, high-bouncing lover,",
+          "role": "verse"
+        },
+        {
+          "paragraph": 6,
+          "text": "I must have you!”",
+          "role": "verse"
+        },
+        {
+          "paragraph": 7,
+          "text": "Thomas Parke d’Invilliers",
+          "role": "signature"
+        },
+        {
+          "paragraph": 8,
+          "text": "Chapter I",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 163,
+          "text": "Chapter II",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 301,
+          "text": "Chapter III",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 474,
+          "text": "Chapter IV",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 652,
+          "text": "Chapter V",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 812,
+          "text": "Chapter VI",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 949,
+          "text": "Chapter VII",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1369,
+          "text": "Chapter VIII",
+          "role": "chapter"
+        },
+        {
+          "paragraph": 1490,
+          "text": "Chapter IX",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "backroom-homeward-bound",
+      "title": "Backroom - Homeward Bound",
+      "author": "DivineAtlas",
+      "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/backroom-homeward-bound/cover.png",
+      "coverPosition": "center top",
+      "bytes": 22638,
+      "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/backroom-homeward-bound/book.txt",
+      "contentVersion": "f59669722ea53355943625768ec9e2b7aa0c01b94b826db8022471cb72c55b65",
+      "wordCount": 4035,
+      "sourceUrl": "https://backrooms-wiki.wikidot.com/homewardbound-ch-1",
+      "sources": [
+        {
+          "title": "Homeward Bound: Chapter 1",
+          "url": "https://backrooms-wiki.wikidot.com/homewardbound-ch-1"
+        },
+        {
+          "title": "Homeward Bound: Chapter 2",
+          "url": "https://backrooms-wiki.wikidot.com/homewardbound-ch-2"
+        }
+      ],
+      "site": "Backrooms Wiki",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "originalTitle": "Homeward Bound: Chapters 1–2",
+      "series": "BACKROOMS TALE SERIES",
+      "hook": "아내 미아가 사라지고 하루. 제임스의 집은 수색으로 어수선하고, 그녀의 작업실은 실종자들의 사진과 붉은 실로 이미 가득합니다. 노트북에는 끝나지 않는 노란 복도가 열려 있습니다. 현실의 주소가 없는 그 방을 따라가면, 문을 닫아도 같은 벽지가 이어집니다. 사랑하는 사람을 찾으려다 제임스는 그 복도의 안쪽으로 들어섭니다.",
+      "edition": "English original · Chapters 1–2",
+      "editionNote": "“Homeward Bound: Chapters 1–2” by DivineAtlas, from the Backrooms Wiki (https://backrooms-wiki.wikidot.com/homewardbound-ch-1 and https://backrooms-wiki.wikidot.com/homewardbound-ch-2). Licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/). The story text was extracted from the wiki pages with paragraph breaks and Chapter 2 scene transitions kept; wiki page chrome, comments and images are omitted. The cover is a separate image made for Breeze and is not from the Backrooms Wiki."
     }
   ]
 }

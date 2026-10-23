@@ -20,7 +20,7 @@ const url=`http://127.0.0.1:${server.address().port}/`;
 const definitions=[
   {id:'backroom-homeward-bound',title:'Backroom - Homeward Bound',file:'homewardbound.txt',paras:107,first:'I sat stunned',last:'It was another flickering wall.'},
 ];
-const expectedOrder=['The Adventure of the Speckled Band','A Scandal in Bohemia','The Red-Headed League','The Final Problem','The Hound of the Baskervilles',"Alice's Adventures in Wonderland",'The Great Gatsby'];
+const expectedOrder=["Alice's Adventures in Wonderland",'A Scandal in Bohemia','The Red-Headed League','The Adventure of the Speckled Band','The Final Problem','The Hound of the Baskervilles','The Great Gatsby'];
 const reports=[];
 
 try{
