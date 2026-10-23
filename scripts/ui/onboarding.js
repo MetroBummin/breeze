@@ -41,6 +41,7 @@ function finishOnboardingWelcome(){
   document.getElementById('onboarding').dataset.welcome='ready';
 }
 function startOnboarding(replay){
+  if(window.BREEZE_TARGET==='toss') return;
   if(onboardingSession)endOnboarding(false);
   const request=++onboardingRequest,previousView=activeAppView(),available=onboardingPdfAvailable();
   if(available instanceof Promise)return available.then(value=>{
@@ -248,6 +249,7 @@ function endOnboarding(remember,returnToPrevious=true){
   if(session.focus instanceof HTMLElement&&session.focus.getClientRects().length)session.focus.focus({preventScroll:true});
 }
 function maybeShowOnboarding(){
+  if(window.BREEZE_TARGET==='toss'){ save(ONBOARD_KEY,'done'); return; }
   if(load(ONBOARD_KEY,'')==='done')return;
   if(books.length||Object.keys(words).length||Object.keys(dead).length||Object.keys(positions).length){save(ONBOARD_KEY,'done');return;}
   return startOnboarding(false);

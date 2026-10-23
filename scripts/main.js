@@ -42,7 +42,8 @@ function paintHome(){
    이미 앱 안에 파일이 있어서 서비스워커 캐시가 할 일이 없습니다. 등록에 실패해도 앱은 예전과
    똑같이 돕니다 — 없으면 매번 네트워크를 탈 뿐입니다. */
 if('serviceWorker' in navigator && location.protocol.startsWith('http')
-    && !window.Capacitor?.isNativePlatform?.()){
+    && !window.Capacitor?.isNativePlatform?.()
+    && window.BREEZE_TARGET!=='toss'){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js', {updateViaCache:'none'})
       .catch(error=>console.warn('오프라인 준비를 건너뜁니다:', error));

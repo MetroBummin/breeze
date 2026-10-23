@@ -372,6 +372,7 @@ function studySetTestAskLeave(){
   return true;
 }
 function studySetTestHoldHistory(){
+  if(window.BREEZE_TARGET==='toss') return false;
   if(studySetsUI.pendingClose||studySetsUI.screen!=='test'||!studySetTestRun)return false;
   history.pushState({
     breeze:true,view:'memory-set',studySets:studySetsUI.historyToken,studySetsScreen:'test',

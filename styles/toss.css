@@ -1,0 +1,55 @@
+/* Toss mini-app only. The web, iOS and Android pages do not load this file. */
+html[data-breeze-target="toss"]{
+  color-scheme:light;
+}
+html[data-breeze-target="toss"] #readback,
+html[data-breeze-target="toss"] #study-sets-back,
+html[data-breeze-target="toss"] #onboard-back,
+html[data-breeze-target="toss"] .am-back,
+html[data-breeze-target="toss"] #drop-overlay,
+html[data-breeze-target="toss"] #login-nudge,
+html[data-breeze-target="toss"] #home-add,
+html[data-breeze-target="toss"] .onboarding-setting,
+html[data-breeze-target="toss"] #aa-pop .aa-row:has(#aa-dark),
+html[data-breeze-target="toss"] #rsource,
+html[data-breeze-target="toss"] #rdiscovery,
+html[data-breeze-target="toss"] #ed-cover-source{
+  display:none !important;
+}
+html[data-breeze-target="toss"] .toss-ai-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:8px;
+  padding:0 6px;
+  min-height:18px;
+  border:1px solid currentColor;
+  border-radius:999px;
+  font:600 10px/1 var(--ui,sans-serif);
+  letter-spacing:.04em;
+  vertical-align:middle;
+}
+html[data-breeze-target="toss"] #toss-ai-notice{
+  width:min(360px,calc(100vw - 32px));
+  padding:22px 22px 18px;
+  border:0;
+  border-radius:22px;
+  background:#fff;
+  color:#1c1c1e;
+}
+html[data-breeze-target="toss"] #toss-ai-notice h2{
+  margin:0 0 8px;
+  font:600 20px/1.3 var(--ui,sans-serif);
+}
+html[data-breeze-target="toss"] #toss-ai-notice p{
+  margin:0 0 16px;
+  font:400 14px/1.5 var(--ui,sans-serif);
+}
+html[data-breeze-target="toss"] #toss-ai-notice button{
+  min-height:44px;
+  width:100%;
+  border:0;
+  border-radius:16px;
+  background:#1c1c1e;
+  color:#fff;
+  font:600 15px/1 var(--ui,sans-serif);
+}

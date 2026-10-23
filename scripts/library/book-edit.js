@@ -27,8 +27,13 @@ function openEditSheet(book, step){
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
   const source = /** @type {HTMLAnchorElement} */(document.getElementById('ed-cover-source'));
-  source.hidden = !book.coverSourcePage;
-  if(book.coverSourcePage) source.href = book.coverSourcePage;
+  if(window.BREEZE_TARGET==='toss'){
+    source.hidden = true;
+    source.removeAttribute('href');
+  }else{
+    source.hidden = !book.coverSourcePage;
+    if(book.coverSourcePage) source.href = book.coverSourcePage;
+  }
   document.getElementById('ed-del-note').textContent = '단어장과 다른 기기의 읽기자료는 그대로 남습니다.';
   if(typeof renderBookCloudToggle==='function')renderBookCloudToggle(book);
   /** @type {HTMLDialogElement} */(editModal()).showModal();

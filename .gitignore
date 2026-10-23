@@ -15,3 +15,7 @@ DerivedData/
 xcuserdata/
 
 /build/
+
+# Apps in Toss. tools/build-toss.mjs and `ait build` recreate these.
+toss/dist/
+*.ait
