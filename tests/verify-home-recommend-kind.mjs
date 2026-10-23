@@ -55,6 +55,9 @@ test('book captions sit under the picture inside the article card box',()=>{
 
 function harness(){
   const {document}=parseHTML(`<div id="casual-rail"></div><p id="home-feed-empty"></p><div id="shelf"></div><div id="home-casual-rail"></div>
+    <h2 id="home-recommend-title" data-i18n="home.recommend">추천</h2>
+    <section id="home-casuals"></section>
+    <section id="longform"><div class="sec-head"><h2><button class="section-link" type="button"><span data-i18n="sec.books">긴 글</span></button></h2></div></section>
     <div id="home-recommend-kind" role="group"><button type="button" data-kind="articles" aria-pressed="true">기사</button><button type="button" data-kind="books">책</button></div>
     <span id="longform-cnt"></span><div id="longform-grid"></div><div id="longform-empty" hidden></div>
     <section id="longform-recommend" hidden><h2 id="longform-recommend-title">추천</h2><div id="longform-recommend-rail"></div></section>`);
@@ -85,7 +88,7 @@ function harness(){
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};
-  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','renderHome','renderLongformRecommend','renderLongformLibrary'])
+  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','tossHome','readIsHolmes','bookIsHolmes','applyTossHomeChrome','tossHolmesSources','tossHolmesRailSpecs','tossShelfOfferSpecs','renderHomeRecommendBooks','renderHome','renderLongformRecommend','renderLongformLibrary'])
     vm.runInContext(extractFunction(library,name),context);
   return {context,books,opened,rss,store,document};
 }
@@ -283,4 +286,36 @@ test('long-form offers use the 추천 rail and the same catalog ownership as Hom
   c.renderLongformLibrary();
   assert.equal(section.hidden,true);
   assert.equal(document.getElementById('longform-cnt').textContent,'7권');
+});
+
+test('toss home keeps Holmes on the original shelf and other books on 책장',()=>{
+  const {context:c,books,document}=harness();
+  c.window={BREEZE_TARGET:'toss'};
+  books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
+  books.push({id:'saved-other',kind:'txt',title:'Pride and Prejudice',author:'Jane Austen'});
+  books.push({id:'saved-backrooms',kind:'txt',title:'Backrooms',author:'',longReadId:'backroom-homeward-bound'});
+  c.renderHome();
+  const title=document.getElementById('home-recommend-title');
+  assert.equal(title.textContent,'셜록 홈즈 오리지널');
+  assert.equal(title.hasAttribute('data-i18n'),false);
+  assert.equal(document.getElementById('home-recommend-kind').hidden,true);
+  assert.equal(document.getElementById('home-casuals').hidden,true);
+  const heading=document.querySelector('#longform > .sec-head h2');
+  assert.equal(heading.textContent,'책장');
+  assert.equal(heading.querySelector('button.section-link'),null);
+  const rail=railTitles(document);
+  assert.ok(rail.includes('A Scandal in Bohemia'));
+  assert.equal(rail.includes("Alice's Adventures in Wonderland"),false);
+  assert.equal(rail.includes('The Great Gatsby'),false);
+  assert.ok(document.querySelector('#casual-rail [data-book-id="saved-holmes"]'));
+  assert.equal(document.querySelector('#shelf [data-book-id="saved-holmes"]'),null);
+  assert.ok(document.querySelector('#shelf [data-book-id="saved-other"]'));
+  assert.ok(document.querySelector('#shelf [data-book-id="saved-backrooms"]'));
+  const shelfTitles=[...document.querySelectorAll('#shelf .home-recommend-book .bt')].map(node=>node.textContent);
+  assert.ok(shelfTitles.includes("Alice's Adventures in Wonderland"));
+  assert.ok(shelfTitles.includes('The Great Gatsby'));
+  assert.equal(shelfTitles.includes('A Scandal in Bohemia'),false);
+  assert.equal(document.querySelectorAll('#shelf .get').length,0);
+  assert.equal(document.querySelectorAll('#home-casual-rail [data-home-key]').length,0);
+  assert.equal(document.querySelectorAll('#shelf [data-home-key="add"]').length,0);
 });

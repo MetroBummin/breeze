@@ -198,6 +198,7 @@ settingsModal().addEventListener('click', event => {
    Home and shelves use the always-expanded Reader primitives. Wordbook owns its controls. */
 function syncHomeNavigation(){
   const home=['home','casuals','longform'].includes(activeAppView());
+  const toss=typeof window!=='undefined'&&window.BREEZE_TARGET==='toss';
   const nav=document.getElementById('primary-nav');
   const top=document.getElementById('topbar');
   const controls=document.getElementById('home-controls');
@@ -211,10 +212,17 @@ function syncHomeNavigation(){
     if(homeButton.parentElement!==controls) controls.append(homeButton);
     if(resume.parentElement!==nav) nav.append(resume);
     if(nav.parentElement!==controls) controls.append(nav);
-    if(settings.parentElement!==top) top.append(settings);
+    if(toss){
+      // The gear is gone. The wordbook circle takes that top-right slot,
+      // and the bottom bar keeps only the centered resume pill.
+      if(words.parentElement!==top) top.append(words);
+      if(settings.parentElement!==nav) nav.append(settings);
+    }else if(settings.parentElement!==top) top.append(settings);
     if(add&&add.parentElement!==nav) nav.append(add);
-    if(shelf){ controls.append(words); nav.prepend(homeButton); }
-    else if(words.parentElement!==nav) nav.prepend(words);
+    if(shelf){
+      if(toss){ if(homeButton.parentElement!==nav) nav.prepend(homeButton); }
+      else { controls.append(words); nav.prepend(homeButton); }
+    }else if(!toss && words.parentElement!==nav) nav.prepend(words);
   }else{
     if(words.parentElement!==nav) nav.prepend(words);
     if(resume.parentElement!==controls) controls.append(resume);

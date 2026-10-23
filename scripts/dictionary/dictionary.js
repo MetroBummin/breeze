@@ -743,27 +743,59 @@ function placeLookupPeek(pill,anchor,reserveDetail=true){
   if(!pill||pill.hidden||!anchor) return;
   const view=window.visualViewport;
   const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
-  const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
-  const gap=8,edge=16,box=pill.getBoundingClientRect();
+  // 100vw and visualViewport can be wider than the layout viewport in a mobile
+  // webview. The tighter width is the one the pill must stay inside.
+  let vw=view&&view.width?view.width:window.innerWidth;
+  let vh=view&&view.height?view.height:window.innerHeight;
+  const root=document.documentElement;
+  const layoutW=root&&root.clientWidth, layoutH=root&&root.clientHeight;
+  if(layoutW>0) vw=Math.min(vw,layoutW);
+  if(window.innerWidth>0) vw=Math.min(vw,window.innerWidth);
+  if(layoutH>0) vh=Math.min(vh,layoutH);
+  if(window.innerHeight>0) vh=Math.min(vh,window.innerHeight);
+  const gap=8,edge=16;
   const chrome=document.getElementById('readchrome').getBoundingClientRect();
   const safeTop=vy+edge+(parseFloat(getComputedStyle(pill).getPropertyValue('--word-safe-top'))||0);
   const safeBottom=Math.min(vy+vh-edge,chrome.height&&chrome.top>safeTop?chrome.top-gap:vy+vh-edge);
   const above=Math.max(0,anchor.top-gap-safeTop);
   const below=Math.max(0,safeBottom-anchor.bottom-gap);
+  const available=Math.max(0,vw-edge*2);
+  if(pill.style.maxWidth) pill.style.maxWidth='';
+  let box=pill.getBoundingClientRect();
+  // A pill wider than the safe area used to keep the left margin and run off
+  // the right, because max(leftEdge, rightEdge) picks the left when the pill
+  // does not fit. Cap it first so both margins can hold.
+  if(box.width>available+0.5){
+    pill.style.maxWidth=available+'px';
+    box=pill.getBoundingClientRect();
+  }
+  const width=Math.min(box.width||0,available);
   // Reserve room for the future detail surface, not only today's 44px pill.
   // Freeze the chosen side for the lookup lifetime so async text cannot flip it.
   if(!anchor.direction){
     const detailHeight=reserveDetail?Math.min(420,(safeBottom-safeTop)*.7):box.height;
     anchor.direction=below>=detailHeight?'below':above>=detailHeight?'above':below>=above?'below':'above';
   }
-  let left=(anchor.left+anchor.right-box.width)/2;
-  left=Math.max(vx+edge,Math.min(left,vx+vw-edge-box.width));
+  let left=(anchor.left+anchor.right-width)/2;
+  const minLeft=vx+edge;
+  const maxLeft=vx+Math.max(edge,vw-edge-width);
+  left=Math.min(Math.max(left,minLeft),maxLeft);
   let top=anchor.direction==='above' ? anchor.top-gap-box.height : anchor.bottom+gap;
   top=Math.max(safeTop,Math.min(top,safeBottom-box.height));
   pill.dataset.expandDirection=anchor.direction;
   pill.style.transformOrigin=anchor.direction==='below'?'50% 0%':'50% 100%';
   pill.style.left=`${Math.round(left)}px`;pill.style.top=`${Math.round(top)}px`;
-
+  // The AI badge and late text can widen the pill after the first measure.
+  const limit=vx+vw-edge;
+  const placed=pill.getBoundingClientRect();
+  if(Number.isFinite(placed.right)&&placed.right>limit+0.5){
+    pill.style.left=`${Math.max(minLeft,Math.round(parseFloat(pill.style.left)-(placed.right-limit)))}px`;
+  }
+  const fitted=pill.getBoundingClientRect();
+  if(Number.isFinite(fitted.right)&&fitted.right>limit+0.5&&available>0){
+    pill.style.maxWidth=available+'px';
+    pill.style.left=`${Math.round(minLeft)}px`;
+  }
 }
 function stopWordMorph(){
   wordMorphGeneration++;

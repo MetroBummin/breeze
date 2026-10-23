@@ -10,7 +10,7 @@
 | 단일 페이지. `location.replace`로 문서를 바꾸지 않음 | done | 토스 빌드에서 소셜 로그인이 그 줄에 닿기 전에 반환 |
 | `eval` / `new Function` 없음 | done | PDF.js, JSZip, QR, Readability는 묶음에서 제외. 테스트가 생성 JS를 검사 |
 | iframe | done | 텍스트 고전 경로에는 없음. EPUB 미리보기 iframe은 토스에서 만들지 않음. YouTube iframe 없음 |
-| 토스 내비게이션 바, 자체 뒤로 버튼 숨김 | done | 첫 화면 뒤로는 미니앱 종료. Android 뒤로도 `backEvent` |
+| 토스 내비게이션 바. 단어장·온보딩 뒤로 버튼 숨김 | done | 읽기 화면의 서재로 돌아가기는 하단 왼쪽에 둠. 첫 화면 뒤로는 미니앱 종료. Android 뒤로도 `backEvent` |
 | 라이트 모드만 | done | 다크 전환은 토스에서 라이트로 고정 |
 | 핀치 확대 잠금 | done | `maximum-scale=1, user-scalable=no` |
 | 입장 시 로그인 시트 없음 | done | 온보딩을 열지 않음. 로그인 마크업을 HTML에서 제거 |

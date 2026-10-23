@@ -584,9 +584,89 @@ async function openHomeRecommendClassic(classic){
   const book=owned();
   if(book)return openCasualPreviewOrReader(book);
 }
+function tossHome(){
+  return typeof window!=='undefined'&&window.BREEZE_TARGET==='toss';
+}
+function readIsHolmes(read){
+  return typeof classicIsHolmes==='function'&&classicIsHolmes(read);
+}
+function bookIsHolmes(book){
+  if(!book) return false;
+  if(book.longReadStyle==='holmes') return true;
+  const id=book.longReadId||book.classicId||'';
+  return typeof classicIsHolmes==='function'&&classicIsHolmes({id,style:book.longReadStyle});
+}
+function applyTossHomeChrome(){
+  if(!tossHome()) return;
+  const title=document.getElementById('home-recommend-title');
+  if(title){
+    title.removeAttribute('data-i18n');
+    if(title.textContent!=='셜록 홈즈 오리지널') title.textContent='셜록 홈즈 오리지널';
+  }
+  const kind=document.getElementById('home-recommend-kind');
+  if(kind) kind.hidden=true;
+  const light=document.getElementById('home-casuals');
+  if(light) light.hidden=true;
+  const heading=document.querySelector('#longform > .sec-head h2');
+  if(heading&&heading.textContent!=='책장') heading.replaceChildren(document.createTextNode('책장'));
+}
+function tossHolmesSources(){
+  const bundled=typeof LONG_READS==='undefined'?[]:LONG_READS.filter(read=>!read.dormant&&read.cover);
+  const extra=typeof classicCatalogOffers==='function'?classicCatalogOffers():
+    (typeof remoteClassicCatalogReads==='function'?remoteClassicCatalogReads():[]);
+  return orderClassicReads(bundled.concat(extra).filter(read=>read&&readIsHolmes(read)));
+}
+function tossHolmesRailSpecs(){
+  const owned=longformBooks().filter(bookIsHolmes);
+  const used=new Set();
+  const specs=[];
+  for(const read of tossHolmesSources()){
+    const book=owned.find(item=>(item.longReadId||item.classicId)===read.id&&!used.has(item.id));
+    if(book){ used.add(book.id); specs.push(homeBookSpec(book,false)); }
+    else if(!homeRecommendCatalogOwned(read.id)) specs.push({
+      key:'recommend:'+read.id,
+      stamp:read.remote?longReadOfferStamp(read):read.id,
+      create:()=>homeRecommendLongReadCard(read),
+    });
+  }
+  for(const classic of homeRecommendClassics()){
+    if(!readIsHolmes(classic)||homeRecommendCatalogOwned(classic.id)) continue;
+    specs.push({key:'recommend:'+classic.id,stamp:classic.id,create:()=>homeRecommendClassicCard(classic)});
+  }
+  for(const book of owned) if(!used.has(book.id)) specs.push(homeBookSpec(book,false));
+  return specs;
+}
+function tossShelfOfferSpecs(){
+  const specs=[];
+  for(const read of homeRecommendReads()){
+    if(readIsHolmes(read)) continue;
+    specs.push({
+      key:'recommend:'+read.id,
+      stamp:read.remote?longReadOfferStamp(read):read.id,
+      create:()=>{
+        const card=homeRecommendLongReadCard(read);
+        card.querySelector('.get')?.remove();
+        return homeRegularTile(card,read.title,read.author||'');
+      },
+    });
+  }
+  for(const classic of homeRecommendClassics()){
+    if(readIsHolmes(classic)) continue;
+    specs.push({
+      key:'recommend:'+classic.id,
+      stamp:classic.id,
+      create:()=>{
+        const card=homeRecommendClassicCard(classic);
+        card.querySelector('.get')?.remove();
+        return homeRegularTile(card,classic.title,classic.author||'');
+      },
+    });
+  }
+  return specs;
+}
 function renderHomeRecommendBooks(rail){
   clearHomeRssCards(rail);
-  const specs=[
+  const specs=tossHome()?tossHolmesRailSpecs():[
     ...homeRecommendReads().map(read=>({key:'recommend:'+read.id,stamp:read.remote?longReadOfferStamp(read):read.id,create:()=>homeRecommendLongReadCard(read)})),
     ...homeRecommendClassics().map(classic=>({key:'recommend:'+classic.id,stamp:classic.id,create:()=>homeRecommendClassicCard(classic)})),
   ];
@@ -602,6 +682,7 @@ function renderHomeRecommendBooks(rail){
 function renderHome(){
   renderLibraryStorageNotice();
   renderHomeResume();
+  applyTossHomeChrome();
   syncHomeRecommendToggle();
   const rail=document.getElementById('casual-rail');
   const recommendBooks=homeRecommendKind()==='books';
@@ -613,15 +694,21 @@ function renderHome(){
     reconcileHomeCards(rail,[]);
     if(typeof appendRssCards==='function')appendRssCards(rail);
   }
-  const longform=longformBooks(),shelf=document.getElementById('shelf');
+  const toss=tossHome();
+  const longform=longformBooks().filter(book=>!toss||!bookIsHolmes(book)),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
   for(const row of serverOnlyBooks()){
     specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
   }
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
-  if(typeof window==='undefined'||window.BREEZE_TARGET!=='toss') specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
+  if(!toss) specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
+  if(toss) specs.push(...tossShelfOfferSpecs());
   reconcileHomeCards(shelf,specs);
   const light=document.getElementById('home-casual-rail');
+  if(toss){
+    if(light) reconcileHomeCards(light,[]);
+    return;
+  }
   const entries=[
     ...casualBooks().map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
     ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
@@ -629,7 +716,7 @@ function renderHome(){
   const lightSpecs=entries.map(entry=>entry.kind==='book'
     ? homeBookSpec(entry.value,true)
     : {key:'cloud:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
-  if(typeof window==='undefined'||window.BREEZE_TARGET!=='toss') lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
+  lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
   reconcileHomeCards(light,lightSpecs);
 }
 

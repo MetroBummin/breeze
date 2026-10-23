@@ -1,8 +1,10 @@
-/* Toss mini-app only. The web, iOS and Android pages do not load this file. */
+/* Toss mini-app only. The web, iOS and Android pages do not load this file.
+   The reader's back-to-home control stays: it is the left circle of the bottom
+   #readchrome, so the Toss host top bar does not cover it. Study, onboarding,
+   and import backs stay hidden. */
 html[data-breeze-target="toss"]{
   color-scheme:light;
 }
-html[data-breeze-target="toss"] #readback,
 html[data-breeze-target="toss"] #study-sets-back,
 html[data-breeze-target="toss"] #onboard-back,
 html[data-breeze-target="toss"] .am-back,
@@ -16,10 +18,49 @@ html[data-breeze-target="toss"] #rdiscovery,
 html[data-breeze-target="toss"] #ed-cover-source{
   display:none !important;
 }
+html[data-breeze-target="toss"] #nav-settings,
+html[data-breeze-target="toss"] #home-recommend-kind,
+html[data-breeze-target="toss"] #home-casuals{
+  display:none !important;
+}
+html[data-breeze-target="toss"] body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar #nav-vocab{
+  margin-left:auto;
+  flex:none;
+  width:44px;
+  height:44px;
+}
+html[data-breeze-target="toss"] body:has(#v-home.on) #topbar #nav-vocab{
+  transform:translateY(4px);
+}
+html[data-breeze-target="toss"] body:has(:is(#v-home,#v-casuals,#v-longform).on) #topbar #nav-vocab span{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+html[data-breeze-target="toss"] #v-home #longform .section-link{
+  pointer-events:none;
+}
+html[data-breeze-target="toss"] #v-home #longform .section-link svg,
+html[data-breeze-target="toss"] #v-home #shelf .home-recommend-book .get{
+  display:none;
+}
+html[data-breeze-target="toss"] #v-home #casual-rail > .home-regular-tile{
+  flex:0 0 min(61vw,560px);
+  width:min(61vw,560px);
+  min-width:min(61vw,560px);
+  max-width:min(61vw,560px);
+  scroll-snap-align:start;
+}
 html[data-breeze-target="toss"] .toss-ai-badge{
   display:inline-flex;
   align-items:center;
+  flex:0 0 auto;
+  align-self:center;
   margin-left:8px;
+  margin-right:10px;
   padding:0 6px;
   min-height:18px;
   border:1px solid currentColor;
