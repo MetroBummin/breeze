@@ -57,7 +57,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}
+        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}-files
 
     - name: Install browsers on cache miss
       if: steps.cache.outputs.cache-hit != 'true'
@@ -67,7 +67,10 @@ runs:
         set -euo pipefail
         cache_dir="${PLAYWRIGHT_BROWSERS_PATH}"
         if [ -d /ms-playwright ]; then
-          cp -a /ms-playwright/. "${cache_dir}/"
+          # Browser directories in the image are symlinks into /ms-playwright.
+          # Copy the files themselves so a host job can launch them after restore.
+          cp -aL /ms-playwright/. "${cache_dir}/"
+          rm -rf "${cache_dir}/.links"
           echo "Cache miss. Seeded ${cache_dir} from the Playwright image instead of downloading."
         else
           echo "Cache miss. Downloading Playwright browsers."
@@ -93,7 +96,7 @@ runs:
       continue-on-error: true
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}
+        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}-files
 
     - name: Browser cache hit
       if: steps.cache.outputs.cache-hit == 'true'
@@ -125,6 +128,10 @@ runs:
             | sudo tee /etc/apt/apt.conf.d/99playwright-ci >/dev/null
         fi
         sudo npx playwright install-deps ${{ inputs.browsers }}
+        # The runner user cannot read root-owned apt locks, and that made the
+        # cache save fail. Keep the downloaded packages and drop the lock.
+        sudo rm -rf /var/cache/apt/archives/partial /var/cache/apt/archives/lock
+        sudo chmod -R a+rX /var/cache/apt/archives
 
     - name: Save apt package cache
       if: steps.version.outputs.deps == 'apt' && steps.apt.outputs.cache-hit != 'true'
