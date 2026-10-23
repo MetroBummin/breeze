@@ -57,7 +57,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}-files
+        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}-${{ steps.version.outputs.deps }}
 
     - name: Install browsers on cache miss
       if: steps.cache.outputs.cache-hit != 'true'
@@ -75,9 +75,10 @@ runs:
         else
           echo "Cache miss. Downloading Playwright browsers."
         fi
-        # Install every browser this version ships. The cache key is OS plus
-        # version, with no browser name, so a partial save would be a false hit
-        # for the next job.
+        # Install every browser this version ships. The cache key is OS, version,
+        # and image vs host. Image installs are symlinks into /ms-playwright, so
+        # a host job must not restore them. A partial browser set would be a
+        # false hit for the next job, so the key has no browser name.
         log="$(npx playwright install 2>&1)" || { printf '%s\n' "${log}"; exit 1; }
         printf '%s\n' "${log}"
         if printf '%s' "${log}" | grep -qi 'Downloading'; then
@@ -96,7 +97,7 @@ runs:
       continue-on-error: true
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}-files
+        key: ${{ runner.os }}-ms-playwright-${{ steps.version.outputs.version }}-${{ steps.version.outputs.deps }}
 
     - name: Browser cache hit
       if: steps.cache.outputs.cache-hit == 'true'

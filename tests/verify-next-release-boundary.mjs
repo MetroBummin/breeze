@@ -15,7 +15,7 @@ const base='fd67f0a0f6f09be247f371d085ad097aea304784';
 const historicalBase='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
-    ".github/actions/playwright-browsers/action.yml": "37484060b975c451060ba5499161d96f5ba06ec56f7850ac4c749f1669496371",
+    ".github/actions/playwright-browsers/action.yml": "11b7fda31d20f91a02890ab73c401b26211712ef940414d024cfa62452d473a4",
     ".github/ci-path-filters.yml": "4964b88f6e45d4e789721dfdb3925dff4b61ae343e09a80f5b28df2eb6cdc9a5",
     ".github/workflows/account-learning.yml": "56168a9255dac371f5a5def5451f2547208cebb028161eaea89f3ef0abe7ca9f",
     ".github/workflows/all-words-picker.yml": "402c4c9af06246b5720709b7c206a27488416d8eafce268e0db9b76d15c0bd85",
