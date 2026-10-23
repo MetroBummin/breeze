@@ -2,6 +2,53 @@
 
 ## Decision
 
+### Android PKCE browser sign-in (2026-10-23)
+
+Android Apple and Google sign-in use the same bundled Supabase client and the
+same request owner as iOS browser consent. There is no second auth client, no
+native Google SDK, and no Android Apple identity-token exchange. iOS Apple
+stays on `ASAuthorization`. iOS Google and web Apple/Google stay as they were.
+
+The client asks `signInWithOAuth` with PKCE only for that Android call, then
+restores the previous flow so email OTP is unchanged. `skipBrowserRedirect`
+stays set. `@capacitor/browser` opens the authorize URL in a Chrome Custom Tab.
+Neither plugin was already installed; App is required for `appUrlOpen` and
+Browser is required for the Custom Tab and the close event. The system browser
+returns through an intent-filter on `kr.io.breeze.app` host `auth` path
+`/callback`. The activity is already `singleTask`.
+
+The redirect is the existing iOS value,
+`kr.io.breeze.app://auth/callback?request=<UUID>`. The bridge ignores any
+callback whose single `request` value is not the open attempt, including a
+reply that arrives after cancel, timeout, or a newer request. A matching but
+malformed callback, including one that carries `access_token` or
+`refresh_token`, does not navigate. A valid callback carries one PKCE `code`
+only. A fresh app document lets the same client exchange that code with the
+verifier already in its own storage. The code is not a session token and is not
+logged. Closing the Custom Tab, or cancelling, rejects that request and
+returns the button to its normal enabled state. Cold start with no open
+request does not accept a callback. Official button artwork and layout are
+unchanged. The buttons stay disabled when the App or Browser plugin is missing.
+
+No Supabase, Apple, or Google provider setting is changed by this work. The
+owner still has to allow the redirect and confirm the provider return URLs:
+
+- Supabase Auth redirect allow list: add
+  `kr.io.breeze.app://auth/callback\?request=*` if that iOS entry is not
+  already present. `?` is a single-character wildcard unless escaped. Do not
+  add a bare `kr.io.breeze.app://**` entry. The server appends `&code=` after
+  the allow-list check, so the entry is the `redirectTo` value, not the final
+  URL. Site URL stays unchanged. PKCE is selected by this client's
+  `code_challenge`; there is no separate project toggle to enable.
+- Apple Services ID Website URLs: no change. The return URL remains
+  `https://<project-ref>.supabase.co/auth/v1/callback`. The app scheme is not
+  an Apple return URL. Android does not add a native Sign in with Apple
+  capability or a new Services ID.
+- Google Cloud OAuth client: no change. The authorized redirect URI remains
+  the same Supabase `/auth/v1/callback` on the existing Web client. Do not
+  create an Android OAuth client and do not register the custom scheme or a
+  SHA-1 fingerprint for this flow.
+
 ### Approved 1.9.1 native Apple follow-up (2026-10-09)
 
 iPhone/iPad Apple sign-in now uses AuthenticationServices
@@ -17,8 +64,9 @@ The native token exchange binds network completion, JSON parsing and the final
 existing session-storage write to its current operation. Closing Settings,
 timeouts, session changes and cancellation prevent late session writes. Only a
 committed session starts the existing account-owned wordbook sync. Google on
-iOS keeps ASWebAuthenticationSession; web Apple/Google keep OAuth. Android has
-no new native auth bridge. Official button artwork, layout and guest access stay
+iOS keeps ASWebAuthenticationSession; web Apple/Google keep OAuth. Android
+had no new native auth bridge in this follow-up; the 2026-10-23 decision above
+adds PKCE Custom Tab sign-in. Official button artwork, layout and guest access stay
 unchanged. There is no client email-based identity linking or account migration.
 
 App/Share marketing version is 1.9.1; the checked-in counter remains 253 until
@@ -70,7 +118,8 @@ redirect. Callbacks must match that request, scheme, host and path. Interactive
 consent is bounded to two minutes. A fresh app document lets the same bundled SDK
 accept the callback and persist its session; no second auth client or custom
 credential persistence is introduced. Generic/cold-launch auth callbacks are not
-accepted. Android has no authentication bridge and remains on existing email.
+accepted. Android had no authentication bridge in this extraction and stayed on
+email; the 2026-10-23 decision above is the Android bridge.
 
 No provider configuration, key, entitlement, signing, automatic account linking,
 quota, vault ownership or security settings are changed. Enabling providers and
@@ -85,9 +134,10 @@ explicit extraction, the design workflow uses the auth-only boundary test, which
 retains exact existing tutorial/Reader/release hashes, unmodified index DOM, and
 the existing Home/Memory CSS prefix. The historical receipt is retained unchanged.
 
-27 deterministic auth tests cover deadline, cancellation, stale ownership,
-malformed/off-project authorize URLs, native callback binding, unsupported native
-shells and retry. Browser tests use the actual bundled SDK and app with substituted
+Deterministic auth tests cover deadline, cancellation, stale ownership,
+malformed/off-project authorize URLs, native callback binding, the Android PKCE
+callback, Custom Tab cancel, stale and malformed Android replies, unsupported
+native shells and retry. Browser tests use the actual bundled SDK and app with substituted
 provider responses and an emulated OS bridge, verifying persistence and reload.
 Foundation policy tests execute production Swift URL validation; the unsigned
 Simulator build checks compilation only. Live consent, physical devices and actual

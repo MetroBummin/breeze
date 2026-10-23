@@ -5,20 +5,33 @@ import {webcrypto} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {parseHTML} from 'linkedom';
 const source=readFileSync(new URL('../scripts/sync/sync.js',import.meta.url),'utf8');
-function device({native=false,bridge=null}={}){
+function device({native=false,bridge=null,android=false,plugins=true}={}){
  const {document}=parseHTML('<html><body><div id="settings-modal" class="on"><div id="sm-body"></div><div id="sm-status"></div></div><input id="recovery-fileinput"><input id="reading-backup-input"></body></html>');
- const requests=[],oauth=[],redirects=[],timers=new Map();let sequence=0;
- const context=vm.createContext({document,window:{Capacitor:{isNativePlatform:()=>native},webkit:bridge?{messageHandlers:{breezeAuth:bridge}}:undefined},words:{kept:{ko:'보관한'}},dead:{},
+ const requests=[],oauth=[],redirects=[],timers=new Map(),opened=[];let sequence=0;
+ const events={appUrlOpen:new Set(),browserFinished:new Set()};
+ const androidPlugins={
+  App:{addListener(event,callback){assert.equal(event,'appUrlOpen');events.appUrlOpen.add(callback);return Promise.resolve({remove(){events.appUrlOpen.delete(callback);}});}},
+  Browser:{
+   open(options){opened.push(options&&options.url);return Promise.resolve();},
+   close(){opened.push('close');return Promise.resolve();},
+   addListener(event,callback){assert.equal(event,'browserFinished');events.browserFinished.add(callback);return Promise.resolve({remove(){events.browserFinished.delete(callback);}});},
+  },
+ };
+ const Capacitor=android?{isNativePlatform:()=>true,getPlatform:()=>'android',isPluginAvailable:name=>plugins&&(name==='App'||name==='Browser'),Plugins:plugins?androidPlugins:{},registerPlugin:name=>androidPlugins[name]}
+  :{isNativePlatform:()=>native};
+ const context=vm.createContext({document,window:{Capacitor,webkit:bridge?{messageHandlers:{breezeAuth:bridge}}:undefined},words:{kept:{ko:'보관한'}},dead:{},
   load:(_key,fallback)=>fallback,esc:String,console,URL,URLSearchParams,AbortController,crypto:webcrypto,VaultCrypto:{uuid:()=>webcrypto.randomUUID()},
-  location:{origin:native?'null':'https://breeze.io.kr',href:native?'breeze://localhost/index.html':'https://breeze.io.kr/',pathname:'/',assign:url=>redirects.push(url),replace:url=>redirects.push(url)},
+  location:{origin:android||native?'null':'https://breeze.io.kr',href:android?'https://localhost/index.html':native?'breeze://localhost/index.html':'https://breeze.io.kr/',pathname:'/',assign:url=>redirects.push(url),replace:url=>redirects.push(url)},
   setTimeout:callback=>{const id=++sequence;timers.set(id,callback);return id;},clearTimeout:id=>timers.delete(id),
   fetch:(url,options)=>new Promise((resolve,reject)=>{requests.push({url,options,resolve,reject});options.signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true});}),
  });
  vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,login:sbAppleLogin,google:sbGoogleLogin,cancel:cancelSocialLogin,operation:()=>socialLoginOperation,options:nativeAppleAuthOptions,advanceEpoch:()=>syncSessionEpoch++,setClient:client=>{sb=client;SB_URL="https://project.supabase.co";SB_KEY="existing-public-test-key";}};',context);
  const client={auth:{signInWithIdToken:async()=>({data:{user:{id:'same-existing-user'}},error:null}),signInWithOAuth:async args=>{oauth.push(args);return {data:{url:'https://project.supabase.co/auth/v1/authorize?provider=apple'},error:null};}}};
  context.api.setClient(client);context.api.render();
- return {api:context.api,client,document,requests,oauth,redirects,timers,words:context.words,
+ return {api:context.api,client,document,requests,oauth,redirects,timers,words:context.words,opened,events,
   resolve:enabled=>requests.at(-1).resolve({ok:true,json:async()=>({external:{apple:enabled,google:enabled}})}),
+  deliver:url=>{for(const callback of events.appUrlOpen)callback({url});},
+  finish:()=>{for(const callback of events.browserFinished)callback();},
   status:()=>document.getElementById('sm-status').textContent,
   button:()=>document.getElementById('sm-apple-login')};
 }
@@ -213,4 +226,138 @@ test('native Apple cancellation followed by retry cannot release the newer owner
  oldReply({request:oldMessage.request,nonce:oldMessage.nonce,identityToken:'header.payload.signature'});await turn();assert.equal(h.button().disabled,true);assert.equal(h.exchanges.length,0);
  h.reply();await next;
  assert.equal(h.exchanges.length,1);assert.equal(h.button().disabled,false);
+});
+
+async function until(check){
+ for(let attempt=0;attempt<30;attempt++){ if(check())return; await turn(); }
+ throw Error('android auth did not reach the expected state');
+}
+function androidDevice(options){
+ const h=device({android:true,...options});
+ h.client.auth.flowType='implicit';
+ h.client.auth.signInWithIdToken=()=>{ throw Error('android must not exchange an Apple identity token'); };
+ h.client.auth.signInWithOAuth=async args=>{
+  h.oauth.push({provider:args.provider,redirectTo:args.options.redirectTo,skipBrowserRedirect:args.options.skipBrowserRedirect,flowType:h.client.auth.flowType});
+  return {data:{url:'https://project.supabase.co/auth/v1/authorize?provider='+args.provider+'&redirect_to='+encodeURIComponent(args.options.redirectTo)+'&code_challenge=local-test-challenge&code_challenge_method=s256'},error:null};
+ };
+ return h;
+}
+const callbackFor=(request,extra='')=>'kr.io.breeze.app://auth/callback?request='+request+extra;
+
+for(const provider of ['apple','google']){
+ const login=h=>provider==='apple'?h.api.login():h.api.google();
+ const button=h=>h.document.getElementById('sm-'+provider+'-login');
+ test('android '+provider+': PKCE callback is bound to the request and carries no session token',async()=>{
+  const h=androidDevice();
+  assert.equal(button(h).disabled,false);
+  assert.equal(h.document.getElementById('sm-'+provider+'-note').textContent,'');
+  assert.match(h.document.getElementById('sm-google-login').innerHTML,/assets\/auth\/google-g\.png/);
+  assert.match(h.document.getElementById('sm-apple-login').innerHTML,/Apple로 로그인/);
+  const work=login(h);h.resolve(true);
+  await until(()=>h.opened.some(url=>typeof url==='string'));
+  const request=new URL(h.oauth[0].redirectTo).searchParams.get('request');
+  assert.equal(h.oauth[0].provider,provider);
+  assert.equal(h.oauth[0].flowType,'pkce');
+  assert.equal(h.oauth[0].skipBrowserRedirect,true);
+  assert.equal(h.client.auth.flowType,'implicit');
+  assert.equal(h.opened[0],'https://project.supabase.co/auth/v1/authorize?provider='+provider+'&redirect_to='+encodeURIComponent(callbackFor(request))+'&code_challenge=local-test-challenge&code_challenge_method=s256');
+  h.deliver(callbackFor(request,'&code=local-test-code'));
+  await work;
+  assert.deepEqual(h.redirects,['https://localhost/index.html?breeze_auth_return='+request+'&code=local-test-code']);
+  assert.equal(h.redirects[0].includes('access_token')||h.redirects[0].includes('refresh_token')||h.redirects[0].includes('#'),false);
+  assert.ok(h.opened.includes('close'));
+  assert.equal(h.events.appUrlOpen.size,0);
+  assert.equal(button(h).disabled,false);
+  assert.equal(h.timers.size,0);
+ });
+ test('android '+provider+': a callback delivered with the browser close still completes',async()=>{
+  const h=androidDevice(),work=login(h);h.resolve(true);
+  await until(()=>h.opened.some(url=>String(url).startsWith('https:')));
+  const request=new URL(h.oauth[0].redirectTo).searchParams.get('request');
+  h.finish();
+  h.deliver(callbackFor(request,'&code=local-test-code'));
+  await work;
+  assert.deepEqual(h.redirects,['https://localhost/index.html?breeze_auth_return='+request+'&code=local-test-code']);
+  assert.equal(button(h).disabled,false);
+ });
+ test('android '+provider+': closing the browser returns the button without navigation',async()=>{
+  const h=androidDevice(),work=login(h);h.resolve(true);
+  await until(()=>h.opened.some(url=>String(url).startsWith('https:')));
+  const request=new URL(h.oauth[0].redirectTo).searchParams.get('request');
+  h.finish();[...h.timers.values()].at(-1)();await work;
+  h.deliver(callbackFor(request,'&code=local-test-code'));await turn();
+  assert.equal(h.redirects.length,0);
+  assert.match(h.status(),/취소/);
+  assert.equal(button(h).disabled,false);
+  assert.equal(h.events.appUrlOpen.size,0);
+  assert.equal(h.timers.size,0);
+ });
+ test('android '+provider+': dismissing the request ignores a late callback and frees the button',async()=>{
+  const h=androidDevice(),work=login(h);h.resolve(true);
+  await until(()=>h.opened.some(url=>String(url).startsWith('https:')));
+  const request=new URL(h.oauth[0].redirectTo).searchParams.get('request');
+  h.api.cancel();await work;
+  h.deliver(callbackFor(request,'&code=local-test-code'));await turn();
+  assert.equal(h.redirects.length,0);
+  assert.equal(button(h).disabled,false);
+  assert.equal(h.events.appUrlOpen.size,0);
+  assert.equal(h.timers.size,0);
+ });
+ test('android '+provider+': a stale callback cannot navigate or release a newer request',async()=>{
+  const opens=h=>h.opened.filter(url=>String(url).startsWith('https:')).length;
+  const h=androidDevice(),first=login(h);h.resolve(true);
+  await until(()=>opens(h)===1);
+  const oldRequest=new URL(h.oauth[0].redirectTo).searchParams.get('request');
+  h.api.cancel();await first;
+  const second=login(h);h.resolve(true);
+  await until(()=>h.oauth.length===2&&opens(h)===2);
+  const request=new URL(h.oauth[1].redirectTo).searchParams.get('request');
+  assert.notEqual(request,oldRequest);
+  h.deliver(callbackFor(oldRequest,'&code=stale-test-code'));await turn();
+  assert.equal(h.redirects.length,0);assert.equal(button(h).disabled,true);
+  h.deliver(callbackFor(request,'&code=local-test-code'));await second;
+  assert.deepEqual(h.redirects,['https://localhost/index.html?breeze_auth_return='+request+'&code=local-test-code']);
+  assert.equal(button(h).disabled,false);
+  const dropped=androidDevice(),stale=login(dropped);dropped.resolve(true);
+  await until(()=>opens(dropped)===1);
+  const live=new URL(dropped.oauth[0].redirectTo).searchParams.get('request');
+  dropped.api.advanceEpoch();
+  dropped.deliver(callbackFor(live,'&code=local-test-code'));await stale;await turn();
+  assert.equal(dropped.redirects.length,0);assert.equal(button(dropped).disabled,false);
+ });
+ test('android '+provider+': malformed callbacks never reload the app',async()=>{
+  for(const address of [
+   request=>'kr.io.breeze.app://user:password@auth/callback?request='+request+'&code=local-test-code',
+   request=>'kr.io.breeze.app://auth:123/callback?request='+request+'&code=local-test-code',
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&request=other&code=local-test-code',
+   request=>'kr.io.breeze.app://auth/callback?request='+request,
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&code=',
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&code=local-test-code&code=other-code',
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&error=access_denied&code=local-test-code',
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&code=local-test-code#access_token=local-test-access&refresh_token=local-test-refresh&token_type=bearer',
+   request=>'kr.io.breeze.app://auth/callback?request='+request+'&access_token=local-test-access&code=local-test-code',
+  ]){
+   const h=androidDevice(),work=login(h);h.resolve(true);
+   await until(()=>h.opened.some(url=>typeof url==='string'));
+   const request=new URL(h.oauth[0].redirectTo).searchParams.get('request');
+   h.deliver(address(request));await work;
+   assert.equal(h.redirects.length,0);assert.equal(button(h).disabled,false);assert.match(h.status(),/연결하지 못했/);
+  }
+ });
+}
+test('android without the App and Browser plugins keeps social buttons disabled',()=>{
+ const h=device({android:true,plugins:false});
+ assert.equal(h.document.getElementById('sm-apple-login').disabled,true);
+ assert.equal(h.document.getElementById('sm-google-login').disabled,true);
+ assert.match(h.document.getElementById('sm-apple-note').textContent,/아직 준비되지/);
+ assert.match(h.document.getElementById('sm-google-note').textContent,/아직 준비되지/);
+ assert.match(h.document.getElementById('sm-google-login').innerHTML,/assets\/auth\/google-g\.png/);
+});
+test('android refuses an authorize URL whose redirect is not the request callback',async()=>{
+ const h=androidDevice();
+ h.client.auth.signInWithOAuth=async()=>({data:{url:'https://project.supabase.co/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent('https://evil.example/callback')},error:null});
+ const work=h.api.google();h.resolve(true);await work;
+ assert.equal(h.opened.length,0);assert.equal(h.redirects.length,0);
+ assert.equal(h.document.getElementById('sm-google-login').disabled,false);
+ assert.match(h.status(),/연결하지 못했/);
 });
