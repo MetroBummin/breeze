@@ -30,7 +30,7 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
     'the-great-gatsby','backroom-homeward-bound',
   ]);
   assert.equal(entry.id,'pride-and-prejudice');
-  assert.equal(entry.hook,'시골 무도회에 부유한 총각이 나타나자 베넷 부인의 머릿속은 혼처 계산으로 가득 찹니다. 둘째 딸 엘리자베스는 첫눈에 오만해 보이는 다아시를 단박에 밀어냅니다. 소문과 편지는 오해를 키우고, 집안은 체면과 재산 사이에서 흔들립니다. 사람을 그렇게 쉽게 판단해 버린 뒤, 다시 본다는 일은 얼마나 늦어질 수 있을까요.');
+  assert.equal(entry.hook,'시골 무도회. 부유한 총각이 들어섭니다. 엘리자베스는 첫눈에 그를 밀어냅니다. 오만해서일까요? 소문은 그보다 빨리 집안을 흔듭니다. 다아시는 정말 그런 남자일까요?');
   assert.equal(entry.title,'Pride and Prejudice');
   assert.equal(entry.author,'Jane Austen');
   assert.equal(entry.bytes,book.length);
@@ -167,8 +167,8 @@ test('읽기 시작 downloads once, reports progress, and rejects a changed file
 test('Alice and Gatsby move to the catalog and a saved copy keeps its text',async()=>{
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const hooks={
-    'alice-in-wonderland':'강둑에서 졸던 앨리스 앞에, 회중시계를 들여다보며 늦었다고 중얼거리는 흰 토끼가 지나갑니다. 토끼를 따라 굴속으로 떨어진 그녀는 작은 문을 열려고 몸이 커졌다 작아졌다 합니다. 웃는 고양이는 나타나더니 이내 사라지고, 규칙은 자꾸 바뀌는데 앨리스의 질문만 남습니다. 이상한 나라의 끝에서 그녀는 제 이름을 아직 기억하고 있을까요.',
-    'the-great-gatsby':'1922년 여름, 롱아일랜드. 닉은 만 건너 저택에서 밤마다 쏟아지는 음악과 불빛을 봅니다. 파티의 주인 제이 개츠비는 좀처럼 모습을 드러내지 않습니다. 사람들은 그의 돈이 어디서 왔는지 수군거리고, 그는 초록 불빛이 닿는 건너편만 바라봅니다. 그곳에는 옛사랑 데이지가 있습니다. 이미 가 버린 한 시절을, 사람은 어디까지 다시 살 수 있을까요.',
+    'alice-in-wonderland':'흰 토끼가 회중시계를 들여다봅니다. 늦었다고 중얼거리며 지나갑니다. 앨리스는 따라 굴속으로 떨어집니다. 그 끝은 어디일까요? 몸은 커졌다 작아지고, 웃는 고양이는 사라집니다. 이 나라의 규칙은 누가 정한 걸까요?',
+    'the-great-gatsby':'1922년 여름, 롱아일랜드. 만 건너 저택에 밤마다 불이 켜집니다. 주인은 나타나지 않습니다. 제이 개츠비. 그 돈은 어디서 온 걸까요? 그는 초록 불빛만 바라봅니다. 그 빛 너머의 데이지. 이미 끝난 사랑을, 사람은 왜 다시 살려고 할까요?',
   };
   for(const id of Object.keys(hooks)){
     const entry=catalog.books.find(book=>book.id===id);
@@ -446,9 +446,9 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
 test('the three Holmes novels are remote illustrated books with opening sections',()=>{
   const catalog=JSON.parse(text('server/classics/catalog.json'));
   const expected=[
-    ['sherlock-holmes-a-study-in-scarlet','A Study in Scarlet',43423,'런던의 빈집, 시체 하나, 그리고 벽에 남은 피 묻은 글자. 겉으로 다친 곳이 없어 보이는 죽음 앞에서 경찰은 발을 멈춥니다. 실험실에서 왓슨이 처음 만난 남자, 셜록 홈즈는 진흙과 재와 반지에서 사람이 지운 이야기를 읽어 냅니다. 베이커가의 첫 사건입니다. 방 안에 남은 것들은 경찰이 지나친 바로 그것을 가리키고 있습니다.',14],
-    ['sherlock-holmes-the-sign-of-the-four','The Sign of the Four',43099,'여섯 해 동안 생일이면 진주 한 알이 도착했습니다. 보낸 사람은 없고, 아버지 모스턴 대위는 인도에서 사라진 채입니다. 어느 안개 낀 밤, 메리에게 드디어 편지가 옵니다. 낯선 이를 따라오라는 그 편지 끝에는 네 사람의 표식이 있습니다. 홈즈와 왓슨은 보물을 좇아 나서고, 템스강의 밤은 더 오래된 약속을 숨기고 있습니다.',12],
-    ['sherlock-holmes-the-valley-of-fear','The Valley of Fear',57608,'아침 식탁 위에 암호 한 장이 놓입니다. 풀리기도 전에, 해자로 둘러싸인 저택에서 한 남자가 죽습니다. 얼굴은 알아보기 어렵고 집 안은 지나치게 조용합니다. 홈즈는 암호 뒤에서 오래된 경고를 읽고, 그 경고가 교수 모리아티의 그림자와 닿아 있음을 느낍니다. 영국의 저택과 아메리카의 계곡, 두 이야기가 하나의 문을 공유합니다.',15],
+    ['sherlock-holmes-a-study-in-scarlet','A Study in Scarlet',43423,'런던의 빈집. 시체 하나. 벽에 피 묻은 글자. 다친 곳은 없습니다. 경찰은 멈춥니다. 실험실의 낯선 남자는 진흙과 재에서 사람을 읽어 냅니다. 셜록 홈즈. 그 글자는 무슨 뜻일까요? 답은 방 안에 있는데, 왜 아무도 못 볼까요?',14],
+    ['sherlock-holmes-the-sign-of-the-four','The Sign of the Four',43099,'생일마다 진주 한 알. 여섯 해째입니다. 보낸 사람은 없습니다. 아버지 모스턴 대위는 인도에서 사라졌습니다. 안개 낀 밤, 편지가 옵니다. 낯선 이를 따라오라. 끝에 찍힌 것은 네 사람의 표식. 그들은 누구일까요? 진주는 선물이었을까요?',12],
+    ['sherlock-holmes-the-valley-of-fear','The Valley of Fear',57608,'아침 식탁의 암호 한 장. 풀리기도 전에, 해자 저택에서 사람이 죽습니다. 얼굴은 알아보기 어렵습니다. 누가 죽은 걸까요? 암호는 경고일까요, 함정일까요? 홈즈는 그 뒤에서 모리아티의 그림자를 느낍니다. 왜 하필 그 이름일까요?',15],
   ];
   for(const [id,title,words,hook,chapters] of expected){
     const entry=catalog.books.find(book=>book.id===id);
