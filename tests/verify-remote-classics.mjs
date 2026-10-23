@@ -417,7 +417,7 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
   const novelPaths=[];
   for(const id of ['sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear']){
     const entry=catalog.books.find(book=>book.id===id);
-    novelPaths.push(`${id}/book.txt`,`${id}/cover.webp`);
+    novelPaths.push(`${id}/book.txt`,`${id}/cover-framed.webp`);
     for(const image of entry.illustrations)novelPaths.push(`${id}/illustrations/${image.id}.webp`);
   }
   assert.deepEqual(plan.slice(9),novelPaths);
@@ -446,7 +446,8 @@ test('the three Holmes novels are remote illustrated books with opening sections
   for(const [id,title,words,hook,chapters] of expected){
     const entry=catalog.books.find(book=>book.id===id);
     const file=read(`server/classics/${id}/book.txt`);
-    const cover=read(`server/classics/${id}/cover.webp`);
+    const cover=read(`server/classics/${id}/cover-framed.webp`);
+    assert.equal(entry.cover.endsWith(`/classics/${id}/cover-framed.webp`),true);
     const paragraphs=file.toString('utf8').trim().split(/\n\s*\n+/);
     assert.equal(entry.title,title);
     assert.equal(entry.author,'Arthur Conan Doyle');
