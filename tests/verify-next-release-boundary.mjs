@@ -300,7 +300,7 @@ const expected={
     "tests/verify-longreads-browser.mjs": "1b69d74194d4df3b06dec36269599dc67f8c5761dace4558f9bb82ed290cd327",
     "tests/verify-lookup-contract.mjs": "5532f4c4daa85ae0b3964fe1eb9c88b462eaa5d4219bb6df8164cd1b4fa74af3",
     "tests/verify-lookup-work-browser.mjs": "737c0eaf71b6f06444afa58661a8d95abe747aa689d02851aa4a745572140d66",
-    "tests/verify-memory-edit-filter-browser.mjs": "622c77d1804ecc5efa6fd8f0369ec84e9ca0e017700bba844a8f5a3a37a486f4",
+    "tests/verify-memory-edit-filter-browser.mjs": "09d950b98bebfe9e2a80e8e92705ca72f80951567b0db863924497dde004723a",
     "tests/verify-native-package.mjs": "9864957d72d6052f8d014fd6ed682834fa58a0c2629cb89b3b64a4968dc6e4db",
     "tests/verify-offline-import-browser.mjs": "ecd7314e5affecd5850ec61e3835766c0c2cedbef8f40bac0e6c8fe540af2ee5",
     "tests/verify-onboarding-browser.mjs": "2d7b7bc633eb96a04a4e520fab3575bef78ad7122962824b48e3720a0d35b44b",
