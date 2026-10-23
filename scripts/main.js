@@ -43,7 +43,7 @@ function paintHome(){
    똑같이 돕니다 — 없으면 매번 네트워크를 탈 뿐입니다. */
 if('serviceWorker' in navigator && location.protocol.startsWith('http')
     && !window.Capacitor?.isNativePlatform?.()
-    && window.BREEZE_TARGET!=='toss'){
+    && (typeof window==='undefined'||window.BREEZE_TARGET!=='toss')){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js', {updateViaCache:'none'})
       .catch(error=>console.warn('오프라인 준비를 건너뜁니다:', error));

@@ -161,7 +161,7 @@ function meaningWaitLine(off){
   if(off === 'offline'){
     return '오프라인이라 뜻을 찾을 수 없어요';
   }
-  if(window.BREEZE_TARGET==='toss' && (off==='trial'||off==='login')) return '오늘은 뜻을 더 볼 수 없어요';
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss' && (off==='trial'||off==='login')) return '오늘은 뜻을 더 볼 수 없어요';
   const why =
       off === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요'
     : off === 'trial'   ? '무료 체험을 다 썼어요'
@@ -670,7 +670,7 @@ function wordPeekSameTarget(k,node){
   return !!(current&&next&&current.owner===next.owner&&current.start===next.start
     &&current.end===next.end&&current.endNode===next.endNode);
 }
-function breezeToss(){ return window.BREEZE_TARGET==='toss'; }
+function breezeToss(){ return typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'; }
 function lookupLimitText(){
   return breezeToss() ? '오늘은 뜻을 더 볼 수 없어요' : '로그인하고 뜻 보기';
 }
@@ -695,7 +695,7 @@ function tossSyncBadge(host,id,show){
 function tossEnsureAiNotice(){
   if(!breezeToss()) return;
   try{ if(localStorage.getItem('breeze.toss.ai-notice')==='seen') return; }catch(error){ return; }
-  let dialog=document.getElementById('toss-ai-notice');
+  let dialog=/** @type {HTMLDialogElement|null} */(document.getElementById('toss-ai-notice'));
   if(!dialog){
     dialog=document.createElement('dialog');
     dialog.id='toss-ai-notice';
@@ -821,7 +821,7 @@ function renderWordPeek(){
     return;
   }
   document.getElementById('word-peek-meaning').textContent=state.text;
-  tossPaintAiMarks(w,pill,'word-peek-ai-badge',state.text);
+  if(typeof tossPaintAiMarks==='function') tossPaintAiMarks(w,pill,'word-peek-ai-badge',state.text);
   pill.classList.toggle('loading',state.loading);
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
@@ -1213,7 +1213,7 @@ function renderPanel(){
      다른 뜻은 문맥 뜻 아래 칩으로 둡니다. 본체는 선택, 끝의 × 는 삭제입니다. */
   document.getElementById('p-ex-fold').hidden=true;
   if(context&&shown&&!asking)aiCap.textContent='저장된 뜻';
-  tossPaintAiMarks(w,document.querySelector('#p-ai .cap'),'p-ai-badge',shown);
+  if(typeof tossPaintAiMarks==='function') tossPaintAiMarks(w,document.querySelector('#p-ai .cap'),'p-ai-badge',shown);
   if(typeof renderEasyExplanation==='function')renderEasyExplanation();
   if(previewWordCard){
     document.getElementById('p-saved-senses').className='';

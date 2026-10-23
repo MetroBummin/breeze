@@ -525,7 +525,7 @@ async function openOriginalEpub(book,record,token){
   }
   const filled=new Set();
   async function appendEpubChapter(index){
-    if(window.BREEZE_TARGET==='toss') return;
+    if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
     if(token!==originalLoadToken||filled.has(index)||index<0||index>=archive.spine.length)return;
     filled.add(index);
     const chapter=archive.spine[index];

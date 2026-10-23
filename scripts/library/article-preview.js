@@ -413,10 +413,16 @@ function openLongReadPreview(read){
   articlePreviewPaint({summaryKo:read.hook});articlePreviewMetadataState('ready');
   articlePreviewDetails.hidden=false;
   articlePreviewDetails.textContent=`${read.edition} · ${read.wordCount.toLocaleString()} words · ${Math.max(1,Math.round(read.wordCount/180))} min (approx.)\n${read.license}`;
-  const source=document.createElement('a');
-  source.href=read.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';
-  source.textContent=`Source acknowledgment: ${read.site}`;
-  articlePreviewDetails.append(document.createElement('br'),source);
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){
+    const note=document.createElement('span');
+    note.textContent=`Source acknowledgment: ${read.site}`;
+    articlePreviewDetails.append(document.createElement('br'),note);
+  }else{
+    const source=document.createElement('a');
+    source.href=read.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';
+    source.textContent=`Source acknowledgment: ${read.site}`;
+    articlePreviewDetails.append(document.createElement('br'),source);
+  }
   const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
   if(read.cover){image.src=read.cover;image.hidden=false;image.onerror=()=>{image.hidden=true;};}
   const owned=books.find(book=>book.longReadId===read.id),generation=articlePreviewGeneration;

@@ -107,7 +107,7 @@ test('shared guards run only when the toss flag is set',()=>{
   assert.match(read('scripts/dictionary/dictionary.js'),/toss-ai-badge/);
   assert.match(read('scripts/reader/epub-original.js'),/appendEpubChapter[\s\S]*BREEZE_TARGET==='toss'/);
   assert.match(read('scripts/reader/pdf-navigation.js'),/renderEpubPreviewQueue[\s\S]*BREEZE_TARGET==='toss'/);
-  assert.match(read('scripts/core/lazy-lib.js'),/name==='pdf'/);
+  assert.match(read('scripts/library/article-preview.js'),/BREEZE_TARGET==='toss'\)\{[\s\S]*createElement\('span'\)/);
   const config=read('apps-in-toss.config.ts');
   assert.match(config,/appName:\s*'breeze'/);
   assert.match(config,/webBundleDir:\s*'toss\/dist'/);

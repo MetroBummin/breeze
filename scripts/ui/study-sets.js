@@ -308,7 +308,7 @@ function studySetsVisibleExportRecords(){
   }));
 }
 async function studySetsShareVisible(){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   if(studySetsUI.editOpen)studySetsCloseEditMenu(false,true);
   const button=studySetsUI.shareButton;
   if(!button||button.disabled||studySetsUI.exporting)return;
@@ -390,7 +390,7 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
   const stop=studySpring(0,1,0,paint,()=>{if(epoch===ui.editEpoch)finish();});
   ui.editAnimation={cancel:stop};
 }
-function studySetsUsesBrowserHistory(){ return window.BREEZE_TARGET!=='toss'; }
+function studySetsUsesBrowserHistory(){ return typeof window==='undefined'||window.BREEZE_TARGET!=='toss'; }
 function replaceStudySetsHistory(patch){
   if(!studySetsUsesBrowserHistory()) return;
   const current=history.state||{};
@@ -867,7 +867,7 @@ function renderStudySets(focus=true){
   }
   studySetsAttachSurface();
   ui.sheet.dataset.screen=ui.screen;
-  const showShare=window.BREEZE_TARGET!=='toss'&&(ui.screen==='detail'&&!!set||ui.screen==='all')&&ui.pageOpen,showMenu=ui.screen==='detail'&&!!set&&ui.pageOpen;
+  const showShare=(typeof window==='undefined'||window.BREEZE_TARGET!=='toss')&&(ui.screen==='detail'&&!!set||ui.screen==='all')&&ui.pageOpen,showMenu=ui.screen==='detail'&&!!set&&ui.pageOpen;
   ui.shareButton.hidden=!showShare;ui.editButton.hidden=!showMenu;ui.editSurface.hidden=!showShare;ui.editSlot.hidden=!showShare;
   ui.editSlot.classList.toggle('is-pair',showMenu);ui.editSurface.classList.toggle('is-pair',showMenu);
   if(!ui.editOpen){ui.editButton.setAttribute('aria-label','세트 편집');ui.editSurface.style.width=(showMenu?88:44)+'px';ui.editSurface.style.height='44px';ui.editSurface.style.borderRadius='22px';}

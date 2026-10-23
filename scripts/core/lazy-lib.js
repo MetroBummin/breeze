@@ -65,7 +65,7 @@ async function cacheUncontrolledLibraries(name){
 }
 
 function loadLazyLib(name){
-  if(window.BREEZE_TARGET==='toss'&&(name==='pdf'||name==='zip'||name==='qr'||name==='readability'))
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'&&(name==='pdf'||name==='zip'||name==='qr'||name==='readability'))
     return Promise.reject(new Error('이 빌드에서는 파일을 가져오지 않아요.'));
   if(LAZY_LIB_READY[name] && LAZY_LIB_READY[name]()) return Promise.resolve();
   if(lazyLibJobs[name]) return lazyLibJobs[name];

@@ -461,7 +461,7 @@ function activeAppView(){
   return view ? view.id.replace(/^v-/,'') : 'home';
 }
 function rememberAppView(view,replace){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   if(appHistoryRestoring || (curBook && curBook.transient)) return;
   const state={breeze:true,view:view||activeAppView()};
   if(replace) history.replaceState(state,'');
@@ -546,7 +546,7 @@ window.addEventListener('popstate',event=>{
 });
 /* 첫 기록을 Breeze의 홈으로 바꿔 둡니다. 이후 앱 안에서 이동할 때만 새 기록을
    쌓으므로, 홈에서 뒤로가기는 원래 방문한 사이트로 자연스럽게 나갑니다. */
-if(window.BREEZE_TARGET!=='toss'){
+if(typeof window==='undefined'||window.BREEZE_TARGET!=='toss'){
   history.replaceState({breeze:true,view:activeAppView()},'');
   appHistoryReady=true;
 }

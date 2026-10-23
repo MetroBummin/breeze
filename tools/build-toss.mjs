@@ -35,6 +35,7 @@ export function transformTossHtml(html){
   outHtml=removeOuterTag(outHtml,'input','original-fileinput');
   outHtml=removeFromOpenToClose(outHtml,'<dialog id="add-modal"','</dialog>');
   outHtml=outHtml.replace(/<button type="button" data-kind="articles"[^>]*>기사<\/button>\s*/,'');
+  outHtml=outHtml.replace(/<img\b[^>]*\bsrc="assets\/samples\/[^"]*"[^>]*>/g,'');
   if(!outHtml.includes('styles/toss.css')){
     outHtml=outHtml.replace('</head>','  <link rel="stylesheet" href="styles/toss.css">\n</head>');
   }

@@ -313,7 +313,7 @@ function paintEpubThumbnails(){
    visible preview per turn keeps navigation responsive; close/reopen cancels
    stale work through the same generation used by PDF rendering. */
 async function renderEpubPreviewQueue(nav){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   if(nav.previewRendering)return;
   nav.previewRendering=true;
   const generation=nav.generation;

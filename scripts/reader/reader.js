@@ -448,7 +448,7 @@ function renderReaderAttribution(book){
   const sourceLines=sources.map(item=>{
     const source=document.createElement('p');
     const label=`${attribution.sourceName} · ${item.title}`;
-    if(window.BREEZE_TARGET==='toss') source.textContent=label;
+    if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') source.textContent=label;
     else{
       const link=document.createElement('a');
       link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
@@ -460,7 +460,7 @@ function renderReaderAttribution(book){
   const license=document.createElement('p');
   license.textContent=book.longReadId==='backroom-homeward-bound'
     ? 'Story text and scene illustrations: ' : 'Story text: ';
-  if(window.BREEZE_TARGET==='toss') license.append(attribution.license||'');
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') license.append(attribution.license||'');
   else{
     const licenseLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
     licenseLink.href=attribution.licenseUrl;
@@ -542,7 +542,7 @@ async function openBook(b,options={}){
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
      하나 남겨 둡니다. */
   const source = document.getElementById('rsource');
-  if(window.BREEZE_TARGET==='toss'){
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){
     source.hidden = true;
     source.removeAttribute('href');
   }else{
@@ -557,7 +557,7 @@ async function openBook(b,options={}){
   }
   renderReaderAttribution(b);
   const discovery = /** @type {HTMLAnchorElement} */(document.getElementById('rdiscovery'));
-  if(window.BREEZE_TARGET==='toss'){
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){
     discovery.hidden = true;
     discovery.removeAttribute('href');
   }else{

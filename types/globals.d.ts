@@ -17,6 +17,8 @@ declare var qrcode: any;
 interface Window {
   supabase?: any;
   BREEZE_CONFIG?: { SB_URL?: string; SB_KEY?: string; RSS_CATALOG?: boolean; RSS_CATALOG_FEED_IDS?: number[]; BOOK_CLOUD?: boolean; READING_CACHE_URL?: string; INK_SYNC?: boolean; CLASSICS_CATALOG_URL?: string };
+  /* Set only by the Apps in Toss bundle. Absent on web, iOS and Android. */
+  BREEZE_TARGET?: string;
   /* Kill switches read at runtime. Absent means the new timing stays on. */
   /* `fill` paints download progress on the book card. Anything else leaves the card unchanged. */
   BREEZE_CARD_ACTIVITY?: string;

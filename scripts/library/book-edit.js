@@ -27,7 +27,7 @@ function openEditSheet(book, step){
   document.getElementById('ed-what').textContent = book.title;
   renderCoverChoices(book);
   const source = /** @type {HTMLAnchorElement} */(document.getElementById('ed-cover-source'));
-  if(window.BREEZE_TARGET==='toss'){
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){
     source.hidden = true;
     source.removeAttribute('href');
   }else{

@@ -42,13 +42,13 @@
 
 콘솔 권장 크기는 세로 636×1048 PNG 3장 이상, 가로 1504×741 PNG 1장 이상입니다. 1932×828 썸네일은 게임용입니다.
 
-라이트 모드 세로 3장:
+라이트 모드 세로 3장을 `docs/toss/screenshots/`에 넣어 두었습니다.
 
-1. `docs/toss/screenshots/01-home-classics.png` — 고전 서가
-2. `docs/toss/screenshots/02-reader.png` — 셜록 홈즈 읽기
-3. `docs/toss/screenshots/03-vocabulary.png` — 단어장
+1. `01-home-classics.png` — 고전 서가. 가져오기 단추와 기사 전환은 없습니다.
+2. `02-reader.png` — 셜록 홈즈 「The Adventure of the Speckled Band」 본문.
+3. `03-vocabulary.png` — 단어장. 저장한 단어가 없을 때의 안내입니다.
 
-생성:
+다시 만들려면:
 
 ```bash
 npm run toss

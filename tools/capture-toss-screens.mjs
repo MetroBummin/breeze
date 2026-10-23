@@ -47,20 +47,19 @@ const page=await browser.newPage({
 await page.emulateMedia({colorScheme:'light',reducedMotion:'reduce'});
 await page.addInitScript(()=>{ window.BREEZE_TARGET='toss'; });
 await page.goto('http://127.0.0.1:'+port+'/',{waitUntil:'domcontentloaded'});
-await page.waitForTimeout(800);
+page.on('pageerror',error=>console.error('pageerror',error.message));
+await page.waitForSelector('.bookcard.longread',{timeout:15000});
 await page.screenshot({path:join(out,'01-home-classics.png')});
 
-await page.evaluate(async()=>{
-  const read=typeof LONG_READS!=='undefined'&&LONG_READS.find(item=>String(item.id||'').includes('sherlock'));
-  if(read&&typeof importLongRead==='function') await importLongRead(read);
-  const book=typeof books!=='undefined'&&books.find(item=>String(item.longReadId||item.id||'').includes('sherlock')||/holmes|sherlock/i.test(item.title||''));
-  if(book&&typeof openBook==='function') await openBook(book);
-});
-await page.waitForTimeout(600);
+await page.locator('.bookcard.longread',{hasText:'Speckled Band'}).first().click();
+await page.locator('.ap-start').click();
+await page.waitForFunction(()=>document.getElementById('v-read')?.classList.contains('on'),null,{timeout:20000});
+await page.waitForTimeout(400);
 await page.screenshot({path:join(out,'02-reader.png')});
 
-await page.evaluate(()=>{ if(typeof show==='function') show('memory'); });
-await page.waitForTimeout(400);
+await page.evaluate(()=>{ if(typeof show==='function') show('vocab'); });
+await page.waitForFunction(()=>document.getElementById('v-vocab')?.classList.contains('on'));
+await page.waitForTimeout(300);
 await page.screenshot({path:join(out,'03-vocabulary.png')});
 
 await browser.close();

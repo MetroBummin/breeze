@@ -93,7 +93,7 @@ function closeAa(){
 }
 let darkMode = load('breeze.dark', false);
 function applyDark(){
-  if(window.BREEZE_TARGET==='toss') darkMode=false;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') darkMode=false;
   document.body.classList.toggle('dark', !!darkMode);
   document.documentElement.classList.toggle('dark', !!darkMode);   // 화면 맨 아래까지 어둡게
   /* 다크 모드를 켜는 자리는 둘입니다 — 읽는 화면의 Aa 와 설정. 어느 쪽에서
@@ -106,7 +106,7 @@ function applyDark(){
   });
 }
 function toggleDark(){
-  if(window.BREEZE_TARGET==='toss'){ darkMode=false; applyDark(); return; }
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){ darkMode=false; applyDark(); return; }
   darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark();
 }
 applyDark();
@@ -313,7 +313,7 @@ function syncLoginNudge(){
   const nudge=document.getElementById('login-nudge');
   const settingsButton=document.getElementById('nav-settings');
   if(!nudge) return;
-  if(window.BREEZE_TARGET==='toss'){ nudge.classList.remove('on'); nudge.hidden=true; return; }
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){ nudge.classList.remove('on'); nudge.hidden=true; return; }
   let signedIn=false;
   try{ signedIn=!!sbUser; }catch(error){}
   const label=uiLang==='ko' ? '로그인' : 'Sign in';

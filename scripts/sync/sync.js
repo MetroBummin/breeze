@@ -77,7 +77,7 @@ function initSupabase(){
   SB_KEY=typeof config.SB_KEY==='string'?config.SB_KEY.trim():'';
   if(!SB_URL||!SB_KEY){ sbInitProblem='config'; return null; }
   if(!window.supabase||typeof window.supabase.createClient!=='function'){ sbInitProblem='sdk'; return null; }
-  try{ sb=window.supabase.createClient(SB_URL,SB_KEY,socialNativeBridge()?nativeAppleAuthOptions():undefined); sbInitProblem=''; if(window.BREEZE_TARGET!=='toss') attachSupabaseAuth(); }
+  try{ sb=window.supabase.createClient(SB_URL,SB_KEY,socialNativeBridge()?nativeAppleAuthOptions():undefined); sbInitProblem=''; if(typeof window==='undefined'||window.BREEZE_TARGET!=='toss') attachSupabaseAuth(); }
   catch(error){ sbInitProblem='client'; console.error('Supabase 연결 초기화 실패:',error); }
   return sb;
 }
@@ -285,7 +285,7 @@ function cancelSocialLogin(){
   updateSocialLoginControls();
 }
 function renderSyncModal(){
-  if(window.BREEZE_TARGET==='toss'){
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss'){
     const local=document.getElementById('sm-body');
     if(local) local.innerHTML='<p class="settings-sync-note">단어와 읽던 위치는 이 토스 미니앱 안에만 저장돼요. 로그인이나 다른 기기 동기화는 없어요.</p>';
     syncStatus('');
@@ -362,7 +362,7 @@ function renderSyncModal(){
 async function sbAppleLogin(){ return sbSocialLogin('apple'); }
 async function sbGoogleLogin(){ return sbSocialLogin('google'); }
 async function sbSocialLogin(provider){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   if(!['apple','google'].includes(provider)||!socialLoginSupported(provider)||sbUser||socialLoginOperation)return;
   const label=provider==='apple'?'Apple':'Google';
   const operation={client:sb,epoch:syncSessionEpoch,controller:new AbortController(),timer:null,native:socialNativeBridge(),nonce:'',nativeApple:false,rawNonce:'',accepted:false,releaseTokens:null};
@@ -439,7 +439,7 @@ async function sbSocialLogin(provider){
 }
 
 async function sbSendLink(){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   const input=syncInput('sm-email');
   if(!input||!sb||sbUser||emailLogin.sending) return;
   rememberLoginEmail();
@@ -534,7 +534,7 @@ function changeLoginEmail(){
   if(typeof input.select==='function') input.select();
 }
 async function sbVerifyCode(){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   const emailInput=syncInput('sm-email'),codeInput=syncInput('sm-code');
   if(!emailInput||!codeInput||!sb||sbUser) return;
   const email=(emailInput.value||'').trim();
@@ -556,7 +556,7 @@ async function sbVerifyCode(){
 function openPasswordLogin(){ passwordLoginOpen=true; renderSyncModal(); syncInput('sm-password-email')?.focus(); }
 function closePasswordLogin(){ passwordLoginOpen=false; renderSyncModal(); syncInput('sm-email')?.focus(); }
 async function sbPasswordLogin(){
-  if(window.BREEZE_TARGET==='toss') return;
+  if(typeof window!=='undefined'&&window.BREEZE_TARGET==='toss') return;
   const email=(syncInput('sm-password-email').value||'').trim();
   const password=syncInput('sm-password').value||'';
   if(!/.+@.+\..+/.test(email)){ syncStatus('이메일 형식을 확인해 주세요'); return; }

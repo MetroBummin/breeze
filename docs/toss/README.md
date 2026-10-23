@@ -32,7 +32,7 @@ npm run toss:ait
 
 `apps-in-toss.config.ts`의 `appName`은 `breeze`입니다. 콘솔에 등록한 앱 아이디와 같아야 합니다. 화면에 보이는 이름은 콘솔에서 정합니다.
 
-이 패키지는 `@apps-in-toss/web-framework` 3.9.0을 씁니다. `ait`가 쓰는 포맷 도구는 Node.js 24 이상을 요구합니다. 24보다 낮은 Node에서 `ait build`가 실패하면, Node 24에서 같은 명령으로 다시 묶으면 됩니다. 콘솔 업로드 전에 계정으로 빌드할 필요는 없습니다.
+이 패키지는 `@apps-in-toss/web-framework` 3.9.0을 씁니다. 이 작업 환경의 Node.js 22.23.4에서 `npm run toss:ait`가 끝났고, 저장소 루트에 `breeze.ait`(약 22MB)가 만들어졌습니다. 그 파일은 생성물이라 git에 넣지 않습니다. `@apps-in-toss/ait-format`은 Node.js 24 이상을 적지만, 이번 빌드는 그 경고 뒤에도 패키지를 만들었습니다. 다른 컴퓨터에서 CLI가 거부하면 Node.js 24에서 같은 명령을 다시 실행합니다.
 
 ## 사용자 식별
 
