@@ -23,7 +23,7 @@ const expected={
     ".github/workflows/ci-changes.yml": "f2c1d44281748eb48aa7061d24dd85e5a96793a108e7a3a55b7bf3df1aea08ea",
     ".github/workflows/design-brand.yml": "92e74eaeb100daa659ac8b7e0492f02d580d97be76215c779ef94dcbc9502d06",
     ".github/workflows/gesture-followup.yml": "b6dca75b592f9cca54360508b31ddc55566caa324d73ef89ad8ae8070d194b95",
-    ".github/workflows/integrity.yml": "3b6e83dfd69ddecce1bc4319b75c2f5f2fb47800d511398254d41c2c92abb804",
+    ".github/workflows/integrity.yml": "bac9397fb42e4db2641171924cc4676a4242e1f3cef18c4e878c4475a5c91e50",
     ".github/workflows/ios-bootstrap.yml": "e08dd494054af435ee7c11a30c7c28f38cfeffacf063cf4b4c1969134e88c635",
     ".github/workflows/landing.yml": "13d218afc8cb6d048b67e374f4a0f370c0303e8c90f23cf02fdd5b814639a22a",
     ".github/workflows/memory-edit-filter.yml": "50ea4b88b88cc65d75a49f87e691d99cb194a9ee46dc8af68aaac03d46ebc7e7",

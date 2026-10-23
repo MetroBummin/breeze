@@ -170,7 +170,9 @@ jobs:
           status=0
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
-            BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
+            # The container run sat in this test with no output until the job cap.
+            # Bound it so a stuck browser fails this step instead of the whole suite.
+            BREEZE_QA_ENGINE=$engine stdbuf -oL -eL timeout --kill-after=15s 480s npm run test:home-reading-cards || status=1
             BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
             BREEZE_QA_ENGINE=$engine npm run test:pdf-sidebar || status=1
           done
