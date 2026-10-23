@@ -376,7 +376,11 @@
      대체가 아니라 서로의 뒷받침입니다. */
   #rtext figure img{max-width:100%; border-radius:10px; box-shadow:var(--shadow);
     -webkit-user-drag:none; -webkit-touch-callout:none;}
-  .w{cursor:pointer; border-radius:5px; padding:0 1px; margin:0 -1px; transition:background .12s;
+  /* 좌우 1px 패딩을 음수 마진으로 지우던 방식은 줄 끝에서 한 픽셀이 남습니다.
+     딱 맞는 줄의 마지막 낱말 — Sign of the Four 1장의 Deduction 같은 — 이
+     낱말 상자가 붙는 순간 다음 줄로 떨어집니다. 하이라이트는 배경과 그림자로만
+     그리고, 줄바꿈은 일반 텍스트와 같게 둡니다. */
+  .w{cursor:pointer; border-radius:5px; padding:0; margin:0; transition:background .12s;
     /* 저장한 색이 아닌데 잠깐 회색 네모가 생기는 것은 Safari/Chrome의 기본 탭 표시입니다.
        단어 자체가 클릭 단추라 이 브라우저 효과는 남길 이유가 없습니다. */
     -webkit-tap-highlight-color:transparent;}

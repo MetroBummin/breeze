@@ -1837,8 +1837,10 @@ assert.match(readerSource, /el\.textContent = bl\.v \|\| bl\.t/,
   'The reader wraps every word while constructing the whole book again');
 assert.match(readerSource, /wordSpanObserver\.observe\(element\)/,
   'Visible paragraphs are not observed for word-span hydration');
-assert.match(readerCss, /\.w\{[^}]*padding:0 1px; margin:0 -1px/,
-  'Word-span padding can change paragraph height during lazy hydration');
+assert.match(readerCss, /\.w\{[^}]*padding:0; margin:0/,
+  'Word spans use horizontal padding again, so a full line wraps when a word becomes tappable');
+assert.doesNotMatch(readerCss, /\.w\{[^}]*padding:\s*0\s+1px/,
+  'Word-span side padding is back — it drops the last word of a full line');
 assert.match(modesSource, /function stabilizePdfModeTarget/,
   'PDF mode switches no longer re-anchor after placeholder sizes settle');
 
