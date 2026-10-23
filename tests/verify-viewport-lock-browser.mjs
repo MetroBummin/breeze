@@ -216,16 +216,17 @@ async function runProfile(browser, device, label, useCdp) {
       await page.evaluate(() => openBook(books[0]));
       await page.waitForFunction(() => originalSession && originalSession.kind === 'pdf' && document.body.classList.contains('reader-original'), null, {timeout: 20000});
     }, ['.pdf-source-page', '#originalwrap']);
+    assert.equal(await page.locator('#pdfzoom-in, #pdfzoom-out, #aa-pdfzoom').count(), 0, 'Retired Aa PDF zoom buttons came back');
     const zoom = await page.evaluate(() => {
-      const before = originalZoomLevel;
-      changeOriginalZoom(1);
-      return {before, after: originalZoomLevel, active: originalZoomActive()};
+      const before = originalZoom();
+      setOriginalZoom(Math.min(4, before + 0.5));
+      return {before, after: originalZoom(), transform: document.getElementById('original-zoom')?.style.transform || ''};
     });
-    assert.equal(zoom.active, true, 'PDF paper zoom was not active');
-    assert.ok(zoom.after > zoom.before, 'PDF paper zoom no longer changes originalZoomLevel');
+    assert.ok(zoom.after > zoom.before, 'PDF pinch commit no longer changes originalZoomLevel');
+    assert.match(zoom.transform, /scale\(/);
     await assertScale(page, label + ' PDF paper zoom');
     await page.evaluate(() => resetOriginalZoom());
-    assert.equal(await page.evaluate(() => originalZoomLevel), 1);
+    assert.equal(await page.evaluate(() => originalZoom()), 1);
     await assertScale(page, label + ' PDF paper zoom reset');
     await visit('Handwriting', async () => {
       const entry = page.locator('.ink-pill-entry');

@@ -116,17 +116,15 @@ action 이 둘 이상 나가면 개발 모드가 아니어도 콘솔이 소리�
 
 ### PDF 확대
 
-PDF 원본의 확대는 `#pdfzoom-out`, `#pdfzoom-in`이 `#original-zoom`의 배율을 바꾸는
-방식입니다. 확대된 종이는 뷰어 안에서 가로·세로로 스크롤합니다. 두 버튼은 따로 뜨지
-않고 Aa popover(`#aa-pdfzoom`) 안, 다른 설정들 아래 한 줄에 삽니다 — PDF 원본일
-때만 `updateOriginalZoomControls()`가 그 줄을 켭니다.
+Aa의 A−/A+(`fontSize`)는 글자 모드와 EPUB의 리플로우입니다. PDF 확대 단추
+(`#pdfzoom-in`, `#pdfzoom-out`, `#aa-pdfzoom`)는 `7ffc7003`에서 빠졌습니다.
+이 잠금은 그 단추를 되돌리지 않습니다.
 
-`pdf-pinch.js`의 touch pinch도 같은 `originalZoomLevel`(1–4배)을 씁니다.
-미리보기는 rAF transform만 변경하고 마지막 손가락이 떨어진 뒤 배율과 스크롤을
-한 번 확정합니다. 버튼의 기존 0.5배 간격과 Aa 퍼센트 표시는 유지합니다.
-접촉 중 PDF canvas 교체·선명화·제거를 미루고, 이미 시작한 한 손가락 스크롤은
-핀치가 가져가지 않습니다. 데스크톱 wheel 경로는 추가하지 않습니다.
-EPUB 원본과 글자 모드는 PDF 배율을 쓰지 않고 `Aa` 설정을 사용합니다.
+PDF 원본의 확대는 `pdf-pinch.js`의 두 손가락 핀치입니다. `originalZoomLevel`(1–4)을
+`#original-zoom`의 CSS transform으로 커밋합니다. 미리보기는 rAF transform만 바꾸고,
+마지막 손가락이 떨어진 뒤 배율과 스크롤을 한 번 확정합니다. 접촉 중 PDF canvas
+교체·선명화·제거를 미루고, 이미 시작한 한 손가락 스크롤은 핀치가 가져가지 않습니다.
+데스크톱 wheel 경로는 없습니다. EPUB 원본과 글자 모드는 이 배율을 쓰지 않습니다.
 
 브라우저 페이지 배율은 앱 전체에서 잠겨 있습니다. `index.html`의 viewport는
 `maximum-scale=1, user-scalable=no`이고, `styles/base.css`의 보편 선택자는
@@ -135,8 +133,8 @@ absolute/fixed 요소와 첫 스크롤러에서 double-tap을 빠뜨리는 구�
 보편 규칙은 한 손가락 pan만 브라우저에 맡기고, 더 구체적인 `none`·`pan-y`·`pan-x`가
 카드 스와이프와 가로 슬라이더를 그대로 둡니다.
 
-PDF·원본 핀치와 Aa +/- 는 `originalZoomLevel`(1–4)의 CSS transform이고, 글자·EPUB의
-Aa는 리플로우입니다. 둘 다 브라우저 `visualViewport.scale`이 아닙니다. WKWebView
+PDF 핀치는 `originalZoomLevel`의 CSS transform이고, 글자·EPUB의 Aa는 리플로우입니다.
+둘 다 브라우저 `visualViewport.scale`이 아닙니다. WKWebView
 스크롤 뷰의 최소·최대 배율은 1이고 핀치 제스처 인식기는 끄지 않습니다. PDF 펜 입력이
 그 인식기를 관찰합니다. Android WebView도 페이지 확대를 끕니다. EPUB iframe에는
 출판사 width를 둔 채 같은 viewport 잠금과 `html,body`의 `touch-action: pan-x pan-y`를

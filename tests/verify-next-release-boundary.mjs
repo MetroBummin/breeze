@@ -396,11 +396,11 @@ const expected={
     "tools/verify-ios-release.mjs": "eeba9a34d77509c13442490815edf4baf524cba1089ce148de050d31b0796a34",
     "types/globals.d.ts": "cda07340d3d602008860d5a85cb962d62bfb9aa64f649dacad5a266c7d3a939d",
     ".github/workflows/viewport-lock.yml": "b7a3c6a0f003b325295444b12b2e49a4ceb677f34f84b247708a6ef115fece0f",
-    "ARCHITECTURE.md": "f2dd44301624ed50c28d4c5aa6e24d2d08d1db568b405b79a0f73d61f59a898c",
+    "ARCHITECTURE.md": "fc50bb8826f105963e72b9be26283486870ae06fd0bb52da26870341fc0bc017",
     "android/app/src/main/java/kr/io/breeze/app/MainActivity.java": "5217f09a70903c963abfd24853805101192159bfd7b53760d06375d672fdaf92",
-    "docs/architecture.html": "16af7a99a800d74280132222fcc0a13d4bbd031aea09d1d42f35123f6c21abe9",
+    "docs/architecture.html": "805dd0e85d487f72c3b3a6b64c08a1c26a883f49829e31e93db7c4994474b00a",
     "docs/touch-zoom-integration-qa.md": "437710a934266126140fdba1f5dad68d2ba209220acb853ac756e45f9db1a24b",
-    "tests/verify-viewport-lock-browser.mjs": "cdebacc5078ccfb95d4e978c1c3ef176e1463e3f17c161322d6216c05e44db5c",
+    "tests/verify-viewport-lock-browser.mjs": "6b1b2b73f8a5b8b41894e30cc087081bb36a30d0dacb0361620cad96a8b565d7",
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});
