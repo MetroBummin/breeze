@@ -400,7 +400,7 @@ const expected={
     "android/app/src/main/java/kr/io/breeze/app/MainActivity.java": "5217f09a70903c963abfd24853805101192159bfd7b53760d06375d672fdaf92",
     "docs/architecture.html": "16af7a99a800d74280132222fcc0a13d4bbd031aea09d1d42f35123f6c21abe9",
     "docs/touch-zoom-integration-qa.md": "437710a934266126140fdba1f5dad68d2ba209220acb853ac756e45f9db1a24b",
-    "tests/verify-viewport-lock-browser.mjs": "e04a792a29b3897534adb1186de15160eac18d232a15c33badfd5ca910aa6580",
+    "tests/verify-viewport-lock-browser.mjs": "cdebacc5078ccfb95d4e978c1c3ef176e1463e3f17c161322d6216c05e44db5c",
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});

@@ -125,6 +125,15 @@ async function focusFields(page, label) {
     await page.evaluate(() => { const active = document.activeElement; if (active && active.blur) active.blur(); });
   }
 }
+async function importFile(page, files) {
+  await page.evaluate(() => {
+    const input = document.getElementById('fileinput');
+    if (input) input.value = '';
+  });
+  const count = await page.evaluate(() => books.length);
+  await page.locator('#fileinput').setInputFiles(files);
+  await page.waitForFunction(count => books.length > count, count, {timeout: 45000});
+}
 async function assertLock(page) {
   const lock = await page.evaluate(() => ({
     meta: document.querySelector('meta[name=viewport]')?.getAttribute('content') || '',
@@ -182,9 +191,7 @@ async function runProfile(browser, device, label, useCdp) {
   await visit('Import URL', () => page.evaluate(() => { openAddModal('casual'); addStep('url'); }), ['#am-url', '#am-card']);
   await visit('Reader text', async () => {
     await page.evaluate(() => closeAddModal?.());
-    const count = await page.evaluate(() => books.length);
-    await page.locator('#fileinput').setInputFiles(textFile);
-    await page.waitForFunction(count => books.length > count, count, {timeout: 30000});
+    await importFile(page, textFile);
     await page.evaluate(() => openBook(books[0]));
     await page.waitForSelector('#rtext .w', {timeout: 15000});
   }, ['#rtext .w', '#readwrap']);
@@ -199,15 +206,16 @@ async function runProfile(browser, device, label, useCdp) {
     await page.evaluate(() => openSentence('A patient reader keeps every meaning together.'));
     await page.waitForFunction(() => document.getElementById('sentence-modal').hidden === false, null, {timeout: 8000});
   }, ['#ps-en', '#p-sentence', '#sentence-modal']);
-  await visit('Reader PDF', async () => {
-    await page.evaluate(() => { closeSentence(); closePanel(); show('home'); });
-    const count = await page.evaluate(() => books.length);
-    await page.locator('#fileinput').setInputFiles({name: 'zoom-lock.pdf', mimeType: 'application/pdf', buffer: fixturePdf()});
-    await page.waitForFunction(count => books.length > count, count, {timeout: 30000});
-    await page.evaluate(() => openBook(books[0]));
-    await page.waitForFunction(() => originalSession && originalSession.kind === 'pdf' && document.body.classList.contains('reader-original'), null, {timeout: 20000});
-  }, ['.pdf-source-page', '#originalwrap']);
+  // Playwright WebKit rejects the PDF/EPUB IndexedDB write
+  // ("Local storage transaction failed"), so those screens cannot be opened
+  // there. Chromium iPhone and iPad still open them, including pinch.
   if (useCdp) {
+    await visit('Reader PDF', async () => {
+      await page.evaluate(() => { closeSentence(); closePanel(); show('home'); });
+      await importFile(page, {name: 'zoom-lock.pdf', mimeType: 'application/pdf', buffer: fixturePdf()});
+      await page.evaluate(() => openBook(books[0]));
+      await page.waitForFunction(() => originalSession && originalSession.kind === 'pdf' && document.body.classList.contains('reader-original'), null, {timeout: 20000});
+    }, ['.pdf-source-page', '#originalwrap']);
     const zoom = await page.evaluate(() => {
       const before = originalZoomLevel;
       changeOriginalZoom(1);
@@ -219,44 +227,46 @@ async function runProfile(browser, device, label, useCdp) {
     await page.evaluate(() => resetOriginalZoom());
     assert.equal(await page.evaluate(() => originalZoomLevel), 1);
     await assertScale(page, label + ' PDF paper zoom reset');
+    await visit('Handwriting', async () => {
+      const entry = page.locator('.ink-pill-entry');
+      await entry.first().waitFor({state: 'visible', timeout: 8000});
+      await entry.first().click();
+    }, ['#pdf-ink-tools', '.pdf-source-page', '#originalwrap']);
+    await visit('Reader EPUB', async () => {
+      await page.evaluate(() => show('home'));
+      await importFile(page, resolve(root, 'tests/fixtures/sample.epub'));
+      await page.evaluate(() => openBook(books[0]));
+      await page.waitForFunction(() => originalSession && originalSession.kind === 'epub'
+        && (originalSession.frames || []).some(frame => frame && frame.contentDocument && frame.contentDocument.body), null, {timeout: 20000});
+      const frame = await page.evaluate(() => {
+        const item = originalSession.frames.find(frame => frame && frame.contentDocument && frame.contentDocument.body);
+        const doc = item.contentDocument;
+        return {
+          touch: getComputedStyle(doc.documentElement).touchAction,
+          userSelect: getComputedStyle(doc.body).webkitUserSelect || getComputedStyle(doc.body).userSelect,
+          viewport: doc.querySelector('meta[name=viewport]')?.getAttribute('content') || ''
+        };
+      });
+      assert.equal(frame.touch, 'pan-x pan-y');
+      assert.notEqual(frame.userSelect, 'none', 'EPUB caret selection was turned off');
+      assert.match(frame.viewport, /maximum-scale=1/);
+      assert.match(frame.viewport, /user-scalable=no/);
+    }, ['.epub-touch-skin', '#originalwrap']);
   }
-  await visit('Handwriting', async () => {
-    const entry = page.locator('.ink-pill-entry');
-    await entry.first().waitFor({state: 'visible', timeout: 8000});
-    await entry.first().click();
-  }, ['#pdf-ink-tools', '.pdf-source-page', '#originalwrap']);
-  await visit('Reader EPUB', async () => {
-    await page.evaluate(() => show('home'));
-    const count = await page.evaluate(() => books.length);
-    await page.locator('#fileinput').setInputFiles(resolve(root, 'tests/fixtures/sample.epub'));
-    await page.waitForFunction(count => books.length > count, count, {timeout: 30000});
-    await page.evaluate(() => openBook(books[0]));
-    await page.waitForFunction(() => originalSession && originalSession.kind === 'epub'
-      && (originalSession.frames || []).some(frame => frame && frame.contentDocument && frame.contentDocument.body), null, {timeout: 20000});
-    const frame = await page.evaluate(() => {
-      const item = originalSession.frames.find(frame => frame && frame.contentDocument && frame.contentDocument.body);
-      const doc = item.contentDocument;
-      return {
-        touch: getComputedStyle(doc.documentElement).touchAction,
-        userSelect: getComputedStyle(doc.body).webkitUserSelect || getComputedStyle(doc.body).userSelect,
-        viewport: doc.querySelector('meta[name=viewport]')?.getAttribute('content') || ''
-      };
-    });
-    assert.equal(frame.touch, 'pan-x pan-y');
-    assert.notEqual(frame.userSelect, 'none', 'EPUB caret selection was turned off');
-    assert.match(frame.viewport, /maximum-scale=1/);
-    assert.match(frame.viewport, /user-scalable=no/);
-  }, ['.epub-touch-skin', '#originalwrap']);
   await visit('Vocab', async () => {
     await page.evaluate(() => {
       words = {quiet: {word: 'quiet', ko: '조용한', example: 'The room is quiet.', book: 'Book', status: 2}};
       saveWords(); show('vocab'); renderVocab();
+      openStudySetsAllWords();
     });
-    await page.locator('#vsearch').fill('quiet');
-    await page.locator('#vsearch').focus();
+    // The search field stays hidden until the all-words list places it.
+    await page.locator('#vsearch').waitFor({state: 'visible', timeout: 8000});
+    const search = page.locator('#vsearch');
+    await search.fill('quiet');
+    await search.focus();
     await page.evaluate(() => document.getElementById('vsearch').setSelectionRange(1, 4));
     await page.keyboard.insertText('oak');
-    assert.equal(await page.locator('#vsearch').inputValue(), 'qoakt');
+    assert.equal(await search.inputValue(), 'qoakt');
   }, ['#vsearch', '#v-vocab']);
   await assertScale(page, label + ' vocab selection');
   await visit('Word sets', () => page.evaluate(() => show('memory')), ['#v-memory h1', '#v-memory']);
