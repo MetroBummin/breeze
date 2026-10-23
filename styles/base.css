@@ -7,6 +7,10 @@
      manipulation 이 남아도 조상 스크롤러의 pan-only 와 교집합이라 핀치는 닫힙니다.
      PDF 핀치는 브라우저 배율이 아니라 종이의 CSS transform 입니다. */
   *{box-sizing:border-box; margin:0; padding:0; touch-action:pan-x pan-y;}
+  /* Chromium paints the tap highlight on the largest enclosing cursor:pointer
+     node. A rule on the book card or word leaves the parent tile blue.
+     The color inherits, so one document-wide rule is the root cause fix. */
+  html,*{-webkit-tap-highlight-color:transparent;}
   /* 내용이 짧으면 body 아래로 html 의 배경이 드러납니다. 그래서 종이색은 여기에도
      걸립니다 — 어두운 값은 tokens.css 의 `html.dark` 가 같은 이름으로 줍니다. */
   html{background:var(--paper);}
@@ -39,7 +43,9 @@
 
   .view{display:none;} .view.on{display:block;}
 
-/* Neutral keyboard focus, with no sticky touch ring on native WebKit. */
-:is(button,a,[role="button"],summary){-webkit-tap-highlight-color:transparent;}
+/* Neutral keyboard focus. Android Chrome/WebView also draws a system outline
+   box when a tap focuses a control, and WebKit can keep :focus-visible after
+   touch. Pointer modality clears that box. Text fields keep their own focus
+   outline. Keyboard :focus-visible stays. */
 :is(button,a,[role="button"],summary):focus-visible{outline-color:var(--soft)!important;}
-html[data-input-modality="pointer"] :is(button,a,[role="button"],summary):focus{outline:none!important;}
+html[data-input-modality="pointer"] :focus:not(input):not(textarea):not(select):not([contenteditable="true"]){outline:none!important;}
