@@ -114,7 +114,16 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         set -euo pipefail
-        echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99keep-debs >/dev/null
+        if [ -d /etc/apt/apt.conf.d ]; then
+          # A stuck mirror used to sit on "Installing dependencies..." until the
+          # job cap. Bound each fetch and retry it instead of waiting forever.
+          printf '%s\n' \
+            'Acquire::Retries "5";' \
+            'Acquire::http::Timeout "30";' \
+            'Acquire::https::Timeout "30";' \
+            'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+            | sudo tee /etc/apt/apt.conf.d/99playwright-ci >/dev/null
+        fi
         sudo npx playwright install-deps ${{ inputs.browsers }}
 
     - name: Save apt package cache

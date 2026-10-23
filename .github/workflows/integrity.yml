@@ -165,25 +165,20 @@ jobs:
           path: /tmp/breeze-catalog-browser-proof/
           if-no-files-found: ignore
           retention-days: 7
-      - name: Bohemia progress and Home reading cards in Chromium and WebKit
+      - name: Recent reading and PDF sidebar in Chromium and WebKit
         run: |
           status=0
           for engine in chromium webkit; do
-            BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
-            # The container run sat in this test with no output until the job cap.
-            # Bound it so a stuck browser fails this step instead of the whole suite.
-            BREEZE_QA_ENGINE=$engine stdbuf -oL -eL timeout --kill-after=15s 480s npm run test:home-reading-cards || status=1
             BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
             BREEZE_QA_ENGINE=$engine npm run test:pdf-sidebar || status=1
           done
           exit "$status"
-      - name: Home reading card proof
+      - name: Recent reading and sidebar proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: home-reading-cards-proof
+          name: recent-reading-sidebar-proof
           path: |
-            /tmp/breeze-home-reading-cards-proof/
             /tmp/breeze-recent-proof/
             /tmp/breeze-pdf-sidebar-motion/
             /tmp/breeze-sidebar-body-gestures/
@@ -286,6 +281,40 @@ jobs:
           retention-days: 7
       - name: Saved original position during interrupted reopening
         run: node tests/verify-original-reopen-browser.mjs
+  reading-progress:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
+      # Chromium sat in img.decode() on the held Bohemia illustration inside the
+      # Playwright image, and WebKit never finished the progress suite there.
+      # Both passed on the GitHub-hosted runner. This job stays on that runner.
+      # Browser binaries still come from the shared cache.
+      - name: Bohemia progress and Home reading cards in Chromium and WebKit
+        run: |
+          status=0
+          for engine in chromium webkit; do
+            BREEZE_QA_ENGINE=$engine stdbuf -oL -eL timeout --kill-after=15s 480s npm run test:bohemia-progress || status=1
+            BREEZE_QA_ENGINE=$engine stdbuf -oL -eL timeout --kill-after=15s 480s npm run test:home-reading-cards || status=1
+          done
+          exit "$status"
+      - name: Home reading card proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reading-progress-proof
+          path: /tmp/breeze-home-reading-cards-proof/
+          if-no-files-found: ignore
+          retention-days: 7
   import-byte-diagnostic:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
@@ -404,7 +433,7 @@ jobs:
           retention-days: 7
 
   suite-status:
-    needs: [changes, contracts, deferred-runtime, browser, import-byte-diagnostic, catalog-hybrid, reader-chrome-layout-diagnostic]
+    needs: [changes, contracts, deferred-runtime, browser, reading-progress, import-byte-diagnostic, catalog-hybrid, reader-chrome-layout-diagnostic]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

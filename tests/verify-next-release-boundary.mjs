@@ -15,7 +15,7 @@ const base='fd67f0a0f6f09be247f371d085ad097aea304784';
 const historicalBase='19bbb8d840df5129f4224f38093b8aa0b443f002';
 const guard='tests/verify-next-release-boundary.mjs';
 const expected={
-    ".github/actions/playwright-browsers/action.yml": "8d76bee7b19f064594d0ec1455206cb9d4311888b9a14772767c9356ae8e2c78",
+    ".github/actions/playwright-browsers/action.yml": "d12911b57e7f6621047d8e2980a236aa937989d956524f19568f0f0a9fefe55f",
     ".github/ci-path-filters.yml": "4964b88f6e45d4e789721dfdb3925dff4b61ae343e09a80f5b28df2eb6cdc9a5",
     ".github/workflows/account-learning.yml": "56168a9255dac371f5a5def5451f2547208cebb028161eaea89f3ef0abe7ca9f",
     ".github/workflows/all-words-picker.yml": "402c4c9af06246b5720709b7c206a27488416d8eafce268e0db9b76d15c0bd85",
@@ -23,7 +23,7 @@ const expected={
     ".github/workflows/ci-changes.yml": "f2c1d44281748eb48aa7061d24dd85e5a96793a108e7a3a55b7bf3df1aea08ea",
     ".github/workflows/design-brand.yml": "92e74eaeb100daa659ac8b7e0492f02d580d97be76215c779ef94dcbc9502d06",
     ".github/workflows/gesture-followup.yml": "b6dca75b592f9cca54360508b31ddc55566caa324d73ef89ad8ae8070d194b95",
-    ".github/workflows/integrity.yml": "bac9397fb42e4db2641171924cc4676a4242e1f3cef18c4e878c4475a5c91e50",
+    ".github/workflows/integrity.yml": "01ead1789ce8288c989c157730dfc4539d4e6562c3c00bf096f24534303bb779",
     ".github/workflows/ios-bootstrap.yml": "e08dd494054af435ee7c11a30c7c28f38cfeffacf063cf4b4c1969134e88c635",
     ".github/workflows/landing.yml": "13d218afc8cb6d048b67e374f4a0f370c0303e8c90f23cf02fdd5b814639a22a",
     ".github/workflows/memory-edit-filter.yml": "50ea4b88b88cc65d75a49f87e691d99cb194a9ee46dc8af68aaac03d46ebc7e7",
@@ -43,7 +43,7 @@ const expected={
     ".github/workflows/social-auth.yml": "4550f04cb23bee6eb3a27f340dd8d51d4132e1adf1d070d0ff08ddc22dba4c52",
     ".github/workflows/social-import.yml": "68395ad3b0a6e43798a5af1addaeb8a167f9bf66f0f9f1dcef48998ad40ccace",
     ".github/workflows/study-sets.yml": "b6f9f6d8f502f32296998796550f471fd2f1dc62d4701ebcd34b2ad6031a3d5a",
-    ".github/workflows/text-rotation.yml": "bbae909b6dceba2ff2e1137237bf6af9ac9783b7e655890c293a5194f008d8fd",
+    ".github/workflows/text-rotation.yml": "4b9a35a6af35d51f2382bf2c2c1451b575260428a92eef935183aae13fe23897",
     ".github/workflows/vocabulary-export.yml": "619b84bf73f901f67d1403fb334ff0e02907fc5aba3845a5dfce2ff025d608df",
     ".github/workflows/vocabulary-test.yml": "fc2de65bc5b3e9d82dfbdfeb9abdc9c7b2c6b66168d7c8d0a2b788b11cfcc7da",
     ".github/workflows/word-retry-recovery.yml": "8e0a1a7d2409de88edc2156968aee1c20de656782d68305e6ec2f6e5f529c08f",
