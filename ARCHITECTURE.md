@@ -128,12 +128,23 @@ PDF 원본의 확대는 `#pdfzoom-out`, `#pdfzoom-in`이 `#original-zoom`의 배
 핀치가 가져가지 않습니다. 데스크톱 wheel 경로는 추가하지 않습니다.
 EPUB 원본과 글자 모드는 PDF 배율을 쓰지 않고 `Aa` 설정을 사용합니다.
 
-Reader의 browser viewport zoom은 어떤 포맷에서도 쓰지 않습니다. 한 손가락 pan만
-브라우저에 맡기는 `touch-action: pan-x pan-y`를 absolute `#reader-scroll`과
-비-absolute 포맷 경계(`#readwrap`, `#originalwrap`)에 함께 둡니다. 이는 absolute
-element에서 double-tap zoom이 정책을 빠져나오는 iOS WebKit 경로를 막으면서도
-native pinch를 다시 허용하는 `manipulation`은 피합니다. EPUB은 iframe 문서의
-`html,body`에도 같은 값을 넣습니다.
+브라우저 페이지 배율은 앱 전체에서 잠겨 있습니다. `index.html`의 viewport는
+`maximum-scale=1, user-scalable=no`이고, `styles/base.css`의 보편 선택자는
+`touch-action: pan-x pan-y`입니다. 화면마다 정책을 복사하는 것으로는 iOS WebKit이
+absolute/fixed 요소와 첫 스크롤러에서 double-tap을 빠뜨리는 구멍을 막지 못합니다.
+보편 규칙은 한 손가락 pan만 브라우저에 맡기고, 더 구체적인 `none`·`pan-y`·`pan-x`가
+카드 스와이프와 가로 슬라이더를 그대로 둡니다.
+
+PDF·원본 핀치와 Aa +/- 는 `originalZoomLevel`(1–4)의 CSS transform이고, 글자·EPUB의
+Aa는 리플로우입니다. 둘 다 브라우저 `visualViewport.scale`이 아닙니다. WKWebView
+스크롤 뷰의 최소·최대 배율은 1이고 핀치 제스처 인식기는 끄지 않습니다. PDF 펜 입력이
+그 인식기를 관찰합니다. Android WebView도 페이지 확대를 끕니다. EPUB iframe에는
+출판사 width를 둔 채 같은 viewport 잠금과 `html,body`의 `touch-action: pan-x pan-y`를
+넣습니다. 본문 `user-select`는 끄지 않습니다. Reader의 `#reader-scroll`, `#readwrap`,
+`#originalwrap` 경계는 그대로 둡니다.
+
+네이티브 셸의 텍스트 입력·select·contenteditable은 16px 이상입니다. 16px보다 작은
+칸에 초점을 주면 iOS가 페이지를 키우므로, viewport 잠금과 함께 막습니다.
 
 상단바는 아래로 읽으면 사라지지만, 파란 진행 줄은 화면 위에 남습니다. `Aa`와
 원본/글자 전환 버튼은 오른쪽 아래에 고정되어 있으며 읽는 동안만 옅어집니다.

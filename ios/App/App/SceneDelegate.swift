@@ -443,7 +443,12 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
         // Bounce stays on. A refresh control is not attached: with one, WebKit
         // shifts the whole page, including the fixed dock, during the pull.
+        // Page magnification stays at 1. Leave the pinch recognizer enabled:
+        // PDF pencil admission observes it, and in-reader zoom is a CSS transform.
         webView.scrollView.bounces = true
+        webView.scrollView.minimumZoomScale = 1
+        webView.scrollView.maximumZoomScale = 1
+        webView.scrollView.bouncesZoom = false
         applyReaderBackground(isDark: false)
         webView.configuration.userContentController.add(self, name: Self.themeMessageHandler)
         webView.configuration.userContentController.add(self, name: Self.positionSyncHandler)

@@ -159,9 +159,25 @@ for(const selector of ['#sm-email','#sm-password-email','#sm-password',
 }
 assert.match(componentsCss, /html\.native-shell #ed-title\{font-size:16px;\}/,
   'Native text fields are not held at the iOS no-focus-zoom threshold');
-assert.doesNotMatch(readFileSync(resolve(root, 'index.html'), 'utf8'),
-  /user-scalable\s*=\s*no|maximum-scale\s*=\s*1/i,
-  'Viewport zoom was disabled instead of fixing undersized inputs');
+assert.match(componentsCss, /html\.native-shell select,\s*html\.native-shell \[contenteditable="true"\]\{font-size:max\(16px, 1em\);\}/,
+  'Native selects and contenteditable fields can still focus-zoom');
+assert.match(readFileSync(resolve(root, 'index.html'), 'utf8'),
+  /<meta name="viewport" content="width=device-width, initial-scale=1\.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">/,
+  'The page viewport can still scale');
+assert.match(readFileSync(resolve(root, 'styles/base.css'), 'utf8'),
+  /\*\s*\{[^}]*touch-action:pan-x pan-y/,
+  'The universal touch policy no longer blocks page pinch and double-tap');
+const sceneDelegate = readFileSync(resolve(root, 'ios/App/App/SceneDelegate.swift'), 'utf8');
+assert.match(sceneDelegate, /webView\.scrollView\.bounces = true/,
+  'Scroll-view bounce was turned off with the zoom lock');
+assert.match(sceneDelegate, /webView\.scrollView\.minimumZoomScale = 1/);
+assert.match(sceneDelegate, /webView\.scrollView\.maximumZoomScale = 1/);
+assert.match(sceneDelegate, /webView\.scrollView\.bouncesZoom = false/);
+assert.doesNotMatch(sceneDelegate, /pinchGestureRecognizer\?\.isEnabled = false/,
+  'The PDF pencil pinch recognizer was disabled');
+assert.match(readFileSync(resolve(root, 'android/app/src/main/java/kr/io/breeze/app/MainActivity.java'), 'utf8'),
+  /setSupportZoom\(false\)/,
+  'Android WebView can still zoom the page');
 /* 계정을 지울 길이 없으면 애플 심사 5.1.1(v) 에서 그대로 반려됩니다. */
 assert.match(syncSource, /op:'delete_account'/,
   'The in-app account deletion path is gone');
@@ -1421,6 +1437,10 @@ assert.doesNotMatch(readerCss.replace(/#rtext \.w\{touch-action:manipulation;\}/
   'The Text-only rapid-tap experiment leaked into another Reader surface');
 assert.match(epubOriginalSource, /html,body\{[^}]*touch-action:pan-x pan-y/,
   'The EPUB document has no explicit browser-zoom exclusion of its own');
+assert.match(epubOriginalSource, /maximum-scale=1/,
+  'EPUB iframe documents can still scale on their own');
+assert.match(epubOriginalSource, /user-scalable=no/,
+  'EPUB iframe documents can still scale on their own');
 
 /* ---- callout 은 끄되 EPUB caret hit-test 는 살립니다 ----
    `user-select:none` 은 브라우저에 따라 caret hit-test 까지 함께 끕니다. 원본

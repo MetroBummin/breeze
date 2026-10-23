@@ -2,8 +2,12 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <!-- viewport-fit=cover 가 있어야 env(safe-area-inset-*) 이 값을 냅니다.
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <!-- maximum-scale=1, user-scalable=no 가 페이지 배율 자체를 잠급니다.
+       화면마다 touch-action 을 덧대는 것으로는 iOS 가 absolute/fixed 요소와
+       첫 스크롤러에서 double-tap 을 빠뜨리는 구멍을 막지 못합니다.
+       PDF 핀치와 Aa 배율은 CSS transform 이라 이 잠금과 별개입니다.
+       viewport-fit=cover 가 있어야 env(safe-area-inset-*) 이 값을 냅니다.
        네이티브 셸(Capacitor)과 아이폰 사파리 둘 다 여기에 기댑니다. -->
   <style>html.boot-pending #app{visibility:hidden;opacity:0;pointer-events:none;}</style>
   <script>
@@ -41,13 +45,13 @@
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=721f9717">
-  <link rel="stylesheet" href="styles/base.css?v=4d0c83fb">
+  <link rel="stylesheet" href="styles/base.css?v=489ca3ea">
   <link rel="stylesheet" href="styles/home.css?v=564359c0">
   <link rel="stylesheet" href="styles/article-preview.css?v=6f944b5a">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=94029b49">
   <link rel="stylesheet" href="styles/reader.css?v=08d46055">
   <link rel="stylesheet" href="styles/dictionary.css?v=c7b494d3">
-  <link rel="stylesheet" href="styles/components.css?v=e01f9d18">
+  <link rel="stylesheet" href="styles/components.css?v=078567b5">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=50b031d0">
   <link rel="stylesheet" href="styles/study-sets.css?v=2fbc3c48">
@@ -81,7 +85,7 @@
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
-  <script defer src="scripts/reader/reader-scroll.js?v=1f6fa553"></script>
+  <script defer src="scripts/reader/reader-scroll.js?v=4c953772"></script>
   <!-- 손짓을 판정하는 곳은 여기 하나입니다. 종이(글자판·PDF·EPUB)들이 자기를
        등록하므로 그것들보다 먼저 실행돼야 합니다 — scripts/reader/gesture.js -->
   <script defer src="scripts/reader/gesture.js?v=faf00a92"></script>
@@ -118,7 +122,7 @@
   <script defer src="scripts/core/study-sets-storage.js?v=6b6f1495"></script>
   <script defer src="scripts/ui/study-sets.js?v=7324426f"></script>
   <script defer src="scripts/core/study-set-test.js?v=3b3ced09"></script>
-  <script defer src="scripts/ui/study-set-test.js?v=ee87c6ce"></script>
+  <script defer src="scripts/ui/study-set-test.js?v=1340b297"></script>
   <script defer src="scripts/core/vocabulary-test.js?v=3677f9b4"></script>
   <script defer src="scripts/core/vocabulary-test-storage.js?v=a2969347"></script>
   <script defer src="scripts/dictionary/vocabulary-test-grading.js?v=83c32b98"></script>
@@ -133,7 +137,7 @@
   <script defer src="scripts/reader/pdf-ocr.js?v=01155e31"></script>
   <script defer src="scripts/reader/pdf-ocr-library.js?v=fe311045"></script>
   <script defer src="scripts/reader/pdf-original.js?v=764b35cd"></script>
-  <script defer src="scripts/reader/epub-original.js?v=282bb301"></script>
+  <script defer src="scripts/reader/epub-original.js?v=e92492de"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
   <script defer src="scripts/reader/reader-modes.js?v=9f19b5f7"></script>
   <script defer src="scripts/reader/gesture-diag.js?v=7245bb14"></script>

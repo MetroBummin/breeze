@@ -21,10 +21,11 @@ function studySetTestReleaseStuckZoom(){
   const meta=document.querySelector('meta[name=viewport]');
   const scale=window.visualViewport?.scale||1;
   if(!meta||scale<=1.01)return;
-  const content=meta.getAttribute('content')||'';
-  if(/maximum-scale/i.test(content))return;
-  meta.setAttribute('content',content+', maximum-scale=1');
-  requestAnimationFrame(()=>meta.setAttribute('content',content));
+  // The lock is permanent, so appending maximum-scale and returning early
+  // cannot unstick a scale that is already above 1. Rewrite the meta.
+  const canonical='width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+  meta.setAttribute('content','width=device-width');
+  requestAnimationFrame(()=>meta.setAttribute('content',canonical));
 }
 function studySetTestFocus(){
   const input=document.getElementById('study-set-test-answer');

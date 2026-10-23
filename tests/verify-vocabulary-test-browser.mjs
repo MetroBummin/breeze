@@ -108,7 +108,8 @@ try{
   await seed(page,{quiet:words.quiet});await open(page);
   for(const [width,height] of [[390,844],[820,1180]])for(const dark of [false,true]){await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);await page.screenshot({path:`${proof}/${engine.name()}-setup-${width}-${dark?'dark':'light'}.png`,fullPage:true});}
   await start(page,1);
-  assert.doesNotMatch(await page.locator('meta[name=viewport]').getAttribute('content'),/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?:[.,\s]|$)/);
+  assert.match(await page.locator('meta[name=viewport]').getAttribute('content'),/maximum-scale\s*=\s*1(?:[.,\s]|$)/);
+  assert.match(await page.locator('meta[name=viewport]').getAttribute('content'),/user-scalable\s*=\s*no(?:[.,\s]|$)/);
   for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390],[390,380]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
    const input=page.locator('#vocabulary-test-answer');assert.ok(await input.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))>=16);

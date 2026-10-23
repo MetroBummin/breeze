@@ -1,7 +1,12 @@
 /* Foundation and navigation
    색·글꼴·그림자는 여기 없습니다 — styles/tokens.css 한 곳에 모여 있습니다. */
 
-  *{box-sizing:border-box; margin:0; padding:0;}
+  /* 페이지 핀치·더블탭은 보편 규칙으로 막습니다. touch-action 은 상속되지 않고
+     첫 스크롤러에서 끊기므로 html 만 잠그면 시트·설정·빈 틈이 다시 열립니다.
+     더 구체적인 pan-y, pan-x, none 은 카드 스와이프와 슬라이더를 그대로 둡니다.
+     manipulation 이 남아도 조상 스크롤러의 pan-only 와 교집합이라 핀치는 닫힙니다.
+     PDF 핀치는 브라우저 배율이 아니라 종이의 CSS transform 입니다. */
+  *{box-sizing:border-box; margin:0; padding:0; touch-action:pan-x pan-y;}
   /* 내용이 짧으면 body 아래로 html 의 배경이 드러납니다. 그래서 종이색은 여기에도
      걸립니다 — 어두운 값은 tokens.css 의 `html.dark` 가 같은 이름으로 줍니다. */
   html{background:var(--paper);}
