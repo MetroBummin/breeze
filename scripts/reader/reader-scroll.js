@@ -255,6 +255,9 @@ function resetOriginalZoom(){
 }
 
 /* ---- 브라우저의 벌리기는 어디서도 안 씁니다 ----
+   페이지 배율의 자물쇠는 index.html 의 viewport(maximum-scale=1, user-scalable=no),
+   보편 touch-action, 그리고 WKWebView 배율 1 입니다. 이 리스너는 WebKit 핀치의
+   덧방입니다. gesturestart 만으로는 double-tap 과 16px 미만 초점 확대를 막지 못합니다.
    PDF 확대는 기존 PDF touch pinch가 담당합니다. Safari가 화면 전체를 확대하면 단추와 사전
    시트까지 함께 커지므로, 브라우저 자체 확대는 막습니다.
    EPUB 틀(iframe)은 제 문서라 부모의 CSS만 믿지 않습니다. sanitise 단계에서

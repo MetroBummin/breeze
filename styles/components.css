@@ -144,6 +144,11 @@
   html.native-shell #ed-title{font-size:16px;}
   html.native-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="hidden"]):not([type="color"]):not([type="image"]),
   html.native-shell textarea{font-size:16px;}
+  /* select 와 contenteditable 은 위 목록에 없었습니다. 서재 카테고리는
+     그래서 UA 13.33px 로 남아 초점이 페이지를 키웠습니다. 1em 은 부모 크기라
+     이미 큰 칸은 줄이지 않고, 16px 보다 작은 칸만 올립니다. */
+  html.native-shell select,
+  html.native-shell [contenteditable="true"]{font-size:max(16px, 1em);}
 
   #minitoast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:140;
     background:var(--minitoast-bg); color:var(--minitoast-ink); font-size:11.5px; letter-spacing:.2px;

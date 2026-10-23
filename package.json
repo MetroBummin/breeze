@@ -30,6 +30,7 @@
     "test:reading-cache": "node --test tests/verify-reading-cache.mjs tests/verify-reading-cache-client.mjs && node tests/verify-reading-cache-browser.mjs",
     "test:pdf-pinch": "node tests/verify-word-pinch-browser.mjs && node tests/verify-pdf-pinch-interruption-browser.mjs && node tests/verify-pdf-pinch-browser.mjs",
     "test:viewport": "node tests/verify-viewport-browser.mjs",
+    "test:viewport-lock": "node tests/verify-viewport-lock-browser.mjs",
     "test:v11": "node tests/verify-onboarding-browser.mjs && node tests/verify-v11-browser.mjs",
     "test:onboarding": "node tests/verify-onboarding-browser.mjs",
     "test:reader-feedback": "node tests/verify-reader-feedback.mjs && node tests/verify-reader-feedback-browser.mjs",

@@ -74,12 +74,13 @@ try{
       await page.screenshot({path:`${out}/${key}-closed.png`});
       if(engine==='chromium'&&key==='phone-light'){
         // CDP scale is a simulation, not evidence of a physical pinch gesture.
+        // The viewport lock rejects it: editing must not leave the page scaled.
         const cdp=await context.newCDPSession(page);
         await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:1.5});
         await cell.focus();record.simulatedUserZoomFocused=await sample();
         await page.locator('#wordbook-home').focus();record.simulatedUserZoomBlurred=await sample();
-        assert.equal(record.simulatedUserZoomFocused.visualViewport.scale,1.5);
-        assert.equal(record.simulatedUserZoomBlurred.visualViewport.scale,1.5,'Editing must not force an existing page zoom back to 1');
+        assert.equal(record.simulatedUserZoomFocused.visualViewport.scale,1,'Page zoom stays locked while a meaning is focused');
+        assert.equal(record.simulatedUserZoomBlurred.visualViewport.scale,1,'Page zoom stays locked after editing');
         await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await cdp.detach();
       }
     }

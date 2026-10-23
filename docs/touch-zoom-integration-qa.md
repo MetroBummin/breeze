@@ -26,6 +26,8 @@ Status: PDF integration and the Reader viewport-zoom ownership fix are complete.
 
 ## Whole-viewport zoom cause and fix
 
+This note records the 2026-09-13 integration. The page viewport is now locked app-wide (`maximum-scale=1, user-scalable=no` in `index.html`, universal `touch-action: pan-x pan-y`, and WKWebView zoom scales of 1). The paragraph below is the historical choice, not the current lock.
+
 The viewport remains `width=device-width, initial-scale=1.0, viewport-fit=cover`; no `maximum-scale`, `user-scalable`, UA branch, or gesture-timing suppression was added. `touch-action: manipulation` is also absent because it permits native pinch.
 
 The structural leak was that `touch-action:pan-x pan-y` existed only on `#reader-scroll`, which is `position:absolute`. WebKit bug 218015 documents that iOS can still double-tap zoom an absolute positioned element despite its `touch-action`. The standards model intersects the touched element and ancestor policy only to the first scroller, so a policy above the scroller is not a reliable substitute.

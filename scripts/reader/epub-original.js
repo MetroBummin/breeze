@@ -144,6 +144,28 @@ function applyEpubDarkTheme(){
   }
 }
 
+/* 장 iframe 은 부모 viewport 를 물려받지 않습니다. 출판사 width 는 두고
+   배율만 잠급니다. 본문 user-select 는 끄지 않습니다 — 낱말 찾기가 caret 에
+   기대고 있습니다. */
+function lockEpubDocumentViewport(doc){
+  const head=doc.head||doc.documentElement;
+  if(!head) return;
+  let meta=doc.querySelector('meta[name="viewport"]');
+  if(!meta){
+    meta=doc.createElement('meta');
+    meta.setAttribute('name','viewport');
+    head.appendChild(meta);
+  }
+  const parts=(meta.getAttribute('content')||'')
+    .split(',')
+    .map(part=>part.trim())
+    .filter(part=>part && !/^(?:maximum-scale|user-scalable|minimum-scale)\s*=/i.test(part));
+  if(!parts.some(part=>/^width\s*=/i.test(part))) parts.unshift('width=device-width');
+  if(!parts.some(part=>/^initial-scale\s*=/i.test(part))) parts.push('initial-scale=1');
+  parts.push('minimum-scale=1','maximum-scale=1','user-scalable=no');
+  meta.setAttribute('content',parts.join(', '));
+}
+
 async function sanitiseEpubChapter(archive,chapter,resources,viewport){
   const file=archive.zip.file(chapter.path) || archive.zip.file(decodeURIComponent(chapter.href));
   if(!file) return '';
@@ -231,6 +253,7 @@ async function sanitiseEpubChapter(archive,chapter,resources,viewport){
     .breeze-original-word.s1{background:rgba(255,226,138,.45)}.breeze-original-word.s2{background:rgba(255,171,120,.42)}
     .breeze-original-word.s3{background:rgba(255,140,140,.42)}`;
   const style=doc.createElement('style'); style.textContent=cssParts.join('\n')+'\n'+safety; doc.head.appendChild(style);
+  lockEpubDocumentViewport(doc);
   if(sourceReaderIsDark()){
     const colors=epubDarkColors();
     if(colors){

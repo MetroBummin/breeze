@@ -1,0 +1,24 @@
+name: Viewport zoom lock
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viewport-lock-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:viewport-lock
