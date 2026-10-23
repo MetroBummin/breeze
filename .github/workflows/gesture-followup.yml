@@ -1,29 +1,29 @@
 name: Post270 gesture followup
 on:
   pull_request:
-    paths:
-      - 'index.html'
-      - 'scripts/ui/study-motion.js'
-      - 'scripts/ui/study-sets.js'
-      - 'scripts/ui/vocabulary-review.js'
-      - 'scripts/reader/pdf-pinch.js'
-      - 'styles/study-sets.css'
-      - 'styles/wordbook.css'
-      - 'tests/verify-study-motion-browser.mjs'
-      - 'tests/capture-study-handoff-browser.mjs'
-      - 'tests/verify-pdf-elastic-motion-browser.mjs'
-      - 'tests/verify-word-pinch-browser.mjs'
-      - 'tests/verify-pdf-pinch-browser.mjs'
-      - 'tests/verify-pdf-pinch-interruption-browser.mjs'
-      - '.github/workflows/gesture-followup.yml'
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: safe.directory
+  GIT_CONFIG_VALUE_0: '*'
 concurrency:
   group: post270-gestures-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   browser:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -39,8 +39,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
-        id: browser
+      - id: browser
+        uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - run: node tests/verify-study-motion-browser.mjs
       - run: node tests/capture-study-handoff-browser.mjs
         if: ${{ !cancelled() && steps.browser.conclusion == 'success' && matrix.engine == 'chromium' }}
@@ -55,3 +57,28 @@ jobs:
           path: /tmp/breeze-motion-proof/${{ matrix.engine }}/
           if-no-files-found: warn
           retention-days: 14
+
+  suite-status:
+    needs: [changes, browser]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

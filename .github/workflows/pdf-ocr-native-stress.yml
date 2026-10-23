@@ -1,23 +1,21 @@
 name: Native OCR stress
 on:
   pull_request:
-    paths:
-      - 'scripts/reader/pdf-ocr.js'
-      - 'ios/App/App/BreezePdfOcrPlugin.swift'
-      - 'android/app/src/**/BreezePdfOcr*'
-      - 'android/app/src/**/PdfOcr*'
-      - 'tests/fixtures/pdf-ocr-stress/**'
-      - 'tests/native/*ocr*'
-      - 'tests/native/CapacitorOcrTestBridge.swift'
-      - 'tests/score-pdf-ocr-stress.mjs'
-      - '.github/workflows/pdf-ocr-native-stress.yml'
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: native-ocr-stress-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   vision:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: macos-15
     timeout-minutes: 15
     steps:
@@ -37,6 +35,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   mlkit:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-24.04
     # Gradle, the API 35 image, the 480s boot deadline, and the 720s
     # instrumentation deadline all sit inside this job. The harness still
@@ -75,3 +75,28 @@ jobs:
           path: ${{ runner.temp }}/breeze-ocr-android/
           if-no-files-found: warn
           retention-days: 7
+
+  suite-status:
+    needs: [changes, vision, mlkit]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

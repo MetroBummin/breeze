@@ -1,24 +1,30 @@
 name: Onboarding carousel
 on:
   pull_request:
-    paths:
-      - 'scripts/ui/onboarding.js'
-      - 'scripts/main.js'
-      - 'styles/onboarding.css'
-      - 'assets/onboarding/**'
-      - 'index.html'
-      - 'tests/verify-onboarding-browser.mjs'
-      - 'tests/verify-onboarding-study-browser.mjs'
-      - '.github/workflows/onboarding-carousel.yml'
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: safe.directory
+  GIT_CONFIG_VALUE_0: '*'
 concurrency:
   group: onboarding-carousel-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   browser:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     # Ubuntu/Playwright dependency mirrors can take over 14 minutes; keep time
     # for the unchanged browser assertions after installation completes.
     timeout-minutes: 30
@@ -32,7 +38,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - name: Welcome, navigation, lifetime, media and Reader isolation
         env:
           BROWSER: ${{ matrix.engine }}
@@ -52,3 +60,28 @@ jobs:
             /tmp/breeze-study-guide-proof/
           if-no-files-found: warn
           retention-days: 7
+
+  suite-status:
+    needs: [changes, browser]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

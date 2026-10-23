@@ -1,23 +1,32 @@
 name: Text rotation source anchor
 on:
   pull_request:
-    paths:
-      - 'scripts/core/state.js'
-      - 'scripts/reader/**'
-      - 'styles/reader.css'
-      - 'tests/verify-text-*.mjs'
-      - 'tests/helpers/text-rotation-source.mjs'
-      - '.github/workflows/text-rotation.yml'
   workflow_dispatch:
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: safe.directory
+  GIT_CONFIG_VALUE_0: '*'
 concurrency:
   group: text-rotation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   rotation:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # WebKit's source paragraph moved by one (253 vs 252) in the Playwright
+    # image. On the GitHub-hosted runner the same assertion held. This job
+    # stays on that runner so font rendering matches the passing run.
+    # Browser binaries still come from the shared cache.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +39,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - uses: actions/checkout@v4
         with:
           ref: 8512e8fd25e51d6aa06cf926bad165d5c3994865
@@ -62,3 +73,28 @@ jobs:
             /tmp/breeze-text-rotation-*/
             /tmp/text-rotation-before.log
           retention-days: 7
+
+  suite-status:
+    needs: [changes, rotation]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

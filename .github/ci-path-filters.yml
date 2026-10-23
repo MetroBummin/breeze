@@ -1,0 +1,20 @@
+# Non-code files are excluded. paths-filter is invoked with
+# predicate-quantifier: every, so a file is "code" only when it matches
+# every pattern: '**' plus each negated content path.
+# Any code, test, workflow, package, or config file makes the filter true
+# and the full suite runs. A pull request is content-only when no file matches.
+code:
+  - '**'
+  - '!server/classics/**/*.txt'
+  - '!server/classics/**/*.webp'
+  - '!server/classics/**/*.png'
+  - '!server/classics/**/*.jpg'
+  - '!server/classics/**/*.jpeg'
+  - '!server/classics/**/*.gif'
+  - '!server/classics/**/*.avif'
+  - '!server/classics/catalog.json'
+  - '!assets/longreads/*.txt'
+  - '!assets/longreads/covers/**'
+  - '!assets/longreads/illustrations/**'
+  - '!assets/images/**'
+  - '!**/*.md'

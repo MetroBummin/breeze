@@ -2,15 +2,23 @@ name: Integrity
 on:
   pull_request:
   push:
-    branches: [chatgpt/audit-hardening-20260925]
+    branches: [main, chatgpt/audit-hardening-20260925]
   workflow_dispatch:
 permissions:
   contents: read
+  actions: write
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: safe.directory
+  GIT_CONFIG_VALUE_0: '*'
 concurrency:
   group: integrity-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   contracts:
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -25,9 +33,18 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Fast content checks
+        if: needs.changes.outputs.heavy != 'true' && success()
+        run: |
+          node --test tests/verify-remote-classics.mjs
+          node tests/verify-next-release-boundary.mjs
+          npm run typecheck
       - run: node tests/verify-next-release-boundary.mjs
+        if: needs.changes.outputs.heavy == 'true' && success()
       - run: npm test
+        if: needs.changes.outputs.heavy == 'true' && success()
       - name: Verify integrated native asset sync
+        if: needs.changes.outputs.heavy == 'true' && success()
         run: |
           npm run ios:sync
           node tests/verify-native-package.mjs
@@ -38,7 +55,7 @@ jobs:
           cmp index.html ios/App/App/public/index.html
           git diff --exit-code -- index.html sw.js ios/App/App.xcodeproj/project.pbxproj
       - name: RSS catalog function types and disabled boot
-        if: ${{ hashFiles('supabase/functions/rss-catalog/index.ts') != '' }}
+        if: needs.changes.outputs.heavy == 'true' && (hashFiles('supabase/functions/rss-catalog/index.ts') != '')
         env:
           RSS_CATALOG_MODE: 'off'
         run: |
@@ -48,12 +65,18 @@ jobs:
           npx --yes deno@2.9.6 test --allow-net=127.0.0.1 --config supabase/functions/rss-catalog/deno.json tests/verify-rss-catalog-prefix-deno.mjs
           node tests/measure-rss-catalog-server.mjs
       - name: Feature audit contracts
+        if: needs.changes.outputs.heavy == 'true' && success()
         run: |
           for test in tests/verify-home-design-audit.mjs tests/verify-ink-scope-audit.mjs tests/verify-article-preview-server.mjs tests/verify-pdf-ink-geometry.mjs; do
             if test -f "$test"; then node --test "$test"; fi
           done
   deferred-runtime:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -65,7 +88,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - name: Deferred import, debug and local lookup boundaries
         env:
           BROWSER: ${{ matrix.engine }}
@@ -76,7 +101,13 @@ jobs:
         if: matrix.engine == 'chromium'
         run: node tests/verify-deferred-offline-browser.mjs && node tests/verify-site-navigation-browser.mjs
   browser:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    # Illustration and anchor suites do not settle in the Playwright image
+    # (held WebP decode, WebKit Bohemia, longread EncodingError). This job
+    # stays on the GitHub-hosted runner, where those suites already passed.
+    # Browsers still come from the shared cache; apt install-deps is bounded.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +115,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
       - name: Email login interruption and resend regression
         run: node tests/verify-email-login-browser.mjs
       - name: Email login visual proof
@@ -137,8 +170,8 @@ jobs:
         run: |
           status=0
           for engine in chromium webkit; do
-            BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
-            BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
+            BREEZE_QA_ENGINE=$engine stdbuf -oL -eL timeout --kill-after=15s 600s npm run test:bohemia-progress || status=1
+            BREEZE_QA_ENGINE=$engine stdbuf -oL -eL timeout --kill-after=15s 600s npm run test:home-reading-cards || status=1
             BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
             BREEZE_QA_ENGINE=$engine npm run test:pdf-sidebar || status=1
           done
@@ -253,7 +286,12 @@ jobs:
       - name: Saved original position during interrupted reopening
         run: node tests/verify-original-reopen-browser.mjs
   import-byte-diagnostic:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 30
     defaults:
       run:
@@ -275,7 +313,10 @@ jobs:
           cache: npm
           cache-dependency-path: current/package-lock.json
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps webkit
+      - uses: ./current/.github/actions/playwright-browsers
+        with:
+          browsers: webkit
+          working-directory: current
       - name: Compare unchanged assertions and byte boundaries on base and current
         run: BREEZE_BYTE_BASE_ROOT="$GITHUB_WORKSPACE/base" node tests/diagnose-import-bytes.mjs
       - name: Import byte diagnostic receipts
@@ -287,7 +328,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   catalog-hybrid:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -295,7 +341,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium webkit
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: chromium webkit
       - name: Explicit hybrid RSS transport and selected-intent browser contracts
         run: |
           status=0
@@ -312,7 +360,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   reader-chrome-layout-diagnostic:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -327,7 +380,9 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.engine }}
       - name: Prove no-op invalidation before and after the production guard
         env:
           BREEZE_QA_ENGINE: ${{ matrix.engine }}
@@ -346,3 +401,28 @@ jobs:
           path: /tmp/breeze-chrome-layout/
           if-no-files-found: error
           retention-days: 7
+
+  suite-status:
+    needs: [changes, contracts, deferred-runtime, browser, import-byte-diagnostic, catalog-hybrid, reader-chrome-layout-diagnostic]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY

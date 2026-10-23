@@ -1,0 +1,48 @@
+name: CI change gate
+on:
+  workflow_call:
+    outputs:
+      heavy:
+        description: Full suite. False only for pull requests whose files are all non-code content.
+        value: ${{ jobs.detect.outputs.heavy }}
+permissions:
+  contents: read
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      heavy: ${{ steps.decide.outputs.heavy }}
+    steps:
+      - name: Checkout pull request history
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify changed files
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3.0.3
+        with:
+          predicate-quantifier: every
+          filters: .github/ci-path-filters.yml
+      - name: Decide whether to run the full suite
+        id: decide
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "Push or manual run: full suite."
+            exit 0
+          fi
+          if [ "${{ steps.filter.outcome }}" != "success" ]; then
+            echo "Path classification did not succeed."
+            exit 1
+          fi
+          if [ "${{ steps.filter.outputs.code }}" = "true" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "App code, tests, workflows, packages, or config changed: full suite."
+          else
+            echo "heavy=false" >> "$GITHUB_OUTPUT"
+            echo "Only non-code content changed. Heavy browser suites will be skipped."
+          fi

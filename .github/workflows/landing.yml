@@ -1,15 +1,29 @@
 name: Landing
 on:
   pull_request:
-    paths: ['landing/**', 'tests/verify-landing-browser.mjs', 'tools/capture-landing-app.mjs', '.github/workflows/landing.yml']
+  push:
+    branches: [main]
+
 permissions:
   contents: read
+  actions: write
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: safe.directory
+  GIT_CONFIG_VALUE_0: '*'
 concurrency:
   group: landing-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
   browser:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -26,7 +40,9 @@ jobs:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - uses: ./.github/actions/playwright-browsers
+        with:
+          browsers: ${{ matrix.browser }}
       - run: node --check landing/landing.js && node tests/verify-landing-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -35,3 +51,28 @@ jobs:
           path: /tmp/breeze-landing-proof/
           if-no-files-found: error
           retention-days: 7
+
+  suite-status:
+    needs: [changes, browser]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Succeed when suites passed or were skipped
+        env:
+          RESULTS: '${{ toJSON(needs) }}'
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          needs = json.loads(os.environ["RESULTS"])
+          failed = []
+          for name, info in needs.items():
+              result = (info or {}).get("result")
+              print(f"{name}: {result}")
+              if result not in ("success", "skipped"):
+                  failed.append(f"{name}={result}")
+          if failed:
+              print("Suites did not pass:", ", ".join(failed))
+              sys.exit(1)
+          print("Suites passed, or this pull request did not require them.")
+          PY
