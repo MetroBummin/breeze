@@ -82,6 +82,33 @@ html[data-breeze-target="toss"] #word-peek #word-peek-ai-badge{
 html[data-breeze-target="toss"] #word-peek-meaning:has(+ #word-peek-ai-badge){
   padding-right:0;
 }
+/* iOS WebKit paints the shared sheen on the sentence cue (a block) and not on
+   the inline word. This overlay is a block box with the same gradient and
+   keyframes, and it does not change the word's own box, so a balanced line
+   stays put. The inline image is cleared so the streak is not painted twice. */
+html[data-breeze-target="toss"] .w.breeze-lookup-pending{
+  position:relative;
+  z-index:0;
+  background-image:none !important;
+}
+html[data-breeze-target="toss"] .w.breeze-lookup-pending::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  border-radius:inherit;
+  background-image:var(--breeze-lookup-sheen,linear-gradient(108deg,transparent 28%,rgba(171,216,255,.42) 40%,rgba(255,255,255,.68) 49%,rgba(171,216,255,.42) 58%,transparent 70%)) !important;
+  background-size:240% 100% !important;
+  background-repeat:no-repeat !important;
+  animation:breeze-word-sheen 1.65s ease-in-out infinite !important;
+}
+@media (prefers-reduced-motion:reduce){
+  html[data-breeze-target="toss"] .w.breeze-lookup-pending::after{
+    animation:none !important;
+    background-image:none !important;
+  }
+}
 html[data-breeze-target="toss"] #toss-ai-notice{
   width:min(360px,calc(100vw - 32px));
   padding:22px 22px 18px;

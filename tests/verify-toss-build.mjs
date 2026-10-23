@@ -118,6 +118,11 @@ test('shared guards run only when the toss flag is set',()=>{
   assert.match(read('scripts/ui/preferences.js'),/BREEZE_TARGET==='toss'/);
   const tossCss=read('styles/toss.css');
   assert.match(tossCss,/#word-peek #word-peek-ai-badge\{[^}]*border:0[^}]*background:none[^}]*font:600 10px/);
+  assert.match(tossCss,/\.w\.breeze-lookup-pending\{[^}]*background-image:none !important/);
+  assert.match(tossCss,/\.w\.breeze-lookup-pending::after\{[^}]*animation:breeze-word-sheen 1\.65s ease-in-out infinite !important/);
+  assert.doesNotMatch(tossCss.replace(/\/\*[\s\S]*?\*\//g,''),/box-decoration-break|padding:\s*0\s+1px|margin:\s*0\s+-1px|inline-block/);
+  const sheen=read('scripts/dictionary/lookup-feedback.js').match(/const styles=`([\s\S]*?)`;/)[1];
+  assert.doesNotMatch(sheen,/box-decoration-break\s*:/);
   const hiddenBacks=tossCss.slice(tossCss.indexOf('#study-sets-back'),tossCss.indexOf('display:none'));
   assert.doesNotMatch(hiddenBacks,/#readback/);
   assert.match(tossCss,/#nav-settings/);

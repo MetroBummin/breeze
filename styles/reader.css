@@ -379,8 +379,13 @@
   /* 좌우 1px 패딩을 음수 마진으로 지우던 방식은 줄 끝에서 한 픽셀이 남습니다.
      딱 맞는 줄의 마지막 낱말 — Sign of the Four 1장의 Deduction 같은 — 이
      낱말 상자가 붙는 순간 다음 줄로 떨어집니다. 하이라이트는 배경과 그림자로만
-     그리고, 줄바꿈은 일반 텍스트와 같게 둡니다. */
-  .w{cursor:pointer; border-radius:5px; padding:0; margin:0; transition:background .12s;
+     그리고, 줄바꿈은 일반 텍스트와 같게 둡니다. 찾는 중 표시도 마찬가지입니다.
+     box-decoration-break:clone 은 WebKit이 그 블록의 text-wrap:balance 를
+     끄게 해서, 누르는 동안 같은 낱말이 다음 줄로 갔다가 돌아옵니다.
+     `transition:background` 는 background-position 까지 넘깁니다. iOS WebKit은
+     그 전환이 걸린 인라인 낱말의 대기 반사를 그리지 않고, 블록인 문장 큐만
+     움직입니다. 색만 전환합니다. */
+  .w{cursor:pointer; border-radius:5px; padding:0; margin:0; transition:background-color .12s;
     /* 저장한 색이 아닌데 잠깐 회색 네모가 생기는 것은 Safari/Chrome의 기본 탭 표시입니다.
        단어 자체가 클릭 단추라 이 브라우저 효과는 남길 이유가 없습니다. */
     -webkit-tap-highlight-color:transparent;}

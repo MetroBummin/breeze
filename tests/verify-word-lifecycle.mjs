@@ -57,6 +57,7 @@ function makeElement(id, world){
       toggle(name,on){ if(on) element.classes.add(name); else element.classes.delete(name); },
     },
     appendChild(){ world.touched++; },
+    after(){ world.touched++; },
     addEventListener(){}, removeEventListener(){}, focus(){},
     getAttribute(){ return null; }, setAttribute(){}, removeAttribute(){},
     closest(){ return null; },
