@@ -10,9 +10,16 @@ const json = path => JSON.parse(read(path));
 test('Android uses the existing Capacitor version and secure local origin', () => {
   const pkg = json('package.json'), lock = json('package-lock.json'), config = json('capacitor.config.json');
   assert.equal(pkg.dependencies['@capacitor/android'], pkg.dependencies['@capacitor/core']);
+  assert.equal(pkg.dependencies['@capacitor/app'], '^8.1.2');
+  assert.equal(pkg.dependencies['@capacitor/browser'], '^8.0.5');
   for (const name of ['core', 'android', 'ios', 'cli']) {
     assert.equal(lock.packages[`node_modules/@capacitor/${name}`].version, '8.5.0');
   }
+  // App and Browser are versioned apart from Capacitor core. 8.5.0 does not
+  // exist for either plugin; these are the latest stable releases that peer
+  // with @capacitor/core >=8.
+  assert.equal(lock.packages['node_modules/@capacitor/app'].version, '8.1.2');
+  assert.equal(lock.packages['node_modules/@capacitor/browser'].version, '8.0.5');
   assert.equal(config.appId, 'kr.io.breeze.app');
   assert.equal(config.webDir, 'www');
   assert.equal(config.server.androidScheme, 'https');
@@ -46,6 +53,12 @@ test('wrapper preserves local-data privacy and keeps permissions minimal', () =>
   assert.match(manifest, /android:dataExtractionRules="@xml\/data_extraction_rules"/);
   const permissions = [...manifest.matchAll(/<uses-permission android:name="([^"]+)"/g)].map(match => match[1]);
   assert.deepEqual(permissions, ['android.permission.INTERNET']);
+  assert.match(manifest, /android:launchMode="singleTask"/);
+  assert.match(manifest, /android:scheme="kr\.io\.breeze\.app"/);
+  assert.match(manifest, /android:host="auth"/);
+  assert.match(manifest, /android:path="\/callback"/);
+  assert.match(manifest, /android.intent.action.VIEW/);
+  assert.match(manifest, /android.intent.category.BROWSABLE/);
   const backup = read('android/app/src/main/res/xml/data_extraction_rules.xml');
   for (const kind of ['cloud-backup', 'device-transfer']) {
     const section = backup.split(`<${kind}>`)[1]?.split(`</${kind}>`)[0];

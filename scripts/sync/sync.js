@@ -30,7 +30,7 @@ const PROGRESS_LOCAL_CHANGED='breeze.progress.changed';
 const LS_HIDDEN='breeze.hidden';
 let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progressRemoteRecords={};
 let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
-/** @type {null | {client:any,epoch:number,controller:AbortController,timer:any,native:any,nonce:string,nativeApple:boolean,rawNonce:string,accepted:boolean,releaseTokens?:()=>void}} */
+/** @type {null | {client:any,epoch:number,controller:AbortController,timer:any,native:any,nonce:string,nativeApple:boolean,pkce:boolean,rawNonce:string,accepted:boolean,releaseTokens?:()=>void}} */
 let socialLoginOperation=null;
 // Keep the current email step across settings dismissal/auth rerenders. Never
 // persist a password or OTP; Supabase continues to own session verification.
@@ -77,7 +77,7 @@ function initSupabase(){
   SB_KEY=typeof config.SB_KEY==='string'?config.SB_KEY.trim():'';
   if(!SB_URL||!SB_KEY){ sbInitProblem='config'; return null; }
   if(!window.supabase||typeof window.supabase.createClient!=='function'){ sbInitProblem='sdk'; return null; }
-  try{ sb=window.supabase.createClient(SB_URL,SB_KEY,socialNativeBridge()?nativeAppleAuthOptions():undefined); sbInitProblem=''; attachSupabaseAuth(); }
+  try{ sb=window.supabase.createClient(SB_URL,SB_KEY,iosSocialBridge()?nativeAppleAuthOptions():undefined); sbInitProblem=''; attachSupabaseAuth(); }
   catch(error){ sbInitProblem='client'; console.error('Supabase 연결 초기화 실패:',error); }
   return sb;
 }
@@ -218,11 +218,123 @@ async function fetchVaultMeta(){
    그 탭을 펴 둡니다 — 사전이 로그인을 요구할 때 이 문으로 들어옵니다. */
 function openSyncModal(){ openSettings('sync'); }
 
-function socialNativeBridge(){
-  return isNativeShell()?Reflect.get(window,'webkit')?.messageHandlers?.breezeAuth:null;
+const SOCIAL_CALLBACK='kr.io.breeze.app://auth/callback?request=';
+function iosSocialBridge(){
+  if(!isNativeShell())return null;
+  return Reflect.get(window,'webkit')?.messageHandlers?.breezeAuth||null;
 }
+function capacitorPlugin(name){
+  const cap=window.Capacitor;
+  if(!cap)return null;
+  if(cap.Plugins&&cap.Plugins[name])return cap.Plugins[name];
+  if(typeof cap.registerPlugin!=='function')return null;
+  try{ return cap.registerPlugin(name); }catch(error){ return null; }
+}
+/* One bridge object owns the open Custom Tab. A second lookup must see the
+   same pending request, or a late callback could attach to a different owner. */
+let androidAuthBridge=null;
+function androidSocialBridge(){
+  if(!isNativeShell()||iosSocialBridge())return null;
+  const cap=window.Capacitor;
+  if(!cap||cap.getPlatform?.()!=='android')return null;
+  if(typeof cap.isPluginAvailable==='function'&&(!cap.isPluginAvailable('App')||!cap.isPluginAvailable('Browser')))return null;
+  const App=capacitorPlugin('App'),Browser=capacitorPlugin('Browser');
+  if(!App||!Browser||typeof Browser.open!=='function'||typeof Browser.close!=='function'||typeof App.addListener!=='function'||typeof Browser.addListener!=='function')return null;
+  if(!androidAuthBridge)androidAuthBridge=createAndroidAuthBridge(App,Browser);
+  return androidAuthBridge;
+}
+function socialNativeBridge(){ return iosSocialBridge()||androidSocialBridge(); }
 function socialLoginSupported(provider='google'){
-  return !!(sb && (!isNativeShell()||socialNativeBridge()) && typeof sb.auth[provider==='apple'&&socialNativeBridge()?'signInWithIdToken':'signInWithOAuth']==='function');
+  const method=provider==='apple'&&iosSocialBridge()?'signInWithIdToken':'signInWithOAuth';
+  return !!(sb && (!isNativeShell()||socialNativeBridge()) && typeof sb.auth[method]==='function');
+}
+function socialRequestId(request){
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request)?request:'';
+}
+function androidAuthorizeAllowed(raw, request){
+  if(!socialRequestId(request))return false;
+  let url,project;
+  try{ url=new URL(String(raw)); project=new URL(SB_URL); }catch(error){ return false; }
+  if(url.protocol!=='https:'||url.origin!==project.origin||url.username||url.password||url.port||url.hash||url.pathname!=='/auth/v1/authorize')return false;
+  const providers=url.searchParams.getAll('provider'),redirects=url.searchParams.getAll('redirect_to');
+  return providers.length===1&&(providers[0]==='apple'||providers[0]==='google')&&redirects.length===1&&redirects[0]===SOCIAL_CALLBACK+request;
+}
+/* Unrelated URLs and another request's callback stay ignored. An ambiguous or
+   current-request callback is delivered so the auth owner can accept or reject it. */
+function androidCallbackDisposition(raw, request){
+  let url;
+  try{ url=new URL(String(raw)); }catch(error){ return 'ignore'; }
+  if(url.protocol!=='kr.io.breeze.app:'||url.hostname!=='auth'||url.pathname!=='/callback')return 'ignore';
+  const requests=url.searchParams.getAll('request');
+  if(requests.length===1&&requests[0]!==request)return 'ignore';
+  return 'deliver';
+}
+function socialCallbackBound(url, request){
+  return url.protocol==='kr.io.breeze.app:'&&url.hostname==='auth'&&!url.username&&!url.password&&!url.port&&url.pathname==='/callback'&&url.searchParams.getAll('request').length===1&&url.searchParams.get('request')===request;
+}
+/* PKCE returns one auth code. Session tokens belong to the SDK exchange and
+   must never be copied into the app URL or diagnostic output. */
+function pkceCallbackCode(url){
+  const hash=new URLSearchParams(url.hash.startsWith('#')?url.hash.slice(1):'');
+  if(url.searchParams.get('error')||url.searchParams.get('error_description')||hash.get('error')||hash.get('access_token')||hash.get('refresh_token')||hash.get('token_type')||url.searchParams.has('access_token')||url.searchParams.has('refresh_token'))return '';
+  const code=url.searchParams.getAll('code');
+  if(code.length!==1||!/^[\x21-\x7E]{8,2048}$/.test(code[0]))return '';
+  return code[0];
+}
+function createAndroidAuthBridge(App, Browser){
+  let pending=null;
+  const drop=current=>{
+    pending=null;
+    clearTimeout(current.closeTimer);
+    for(const handle of current.handles){
+      try{ const gone=handle&&handle.remove&&handle.remove(); if(gone&&typeof gone.catch==='function')gone.catch(()=>{}); }
+      catch(error){}
+    }
+  };
+  const fail=(request, message)=>{
+    if(!pending||pending.request!==request)return;
+    const current=pending;
+    drop(current);
+    Browser.close().catch(()=>{});
+    current.reject(Error(message));
+  };
+  return {postMessage(message){
+    const request=message&&message.request;
+    if(message&&message.action==='cancel'){
+      if(pending&&pending.request===request)fail(request,'로그인을 취소했어요.');
+      return Promise.resolve(true);
+    }
+    if(!message||message.action!=='start'||pending||!androidAuthorizeAllowed(message.url, request))return Promise.reject(Error('로그인 연결을 확인할 수 없어요.'));
+    return new Promise((resolve, reject)=>{
+      const current={request, resolve, reject, handles:[]};
+      pending=current;
+      const deliver=event=>{
+        if(pending!==current)return;
+        if(androidCallbackDisposition(event&&event.url, request)!=='deliver')return;
+        const raw=String(event.url);
+        drop(current);
+        Browser.close().catch(()=>{});
+        resolve(raw);
+      };
+      // Custom Tab close and the deep link are separate WebView tasks. A
+      // zero-delay timer lets an already queued callback win; a real close
+      // with no callback still rejects this request.
+      const finished=()=>{
+        if(pending!==current||current.closeTimer)return;
+        current.closeTimer=setTimeout(()=>{ if(pending===current)fail(request,'로그인을 취소했어요.'); },0);
+      };
+      Promise.all([
+        App.addListener('appUrlOpen', deliver),
+        Browser.addListener('browserFinished', finished),
+      ]).then(handles=>{
+        if(pending!==current){ for(const handle of handles){ try{ handle.remove(); }catch(error){} } return; }
+        current.handles=handles;
+        return Browser.open({url:message.url});
+      }).then(()=>{
+        if(pending!==current)Browser.close().catch(()=>{});
+      }).catch(()=>fail(request,'로그인 창을 열지 못했어요.'));
+    });
+  }};
 }
 function appleLoginWebSupported(){ return socialLoginSupported('apple'); }
 function socialLoginCurrent(operation){
@@ -358,9 +470,10 @@ async function sbGoogleLogin(){ return sbSocialLogin('google'); }
 async function sbSocialLogin(provider){
   if(!['apple','google'].includes(provider)||!socialLoginSupported(provider)||sbUser||socialLoginOperation)return;
   const label=provider==='apple'?'Apple':'Google';
-  const operation={client:sb,epoch:syncSessionEpoch,controller:new AbortController(),timer:null,native:socialNativeBridge(),nonce:'',nativeApple:false,rawNonce:'',accepted:false,releaseTokens:null};
+  const operation={client:sb,epoch:syncSessionEpoch,controller:new AbortController(),timer:null,native:socialNativeBridge(),nonce:'',nativeApple:false,pkce:false,rawNonce:'',accepted:false,releaseTokens:null};
   if(operation.native)operation.nonce=VaultCrypto.uuid();
-  operation.nativeApple=provider==='apple'&&!!operation.native;
+  operation.nativeApple=provider==='apple'&&!!iosSocialBridge()&&operation.native===iosSocialBridge();
+  operation.pkce=!!operation.native&&!operation.nativeApple&&operation.native===androidSocialBridge();
   socialLoginOperation=operation;
   const current=()=>socialLoginCurrent(operation);
   const deadline=new Promise((_,reject)=>{
@@ -378,9 +491,16 @@ async function sbSocialLogin(provider){
       if(!current())return null;
       if(settings.external?.[provider]!==true)return {unconfigured:true};
       if(operation.nativeApple)return {appleNative:true};
-      const {data,error}=await operation.client.auth.signInWithOAuth({provider,options:{
-        redirectTo:operation.native?'kr.io.breeze.app://auth/callback?request='+operation.nonce:location.origin+location.pathname,skipBrowserRedirect:true,
-      }});
+      // Android OAuth is PKCE on this same client. Email OTP stays on the
+      // client's previous flow; the verifier is stored only for this request.
+      const previousFlow=operation.client.auth.flowType;
+      if(operation.pkce)operation.client.auth.flowType='pkce';
+      let data,error;
+      try{
+        ({data,error}=await operation.client.auth.signInWithOAuth({provider,options:{
+          redirectTo:operation.native?SOCIAL_CALLBACK+operation.nonce:location.origin+location.pathname,skipBrowserRedirect:true,
+        }}));
+      }finally{ if(operation.pkce)operation.client.auth.flowType=previousFlow; }
       if(!current())return null;
       if(error||!data?.url)throw Error('social_signin');
       const target=new URL(data.url),project=new URL(SB_URL);
@@ -408,10 +528,23 @@ async function sbSocialLogin(provider){
       if(result.error)throw Error('apple_signin');
       return;
     }
-    const callback=await Promise.race([operation.native.postMessage({action:'start',request:operation.nonce,url:result.url}),deadline]);
+    const started=operation.native.postMessage({action:'start',request:operation.nonce,url:result.url});
+    started.catch(()=>{});
+    const callback=await Promise.race([started,deadline]);
     if(!current())return;
     const returned=new URL(String(callback));
-    if(returned.protocol!=='kr.io.breeze.app:'||returned.hostname!=='auth'||returned.username||returned.password||returned.port||returned.pathname!=='/callback'||returned.searchParams.getAll('request').length!==1||returned.searchParams.get('request')!==operation.nonce)throw Error('social_callback');
+    if(!socialCallbackBound(returned, operation.nonce))throw Error('social_callback');
+    if(operation.pkce){
+      const code=pkceCallbackCode(returned);
+      if(!code)throw Error('social_callback');
+      // A request-bound query forces a fresh document. The same client reads
+      // the code, exchanges it with the stored verifier, and persists the
+      // session. The code is not a session token and is not logged.
+      const appURL=new URL(location.href);appURL.search='';appURL.hash='';
+      appURL.searchParams.set('breeze_auth_return',operation.nonce);appURL.searchParams.set('code',code);
+      location.replace(appURL.href);
+      return;
+    }
     const tokens=new URLSearchParams(returned.hash.slice(1));
     if(tokens.get('error')||!tokens.get('access_token')||!tokens.get('refresh_token')||tokens.get('token_type')!=='bearer')throw Error('social_callback');
     // A new app document hands the callback to the same bundled SDK's URL

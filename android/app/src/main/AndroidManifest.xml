@@ -25,6 +25,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Social PKCE return. The request query binds the callback to the
+                 sign-in that opened the Custom Tab. singleTask delivers it to
+                 the existing activity. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="kr.io.breeze.app"
+                    android:host="auth"
+                    android:path="/callback" />
+            </intent-filter>
+
         </activity>
 
         <provider
