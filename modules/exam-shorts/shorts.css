@@ -38,7 +38,7 @@
   /* 시간이 흐르는 동안에는 단어를 만질 수 없습니다. 실전은 사전이 없으니까요. */
   .short:not(.revealed) .short-passage{user-select:none; -webkit-user-select:none;}
   .short:not(.revealed) .short-passage .w{pointer-events:none; background:none!important;}
-  .short.revealed .short-passage .w{cursor:pointer; border-radius:5px; padding:0 1px;}
+  .short.revealed .short-passage .w{cursor:pointer; border-radius:5px; padding:0; margin:0;}
   .short.revealed .short-passage .w:hover{background:#2E3237;}
   .short.revealed .short-passage .w.s1{background:rgba(255,226,138,.30);}
   .short.revealed .short-passage .w.s2{background:rgba(255,171,120,.32);}
