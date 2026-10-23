@@ -41,7 +41,7 @@ assert.equal(registry.get('word-peek').hidden,true,'pending pill covers reading'
 assert.equal(word.classList.contains('breeze-lookup-pending'),true);
 assert.equal(word.getAttribute('aria-busy'),'true');assert.equal(placed,0);
 assert.match(registry.get('breeze-word-feedback-style').textContent,/prefers-reduced-motion:reduce/);
-assert.doesNotMatch(registry.get('breeze-word-feedback-style').textContent,/transform:|filter:|width:.*pending/);
+assert.doesNotMatch(registry.get('breeze-word-feedback-style').textContent,/transform:|filter:|width:.*pending|box-decoration-break\s*:|padding:\s*0\s+1px|margin:\s*0\s+-1px|font-weight:|letter-spacing:|display:\s*inline-block/);
 clock=180;api.repeat(1);api.repeat(1);
 clock=700;const ticket=api.request(1,'text');clock=1000;api.response(ticket,'success');
 context.card={ko:'검증된 뜻'};context.renderWordPeek();context.renderWordPeek();
