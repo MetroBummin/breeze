@@ -57,10 +57,7 @@ html[data-breeze-target="toss"] #v-home #casual-rail > .home-regular-tile{
 html[data-breeze-target="toss"] .toss-ai-badge{
   display:inline-flex;
   align-items:center;
-  flex:0 0 auto;
-  align-self:center;
   margin-left:8px;
-  margin-right:10px;
   padding:0 6px;
   min-height:18px;
   border:1px solid currentColor;
@@ -68,6 +65,22 @@ html[data-breeze-target="toss"] .toss-ai-badge{
   font:600 10px/1 var(--ui,sans-serif);
   letter-spacing:.04em;
   vertical-align:middle;
+}
+html[data-breeze-target="toss"] #word-peek #word-peek-ai-badge{
+  flex:0 0 auto;
+  align-self:center;
+  margin:0 6px 0 4px;
+  padding:0;
+  min-height:0;
+  border:0;
+  background:none;
+  border-radius:0;
+  color:var(--sentence-glass-muted);
+  font:600 10px/1 var(--ui,sans-serif);
+  letter-spacing:0;
+}
+html[data-breeze-target="toss"] #word-peek-meaning:has(+ #word-peek-ai-badge){
+  padding-right:0;
 }
 html[data-breeze-target="toss"] #toss-ai-notice{
   width:min(360px,calc(100vw - 32px));

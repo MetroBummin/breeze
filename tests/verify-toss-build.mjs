@@ -105,6 +105,11 @@ test('shared guards run only when the toss flag is set',()=>{
   assert.ok(modal.indexOf("BREEZE_TARGET==='toss'")<modal.indexOf('Google로 로그인'));
   assert.match(read('scripts/dictionary/dictionary.js'),/toss-ai-notice/);
   assert.match(read('scripts/dictionary/dictionary.js'),/toss-ai-badge/);
+  const dictionary=read('scripts/dictionary/dictionary.js');
+  const peek=dictionary.slice(dictionary.indexOf('function renderWordPeek'),dictionary.indexOf('function renderWordLookup'));
+  assert.match(peek,/tossPaintAiMarks\(w,pill,'word-peek-ai-badge',state\.text\)/);
+  assert.match(peek,/word-peek-meaning'\)\.after\(aiMark\)/);
+  assert.match(dictionary,/tossPaintAiMarks\(w,document\.querySelector\('#p-ai \.cap'\),'p-ai-badge',shown\)/);
   assert.match(read('scripts/reader/epub-original.js'),/appendEpubChapter[\s\S]*BREEZE_TARGET==='toss'/);
   assert.match(read('scripts/reader/pdf-navigation.js'),/renderEpubPreviewQueue[\s\S]*BREEZE_TARGET==='toss'/);
   assert.match(read('scripts/library/article-preview.js'),/BREEZE_TARGET==='toss'\)\{[\s\S]*createElement\('span'\)/);
@@ -112,6 +117,7 @@ test('shared guards run only when the toss flag is set',()=>{
   assert.match(read('scripts/library/library.js'),/책장/);
   assert.match(read('scripts/ui/preferences.js'),/BREEZE_TARGET==='toss'/);
   const tossCss=read('styles/toss.css');
+  assert.match(tossCss,/#word-peek #word-peek-ai-badge\{[^}]*border:0[^}]*background:none[^}]*font:600 10px/);
   const hiddenBacks=tossCss.slice(tossCss.indexOf('#study-sets-back'),tossCss.indexOf('display:none'));
   assert.doesNotMatch(hiddenBacks,/#readback/);
   assert.match(tossCss,/#nav-settings/);

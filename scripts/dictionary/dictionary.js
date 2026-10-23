@@ -785,7 +785,7 @@ function placeLookupPeek(pill,anchor,reserveDetail=true){
   pill.dataset.expandDirection=anchor.direction;
   pill.style.transformOrigin=anchor.direction==='below'?'50% 0%':'50% 100%';
   pill.style.left=`${Math.round(left)}px`;pill.style.top=`${Math.round(top)}px`;
-  // The AI badge and late text can widen the pill after the first measure.
+  // Late text, including the small Toss mark, can widen the pill after the first measure.
   const limit=vx+vw-edge;
   const placed=pill.getBoundingClientRect();
   if(Number.isFinite(placed.right)&&placed.right>limit+0.5){
@@ -854,6 +854,8 @@ function renderWordPeek(){
   }
   document.getElementById('word-peek-meaning').textContent=state.text;
   if(typeof tossPaintAiMarks==='function') tossPaintAiMarks(w,pill,'word-peek-ai-badge',state.text);
+  const aiMark=document.getElementById('word-peek-ai-badge');
+  if(aiMark) document.getElementById('word-peek-meaning').after(aiMark);
   pill.classList.toggle('loading',state.loading);
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
