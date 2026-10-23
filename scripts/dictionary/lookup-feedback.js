@@ -7,6 +7,9 @@ const wordLookupFeedback = (()=>{
   const format=value=>['text','pdf','epub'].includes(value)?value:'text';
   const elapsed=start=>Math.max(0,Math.round(now()-start));
   const append=row=>{rows.push(row);if(rows.length>limit)rows.shift();};
+  /* Paint only. WebKit turns off text-wrap:balance for a whole block when any
+     inline fragment uses box-decoration-break:clone, so a waiting word on a
+     tight line would jump and then return. Background and shadow do not. */
   const styles=`
     .breeze-lookup-pending,
     .reader-sentence-cue-layer.is-pending .reader-sentence-cue {
@@ -15,7 +18,6 @@ const wordLookupFeedback = (()=>{
       background-size:240% 100%!important;background-repeat:no-repeat!important;
       border-color:transparent!important;border-radius:var(--breeze-lookup-radius,5px)!important;
       box-shadow:none!important;
-      -webkit-box-decoration-break:clone;box-decoration-break:clone;
       animation:breeze-word-sheen 1.65s ease-in-out infinite!important;
     }
     @keyframes breeze-word-sheen {
