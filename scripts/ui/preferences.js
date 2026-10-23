@@ -93,6 +93,7 @@ function closeAa(){
 }
 let darkMode = load('breeze.dark', false);
 function applyDark(){
+  if(window.BREEZE_TARGET==='toss') darkMode=false;
   document.body.classList.toggle('dark', !!darkMode);
   document.documentElement.classList.toggle('dark', !!darkMode);   // 화면 맨 아래까지 어둡게
   /* 다크 모드를 켜는 자리는 둘입니다 — 읽는 화면의 Aa 와 설정. 어느 쪽에서
@@ -104,7 +105,10 @@ function applyDark(){
     toggle.setAttribute('aria-pressed', darkMode ? 'true' : 'false');
   });
 }
-function toggleDark(){ darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark(); }
+function toggleDark(){
+  if(window.BREEZE_TARGET==='toss'){ darkMode=false; applyDark(); return; }
+  darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark();
+}
 applyDark();
 
 /* 필기 줄을 옮기는 기능은 기본으로 꺼 둡니다. 다크 모드와 같은 기기 저장이고,
@@ -208,14 +212,14 @@ function syncHomeNavigation(){
     if(resume.parentElement!==nav) nav.append(resume);
     if(nav.parentElement!==controls) controls.append(nav);
     if(settings.parentElement!==top) top.append(settings);
-    if(add.parentElement!==nav) nav.append(add);
+    if(add&&add.parentElement!==nav) nav.append(add);
     if(shelf){ controls.append(words); nav.prepend(homeButton); }
     else if(words.parentElement!==nav) nav.prepend(words);
   }else{
     if(words.parentElement!==nav) nav.prepend(words);
     if(resume.parentElement!==controls) controls.append(resume);
     if(homeButton.parentElement!==nav) nav.prepend(homeButton);
-    if(add.parentElement!==controls) controls.append(add);
+    if(add&&add.parentElement!==controls) controls.append(add);
     if(settings.parentElement!==nav) nav.append(settings);
     if(nav.parentElement!==top) top.append(nav);
   }
@@ -309,6 +313,7 @@ function syncLoginNudge(){
   const nudge=document.getElementById('login-nudge');
   const settingsButton=document.getElementById('nav-settings');
   if(!nudge) return;
+  if(window.BREEZE_TARGET==='toss'){ nudge.classList.remove('on'); nudge.hidden=true; return; }
   let signedIn=false;
   try{ signedIn=!!sbUser; }catch(error){}
   const label=uiLang==='ko' ? '로그인' : 'Sign in';

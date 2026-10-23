@@ -161,6 +161,7 @@ function meaningWaitLine(off){
   if(off === 'offline'){
     return '오프라인이라 뜻을 찾을 수 없어요';
   }
+  if(window.BREEZE_TARGET==='toss' && (off==='trial'||off==='login')) return '오늘은 뜻을 더 볼 수 없어요';
   const why =
       off === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요'
     : off === 'trial'   ? '무료 체험을 다 썼어요'
@@ -669,15 +670,59 @@ function wordPeekSameTarget(k,node){
   return !!(current&&next&&current.owner===next.owner&&current.start===next.start
     &&current.end===next.end&&current.endNode===next.endNode);
 }
+function breezeToss(){ return window.BREEZE_TARGET==='toss'; }
+function lookupLimitText(){
+  return breezeToss() ? '오늘은 뜻을 더 볼 수 없어요' : '로그인하고 뜻 보기';
+}
+function tossAiMeaning(w){
+  if(!breezeToss()||!w||w.koEdited) return false;
+  const ai=w.ai||{};
+  return !!(String(w.ko||ai.ko||'').trim() && (ai.done||ai.cached||ai.noteDone));
+}
+function tossSyncBadge(host,id,show){
+  if(!host) return;
+  let badge=document.getElementById(id);
+  if(!show){ badge?.remove(); return; }
+  if(!badge){
+    badge=document.createElement('span');
+    badge.id=id;
+    badge.className='toss-ai-badge';
+    badge.textContent='AI';
+    badge.setAttribute('aria-label','인공지능이 만든 뜻');
+    host.appendChild(badge);
+  }
+}
+function tossEnsureAiNotice(){
+  if(!breezeToss()) return;
+  try{ if(localStorage.getItem('breeze.toss.ai-notice')==='seen') return; }catch(error){ return; }
+  let dialog=document.getElementById('toss-ai-notice');
+  if(!dialog){
+    dialog=document.createElement('dialog');
+    dialog.id='toss-ai-notice';
+    dialog.innerHTML='<h2>인공지능이 만든 뜻</h2><p>단어를 누르면 인공지능이 문맥에 맞는 뜻을 만들어 보여 줘요. 만든 뜻에는 AI 표시가 붙고, 저장한 단어는 이 미니앱 안에만 남아요.</p><button type="button">확인</button>';
+    dialog.querySelector('button').onclick=()=>{
+      try{ localStorage.setItem('breeze.toss.ai-notice','seen'); }catch(error){}
+      dialog.close();
+    };
+    document.body.appendChild(dialog);
+  }
+  if(typeof dialog.showModal==='function'&&!dialog.open) dialog.showModal();
+}
+function tossPaintAiMarks(w,host,badgeId,visibleText){
+  const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();
+  const show=tossAiMeaning(w)&&(!visibleText||String(visibleText).trim()===meaning);
+  tossSyncBadge(host,badgeId,show);
+  if(show) tossEnsureAiNotice();
+}
 function wordPeekState(w,context){
   if(context&&context.error)return {text:context.error==='deleted'?'지운 뜻이에요'
-    : (context.error==='trial'||context.error==='login')?'로그인하고 뜻 보기':meaningWaitLine(context.error),loading:false};
+    : (context.error==='trial'||context.error==='login')?lookupLimitText():meaningWaitLine(context.error),loading:false};
   if(context&&context.loading)return {text:context.loading==='new'?'새 뜻 찾는 중':context.loading==='repair'?'뜻 다듬는 중':'뜻 확인 중',loading:true};
   if(wordPeekRetryState && wordPeekRetryState.key===selKey){
     if(wordPeekRetryState.loading) return {text:'뜻 다시 찾는 중',loading:true};
     const retryOff=wordPeekRetryState.error||'';
     if(retryOff==='quota') return {text:'오늘 뜻 사용량을 다 썼어요',loading:false};
-    if(retryOff==='trial'||retryOff==='login') return {text:'로그인하고 뜻 보기',loading:false};
+    if(retryOff==='trial'||retryOff==='login') return {text:lookupLimitText(),loading:false};
     if(retryOff==='offline') return {text:'오프라인이에요',loading:false};
     if(retryOff) return {text:'뜻을 찾지 못했어요',loading:false};
   }
@@ -686,7 +731,7 @@ function wordPeekState(w,context){
   if(w&&(w.loading||w.aiLoading)&&!w.aiSlow) return {text:'뜻 찾는 중',loading:true};
   const off=navigator.onLine===false?'offline':(w&&w.aiOff)||'';
   if(off==='quota') return {text:'오늘 뜻 사용량을 다 썼어요',loading:false};
-  if(off==='trial'||off==='login') return {text:'로그인하고 뜻 보기',loading:false};
+  if(off==='trial'||off==='login') return {text:lookupLimitText(),loading:false};
   if(off==='offline') return {text:'오프라인이에요',loading:false};
   if(off==='error'||(w&&w.aiSlow)) return {text:'뜻을 찾지 못했어요',loading:false};
   return {text:'뜻 찾는 중',loading:true};
@@ -776,6 +821,7 @@ function renderWordPeek(){
     return;
   }
   document.getElementById('word-peek-meaning').textContent=state.text;
+  tossPaintAiMarks(w,pill,'word-peek-ai-badge',state.text);
   pill.classList.toggle('loading',state.loading);
   const retry=document.getElementById('word-peek-retry');
   if(state.loading) retry.setAttribute('disabled','');
@@ -913,7 +959,7 @@ async function retryWordPeek(){
   const k=selKey,w=words[k];
   const blocked=currentContext(k);
   const reason=(blocked&&blocked.error)||(wordPeekRetryState&&wordPeekRetryState.error)||(w&&w.aiOff);
-  if(w && (reason==='trial'||reason==='login')){ openSyncModal(); return; }
+  if(w && (reason==='trial'||reason==='login')){ if(!breezeToss()) openSyncModal(); return; }
   if(!wordPeekActive||!k||!w||w.loading||w.aiLoading||
      (wordPeekRetryState&&wordPeekRetryState.key===k&&wordPeekRetryState.loading)) return;
   const input=lookupRequestFor(w,activeSelectedWordNode,true);
@@ -1141,8 +1187,9 @@ function renderPanel(){
      하기 때문입니다. 여기서 다시 정하면 두 자리가 다른 말을 할 수 있습니다. */
   /* 뜻 칸이 이미 이유를 말한 상태에서는 아래에서 되풀이하지 않습니다. 누를 것이
      있는 상태(체험 소진·로그인·오류)만 단추와 함께 한 줄을 남깁니다. */
-  const hintOff = (!shown && (off === 'quota' || off === 'offline' || off === 'login' || off === 'trial')) ? '' : off;
-  aiBtn.style.display = (off && off !== 'quota' && off !== 'offline') ? 'flex' : 'none';
+  const tossLimit = breezeToss() && (off === 'trial' || off === 'login');
+  const hintOff = tossLimit ? off : ((!shown && (off === 'quota' || off === 'offline' || off === 'login' || off === 'trial')) ? '' : off);
+  aiBtn.style.display = (off && off !== 'quota' && off !== 'offline' && !tossLimit) ? 'flex' : 'none';
   document.getElementById('p-aibtn-t').textContent =
       (off === 'trial' || off === 'login') ? '로그인하고 계속 쓰기'
     : (off === 'error' || w.aiSlow)        ? '다시 시도'
@@ -1155,7 +1202,8 @@ function renderPanel(){
      실제로 그려질 때만 당기고, 아니면 평범한 간격으로 놔둡니다. */
   aiHint.classList.toggle('tight', aiBtn.style.display !== 'none');
   aiHint.textContent =
-      hintOff === 'trial'   ? '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요'
+      hintOff === 'trial'   ? (breezeToss() ? '오늘은 뜻을 더 볼 수 없어요. 내일 다시 열어 주세요.' : '무료 체험을 다 썼어요. 로그인하면 이어서 쓸 수 있어요')
+    : hintOff === 'login'   ? '오늘은 뜻을 더 볼 수 없어요. 내일 다시 열어 주세요.'
     : hintOff === 'quota'   ? '오늘의 문맥 뜻 사용량을 모두 썼어요. 자정에 다시 채워집니다'
     : hintOff === 'offline' ? '오프라인이라 새로운 뜻은 불러올 수 없어요'
     : hintOff === 'error'   ? '잠깐 문제가 있었어요. 다시 눌러 보세요'
@@ -1165,6 +1213,7 @@ function renderPanel(){
      다른 뜻은 문맥 뜻 아래 칩으로 둡니다. 본체는 선택, 끝의 × 는 삭제입니다. */
   document.getElementById('p-ex-fold').hidden=true;
   if(context&&shown&&!asking)aiCap.textContent='저장된 뜻';
+  tossPaintAiMarks(w,document.querySelector('#p-ai .cap'),'p-ai-badge',shown);
   if(typeof renderEasyExplanation==='function')renderEasyExplanation();
   if(previewWordCard){
     document.getElementById('p-saved-senses').className='';
@@ -1218,7 +1267,7 @@ function renderPanel(){
   else if(w.enLoading) defs.textContent='영어 뜻 찾는 중…';
   else if(w.enError) defs.innerHTML='<button type="button" id="p-en-retry" aria-label="영어 뜻 다시 시도" title="다시 시도"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M20 12a8 8 0 1 0-2.3 5.7"/></svg></button>';
   else defs.textContent='';
-  if(w.defs?.length&&w.definitionSource==='wiktionary'){
+  if(!breezeToss()&&w.defs?.length&&w.definitionSource==='wiktionary'){
     defs.insertAdjacentHTML('beforeend',`<small class="p-dict-source"><a href="https://en.wiktionary.org/wiki/${encodeURIComponent(w.definitionSourceWord||w.word)}#English" target="_blank" rel="noopener">Wiktionary</a> · <a href="https://freedictionaryapi.com/" target="_blank" rel="noopener">FreeDictionaryAPI</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></small>`);
   }
   const retry=document.getElementById('p-en-retry');
@@ -1922,7 +1971,7 @@ async function askAI(){
   const off = w.aiOff;
   /* 맛보기를 다 썼거나 서버가 로그인을 요구하면, 다시 부르는 것은 같은 답을
      한 번 더 받는 일입니다. 할 수 있는 일이 있는 곳으로 보냅니다. */
-  if(off === 'trial' || off === 'login'){ openSyncModal(); return; }
+  if(off === 'trial' || off === 'login'){ if(!breezeToss()) openSyncModal(); return; }
   const context=currentContext(k),life=wordLookupLife;
   if(context){context.loading='checking';delete context.error;}
   let found=false;

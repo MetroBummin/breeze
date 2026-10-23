@@ -485,6 +485,7 @@ function homeBookSpec(book,casual){
     }};
 }
 function homeRecommendKind(){
+  if(window.BREEZE_TARGET==='toss') return 'books';
   return load('breeze.home-recommend','books')==='books'?'books':'articles';
 }
 /* A started catalog book is one library record. Bundled text keeps the catalog
@@ -538,6 +539,7 @@ function syncHomeRecommendToggle(){
   });
 }
 function setHomeRecommendKind(kind){
+  if(window.BREEZE_TARGET==='toss'){ syncHomeRecommendToggle(); return; }
   const next=kind==='books'?'books':'articles';
   if(next===homeRecommendKind()){syncHomeRecommendToggle();return;}
   save('breeze.home-recommend',next);
@@ -617,7 +619,7 @@ function renderHome(){
     specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
   }
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
-  specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
+  if(window.BREEZE_TARGET!=='toss') specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
   const light=document.getElementById('home-casual-rail');
   const entries=[
@@ -627,7 +629,7 @@ function renderHome(){
   const lightSpecs=entries.map(entry=>entry.kind==='book'
     ? homeBookSpec(entry.value,true)
     : {key:'cloud:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
-  lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
+  if(window.BREEZE_TARGET!=='toss') lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
   reconcileHomeCards(light,lightSpecs);
 }
 
@@ -698,6 +700,7 @@ function addStep(step){
 /* mode='casual'이면 짧은 글 두 가지만 보여 줍니다. */
 let addImportFolder='';
 function openAddModal(mode){
+  if(window.BREEZE_TARGET==='toss'||!addModal()) return;
   addImportFolder=currentImportFolder();
   /** @type {HTMLDialogElement} */(addModal()).showModal();
   addModal().querySelector('.am-file').hidden = mode === 'casual';
@@ -707,8 +710,9 @@ function closeAddModal(){
   // Release native modal inertness before changing the presentation.
   /** @type {HTMLDialogElement} */(addModal()).close();
 }
-addModal().addEventListener('cancel',event=>{event.preventDefault();closeAddModal();});
+addModal()?.addEventListener('cancel',event=>{event.preventDefault();closeAddModal();});
 function pickBookFile(){
+  if(window.BREEZE_TARGET==='toss'||!finput) return;
   if(!/** @type {HTMLDialogElement} */(addModal()).open)addImportFolder=currentImportFolder();
   closeAddModal(); finput.click();
 }
@@ -778,19 +782,19 @@ async function importPastedText(){
   catch(error){console.error(error);toast('글을 저장하지 못했어요. 입력한 내용은 남겨 두었어요.');}
 }
 
-document.getElementById('am-text').addEventListener('input', updatePastePreview);
-document.getElementById('am-url').addEventListener('keydown', event => {
+document.getElementById('am-text')?.addEventListener('input', updatePastePreview);
+document.getElementById('am-url')?.addEventListener('keydown', event => {
   if(event.key === 'Enter') importArticleUrl();
 });
-addModal().addEventListener('click', event => { if(event.target.id === 'add-modal') closeAddModal(); });
+addModal()?.addEventListener('click', event => { if(event.target.id === 'add-modal') closeAddModal(); });
 
 /* ================= import ================= */
-const finput = /** @type {HTMLInputElement} */(document.getElementById('fileinput'));
-const originalInput = /** @type {HTMLInputElement} */(document.getElementById('original-fileinput'));
-finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0],null,{folderId:addImportFolder}); finput.value=''; };
+const finput = /** @type {HTMLInputElement|null} */(document.getElementById('fileinput'));
+const originalInput = /** @type {HTMLInputElement|null} */(document.getElementById('original-fileinput'));
+if(finput) finput.onchange = () => { if(finput.files[0]) importFile(finput.files[0],null,{folderId:addImportFolder}); finput.value=''; };
 let reconnectTarget = null;
 let vaultReconnectTarget = null;
-originalInput.onchange = async()=>{
+if(originalInput) originalInput.onchange = async()=>{
   const file = originalInput.files[0];
   originalInput.value = '';
   const target = reconnectTarget;
@@ -843,11 +847,12 @@ async function reconnectVaultItem(row,file){
    is driven by a depth counter rather than by the last event seen. */
 let dragDepth = 0;
 const dropOverlay = () => document.getElementById('drop-overlay');
-window.addEventListener('dragenter', e=>{ e.preventDefault(); dragDepth++; dropOverlay().classList.add('on'); });
-window.addEventListener('dragleave', e=>{ e.preventDefault(); if(--dragDepth<=0){ dragDepth=0; dropOverlay().classList.remove('on'); } });
+window.addEventListener('dragenter', e=>{ e.preventDefault(); if(window.BREEZE_TARGET==='toss')return; dragDepth++; dropOverlay()?.classList.add('on'); });
+window.addEventListener('dragleave', e=>{ e.preventDefault(); if(window.BREEZE_TARGET==='toss')return; if(--dragDepth<=0){ dragDepth=0; dropOverlay()?.classList.remove('on'); } });
 window.addEventListener('dragover', e=>e.preventDefault());
 window.addEventListener('drop', e=>{
-  e.preventDefault(); dragDepth=0; document.getElementById('drop-overlay').classList.remove('on');
+  e.preventDefault(); dragDepth=0; document.getElementById('drop-overlay')?.classList.remove('on');
+  if(window.BREEZE_TARGET==='toss')return;
   const f = e.dataTransfer.files[0]; if(f) importFile(f);
 });
 

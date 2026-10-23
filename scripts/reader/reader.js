@@ -447,20 +447,27 @@ function renderReaderAttribution(book){
     ? attribution.sources : [{title:attribution.title,url:attribution.sourceUrl}];
   const sourceLines=sources.map(item=>{
     const source=document.createElement('p');
-    const link=document.createElement('a');
-    link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
-    link.textContent=`${attribution.sourceName} · ${item.title}`;
-    source.appendChild(link);
+    const label=`${attribution.sourceName} · ${item.title}`;
+    if(window.BREEZE_TARGET==='toss') source.textContent=label;
+    else{
+      const link=document.createElement('a');
+      link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
+      link.textContent=label;
+      source.appendChild(link);
+    }
     return source;
   });
   const license=document.createElement('p');
   license.textContent=book.longReadId==='backroom-homeward-bound'
     ? 'Story text and scene illustrations: ' : 'Story text: ';
-  const licenseLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
-  licenseLink.href=attribution.licenseUrl;
-  licenseLink.target='_blank'; licenseLink.rel='noopener noreferrer';
-  licenseLink.textContent=attribution.license;
-  license.appendChild(licenseLink);
+  if(window.BREEZE_TARGET==='toss') license.append(attribution.license||'');
+  else{
+    const licenseLink=/** @type {HTMLAnchorElement} */ (document.createElement('a'));
+    licenseLink.href=attribution.licenseUrl;
+    licenseLink.target='_blank'; licenseLink.rel='noopener noreferrer';
+    licenseLink.textContent=attribution.license;
+    license.appendChild(licenseLink);
+  }
   const note=document.createElement('p');
   note.textContent=attribution.editionNote||'본문은 원문 표현을 바꾸지 않고 Breeze Text 형식으로 재조판했습니다. 장면 삽화는 원문 내용을 바탕으로 새로 제작했으며 원문 페이지의 이미지는 사용하지 않았습니다. 표지는 별도로 제공된 이미지입니다.';
   body.append(line,...sourceLines,license,note);
@@ -535,20 +542,30 @@ async function openBook(b,options={}){
      사진 설명·영상·인터랙티브 도표는 여기 없으므로, 원문으로 가는 길을
      하나 남겨 둡니다. */
   const source = document.getElementById('rsource');
-  source.hidden = !b.sourceUrl;
-  if(b.sourceUrl){
-    source.href = b.sourceUrl;
-    const hideAuthor=typeof openingRepeatsAuthor==='function'&&openingRepeatsAuthor({
-      author:b.author, byline:readerOpeningByline(b), front:(b.paras||[]).slice(0,8),
-    });
-    source.textContent = [b.site,hideAuthor?'':b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
+  if(window.BREEZE_TARGET==='toss'){
+    source.hidden = true;
+    source.removeAttribute('href');
+  }else{
+    source.hidden = !b.sourceUrl;
+    if(b.sourceUrl){
+      source.href = b.sourceUrl;
+      const hideAuthor=typeof openingRepeatsAuthor==='function'&&openingRepeatsAuthor({
+        author:b.author, byline:readerOpeningByline(b), front:(b.paras||[]).slice(0,8),
+      });
+      source.textContent = [b.site,hideAuthor?'':b.author,b.publishedAt ? rssDate(b.publishedAt) : ''].filter(Boolean).join(' · ') + ' · 원문 보기 ↗';
+    }
   }
   renderReaderAttribution(b);
   const discovery = /** @type {HTMLAnchorElement} */(document.getElementById('rdiscovery'));
-  discovery.hidden = !b.discoveredFromUrl;
-  if(b.discoveredFromUrl){
-    discovery.href = b.discoveredFromUrl;
-    discovery.textContent = '게시물 보기 ↗';
+  if(window.BREEZE_TARGET==='toss'){
+    discovery.hidden = true;
+    discovery.removeAttribute('href');
+  }else{
+    discovery.hidden = !b.discoveredFromUrl;
+    if(b.discoveredFromUrl){
+      discovery.href = b.discoveredFromUrl;
+      discovery.textContent = '게시물 보기 ↗';
+    }
   }
   /* 책은 `show('read')` 를 거치지 않고 바로 열립니다. 셸을 켜는 표는 두 곳에
      달아야 합니다 — `body` 만 잠그면 아이폰에서 문서가 여전히 고무줄처럼 늘어나서,

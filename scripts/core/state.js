@@ -461,6 +461,7 @@ function activeAppView(){
   return view ? view.id.replace(/^v-/,'') : 'home';
 }
 function rememberAppView(view,replace){
+  if(window.BREEZE_TARGET==='toss') return;
   if(appHistoryRestoring || (curBook && curBook.transient)) return;
   const state={breeze:true,view:view||activeAppView()};
   if(replace) history.replaceState(state,'');
@@ -545,8 +546,10 @@ window.addEventListener('popstate',event=>{
 });
 /* 첫 기록을 Breeze의 홈으로 바꿔 둡니다. 이후 앱 안에서 이동할 때만 새 기록을
    쌓으므로, 홈에서 뒤로가기는 원래 방문한 사이트로 자연스럽게 나갑니다. */
-history.replaceState({breeze:true,view:activeAppView()},'');
-appHistoryReady=true;
+if(window.BREEZE_TARGET!=='toss'){
+  history.replaceState({breeze:true,view:activeAppView()},'');
+  appHistoryReady=true;
+}
 
 /* ================= home ================= */
 /* 예전에는 샘플 책 한 권(AI Hurtles Ahead)을 늘 목록 맨 앞에 끼워 넣었습니다.

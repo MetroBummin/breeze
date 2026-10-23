@@ -308,6 +308,7 @@ function studySetsVisibleExportRecords(){
   }));
 }
 async function studySetsShareVisible(){
+  if(window.BREEZE_TARGET==='toss') return;
   if(studySetsUI.editOpen)studySetsCloseEditMenu(false,true);
   const button=studySetsUI.shareButton;
   if(!button||button.disabled||studySetsUI.exporting)return;
@@ -389,7 +390,9 @@ function studySetsSetEditMenu(open,focus=false,immediate=false){
   const stop=studySpring(0,1,0,paint,()=>{if(epoch===ui.editEpoch)finish();});
   ui.editAnimation={cancel:stop};
 }
+function studySetsUsesBrowserHistory(){ return window.BREEZE_TARGET!=='toss'; }
 function replaceStudySetsHistory(patch){
+  if(!studySetsUsesBrowserHistory()) return;
   const current=history.state||{};
   if(Object.entries(patch).some(([key,value])=>current[key]!==value))history.replaceState({...current,...patch},'');
 }
@@ -457,6 +460,7 @@ function openStudySet(id){
   openStudySets(false,'detail',id,true);
 }
 function studySetsReturnDirectory(){
+  if(!studySetsUsesBrowserHistory()){studySetsGo('directory');return;}
   if(studySetsUI.directoryDepth>0){studySetsUI.pendingClose=true;history.go(-studySetsUI.directoryDepth);}
 }
 function studySetsFullPage(screen=studySetsUI.screen){
@@ -518,7 +522,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
   studySetsUI.back.hidden=studySetsUI.screen==='list';
   if(!fromHistory){
     studySetsUI.historyToken=String(Date.now())+'-'+String(Math.random()).slice(2);
-    history.pushState({breeze:true,view:studySetsFullPage()?'memory-set':typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll,studySetsDirectoryOrigin:studySetsUI.directoryOrigin,studySetsDirectoryDepth:0,studySetsDirectoryScroll:studySetsUI.directoryScroll,studySetsVocabScroll:studySetsUI.vocabScroll},'');
+    if(studySetsUsesBrowserHistory()) history.pushState({breeze:true,view:studySetsFullPage()?'memory-set':typeof activeAppView==='function'?activeAppView():'memory',studySets:studySetsUI.historyToken,studySetsScreen:studySetsUI.screen,studySetsSetId:studySetsUI.setId,studySetsHome:studySetsUI.homeEntry,studySetsManagement:studySetsUI.managementEntry,studySetsHomeScroll:studySetsUI.homeScroll,studySetsDirectoryOrigin:studySetsUI.directoryOrigin,studySetsDirectoryDepth:0,studySetsDirectoryScroll:studySetsUI.directoryScroll,studySetsVocabScroll:studySetsUI.vocabScroll},'');
   }else studySetsUI.historyToken=history.state?.studySets||'';
   studySetsAttachSurface();return studySetsReadAndRender();
 }
@@ -531,7 +535,7 @@ function closeStudySets(fromHistory=false){
   studySetsUnlockScroll();
   if(studySetsUI.pageOpen){studySetsUI.pageOpen=false;studySetsReturnHomeFocus();}
   else studySetsUI.dialog.close();
-  if(!fromHistory&&history.state?.studySets===studySetsUI.historyToken){
+  if(!fromHistory&&studySetsUsesBrowserHistory()&&history.state?.studySets===studySetsUI.historyToken){
     studySetsUI.pendingClose=true;if(studySetsUI.directoryOrigin)history.go(-(studySetsUI.directoryDepth+1));else history.back();
   }
 }
@@ -808,9 +812,9 @@ function studySetsAnimateExit(row){
 function studySetsGo(screen,setId=studySetsUI.setId){
   if(studySetsUI.pendingClose)return;
   studySetsCloseEditMenu(false,true);
-  if(screen==='detail'&&studySetsUI.screen==='study'&&history.state?.studySetsScreen==='study'){history.back();return;}
-  if(screen==='test-setup'&&studySetsUI.screen==='test'&&history.state?.studySetsScreen==='test'){history.back();return;}
-  if(studySetsUI.directoryOrigin&&screen!==studySetsUI.screen){
+  if(studySetsUsesBrowserHistory()&&screen==='detail'&&studySetsUI.screen==='study'&&history.state?.studySetsScreen==='study'){history.back();return;}
+  if(studySetsUsesBrowserHistory()&&screen==='test-setup'&&studySetsUI.screen==='test'&&history.state?.studySetsScreen==='test'){history.back();return;}
+  if(studySetsUsesBrowserHistory()&&studySetsUI.directoryOrigin&&screen!==studySetsUI.screen){
     rememberStudySetsDirectory();
     studySetsUI.directoryDepth++;if(screen==='menu')studySetsUI.managementEntry=true;
     history.pushState({...history.state,studySetsScreen:screen,studySetsDetailEditing:studySetsUI.detailEditing,studySetsSetId:setId,studySetsDirectoryDepth:studySetsUI.directoryDepth,studySetsManagement:studySetsUI.managementEntry,view:studySetsFullPage(screen)?'memory-set':'vocab'},'');
@@ -826,7 +830,16 @@ function studySetsBack(){
   if(studySetsUI.editOpen){studySetsCloseEditMenu(true);return;}
   const screen=studySetsUI.screen;
   if(screen==='test'&&typeof studySetTestAskLeave==='function'&&studySetTestAskLeave())return;
-  if(studySetsUI.directoryOrigin){if(screen==='directory')closeStudySets();else history.back();return;}
+  if(studySetsUI.directoryOrigin){
+    if(screen==='directory'){closeStudySets();return;}
+    if(!studySetsUsesBrowserHistory()){
+      if(screen==='test'||screen==='test-result'){studySetsGo('test-setup');return;}
+      if(['study','excluded','rename','books','delete','test-setup'].includes(screen)){studySetsGo('detail');return;}
+      studySetsGo('directory');
+      return;
+    }
+    history.back();return;
+  }
   if(['detail','all'].includes(screen)&&studySetsUI.pageOpen||screen==='list'||studySetsUI.homeEntry&&['detail','create','menu'].includes(screen)){closeStudySets();return;}
   if(screen==='test'||screen==='test-result'){studySetsGo('test-setup');return;}
   studySetsGo(['study','excluded','rename','books','delete','test-setup'].includes(screen)?'detail':'list');
@@ -854,7 +867,7 @@ function renderStudySets(focus=true){
   }
   studySetsAttachSurface();
   ui.sheet.dataset.screen=ui.screen;
-  const showShare=(ui.screen==='detail'&&!!set||ui.screen==='all')&&ui.pageOpen,showMenu=ui.screen==='detail'&&!!set&&ui.pageOpen;
+  const showShare=window.BREEZE_TARGET!=='toss'&&(ui.screen==='detail'&&!!set||ui.screen==='all')&&ui.pageOpen,showMenu=ui.screen==='detail'&&!!set&&ui.pageOpen;
   ui.shareButton.hidden=!showShare;ui.editButton.hidden=!showMenu;ui.editSurface.hidden=!showShare;ui.editSlot.hidden=!showShare;
   ui.editSlot.classList.toggle('is-pair',showMenu);ui.editSurface.classList.toggle('is-pair',showMenu);
   if(!ui.editOpen){ui.editButton.setAttribute('aria-label','세트 편집');ui.editSurface.style.width=(showMenu?88:44)+'px';ui.editSurface.style.height='44px';ui.editSurface.style.borderRadius='22px';}
@@ -1254,7 +1267,7 @@ function renderStudySetsEdit(set){
   const save=studySetsButton('이름 저장',()=>{},'study-sets-primary');save.type='submit';
   form.append(label,save);form.addEventListener('submit',event=>{
     event.preventDefault();if(!input.value.trim()){input.setCustomValidity('세트 이름을 입력해 주세요.');input.reportValidity();return;}
-    const name=input.value.trim();studySetsMutate(state=>BreezeStudySets.rename(state,set.id,name,Date.now()),()=>{if(studySetsUI.directoryOrigin){studySetsUI.pendingClose=true;history.back();return;}studySetsUI.screen='detail';studySetsUI.notice='';});
+    const name=input.value.trim();studySetsMutate(state=>BreezeStudySets.rename(state,set.id,name,Date.now()),()=>{if(studySetsUI.directoryOrigin&&studySetsUsesBrowserHistory()){studySetsUI.pendingClose=true;history.back();return;}studySetsUI.screen='detail';studySetsUI.notice='';});
   });input.addEventListener('input',()=>input.setCustomValidity(''));body.append(form);
 }
 function renderStudySetsBooks(set){
@@ -1281,7 +1294,7 @@ function renderStudySetsBooks(set){
   form.addEventListener('submit',event=>{
     event.preventDefault();if(!selection.size)return;
     studySetsMutate(state=>BreezeStudySets.addBooks(state,set.id,[...selection],words,Date.now()),()=>{
-      if(studySetsUI.directoryOrigin){studySetsUI.pendingClose=true;history.back();return;}
+      if(studySetsUI.directoryOrigin&&studySetsUsesBrowserHistory()){studySetsUI.pendingClose=true;history.back();return;}
       studySetsUI.screen='detail';studySetsUI.notice='';
     });
   });body.append(form);
@@ -1548,7 +1561,7 @@ function studySetsBegin(id,restart,stars){
     return BreezeStudySets.start(state,id,Date.now(),{restart:replacing,words:replacing?words:undefined,stars:creating?stars:undefined});
   },()=>{
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
-    if(entering){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
+    if(entering&&studySetsUsesBrowserHistory()){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
 }
 function renderStudySetsStudy(set){
   const body=studySetsUI.body,view=BreezeStudySets.view(studySetsUI.state,set.id);
