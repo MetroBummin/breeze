@@ -128,6 +128,16 @@ checked-in Play version code stays 2. 1.9.6 (328) remains the build in App Store
 review. Xcode Cloud assigns the next counter, so this baseline is not that
 upload number.
 
+## Marketing version 1.9.8 (2026-10-24)
+
+App and Share Debug/Release `MARKETING_VERSION` move to 1.9.8, and their
+counters move from 298 to 299. The cloud bootstrap still replaces that baseline
+with `CI_BUILD_NUMBER`. Android `versionName` follows the same release. The
+checked-in Play version code stays 2. 1.9.7 (338) is the previous TestFlight
+build. Xcode Cloud assigns the next counter, so this baseline is not that
+upload number. This archive contains the home boot-banner fix and the public
+AO3 work import. It is not submitted for App Store review.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports
