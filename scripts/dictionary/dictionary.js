@@ -679,7 +679,7 @@ function tossAiMeaning(w){
   const ai=w.ai||{};
   return !!(String(w.ko||ai.ko||'').trim() && (ai.done||ai.cached||ai.noteDone));
 }
-function tossSyncBadge(host,id,show){
+function tossSyncBadge(host,id,show,label){
   if(!host) return;
   let badge=document.getElementById(id);
   if(!show){ badge?.remove(); return; }
@@ -688,9 +688,9 @@ function tossSyncBadge(host,id,show){
     badge.id=id;
     badge.className='toss-ai-badge';
     badge.textContent='AI';
-    badge.setAttribute('aria-label','인공지능이 만든 뜻');
     host.appendChild(badge);
   }
+  badge.setAttribute('aria-label',label||'인공지능이 만든 뜻');
 }
 function tossEnsureAiNotice(){
   if(!breezeToss()) return;
@@ -699,7 +699,7 @@ function tossEnsureAiNotice(){
   if(!dialog){
     dialog=document.createElement('dialog');
     dialog.id='toss-ai-notice';
-    dialog.innerHTML='<h2>인공지능이 만든 뜻</h2><p>단어를 누르면 인공지능이 문맥에 맞는 뜻을 만들어 보여 줘요. 만든 뜻에는 AI 표시가 붙고, 저장한 단어는 이 미니앱 안에만 남아요.</p><button type="button">확인</button>';
+    dialog.innerHTML='<h2>인공지능이 만든 뜻과 해석</h2><p>단어나 문장을 누르면 인공지능이 문맥에 맞는 뜻과 해석을 만들어 보여 줘요. 만든 결과에는 AI 표시가 붙고, 저장한 단어는 이 미니앱 안에만 남아요.</p><button type="button">확인</button>';
     dialog.querySelector('button').onclick=()=>{
       try{ localStorage.setItem('breeze.toss.ai-notice','seen'); }catch(error){}
       dialog.close();
@@ -707,6 +707,18 @@ function tossEnsureAiNotice(){
     document.body.appendChild(dialog);
   }
   if(typeof dialog.showModal==='function'&&!dialog.open) dialog.showModal();
+}
+function tossPaintSentenceAiMark(host,badgeId,show){
+  if(!host||typeof tossSyncBadge!=='function') return;
+  const visible=!!(breezeToss()&&show);
+  tossSyncBadge(host,badgeId,visible,'인공지능이 만든 해석');
+  if(!visible) return;
+  const badge=document.getElementById(badgeId);
+  if(badge&&host.id==='sentence-peek'){
+    const meaning=document.getElementById('sentence-peek-meaning');
+    if(meaning&&meaning.after) meaning.after(badge);
+  }
+  tossEnsureAiNotice();
 }
 function tossPaintAiMarks(w,host,badgeId,visibleText){
   const meaning=String((w&&(w.ko||(w.ai&&w.ai.ko)))||'').trim();

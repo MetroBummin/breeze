@@ -82,6 +82,35 @@ html[data-breeze-target="toss"] #word-peek #word-peek-ai-badge{
 html[data-breeze-target="toss"] #word-peek-meaning:has(+ #word-peek-ai-badge){
   padding-right:0;
 }
+/* Sentence results use the word pill's quiet mark: 10px, #6C7377, no chip.
+   The pill mark sits in the row before the retry. The sheet mark stays inline
+   at the end of the translation, so neither covers the retry control. */
+html[data-breeze-target="toss"] :is(#sentence-peek #sentence-peek-ai-badge,#ps-ko #ps-ko-ai-badge){
+  border:0;
+  background:none;
+  box-shadow:none;
+  padding:0;
+  min-height:0;
+  border-radius:0;
+  color:#6C7377;
+  font:600 10px/1 var(--ui,sans-serif);
+  letter-spacing:0;
+  white-space:nowrap;
+}
+html[data-breeze-target="toss"] #sentence-peek #sentence-peek-ai-badge{
+  display:inline-flex;
+  flex:0 0 auto;
+  align-self:center;
+  margin:0 6px 0 4px;
+}
+html[data-breeze-target="toss"] #sentence-peek-meaning:has(+ #sentence-peek-ai-badge){
+  padding-right:0;
+}
+html[data-breeze-target="toss"] #ps-ko #ps-ko-ai-badge{
+  display:inline;
+  margin:0 0 0 6px;
+  vertical-align:0.2em;
+}
 /* iOS WebKit paints the shared sheen on the sentence cue (a block) and not on
    the inline word. This overlay is a block box with the same gradient and
    keyframes, and it does not change the word's own box, so a balanced line

@@ -301,6 +301,21 @@ function closeSentence(){
   if(modal) modal.hidden = true;
   if(typeof clearReaderModeCue === 'function') clearReaderModeCue();
   if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl = null; }
+  syncTossSentenceAiMarks(null);
+}
+function sentenceAiTranslation(state){
+  return !!(state&&state.ai&&String(state.ko||'').trim()&&!state.waiting);
+}
+function syncTossSentenceAiMarks(state){
+  if(typeof tossPaintSentenceAiMark!=='function') return;
+  const text=String(state&&state.ko||'').trim();
+  const ai=sentenceAiTranslation(state);
+  const ko=document.getElementById('ps-ko');
+  tossPaintSentenceAiMark(ko,'ps-ko-ai-badge',!!(ai&&ko&&!ko.hidden));
+  const pill=document.getElementById('sentence-peek');
+  const meaning=document.getElementById('sentence-peek-meaning');
+  const pillShows=!!(ai&&pill&&!pill.hidden&&meaning&&meaning.textContent.trim()===text);
+  tossPaintSentenceAiMark(pill,'sentence-peek-ai-badge',pillShows);
 }
 function paintSentence(state){
   const modal = document.getElementById('sentence-modal');
@@ -311,6 +326,7 @@ function paintSentence(state){
   const ko = document.getElementById('ps-ko');
   ko.textContent = state.ko || '';
   ko.hidden = !state.ko;
+  syncTossSentenceAiMarks(state);
   const foot = document.getElementById('ps-foot');
   foot.textContent = state.foot || '';
   foot.hidden = !state.foot;
@@ -380,7 +396,7 @@ async function openSentence(text,origin){
     // A previously stored answer never waits for an optional asset download.
     const hit=await dictGet(key);
     if(!sentenceAlive(life))return;
-    if(hit&&hit.ko){paintSentenceFor(life,{en:clean,ko:hit.ko});return;}
+    if(hit&&hit.ko){paintSentenceFor(life,{en:clean,ko:hit.ko,ai:true});return;}
     if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
       try{await ensureHomewardLookupData();}
       catch{paintSentenceFor(life,{en:clean,retry:true,foot:'읽기 자료를 준비하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'});return;}
@@ -422,7 +438,7 @@ async function openSentence(text,origin){
   }
   sentenceRecoveries.delete(recoveryKey);
   if(sentenceAlive(life)&&sbUser)rememberSentLeft(answer.left,answer.day);
-  paintSentenceFor(life,{ en:clean, ko:answer.ko });
+  paintSentenceFor(life,{ en:clean, ko:answer.ko, ai:true });
   await dictPut(key, { ko:answer.ko, done:true });
 }
 
