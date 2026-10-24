@@ -268,7 +268,19 @@ private final class BreezeInkInputProbe: UIGestureRecognizer {
 }
 #endif
 
-final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate, ASWebAuthenticationPresentationContextProviding, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+private final class BreezeAo3Task {
+    let limit: Int
+    let reply: (Any?, String?) -> Void
+    var data = Data()
+    var response: HTTPURLResponse?
+    var tooBig = false
+    init(limit: Int, reply: @escaping (Any?, String?) -> Void) {
+        self.limit = limit
+        self.reply = reply
+    }
+}
+
+final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, AVSpeechSynthesizerDelegate, ASWebAuthenticationPresentationContextProviding, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding, URLSessionDataDelegate {
     #if DEBUG
     private let pdfMotionProbe = BreezePdfMotionProbe()
     private var pdfMotionTraceEnabled = false
@@ -320,6 +332,23 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var appleAuthNonce: String?
     private static let sharedFileHandler = "breezeSharedFile"
     private let sharedFileQueue = DispatchQueue(label: "kr.io.breeze.shared-files", qos: .userInitiated)
+    private static let ao3Handler = "breezeAo3"
+    private var ao3Session: URLSession?
+    private var ao3Busy = false
+    private var ao3Payloads: [String: Data] = [:]
+    private var ao3Tasks: [Int: BreezeAo3Task] = [:]
+    private let ao3Lock = NSLock()
+    private static let ao3Messages = [
+        "ao3_restricted": "이 작품은 AO3에 로그인한 사람만 볼 수 있어요. 로그인을 우회하지 않아요.",
+        "ao3_missing": "그 주소에서 작품을 찾지 못했어요.",
+        "ao3_unavailable": "AO3에서 이 작품을 받을 수 없어요.",
+        "ao3_rate_limited": "AO3가 잠시 요청을 멈춰 달라고 했어요. 조금 뒤에 이 작품만 다시 시도해 주세요.",
+        "ao3_too_big": "이 작품이 너무 커요. AO3에서 EPUB을 받아 파일로 넣어 주세요.",
+        "ao3_timeout": "AO3 응답이 너무 느려요. 조금 뒤에 이 작품만 다시 시도해 주세요.",
+        "ao3_unreachable": "AO3에 연결하지 못했어요. 인터넷을 확인한 뒤 다시 시도해 주세요.",
+        "busy": "이미 한 작품을 가져오는 중이에요. 끝난 뒤에 다시 시도해 주세요.",
+        "bad_url": "AO3 작품 주소를 다시 확인해 주세요.",
+    ]
     private static let readerSelectionHandler = "breezeReaderSelection"
     private static let testBackHandler = "breezeTestBack"
     private static let lightReaderBackground = UIColor(red: 250 / 255, green: 248 / 255, blue: 242 / 255, alpha: 1)
@@ -457,6 +486,16 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         webView.configuration.userContentController.add(self, name: Self.shareInboxHandler)
         webView.configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.authHandler)
         webView.configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.sharedFileHandler)
+        webView.configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Self.ao3Handler)
+        let ao3Config = URLSessionConfiguration.ephemeral
+        ao3Config.httpShouldSetCookies = false
+        ao3Config.httpCookieAcceptPolicy = .never
+        ao3Config.httpCookieStorage = nil
+        ao3Config.urlCache = nil
+        ao3Config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        ao3Config.timeoutIntervalForRequest = 45
+        ao3Config.timeoutIntervalForResource = 45
+        ao3Session = URLSession(configuration: ao3Config, delegate: self, delegateQueue: nil)
         speechSynthesizer.delegate = self
         NotificationCenter.default.addObserver(
             self,
@@ -466,6 +505,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         )
         webView.configuration.userContentController.addUserScript(
             WKUserScript(source: Self.shareInboxScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        )
+        webView.configuration.userContentController.addUserScript(
+            WKUserScript(source: Self.ao3Script, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         )
         webView.configuration.userContentController.addUserScript(
             WKUserScript(
@@ -764,6 +806,17 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping (Any?, String?) -> Void) {
+        if message.name == Self.ao3Handler {
+            guard message.frameInfo.isMainFrame,
+                  message.frameInfo.securityOrigin.protocol == "breeze",
+                  message.frameInfo.securityOrigin.host == "localhost",
+                  let request = message.body as? [String: Any] else {
+                replyHandler(nil, "AO3 요청을 확인할 수 없어요.")
+                return
+            }
+            handleAo3(request, reply: replyHandler)
+            return
+        }
         if message.name == Self.authHandler {
             handleAuthMessage(message, replyHandler: replyHandler)
             return
@@ -1158,7 +1211,192 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         schedulePdfRoutingRefresh()
     }
 
+    private func ao3Failure(_ code: String) -> [String: Any] {
+        ["error": true, "code": code, "message": Self.ao3Messages[code] ?? Self.ao3Messages["ao3_unavailable"]!]
+    }
+
+    private func handleAo3(_ request: [String: Any], reply: @escaping (Any?, String?) -> Void) {
+        let action = request["action"] as? String ?? ""
+        if action == "list" {
+            deliverAo3Inbox()
+            DispatchQueue.main.async { reply(true, nil) }
+            return
+        }
+        if action == "ack" {
+            let id = request["id"] as? String ?? ""
+            DispatchQueue.global(qos: .utility).async {
+                do { try ShareInboxStore.acknowledgeAo3(id: id) }
+                catch { NSLog("[BreezeAo3] acknowledge failed: %@", error.localizedDescription) }
+                DispatchQueue.main.async { reply(true, nil) }
+            }
+            return
+        }
+        if action == "discard" {
+            if let id = request["id"] as? String {
+                ao3Lock.lock()
+                ao3Payloads[id] = nil
+                ao3Lock.unlock()
+            }
+            DispatchQueue.main.async { reply(true, nil) }
+            return
+        }
+        if action == "read" {
+            guard let id = request["id"] as? String, UUID(uuidString: id) != nil,
+                  let offset = request["offset"] as? Int, offset >= 0 else {
+                DispatchQueue.main.async { reply(nil, Self.ao3Messages["ao3_unavailable"]) }
+                return
+            }
+            ao3Lock.lock()
+            let data = ao3Payloads[id]
+            ao3Lock.unlock()
+            guard let data, offset < data.count else {
+                DispatchQueue.main.async { reply(nil, Self.ao3Messages["ao3_unavailable"]) }
+                return
+            }
+            let end = min(offset + 256 * 1024, data.count)
+            DispatchQueue.main.async { reply(data.subdata(in: offset..<end).base64EncodedString(), nil) }
+            return
+        }
+        guard action == "fetch" else {
+            DispatchQueue.main.async { reply(self.ao3Failure("bad_url"), nil) }
+            return
+        }
+        guard let raw = request["url"] as? String, let parsed = URL(string: raw), let canonical = Ao3Link.canonical(parsed) else {
+            DispatchQueue.main.async { reply(self.ao3Failure("bad_url"), nil) }
+            return
+        }
+        ao3Lock.lock()
+        let busy = ao3Busy
+        if !busy { ao3Busy = true }
+        ao3Lock.unlock()
+        guard !busy, let session = ao3Session else {
+            if !busy {
+                ao3Lock.lock()
+                ao3Busy = false
+                ao3Lock.unlock()
+            }
+            DispatchQueue.main.async { reply(self.ao3Failure(busy ? "busy" : "ao3_unreachable"), nil) }
+            return
+        }
+        let epub = canonical.path.lowercased().hasSuffix(".epub")
+        var req = URLRequest(url: canonical)
+        req.httpMethod = "GET"
+        req.timeoutInterval = epub ? 45 : 20
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue(Ao3Link.userAgent, forHTTPHeaderField: "User-Agent")
+        req.setValue(epub ? "application/epub+zip,application/octet-stream;q=0.8" : "text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
+        req.setValue("en", forHTTPHeaderField: "Accept-Language")
+        let task = session.dataTask(with: req)
+        let body = BreezeAo3Task(limit: epub ? 40 * 1024 * 1024 : 2 * 1024 * 1024, reply: reply)
+        ao3Lock.lock()
+        ao3Tasks[task.taskIdentifier] = body
+        ao3Lock.unlock()
+        task.resume()
+    }
+
+    private func finishAo3(_ body: BreezeAo3Task, error: Error?) {
+        let payload: [String: Any]
+        if body.tooBig {
+            payload = ao3Failure("ao3_too_big")
+        } else if let error = error as NSError?, error.domain == NSURLErrorDomain && error.code == NSURLErrorTimedOut {
+            payload = ao3Failure("ao3_timeout")
+        } else if error != nil {
+            payload = ao3Failure("ao3_unreachable")
+        } else if let http = body.response {
+            payload = ao3Result(http, data: body.data)
+        } else {
+            payload = ao3Failure("ao3_unreachable")
+        }
+        DispatchQueue.main.async { body.reply(payload, nil) }
+    }
+
+    private func ao3Result(_ http: HTTPURLResponse, data: Data) -> [String: Any] {
+        if let url = http.url, Ao3Link.canonical(url) == nil { return ao3Failure("ao3_unavailable") }
+        let status = http.statusCode
+        if status == 429 { return ao3Failure("ao3_rate_limited") }
+        if status == 404 { return ao3Failure("ao3_missing") }
+        if status == 401 || status == 403 || (300...399).contains(status) { return ao3Failure("ao3_restricted") }
+        if status < 200 || status >= 300 || data.isEmpty { return ao3Failure("ao3_unavailable") }
+        let type = http.value(forHTTPHeaderField: "Content-Type") ?? ""
+        let final = http.url?.absoluteString ?? ""
+        let epub = (http.url?.path ?? "").lowercased().hasSuffix(".epub")
+        if !epub && data.count <= 2_000_000 && (type.isEmpty || type.range(of: "html", options: .caseInsensitive) != nil || type.range(of: "xml", options: .caseInsensitive) != nil) {
+            return ["status": status, "finalURL": final, "contentType": type, "text": String(data: data, encoding: .utf8) ?? ""]
+        }
+        let id = UUID().uuidString
+        ao3Lock.lock()
+        ao3Payloads.removeAll()
+        ao3Payloads[id] = data
+        ao3Lock.unlock()
+        return ["status": status, "finalURL": final, "contentType": type, "id": id, "size": data.count]
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        guard session === ao3Session else { completionHandler(.cancel); return }
+        ao3Lock.lock()
+        let body = ao3Tasks[dataTask.taskIdentifier]
+        ao3Lock.unlock()
+        guard let body else { completionHandler(.cancel); return }
+        body.response = response as? HTTPURLResponse
+        if response.expectedContentLength > Int64(body.limit) {
+            body.tooBig = true
+            completionHandler(.cancel)
+            return
+        }
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        guard session === ao3Session else { return }
+        ao3Lock.lock()
+        let body = ao3Tasks[dataTask.taskIdentifier]
+        ao3Lock.unlock()
+        guard let body, !body.tooBig else { return }
+        if body.data.count + data.count > body.limit {
+            body.tooBig = true
+            dataTask.cancel()
+            return
+        }
+        body.data.append(data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard session === ao3Session else { return }
+        ao3Lock.lock()
+        let body = ao3Tasks.removeValue(forKey: task.taskIdentifier)
+        if body != nil { ao3Busy = false }
+        ao3Lock.unlock()
+        guard let body else { return }
+        finishAo3(body, error: error)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+        guard session === ao3Session else { completionHandler(request); return }
+        guard let url = request.url, Ao3Link.canonical(url) != nil else {
+            completionHandler(nil)
+            return
+        }
+        var next = request
+        next.setValue(Ao3Link.userAgent, forHTTPHeaderField: "User-Agent")
+        next.setValue(nil, forHTTPHeaderField: "Cookie")
+        next.setValue(nil, forHTTPHeaderField: "Authorization")
+        completionHandler(next)
+    }
+
+    func deliverAo3Inbox() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(ShareInboxStore.pendingAo3())
+            guard let json = String(data: data, encoding: .utf8) else { return }
+            webView?.evaluateJavaScript("window.breezeAo3Pending = \(json); window.dispatchEvent(new CustomEvent('breeze-ao3-inbox',{detail:window.breezeAo3Pending}))", completionHandler: nil)
+        } catch {
+            NSLog("[BreezeAo3] listing failed: %@", error.localizedDescription)
+        }
+    }
+
     func deliverSharedLinks() {
+        deliverAo3Inbox()
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -1198,6 +1436,18 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
       open: id => window.webkit.messageHandlers.breezeShareInbox.postMessage({action:'open', id})
     };
     window.addEventListener('load', () => window.breezeShareInbox.list(), {once:true});
+    """
+
+    private static let ao3Script = """
+    window.breezeAo3Pending = [];
+    window.breezeAo3 = {
+      fetch: url => window.webkit.messageHandlers.breezeAo3.postMessage({action:'fetch', url}),
+      read: (id, offset) => window.webkit.messageHandlers.breezeAo3.postMessage({action:'read', id, offset}),
+      discard: id => window.webkit.messageHandlers.breezeAo3.postMessage({action:'discard', id}),
+      ack: id => window.webkit.messageHandlers.breezeAo3.postMessage({action:'ack', id}),
+      list: () => window.webkit.messageHandlers.breezeAo3.postMessage({action:'list'})
+    };
+    window.addEventListener('load', () => window.breezeAo3.list(), {once:true});
     """
 
     private func reportVocabularyExport(id: String, error: String? = nil) {

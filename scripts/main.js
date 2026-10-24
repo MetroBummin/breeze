@@ -23,6 +23,7 @@ const homeReady=loadBooks().then(async()=>{
   paintHome();
 }).finally(()=>document.documentElement.classList.remove('boot-pending'));
 homeReady.then(()=>startSharedFileImports());
+homeReady.then(()=>{ if(typeof startAo3Inbox==='function') startAo3Inbox(); });
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
 /* A saved 기사 choice must not request the classics catalog. RSS discovery

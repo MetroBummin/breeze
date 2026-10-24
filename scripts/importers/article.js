@@ -401,6 +401,10 @@ async function importArticleUrl(){
   const url = normalizeArticleUrl(field.value);
   status.classList.remove('bad');
   if(!url){ status.classList.add('bad'); status.textContent = '주소를 다시 확인해 주세요'; return; }
+  if(typeof importAo3FromComposer === 'function' && typeof parseAo3WorkUrl === 'function' && parseAo3WorkUrl(url)){
+    await importAo3FromComposer();
+    return;
+  }
 
   button.disabled = true;
   status.textContent = typeof socialUrlInfo==='function'&&socialUrlInfo(url) ? '게시글을 가져오는 중…' : '기사를 가져오는 중…';
