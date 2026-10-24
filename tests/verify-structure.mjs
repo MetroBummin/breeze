@@ -1583,6 +1583,32 @@ assert.match(gestureSource, /countDispatch\(gesture, 'DISMISS_SENTENCE'\)/,
 assert.match(gestureSource,
   /function endSentenceModalGesture[\s\S]{0,600}finishGesture\(gesture, GESTURE_DISMISS_SENTENCE, true\);\s*\n\s*countDispatch\(gesture, 'DISMISS_SENTENCE'\);[\s\S]{0,200}closeSentence\(\)/,
   'DISMISS_SENTENCE no longer ends in exactly one closeSentence() call');
+/* 카드 바깥을 문턱 넘게 밀면 그 손짓은 스크롤입니다. pointerup 뒤의 click 이
+   preventDefault 하면 iPad 가 그 팬을 한 번 끊습니다. 임자는 그대로입니다. */
+assert.match(gestureSource,
+  /gesture\.moved > GESTURE_SLOP && gesture\.owner === OWNER_SENTENCE_MODAL && gesture\.dismisses && !gesture\.pulls\)\{\s*\n\s*noteSentenceOutsideScroll\(gesture\);\s*\n\s*finishGesture\(gesture, GESTURE_SCROLL\)/,
+  'An outside sentence pan is still a tap, so the trailing click can cancel the reader scroll');
+assert.match(gestureSource,
+  /function sentenceOutsidePan\(gesture\)\{[\s\S]{0,220}gesture\.readerScrolled \|\| \(gesture\.moved > GESTURE_SLOP && gesture\.dismisses && !gesture\.pulls\)/,
+  'A scroll that arrives before pointermove is still ended as an outside tap');
+assert.match(sentenceSource,
+  /sentenceOutsidePanActive\(\)\) parkSentenceForScroll\(\);\s*\n\s*else closeSentence\(\)/,
+  'A live outside pan still tears the sentence card down inside the scroll event');
+assert.match(sentenceSource,
+  /function parkSentenceForScroll[\s\S]{0,900}opacity='0'[\s\S]{0,120}pointerEvents='none'/,
+  'The scrolling sentence card is hidden by removing it instead of by opacity');
+assert.match(sentenceSource,
+  /addEventListener\('scrollend', finishSentenceScrollTeardown\)/,
+  'Sentence card teardown no longer waits for scrollend');
+assert.match(sentenceSource,
+  /setTimeout\(finishSentenceScrollTeardown, SENTENCE_SCROLL_TEARDOWN_MS\)/,
+  'Sentence card teardown has no timeout when scrollend does not fire');
+assert.match(sentenceSource,
+  /function finishSentenceScrollTeardown[\s\S]{0,400}closeSentence\(\)/,
+  'scrollend no longer finishes the parked sentence card');
+assert.match(sentenceSource,
+  /panel\.style\.overflowY = panel\.scrollHeight <= panel\.clientHeight \+ 1 \? 'hidden' : 'auto'/,
+  'A short anchored sentence card keeps a nested overflow scroller');
 /* 바깥 누르기의 꼬리 click 은 reader 로 내려가지 않아야 합니다 — 예전에 "팝업
    뒤의 낱말이 함께 눌린다"가 여기서 나왔습니다. */
 assert.match(gestureSource,

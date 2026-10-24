@@ -95,7 +95,7 @@ function stopSentenceResultPresentation(){
   sentenceResultAnimation?.cancel();sentenceResultAnimation=null;
   const panel=document.getElementById('p-sentence');
   if(panel){
-    for(const name of ['left','top','width','max-height','transform-origin'])panel.style.removeProperty?.(name);
+    for(const name of ['left','top','width','max-height','transform-origin','overflow-y'])panel.style.removeProperty?.(name);
     if(panel.dataset)delete panel.dataset.expandDirection;
   }
 }
@@ -141,6 +141,7 @@ function placeSentenceResult(){
   // Horizontal safe areas matter on landscape phones; the shared placement
   // still owns the below/above choice and Reader-control boundary.
   panel.style.left=Math.max(left,Math.min(parseFloat(panel.style.left),right-panel.offsetWidth))+'px';
+  panel.style.overflowY = panel.scrollHeight <= panel.clientHeight + 1 ? 'hidden' : 'auto';
 }
 function revealAnchoredSentenceResult(){
   const panel=document.getElementById('p-sentence'),life=sentenceLife;
@@ -183,7 +184,69 @@ function deferSentencePeekReveal(){
     else if(sentencePillErrorActive())revealSentencePeek();
   },lookupPeekScrollRemaining(sentencePeekLastScroll));
 }
+/* 바깥 팬의 첫 사용자 스크롤은 조회를 끝내되, 유리층은 스크롤이 멈춘 뒤에
+   걷습니다. 스크롤 중에 backdrop-filter 를 지우면 iPad 가 그 팬을 한 번 끊습니다.
+   손짓이 없는 스크롤(테스트가 scrollTop 을 직접 넣는 경우 포함)은 즉시 닫습니다. */
+let sentenceScrollParked=null,sentenceScrollTeardownTimer=0;
+const SENTENCE_SCROLL_TEARDOWN_MS=480;
+function cancelSentenceScrollPark(){
+  sentenceScrollParked=null;
+  clearTimeout(sentenceScrollTeardownTimer);
+  sentenceScrollTeardownTimer=0;
+  const scroller=typeof readerScroller==='function'?readerScroller():null;
+  scroller?.removeEventListener('scrollend', finishSentenceScrollTeardown);
+  const panel=document.getElementById('p-sentence');
+  if(!panel) return;
+  panel.style.opacity='';
+  panel.style.pointerEvents='';
+}
+function armSentenceScrollTeardown(){
+  clearTimeout(sentenceScrollTeardownTimer);
+  sentenceScrollTeardownTimer=setTimeout(finishSentenceScrollTeardown, SENTENCE_SCROLL_TEARDOWN_MS);
+  const scroller=typeof readerScroller==='function'?readerScroller():null;
+  if(!scroller) return;
+  scroller.removeEventListener('scrollend', finishSentenceScrollTeardown);
+  scroller.addEventListener('scrollend', finishSentenceScrollTeardown);
+}
+function finishSentenceScrollTeardown(){
+  if(!sentenceScrollParked) return;
+  const life=sentenceScrollParked;
+  if(sentenceLife!==life){ cancelSentenceScrollPark(); return; }
+  closeSentence();
+}
+function parkSentenceForScroll(){
+  if(typeof consumeSentenceOutsidePan==='function') consumeSentenceOutsidePan();
+  if(sentenceScrollParked){ armSentenceScrollTeardown(); return; }
+  sentenceResultAnimation?.cancel();
+  sentenceResultAnimation=null;
+  if(sentenceResultFrame){ cancelAnimationFrame(sentenceResultFrame); sentenceResultFrame=0; }
+  sentenceLife++;
+  sentenceView='closed';
+  cancelSentencePeekReveal();
+  sentencePeekAnchor=null;sentencePeekShownAt=null;sentencePresentationEnded=false;
+  sentencePendingPaint=null;
+  if(typeof cancelSentenceEasyExplanation==='function') cancelSentenceEasyExplanation();
+  sentenceWaitingControls(false);
+  if(sentCtrl){ try{ sentCtrl.abort(); }catch(e){} sentCtrl=null; }
+  if(typeof clearReaderModeCue==='function') clearReaderModeCue();
+  const panel=document.getElementById('p-sentence');
+  if(panel){
+    panel.style.opacity='0';
+    panel.style.pointerEvents='none';
+  }
+  sentenceScrollParked=sentenceLife;
+  armSentenceScrollTeardown();
+}
+function sentenceScrollChanged(){
+  const box=typeof readerScroller==='function'?readerScroller():null;
+  const position=[box?.scrollTop||0,box?.scrollLeft||0];
+  return !sentenceScrollPosition || position.some((value,index)=>value!==sentenceScrollPosition[index]);
+}
 function sentenceReaderScrolled(userScroll){
+  if(sentenceScrollParked){
+    if(userScroll) armSentenceScrollTeardown();
+    return;
+  }
   if(!sentenceSurfaceAnchored()) return;
   const box=readerScroller();
   const position=[box?.scrollTop||0,box?.scrollLeft||0];
@@ -191,7 +254,10 @@ function sentenceReaderScrolled(userScroll){
   sentenceScrollPosition=position;
   if(!changed)return;
   if(!sentenceInlineActive()){
-    if(userScroll)closeSentence();else if(sentenceResultAnchored())scheduleSentenceResultPlacement();
+    if(userScroll){
+      if(typeof sentenceOutsidePanActive==='function' && sentenceOutsidePanActive()) parkSentenceForScroll();
+      else closeSentence();
+    }else if(sentenceResultAnchored()) scheduleSentenceResultPlacement();
     return;
   }
   sentencePeekLastScroll=performance.now();
@@ -284,6 +350,8 @@ function sentenceGestureReleased(){
   if(sentencePendingPaint) revealSentenceResult();
 }
 function closeSentence(){
+  cancelSentenceScrollPark();
+  if(typeof clearSentenceOutsidePan==='function') clearSentenceOutsidePan();
   stopSentenceResultPresentation();
   sentenceLife++;
   sentenceView='closed';
@@ -347,6 +415,8 @@ function paintSentenceFor(life,state){
 async function openSentence(text,origin){
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if(!clean) return;
+  cancelSentenceScrollPark();
+  if(typeof clearSentenceOutsidePan==='function') clearSentenceOutsidePan();
   stopSentenceResultPresentation();
   const life=++sentenceLife;
   cancelSentencePeekReveal();sentencePendingPaint=null;
@@ -427,7 +497,7 @@ async function openSentence(text,origin){
 }
 
 document.addEventListener('keydown', event=>{
-  if(event.key === 'Escape' && sentenceLookupOpen()) closeSentence();
+  if(event.key === 'Escape' && (sentenceLookupOpen() || sentenceScrollParked)) closeSentence();
 });
 
 /* 주소창이 드나드는 작은 높이 변화는 같은 분기에 머무는 한 아무 일도 아닙니다.
