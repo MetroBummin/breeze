@@ -1211,6 +1211,15 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         schedulePdfRoutingRefresh()
     }
 
+    private static func ao3RestrictedPage(_ html: String) -> Bool {
+        guard html.range(of: "This work is only available to registered users of the Archive", options: .caseInsensitive) != nil else { return false }
+        let body = html.range(of: "id=\"workskin\"", options: .caseInsensitive) != nil
+            || html.range(of: "id='workskin'", options: .caseInsensitive) != nil
+            || html.range(of: "id=\"chapters\"", options: .caseInsensitive) != nil
+            || html.range(of: "id='chapters'", options: .caseInsensitive) != nil
+        return !body
+    }
+
     private func ao3Failure(_ code: String) -> [String: Any] {
         ["error": true, "code": code, "message": Self.ao3Messages[code] ?? Self.ao3Messages["ao3_unavailable"]!]
     }
@@ -1315,11 +1324,13 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         let status = http.statusCode
         if status == 429 { return ao3Failure("ao3_rate_limited") }
         if status == 404 { return ao3Failure("ao3_missing") }
-        if status == 401 || status == 403 || (300...399).contains(status) { return ao3Failure("ao3_restricted") }
+        let epub = (http.url?.path ?? "").lowercased().hasSuffix(".epub")
+        if !epub, let text = String(data: data, encoding: .utf8), Self.ao3RestrictedPage(text) {
+            return ao3Failure("ao3_restricted")
+        }
         if status < 200 || status >= 300 || data.isEmpty { return ao3Failure("ao3_unavailable") }
         let type = http.value(forHTTPHeaderField: "Content-Type") ?? ""
         let final = http.url?.absoluteString ?? ""
-        let epub = (http.url?.path ?? "").lowercased().hasSuffix(".epub")
         if !epub && data.count <= 2_000_000 && (type.isEmpty || type.range(of: "html", options: .caseInsensitive) != nil || type.range(of: "xml", options: .caseInsensitive) != nil) {
             return ["status": status, "finalURL": final, "contentType": type, "text": String(data: data, encoding: .utf8) ?? ""]
         }

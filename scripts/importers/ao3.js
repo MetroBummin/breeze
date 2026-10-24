@@ -71,10 +71,10 @@ function ao3HasWorkBody(html){
 }
 
 function classifyAo3Page(html, finalUrl){
-  const href = String(finalUrl || '');
-  if(/\/users\/(?:login|auth)\b/i.test(href)) return 'ao3_restricted';
   const source = String(html || '');
   const body = ao3HasWorkBody(source);
+  /* Login-only is AO3's own sentence. A redirect, a 403, or a login URL is not
+     that sentence, and a public chapter can quote it beside the work body. */
   if(/This work is only available to registered users of the Archive/i.test(source) && !body) return 'ao3_restricted';
   if(/hidden by an admin/i.test(source) && !body) return 'ao3_unavailable';
   if(/can(?:'|’)t download an unrevealed work/i.test(source) && !body) return 'ao3_unavailable';
@@ -89,7 +89,6 @@ function classifyAo3Page(html, finalUrl){
 function ao3StatusCode(status){
   if(status === 429) return 'ao3_rate_limited';
   if(status === 404) return 'ao3_missing';
-  if(status === 401 || status === 403 || status === 302 || status === 301 || status === 303 || status === 307 || status === 308) return 'ao3_restricted';
   if(status < 200 || status >= 300) return 'ao3_unavailable';
   return '';
 }
@@ -250,10 +249,12 @@ async function ao3Transport(url, kind){
 }
 
 function ao3PageError(loaded){
+  const html = ao3Decode(loaded.bytes || new Uint8Array());
+  if(classifyAo3Page(html, loaded.url) === 'ao3_restricted') return 'ao3_restricted';
   const status = ao3StatusCode(loaded.status);
   if(status) return status;
   if(loaded.bytes && loaded.bytes.length > 2_000_000) return 'ao3_too_big';
-  return classifyAo3Page(ao3Decode(loaded.bytes || new Uint8Array()), loaded.url);
+  return classifyAo3Page(html, loaded.url);
 }
 
 function ao3WorkIdFromPage(loaded){

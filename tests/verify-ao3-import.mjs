@@ -83,9 +83,12 @@ test('restricted, adult, and missing pages are named, and a quoted notice stays 
   assert.equal(context.classifyAo3Page(restricted, 'https://archiveofourown.org/works/1'), 'ao3_restricted');
   assert.equal(context.classifyAo3Page('<div id="workskin"></div>' + restricted, 'https://archiveofourown.org/works/1'), '');
   assert.equal(context.classifyAo3Page('<h2>Adult Content Warning</h2><p>willing to see such content</p>', 'https://archiveofourown.org/works/1'), 'ao3_adult');
-  assert.equal(context.classifyAo3Page('<div id="chapters"></div>', 'https://archiveofourown.org/users/login'), 'ao3_restricted');
+  assert.equal(context.classifyAo3Page('<div id="chapters"></div>', 'https://archiveofourown.org/users/login'), '');
   assert.equal(context.classifyAo3Page('Error 404', 'https://archiveofourown.org/works/1'), 'ao3_missing');
   assert.equal(context.classifyAo3Page('<p>hidden by an admin</p>', 'https://archiveofourown.org/works/1'), 'ao3_unavailable');
+  assert.equal(context.ao3StatusCode(301), 'ao3_unavailable');
+  assert.equal(context.ao3StatusCode(302), 'ao3_unavailable');
+  assert.equal(context.ao3StatusCode(403), 'ao3_unavailable');
 });
 
 test('author notes drop and a story quotation that says Notes stays', () => {
@@ -231,6 +234,49 @@ test('a terminal share is dropped and a rate limit waits until the app is forwar
 });
 
 const resolve = async () => [{address:'1.1.1.1', family:4}];
+test('a public chaptered work redirects to its download host and is not login-only', async () => {
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/ao3-4701869-redirect.json', import.meta.url), 'utf8'));
+  const {context} = loadClient();
+  const epub = await sampleEpub();
+  const urls = [];
+  await context.importAo3Work(fixture.work, {
+    present: false,
+    transport: async url => {
+      urls.push(url);
+      if(url === fixture.epub.url) return {status:200, url:fixture.epub.location, contentType:fixture.epub.finalContentType, bytes:epub};
+      return page('<div id="workskin"></div><p>Chapters: 50/50</p>', 'https://archiveofourown.org' + fixture.page.location);
+    },
+  });
+  assert.deepEqual(urls, [
+    'https://archiveofourown.org/works/4701869?view_adult=true',
+    fixture.epub.url,
+  ]);
+  for(const status of [fixture.page.status, fixture.epub.status, 403]){
+    const seen = [];
+    await assert.rejects(context.importAo3Work(fixture.work, {
+      transport: async url => { seen.push(url); return {status, url, contentType:'text/html', bytes:new Uint8Array()}; },
+    }), error => error.code === 'ao3_unavailable');
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].includes('/downloads/'), false);
+  }
+  const calls = [];
+  const transport = async url => {
+    calls.push(url.href);
+    if(url.href === fixture.epub.url) return {status:fixture.epub.status, location:fixture.epub.location, headers:{}};
+    if(url.href === fixture.epub.location) return {status:200, headers:{'content-type':fixture.epub.finalContentType}, bytes:new Uint8Array([0x50, 0x4b, 3, 4, 1])};
+    throw new Error('unexpected ' + url.href);
+  };
+  const result = await fetchPublic(fixture.epub.url, {admit:ao3PublicUrl, transport, resolve});
+  assert.equal(result.status, 200);
+  assert.equal(result.bytes[0], 0x50);
+  assert.deepEqual(calls, [fixture.epub.url, fixture.epub.location]);
+  await assert.rejects(fetchPublic(fixture.epub.url, {
+    admit:ao3PublicUrl,
+    resolve,
+    transport: async url => ({status:301, location:'https://download.archiveofourown.org/works/4701869', headers:{}}),
+  }), error => error.message === 'bad_url');
+});
+
 test('a redirect off AO3 or onto a login path is not requested', async () => {
   for(const location of ['https://evil.example/steal', 'https://archiveofourown.org/users/login?return_to=%2Fworks%2F1']){
     const calls = [];

@@ -185,12 +185,19 @@ enum Ao3Link {
               let scheme = parts.scheme?.lowercased(), scheme == "http" || scheme == "https",
               parts.user == nil, parts.password == nil else { return nil }
         let host = parts.host?.lowercased()
-        guard host == "archiveofourown.org" || host == "www.archiveofourown.org" else { return nil }
+        let download = host == "download.archiveofourown.org"
+        guard host == "archiveofourown.org" || host == "www.archiveofourown.org" || download else { return nil }
         parts.scheme = "https"
-        parts.host = "archiveofourown.org"
+        parts.host = download ? "download.archiveofourown.org" : "archiveofourown.org"
         parts.port = nil
         parts.fragment = nil
-        guard pathAllowed(parts.percentEncodedPath.removingPercentEncoding ?? parts.path) else { return nil }
+        let path = parts.percentEncodedPath.removingPercentEncoding ?? parts.path
+        guard pathAllowed(path) else { return nil }
+        if download {
+            guard path.split(separator: "/").map(String.init).last?.lowercased() == "work.epub" else { return nil }
+            parts.queryItems = nil
+            return parts.url
+        }
         let query = (parts.queryItems ?? []).filter { item in
             (item.name == "view_adult" || item.name == "view_full_work") && (item.value == "true" || item.value == "false")
         }

@@ -18,6 +18,8 @@ final class ShareViewController: UIViewController {
 
         let icon = UIImageView(image: UIImage(named: "BreezeMark"))
         icon.contentMode = .scaleAspectFit
+        icon.layer.cornerRadius = 8
+        icon.clipsToBounds = true
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.widthAnchor.constraint(equalToConstant: 36).isActive = true
         icon.heightAnchor.constraint(equalToConstant: 36).isActive = true

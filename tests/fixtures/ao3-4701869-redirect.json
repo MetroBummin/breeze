@@ -1,0 +1,15 @@
+{
+  "work": "https://archiveofourown.org/works/4701869",
+  "rating": "General Audiences",
+  "page": {
+    "url": "https://archiveofourown.org/works/4701869?view_adult=true",
+    "status": 302,
+    "location": "/works/4701869/chapters/10736366"
+  },
+  "epub": {
+    "url": "https://archiveofourown.org/downloads/4701869/work.epub",
+    "status": 301,
+    "location": "https://download.archiveofourown.org/downloads/4701869/work.epub",
+    "finalContentType": "application/epub"
+  }
+}
