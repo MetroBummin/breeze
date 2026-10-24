@@ -160,6 +160,9 @@
 
   /* ---- 되돌릴 수 없는 일 ---- */
   --danger:#B0483A;
+  /* 부팅 실패 막대. 어두운 화면의 --danger 는 글자색이라 판으로 쓰면 옅어지므로 짝을 따로 둔다. */
+  --bootfail-bg:#B0483A;
+  --bootfail-ink:#fff;
   --danger-bg:#F7EAE7;
   --danger-bg-hover:#F0DAD5;
   --danger-line:#E7C7C1;
@@ -446,6 +449,8 @@ body.dark{
   --cue-block:rgba(111,199,236,.17);
 
   --danger:#D98A7A;
+  --bootfail-bg:#B0483A;
+  --bootfail-ink:#fff;
   --danger-bg:#33211E;
   --danger-bg-hover:#3E2823;
   --danger-ico-bg:#3A2622;

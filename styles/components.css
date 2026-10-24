@@ -165,11 +165,11 @@
     left:max(12px, env(safe-area-inset-left)); right:max(12px, env(safe-area-inset-right));
     bottom:calc(env(safe-area-inset-bottom) + 78px); max-width:520px; margin-inline:auto;
     align-items:flex-start; gap:8px; padding:12px 12px 12px 16px; border-radius:16px;
-    background:#B0483A; color:#fff; font:13px/1.5 -apple-system,sans-serif;}
+    background:var(--bootfail-bg); color:var(--bootfail-ink); font:13px/1.5 -apple-system,sans-serif;}
   #bootfail p{margin:0; flex:1;}
   #bootfail-msg{opacity:.85;}
   #bootfail-dismiss{pointer-events:auto; flex:none; width:32px; height:32px; margin:-4px 0 0; padding:0;
-    border:0; border-radius:8px; background:transparent; color:#fff; cursor:pointer;}
+    border:0; border-radius:8px; background:transparent; color:inherit; cursor:pointer;}
   #bootfail-dismiss svg{width:16px; height:16px; stroke:currentColor; stroke-width:2; fill:none;}
   #drop-overlay{position:fixed; inset:0; z-index:120; background:var(--drop-veil); display:none;
     align-items:center; justify-content:center; font-size:22px; color:var(--blue-deep); font-weight:500;
