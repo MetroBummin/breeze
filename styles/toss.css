@@ -138,13 +138,26 @@ html[data-breeze-target="toss"] .w.breeze-lookup-pending::after{
     background-image:none !important;
   }
 }
+/* The page reset zeros every margin, so a modal dialog sticks to the
+   top-left. A fixed inset plus auto margins centers the card, and the
+   backdrop is the dim layer behind it. */
 html[data-breeze-target="toss"] #toss-ai-notice{
+  position:fixed;
+  inset:0;
+  box-sizing:border-box;
   width:min(360px,calc(100vw - 32px));
+  height:fit-content;
+  max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  margin:auto;
   padding:22px 22px 18px;
   border:0;
   border-radius:22px;
   background:#fff;
   color:#1c1c1e;
+  overflow:auto;
+}
+html[data-breeze-target="toss"] #toss-ai-notice::backdrop{
+  background:rgba(0,0,0,.45);
 }
 html[data-breeze-target="toss"] #toss-ai-notice h2{
   margin:0 0 8px;
@@ -155,6 +168,9 @@ html[data-breeze-target="toss"] #toss-ai-notice p{
   font:400 14px/1.5 var(--ui,sans-serif);
 }
 html[data-breeze-target="toss"] #toss-ai-notice button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
   min-height:44px;
   width:100%;
   border:0;

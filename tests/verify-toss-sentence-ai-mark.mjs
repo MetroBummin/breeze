@@ -154,6 +154,11 @@ test('source keeps the sentence mark on AI answers and out of the regular styles
   assert.match(tossCss,/#ps-ko #ps-ko-ai-badge\{[^}]*display:inline/);
   const markRules=tossCss.slice(tossCss.indexOf('Sentence results use the word pill'), tossCss.indexOf('iOS WebKit paints the shared sheen'));
   assert.doesNotMatch(markRules,/position:\s*absolute/);
+  const noticeRule=tossCss.slice(tossCss.indexOf('html[data-breeze-target="toss"] #toss-ai-notice{'), tossCss.indexOf('#toss-ai-notice::backdrop'));
+  assert.match(noticeRule,/position:\s*fixed/);
+  assert.match(noticeRule,/margin:\s*auto/);
+  assert.match(noticeRule,/height:\s*fit-content/);
+  assert.match(tossCss,/html\[data-breeze-target="toss"\] #toss-ai-notice::backdrop\{[^}]*background:\s*rgba\(0,\s*0,\s*0,\s*\.45\)/);
 });
 
 test('Toss shows the sentence mark only on a displayed AI translation',()=>{
