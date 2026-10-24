@@ -183,16 +183,17 @@ async function requestDenoPinned(url,addresses,{signal,headers,limit}){
  * @param {string} raw
  * @param {{signal?: AbortSignal, headers?: Record<string,string>, limit?: number, resolve?: typeof lookup, transport?: typeof requestPinned}} [options]
  */
-export async function fetchPublic(raw,{signal,headers={},limit=3000000,resolve=lookup,transport=requestPinned}={}){
+export async function fetchPublic(raw,{signal,headers={},limit=3000000,resolve=lookup,transport=requestPinned,admit=publicUrl}={}){
   if(typeof Deno!=='undefined'&&transport===requestPinned)transport=requestDenoPinned;
-  let url=publicUrl(raw);
+  let url=admit(raw);
   const controller=signal?null:new AbortController();signal=signal||controller.signal;
   for(let hop=0;hop<=5;hop++){
     const addresses=await untilAbort(publicAddresses(url,resolve),signal);
     const result=await untilAbort(transport(url,addresses,{signal,headers:{...headers,'Accept-Encoding':'identity'},limit}),signal);
     if([301,302,303,307,308].includes(result.status)){
       if(hop===5||!result.location)throw new Error('redirect_limit');
-      url=publicUrl(new URL(result.location,url).href);continue;
+      // admit runs before the next request, so a refused host is never fetched.
+      url=admit(new URL(result.location,url).href);continue;
     }
     return {...result,url:url.href};
   }

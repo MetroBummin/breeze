@@ -9,9 +9,11 @@ recovery is introduced. Existing article/image relay remains the transport.
 
 ## Pipeline
 
-The Share Extension is embedded for PDF/EPUB file intake only (see the file
-handoff below). External web-link sharing remains dormant: the Saved chip and
-pending-link cards are hidden. Existing App Group URL records are neither
+The Share Extension is embedded for PDF/EPUB file intake (see the file
+handoff below). An AO3 work or chapter URL is the one web-link exception,
+recorded in decision 036: a separate inbox, then AO3's official EPUB. External
+web-link sharing otherwise remains dormant: the Saved chip and pending-link
+cards are hidden. Existing App Group URL records are neither
 acknowledged nor deleted; articles already imported into Casuals remain ordinary
 saved books. An old persisted Saved category resets to All.
 
@@ -679,3 +681,9 @@ are not copied. Native bundles include the deferred files and skip web runtime
 caching; Android HTTPS and iOS both skip worker registration via Capacitor.
 `verify-deferred-resources-browser.mjs` and `verify-deferred-offline-browser.mjs`
 exercise failure/retry, HTML import, old-shell carryover and cold offline lookup.
+
+## AO3 works
+
+Decision 036 records the only web-link exception. A shared AO3 work or chapter
+URL is stored apart from this dormant inbox and opened from AO3's official
+EPUB after a public-page check. Other web links stay dormant.

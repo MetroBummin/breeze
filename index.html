@@ -46,7 +46,7 @@
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
   <link rel="stylesheet" href="styles/tokens.css?v=721f9717">
   <link rel="stylesheet" href="styles/base.css?v=489ca3ea">
-  <link rel="stylesheet" href="styles/home.css?v=564359c0">
+  <link rel="stylesheet" href="styles/home.css?v=26c1961e">
   <link rel="stylesheet" href="styles/article-preview.css?v=6f944b5a">
   <link rel="stylesheet" href="styles/pdf-ink.css?v=94029b49">
   <link rel="stylesheet" href="styles/reader.css?v=99b81fe1">
@@ -104,7 +104,8 @@
   <script defer src="scripts/library/public-domain-layout.js?v=1d06314a"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=24ab4083"></script>
   <script defer src="scripts/importers/importers.js?v=36710c99"></script>
-  <script defer src="scripts/importers/article.js?v=e9d7b6b3"></script>
+  <script defer src="scripts/importers/article.js?v=761df2b4"></script>
+  <script defer src="scripts/importers/ao3.js?v=e2d1b9f9"></script>
   <script defer src="scripts/importers/social.js?v=0278bfd4"></script>
   <script defer src="scripts/importers/rss.js?v=c8316809"></script>
   <script defer src="scripts/library/article-preview.js?v=9ce12527"></script>
@@ -156,7 +157,7 @@
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
-  <script defer src="scripts/main.js?v=4297fe8c"></script>
+  <script defer src="scripts/main.js?v=9d6bef93"></script>
   <link rel="stylesheet" href="styles/study.css?v=ff988d52">
   <link rel="stylesheet" href="styles/surfaces.css?v=ee2a082b">
   <link rel="stylesheet" href="styles/header-controls.css?v=b58ebc34">
@@ -654,8 +655,12 @@
       <button type="button" class="am-back" onclick="addStep('pick')">← 뒤로</button>
       <h2>기사 URL</h2>
       <div class="desc">주소만 넣으면 본문만 골라 옵니다. <b>로그인이나 결제가 필요한 기사는 아직 못 가져와요</b> —
-        그럴 땐 본문을 복사해서 붙여넣어 주세요.</div>
+        그럴 땐 본문을 복사해서 붙여넣어 주세요. AO3 작품 주소도 여기에 붙여 넣을 수 있어요.</div>
       <input id="am-url" type="url" inputmode="url" placeholder="https://www.bbc.com/news/…" spellcheck="false">
+      <label id="am-ao3-notes" hidden>
+        <input id="am-ao3-notes-input" type="checkbox" checked>
+        작가 노트 포함
+      </label>
       <div id="am-url-status"></div>
       <button class="sm-btn primary" id="am-url-go" onclick="importArticleUrl()">가져오기</button>
     </div>

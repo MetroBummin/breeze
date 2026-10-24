@@ -168,3 +168,94 @@ extension ShareInboxStore {
         try? FileManager.default.removeItem(at: trash)
     }
 }
+
+// One AO3 work URL. Kept out of the dormant general link inbox.
+struct SharedAo3: Codable {
+    let id: String
+    let url: String
+    let savedAt: Date
+}
+
+enum Ao3Link {
+    static let userAgent = "Breeze (https://breeze.io.kr; personal reading; one work per explicit request)"
+    private static let workID = try! NSRegularExpression(pattern: "^[1-9]\\d{0,11}$")
+
+    static func canonical(_ raw: URL) -> URL? {
+        guard var parts = URLComponents(url: raw, resolvingAgainstBaseURL: false),
+              let scheme = parts.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              parts.user == nil, parts.password == nil else { return nil }
+        let host = parts.host?.lowercased()
+        guard host == "archiveofourown.org" || host == "www.archiveofourown.org" else { return nil }
+        parts.scheme = "https"
+        parts.host = "archiveofourown.org"
+        parts.port = nil
+        parts.fragment = nil
+        guard pathAllowed(parts.percentEncodedPath.removingPercentEncoding ?? parts.path) else { return nil }
+        let query = (parts.queryItems ?? []).filter { item in
+            (item.name == "view_adult" || item.name == "view_full_work") && (item.value == "true" || item.value == "false")
+        }
+        parts.queryItems = query.isEmpty ? nil : query
+        return parts.url
+    }
+
+    private static func isID(_ value: String) -> Bool {
+        workID.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil
+    }
+
+    private static func pathAllowed(_ path: String) -> Bool {
+        let parts = path.split(separator: "/").map(String.init)
+        if parts.count == 2 && parts[0] == "works" && isID(parts[1]) { return true }
+        if parts.count == 4 && parts[0] == "works" && isID(parts[1]) && parts[2] == "chapters" && isID(parts[3]) { return true }
+        if parts.count == 2 && parts[0] == "chapters" && isID(parts[1]) { return true }
+        if parts.count == 3 && parts[0] == "downloads" && isID(parts[1]) && parts[2].lowercased().hasSuffix(".epub") { return true }
+        return false
+    }
+}
+
+extension ShareInboxStore {
+    private static func ao3Directory() throws -> URL {
+        let folder = try directory().appendingPathComponent("Ao3", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder
+    }
+
+    @discardableResult
+    static func saveAo3(url: URL) throws -> SharedAo3 {
+        guard let canonical = Ao3Link.canonical(url) else {
+            throw fileError("AO3 작품 링크만 가져올 수 있어요.")
+        }
+        let now = Date()
+        let href = canonical.absoluteString
+        if let recent = try pendingAo3().last(where: {
+            $0.url == href && now.timeIntervalSince($0.savedAt) < 60
+        }) {
+            return recent
+        }
+        let item = SharedAo3(id: UUID().uuidString, url: href, savedAt: now)
+        let data = try JSONEncoder().encode(item)
+        try data.write(to: try ao3Directory().appendingPathComponent(item.id).appendingPathExtension("json"), options: .atomic)
+        return item
+    }
+
+    static func pendingAo3() throws -> [SharedAo3] {
+        let folder = try ao3Directory()
+        return try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .compactMap { file -> SharedAo3? in
+                guard let data = try? Data(contentsOf: file),
+                      let item = try? JSONDecoder().decode(SharedAo3.self, from: data),
+                      UUID(uuidString: item.id) != nil,
+                      Ao3Link.canonical(URL(string: item.url) ?? URL(fileURLWithPath: "/")) != nil else { return nil }
+                return item
+            }
+            .sorted { $0.savedAt < $1.savedAt }
+    }
+
+    static func acknowledgeAo3(id: String) throws {
+        guard UUID(uuidString: id) != nil else { return }
+        let file = try ao3Directory().appendingPathComponent(id).appendingPathExtension("json")
+        if FileManager.default.fileExists(atPath: file.path) {
+            try FileManager.default.removeItem(at: file)
+        }
+    }
+}

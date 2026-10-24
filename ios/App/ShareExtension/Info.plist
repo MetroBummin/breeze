@@ -9,11 +9,14 @@
 <key>CFBundleDisplayName</key><string>Breeze</string>
 <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
 <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+<key>LSApplicationQueriesSchemes</key><array><string>kr-io-breeze</string></array>
 <key>NSExtension</key><dict>
 <key>NSExtensionPointIdentifier</key><string>com.apple.share-services</string>
 <key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
 <key>NSExtensionAttributes</key><dict>
 <key>NSExtensionActivationRule</key><dict>
 <key>NSExtensionActivationSupportsFileWithMaxCount</key><integer>1</integer>
+<key>NSExtensionActivationSupportsWebURLWithMaxCount</key><integer>1</integer>
+<key>NSExtensionActivationSupportsWebPageWithMaxCount</key><integer>1</integer>
 </dict></dict></dict>
 </dict></plist>

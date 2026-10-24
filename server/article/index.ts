@@ -32,7 +32,9 @@ const TIMEOUT_MS = 12_000;
 // Node-compatible transport pins validated DNS addresses and bounds streaming bodies.
 import {fetchPublic,publicUrl} from "./public-fetch.mjs";
 import {fetchXEmbed} from "./social-embed.mjs";
+import {fetchAo3} from "./ao3-fetch.mjs";
 let activeRequests=0;
+let ao3Active=0;
 function safeUrl(raw:string|null):URL|null{try{return raw?publicUrl(raw):null;}catch{return null;}}
 
 Deno.serve(async (req) => {
@@ -43,14 +45,25 @@ Deno.serve(async (req) => {
   const url = safeUrl(params.get("url"));
   if (!url) return json({ error: "bad_url", message: "열 수 없는 주소예요" }, 400);
   const asImage = params.get("as") === "image";
+  const ao3 = params.get("as") === "ao3";
+  const ao3Epub = ao3 && /\/downloads\/[1-9]\d{0,11}\/work\.epub$/.test(url.pathname);
+  if(ao3 && ao3Active>=1)return json({error:"busy",message:"잠시 후 다시 시도해 주세요"},503);
   if(activeRequests>=8)return json({error:"busy",message:"잠시 후 다시 시도해 주세요"},503);
   activeRequests++;
+  if(ao3)ao3Active++;
 
   const abort = new AbortController();
-  const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => abort.abort(), ao3Epub ? 45_000 : ao3 ? 20_000 : TIMEOUT_MS);
   try {
     if(params.get("as")==="x-oembed"){
       const result=await fetchXEmbed(url.href,abort.signal,fetchPublic);
+      return json(result.body,result.status);
+    }
+    if(ao3){
+      const result=await fetchAo3(url.href,abort.signal,fetchPublic);
+      if(result.bytes){
+        return new Response(result.bytes,{headers:{...CORS,"Content-Type":"application/epub+zip","Cache-Control":"no-store","X-Ao3-Url":result.url||"","Access-Control-Expose-Headers":"X-Ao3-Url"}});
+      }
       return json(result.body,result.status);
     }
     const upstream = await fetchPublic(url.href, {
@@ -125,5 +138,6 @@ Deno.serve(async (req) => {
   } finally {
     clearTimeout(timer);
     activeRequests--;
+    if(ao3)ao3Active--;
   }
 });
