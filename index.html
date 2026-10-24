@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="styles/pdf-ink.css?v=94029b49">
   <link rel="stylesheet" href="styles/reader.css?v=99b81fe1">
   <link rel="stylesheet" href="styles/dictionary.css?v=c7b494d3">
-  <link rel="stylesheet" href="styles/components.css?v=078567b5">
+  <link rel="stylesheet" href="styles/components.css?v=f7b90320">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=50b031d0">
   <link rel="stylesheet" href="styles/study-sets.css?v=2fbc3c48">
@@ -71,7 +71,7 @@
   <script defer src="config.js?v=6b1fbcda"></script>
 
   <!-- Ordered, no-build modules. Their dependency order is documented in ARCHITECTURE.md. -->
-  <script defer src="scripts/core/boot-safety.js?v=c253b59c"></script>
+  <script defer src="scripts/core/boot-safety.js?v=0efa9c06"></script>
   <script defer src="scripts/core/storage-quota.js?v=fff776fa"></script>
   <script defer src="scripts/core/lazy-lib.js?v=152792fc"></script>
   <script defer src="scripts/core/storage.js?v=6841c31a"></script>
@@ -93,7 +93,7 @@
   <script defer src="scripts/reader/formatting.js?v=0c0d268a"></script>
   <script defer src="scripts/ui/smart-crop.js?v=b12f166e"></script>
   <script defer src="scripts/library/library.js?v=056213e3"></script>
-  <script defer src="scripts/library/shared-links.js?v=9b5e1c4a"></script>
+  <script defer src="scripts/library/shared-links.js?v=b17c1144"></script>
   <script defer src="scripts/library/shared-files.js?v=b42ab8b4"></script>
   <script defer src="scripts/library/book-edit.js?v=5670e589"></script>
   <script defer src="scripts/library/book-cloud.js?v=4e754070"></script>
@@ -736,10 +736,10 @@
 </dialog>
 <div id="minitoast"></div>
 <div id="toast"></div>
-<div id="bootfail" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:300;
-  background:#B0483A;color:#fff;font:13px/1.5 -apple-system,sans-serif;padding:12px 16px;">
-  앱을 불러오는 중 문제가 생겼어요. 새로고침해도 계속되면 개발자에게 알려주세요.
-  <span id="bootfail-msg" style="opacity:.85"></span>
+<div id="bootfail" style="display:none">
+  <p>앱을 불러오는 중 문제가 생겼어요. 새로고침해도 계속되면 개발자에게 알려주세요.
+  <span id="bootfail-msg"></span></p>
+  <button type="button" id="bootfail-dismiss" aria-label="오류 알림 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
 </div>
 <div id="drop-overlay">여기에 놓으면 책이 추가됩니다</div>
 <input type="file" id="original-fileinput" accept=".pdf,.epub" hidden>

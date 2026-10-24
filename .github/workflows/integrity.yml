@@ -139,6 +139,7 @@ jobs:
           for engine in chromium webkit; do
             BREEZE_QA_ENGINE=$engine npm run test:bohemia-progress || status=1
             BREEZE_QA_ENGINE=$engine npm run test:home-reading-cards || status=1
+            BREEZE_QA_ENGINE=$engine npm run test:home-boot-banner || status=1
             BREEZE_QA_ENGINE=$engine npm run test:recent-reading || status=1
             BREEZE_QA_ENGINE=$engine npm run test:pdf-sidebar || status=1
           done

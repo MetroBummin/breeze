@@ -80,6 +80,7 @@ function successful(result){
   assert.deepEqual(downstream(result),[
     {tool:'node',args:['tools/verify-ios-release.mjs','--apply-cloud-build']},
     {tool:'npm',args:['ci','--ignore-scripts','--no-audit','--no-fund']},
+    {tool:'node',args:['tests/verify-startup-references.mjs']},
     {tool:'npm',args:['test']},{tool:'npm',args:['run','ios:sync']}
   ]);
   for(const entry of installs(result))assert.deepEqual(entry.env,{HOMEBREW_NO_AUTO_UPDATE:'1',HOMEBREW_NO_INSTALL_UPGRADE:'1',HOMEBREW_NO_INSTALL_CLEANUP:'1'});

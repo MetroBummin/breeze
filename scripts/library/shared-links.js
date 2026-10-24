@@ -69,6 +69,15 @@ function receiveSharedLinks(items) {
     }
   }
   sharedLinks = [...byURL.values()].sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+  scheduleSharedLinkPaint();
+}
+
+/* The shell can set an empty inbox, or deliver one, while deferred scripts are
+   still running. Home paint calls functions from scripts that come later
+   (`updateCompletionBadge` in reader.js). Wait until parsing finishes. */
+let sharedLinkPaintReady = document.readyState === 'complete';
+let sharedLinkPaintWaiting = false;
+function paintSharedLinkLibrary(){
   if (typeof activeAppView !== 'function') return;
   if (activeAppView() === 'home') {
     const rail = document.getElementById('casual-rail');
@@ -77,6 +86,16 @@ function receiveSharedLinks(items) {
     if (rail) rail.scrollLeft = scrollLeft;
   } else if (activeAppView() === 'casuals') renderCasualLibrary();
 }
+function scheduleSharedLinkPaint(){
+  if (!sharedLinkPaintReady) { sharedLinkPaintWaiting = true; return; }
+  paintSharedLinkLibrary();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  sharedLinkPaintReady = true;
+  if (!sharedLinkPaintWaiting) return;
+  sharedLinkPaintWaiting = false;
+  paintSharedLinkLibrary();
+});
 
 window.addEventListener('breeze-share-inbox', event => receiveSharedLinks(/** @type {CustomEvent} */ (event).detail));
 if (Array.isArray(nativeShareWindow.breezeShareInboxPending)) receiveSharedLinks(nativeShareWindow.breezeShareInboxPending);

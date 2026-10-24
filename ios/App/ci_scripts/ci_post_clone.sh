@@ -58,5 +58,6 @@ echo "Using $(command -v node): $(node --version), npm $(npm --version)"
 # Missing/invalid counters and checked-in release drift fail before npm install.
 node tools/verify-ios-release.mjs --apply-cloud-build
 npm ci --ignore-scripts --no-audit --no-fund
+node tests/verify-startup-references.mjs
 npm test
 npm run ios:sync
