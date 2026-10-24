@@ -168,14 +168,20 @@ html[data-breeze-target="toss"] #toss-ai-notice p{
   font:400 14px/1.5 var(--ui,sans-serif);
 }
 html[data-breeze-target="toss"] #toss-ai-notice button{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
+  width:auto;
   min-height:44px;
-  width:100%;
+  margin:0 auto;
+  padding:0 18px;
   border:0;
-  border-radius:16px;
-  background:#1c1c1e;
-  color:#fff;
+  border-radius:22px;
+  background:var(--am-glass);
+  box-shadow:var(--am-glass-shadow);
+  backdrop-filter:var(--am-blur);
+  -webkit-backdrop-filter:var(--am-blur);
+  color:var(--am-ink-primary);
   font:600 15px/1 var(--ui,sans-serif);
 }

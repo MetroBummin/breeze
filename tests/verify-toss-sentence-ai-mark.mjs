@@ -15,7 +15,7 @@ const dictionary=read('scripts/dictionary/dictionary.js');
 const tossSource=dictionary.slice(dictionary.indexOf('function breezeToss('), dictionary.indexOf('function wordPeekState('));
 const translation='그는 창밖을 힐끗 보았다.';
 const noticeTitle='인공지능이 만든 뜻과 해석';
-const noticeBody='단어나 문장을 누르면 인공지능이 문맥에 맞는 뜻과 해석을 만들어 보여 줘요. 만든 결과에는 AI 표시가 붙고, 저장한 단어는 이 미니앱 안에만 남아요.';
+const noticeBody='단어와 문장의 뜻은 AI가 만들어요. 만든 결과에는 AI 표시가 붙어요.';
 
 function boot(toss){
   const elements=new Map();
@@ -144,7 +144,8 @@ test('source keeps the sentence mark on AI answers and out of the regular styles
   assert.match(sentenceSource,/paintSentenceFor\(life,\{en:clean,ko:hit\.ko,ai:true\}\)/);
   assert.match(sentenceSource,/paintSentenceFor\(life,\{\s*en:clean,\s*ko:answer\.ko,\s*ai:true\s*\}\)/);
   assert.match(dictionary,/인공지능이 만든 뜻과 해석/);
-  assert.match(dictionary,/단어나 문장을 누르면 인공지능이 문맥에 맞는 뜻과 해석을 만들어 보여 줘요/);
+  assert.match(dictionary,/단어와 문장의 뜻은 AI가 만들어요\. 만든 결과에는 AI 표시가 붙어요\./);
+  assert.match(dictionary,/<button type="button" class="control-glass">확인<\/button>/);
   assert.doesNotMatch(read('index.html'),/ps-ko-ai-badge|sentence-peek-ai-badge/);
   assert.doesNotMatch(read('styles/dictionary.css'),/ps-ko-ai-badge|sentence-peek-ai-badge/);
   const tossCss=read('styles/toss.css');
@@ -159,6 +160,12 @@ test('source keeps the sentence mark on AI answers and out of the regular styles
   assert.match(noticeRule,/margin:\s*auto/);
   assert.match(noticeRule,/height:\s*fit-content/);
   assert.match(tossCss,/html\[data-breeze-target="toss"\] #toss-ai-notice::backdrop\{[^}]*background:\s*rgba\(0,\s*0,\s*0,\s*\.45\)/);
+  const noticeButton=tossCss.slice(tossCss.indexOf('#toss-ai-notice button{'));
+  assert.match(noticeButton,/background:\s*var\(--am-glass\)/);
+  assert.match(noticeButton,/box-shadow:\s*var\(--am-glass-shadow\)/);
+  assert.match(noticeButton,/color:\s*var\(--am-ink-primary\)/);
+  assert.match(noticeButton,/border-radius:\s*22px/);
+  assert.doesNotMatch(noticeButton,/width:\s*100%|#1c1c1e/);
 });
 
 test('Toss shows the sentence mark only on a displayed AI translation',()=>{

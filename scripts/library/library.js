@@ -601,7 +601,7 @@ function applyTossHomeChrome(){
   const title=document.getElementById('home-recommend-title');
   if(title){
     title.removeAttribute('data-i18n');
-    if(title.textContent!=='셜록 홈즈 오리지널') title.textContent='셜록 홈즈 오리지널';
+    if(title.textContent!=='셜록 홈즈') title.textContent='셜록 홈즈';
   }
   const kind=document.getElementById('home-recommend-kind');
   if(kind) kind.hidden=true;

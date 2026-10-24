@@ -296,7 +296,7 @@ test('toss home keeps Holmes on the original shelf and other books on 책장',()
   books.push({id:'saved-backrooms',kind:'txt',title:'Backrooms',author:'',longReadId:'backroom-homeward-bound'});
   c.renderHome();
   const title=document.getElementById('home-recommend-title');
-  assert.equal(title.textContent,'셜록 홈즈 오리지널');
+  assert.equal(title.textContent,'셜록 홈즈');
   assert.equal(title.hasAttribute('data-i18n'),false);
   assert.equal(document.getElementById('home-recommend-kind').hidden,true);
   assert.equal(document.getElementById('home-casuals').hidden,true);

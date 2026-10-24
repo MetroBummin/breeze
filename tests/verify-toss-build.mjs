@@ -113,7 +113,8 @@ test('shared guards run only when the toss flag is set',()=>{
   assert.match(read('scripts/reader/epub-original.js'),/appendEpubChapter[\s\S]*BREEZE_TARGET==='toss'/);
   assert.match(read('scripts/reader/pdf-navigation.js'),/renderEpubPreviewQueue[\s\S]*BREEZE_TARGET==='toss'/);
   assert.match(read('scripts/library/article-preview.js'),/BREEZE_TARGET==='toss'\)\{[\s\S]*createElement\('span'\)/);
-  assert.match(read('scripts/library/library.js'),/셜록 홈즈 오리지널/);
+  assert.match(read('scripts/library/library.js'),/textContent='셜록 홈즈'/);
+  assert.doesNotMatch(read('scripts/library/library.js'),/셜록 홈즈 오리지널/);
   assert.match(read('scripts/library/library.js'),/책장/);
   assert.match(read('scripts/ui/preferences.js'),/BREEZE_TARGET==='toss'/);
   const tossCss=read('styles/toss.css');
