@@ -699,7 +699,7 @@ function tossEnsureAiNotice(){
   if(!dialog){
     dialog=document.createElement('dialog');
     dialog.id='toss-ai-notice';
-    dialog.innerHTML='<h2>인공지능이 만든 뜻과 해석</h2><p>단어와 문장의 뜻은 AI가 만들어요. 만든 결과에는 AI 표시가 붙어요.</p><button type="button" class="control-glass">확인</button>';
+    dialog.innerHTML='<h2>인공지능이 만든 뜻과 해석</h2><p>단어와 문장의 뜻은 AI가 만들어요. 만든 결과에는 AI 표시가 붙어요.</p><button type="button">확인</button>';
     dialog.querySelector('button').onclick=()=>{
       try{ localStorage.setItem('breeze.toss.ai-notice','seen'); }catch(error){}
       dialog.close();
