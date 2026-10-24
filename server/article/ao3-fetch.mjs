@@ -9,7 +9,6 @@ const EPUB_LIMIT = 40_000_000;
 const PAGE_LIMIT = 2_000_000;
 
 const MESSAGES = {
-  ao3_restricted: "이 작품은 AO3에 로그인한 사람만 볼 수 있어요. 로그인을 우회하지 않아요.",
   ao3_missing: "그 주소에서 작품을 찾지 못했어요.",
   ao3_rate_limited: "AO3가 잠시 요청을 멈춰 달라고 했어요. 조금 뒤에 이 작품만 다시 시도해 주세요.",
   ao3_unavailable: "AO3에서 이 작품을 받을 수 없어요.",
@@ -19,16 +18,18 @@ const MESSAGES = {
 export function ao3PublicUrl(raw){
   const url = publicUrl(typeof raw === "string" ? raw : String(raw?.href || raw));
   const host = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
-  if (host !== "archiveofourown.org" && host !== "www.archiveofourown.org") throw new Error("bad_url");
+  const download = host === "download.archiveofourown.org";
+  if (host !== "archiveofourown.org" && host !== "www.archiveofourown.org" && !download) throw new Error("bad_url");
   url.protocol = "https:";
-  url.hostname = "archiveofourown.org";
+  url.hostname = download ? "download.archiveofourown.org" : "archiveofourown.org";
   url.port = "";
-  if (/\/users\/(?:login|auth)\b/i.test(url.pathname)) {
-    const error = new Error("ao3_restricted");
-    error.code = "ao3_restricted";
-    throw error;
-  }
+  if (/\/users\/(?:login|auth)\b/i.test(url.pathname)) throw new Error("bad_url");
   if (!ao3PathOk(url)) throw new Error("bad_url");
+  if (download) {
+    url.search = "";
+    if (!url.pathname.endsWith("/work.epub")) throw new Error("bad_url");
+    return url;
+  }
   for (const [key, value] of url.searchParams) {
     if ((key === "view_adult" || key === "view_full_work") && (value === "true" || value === "false")) continue;
     throw new Error("bad_url");
@@ -48,9 +49,8 @@ function ao3PathOk(url){
 function failure(status){
   const code = status === 429 ? "ao3_rate_limited"
     : status === 404 ? "ao3_missing"
-    : status === 401 || status === 403 ? "ao3_restricted"
     : "ao3_unavailable";
-  const http = code === "ao3_rate_limited" ? 429 : code === "ao3_missing" ? 404 : code === "ao3_restricted" ? 403 : 502;
+  const http = code === "ao3_rate_limited" ? 429 : code === "ao3_missing" ? 404 : 502;
   return {body: {error: code, message: MESSAGES[code]}, status: http};
 }
 
@@ -70,7 +70,6 @@ export async function fetchAo3(raw, signal, fetchPublic){
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "ao3_restricted") return failure(403);
     if (error instanceof Error && error.message === "too_big") return {body: {error: "ao3_too_big", message: MESSAGES.ao3_too_big}, status: 413};
     throw error;
   }

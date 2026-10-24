@@ -8,16 +8,22 @@ searches, or queues a second work behind the first.
 ## What is fetched
 
 AO3 already publishes one EPUB per work at
-`/downloads/{workId}/work.epub`. That file is the book Breeze opens. Chapters
-stay in the EPUB spine order, and the existing EPUB reader supplies tap lookup.
-Title and author come from the EPUB package document.
+`/downloads/{workId}/work.epub`. That URL answers with a redirect to
+`download.archiveofourown.org` for the same path. That host is the file, so
+the redirect is followed. No other path on that host is requested. The EPUB is
+the book Breeze opens. Chapters stay in the EPUB spine order, and the existing
+EPUB reader supplies tap lookup. Title and author come from the EPUB package
+document.
 
 The download route does not apply AO3's normal login check. A restricted work
 must therefore be recognized before that URL is requested. Breeze first loads
 one work or chapter page (`?view_adult=true` on that explicit work only). A
-page with a work body may continue to the EPUB. A login-only page, a redirect
-to `/users/login` or `/users/auth`, or an adult interstitial with no work body
-stops there. The EPUB is not requested, and no cookie or account is attached.
+chaptered work answers that URL with a redirect to its first chapter, which is
+still one work. A page with a work body may continue to the EPUB. Login-only
+means the page itself contains AO3's sentence "This work is only available to
+registered users of the Archive" and has no work body. A redirect, a 403, or a
+login URL is not that sentence. An adult interstitial with no work body stops
+there too. The EPUB is not requested, and no cookie or account is attached.
 `view_adult=true` records the person's continue for that one page. It is not a
 way around a login wall.
 
