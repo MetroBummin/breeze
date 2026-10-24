@@ -58,6 +58,8 @@
     font-size:clamp(24px,6.2vw,38px); line-height:1.5; letter-spacing:-.035em;}
   #copy{color:var(--ink); text-shadow:none; transition:opacity .5s ease;}
   .lp-line + .lp-line{margin-top:.15em;}
+  /* 첫 줄만 제목입니다. 크기는 옆 줄과 같은 슬롯 글꼴을 그대로 씁니다. */
+  h1.lp-line{margin:0;font:inherit;letter-spacing:inherit;}
   /* ---- 상표만 남습니다 ----
      한국어가 영어로 바뀔 때, 앞뒤의 말은 흐려졌다 돌아오고 `Breeze` 는 흐려지지
      않습니다. 줄 안에서 자리가 바뀌는 것만 옛 자리에서부터 조용히 미끄러져
