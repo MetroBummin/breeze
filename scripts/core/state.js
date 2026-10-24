@@ -469,6 +469,69 @@ function rememberAppView(view,replace){
 }
 let readerOpenIntent=0;
 function cancelPendingBookOpen(){readerOpenIntent++;}
+/* Reader, word study, and modal dialogs each freeze the document. Home scrolls
+   the document itself. iOS WKWebView does not recompute that scroll size after
+   `position:fixed` / `overflow:hidden` comes off, so a return trip stays stuck
+   on one screen until overflow is rewritten. */
+function clearInlineScrollLock(){
+  const root=document.documentElement, body=document.body;
+  for(const node of [root, body]){
+    if(!node) continue;
+    if(node.style.overflow==='hidden') node.style.removeProperty('overflow');
+    if(node.style.overflowY==='hidden') node.style.removeProperty('overflow-y');
+    if(node===root && node.style.overflowX==='hidden') node.style.removeProperty('overflow-x');
+    if(node.style.position==='fixed'){
+      node.style.removeProperty('position');
+      node.style.removeProperty('top');
+      node.style.removeProperty('left');
+      node.style.removeProperty('right');
+      node.style.removeProperty('width');
+    }
+    const height=node.style.height;
+    if(height==='100%'||height==='100vh'||height==='100dvh'||height==='100svh') node.style.removeProperty('height');
+  }
+  const app=document.getElementById('app');
+  if(app&&app.style.position==='fixed') app.style.removeProperty('position');
+  if(!document.querySelector('dialog[open]')){
+    for(const node of [root, body, app]) if(node) node.inert=false;
+  }
+}
+function wakeDocumentScroll(){
+  const root=document.documentElement, body=document.body;
+  const scroller=document.scrollingElement||root;
+  const y=scroller.scrollTop||0;
+  root.style.overflowY='auto';
+  body.style.overflowY='visible';
+  void root.offsetHeight;
+  root.style.removeProperty('overflow-y');
+  body.style.removeProperty('overflow-y');
+  const max=Math.max(0, scroller.scrollHeight-scroller.clientHeight);
+  if(max>0){
+    scroller.scrollTop=Math.min(max, y+1);
+    scroller.scrollTop=y;
+  }
+}
+function releaseHomeDocumentScroll(){
+  if(document.body.classList.contains('reading')||activeAppView()==='read'||activeAppView()==='study') return;
+  document.body.classList.remove('simple-word-cards');
+  const settings=document.getElementById('settings-modal');
+  const settingsOpen=!!(settings&&settings.classList.contains('on'));
+  if(!settingsOpen) document.body.classList.remove('settings-open');
+  const studyDialog=/** @type {HTMLDialogElement|null} */(document.getElementById('study-sets-dialog'));
+  if(!studyDialog||!studyDialog.open){
+    document.documentElement.classList.remove('study-sets-modal-open');
+    document.documentElement.style.removeProperty('--study-sets-scroll-top');
+  }
+  const notice=/** @type {HTMLDialogElement|null} */(document.getElementById('toss-ai-notice'));
+  if(notice&&notice.open){
+    notice.close();
+    if(notice.open) notice.removeAttribute('open');
+  }
+  clearInlineScrollLock();
+  if(settingsOpen||document.documentElement.classList.contains('study-sets-modal-open')) return;
+  if(document.documentElement.classList.contains('home-returning')) return;
+  wakeDocumentScroll();
+}
 function show(v,options){
   // Old history entries cannot reopen the deferred typed-test feature.
   if(v==='vocabulary-test'&&(typeof BreezeVocabularyTest==='undefined'||!BreezeVocabularyTest.ENABLED))v='vocab';
@@ -521,6 +584,8 @@ function show(v,options){
   if(settings.fromHistory&&v==='memory'&&history.state?.studySetsDirectoryScroll!==undefined)document.getElementById('study-sets-all')?.focus({preventScroll:true});
   const box = readerScroller();
   if(box && v!=='read'){ box.scrollTop = 0; box.scrollLeft = 0; }
+  if((v==='home'||v==='casuals'||v==='longform'||v==='vocab'||v==='memory')
+      && !(typeof studySetsIsOpen==='function'&&studySetsIsOpen())) releaseHomeDocumentScroll();
   if(typeof syncHomeNavigation==='function') syncHomeNavigation();
   if(typeof syncLoginNudge==='function') syncLoginNudge();
   if(appHistoryReady && !settings.fromHistory) rememberAppView(v,!!settings.replace);

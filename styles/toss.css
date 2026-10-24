@@ -47,6 +47,16 @@ html[data-breeze-target="toss"] #v-home #longform .section-link svg,
 html[data-breeze-target="toss"] #v-home #shelf .home-recommend-book .get{
   display:none;
 }
+/* A horizontal shelf with only overflow-x:auto computes overflow-y to auto.
+   iOS then treats the shelf as the scroll container and eats the vertical pan,
+   so Home never reaches the next shelf once the cards fill the screen. */
+html[data-breeze-target="toss"] #v-home :is(#casual-rail,#shelf,#home-casual-rail){
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y;
+}
 html[data-breeze-target="toss"] #v-home #casual-rail > .home-regular-tile{
   flex:0 0 min(61vw,560px);
   width:min(61vw,560px);

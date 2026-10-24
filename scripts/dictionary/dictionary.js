@@ -703,6 +703,13 @@ function tossEnsureAiNotice(){
     dialog.querySelector('button').onclick=()=>{
       try{ localStorage.setItem('breeze.toss.ai-notice','seen'); }catch(error){}
       dialog.close();
+      if(dialog.open) dialog.removeAttribute('open');
+      // showModal() can leave an inline overflow lock after close, especially
+      // on iOS. Drop that lock. The reader shell, if still open, keeps its own.
+      if(typeof clearInlineScrollLock==='function') clearInlineScrollLock();
+      if(typeof releaseHomeDocumentScroll==='function'
+          && !document.body.classList.contains('reading')
+          && activeAppView()!=='study') releaseHomeDocumentScroll();
     };
     document.body.appendChild(dialog);
   }

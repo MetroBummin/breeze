@@ -263,7 +263,12 @@ async function returnHomeFromReader(){
     });
     void homeReturnTransition.ready.catch(()=>{});
     await homeReturnTransition.finished;
-  }finally{root.classList.remove('home-returning');homeReturnTransition=null;homeReturnReadingOwner=null;}
+  }finally{
+    root.classList.remove('home-returning');homeReturnTransition=null;homeReturnReadingOwner=null;
+    // The return transition snapshots the fixed reader shell. Wake the document
+    // only after that overlay is gone, or WKWebView keeps the viewport height.
+    if(typeof releaseHomeDocumentScroll==='function' && activeAppView()!=='read') releaseHomeDocumentScroll();
+  }
 }
 async function resumeHomeBook(button){
   const book=homeResumeBook(),view=activeAppView();

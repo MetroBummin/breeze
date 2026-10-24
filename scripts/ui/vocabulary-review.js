@@ -474,6 +474,9 @@ function resetVocabularyReviewSurface(){
   ++simpleStudyEpoch;simpleCardMotion.reset();
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleWordCards.flipped=false;
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
+  // Word cards lock the document (`body.simple-word-cards`). Leaving study
+  // must drop that lock; otherwise Home stays one screen tall.
+  document.body.classList.remove('simple-word-cards');
 }
 function closeVocabularyReview(){
   if(activeAppView()!=='study')return;
