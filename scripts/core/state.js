@@ -447,8 +447,17 @@ function saveReadingState(){
   const previous = posOf(curBook.id);
   const measured = textProgressForBook(curBook,a);
   const logical = readerProgressAtEnd(measured==null ? previous.p||0 : measured);
+  // The original locator has to follow the text the reader is actually on.
+  // The same paragraph keeps its page fraction or character offset; a later
+  // paragraph takes that paragraph's source anchor instead of the old chapter.
+  let original=previous.original??null;
+  if(a&&a.pi!=null&&typeof sourceAnchorForParagraph==='function'){
+    const same=original&&typeof paragraphForSource==='function'
+      &&paragraphForSource(curBook,original)===a.pi;
+    if(!same) original=sourceAnchorForParagraph(curBook,a.pi)||original;
+  }
   const candidate = {...previous, y:readerScrollTop(),p:logical, t:Date.now(), mode:'text',
-    pi: a ? a.pi : null, dy: a ? a.dy : 0 };
+    pi: a ? a.pi : null, dy: a ? a.dy : 0, original};
   const changed=!sameProgressLocation(previous,candidate);
   const next=changed?candidate:{...candidate,t:previous.t||0};
   positions[curBook.id] = next;
