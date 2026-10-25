@@ -285,7 +285,7 @@ const expected={
     "tests/verify-home-controls-browser.mjs": "fd5348afb8679e58991a44df9f4f76b577ef88cfebe2ccca592862722acc2bc3",
     "tests/verify-home-heading-browser.mjs": "d2ff67974ea52fb8d22e36080f3d36d3289b0a022a4b577c82cccbc42ce131b0",
     "tests/verify-home-progress-sync-browser.mjs": "bded96dbe9cd6a92f709c5a77636dbc3609de4da4ad189a8d3d7207b90166eb8",
-    "tests/verify-home-reading-cards-browser.mjs": "272691ec3339da41ed9a69cb62ec62f4ffebb9a1764dbb83142bf31e4f34eb79",
+    "tests/verify-home-reading-cards-browser.mjs": "8a4c87055a538966e5c01821bc34627ddb438d23709d8bfd94c411fd5b318223",
     "tests/verify-home-reading-cards.mjs": "3fb47901a83c30e0b62a0de0975c01ec2f0b87e543eb967c932ef5f29a6f4c25",
     "tests/verify-home-recommend-kind.mjs": "f2d8324970a4c4210eb5b6e24c2fb324896d6e658e93a1b7f6d5242336ece631",
     "tests/verify-import-commit-browser.mjs": "8dcb62c2d8c95cf6df2ce86fbfef36ce3e3bf17d3ba2cf28aa2670f1408eb070",
