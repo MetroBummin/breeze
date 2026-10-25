@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 import {pdfGeometryFixture} from './helpers/pdf-geometry-fixture.mjs';
 const root=resolve(new URL('..',import.meta.url).pathname);
 const server=createServer((req,res)=>{const p=resolve(root,'.'+(req.url.split('?')[0]==='/'?'/index.html':req.url.split('?')[0]));try{res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});

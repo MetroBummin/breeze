@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {tmpdir} from 'node:os';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {browserPhase} from './helpers/browser-phase.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=process.env.BREEZE_COVER_PROOF||'/tmp/breeze-cover-chooser';mkdirSync(out,{recursive:true});

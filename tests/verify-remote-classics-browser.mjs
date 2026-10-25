@@ -4,7 +4,7 @@ import {mkdirSync, readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {extname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const proof = process.env.BREEZE_REMOTE_PROOF || '/tmp/breeze-remote-classics';

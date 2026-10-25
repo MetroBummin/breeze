@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=(process.env.BREEZE_SIDEBAR_SOURCE_ROOT||fileURLToPath(new URL('../',import.meta.url))).replace(/\/$/,'')+'/';
 const before=process.env.BREEZE_SIDEBAR_PHASE==='before',out=process.env.BREEZE_SIDEBAR_OUTPUT||'/tmp/breeze-sidebar-consistency-'+(before?'before':'after');mkdirSync(out,{recursive:true});

@@ -10,7 +10,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const output=resolve(process.env.BREEZE_LOOKUP_TONE_PROOF||'/tmp/breeze-light-lookup-tone');

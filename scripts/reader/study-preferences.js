@@ -37,13 +37,17 @@ function applyStarPreferences(){
   if(typeof selKey!=='undefined'&&selKey&&words[selKey]&&wordPanelOpen())renderPanel();
 }
 function applyEpubStarPreferences(doc){
+  const parent=doc.head||doc.documentElement;
+  if(!parent)return;
   let style=doc.getElementById('breeze-saved-mark-style');
   if(!style){
     style=doc.createElement('style');style.id='breeze-saved-mark-style';
     style.textContent=[1,2,3].map(n=>`::highlight(breeze-saved-${n}){background:var(--breeze-saved-${n})}`).join('\n');
-    doc.head.append(style);
+    parent.append(style);
   }
-  for(const n of [1,2,3])setStudyStyle(doc.documentElement.style,'--breeze-saved-'+n,starFill(n));
+  const root=doc.documentElement;
+  if(!root)return;
+  for(const n of [1,2,3])setStudyStyle(root.style,'--breeze-saved-'+n,starFill(n));
 }
 function setStarPreference(index,patch){
   const next=structuredClone(studyPrefs);Object.assign(next.stars[index-1],patch);

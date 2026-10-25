@@ -5,7 +5,7 @@ import {readFileSync,writeFileSync,mkdirSync,rmSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=(process.env.BREEZE_OPTICAL_SOURCE_ROOT||fileURLToPath(new URL('../',import.meta.url))).replace(/\/$/,'')+'/';
 const before=process.env.BREEZE_OPTICAL_PHASE==='before';

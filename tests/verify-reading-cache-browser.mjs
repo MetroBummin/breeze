@@ -5,7 +5,7 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, firefox, webkit, devices } from "playwright";
+import { chromium, firefox, webkit, devices } from "./helpers/bounded-playwright.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const server = createServer((request, response) => {

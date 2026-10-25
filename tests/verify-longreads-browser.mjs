@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit,decodeImage} from './helpers/bounded-playwright.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.jpg':'image/jpeg',
@@ -109,7 +109,7 @@ try{
         assert.equal(await page.locator('#rtext h3').filter({hasText:'Chapter 2'}).count(),1,'chapter 2 heading is missing');
         for(const illustration of await page.locator('#rtext .story-illustration').all()){
           await illustration.scrollIntoViewIfNeeded();
-          await illustration.locator('img').evaluate(image=>image.decode());
+          await decodeImage(illustration.locator('img'));
         }
         assert.equal(await page.locator('#rtext .story-illustration').evaluateAll(nodes=>nodes.every(node=>{
           const next=node.nextElementSibling;

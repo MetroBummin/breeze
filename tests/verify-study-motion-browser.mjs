@@ -2,7 +2,7 @@
    synthetic PointerEvents for deterministic lifecycle coverage, not native QA. */
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync,copyFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const out=process.env.BREEZE_MOTION_OUTPUT||'/tmp/breeze-motion-proof';mkdirSync(out,{recursive:true});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync,copyFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const proof=process.env.BREEZE_DIRECTION_PROOF||'/tmp/breeze-study-direction-proof';mkdirSync(proof,{recursive:true});

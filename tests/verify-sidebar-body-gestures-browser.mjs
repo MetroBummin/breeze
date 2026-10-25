@@ -3,7 +3,7 @@ import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {pdfGeometryFixture} from './helpers/pdf-geometry-fixture.mjs';
 const root=process.env.BREEZE_QA_ROOT?resolve(process.env.BREEZE_QA_ROOT)+'/':fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_SIDEBAR_BODY_PROOF||'/tmp/breeze-sidebar-body-gestures';mkdirSync(proof,{recursive:true});

@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,firefox,webkit} from 'playwright';
+import {chromium,firefox,webkit} from './helpers/bounded-playwright.mjs';
 import {scanPdf} from './helpers/pdf-scan-fixture.mjs';
 import {stressPdfOcrBrowser} from './helpers/pdf-ocr-browser-stress.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2'};

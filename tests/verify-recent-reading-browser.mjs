@@ -4,7 +4,7 @@ import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=resolve(process.env.BREEZE_RECENT_ROOT||fileURLToPath(new URL('../',import.meta.url)));
 const proof=process.env.BREEZE_RECENT_PROOF||'/tmp/breeze-recent-proof';mkdirSync(proof,{recursive:true});

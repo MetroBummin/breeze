@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {extname,resolve} from 'node:path';
 import {mkdtempSync,rmSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {pdfGeometryFixture} from './helpers/pdf-geometry-fixture.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));

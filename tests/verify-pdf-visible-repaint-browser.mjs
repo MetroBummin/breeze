@@ -8,7 +8,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const output=process.env.BREEZE_PDF_REPAINT_PROOF||'/tmp/breeze-pdf-visible-repaint';
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;
@@ -161,14 +161,22 @@ page.on('pageerror',e=>{if(!e.message.startsWith('ResizeObserver loop'))errors.p
    await page.screenshot({path:resolve(output,name+'-before-scroll.png')});
    // Identical physical-coordinate displacements. These cause genuine scroll
    // events, but do not claim to reproduce iOS's native finger/momentum path.
-   await page.evaluate(async()=>{
-    qaPhase='scroll';const box=readerScroller(),start=box.scrollTop;
-    const offsets=[...Array.from({length:18},(_,i)=>(i+1)*80),...Array.from({length:36},(_,i)=>1440-(i+1)*80),...Array.from({length:18},(_,i)=>-1440+(i+1)*80)];
-    for(const offset of offsets){box.scrollTop=start+offset;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-     const visible=qaVisible(),productionVisible=originalSession.kind==='pdf'?pdfPagesInView(originalSession):[];
-     qaSamples.push({t:performance.now(),y:box.scrollTop,visible,productionVisible,unsettled:visible.filter(n=>!originalSession.settled.has(n)),empty:visible.filter(n=>{const c=originalSession.pages[n-1].querySelector('canvas');return !c||!c.width||!c.height;}),sentenceOpen:sentenceLookupOpen(),cues:qaCueCount()});
-    }qaPhase='settle';if(qaPending)qaPending({explanation:'늦은 응답은 닫힌 창을 다시 열면 안 됩니다.'});
-   });
+   // The whole gesture is one page-side loop. WebKit can spend more than 20s
+   // painting it, and page.evaluate has no Playwright timeout, so return to
+   // Node between chunks. A chunk that never settles still fails at 20s.
+   const scrollStart=await page.evaluate(()=>{qaPhase='scroll';return readerScroller().scrollTop;});
+   const offsets=[...Array.from({length:18},(_,i)=>(i+1)*80),...Array.from({length:36},(_,i)=>1440-(i+1)*80),...Array.from({length:18},(_,i)=>-1440+(i+1)*80)];
+   for(let i=0;i<offsets.length;i+=12){
+    const slice=offsets.slice(i,i+12);
+    await page.evaluate(async({slice,start,settle})=>{
+     const box=readerScroller();
+     for(const offset of slice){box.scrollTop=start+offset;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      const visible=qaVisible(),productionVisible=originalSession.kind==='pdf'?pdfPagesInView(originalSession):[];
+      qaSamples.push({t:performance.now(),y:box.scrollTop,visible,productionVisible,unsettled:visible.filter(n=>!originalSession.settled.has(n)),empty:visible.filter(n=>{const c=originalSession.pages[n-1].querySelector('canvas');return !c||!c.width||!c.height;}),sentenceOpen:sentenceLookupOpen(),cues:qaCueCount()});
+     }
+     if(settle){qaPhase='settle';if(qaPending)qaPending({explanation:'늦은 응답은 닫힌 창을 다시 열면 안 됩니다.'});}
+    },{slice,start:scrollStart,settle:i+12>=offsets.length});
+   }
    await page.waitForTimeout(1000);
    if(kind==='pdf')await page.waitForFunction(()=>pdfPagesInView(originalSession).every(n=>originalSession.settled.has(n)),{timeout:30000});
    const after=await page.evaluate(()=>qaSnapshot()),events=await page.evaluate(()=>qaEvents),samples=await page.evaluate(()=>qaSamples);

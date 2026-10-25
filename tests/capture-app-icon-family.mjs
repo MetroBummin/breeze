@@ -5,7 +5,7 @@ import {readFileSync,writeFileSync,mkdirSync,rmSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {appFamilyScenes,assertAppFamilyScene,createAppFamilyFolder,captureAppFamilyStudy} from './helpers/app-icon-family-scenes.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const root=(process.env.BREEZE_FAMILY_ROOT||fileURLToPath(new URL('../',import.meta.url))).replace(/\/$/,'')+'/';

@@ -5,7 +5,7 @@ import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_HOLMES_READABILITY_PROOF||'/tmp/breeze-holmes-readability-proof';mkdirSync(proof,{recursive:true});
 const audit=JSON.parse(readFileSync(resolve(root,'docs/content/holmes-readability/boundaries.json')));

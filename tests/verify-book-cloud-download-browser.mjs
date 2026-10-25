@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import {readFileSync} from 'node:fs';
-import {chromium,firefox,webkit} from 'playwright';
+import {chromium,firefox,webkit} from './helpers/bounded-playwright.mjs';
 
 const cloud=readFileSync(new URL('../scripts/library/book-cloud.js',import.meta.url));
 const server=http.createServer((req,res)=>{

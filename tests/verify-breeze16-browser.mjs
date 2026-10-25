@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const server=createServer((req,res)=>{

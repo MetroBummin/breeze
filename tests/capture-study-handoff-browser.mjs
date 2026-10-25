@@ -5,7 +5,7 @@ import {mkdirSync,writeFileSync,mkdtempSync,rmSync,copyFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const out=process.env.BREEZE_MOTION_OUTPUT||'/tmp/breeze-motion-proof';mkdirSync(out,{recursive:true});
 const baseline='f34cef95f4cec5835e60dfc7ca831d7020e75c7f',scratch=mkdtempSync(join(tmpdir(),'breeze-handoff-'));

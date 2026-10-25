@@ -3,7 +3,7 @@ import {mkdirSync, readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {extname, resolve, sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium, webkit} from 'playwright';
+import {chromium, webkit} from './helpers/bounded-playwright.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_HOME_PROGRESS_PROOF||'/tmp/breeze-home-progress';

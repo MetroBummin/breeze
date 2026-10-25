@@ -5,7 +5,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 import {pdfGeometryFixture} from './helpers/pdf-geometry-fixture.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_POINTER_INK_PROOF||'/tmp/breeze-pdf-pointer-ink';

@@ -5,7 +5,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Script} from 'node:vm';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),out='/tmp/breeze-client-polish';mkdirSync(out,{recursive:true});
 // Build a valid old schedule outside the browser: the shipped OFF page must not
 // load the dormant engine merely to manufacture this regression fixture.

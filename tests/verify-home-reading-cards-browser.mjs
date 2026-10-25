@@ -4,7 +4,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit,decodeImage} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=process.env.BREEZE_PROGRESS_ROOT?resolve(process.env.BREEZE_PROGRESS_ROOT)+'/':fileURLToPath(new URL('../',import.meta.url));
 const story='sherlock-holmes-scandal-in-bohemia',proof=process.env.BREEZE_HOME_READING_PROOF||'/tmp/breeze-home-reading-cards-proof';mkdirSync(proof,{recursive:true});
@@ -99,7 +99,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   for(const [width,height] of [[390,844],[320,568],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
    await page.locator(`#shelf [data-local-book="${id}"]`).click();await readerReady(page);
-   await page.locator('img[src$="scandal-in-bohemia-05.webp"]').evaluate(img=>img.decode());
+   await decodeImage(page.locator('img[src*="scandal-in-bohemia-05.webp"]'));
    await page.evaluate(()=>{fontSize(1);return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});
    await scrollToParagraph(page,177,engine);const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureAnchor()}));
    await page.evaluate(()=>returnHomeFromReader());const home=await homeState(page,id);

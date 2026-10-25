@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {tmpdir} from 'node:os';
 import {resolve,join,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 // Original synthetic PDF: real 80-page parsing without external document/network fixtures.

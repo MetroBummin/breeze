@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {textRotationSource} from './helpers/text-rotation-source.mjs';
 
 const source=textRotationSource(),css=readFileSync(new URL('../styles/reader.css',import.meta.url),'utf8');
