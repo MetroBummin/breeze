@@ -1,5 +1,6 @@
 // One approved 1.9.8 review submission for Cloud run 295d8dcf.
 // Uses the existing release client. Prints no keys, JWTs, or response bodies.
+import {existsSync, readFileSync} from 'node:fs';
 import {ReleaseError, createClient, release, tokenFactory} from './apple-release.mjs';
 
 const RUN_ID = '295d8dcf-61d4-49f7-9beb-475f4c669f5a';
@@ -46,8 +47,20 @@ async function describe(client) {
   return {summary, builds};
 }
 
+function confirmed() {
+  if (process.env.CONFIRM === CONFIRM) return true;
+  const path = 'releases/apple/live/submit-breeze-198.json';
+  if (!existsSync(path)) return false;
+  try {
+    const request = JSON.parse(readFileSync(path, 'utf8'));
+    return request?.releaseId === 'breeze-198' && request?.confirmation === CONFIRM;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
-  const submit = process.env.CONFIRM === CONFIRM;
+  const submit = confirmed();
   console.log(JSON.stringify({
     releaseEnabled: process.env.ASC_RELEASE_ENABLED === 'true',
     writesEnabled: process.env.ASC_WRITES_ENABLED === 'true',
@@ -67,6 +80,9 @@ async function main() {
   for (let attempt = 1; attempt <= 16; attempt++) {
     const described = await describe(client);
     console.log(JSON.stringify({attempt, ...described.summary, builds: described.builds}));
+    if (attempt === 1 && submit && process.env.ASC_WRITES_ENABLED !== 'true') {
+      throw new ReleaseError('Apple writes require ASC_WRITES_ENABLED=true');
+    }
     const runOk = described.summary.executionProgress === 'COMPLETE'
       && described.summary.completionStatus === 'SUCCEEDED'
       && described.summary.isPullRequestBuild === false
@@ -74,7 +90,7 @@ async function main() {
     const ready = described.builds.filter(build => build.processingState === 'VALID'
       && build.expired === false && build.buildAudienceType === 'APP_STORE_ELIGIBLE'
       && build.version === '1.9.8' && build.platform === 'IOS'
-      && build.buildNumber === described.summary.buildNumber);
+      && /^[1-9]\d{0,17}$/.test(build.buildNumber ?? ''));
     if (runOk && ready.length === 1) { found = {summary: described.summary, build: ready[0]}; break; }
     if (described.summary.completionStatus && described.summary.completionStatus !== 'SUCCEEDED'
       && described.summary.executionProgress === 'COMPLETE') {

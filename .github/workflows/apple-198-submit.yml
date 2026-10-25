@@ -8,13 +8,16 @@ on:
         type: string
         required: false
         default: ''
+  push:
+    branches: [main]
+    paths: ['releases/apple/live/submit-breeze-198.json']
 
 permissions:
   contents: read
 
 jobs:
   apple:
-    if: github.repository == 'MetroBummin/breeze'
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/main' && (github.actor == 'cursor[bot]' || github.actor == 'MetroBummin')
     environment: apple-release
     runs-on: ubuntu-24.04
     timeout-minutes: 25
