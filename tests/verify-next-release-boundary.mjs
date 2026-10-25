@@ -281,7 +281,7 @@ const expected={
     "tests/verify-gesture-ownership.mjs": "39cd65f26f275b5fb2705f61b68ebf5b775da7d3c6e02f6930a922c4aaa370d2",
     "tests/verify-header-controls-browser.mjs": "5786f769a4a0682c46abd3402c4b05b3c86f0f3ba57436f1a646e97e36d4113c",
     "tests/verify-holmes-collection.mjs": "182e221b3c1f6b81fedfe5c578b99b86c90c7f39f1fb9925af11b705c4d0f979",
-    "tests/verify-holmes-illustrations-browser.mjs": "f805e4416a303ae62270b44153ba10576e3af98e0d397b65d8b1be10d7290161",
+    "tests/verify-holmes-illustrations-browser.mjs": "460875da7c52d7931278fba929f9e7a159a7568de4be71d85fe1debbabb03f1c",
     "tests/verify-home-controls-browser.mjs": "35aa4148e4123401f0d2c8d96027cf659bf7fa10ca9442b4f28c2e4e6e6982d9",
     "tests/verify-home-heading-browser.mjs": "6d37c03ca1da33562fda79bf479d501f556612b73bf1aadff6a0158433b80ea4",
     "tests/verify-home-progress-sync-browser.mjs": "c53dc8f4d4b2341561ada8eef0c2f146fb0144ade6bea215fd940d77350a692f",
@@ -301,7 +301,7 @@ const expected={
     "tests/verify-learning-sync.mjs": "8eea53b910fd3a5948eb295fa2db17f48489a9243d0c415d607ba49812be54f4",
     "tests/verify-library-refresh-browser.mjs": "e3e8c83168465a533e6d4823867736cf0c8ccc26198256530916ec48c53659c1",
     "tests/verify-longread-preview-browser.mjs": "dc34ac46160e20bc667a88c426388cc9686716277935c86839878d8a3d5d3be4",
-    "tests/verify-longreads-browser.mjs": "d2cf73feaa516cc475297680711761dff1cfc0469e904d996f3c8519e195141e",
+    "tests/verify-longreads-browser.mjs": "4c9a497628335b47da53f1dc543cc02090f5b75696e7bdb68bad5f4dd56e539c",
     "tests/verify-lookup-contract.mjs": "5532f4c4daa85ae0b3964fe1eb9c88b462eaa5d4219bb6df8164cd1b4fa74af3",
     "tests/verify-lookup-work-browser.mjs": "fb805a9051e236e0798e3e1c19b61ea3d080d6d6f39f6fd6ae30e9a6cc07972d",
     "tests/verify-memory-edit-filter-browser.mjs": "b7839052b7d5961d9854814e3954cf6c3d3cd53f75ce7dcc476c61140c684ee3",
@@ -472,7 +472,7 @@ const expected={
     "tests/verify-pdf-pointer-ink-browser.mjs": "0cfae5df42348dea6a0ee506a2b6fb367ef31d4abc32d2aa7e9dd251b7aee6cb",
     "tests/verify-pdf-sidebar-motion-browser.mjs": "9909cd7a56931dd3ca42fb6bb65e1ed331298a9e75cc766695c94048a6f07c7b",
     "tests/verify-pdf-tap-feedback-browser.mjs": "1db05fc26e4d2fef3e21b7932299a6a582ee6979b9b52820ed34eb03556c0452",
-    "tests/verify-pdf-visible-repaint-browser.mjs": "abb44bcbee55dc1b57202abe316e03465f58b22f6d2789ebc0feb2c18f700c8a",
+    "tests/verify-pdf-visible-repaint-browser.mjs": "aa7e0931877baa31bad98596215e2a139f42e55e18dbe96c35335d558313d250",
     "tests/verify-preview-intent-browser.mjs": "cbc1313e8a8393d1ba1e773391a678d8d365360d57587e38528fd09bd1edf8bd",
     "tests/verify-reader-211-browser.mjs": "b64ea62fa43ea2e1c3cbe5eb76bda31f73cca2ed5cdb9a2c6c5a4242e4659aaf",
     "tests/verify-reader-feedback-browser.mjs": "78e379bd316d3d45735c1c2d7002de161fee0bc29b1644f67e2d027095e8405f",
@@ -498,7 +498,8 @@ const expected={
     "tests/verify-word-morph-browser.mjs": "ee43c42ba1b2abb935c4822aca28250dcd000c2cf2b9ae7b88bf9910f36f6ee1",
     "tests/verify-word-pinch-browser.mjs": "6bbeeac3ed6e989f4726d7aabf6394c38808743416a150876e54f52496b851b7",
     "tests/verify-word-scroll-idle-browser.mjs": "667edca25190192d3da7d7d4c6aa6b8168f20b9303bb95e852f7a5340c3fb9e2",
-    "tests/helpers/bounded-playwright.mjs": "f38918a259de2a73457c889364a6c4d62ebff742997fbfe8be86954535587968",
+    "tests/helpers/bounded-playwright.mjs": "a69bf015810dd772dc065830d448a91a00f51c0f16eff689de96ce19a1f297ef",
+    "tests/measure-breeze271-baseline.mjs": "d1d581f9b119f1242c1cc5e693938fe630ef52074b8fce3a5335591acefbbaa7",
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
 const git=(...args)=>execFileSync('git',args,{cwd:root,maxBuffer:64*1024*1024});

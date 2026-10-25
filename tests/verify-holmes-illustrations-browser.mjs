@@ -3,7 +3,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {chromium,webkit,decodeImage} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const slugs=['speckled-band','scandal-in-bohemia','red-headed-league','final-problem','hound-of-the-baskervilles'];
 const proof='/tmp/breeze-holmes-integration-proof';mkdirSync(proof,{recursive:true});
@@ -60,7 +60,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
    }
    for(const scene of scenes){
     const figure=page.locator(`#rtext .story-illustration[data-scene="${scene.id}.webp"]`);
-    await figure.scrollIntoViewIfNeeded();await figure.locator('img').evaluate(img=>img.decode());
+    await figure.scrollIntoViewIfNeeded();await decodeImage(figure.locator('img'));
     const actual=await figure.evaluate(fig=>({pi:Number([...document.querySelectorAll('#rtext [data-pi],#rtext .story-illustration')][[...document.querySelectorAll('#rtext [data-pi],#rtext .story-illustration')].indexOf(fig)+1].dataset.pi),loaded:fig.querySelector('img').naturalWidth>0,ratio:fig.querySelector('img').getBoundingClientRect().width/fig.querySelector('img').getBoundingClientRect().height}));
     assert.equal(actual.pi,scene.verifiedPlacement.afterParagraph1Based);assert.equal(actual.loaded,true);assert.ok(Math.abs(actual.ratio-2)<.01);
    }
@@ -97,7 +97,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
    await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),saved.id);await page.waitForFunction(()=>!readerPositionPending());
    for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
     await page.setViewportSize({width,height});await page.evaluate(d=>{darkMode=d;applyDark();},dark);
-    const figure=page.locator('#rtext .story-illustration').first();await figure.scrollIntoViewIfNeeded();await figure.locator('img').evaluate(img=>img.decode());
+    const figure=page.locator('#rtext .story-illustration').first();await figure.scrollIntoViewIfNeeded();await decodeImage(figure.locator('img'));
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.screenshot({path:`${proof}/${engine.name()}-${slug}-${width}x${height}-${dark?'dark':'light'}.png`});
    }

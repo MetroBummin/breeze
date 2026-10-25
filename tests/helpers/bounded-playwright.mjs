@@ -32,30 +32,38 @@ function boundMethod(proto,method){
 }
 function boundPage(page){
  if(!page)return page;
- if(page.__breezeBound)return page.__breezeBound;
- page.__breezeBound=(async()=>{
-  page.setDefaultTimeout(stepMs);
-  page.setDefaultNavigationTimeout(stepMs);
-  boundMethod(Object.getPrototypeOf(page),'evaluate');
-  boundMethod(Object.getPrototypeOf(page),'evaluateHandle');
-  const frame=page.mainFrame?.();
-  if(frame){
-   boundMethod(Object.getPrototypeOf(frame),'evaluate');
-   boundMethod(Object.getPrototypeOf(frame),'evaluateHandle');
+ if(page.__breezeBound)return page;
+ page.__breezeBound=true;
+ page.setDefaultTimeout(stepMs);
+ page.setDefaultNavigationTimeout(stepMs);
+ boundMethod(Object.getPrototypeOf(page),'evaluate');
+ boundMethod(Object.getPrototypeOf(page),'evaluateHandle');
+ const frame=page.mainFrame?.();
+ if(frame){
+  boundMethod(Object.getPrototypeOf(frame),'evaluate');
+  boundMethod(Object.getPrototypeOf(frame),'evaluateHandle');
+ }
+ const locator=Object.getPrototypeOf(page.locator('html'));
+ boundMethod(locator,'evaluate');
+ boundMethod(locator,'evaluateHandle');
+ // Bound element-handle evaluate when a test asks for one. Do not query the
+ // document here: that runs before the caller's init scripts.
+ if(!locator.__breezeElementHandle){
+  const original=locator.elementHandle;
+  if(typeof original==='function'){
+   locator.elementHandle=async function(...args){
+    const handle=await original.apply(this,args);
+    if(handle){
+     const proto=Object.getPrototypeOf(handle);
+     boundMethod(proto,'evaluate');
+     boundMethod(proto,'evaluateHandle');
+    }
+    return handle;
+   };
+   locator.__breezeElementHandle=true;
   }
-  const locator=Object.getPrototypeOf(page.locator('html'));
-  boundMethod(locator,'evaluate');
-  boundMethod(locator,'evaluateHandle');
-  const handle=await page.locator('html').elementHandle().catch(()=>null);
-  if(handle){
-   const proto=Object.getPrototypeOf(handle);
-   boundMethod(proto,'evaluate');
-   boundMethod(proto,'evaluateHandle');
-   await handle.dispose().catch(()=>{});
-  }
-  return page;
- })();
- return page.__breezeBound;
+ }
+ return page;
 }
 function boundContext(context){
  const open=context.newPage.bind(context);
@@ -90,13 +98,23 @@ export const firefox=boundEngine(firefoxEngine);
 export function decodeImage(locator){
  return locator.evaluate(img=>new Promise((resolve,reject)=>{
   const timer=setTimeout(()=>reject(Error('illustration decode never settled')),8000);
-  const finish=()=>img.decode().then(()=>{clearTimeout(timer);resolve();},error=>{clearTimeout(timer);reject(error);});
+  const fail=error=>{clearTimeout(timer);reject(error instanceof Error?error:Error(String(error&&error.message||error)));};
+  const finish=()=>img.decode().then(()=>{clearTimeout(timer);resolve();},error=>{
+   // Chromium rejects decode() when a lazy image's src is still settling.
+   if(error&&error.name==='EncodingError'&&!(img.complete&&img.naturalWidth)){
+    img.addEventListener('load',()=>img.decode().then(()=>{clearTimeout(timer);resolve();},fail),{once:true});
+    return;
+   }
+   fail(error);
+  });
   if(img.complete&&img.naturalWidth){finish();return;}
   img.loading='eager';
   img.addEventListener('load',finish,{once:true});
-  img.addEventListener('error',()=>{clearTimeout(timer);reject(Error('illustration failed to load'));},{once:true});
+  img.addEventListener('error',()=>fail(Error('illustration failed to load')),{once:true});
   const src=img.getAttribute('src');
-  if(!src){clearTimeout(timer);reject(Error('illustration has no src'));return;}
-  img.src=src.split('?')[0]+'?eager=1';
+  if(!src){fail(Error('illustration has no src'));return;}
+  const next=src.split('?')[0]+'?eager=1';
+  if(src===next){finish();return;}
+  img.src=next;
  }));
 }
