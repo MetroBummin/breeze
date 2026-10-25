@@ -68,7 +68,7 @@ async function snapshot(token) {
   const submissions = await list(token, `/v1/apps/${APP_ID}/reviewSubmissions?filter[platform]=IOS&limit=20`);
   const related = [];
   for (const submission of submissions) {
-    const items = await list(token, `/v1/reviewSubmissions/${submission.id}/items?limit=20`);
+    const items = await list(token, `/v1/reviewSubmissions/${submission.id}/items?include=appStoreVersion&limit=20`);
     const matches = items.filter(item => item.relationships?.appStoreVersion?.data?.id === version.id);
     if (!matches.length) continue;
     if (matches.length !== 1 || items.length !== 1) throw new ReleaseError('Review submission does not contain exactly this version');

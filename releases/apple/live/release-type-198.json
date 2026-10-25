@@ -2,5 +2,6 @@
   "confirmation": "release-type:breeze-198",
   "version": "1.9.8",
   "buildNumber": "345",
-  "releaseType": "AFTER_APPROVAL"
+  "releaseType": "AFTER_APPROVAL",
+  "readBack": true
 }
