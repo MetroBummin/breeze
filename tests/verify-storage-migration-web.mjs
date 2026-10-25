@@ -22,16 +22,16 @@ try{
 
 async function openPage(init){
   const context=await browser.newContext(mobile?phone:desktop);
-  const page=await context.newPage();
-  const errors=[];
-  page.on('pageerror',error=>errors.push(error.message));
-  if(init) await page.addInitScript(init);
-  await page.addInitScript(()=>{window.__breezeNativeSetItem=Storage.prototype.setItem;});
-  await page.addInitScript(()=>{
+  if(init) await context.addInitScript(init);
+  await context.addInitScript(()=>{window.__breezeNativeSetItem=Storage.prototype.setItem;});
+  await context.addInitScript(()=>{
     const persist=navigator.storage&&navigator.storage.persist?navigator.storage.persist.bind(navigator.storage):null;
     window.__persistCalls=0;
     if(navigator.storage) navigator.storage.persist=function(){window.__persistCalls++;return persist?persist():Promise.resolve(false);};
   });
+  const page=await context.newPage();
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
   await prepareStudyPage(page,server.url);
   return {context,page,errors};
 }

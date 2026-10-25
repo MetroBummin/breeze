@@ -353,7 +353,7 @@ const expected={
     "tests/verify-source-dark.mjs": "46032165186f4aa7e6294edb534118e26e13780243d16df27a0bcce34e6fd52e",
     "tests/verify-speckled-band.mjs": "b356e66ec3ac36e53f370c5416e821329b6611b8fa2c0389a1d14d1ee11185ff",
     "tests/verify-storage-migration-browser.mjs": "ede421b31b48e82052df66190e19c4d5d84c42601bd9b4cb98965dda95f0c183",
-    "tests/verify-storage-migration-web.mjs": "14306cd3e223dec7499af3cbd42a8e4f7598db43e36dbf9226d0b20491a9e449",
+    "tests/verify-storage-migration-web.mjs": "00aa15f0ae0c066aa843c67a885996a9aa704a94476aa49e908556399b868d29",
     "tests/verify-storage-migration.mjs": "f6593a7e7a6e9bdcbd233461f482994bfee708bb60bcc7bd5fdd71d56adafeab",
     "tests/verify-storage-quota-browser.mjs": "dd13e78c8cd24a3c65cbde0cc0214b815a827851f698f48daa848a41f89e7e79",
     "tests/verify-storage-quota.mjs": "ba84ace85d2e2e26bc6bda10e0b46a07272018104682164c6ebb9ae41166cb72",
