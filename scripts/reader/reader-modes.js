@@ -463,6 +463,11 @@ function savedPlaceReleased(){
   const session=typeof originalSession!=='undefined'?originalSession:null;
   return !!(session&&session.userMovedPlace);
 }
+/* A previous visit's hand scroll must not veto this text-to-original landing.
+   A wheel or touch during this switch sets the flag again and still wins. */
+function beginOriginalModeRestore(session){
+  if(session) session.userMovedPlace=false;
+}
 function stabilizePdfModeTarget(record,target,bridge,changeToken,bookAtStart){
   if(!record || record.kind!=='pdf' || !target) return;
   [360,900].forEach(delay=>setTimeout(async()=>{
@@ -556,6 +561,7 @@ async function switchReaderMode(mode,options){
   suspendReaderScrollSave(1400);
   holdReaderPillProgress();
   currentReaderMode = mode;
+  if(mode==='original') beginOriginalModeRestore(originalSession);
   closePanel();
 
   document.body.classList.toggle('reader-original',mode==='original');

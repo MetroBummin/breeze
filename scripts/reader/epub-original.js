@@ -524,7 +524,14 @@ async function openOriginalEpub(book,record,token){
     slots[index]=section;
   }
   const filled=new Set();
-  async function appendEpubChapter(index){
+  const chapterJobs=new Map();
+  function appendEpubChapter(index){
+    let job=chapterJobs.get(index);
+    if(!job){ job=loadEpubChapter(index); chapterJobs.set(index,job); }
+    return job;
+  }
+  session.ensureChapter=appendEpubChapter;
+  async function loadEpubChapter(index){
     if(token!==originalLoadToken||filled.has(index)||index<0||index>=archive.spine.length)return;
     filled.add(index);
     const chapter=archive.spine[index];
@@ -1067,8 +1074,22 @@ function epubSpineForSource(source){
     }
   }
   const spine=Number(source&&source.spine);
-  if(Number.isInteger(spine)&&spine>=0&&spine<frames.length&&frames[spine])return spine;
-  return Math.max(0,Math.min(Math.max(frames.length-1,0),Number.isFinite(spine)?spine:0));
+  if(Number.isInteger(spine)&&spine>=0)return spine;
+  return 0;
+}
+async function ensureEpubChaptersThrough(spine){
+  const session=originalSession;
+  if(!session||session.kind!=='epub'||typeof session.ensureChapter!=='function') return false;
+  const last=Number(spine);
+  const total=session.archive&&session.archive.spine?session.archive.spine.length:0;
+  if(!Number.isInteger(last)||last<0||!total) return false;
+  const end=Math.min(last,total-1);
+  for(let index=0;index<=end;index++){
+    if(session.frames[index]) continue;
+    await session.ensureChapter(index);
+    if(originalSession!==session) return false;
+  }
+  return !!session.frames[end];
 }
 function epubAnchorScrollOffset(frame,source){
   const element=frame&&frame.contentDocument
@@ -1124,6 +1145,8 @@ function epubRestoreOwnsPosition(){
 }
 
 async function restoreEpubAnchor(source,inset,_changeToken,isCurrent){
+  if(!originalSession)return false;
+  await ensureEpubChaptersThrough(source&&source.spine);
   if(!originalSession)return false;
   const spine=epubSpineForSource(source);
   const frame=originalSession.frames[spine];
