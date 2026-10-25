@@ -1,0 +1,31 @@
+name: Apple 1.9.8 What's New
+
+on:
+  push:
+    branches: [main]
+    paths: ['releases/apple/live/whats-new-198.json']
+
+permissions:
+  contents: read
+
+jobs:
+  notes:
+    if: github.repository == 'MetroBummin/breeze' && github.ref == 'refs/heads/main' && (github.actor == 'cursor[bot]' || github.actor == 'MetroBummin')
+    environment: apple-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: '24.19.0'
+      - name: Update the Korean What's New for build 345
+        env:
+          ASC_APP_ID: ${{ vars.ASC_APP_ID }}
+          ASC_KEY_TYPE: ${{ vars.ASC_KEY_TYPE }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: node tools/apple-whats-new-198.mjs
