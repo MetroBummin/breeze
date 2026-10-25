@@ -499,6 +499,7 @@ const expected={
     "tests/verify-word-pinch-browser.mjs": "6bbeeac3ed6e989f4726d7aabf6394c38808743416a150876e54f52496b851b7",
     "tests/verify-word-scroll-idle-browser.mjs": "667edca25190192d3da7d7d4c6aa6b8168f20b9303bb95e852f7a5340c3fb9e2",
     "tests/helpers/bounded-playwright.mjs": "c3e1a4eb6681356da5452509831c3dc9186d4bfeb7f21068dd70783b0eb467d4",
+    "scripts/reader/study-preferences.js": "8202e181fad6835eca1c8399aa73936810634cf2cc2c5c2e1a491658bc6f1604",
     "tests/measure-breeze271-baseline.mjs": "d1d581f9b119f1242c1cc5e693938fe630ef52074b8fce3a5335591acefbbaa7",
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];
