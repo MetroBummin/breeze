@@ -138,7 +138,8 @@ build. Xcode Cloud assigns the next counter, so this baseline is not that
 upload number. This archive contains the home boot-banner fix, the public
 AO3 work import, and the text-to-original reading position. Marketing version
 stays 1.9.8 because 1.9.7 (338) is already the previous TestFlight build.
-It is not submitted for App Store review.
+Xcode Cloud run 295d8dcf produced App Store build 345 for commit 3423d020.
+That build was submitted for review and is waiting for review. Release stays manual.
 
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
