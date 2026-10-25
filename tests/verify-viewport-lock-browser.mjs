@@ -5,7 +5,7 @@
    universal touch-action, native-shell font sizes, EPUB iframe viewport) and
    still runs double-tap, pinch, and input focus on each main screen.
    In-reader PDF zoom is a CSS transform and must keep working. */
-import {chromium, webkit, devices} from 'playwright';
+import {chromium, webkit, devices} from './helpers/bounded-playwright.mjs';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFileSync} from 'node:fs';

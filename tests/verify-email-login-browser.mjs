@@ -1,4 +1,4 @@
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {createServer} from 'node:http';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {resolve,extname} from 'node:path';

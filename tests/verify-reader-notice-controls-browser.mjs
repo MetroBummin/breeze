@@ -3,7 +3,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),proof='/tmp/breeze-reader-notice-212';mkdirSync(proof,{recursive:true});
 const server=createServer((req,res)=>{

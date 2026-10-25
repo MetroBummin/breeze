@@ -6,7 +6,7 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),baseline=process.env.BREEZE_HOLMES_BASELINE;
 if(!baseline){console.log('SKIP previous-main cache migration: set BREEZE_HOLMES_BASELINE to a clean e7b61d5 checkout (whole-story offline tests run separately).');process.exit(0);}
 let next=false;

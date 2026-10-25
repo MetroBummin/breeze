@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=resolve('.'),out=process.env.BREEZE_ONBOARD_PROOF||'/tmp/breeze-onboarding-carousel';mkdirSync(out,{recursive:true});
 const welcomeJoin=JSON.parse(readFileSync(resolve(root,'tests/fixtures/welcome-join-437fd6f.json'),'utf8'));
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg','.mp4':'video/mp4','.woff2':'font/woff2'};

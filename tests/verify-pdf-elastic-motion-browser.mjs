@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync,mkdtempSync,rmSync,copyFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 import {pdfGeometryFixture} from './helpers/pdf-geometry-fixture.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium,out=process.env.BREEZE_MOTION_OUTPUT||'/tmp/breeze-motion-proof';mkdirSync(out,{recursive:true});

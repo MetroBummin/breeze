@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {resolve,extname} from 'node:path';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {unavailableRemote} from './helpers/unavailable-remote.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const text=readFileSync(resolve(root,'assets/longreads/homewardbound.txt'),'utf8');

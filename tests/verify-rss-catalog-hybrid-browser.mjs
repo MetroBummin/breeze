@@ -6,7 +6,7 @@ import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_HYBRID_PROOF||'/tmp/breeze-catalog-browser-proof/hybrid';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {chromium,firefox,webkit} from 'playwright';
+import {chromium,firefox,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=resolve(new URL('..',import.meta.url).pathname);
 const engineName=process.env.BREEZE_QA_ENGINE||'chromium';

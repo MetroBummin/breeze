@@ -2,7 +2,7 @@
    This is deliberately not Supabase E2E or whole-application regression. */
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=new URL('../',import.meta.url);
 const script=readFileSync(new URL('scripts/library/article-preview.js',root),'utf8');
 const css=readFileSync(new URL('styles/article-preview.css',root),'utf8');

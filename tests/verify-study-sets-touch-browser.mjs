@@ -5,7 +5,7 @@ import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 const root=process.env.BREEZE_STUDY_ROOT?resolve(process.env.BREEZE_STUDY_ROOT)+'/':fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_STUDY_TOUCH_PROOF||'/tmp/breeze-study-touch-preview';mkdirSync(proof,{recursive:true});
 const server=createServer((req,res)=>{

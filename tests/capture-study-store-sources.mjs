@@ -7,7 +7,7 @@ import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 const repoRoot=fileURLToPath(new URL('../',import.meta.url)),root=process.env.BREEZE_STORE_SOURCE_ROOT||repoRoot,all=process.env.BREEZE_STORE_DOMAIN==='all',out=process.env.BREEZE_STORE_SOURCE_OUTPUT||'/tmp/breeze-study-store-sources';mkdirSync(out,{recursive:true});
 const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`,browser=await chromium.launch({executablePath:process.env.BREEZE_BROWSER_EXECUTABLE}),files=[],feedbackChecks=[];

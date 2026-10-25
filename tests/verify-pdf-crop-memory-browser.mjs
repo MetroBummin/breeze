@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {pdfCropFixture} from './helpers/pdf-crop-fixture.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=process.env.BREEZE_QA_ROOT||resolve(new URL('..',import.meta.url).pathname),baseline=!!process.env.BREEZE_QA_BASELINE,reports=[];

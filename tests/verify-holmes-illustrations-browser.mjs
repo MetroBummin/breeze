@@ -3,7 +3,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const slugs=['speckled-band','scandal-in-bohemia','red-headed-league','final-problem','hound-of-the-baskervilles'];
 const proof='/tmp/breeze-holmes-integration-proof';mkdirSync(proof,{recursive:true});

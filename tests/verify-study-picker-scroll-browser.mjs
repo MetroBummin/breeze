@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage,studySetFixture} from './helpers/study-sets-browser-fixture.mjs';
 import {allWordsFixture} from './helpers/all-words-fixture.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium,server=await serveStudyFixture();

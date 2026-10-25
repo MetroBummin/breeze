@@ -1,7 +1,7 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import assert from 'node:assert/strict';
 const root=resolve(import.meta.dirname,'..');
 const out=process.env.AUDIT_OUTPUT||'/tmp';

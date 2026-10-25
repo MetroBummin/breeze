@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {tmpdir} from 'node:os';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=process.env.BREEZE_IMPORT_ROOT||fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_IMPORT_PROOF||'/tmp/breeze-import-commit-proof';mkdirSync(proof,{recursive:true});
 const server=createServer((req,res)=>{try{

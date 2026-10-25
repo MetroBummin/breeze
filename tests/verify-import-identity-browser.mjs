@@ -3,7 +3,7 @@ import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const storage=readFileSync(new URL('../scripts/core/storage.js',import.meta.url),'utf8');
 const server=createServer((req,res)=>{

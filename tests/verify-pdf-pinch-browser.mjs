@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { createServer } from 'node:http';
 import { resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, webkit } from 'playwright';
+import { chromium, webkit } from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 function fixturePdf(count=120){
   const objects=['','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];

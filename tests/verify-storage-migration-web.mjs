@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
-import {chromium,firefox,webkit,devices} from 'playwright';
+import {chromium,firefox,webkit,devices} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 
 const engineName=process.env.BROWSER||'chromium';

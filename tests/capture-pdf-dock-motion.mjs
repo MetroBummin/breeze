@@ -4,7 +4,7 @@ import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),proof=process.env.BREEZE_PDF_DOCK_PROOF||'/tmp/breeze-pdf-dock-motion';mkdirSync(proof,{recursive:true});
 const server=createServer((req,res)=>{try{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));if(!p.startsWith(root))throw Error();res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2'})[extname(p)]||'application/octet-stream');res.end(readFileSync(p));}catch{res.writeHead(404).end();}});

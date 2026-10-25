@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const before=process.env.BREEZE_HEADER_PHASE==='before',out=process.env.BREEZE_HEADER_PROOF||'/tmp/breeze-header-controls';mkdirSync(out,{recursive:true});
 const engine=process.env.BROWSER==='webkit'?webkit:chromium,server=await serveStudyFixture(),browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined}),rows=[];

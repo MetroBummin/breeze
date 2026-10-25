@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,firefox,webkit} from 'playwright';
+import {chromium,firefox,webkit} from './helpers/bounded-playwright.mjs';
 import {scanPdf} from './helpers/pdf-scan-fixture.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const engines={chromium,firefox,webkit},engine=engines[process.env.BROWSER]||chromium;

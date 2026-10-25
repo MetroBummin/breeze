@@ -3,7 +3,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 // Run with BROWSER=webkit for the Safari-engine regression pass. Fixtures use
 // saveWords, not a legacy snapshot, so reload exercises the real item journal.

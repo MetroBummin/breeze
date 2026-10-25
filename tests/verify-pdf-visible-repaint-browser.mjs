@@ -8,7 +8,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const output=process.env.BREEZE_PDF_REPAINT_PROOF||'/tmp/breeze-pdf-visible-repaint';
 const engine=process.env.BREEZE_QA_ENGINE==='webkit'?webkit:chromium;

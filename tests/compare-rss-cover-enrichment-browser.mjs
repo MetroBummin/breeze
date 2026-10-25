@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const proof=process.env.BREEZE_RSS_ENRICHMENT_PROOF||'/tmp/breeze-rss-enrichment-comparison';

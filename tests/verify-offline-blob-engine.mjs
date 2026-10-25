@@ -6,7 +6,7 @@ import {createServer} from 'node:http';
 import {mkdtempSync,mkdirSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {dirname,join} from 'node:path';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 const require=createRequire(import.meta.url),engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const server=createServer((req,res)=>{res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Blob control</title>');});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));

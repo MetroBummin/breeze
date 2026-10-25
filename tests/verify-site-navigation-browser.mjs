@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,statSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
-import {chromium} from 'playwright';
+import {chromium} from './helpers/bounded-playwright.mjs';
 const root=resolve('.'),out=process.env.BREEZE_SITE_PROOF||'/tmp/breeze-site-navigation';mkdirSync(out,{recursive:true});
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2'};
 const server=createServer((req,res)=>{try{

@@ -2,7 +2,7 @@
 // Playwright browser interactions are not physical-device acceptance.
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 import {studyAction} from './helpers/study-actions.mjs';
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;

@@ -1,4 +1,4 @@
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {createServer} from 'node:http';

@@ -3,7 +3,7 @@ import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=resolve(process.env.BREEZE_LANDING_ROOT||fileURLToPath(new URL('../',import.meta.url)));
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;

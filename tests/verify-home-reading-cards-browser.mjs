@@ -4,7 +4,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit,decodeImage} from './helpers/bounded-playwright.mjs';
 import {fixturePdf} from './helpers/pdf-scroll-fixture.mjs';
 const root=process.env.BREEZE_PROGRESS_ROOT?resolve(process.env.BREEZE_PROGRESS_ROOT)+'/':fileURLToPath(new URL('../',import.meta.url));
 const story='sherlock-holmes-scandal-in-bohemia',proof=process.env.BREEZE_HOME_READING_PROOF||'/tmp/breeze-home-reading-cards-proof';mkdirSync(proof,{recursive:true});
@@ -16,44 +16,9 @@ const server=createServer((req,res)=>{
  try{res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.webp':'image/webp'})[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}catch{res.writeHead(404).end();}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
-// Playwright gives page.evaluate and locator.evaluate no timeout (timeout 0).
-// A promise that never settles therefore holds the process until the job is killed.
-const stepMs=20000;
-function step(label,work,ms=stepMs){
- let timer;
- const timeout=new Promise((_,reject)=>{
-  timer=setTimeout(()=>{
-   console.error(`step timed out after ${ms}ms: ${label}`);
-   setTimeout(()=>process.exit(1),250);
-   reject(Error(`step timed out after ${ms}ms: ${label}`));
-  },ms);
- });
- return Promise.race([Promise.resolve().then(work),timeout]).finally(()=>clearTimeout(timer));
-}
-function evaluateLabel(fn){
- const text=typeof fn==='function'?fn.toString():String(fn);
- return 'evaluate '+text.replace(/\s+/g,' ').slice(0,80);
-}
 async function readerReady(page){
  await page.waitForFunction(()=>curBook&&!readerPositionPending()&&!articlePreviewDialog.open);
  await page.evaluate(()=>document.fonts.ready);
-}
-async function decodeScene(page){
- // The picture is anchored near paragraph 144 and loading=lazy. After the
- // 66→68 log the reader is restored lower down, so the browser never starts
- // the fetch and img.decode() never settles. locator.evaluate has no timeout.
- // Reload it in place; scrolling it into view would move the anchor the next
- // wheel step has to land on. Match the scene id with or without the reload query.
- const scene=page.locator('img[src*="scandal-in-bohemia-05.webp"]');
- await step('decode scandal-in-bohemia-05',()=>scene.evaluate(img=>new Promise((resolve,reject)=>{
-  const timer=setTimeout(()=>reject(Error('illustration decode never settled')),8000);
-  const finish=()=>img.decode().then(()=>{clearTimeout(timer);resolve();},error=>{clearTimeout(timer);reject(error);});
-  if(img.complete&&img.naturalWidth){finish();return;}
-  img.loading='eager';
-  img.addEventListener('load',finish,{once:true});
-  img.addEventListener('error',()=>{clearTimeout(timer);reject(Error('illustration failed to load'));},{once:true});
-  img.src=img.getAttribute('src').split('?')[0]+'?eager=1';
- })));
 }
 async function scrollToParagraph(page,pi,engine){
  const {top,target}=await page.evaluate(pi=>({top:readerScrollTop(),target:Math.round(readerScrollTop()+document.querySelector(`#rtext [data-pi="${pi}"]`).getBoundingClientRect().top-30)}),pi);
@@ -79,9 +44,6 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
  try{
   const page=await context.newPage(),errors=[];
-  page.setDefaultTimeout(stepMs);page.setDefaultNavigationTimeout(stepMs);
-  const evaluate=page.evaluate.bind(page);
-  page.evaluate=(...args)=>step(evaluateLabel(args[0]),()=>evaluate(...args));
   page.on('pageerror',error=>errors.push(error.message));
   const warnings=[];page.on('console',message=>{if(['warning','error'].includes(message.type()))warnings.push(message.text());});
   let releaseScene;const scene=new Promise(resolve=>releaseScene=resolve);
@@ -137,7 +99,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   for(const [width,height] of [[390,844],[320,568],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
    await page.setViewportSize({width,height});await page.evaluate(dark=>document.body.classList.toggle('dark',dark),dark);
    await page.locator(`#shelf [data-local-book="${id}"]`).click();await readerReady(page);
-   await decodeScene(page);
+   await decodeImage(page.locator('img[src*="scandal-in-bohemia-05.webp"]'));
    await page.evaluate(()=>{fontSize(1);return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});
    await scrollToParagraph(page,177,engine);const actual=await page.evaluate(()=>({p:visibleReaderProgress(),anchor:captureAnchor()}));
    await page.evaluate(()=>returnHomeFromReader());const home=await homeState(page,id);

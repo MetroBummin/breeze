@@ -6,7 +6,7 @@ import {createServer} from 'node:http';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit,decodeImage} from './helpers/bounded-playwright.mjs';
 const root=process.env.BREEZE_PROGRESS_ROOT?resolve(process.env.BREEZE_PROGRESS_ROOT)+sep:fileURLToPath(new URL('../',import.meta.url));
 const server=createServer((req,res)=>{
  const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
@@ -124,7 +124,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   assert.equal(early.home,Math.floor(early.p*100)+'%');
   releaseFonts();releaseScene();await page.evaluate(()=>document.fonts.ready);
   await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);
-  await page.locator('img[src$="scandal-in-bohemia-03.webp"]').evaluate(img=>img.decode());
+  await decodeImage(page.locator('img[src*="scandal-in-bohemia-03.webp"]'));
   await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>captureAnchor().pi),early.pi);
   console.log(`${engine.name()}: initial paint ${JSON.stringify(first)}; immediate Home ${early.home}; text-only paragraph ${early.pi} reopened`);
@@ -190,18 +190,18 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   // Save inside illustration 09's gap: a cold open must reserve its catalog
   // dimensions before decode, so the preceding paragraph cannot enter the probe.
   await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);
-  await page.locator('img[src$="scandal-in-bohemia-09.webp"]').evaluate(img=>img.decode());
+  await decodeImage(page.locator('img[src*="scandal-in-bohemia-09.webp"]'));
   await page.evaluate(()=>restoreAnchor({pi:245,dy:200}));
   await settleReader(page);const preparedCold=await page.evaluate(()=>captureAnchor());
   check('cold illustration setup',()=>assert.deepEqual(preparedCold,{pi:245,dy:200}));
   const coldSaved=await page.evaluate(()=>{show('home');return {...posOf(homeResumeBook().id)};});coldReload=true;
   await page.reload();await page.evaluate(()=>homeReady);await page.evaluate(async id=>openBook(books.find(b=>b.id===id)),id);
   await settleReader(page);
-  const coldBefore=await page.evaluate(()=>{const img=document.querySelector('img[src$="scandal-in-bohemia-09.webp"]');return {anchor:captureAnchor(),height:img.getBoundingClientRect().height,complete:img.complete};});
+  const coldBefore=await page.evaluate(()=>{const img=document.querySelector('img[src*="scandal-in-bohemia-09.webp"]');return {anchor:captureAnchor(),height:img.getBoundingClientRect().height,complete:img.complete};});
   check('cold illustration reservation',()=>{assert.equal(coldBefore.complete,false);assert.ok(coldBefore.height>0,'catalog dimensions reserve an unloaded illustration');
    assert.deepEqual(coldBefore.anchor,{pi:coldSaved.pi,dy:coldSaved.dy});});
-  releaseColdScene();await page.locator('img[src$="scandal-in-bohemia-09.webp"]').evaluate(img=>img.decode());await settleReader(page);
-  const coldAfter=await page.evaluate(()=>captureAnchor()),coldHeight=await page.locator('img[src$="scandal-in-bohemia-09.webp"]').evaluate(img=>img.getBoundingClientRect().height);
+  releaseColdScene();await decodeImage(page.locator('img[src*="scandal-in-bohemia-09.webp"]'));await settleReader(page);
+  const coldAfter=await page.evaluate(()=>captureAnchor()),coldHeight=await page.locator('img[src*="scandal-in-bohemia-09.webp"]').evaluate(img=>img.getBoundingClientRect().height);
   check('cold illustration decode',()=>{assert.deepEqual(coldAfter,coldBefore.anchor,'cold image decode must not move the restored paragraph or offset');assert.equal(coldHeight,coldBefore.height);});
   console.log(`${engine.name()}: cold illustration 09 reserved ${coldBefore.height}px; paragraph 245 at 200px preserved before/after decode`);
   // Delayed catalog decode preserves layout. A separate late-layout change
@@ -216,9 +216,9 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   const layoutTarget=await layoutPage.evaluate(()=>{const el=document.querySelector('#rtext [data-pi="43"]');return Math.round(readerScrollTop()+el.getBoundingClientRect().top-200);});
   await layoutPage.mouse.wheel(0,layoutTarget);await layoutPage.waitForFunction(target=>Math.abs(readerScrollTop()-target)<1,layoutTarget);
   await layoutPage.waitForTimeout(100);
-  const beforeImage=await layoutPage.evaluate(()=>({anchor:captureAnchor(),cached:readerFrameAnchor(),top:readerScrollTop(),height:document.querySelector('img[src$="scandal-in-bohemia-03.webp"]').getBoundingClientRect().height}));
+  const beforeImage=await layoutPage.evaluate(()=>({anchor:captureAnchor(),cached:readerFrameAnchor(),top:readerScrollTop(),height:document.querySelector('img[src*="scandal-in-bohemia-03.webp"]').getBoundingClientRect().height}));
   check('delayed illustration setup',()=>{assert.ok(beforeImage.height>0,'delayed illustration 03 reserves height');assert.deepEqual(beforeImage.anchor,{pi:43,dy:200});});
-  releaseLayout();await layoutPage.locator('img[src$="scandal-in-bohemia-03.webp"]').evaluate(img=>img.decode());
+  releaseLayout();await decodeImage(layoutPage.locator('img[src*="scandal-in-bohemia-03.webp"]'));
   await layoutPage.waitForTimeout(100);
   const decodedLayout=await layoutPage.evaluate(()=>captureAnchor());
   check('delayed illustration decode',()=>assert.deepEqual(decodedLayout,beforeImage.anchor,'decoding the actual image preserves its reserved layout'));
@@ -226,7 +226,7 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BREEZE_QA_ENGIN
   // still change independently of scroll, even though catalog decode is stable.
   const layout=await layoutPage.evaluate(()=>{
    readerScroller().style.overflowAnchor='none';
-   const cached=readerFrameAnchor(),img=document.querySelector('img[src$="scandal-in-bohemia-03.webp"]');
+   const cached=readerFrameAnchor(),img=document.querySelector('img[src*="scandal-in-bohemia-03.webp"]');
    img.style.height=(img.getBoundingClientRect().height+80)+'px';
    const actual=captureAnchor();saveReadingState();return {actual,cached,stored:{...posOf(curBook.id)},top:readerScrollTop()};
   });

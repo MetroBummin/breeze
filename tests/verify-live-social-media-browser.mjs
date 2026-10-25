@@ -7,7 +7,7 @@ import {createServer} from 'node:http';
 import {tmpdir} from 'node:os';
 import {resolve,join,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const target=new URL(process.env.BREEZE_LIVE_SOCIAL_URL||'https://x.com/dsqjaffa/status/2102054148925526206?s=46');

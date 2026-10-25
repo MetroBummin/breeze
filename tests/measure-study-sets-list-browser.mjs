@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {studyAction} from './helpers/study-actions.mjs';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {studySetFixture,serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 const before=process.env.BREEZE_STUDY_PHASE==='before',engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const out=process.env.BREEZE_STUDY_LIST_OUTPUT||'/tmp/breeze-study-list-'+(before?'before':'after');mkdirSync(out,{recursive:true});

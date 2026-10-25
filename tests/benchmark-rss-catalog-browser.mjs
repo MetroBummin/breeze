@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 import {createCatalogService} from '../server/rss-catalog/service.mjs';
 import {catalogHandler} from '../server/rss-catalog/handler.mjs';

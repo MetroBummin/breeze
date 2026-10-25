@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_RSS_SHIMMER_COST_PROOF||'/tmp/breeze-rss-shimmer-cost';

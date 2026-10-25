@@ -6,7 +6,7 @@ import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {coverDocumentCases} from './fixtures/rss-cover-document-cases.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));

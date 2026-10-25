@@ -2,7 +2,7 @@
    browser capability emulation does not establish native Pencil acceptance. */
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
-import {chromium,webkit} from 'playwright';
+import {chromium,webkit} from './helpers/bounded-playwright.mjs';
 import {serveStudyFixture,prepareStudyPage} from './helpers/study-sets-browser-fixture.mjs';
 import {pdfGeometryFixture} from './helpers/pdf-geometry-fixture.mjs';
 const out=process.env.BREEZE_OPTICS_PROOF||'/tmp/breeze-control-optics';mkdirSync(out,{recursive:true});
