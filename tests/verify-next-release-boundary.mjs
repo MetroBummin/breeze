@@ -281,7 +281,7 @@ const expected={
     "tests/verify-gesture-ownership.mjs": "39cd65f26f275b5fb2705f61b68ebf5b775da7d3c6e02f6930a922c4aaa370d2",
     "tests/verify-header-controls-browser.mjs": "5786f769a4a0682c46abd3402c4b05b3c86f0f3ba57436f1a646e97e36d4113c",
     "tests/verify-holmes-collection.mjs": "182e221b3c1f6b81fedfe5c578b99b86c90c7f39f1fb9925af11b705c4d0f979",
-    "tests/verify-holmes-illustrations-browser.mjs": "460875da7c52d7931278fba929f9e7a159a7568de4be71d85fe1debbabb03f1c",
+    "tests/verify-holmes-illustrations-browser.mjs": "38c287559a15f1eb03fd4883e6f6003c3307aa88f4f559961c8b7febc1f28438",
     "tests/verify-home-controls-browser.mjs": "35aa4148e4123401f0d2c8d96027cf659bf7fa10ca9442b4f28c2e4e6e6982d9",
     "tests/verify-home-heading-browser.mjs": "6d37c03ca1da33562fda79bf479d501f556612b73bf1aadff6a0158433b80ea4",
     "tests/verify-home-progress-sync-browser.mjs": "c53dc8f4d4b2341561ada8eef0c2f146fb0144ade6bea215fd940d77350a692f",
@@ -498,7 +498,7 @@ const expected={
     "tests/verify-word-morph-browser.mjs": "ee43c42ba1b2abb935c4822aca28250dcd000c2cf2b9ae7b88bf9910f36f6ee1",
     "tests/verify-word-pinch-browser.mjs": "6bbeeac3ed6e989f4726d7aabf6394c38808743416a150876e54f52496b851b7",
     "tests/verify-word-scroll-idle-browser.mjs": "667edca25190192d3da7d7d4c6aa6b8168f20b9303bb95e852f7a5340c3fb9e2",
-    "tests/helpers/bounded-playwright.mjs": "a69bf015810dd772dc065830d448a91a00f51c0f16eff689de96ce19a1f297ef",
+    "tests/helpers/bounded-playwright.mjs": "c3e1a4eb6681356da5452509831c3dc9186d4bfeb7f21068dd70783b0eb467d4",
     "tests/measure-breeze271-baseline.mjs": "d1d581f9b119f1242c1cc5e693938fe630ef52074b8fce3a5335591acefbbaa7",
 };
 const runners=[".github/workflows/integrity.yml", ".github/workflows/design-brand.yml", ".github/workflows/social-auth.yml"];

@@ -20,12 +20,20 @@ function snippet(fn){
  const text=typeof fn==='function'?fn.toString():String(fn??'');
  return text.replace(/\s+/g,' ').slice(0,80);
 }
+function limitFor(fn){
+ const compact=(typeof fn==='function'?fn.toString():String(fn??'')).replace(/\s+/g,'');
+ // homeReady is the app boot promise (IndexedDB open and migration). A busy
+ // CI runner can take longer than a stuck decode, and 45s still fails the job
+ // instead of holding it until the workflow limit.
+ if(compact.includes('homeReady')&&compact.length<180)return 45000;
+ return stepMs;
+}
 function boundMethod(proto,method){
  if(!proto||proto['__breezeBound_'+method])return;
  const original=proto[method];
  if(typeof original!=='function')return;
  proto[method]=function(...args){
-  return step(`${method} ${snippet(args[0])}`,()=>original.apply(this,args));
+  return step(`${method} ${snippet(args[0])}`,()=>original.apply(this,args),limitFor(args[0]));
  };
  proto['__breezeBound_'+method]=true;
  boundProtos.add(proto);

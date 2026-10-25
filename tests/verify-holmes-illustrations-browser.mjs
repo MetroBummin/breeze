@@ -21,7 +21,8 @@ try{for(const engine of [chromium,webkit].filter(e=>!process.env.BROWSER||e.name
   await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
   await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
   await page.goto(url);await page.evaluate(()=>homeReady);
-  const offeredIds=[...slugs.map(slug=>'sherlock-holmes-'+slug),'alice-in-wonderland','the-great-gatsby'];
+  // orderClassicReads: Alice (1865) precedes Holmes, then same-year title order, then Gatsby.
+  const offeredIds=['alice-in-wonderland','sherlock-holmes-scandal-in-bohemia','sherlock-holmes-red-headed-league','sherlock-holmes-speckled-band','sherlock-holmes-final-problem','sherlock-holmes-hound-of-the-baskervilles','the-great-gatsby'];
   assert.equal(await page.locator('#shelf .longread').count(),0,'Home long-form shelf offers the Gutenberg catalog');
   await page.evaluate(()=>show('longform'));
   assert.equal(await page.locator('#longform-grid .longread').count(),0,'Unstarted offers stay out of the owned grid');
