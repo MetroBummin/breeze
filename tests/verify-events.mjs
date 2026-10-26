@@ -58,6 +58,15 @@ test('parses the landing UTM convention and keeps the first touch',()=>{
   });
 });
 
+test('an automated browser does not record',async()=>{
+  const {context,calls}=install();
+  context.navigator={webdriver:true};
+  context.trackEvent('app_open');
+  context.trackEvent('first_word_tap');
+  await context.eventFlush();
+  assert.equal(calls.length,0);
+});
+
 test('a failed send and a broken storage do nothing to the caller',async()=>{
   const broken=install();
   broken.failFetch(new Error('offline'));

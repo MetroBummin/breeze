@@ -189,6 +189,8 @@ function eventFlush(){
 }
 function trackEvent(name,props){
   try{
+    // Playwright and other automated browsers set this. Real readers do not.
+    if(typeof navigator!=='undefined'&&navigator.webdriver)return;
     if(!EVENT_NAMES[name]||eventSentToday()>=EVENT_DEVICE_CAP)return;
     if(name==='app_open'){
       const day=eventLocalDay();
