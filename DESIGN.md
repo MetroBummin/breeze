@@ -360,7 +360,9 @@ Home background. The clip matches the viewport's closest aspect and the light
 or dark theme. The meaning is the real word pill, text `맡다` only, placed on
 the video pill, and its chevron opens the real word detail.
 The toast fades out on its own. Book covers then peek up from the bottom and
-follow a swipe onto the looping cover flow. Lookup glass,
+stay there until a swipe or a tap on a cover carries them onto the looping
+cover flow. Retry on the pill keeps `맡다` without a loading label, and the
+detail card is filled before it grows. Lookup glass,
 the shared dock, and Reader gesture ownership stay as already approved. The
 in-reader long-press tip uses the existing sentence-glass fill, line, ink, and
 shadow, with a sky-blue sentence highlight. See `docs/decisions/006-reader-onboarding.md`.

@@ -42,18 +42,21 @@ file. Theme follows `html`/`body` class `dark`.
 2. The main clip holds its last frame once the picture is static (about 4
    seconds). The real `#word-peek` crossfades in over about 120ms on the
    normalized pill rect. Its meaning text is only `맡다`. Retry shows `맡다`
-   again and does not call the dictionary. The chevron, or a tap on the pill,
-   opens the real word detail.
+   again, with at most a short fade, and does not call the dictionary or show
+   a loading label. The chevron, or a tap on the pill, opens the real word
+   detail. That detail is filled before the card grows, and it stays visible
+   for the whole expand.
 3. Nothing advances by itself after the save. A green toast,
    `단어장에 저장됐어요`, appears once, fades out after about two seconds,
    and a `+1` badge bumps the vocabulary chip. About a second after the toast
-   appears, the book covers spring up until their tops peek at the bottom.
-   A drag or swipe up, or a downward trackpad scroll, follows the finger.
-   Only the cover row moves, by transform, and the choice copy fades by opacity.
-   Releasing past about 30%, or with a flick, springs into the book screen.
-   Otherwise it springs back to the peek. Tapping the peeking covers also
-   continues. The pill
-   chevron calls the real `expandWordDetail`. The same
+   appears, the book covers spring up over the held video until their tops peek
+   at the bottom.
+   No timer opens the book screen. A drag or swipe up, or a downward trackpad
+   scroll, follows the finger. Only the cover row moves, by transform, and the
+   choice copy fades by opacity. Releasing past about 30%, or with a flick,
+   springs into the book screen. Otherwise it springs back to the peek.
+   Tapping a peeking cover also continues. A tap on the empty overlay does not.
+   The pill chevron calls the real `expandWordDetail`. The same
    record is written through `saveWords`. Replay does not overwrite a real
    `take` and does not add the sample when other words exist. Skipping to the
    choice screen still writes the sample under those rules.

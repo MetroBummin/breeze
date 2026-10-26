@@ -95,8 +95,39 @@ try{
     return {dx:Math.abs(pill.left-(box.left+expect.left)),dy:Math.abs(pill.top-(box.top+expect.top)),dw:Math.abs(pill.width-expect.width),dh:Math.abs(pill.height-expect.height)};
   });
   assert.ok(aligned.dx<=1.5&&aligned.dy<=1.5&&aligned.dw<=1.5&&aligned.dh<=1.5,JSON.stringify(aligned));
+  await page.locator('#word-peek-retry').click();
+  const retry=await page.evaluate(()=>{
+    const peek=document.getElementById('word-peek');
+    return {text:document.getElementById('word-peek-meaning').textContent,loading:peek.classList.contains('loading')};
+  });
+  assert.equal(retry.text,'맡다');
+  assert.equal(retry.loading,false);
+  await page.locator('#word-peek-more').click();
+  const detail=await page.evaluate(()=>{
+    const panel=document.getElementById('panel');
+    const inner=panel.querySelector('.inner');
+    return {on:panel.classList.contains('on'),word:document.getElementById('p-word').textContent,ko:document.getElementById('p-ai-ko').textContent.trim(),opacity:getComputedStyle(inner).opacity};
+  });
+  assert.equal(detail.on,true);
+  assert.equal(detail.word,'take');
+  assert.equal(detail.ko,'맡다');
+  assert.equal(detail.opacity,'1');
+  await page.evaluate(()=>closePanel());
+  assert.equal(await page.evaluate(()=>document.getElementById('word-peek').hidden),false);
+  assert.equal(await page.evaluate(()=>document.getElementById('word-peek-meaning').textContent),'맡다');
   await page.screenshot({path:`${out}/pill.png`});
-  await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady);
+  await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady&&onboardingSession.shiftSpring==null);
+  await page.waitForTimeout(800);
+  const held=await page.evaluate(()=>{
+    const band=[...document.querySelectorAll('.onboard-cover')].map(node=>node.getBoundingClientRect()).filter(rect=>rect.width>8&&rect.top<innerHeight-12&&rect.bottom>innerHeight-4);
+    const visible=band.reduce((max,rect)=>Math.max(max,Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0)),0);
+    const hit=document.elementFromPoint(innerWidth/2,innerHeight-24);
+    return {scene:document.getElementById('onboarding').dataset.scene,n:band.length,visible,commit:onboardingSession.pullCommit,hit:!!(hit&&hit.closest&&hit.closest('.onboard-cover'))};
+  });
+  assert.notEqual(held.scene,'choice');
+  assert.equal(held.commit,false);
+  assert.equal(held.hit,true,JSON.stringify(held));
+  assert.ok(held.n>=1&&held.visible>=48,JSON.stringify(held));
   await page.evaluate(()=>{const s=onboardingSession;s.shift=0;s.shiftSpring=null;showChoice(s,false);});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   await page.screenshot({path:`${out}/choice.png`});
@@ -345,6 +376,16 @@ try{
     assert.equal(aligned.text,'맡다');
     assert.ok(aligned.paused||aligned.time>=4,'main did not hold the static frame');
     assert.ok(aligned.dx<=1.5&&aligned.dy<=1.5&&aligned.dw<=1.5&&aligned.dh<=1.5,`${spec.clip} ${JSON.stringify(aligned)}`);
+    await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady&&onboardingSession.shiftSpring==null);
+    const peeking=await page.evaluate(()=>{
+      const band=[...document.querySelectorAll('.onboard-cover')].map(node=>node.getBoundingClientRect()).filter(rect=>rect.width>8&&rect.top<innerHeight-12&&rect.bottom>innerHeight-4);
+      const visible=band.reduce((max,rect)=>Math.max(max,Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0)),0);
+      const hit=document.elementFromPoint(innerWidth/2,innerHeight-24);
+      return {scene:document.getElementById('onboarding').dataset.scene,n:band.length,visible,hit:!!(hit&&hit.closest&&hit.closest('.onboard-cover'))};
+    });
+    assert.notEqual(peeking.scene,'choice',spec.clip);
+    assert.equal(peeking.hit,true,`${spec.clip} ${JSON.stringify(peeking)}`);
+    assert.ok(peeking.n>=1&&peeking.visible>=48,`${spec.clip} ${JSON.stringify(peeking)}`);
     if(spec.clip==='ipadportrait'){
       await page.locator('#word-peek-retry').click();
       assert.equal(await page.locator('#word-peek-meaning').innerText(),'맡다');

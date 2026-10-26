@@ -51,9 +51,14 @@ body.onboarding-active #word-peek.onboard-live{
   box-sizing:border-box;max-width:none;pointer-events:auto;
   transition:opacity .12s linear;
 }
+body.onboarding-active #word-peek.onboard-live #word-peek-meaning{transition:opacity .16s linear;}
+body.onboarding-active #word-peek.onboard-live.onboard-retry #word-peek-meaning{opacity:.45;transition:none;}
 body.onboarding-active #word-peek-retry,
 body.onboarding-active #word-peek-more{pointer-events:auto;}
 body.onboarding-active #panel.on{z-index:190;}
+/* The reader morph hides the card until the shell finishes scaling. Onboarding
+   fills the detail first, so that same card must stay readable while it grows. */
+body.onboarding-active #panel.anchored.morphing .inner{opacity:1;}
 #word-peek.onboard-leave{animation:onboard-demo-out .42s cubic-bezier(.4,0,.2,1) forwards!important;pointer-events:none!important;}
 #onboard-toast{
   position:fixed;z-index:179;top:calc(18px + env(safe-area-inset-top));left:50%;
@@ -114,7 +119,9 @@ body.onboarding-active #panel.on{z-index:190;}
   from{opacity:1;transform:translateY(0);}
   to{opacity:0;transform:translateY(-28px);}
 }
-#onboard-choice.peek{visibility:visible;opacity:1;pointer-events:auto;}
+/* The intro videos are z-index 1–2 and cover the viewport. The peek has to
+   paint above that held frame, or the cover tops never show. */
+#onboard-choice.peek{visibility:visible;opacity:1;pointer-events:auto;z-index:4;}
 #onboard-choice{
   display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;
   padding:calc(28px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
@@ -216,7 +223,8 @@ html.dark .longpress-tip-mark{background:rgba(41,75,87,.55);}
   #onboarding.entering #onboard-read,#onboarding.entering #onboard-file,#onboarding.entering #onboard-browse,
   #onboarding.leaving #onboard-demo{animation:none;}
   #onboard-video-idle.is-out,#onboard-video-main.is-in,
-  body.onboarding-active #word-peek.onboard-live{transition:none;}
+  body.onboarding-active #word-peek.onboard-live,
+  body.onboarding-active #word-peek.onboard-live #word-peek-meaning{transition:none;}
   #onboarding.leaving #onboard-demo,
   #onboarding.leaving #onboard-toast,
   #onboarding.leaving #onboard-vocab-bump,
