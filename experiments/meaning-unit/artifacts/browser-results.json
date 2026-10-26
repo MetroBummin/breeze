@@ -1,0 +1,1242 @@
+{
+  "runs": [
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "abbreviations",
+      "renderMs": 7.117814000000067,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 5.822399999999902,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "choices",
+      "renderMs": 3.1569919999999456,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "dialogue",
+      "renderMs": 2.3107080000000906,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "long-sentence",
+      "renderMs": 16.909632999999985,
+      "rects": 189
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "repeated-word",
+      "renderMs": 4.078999999999951,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "repeated-sentence",
+      "renderMs": 2.8520129999999426,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "page-boundary",
+      "renderMs": 1.8953930000000128,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "two-columns",
+      "renderMs": 9.657396000000062,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "hyphen-ligature",
+      "renderMs": 3.805898999999954,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "malicious",
+      "renderMs": 2.4735729999999876,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "unicode",
+      "renderMs": 2.5003039999999146,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "long-output",
+      "renderMs": 6.679524000000015,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "abbreviations",
+      "renderMs": 4.485453000000007,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 3.307369000000108,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "choices",
+      "renderMs": 2.6348400000001675,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "dialogue",
+      "renderMs": 3.567872999999963,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "long-sentence",
+      "renderMs": 15.21838600000001,
+      "rects": 189
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "repeated-word",
+      "renderMs": 2.394747000000052,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "repeated-sentence",
+      "renderMs": 1.6002539999999499,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "page-boundary",
+      "renderMs": 1.8661560000000463,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "two-columns",
+      "renderMs": 2.6731580000000577,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "hyphen-ligature",
+      "renderMs": 2.281484999999975,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "malicious",
+      "renderMs": 1.4375770000001467,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "unicode",
+      "renderMs": 1.6593229999998584,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "long-output",
+      "renderMs": 5.685700999999881,
+      "rects": 3
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "abbreviations",
+      "renderMs": 39.70894599999997,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 2.115884000000051,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "choices",
+      "renderMs": 2.210598000000118,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "dialogue",
+      "renderMs": 1.8407669999999143,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "long-sentence",
+      "renderMs": 9.22172599999999,
+      "rects": 85
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "repeated-word",
+      "renderMs": 2.0835050000000592,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "repeated-sentence",
+      "renderMs": 52.15808799999991,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "page-boundary",
+      "renderMs": 2.590983999999935,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "two-columns",
+      "renderMs": 28.348692000000028,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "hyphen-ligature",
+      "renderMs": 32.11589600000002,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "malicious",
+      "renderMs": 2.118949000000157,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "unicode",
+      "renderMs": 2.2187800000001516,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "long-output",
+      "renderMs": 86.27869099999975,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "light",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "abbreviations",
+      "renderMs": 53.26836800000001,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 3.3906839999999647,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "choices",
+      "renderMs": 1.8765049999997245,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "dialogue",
+      "renderMs": 2.612822999999935,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "long-sentence",
+      "renderMs": 13.775716000000102,
+      "rects": 85
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "repeated-word",
+      "renderMs": 3.7582369999995535,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "repeated-sentence",
+      "renderMs": 40.840506000000005,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "page-boundary",
+      "renderMs": 2.6239989999999125,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "two-columns",
+      "renderMs": 21.561155999999755,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "hyphen-ligature",
+      "renderMs": 32.088882999999896,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "malicious",
+      "renderMs": 1.752538000000186,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "unicode",
+      "renderMs": 3.6719680000001063,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "long-output",
+      "renderMs": 83.6744020000001,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "theme": "dark",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "abbreviations",
+      "renderMs": 2.723269999999957,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 1.8289130000002842,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "choices",
+      "renderMs": 2.124879000000419,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "dialogue",
+      "renderMs": 1.8430939999998373,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "long-sentence",
+      "renderMs": 4.330337999999756,
+      "rects": 61
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "repeated-word",
+      "renderMs": 2.1793800000000374,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "repeated-sentence",
+      "renderMs": 2.9662349999998696,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "page-boundary",
+      "renderMs": 2.2751340000004348,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "two-columns",
+      "renderMs": 1.4294509999999718,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "hyphen-ligature",
+      "renderMs": 2.761026000000129,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "malicious",
+      "renderMs": 1.1956800000002659,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "unicode",
+      "renderMs": 1.5128170000002683,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "long-output",
+      "renderMs": 5.19868600000018,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "light",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "abbreviations",
+      "renderMs": 2.8232199999997647,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 2.170857999999953,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "choices",
+      "renderMs": 2.9637609999999768,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "dialogue",
+      "renderMs": 3.3356909999997697,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "long-sentence",
+      "renderMs": 7.278655999999955,
+      "rects": 61
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "repeated-word",
+      "renderMs": 3.219926999999643,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "repeated-sentence",
+      "renderMs": 3.871278000000075,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "page-boundary",
+      "renderMs": 2.4337940000000344,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "two-columns",
+      "renderMs": 2.183647000000292,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "hyphen-ligature",
+      "renderMs": 4.3679550000001655,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "malicious",
+      "renderMs": 2.033650999999736,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "unicode",
+      "renderMs": 1.5781660000002375,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "long-output",
+      "renderMs": 3.709643000000142,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "theme": "dark",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "abbreviations",
+      "renderMs": 4.046190999999453,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 3.1488090000002558,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "choices",
+      "renderMs": 2.3244489999997313,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "dialogue",
+      "renderMs": 1.9679519999999684,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "long-sentence",
+      "renderMs": 10.536090000000513,
+      "rects": 85
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "repeated-word",
+      "renderMs": 3.3130459999993036,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "repeated-sentence",
+      "renderMs": 2.285780999999588,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "page-boundary",
+      "renderMs": 1.589933000000201,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "two-columns",
+      "renderMs": 1.5521660000003976,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "hyphen-ligature",
+      "renderMs": 2.526213000000098,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "malicious",
+      "renderMs": 2.023204999999507,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "unicode",
+      "renderMs": 1.5957720000005793,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "long-output",
+      "renderMs": 4.434033999999883,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "light",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "abbreviations",
+      "renderMs": 3.7491689999997106,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "decimal-ellipsis",
+      "renderMs": 2.0583990000004633,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "choices",
+      "renderMs": 2.3271530000001803,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "dialogue",
+      "renderMs": 3.363122000000658,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "long-sentence",
+      "renderMs": 7.065354999999727,
+      "rects": 85
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "repeated-word",
+      "renderMs": 2.588306000000557,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "repeated-sentence",
+      "renderMs": 1.4568129999997836,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "page-boundary",
+      "renderMs": 2.055043000000296,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "two-columns",
+      "renderMs": 1.6797790000000532,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "hyphen-ligature",
+      "renderMs": 2.201423999999861,
+      "rects": 2
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "malicious",
+      "renderMs": 1.2769020000005185,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "unicode",
+      "renderMs": 2.2862519999998767,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "long-output",
+      "renderMs": 4.6253719999995155,
+      "rects": 1
+    },
+    {
+      "engine": "chromium",
+      "viewport": {
+        "width": 768,
+        "height": 420
+      },
+      "theme": "dark",
+      "fixture": "actual-pdf-two-columns",
+      "pages": 2,
+      "items": 6
+    }
+  ],
+  "blocked": [
+    {
+      "engine": "webkit",
+      "error": "browserType.launch: Executable doesn't exist at /tmp/breeze-browser/browsers/webkit-2359/pw_run.sh\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     npx playwright install                                 ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
+    }
+  ]
+}

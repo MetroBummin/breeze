@@ -1,0 +1,47 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Breeze meaning-unit experiment — synthetic stub</title>
+<style>
+:root{color-scheme:light dark}body{margin:24px;font:16px system-ui;line-height:1.5}button{min-height:44px;padding:8px 16px}main{max-width:1000px;margin:auto}#source{white-space:pre-wrap;font:20px/1.7 Georgia;overflow-wrap:anywhere}#translation{white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid #888;padding:16px 0}#overlays{position:absolute;inset:0;pointer-events:none}.mark{position:absolute;background:#007aff38;border-radius:5px}#paper{position:relative;width:100%;overflow:auto}canvas{max-width:100%;display:block}#status{font-size:14px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:24px}::highlight(selected){background:#007aff38}
+</style>
+<main><h1>Meaning-unit experiment</h1><p>Synthetic source · oracle stub · no AI accuracy claim</p><button id="next">Next case</button><div id="status" role="status"></div><div id="neighbors" class="columns"></div><p id="source"></p><div id="paper"><canvas></canvas><div id="overlays"></div></div><p id="translation"></p></main>
+<script src="../../assets/lib/pdf-3.11.174.min.js"></script>
+<script type="module">
+import {fixtures} from './fixtures.mjs';
+import {SelectionSession,highlightGlyphs,prepare} from './core.mjs';
+let index=0;
+const session=new SelectionSession(async prepared=>JSON.stringify(fixtures.find(f=>f.input.documentId===prepared.documentId).expected));
+const source=document.querySelector('#source'),translation=document.querySelector('#translation');
+window.show=async function(i){index=i;const f=fixtures[i];document.querySelector('#paper').hidden=true;source.hidden=false;
+ source.textContent=f.input.blocks.find(b=>b.id==='target').text;translation.textContent='';CSS.highlights.delete('selected');
+ const {prepared,result}=await session.select(f.input);const range=document.createRange();range.setStart(source.firstChild,result.start);range.setEnd(source.firstChild,result.end);
+ CSS.highlights.set('selected',new Highlight(range));translation.textContent=result.translation;
+ document.querySelector('#status').textContent=f.name+' · source '+result.start+'–'+result.end+' · context '+(result.contextOmitted?'omitted':'included');
+ document.querySelector('#neighbors').replaceChildren(...f.input.blocks.filter(b=>b.id!=='target').map(b=>{const p=document.createElement('p');p.textContent=`Context only (page ${b.page}, column ${b.column}): ${b.text}`;return p;}));
+ window.current={prepared,result,selectedText:range.toString(),rects:[...range.getClientRects()].filter(r=>r.width>0&&r.height>0).map(r=>({x:r.x,y:r.y,width:r.width,height:r.height})),translation:translation.textContent};return window.current;
+};
+document.querySelector('#next').onclick=()=>show((index+1)%fixtures.length);
+window.showPdf=async function(bytes){
+ session.cancel();source.hidden=true;document.querySelector('#paper').hidden=false;document.querySelector('#neighbors').replaceChildren();
+ pdfjsLib.GlobalWorkerOptions.workerSrc='../../assets/lib/pdf-3.11.174.worker.min.js';
+ const pdf=await pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise,page=await pdf.getPage(1),viewport=page.getViewport({scale:1});
+ const canvas=document.querySelector('canvas');canvas.width=viewport.width;canvas.height=viewport.height;
+ await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+ const content=await page.getTextContent(),items=content.items.filter(i=>i.str.trim());
+ // Controlled synthetic layout: each PDF text item is a complete choice block.
+ // This adapter is not a general PDF column/paragraph detector.
+ const blocks=items.map((item,i)=>({id:'pdf-'+i,text:item.str,page:1,column:item.transform[4]>300?1:0,kind:'choice'}));
+ const block=blocks.find(b=>b.text.startsWith('B)')),tapStart=block.text.indexOf('oxygen');
+ const prepared=prepare({documentId:'synthetic-pdf',revision:'1',blocks,tap:{blockId:block.id,start:tapStart,end:tapStart+6}});
+ const result={blockId:block.id,start:0,end:block.text.length,source:block.text,translation:'압력을 바꾸지 않고 산소 소비량을 증가시킨다',complete:true};
+ const glyphs=items.flatMap((item,i)=>{const b=blocks[i],m=pdfjsLib.Util.transform(viewport.transform,item.transform),w=item.width*viewport.scale/item.str.length;return Array.from(item.str,(_,j)=>({blockId:b.id,page:1,column:b.column,start:j,end:j+1,x:m[4]+j*w,y:m[5]-item.height,width:w,height:item.height}));});
+ const selected=highlightGlyphs(prepared,result,glyphs),overlays=document.querySelector('#overlays');overlays.replaceChildren();
+ // One rectangle per PDF text item; equal-width per-character approximation is
+ // used only to prove block filtering, not production glyph hit precision.
+ const scale=canvas.getBoundingClientRect().width/viewport.width;
+ const mark=document.createElement('div');mark.className='mark';const left=Math.min(...selected.map(g=>g.x)),top=Math.min(...selected.map(g=>g.y)),right=Math.max(...selected.map(g=>g.x+g.width));
+ Object.assign(mark.style,{left:left*scale+'px',top:top*scale+'px',width:(right-left)*scale+'px',height:selected[0].height*scale+'px'});overlays.append(mark);
+ translation.textContent=result.translation;document.querySelector('#status').textContent='Rendered synthetic PDF · left-column choice B only · page 2 is context boundary';
+ window.current={prepared,result,selectedText:selected.map(g=>block.text.slice(g.start,g.end)).join(''),translation:translation.textContent,rects:[{x:left,y:top,width:right-left,height:selected[0].height}],pdfPages:pdf.numPages,pdfItems:items.map(i=>i.str),selectedColumns:[...new Set(selected.map(g=>g.column))]};return window.current;
+};
+await show(0);
+</script>
