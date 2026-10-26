@@ -555,7 +555,10 @@ function buildLiveItems(aspect,vw,vh,sideClear,takeHalf){
   }
   out.forEach((it,i)=>{
     it.d=Math.hypot(it.x,it.y)/LIVE_K;
-    it.delay=(Math.hypot(it.x,it.y*1.3)/LIVE_K/1300)*196+liveRnd(i+30)*39;
+    // Cycle 9: tighter stagger for the spread. The old distance spread
+    // left neighbouring words up to ~110ms out of phase, so rows mixed
+    // vertically mid-flight and words crossed each other on screen.
+    it.delay=(Math.hypot(it.x,it.y*1.3)/LIVE_K/1300)*120+liveRnd(i+30)*20;
     it.sd=2470-78+(1-Math.min(1,it.d/1200))*78+liveRnd(i+11)*39;
     if(it.m==='맡다')it.sd=2510;
   });
@@ -748,7 +751,10 @@ function renderLiveFrame(session){
       const ox=(it.x+dx)*out*(1-back);
       const oy=it.y*out*(1-back);
       const sc=lock?spr*liveInterp(back,[0,0.6,1],[1,0.8,0.45],LIVE_EASE.linear):spr*(1-back*0.92);
-      const op=lock?Math.min(1,out*3)*(1-liveInterp(back,[0.86,1],[0,1],LIVE_EASE.linear)):Math.min(1,out*3)*(1-liveInterp(back,[0.3,0.75],[0,1],LIVE_EASE.linear));
+      // Cycle 9: words fade in as they travel instead of going fully opaque
+      // at a third of the way out, so the words still crossing near the
+      // centre read as a soft explosion rather than text piled on text.
+      const op=lock?Math.min(1,out*1.5)*(1-liveInterp(back,[0.86,1],[0,1],LIVE_EASE.linear)):Math.min(1,out*1.5)*(1-liveInterp(back,[0.3,0.75],[0,1],LIVE_EASE.linear));
       if(op<=0.001){if(it._op!=='0'){it._op='0';it.el.style.opacity='0';}return;}
       const tf=`translate(${px+ox}px, ${py+oy}px) translate(-50%,-50%) scale(${sc})`;
       if(it._tf!==tf){it._tf=tf;it.el.style.transform=tf;}
@@ -1007,6 +1013,17 @@ function placeOnboardHotspot(session){
   button.style.height=rect.height+'px';
 }
 function onboardSentenceAnchor(session){
+  // Cycle 9: the live flow has no video variant, so the old fallback
+  // anchored the panel to the (hidden) video box's top-left corner and the
+  // detail panel opened stuck to the top-left. Anchor it to the live take
+  // button instead: it sits exactly over the take word in the sentence.
+  if(session.liveIntro){
+    const btn=document.getElementById('onboard-take');
+    if(btn){
+      const r=btn.getBoundingClientRect();
+      if(r.width>0)return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,direction:'below'};
+    }
+  }
   const variant=session.variant;
   const box=onboardVideoBox();
   const norm=variant&&variant.sentence;
