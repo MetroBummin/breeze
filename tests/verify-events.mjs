@@ -118,5 +118,9 @@ test('the app wires each funnel event through the logger',()=>{
   const dictionary=read('scripts/dictionary/dictionary.js');
   assert.match(dictionary,/trackEvent\('first_word_tap'\)/);
   assert.match(dictionary,/trackEvent\('first_lookup_success'\)/);
+  const applyLook=dictionary.slice(dictionary.indexOf('function applyLook'),dictionary.indexOf('/* A failed first lookup'));
+  assert.match(applyLook,/trackEvent\('first_lookup_success'\)/);
+  const detected=dictionary.slice(dictionary.indexOf('function saveDetectedExpression'),dictionary.indexOf('async function loadCachedLook'));
+  assert.match(detected,/trackEvent\('first_lookup_success'\)/);
   assert.match(dictionary,/trackEvent\('vocab_save',\{first:true\}\)/);
 });

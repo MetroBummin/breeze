@@ -1724,7 +1724,10 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   recentWordOpens.set(id,Math.max(recentWordOpens.get(id)||0,recentWordOpens.get(base.root||k)||0,Date.now()));
   selKey=active;contextView=null;
   saveWords([k,id,active,owner]);queueSync(true);refreshReaderWords();renderIfAlive(life);
-  if(!previous&&typeof trackEvent==='function')trackEvent('vocab_save',{first:true});
+  if(!previous&&typeof trackEvent==='function'){
+    trackEvent('first_lookup_success');
+    trackEvent('vocab_save',{first:true});
+  }
   return active;
 }
 
@@ -1915,6 +1918,7 @@ function applyLook(w, j, k, opt){
   w.up = Date.now();
   if(initial&&String(w.ko||'').trim())firstLookupMeaning={root:k,life:opt.life===undefined?wordLookupLife:opt.life};
   saveWords(k); queueSync(true);
+  if(j&&j.ko&&typeof trackEvent==='function')trackEvent('first_lookup_success');
   if(!hadMeaning&&String(w.ko||'').trim()&&typeof trackEvent==='function')trackEvent('vocab_save',{first:true});
   renderIfAlive(opt.life);
 }
