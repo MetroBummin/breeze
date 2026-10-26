@@ -550,20 +550,37 @@ function measureLiveCenters(session){
   session.liveTakeBox={l:tr.left-wr.left,t:tr.top-wr.top,w:tr.width,h:tr.height};
   session.liveSentCX=sr.left-wr.left+sr.width/2;
 }
+// Cycle 3: the final sentence is no longer a fixed 22px. On a phone it stays
+// 22px; on wider screens it grows with the viewport (capped at 44px) so the
+// sentence does not look tiny on desktop. The whole camera path scales with
+// it, so the take zoom and the lock zoom keep their proportions.
+function liveFinalPx(W){return W<=390?22:Math.min(44,22*W/390);}
+// Cycle 3: write a style only when it actually changed. After the intro lands,
+// every value is steady, so a steady frame writes nothing instead of dirtying
+// 44 meanings, the take word and the halo 60 times a second.
+let liveStyleCache=new WeakMap();
+function liveSet(el,prop,val){
+  if(!el)return;
+  let cache=liveStyleCache.get(el);
+  if(!cache){cache={};liveStyleCache.set(el,cache);}
+  if(cache[prop]!==val){cache[prop]=val;el.style[prop]=val;}
+}
 function liveCamera(W,H,bt,session){
   // bt = ms since burst (negative before burst). push runs tap->zoom1, i.e. bt -118 -> 2470.
   const take=(session&&session.liveTake)||LIVE_TAKE;
   const sentCX=(session&&session.liveSentCX)||LIVE_LINE.cx;
+  const sEnd=liveFinalPx(W)/LIVE_FS;
+  const sBig=(sEnd*6.4)/1.12, sLock=(sEnd*3.1)/1.12;
   const push=liveInterp(bt+118,[0,2588],[1,1.04],LIVE_EASE.linear);
   const z1=liveInterp(bt,[2470,2776],[0,1],LIVE_EASE.expoOut);
   const drift=liveInterp(bt,[2776,2988],[0,1],LIVE_EASE.linear);
   const z2=liveInterp(bt,[2988,3647],[0,1],LIVE_EASE.expoInOut);
-  const sA=LIVE_S_BIG*push;
-  const sL=LIVE_S_LOCK*(1-0.04*drift);
-  let s=Math.exp(Math.log(sA)+(Math.log(LIVE_S_LOCK)-Math.log(sA))*z1);
+  const sA=sBig*push;
+  const sL=sLock*(1-0.04*drift);
+  let s=Math.exp(Math.log(sA)+(Math.log(sLock)-Math.log(sA))*z1);
   if(bt>=2776)s=sL;
-  if(z2>0)s=Math.exp(Math.log(sL)+(Math.log(LIVE_S_END)-Math.log(sL))*z2);
-  const endTakeX=W/2+(take.x-sentCX)*LIVE_S_END;
+  if(z2>0)s=Math.exp(Math.log(sL)+(Math.log(sEnd)-Math.log(sL))*z2);
+  const endTakeX=W/2+(take.x-sentCX)*sEnd;
   const endTakeY=0.45*H;
   const px=liveInterp(z2,[0,1],[W/2,endTakeX],LIVE_EASE.linear);
   const py=liveInterp(z2,[0,1],[H/2,endTakeY],LIVE_EASE.linear);
@@ -572,8 +589,15 @@ function liveCamera(W,H,bt,session){
 function renderLiveFrame(session){
   const live=document.getElementById('onboard-live');
   if(!live||live.hidden)return;
-  const rect=document.getElementById('onboarding').getBoundingClientRect();
-  const W=rect.width, H=rect.height;
+  // Cycle 3: no layout read every frame. The viewport size only changes on
+  // resize, so measure #onboarding then and reuse it while it is stable.
+  // (Reading a rect after writing styles every frame forced a layout flush.)
+  const vw=window.innerWidth, vh=window.innerHeight;
+  if(!session.liveWH||session.liveWH.vw!==vw||session.liveWH.vh!==vh){
+    const rect=document.getElementById('onboarding').getBoundingClientRect();
+    session.liveWH={vw,vh,w:rect.width,h:rect.height};
+  }
+  const W=session.liveWH.w, H=session.liveWH.h;
   const aspect=liveAspect(W,H);
   if(session.liveAspect!==aspect||!session.liveItems)buildLiveMeanings(session);
   const world=document.getElementById('onboard-live-world');
@@ -589,47 +613,64 @@ function renderLiveFrame(session){
   const {s,px,py}=liveCamera(W,H,bt,session);
   const takeC=(session.liveTake)||LIVE_TAKE;
   const takeBox=(session.liveTakeBox)||{l:LIVE_TAKE_BOX.l,t:LIVE_TAKE_BOX.t,w:LIVE_TAKE_BOX.r-LIVE_TAKE_BOX.l,h:LIVE_TAKE_BOX.b-LIVE_TAKE_BOX.t};
-  if(world)world.style.transform=`translate(${px-takeC.x*s}px, ${py-takeC.y*s}px) scale(${s})`;
-  // aurora: 420px, 2.4s cycle, fades burst -> burst+200ms
+  liveSet(world,'transform',`translate(${px-takeC.x*s}px, ${py-takeC.y*s}px) scale(${s})`);
+  // aurora: 420px, 2.4s cycle, fades burst -> burst+200ms. Once faded out it
+  // is invisible, so stop touching it instead of rewriting it every frame.
   if(aurora){
-    const tReal=session.clock/1000;
-    const ph=((tReal%2.4)/2.4+2.4)%2.4;
-    const e=ph<0.5?LIVE_EASE.eio(ph*2):1-LIVE_EASE.eio((ph-0.5)*2);
     const fade=session.liveStarted?1-liveClamp((elapsed-118)/200,0,1):1;
-    const sc=0.96+0.08*e, op=(0.55+0.35*e)*fade;
-    aurora.style.opacity=op>0.001?String(op):'0';
-    aurora.style.transform=`translate(${px-210}px, ${py-210}px) scale(${sc})`;
+    if(fade<=0)liveSet(aurora,'opacity','0');
+    else{
+      const tReal=session.clock/1000;
+      const ph=((tReal%2.4)/2.4+2.4)%2.4;
+      const e=ph<0.5?LIVE_EASE.eio(ph*2):1-LIVE_EASE.eio((ph-0.5)*2);
+      const sc=0.96+0.08*e, op=(0.55+0.35*e)*fade;
+      liveSet(aurora,'opacity',op>0.001?String(op):'0');
+      liveSet(aurora,'transform',`translate(${px-210}px, ${py-210}px) scale(${sc})`);
+    }
   }
   // take pulse (squish): tap -> burst -> burst+235ms
   const pulse=bt<0?1-0.06*LIVE_EASE.quadOut(liveClamp((bt+118)/118,0,1)):1-0.06*(1-LIVE_EASE.quadOut(liveClamp(bt/235,0,1)));
-  if(takeWord)takeWord.style.transform=`scale(${pulse})`;
-  if(glowWord)glowWord.style.transform=`scale(${pulse})`;
+  liveSet(takeWord,'transform',`scale(${pulse})`);
+  liveSet(glowWord,'transform',`scale(${pulse})`);
   // context fade + highlight
   const ctx=liveInterp(bt,[3082,3388],[0,1],LIVE_EASE.linear);
-  document.querySelectorAll('#onboard-live-sentence-main .onboard-live-ctx').forEach(el=>{el.style.opacity=String(ctx);});
-  if(highlight)highlight.style.opacity=String(liveInterp(bt,[2757,2835],[0,1],LIVE_EASE.linear));
-  // shimmer
+  if(!session.liveCtx)session.liveCtx=[...document.querySelectorAll('#onboard-live-sentence-main .onboard-live-ctx')];
+  session.liveCtx.forEach(el=>{liveSet(el,'opacity',String(ctx));});
+  liveSet(highlight,'opacity',String(liveInterp(bt,[2757,2835],[0,1],LIVE_EASE.linear)));
+  // shimmer: the sharp take word keeps its moving gradient, but the blurred
+  // glow copy no longer rebuilds a gradient every frame (under 9px of blur
+  // the sweep is invisible anyway). Its gradient is set once in
+  // resetLiveIntro; here only its opacity follows the shimmer.
   const shimOn=liveInterp(bt,[39,196,2717,2776],[0,1,1,0],LIVE_EASE.linear);
-  const cyc=bt>=0?((bt/1167)%1):0;
-  const bp=-18+LIVE_EASE.shimmer(cyc)*136;
-  const INK='#293034';
-  const grad=`linear-gradient(105deg, ${INK} 0%, ${INK} ${bp-30}%, rgb(20,122,255) ${bp-11}%, rgb(150,205,255) ${bp}%, rgb(20,122,255) ${bp+11}%, ${INK} ${bp+30}%, ${INK} 100%)`;
-  const glowGrad=`linear-gradient(105deg, transparent 0%, transparent ${bp-22}%, rgba(40,140,255,1) ${bp}%, transparent ${bp+22}%, transparent 100%)`;
   if(takeWord){
-    if(shimOn>0){takeWord.style.color='transparent';takeWord.style.backgroundImage=grad;takeWord.style.webkitBackgroundClip='text';takeWord.style.backgroundClip='text';}
-    else{takeWord.style.color='';takeWord.style.backgroundImage='';takeWord.style.webkitBackgroundClip='';takeWord.style.backgroundClip='';}
+    if(shimOn>0){
+      const cyc=bt>=0?((bt/1167)%1):0;
+      const bp=-18+LIVE_EASE.shimmer(cyc)*136;
+      const INK='#293034';
+      liveSet(takeWord,'color','transparent');
+      liveSet(takeWord,'backgroundImage',`linear-gradient(105deg, ${INK} 0%, ${INK} ${bp-30}%, rgb(20,122,255) ${bp-11}%, rgb(150,205,255) ${bp}%, rgb(20,122,255) ${bp+11}%, ${INK} ${bp+30}%, ${INK} 100%)`);
+      liveSet(takeWord,'webkitBackgroundClip','text');
+      liveSet(takeWord,'backgroundClip','text');
+    }else{
+      liveSet(takeWord,'color','');
+      liveSet(takeWord,'backgroundImage','');
+      liveSet(takeWord,'webkitBackgroundClip','');
+      liveSet(takeWord,'backgroundClip','');
+    }
   }
-  if(glow&&glowWord){
-    glow.style.opacity=String(shimOn);
-    glowWord.style.color='transparent';glowWord.style.backgroundImage=glowGrad;glowWord.style.webkitBackgroundClip='text';glowWord.style.backgroundClip='text';
-  }
+  liveSet(glow,'opacity',String(shimOn));
   // meanings (hidden after lock+59ms, like Remotion's Burst render window)
+  // Cycle 3: transform-only. The old code rewrote left/top (a layout pass)
+  // and a blur filter (a repaint) for all 44 meanings every frame; the spans
+  // now sit at 0,0 and only their transform/opacity change, which the browser
+  // can move on the compositor without repainting. The blur fade is dropped:
+  // the scale + opacity fade already reads as the same suck-in.
   const showMeanings=bt<2835;
-  if(meaningsWrap)meaningsWrap.style.display=showMeanings?'':'none';
+  liveSet(meaningsWrap,'display',showMeanings?'':'none');
   if(showMeanings&&session.liveItems){
     session.liveItems.forEach((it)=>{
       const out=liveInterp(bt,[it.delay,it.delay+431],[0,1],LIVE_EASE.expoOut);
-      if(out<=0){it.el.style.opacity='0';return;}
+      if(out<=0){if(it._op!=='0'){it._op='0';it.el.style.opacity='0';}return;}
       const spr=0.2+0.8*liveInterp(bt,[it.delay,it.delay+470],[0,1],LIVE_EASE.spring);
       const drift=liveInterp(bt,[it.delay,2470],[0,1],LIVE_EASE.linear);
       const dx=Math.sign(it.x)*drift*22*LIVE_K;
@@ -639,21 +680,19 @@ function renderLiveFrame(session){
       const oy=it.y*out*(1-back);
       const sc=lock?spr*liveInterp(back,[0,0.6,1],[1,0.8,0.45],LIVE_EASE.linear):spr*(1-back*0.92);
       const op=lock?Math.min(1,out*3)*(1-liveInterp(back,[0.86,1],[0,1],LIVE_EASE.linear)):Math.min(1,out*3)*(1-liveInterp(back,[0.3,0.75],[0,1],LIVE_EASE.linear));
-      if(op<=0.001){it.el.style.opacity='0';return;}
-      const blur=(!lock&&back>0&&back<1?back*6:(out<1?(1-out)*5:0))*LIVE_K;
-      it.el.style.left=(px+ox)+'px';
-      it.el.style.top=(py+oy)+'px';
-      it.el.style.transform=`translate(-50%,-50%) scale(${sc})`;
-      it.el.style.opacity=String(op);
-      it.el.style.filter=blur>0.15?`blur(${blur.toFixed(2)}px)`:'';
+      if(op<=0.001){if(it._op!=='0'){it._op='0';it.el.style.opacity='0';}return;}
+      const tf=`translate(${px+ox}px, ${py+oy}px) translate(-50%,-50%) scale(${sc})`;
+      if(it._tf!==tf){it._tf=tf;it.el.style.transform=tf;}
+      const opStr=String(op);
+      if(it._op!==opStr){it._op=opStr;it.el.style.opacity=opStr;}
     });
   }
   // tap overlay follows the take box through the camera
   if(takeBtn){
-    takeBtn.style.left=(px+(takeBox.l-takeC.x)*s)+'px';
-    takeBtn.style.top=(py+(takeBox.t-takeC.y)*s)+'px';
-    takeBtn.style.width=(takeBox.w*s)+'px';
-    takeBtn.style.height=(takeBox.h*s)+'px';
+    liveSet(takeBtn,'left',(px+(takeBox.l-takeC.x)*s)+'px');
+    liveSet(takeBtn,'top',(py+(takeBox.t-takeC.y)*s)+'px');
+    liveSet(takeBtn,'width',(takeBox.w*s)+'px');
+    liveSet(takeBtn,'height',(takeBox.h*s)+'px');
   }
 }
 function resetLiveIntro(session){
@@ -662,6 +701,17 @@ function resetLiveIntro(session){
   live.hidden=false;
   buildLiveMeanings(session);
   measureLiveCenters(session);
+  // Cycle 3: fresh style cache for the new run, and the glow copy gets its
+  // gradient once here instead of rebuilt every frame (see renderLiveFrame).
+  liveStyleCache=new WeakMap();
+  session.liveCtx=null;
+  const glowWord=document.getElementById('onboard-live-take-glow-word');
+  if(glowWord){
+    glowWord.style.color='transparent';
+    glowWord.style.backgroundImage='linear-gradient(105deg, transparent 0%, transparent 35%, rgba(40,140,255,1) 50%, transparent 65%, transparent 100%)';
+    glowWord.style.webkitBackgroundClip='text';
+    glowWord.style.backgroundClip='text';
+  }
   session.liveStarted=false;session.liveBurst=false;session.liveShimmer=false;
   session.liveSuck=false;session.liveSentence=false;session.liveAt=0;
   session.step='word';session.stepAt=performance.now();

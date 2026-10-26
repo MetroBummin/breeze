@@ -67,9 +67,9 @@ html.dark #onboard-live-highlight{background:#294B57;box-shadow:0 0 0 7.35px #29
   position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;
 }
 #onboard-live-meanings span{
-  position:absolute;color:var(--sentence-glass-ink);
+  position:absolute;left:0;top:0;color:var(--sentence-glass-ink);
   font-family:'Pretendard',var(--ui);letter-spacing:-.025em;white-space:nowrap;
-  will-change:transform,opacity,filter;
+  will-change:transform,opacity;
 }
 #onboarding #onboard-take{
   position:absolute;z-index:5;margin:0;padding:0;border:0;border-radius:0;
