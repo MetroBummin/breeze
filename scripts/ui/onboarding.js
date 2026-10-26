@@ -59,7 +59,9 @@ function startOnboardingResolved(replay,pdfAvailable){
   else if(!replay&&typeof progress?.feature==='string'&&progress.feature!=='welcome'){const index=session.pages.findIndex(p=>p[0]===progress.feature);if(index>=0)session.page=index+1;}
   else if(!replay&&!progress?.feature&&session.page>=session.pages.length)session.page=session.pages.length+1;
   session.page=Math.min(session.pages.length+1,session.page);
+  session.startedAt=Date.now();session.stepAt=session.startedAt;
   onboardingSession=session;
+  if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
   for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
     session.inert.push([node,node.inert]);node.inert=true;
   }
@@ -116,7 +118,11 @@ function startOnboardingResolved(replay,pdfAvailable){
     else goOnboardingPage(session.page+1);
   },{signal});
   document.getElementById('onboard-back').addEventListener('click',()=>goOnboardingPage(session.page-1),{signal});
-  document.getElementById('onboard-skip').addEventListener('click',()=>{if(onboardingStudyActive(session)){goOnboardingPage(session.page+1);}else endOnboarding(true);},{signal});
+  document.getElementById('onboard-skip').addEventListener('click',()=>{
+    if(onboardingStudyActive(session)){goOnboardingPage(session.page+1);return;}
+    if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
+    endOnboarding(true);
+  },{signal});
   input.addEventListener('change',async()=>{
     const file=input.files[0];input.value='';
     if(!file||session.page!==session.pages.length+1||session.importController)return;
@@ -126,7 +132,13 @@ function startOnboardingResolved(replay,pdfAvailable){
       const result=await importFile(file,null,{signal:controller.signal});
       // Back, Skip, replay and external navigation invalidate this handoff.
       if(onboardingSession!==session||session.importController!==controller)return;
-      if(result?.bookId){endOnboarding(true);return;}
+      if(result?.bookId){
+        if(typeof trackEvent==='function'){
+          trackEvent('onboarding_step_complete',{step:'finish',ms:onboardingStepMs(session)});
+          trackEvent('onboarding_choice',{choice:'import'});
+        }
+        endOnboarding(true);return;
+      }
       session.importMessage='책을 넣지 못했어요. DRM이 없는 PDF · EPUB · TXT 파일을 다시 골라주세요.';
     }catch{
       if(onboardingSession!==session||session.importController!==controller)return;
@@ -176,14 +188,28 @@ function startOnboardingResolved(replay,pdfAvailable){
   for(const view of document.querySelectorAll('.view'))session.theme.observe(view,{attributes:true,attributeFilter:['class']});
   drawOnboarding();document.getElementById('onboard-next').focus({preventScroll:true});
 }
+function onboardingStepName(session){
+  if(session.page===0)return 'welcome';
+  if(session.page===session.pages.length+1)return 'finish';
+  return session.pages[session.page-1]?.[0]||'';
+}
+function onboardingStepMs(session){
+  return Math.max(0,Math.min(3600000,Date.now()-(session.stepAt||Date.now())));
+}
 function goOnboardingPage(page){
   if(!onboardingSession)return;
   finishOnboardingWelcome();
-  const next=Math.max(0,Math.min(onboardingSession.pages.length+1,page));
-  if(next!==onboardingSession.page){
-    onboardingSession.importController?.abort();onboardingSession.importController=null;onboardingSession.importMessage='';
+  const session=onboardingSession;
+  const next=Math.max(0,Math.min(session.pages.length+1,page));
+  if(next!==session.page){
+    if(next>session.page&&typeof trackEvent==='function'){
+      const step=onboardingStepName(session);
+      if(step)trackEvent('onboarding_step_complete',{step,ms:onboardingStepMs(session)});
+    }
+    session.importController?.abort();session.importController=null;session.importMessage='';
+    session.stepAt=Date.now();
   }
-  onboardingSession.page=next;persistOnboarding();drawOnboarding();
+  session.page=next;persistOnboarding();drawOnboarding();
 }
 function drawOnboarding(){
   const session=onboardingSession;if(!session)return;
