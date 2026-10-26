@@ -41,16 +41,17 @@ file. Theme follows `html`/`body` class `dark`.
    burst.
 2. The main clip holds its last frame once the picture is static (about 4
    seconds). The real `#word-peek` crossfades in over about 120ms on the
-   normalized pill rect. Its meaning text is only `맡다`. Retry shows `맡다`
+   normalized pill rect. Its meaning text is only `맡다`, fully visible inside
+   that rect. Retry shows `맡다`
    again, with at most a short fade, and does not call the dictionary or show
    a loading label. The chevron, or a tap on the pill, opens the real word
    detail. That detail is filled before the card grows, and it stays visible
    for the whole expand.
 3. Nothing advances by itself after the save. A green toast,
    `단어장에 저장됐어요`, appears once, fades out after about two seconds,
-   and a `+1` badge bumps the vocabulary chip. About a second after the toast
-   appears, the book covers spring up over the held video until their tops peek
-   at the bottom.
+   and a `+1` badge bumps the vocabulary chip. The chip sits above the book
+   tops so it does not cover them. When the pill appears, the book covers are
+   already peeking over the held video, tops at the bottom.
    No timer opens the book screen. A drag or swipe up, or a downward trackpad
    scroll, follows the finger. Only the cover row moves, by transform, and the
    choice copy fades by opacity. Releasing past about 30%, or with a flick,

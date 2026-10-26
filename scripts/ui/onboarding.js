@@ -614,7 +614,7 @@ function showOnboardPill(session){
   session.pillShown=true;
   session.pillAt=session.clock;
   session.toastAt=session.clock+700;
-  session.continueAt=session.toastAt+1000;
+  session.continueAt=session.clock;
   const meaning=document.getElementById('word-peek-meaning');
   peek.classList.remove('loading');
   peek.classList.add('onboard-live');
@@ -622,6 +622,9 @@ function showOnboardPill(session){
   peek.style.opacity='0';
   peek.hidden=false;
   placeOnboardPill(session);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{
+    if(onboardingSession===session&&session.pillShown)fitOnboardMeaning();
+  });
   if(session.reduced||session.motion.matches){
     peek.style.opacity='1';
     return;
@@ -640,6 +643,18 @@ function placeOnboardPill(session){
   peek.style.height=rect.height+'px';
   peek.style.transform='none';
   peek.style.margin='0';
+  fitOnboardMeaning();
+}
+function fitOnboardMeaning(){
+  const meaning=document.getElementById('word-peek-meaning');
+  const peek=document.getElementById('word-peek');
+  if(!meaning||!peek||peek.hidden||meaning.textContent!==ONBOARD_MEANING)return;
+  meaning.style.fontSize='';
+  let size=14;
+  while(meaning.scrollWidth>meaning.clientWidth+0.5&&size>11){
+    size-=0.5;
+    meaning.style.fontSize=size+'px';
+  }
 }
 function adoptPeek(session){
   const peek=document.getElementById('word-peek');
@@ -768,13 +783,7 @@ function armPeek(session){
   updateOnboardingChoiceLabel(session,true);
   const rest=peekShift();
   session.restShift=rest;
-  if(session.reduced||session.motion.matches){
-    session.shift=rest;session.shiftV=0;session.shiftSpring=null;
-  }else{
-    session.shift=Math.min(window.innerHeight,rest+140);
-    session.shiftV=0;
-    session.shiftSpring=rest;
-  }
+  session.shift=rest;session.shiftV=0;session.shiftSpring=null;
   renderPull(session);
   document.getElementById('onboard-choice').classList.add('peek');
   session.pullPainted=false;
@@ -1396,6 +1405,7 @@ function paintLockedOnboardingPeek(session){
   peek.hidden=false;
   peek.style.opacity='1';
   placeOnboardPill(session);
+  fitOnboardMeaning();
 }
 let onboardRetryFadeAt=0;
 function fadeLockedOnboardingPeek(){

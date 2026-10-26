@@ -95,6 +95,14 @@ try{
     return {dx:Math.abs(pill.left-(box.left+expect.left)),dy:Math.abs(pill.top-(box.top+expect.top)),dw:Math.abs(pill.width-expect.width),dh:Math.abs(pill.height-expect.height)};
   });
   assert.ok(aligned.dx<=1.5&&aligned.dy<=1.5&&aligned.dw<=1.5&&aligned.dh<=1.5,JSON.stringify(aligned));
+  const fitted=await page.evaluate(()=>{
+    const meaning=document.getElementById('word-peek-meaning');
+    return {text:meaning.textContent,clip:meaning.scrollWidth-meaning.clientWidth,peek:onboardingSession.peekReady,gap:onboardingSession.continueAt-onboardingSession.pillAt};
+  });
+  assert.equal(fitted.text,'맡다');
+  assert.ok(fitted.clip<=0.5,JSON.stringify(fitted));
+  assert.equal(fitted.peek,true);
+  assert.equal(fitted.gap,0);
   await page.locator('#word-peek-retry').click();
   const retry=await page.evaluate(()=>{
     const peek=document.getElementById('word-peek');
@@ -117,16 +125,23 @@ try{
   assert.equal(await page.evaluate(()=>document.getElementById('word-peek-meaning').textContent),'맡다');
   await page.screenshot({path:`${out}/pill.png`});
   await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady&&onboardingSession.shiftSpring==null);
+  await page.waitForFunction(()=>document.getElementById('onboard-vocab-bump').classList.contains('on'));
   await page.waitForTimeout(800);
   const held=await page.evaluate(()=>{
     const band=[...document.querySelectorAll('.onboard-cover')].map(node=>node.getBoundingClientRect()).filter(rect=>rect.width>8&&rect.top<innerHeight-12&&rect.bottom>innerHeight-4);
     const visible=band.reduce((max,rect)=>Math.max(max,Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0)),0);
     const hit=document.elementFromPoint(innerWidth/2,innerHeight-24);
-    return {scene:document.getElementById('onboarding').dataset.scene,n:band.length,visible,commit:onboardingSession.pullCommit,hit:!!(hit&&hit.closest&&hit.closest('.onboard-cover'))};
+    const bump=document.getElementById('onboard-vocab-bump').getBoundingClientRect();
+    const overlap=[...document.querySelectorAll('.onboard-cover')].some(node=>{
+      const rect=node.getBoundingClientRect();
+      return rect.width>8&&rect.left<bump.right+1&&rect.right>bump.left-1&&rect.top<bump.bottom+1&&rect.bottom>bump.top-1;
+    });
+    return {scene:document.getElementById('onboarding').dataset.scene,n:band.length,visible,commit:onboardingSession.pullCommit,hit:!!(hit&&hit.closest&&hit.closest('.onboard-cover')),overlap,bumpBottom:Math.round(innerHeight-bump.bottom)};
   });
   assert.notEqual(held.scene,'choice');
   assert.equal(held.commit,false);
   assert.equal(held.hit,true,JSON.stringify(held));
+  assert.equal(held.overlap,false,JSON.stringify(held));
   assert.ok(held.n>=1&&held.visible>=48,JSON.stringify(held));
   await page.evaluate(()=>{const s=onboardingSession;s.shift=0;s.shiftSpring=null;showChoice(s,false);});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
@@ -376,6 +391,13 @@ try{
     assert.equal(aligned.text,'맡다');
     assert.ok(aligned.paused||aligned.time>=4,'main did not hold the static frame');
     assert.ok(aligned.dx<=1.5&&aligned.dy<=1.5&&aligned.dw<=1.5&&aligned.dh<=1.5,`${spec.clip} ${JSON.stringify(aligned)}`);
+    const fitted=await page.evaluate(()=>{
+      const meaning=document.getElementById('word-peek-meaning');
+      return {clip:meaning.scrollWidth-meaning.clientWidth,peek:onboardingSession.peekReady,gap:onboardingSession.continueAt-onboardingSession.pillAt};
+    });
+    assert.ok(fitted.clip<=0.5,`${spec.clip} ${JSON.stringify(fitted)}`);
+    assert.equal(fitted.peek,true,spec.clip);
+    assert.equal(fitted.gap,0,spec.clip);
     await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady&&onboardingSession.shiftSpring==null);
     const peeking=await page.evaluate(()=>{
       const band=[...document.querySelectorAll('.onboard-cover')].map(node=>node.getBoundingClientRect()).filter(rect=>rect.width>8&&rect.top<innerHeight-12&&rect.bottom>innerHeight-4);
@@ -386,6 +408,16 @@ try{
     assert.notEqual(peeking.scene,'choice',spec.clip);
     assert.equal(peeking.hit,true,`${spec.clip} ${JSON.stringify(peeking)}`);
     assert.ok(peeking.n>=1&&peeking.visible>=48,`${spec.clip} ${JSON.stringify(peeking)}`);
+    await page.waitForFunction(()=>document.getElementById('onboard-vocab-bump').classList.contains('on'));
+    const clear=await page.evaluate(()=>{
+      const bump=document.getElementById('onboard-vocab-bump').getBoundingClientRect();
+      const overlap=[...document.querySelectorAll('.onboard-cover')].some(node=>{
+        const rect=node.getBoundingClientRect();
+        return rect.width>8&&rect.left<bump.right+1&&rect.right>bump.left-1&&rect.top<bump.bottom+1&&rect.bottom>bump.top-1;
+      });
+      return {overlap,gap:Math.round(bump.bottom)};
+    });
+    assert.equal(clear.overlap,false,`${spec.clip} ${JSON.stringify(clear)}`);
     if(spec.clip==='ipadportrait'){
       await page.locator('#word-peek-retry').click();
       assert.equal(await page.locator('#word-peek-meaning').innerText(),'맡다');

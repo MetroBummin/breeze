@@ -51,7 +51,10 @@ body.onboarding-active #word-peek.onboard-live{
   box-sizing:border-box;max-width:none;pointer-events:auto;
   transition:opacity .12s linear;
 }
-body.onboarding-active #word-peek.onboard-live #word-peek-meaning{transition:opacity .16s linear;}
+body.onboarding-active #word-peek.onboard-live #word-peek-meaning{
+  flex:1 1 auto;max-width:none;padding:10px 8px 9px 10px;
+  text-overflow:clip;transition:opacity .16s linear;
+}
 body.onboarding-active #word-peek.onboard-live.onboard-retry #word-peek-meaning{opacity:.45;transition:none;}
 body.onboarding-active #word-peek-retry,
 body.onboarding-active #word-peek-more{pointer-events:auto;}
@@ -88,6 +91,8 @@ body.onboarding-active #panel.anchored.morphing .inner{opacity:1;}
   opacity:0;visibility:hidden;
 }
 #onboard-vocab-bump.on{visibility:visible;opacity:1;}
+/* 78px cover peek plus a gap, so the chip and its label clear the book tops. */
+body.onboarding-active #onboard-vocab-bump{bottom:calc(96px + env(safe-area-inset-bottom));}
 .onboard-vocab-icon{
   position:relative;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;
   background:#fff;color:#1c1c1e;box-shadow:0 6px 16px rgba(25,35,45,.12);
