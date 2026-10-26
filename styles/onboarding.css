@@ -33,6 +33,44 @@ body.onboarding-active{overflow:hidden;}
 #onboard-video-main{z-index:2;opacity:0;}
 #onboard-video-idle.is-out{opacity:0;transition:opacity .1s linear;}
 #onboard-video-main.is-in{opacity:1;transition:opacity .1s linear;}
+/* Cycle 2: live intro ported from Remotion OnboardingIntro. One world layer
+   (1170x2532) driven by the camera in JS; transform/opacity/filter only.
+   The choice screen below is untouched. */
+#onboarding.live-intro #onboard-video-idle,#onboarding.live-intro #onboard-video-main{display:none;}
+#onboard-live{position:absolute;inset:0;z-index:3;overflow:hidden;background:var(--home-background);}
+#onboard-live[hidden]{display:none!important;}
+.onboard-live-halo{
+  position:absolute;left:0;top:0;width:420px;height:420px;z-index:0;
+  background:radial-gradient(closest-side,rgba(77,174,214,.18),rgba(77,174,214,.06) 60%,transparent);
+  filter:blur(12px);pointer-events:none;will-change:transform,opacity;
+}
+#onboard-live-world{
+  position:absolute;left:0;top:0;width:1170px;height:2532px;z-index:1;
+  transform-origin:0 0;will-change:transform;pointer-events:none;
+}
+#onboard-live-highlight{
+  position:absolute;left:459px;top:668px;width:102px;height:62px;opacity:0;
+  background:#DCEAF0;border-radius:14.7px;box-shadow:0 0 0 7.35px #DCEAF0;
+}
+html.dark #onboard-live-highlight{background:#294B57;box-shadow:0 0 0 7.35px #294B57;}
+.onboard-live-sentence{
+  position:absolute;left:98.5px;top:671px;white-space:pre;
+  color:var(--sentence-glass-ink);font-family:'Gelasio',var(--serif);
+  font-size:53.9px;line-height:64.68px;
+}
+.onboard-live-sentence .onboard-live-ctx{opacity:0;}
+#onboard-live-take-word,#onboard-live-take-glow-word{
+  display:inline-block;transform-origin:50% 60%;will-change:transform;
+}
+.onboard-live-glow{opacity:0;filter:blur(9px);pointer-events:none;}
+#onboard-live-meanings{
+  position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;
+}
+#onboard-live-meanings span{
+  position:absolute;color:var(--sentence-glass-ink);
+  font-family:'Pretendard',var(--ui);letter-spacing:-.025em;white-space:nowrap;
+  will-change:transform,opacity,filter;
+}
 #onboarding #onboard-take{
   position:absolute;z-index:5;margin:0;padding:0;border:0;border-radius:0;
   background:transparent;color:transparent;min-width:0;min-height:0;

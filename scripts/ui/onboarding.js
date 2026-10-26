@@ -24,6 +24,9 @@ const ONBOARD_BOOKS=[
   {id:'sherlock-holmes-hound-of-the-baskervilles',cta:'바스커빌 바로 읽기'},
 ];
 const PEEK_PX=78;
+/* Cycle 1: live intro. Words follow the attached promo frame (2.2s): rows
+   around a centre gap where the live take sits. Only the choice screen
+   (covers, buttons) is left alone; the pill/save cycles come later. */
 let onboardHotspotsPromise=null;
 
 function lerpStops(a,values){
@@ -225,7 +228,7 @@ function startOnboarding(replay){
     replay:!!replay,motion:matchMedia('(prefers-reduced-motion: reduce)'),
     mode:'boot',step:'word',stepAt:performance.now(),
     clock:0,last:performance.now(),B:onboardTiming().idle,rate:clockRate(),
-    reduced:false,burstStarted:false,mainStarted:false,pillShown:false,
+    reduced:false,burstStarted:false,mainStarted:false,pillShown:false,liveIntro:true,
     saved:false,coversReady:false,importing:false,
     didWord:false,didBurst:false,didSentence:false,didSave:false,peekReady:false,pullCommit:false,
     variants:[],variant:null,theme:'light',
@@ -419,6 +422,318 @@ function tick(session,now){
     }
   }else if(session.mode==='choice')tickCovers(session,dtMs/1000);
 }
+/* Remotion OnboardingIntro port (numbers copied from src/onb/OnboardingIntro.tsx).
+   World = promo recording coords (1170 wide). Camera scale s maps world to screen:
+   screen font = 53.9 * s, start 125.7px, lock 60.8px, end 22px. */
+const LIVE_TAKE={x:510,y:699};
+const LIVE_TAKE_BOX={l:459,t:668,r:561,b:730};
+const LIVE_FS=53.9, LIVE_LEFT=98.5, LIVE_TOP0=671, LIVE_LINE={cx:554,cy:699};
+const LIVE_S_END=22/LIVE_FS;
+const LIVE_S_BIG=(LIVE_S_END*6.4)/1.12, LIVE_S_LOCK=(LIVE_S_END*3.1)/1.12;
+const LIVE_K=390/1080;
+const LIVE_MEANINGS=['잡다','가져가다','데려가다','걸리다','받아들이다','참다','먹다','타다','찍다','앉다','맡다','점령하다','고르다','하다','받다','취하다','필요로 하다','듣다','빼다','재다','여기다','견디다','차지하다','쥐다','택하다','이용하다','복용하다','수강하다','사다','간주하다','소요되다','적다','빼앗다','섭취하다','수락하다','감수하다','촬영하다','측정하다','인수하다','선택하다','붙잡다','수용하다','함락하다','승차하다'];
+const LIVE_WIDTH_EM={"잡다":1.705,"가져가다":3.39,"데려가다":3.39,"걸리다":2.548,"받아들이다":4.233,"참다":1.705,"먹다":1.705,"타다":1.705,"찍다":1.705,"앉다":1.705,"맡다":1.705,"점령하다":3.39,"고르다":2.548,"하다":1.705,"받다":1.705,"취하다":2.548,"필요로 하다":4.452,"듣다":1.705,"빼다":1.705,"재다":1.705,"여기다":2.548,"견디다":2.548,"차지하다":3.39,"쥐다":1.705,"택하다":2.548,"이용하다":3.39,"복용하다":3.39,"수강하다":3.39,"사다":1.705,"간주하다":3.39,"소요되다":3.39,"적다":1.705,"빼앗다":2.548,"섭취하다":3.39,"수락하다":3.39,"감수하다":3.39,"촬영하다":3.39,"측정하다":3.39,"인수하다":3.39,"선택하다":3.39,"붙잡다":2.548,"수용하다":3.39,"함락하다":3.39,"승차하다":3.39};
+const LIVE_WEIGHTS=[500,600,700,800];
+function liveRnd(i){const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+function liveClamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function liveBezier(x1,y1,x2,y2){
+  const cx=3*x1, bx=3*(x2-x1)-cx, ax=1-cx-bx, cy=3*y1, by=3*(y2-y1)-cy, ay=1-cy-by;
+  const sampleX=t=>((ax*t+bx)*t+cx)*t, sampleY=t=>((ay*t+by)*t+cy)*t, sampleSlope=t=>(3*ax*t+2*bx)*t+cx;
+  return p=>{
+    if(p<=0)return 0; if(p>=1)return 1;
+    let t=p;
+    for(let i=0;i<8;i++){const err=sampleX(t)-p; if(Math.abs(err)<1e-6)break; const slope=sampleSlope(t); if(Math.abs(slope)<1e-6)break; t-=err/slope;}
+    if(t<0||t>1){let lo=0,hi=1; for(let i=0;i<20;i++){t=(lo+hi)/2; if(sampleX(t)<p)lo=t; else hi=t;}}
+    return sampleY(t);
+  };
+}
+const LIVE_EASE={
+  expoOut:liveBezier(0.16,1,0.3,1),
+  expoInOut:liveBezier(0.87,0,0.13,1),
+  spring:liveBezier(0.34,1.45,0.64,1),
+  eio:liveBezier(0.42,0,0.58,1),
+  shimmer:liveBezier(0.42,0,0.3,1),
+  suck:liveBezier(0.6,0,0.95,0.45),
+  lock:liveBezier(0.55,0,0.45,1),
+  quadOut:p=>1-(1-p)*(1-p),
+  linear:p=>p,
+};
+function liveInterp(t,points,values,easing){
+  if(t<=points[0])return values[0];
+  for(let i=1;i<points.length;i++){
+    if(t<=points[i]){
+      const p=(t-points[i-1])/(points[i]-points[i-1]);
+      const e=easing?easing(p):p;
+      return values[i-1]+(values[i]-values[i-1])*e;
+    }
+  }
+  return values[values.length-1];
+}
+function liveAspect(W,H){
+  if(H>W)return W<=420?'portrait':'ipadportrait';
+  return W>=1180?'ipadlandscape':'landscape';
+}
+function buildLiveItems(aspect){
+  const out=[]; let mi=0;
+  const CFG={
+    portrait:{mul:1,ys:[-820,-640,-460,-285,285,460,640,820].map(y=>y*LIVE_K*1.217),counts:[6,5,6,5,6,5,6,5]},
+    landscape:{mul:1.1,ys:[-277,-190,-103,103,190,277],counts:[7,6,7,7,6,7]},
+    ipadportrait:{mul:1.35,ys:[-515,-415,-315,-215,-115,115,215,315,415,515],counts:[5,4,5,4,4,4,5,4,5,4]},
+    ipadlandscape:{mul:1.35,ys:[-380,-290,-200,-110,110,200,290,380],counts:[5,6,5,6,6,5,6,5]},
+  }[aspect];
+  const gap=72*LIVE_K;
+  const take=(n)=>{
+    const row=[];
+    for(let j=0;j<n&&mi<LIVE_MEANINGS.length;j++){
+      const m=LIVE_MEANINGS[mi]; mi++;
+      const size=(80+liveRnd(mi+3)*62)*LIVE_K*CFG.mul;
+      row.push({m,size,w:LIVE_WIDTH_EM[m]*size,weight:LIVE_WEIGHTS[Math.floor(liveRnd(mi+9)*4)]});
+    }
+    return row;
+  };
+  CFG.ys.forEach((y,r)=>{
+    const row=take(CFG.counts[r]);
+    const total=row.reduce((a,it)=>a+it.w,0)+gap*(row.length-1);
+    let x=-total/2+(liveRnd(r+40)-0.5)*260*LIVE_K;
+    row.forEach(it=>{out.push({m:it.m,x:x+it.w/2,y:y+(liveRnd(mi+r)-0.5)*14*LIVE_K,size:it.size,weight:it.weight}); x+=it.w+gap;});
+  });
+  if(aspect==='landscape'&&mi<LIVE_MEANINGS.length){
+    const rest=take(LIVE_MEANINGS.length-mi);
+    const half=Math.ceil(rest.length/2);
+    [rest.slice(0,half),rest.slice(half)].forEach((part,side)=>{
+      let x=side===0?-168:168;
+      part.forEach(it=>{
+        const cx=side===0?x-it.w/2:x+it.w/2;
+        out.push({m:it.m,x:cx,y:(liveRnd(mi+side)-0.5)*6,size:it.size,weight:it.weight});
+        x+=side===0?-(it.w+gap):it.w+gap;
+      });
+    });
+  }
+  out.forEach((it,i)=>{
+    it.d=Math.hypot(it.x,it.y)/LIVE_K;
+    it.delay=(Math.hypot(it.x,it.y*1.3)/LIVE_K/1300)*196+liveRnd(i+30)*39;
+    it.sd=2470-78+(1-Math.min(1,it.d/1200))*78+liveRnd(i+11)*39;
+    if(it.m==='맡다')it.sd=2510;
+  });
+  return out;
+}
+function buildLiveMeanings(session){
+  const wrap=document.getElementById('onboard-live-meanings');
+  if(!wrap)return;
+  const rect=document.getElementById('onboarding').getBoundingClientRect();
+  const aspect=liveAspect(rect.width,rect.height);
+  session.liveAspect=aspect;
+  wrap.innerHTML='';
+  session.liveItems=buildLiveItems(aspect).map((it,i)=>{
+    const span=document.createElement('span');
+    span.textContent=it.m;
+    span.style.fontWeight=it.weight;
+    span.style.fontSize=it.size+'px';
+    span.style.opacity='0';
+    wrap.append(span);
+    return {...it,el:span,index:i};
+  });
+}
+function measureLiveCenters(session){
+  // Georgia (DOM) is narrower than Gelasio (Remotion), so the real take centre
+  // sits ~36 world px left of LIVE_TAKE. Measure it once so the camera centres
+  // the take that is actually on screen, not the Remotion coordinate.
+  const world=document.getElementById('onboard-live-world');
+  const take=document.getElementById('onboard-live-take-word');
+  const sent=document.getElementById('onboard-live-sentence-main');
+  if(!world||!take||!sent)return;
+  const saved=world.style.transform;
+  world.style.transform='none';
+  const wr=world.getBoundingClientRect(), tr=take.getBoundingClientRect(), sr=sent.getBoundingClientRect();
+  world.style.transform=saved;
+  session.liveTake={x:tr.left-wr.left+tr.width/2,y:tr.top-wr.top+tr.height/2};
+  session.liveTakeBox={l:tr.left-wr.left,t:tr.top-wr.top,w:tr.width,h:tr.height};
+  session.liveSentCX=sr.left-wr.left+sr.width/2;
+}
+function liveCamera(W,H,bt,session){
+  // bt = ms since burst (negative before burst). push runs tap->zoom1, i.e. bt -118 -> 2470.
+  const take=(session&&session.liveTake)||LIVE_TAKE;
+  const sentCX=(session&&session.liveSentCX)||LIVE_LINE.cx;
+  const push=liveInterp(bt+118,[0,2588],[1,1.04],LIVE_EASE.linear);
+  const z1=liveInterp(bt,[2470,2776],[0,1],LIVE_EASE.expoOut);
+  const drift=liveInterp(bt,[2776,2988],[0,1],LIVE_EASE.linear);
+  const z2=liveInterp(bt,[2988,3647],[0,1],LIVE_EASE.expoInOut);
+  const sA=LIVE_S_BIG*push;
+  const sL=LIVE_S_LOCK*(1-0.04*drift);
+  let s=Math.exp(Math.log(sA)+(Math.log(LIVE_S_LOCK)-Math.log(sA))*z1);
+  if(bt>=2776)s=sL;
+  if(z2>0)s=Math.exp(Math.log(sL)+(Math.log(LIVE_S_END)-Math.log(sL))*z2);
+  const endTakeX=W/2+(take.x-sentCX)*LIVE_S_END;
+  const endTakeY=0.45*H;
+  const px=liveInterp(z2,[0,1],[W/2,endTakeX],LIVE_EASE.linear);
+  const py=liveInterp(z2,[0,1],[H/2,endTakeY],LIVE_EASE.linear);
+  return {s,px,py};
+}
+function renderLiveFrame(session){
+  const live=document.getElementById('onboard-live');
+  if(!live||live.hidden)return;
+  const rect=document.getElementById('onboarding').getBoundingClientRect();
+  const W=rect.width, H=rect.height;
+  const aspect=liveAspect(W,H);
+  if(session.liveAspect!==aspect||!session.liveItems)buildLiveMeanings(session);
+  const world=document.getElementById('onboard-live-world');
+  const aurora=document.querySelector('.onboard-live-halo');
+  const takeWord=document.getElementById('onboard-live-take-word');
+  const glowWord=document.getElementById('onboard-live-take-glow-word');
+  const glow=document.getElementById('onboard-live-sentence-glow');
+  const highlight=document.getElementById('onboard-live-highlight');
+  const meaningsWrap=document.getElementById('onboard-live-meanings');
+  const takeBtn=document.getElementById('onboard-take');
+  const elapsed=session.liveStarted?session.clock-session.liveAt:0;
+  const bt=elapsed-118; // ms since burst
+  const {s,px,py}=liveCamera(W,H,bt,session);
+  const takeC=(session.liveTake)||LIVE_TAKE;
+  const takeBox=(session.liveTakeBox)||{l:LIVE_TAKE_BOX.l,t:LIVE_TAKE_BOX.t,w:LIVE_TAKE_BOX.r-LIVE_TAKE_BOX.l,h:LIVE_TAKE_BOX.b-LIVE_TAKE_BOX.t};
+  if(world)world.style.transform=`translate(${px-takeC.x*s}px, ${py-takeC.y*s}px) scale(${s})`;
+  // aurora: 420px, 2.4s cycle, fades burst -> burst+200ms
+  if(aurora){
+    const tReal=session.clock/1000;
+    const ph=((tReal%2.4)/2.4+2.4)%2.4;
+    const e=ph<0.5?LIVE_EASE.eio(ph*2):1-LIVE_EASE.eio((ph-0.5)*2);
+    const fade=session.liveStarted?1-liveClamp((elapsed-118)/200,0,1):1;
+    const sc=0.96+0.08*e, op=(0.55+0.35*e)*fade;
+    aurora.style.opacity=op>0.001?String(op):'0';
+    aurora.style.transform=`translate(${px-210}px, ${py-210}px) scale(${sc})`;
+  }
+  // take pulse (squish): tap -> burst -> burst+235ms
+  const pulse=bt<0?1-0.06*LIVE_EASE.quadOut(liveClamp((bt+118)/118,0,1)):1-0.06*(1-LIVE_EASE.quadOut(liveClamp(bt/235,0,1)));
+  if(takeWord)takeWord.style.transform=`scale(${pulse})`;
+  if(glowWord)glowWord.style.transform=`scale(${pulse})`;
+  // context fade + highlight
+  const ctx=liveInterp(bt,[3082,3388],[0,1],LIVE_EASE.linear);
+  document.querySelectorAll('#onboard-live-sentence-main .onboard-live-ctx').forEach(el=>{el.style.opacity=String(ctx);});
+  if(highlight)highlight.style.opacity=String(liveInterp(bt,[2757,2835],[0,1],LIVE_EASE.linear));
+  // shimmer
+  const shimOn=liveInterp(bt,[39,196,2717,2776],[0,1,1,0],LIVE_EASE.linear);
+  const cyc=bt>=0?((bt/1167)%1):0;
+  const bp=-18+LIVE_EASE.shimmer(cyc)*136;
+  const INK='#293034';
+  const grad=`linear-gradient(105deg, ${INK} 0%, ${INK} ${bp-30}%, rgb(20,122,255) ${bp-11}%, rgb(150,205,255) ${bp}%, rgb(20,122,255) ${bp+11}%, ${INK} ${bp+30}%, ${INK} 100%)`;
+  const glowGrad=`linear-gradient(105deg, transparent 0%, transparent ${bp-22}%, rgba(40,140,255,1) ${bp}%, transparent ${bp+22}%, transparent 100%)`;
+  if(takeWord){
+    if(shimOn>0){takeWord.style.color='transparent';takeWord.style.backgroundImage=grad;takeWord.style.webkitBackgroundClip='text';takeWord.style.backgroundClip='text';}
+    else{takeWord.style.color='';takeWord.style.backgroundImage='';takeWord.style.webkitBackgroundClip='';takeWord.style.backgroundClip='';}
+  }
+  if(glow&&glowWord){
+    glow.style.opacity=String(shimOn);
+    glowWord.style.color='transparent';glowWord.style.backgroundImage=glowGrad;glowWord.style.webkitBackgroundClip='text';glowWord.style.backgroundClip='text';
+  }
+  // meanings (hidden after lock+59ms, like Remotion's Burst render window)
+  const showMeanings=bt<2835;
+  if(meaningsWrap)meaningsWrap.style.display=showMeanings?'':'none';
+  if(showMeanings&&session.liveItems){
+    session.liveItems.forEach((it)=>{
+      const out=liveInterp(bt,[it.delay,it.delay+431],[0,1],LIVE_EASE.expoOut);
+      if(out<=0){it.el.style.opacity='0';return;}
+      const spr=0.2+0.8*liveInterp(bt,[it.delay,it.delay+470],[0,1],LIVE_EASE.spring);
+      const drift=liveInterp(bt,[it.delay,2470],[0,1],LIVE_EASE.linear);
+      const dx=Math.sign(it.x)*drift*22*LIVE_K;
+      const lock=it.m==='맡다';
+      const back=lock?liveInterp(bt,[2510,2776],[0,1],LIVE_EASE.lock):liveInterp(bt,[it.sd,it.sd+255],[0,1],LIVE_EASE.suck);
+      const ox=(it.x+dx)*out*(1-back);
+      const oy=it.y*out*(1-back);
+      const sc=lock?spr*liveInterp(back,[0,0.6,1],[1,0.8,0.45],LIVE_EASE.linear):spr*(1-back*0.92);
+      const op=lock?Math.min(1,out*3)*(1-liveInterp(back,[0.86,1],[0,1],LIVE_EASE.linear)):Math.min(1,out*3)*(1-liveInterp(back,[0.3,0.75],[0,1],LIVE_EASE.linear));
+      if(op<=0.001){it.el.style.opacity='0';return;}
+      const blur=(!lock&&back>0&&back<1?back*6:(out<1?(1-out)*5:0))*LIVE_K;
+      it.el.style.left=(px+ox)+'px';
+      it.el.style.top=(py+oy)+'px';
+      it.el.style.transform=`translate(-50%,-50%) scale(${sc})`;
+      it.el.style.opacity=String(op);
+      it.el.style.filter=blur>0.15?`blur(${blur.toFixed(2)}px)`:'';
+    });
+  }
+  // tap overlay follows the take box through the camera
+  if(takeBtn){
+    takeBtn.style.left=(px+(takeBox.l-takeC.x)*s)+'px';
+    takeBtn.style.top=(py+(takeBox.t-takeC.y)*s)+'px';
+    takeBtn.style.width=(takeBox.w*s)+'px';
+    takeBtn.style.height=(takeBox.h*s)+'px';
+  }
+}
+function resetLiveIntro(session){
+  const live=document.getElementById('onboard-live');
+  if(!live)return;
+  live.hidden=false;
+  buildLiveMeanings(session);
+  measureLiveCenters(session);
+  session.liveStarted=false;session.liveBurst=false;session.liveShimmer=false;
+  session.liveSuck=false;session.liveSentence=false;session.liveAt=0;
+  session.step='word';session.stepAt=performance.now();
+  renderLiveFrame(session);
+}
+function liveIntroToSentence(session){
+  if(session.liveSentence)return;
+  session.liveSentence=true;
+  const bt=4000;
+  const rect=document.getElementById('onboarding').getBoundingClientRect();
+  const {s,px,py}=liveCamera(rect.width,rect.height,bt,session);
+  const takeC=(session.liveTake)||LIVE_TAKE;
+  const takeBox=(session.liveTakeBox)||{l:LIVE_TAKE_BOX.l,t:LIVE_TAKE_BOX.t,w:LIVE_TAKE_BOX.r-LIVE_TAKE_BOX.l,h:LIVE_TAKE_BOX.b-LIVE_TAKE_BOX.t};
+  const world=document.getElementById('onboard-live-world');
+  if(world)world.style.transform=`translate(${px-takeC.x*s}px, ${py-takeC.y*s}px) scale(${s})`;
+  const meanings=document.getElementById('onboard-live-meanings');
+  if(meanings)meanings.style.display='none';
+  const aurora=document.querySelector('.onboard-live-halo');
+  if(aurora)aurora.style.opacity='0';
+  document.querySelectorAll('#onboard-live-sentence-main .onboard-live-ctx').forEach(el=>{el.style.opacity='1';});
+  const highlight=document.getElementById('onboard-live-highlight');
+  if(highlight)highlight.style.opacity='1';
+  const takeWord=document.getElementById('onboard-live-take-word');
+  if(takeWord){takeWord.style.transform='';takeWord.style.color='';takeWord.style.backgroundImage='';takeWord.style.webkitBackgroundClip='';takeWord.style.backgroundClip='';}
+  const glow=document.getElementById('onboard-live-sentence-glow');
+  if(glow)glow.style.opacity='0';
+  const takeBtn=document.getElementById('onboard-take');
+  if(takeBtn){
+    takeBtn.style.left=(px+(takeBox.l-takeC.x)*s)+'px';
+    takeBtn.style.top=(py+(takeBox.t-takeC.y)*s)+'px';
+    takeBtn.style.width=(takeBox.w*s)+'px';
+    takeBtn.style.height=(takeBox.h*s)+'px';
+  }
+  const root=document.getElementById('onboarding');
+  if(root)root.dataset.scene='sentence';
+  const ms=stepMs(session);
+  session.step='sentence';session.stepAt=performance.now();
+  if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'sentence',ms});
+  onboardMirror('onboarding_step_complete',{step:'sentence',ms});
+}
+function startLiveIntro(session,reason){
+  if(onboardingSession!==session||session.mode!=='demo'||session.liveStarted)return;
+  session.liveStarted=true;
+  session.liveAt=session.clock;
+  if(reason==='tap')noteFirstWordTap();
+  if(session.clock<session.B)session.B=session.clock;
+  if(session.reduced||session.motion.matches){liveIntroToSentence(session);return;}
+  session.liveBurst=true;
+  const ms=stepMs(session);
+  session.step='burst';session.stepAt=performance.now();
+  if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'word',ms});
+  onboardMirror('onboarding_step_complete',{step:'word',ms});
+}
+function advanceLiveIntro(session){
+  if(session.reduced||session.motion.matches){
+    if(!session.liveSentence)liveIntroToSentence(session);
+    return;
+  }
+  if(!session.liveStarted&&session.clock>=session.B)startLiveIntro(session,'timeout');
+  if(!session.liveStarted){renderLiveFrame(session);return;}
+  const bt=session.clock-session.liveAt-118;
+  if(!session.liveSuck&&bt>=2470){
+    session.liveSuck=true;
+    const ms=stepMs(session);
+    session.step='sentence';session.stepAt=performance.now();
+    if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'burst',ms});
+    onboardMirror('onboarding_step_complete',{step:'burst',ms});
+  }
+  if(!session.liveSentence&&bt>=3647)liveIntroToSentence(session);
+  else renderLiveFrame(session);
+}
+
 function showDemo(session){
   if(onboardingSession!==session)return;
   session.mode='demo';
@@ -444,6 +759,14 @@ function showDemo(session){
   document.getElementById('onboard-toast').classList.remove('on');
   document.getElementById('onboard-vocab-bump').classList.remove('on');
   releaseOnboardingPeek();
+  if(session.liveIntro){
+    root.classList.add('live-intro');
+    resetLiveIntro(session);
+    if(session.reduced||session.motion.matches)liveIntroToSentence(session);
+    const take=document.getElementById('onboard-take');
+    if(take)take.focus({preventScroll:true});
+    return;
+  }
   resetOnboardVideos();
   const ready=session.variants.length?Promise.resolve(session.variants):loadOnboardHotspots().then(hotspots=>{
     session.variants=onboardVariants(hotspots);
@@ -477,6 +800,7 @@ function applyOnboardRate(video,session){
   try{video.playbackRate=rate;video.defaultPlaybackRate=rate;}catch(error){}
 }
 function layoutOnboardVideo(session,reset){
+  if(session.liveIntro)return;
   if(!session.variants.length)return;
   const box=onboardVideoBox();
   const variant=pickOnboardVariant(session.variants,box.width,box.height);
@@ -551,7 +875,9 @@ function onboardSentenceAnchor(session){
   return {left:left,right:left+rect.width,top:top,bottom:top+rect.height,direction:'below'};
 }
 function startOnboardMain(session,reason){
-  if(onboardingSession!==session||session.mode!=='demo'||session.mainStarted||!session.variant)return;
+  if(onboardingSession!==session||session.mode!=='demo'||session.mainStarted)return;
+  if(session.liveIntro){session.mainStarted=true;session.burstStarted=true;startLiveIntro(session,reason);return;}
+  if(!session.variant)return;
   session.mainStarted=true;
   session.burstStarted=true;
   if(reason==='tap')noteFirstWordTap();
@@ -592,6 +918,7 @@ function pinOnboardMain(session){
 }
 function advanceDemo(session){
   if(session.panelHome&&!document.getElementById('panel').classList.contains('on'))restorePanelHome(session);
+  if(session.liveIntro){advanceLiveIntro(session);return;}
   if(!session.mainStarted&&session.clock>=session.B&&session.variant)startOnboardMain(session,'timeout');
   const main=document.getElementById('onboard-video-main');
   if(session.mainStarted&&main&&session.variant&&!(session.reduced||session.motion.matches)){
@@ -1225,7 +1552,9 @@ function endOnboarding(remember,options){
   releaseOnboardingPeek(session);
   const root=document.getElementById('onboarding');
   root.hidden=true;
-  root.classList.remove('entering','leaving','compact');
+  root.classList.remove('entering','leaving','compact','live-intro');
+  const live=document.getElementById('onboard-live');
+  if(live)live.hidden=true;
   clearPullStyles();
   document.body.classList.remove('onboarding-active');
   for(const [node,inert] of session.inert)node.inert=inert;
