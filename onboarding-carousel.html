@@ -96,6 +96,19 @@
     display: block; width: 100%; margin-top: 12px; padding: 6px; border: 0;
     background: none; color: #8A8A8E; font-size: 14px; cursor: pointer;
   }
+  /* Tablet/desktop: the 4:3 renders. The card goes wider (same height
+     rule), the video switches aspect, and card 3's covers are capped
+     by viewport height so the book card never overflows short screens.
+     NOTE: this block must stay after the base .fan .cover rule, or the
+     base rule wins the cascade and the cap silently stops working. */
+  @media (min-width: 768px) {
+    .wrap { --cw: min(calc(100vw - 48px), calc(78vh * 4 / 3)); }
+    .card video { aspect-ratio: 4 / 3; }
+    .fan .cover {
+      flex-basis: min(calc(var(--cw) * 0.54), calc(60vh * 2 / 3));
+      height: min(calc(var(--cw) * 0.81), 60vh);
+    }
+  }
 </style>
 </head>
 <body>
@@ -104,7 +117,10 @@
   <div class="wrap" id="wrap">
     <div class="track">
       <article class="card" data-card="0">
-        <video src="assets/onboarding-carousel/card1.mp4" autoplay muted loop playsinline></video>
+        <video autoplay muted loop playsinline>
+          <source src="assets/onboarding-carousel/card1-wide.mp4" media="(min-width: 768px)">
+          <source src="assets/onboarding-carousel/card1.mp4">
+        </video>
         <div class="dots"><i class="on"></i><i></i><i></i></div>
         <div class="copy">
           <div class="t1">단어를 탭해보세요</div>
@@ -112,7 +128,10 @@
         </div>
       </article>
       <article class="card" data-card="1">
-        <video src="assets/onboarding-carousel/card2.mp4" autoplay muted loop playsinline></video>
+        <video autoplay muted loop playsinline>
+          <source src="assets/onboarding-carousel/card2-wide.mp4" media="(min-width: 768px)">
+          <source src="assets/onboarding-carousel/card2.mp4">
+        </video>
         <div class="dots"><i></i><i class="on"></i><i></i></div>
         <div class="copy">
           <div class="t1">홈에서 북마크를 탭해보세요</div>
