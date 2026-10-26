@@ -35,14 +35,19 @@ Scenes stay on one camera. There is no blank frame and no second copy of `take`.
 3. Nothing advances by itself after the save. A green toast,
    `단어장에 저장됐어요`, appears once, fades out after about two seconds,
    and a `+1` badge bumps the vocabulary chip. About a second after the toast
-   appears, `계속하기` rises. A tap anywhere continues. The sentence, pill,
-   toast, badge, and continue button fade out and stay hidden on the book
-   screen. The pill chevron calls the real `expandWordDetail`. The same
+   appears, the book covers spring up until their tops peek at the bottom.
+   A drag or swipe up, or a downward trackpad scroll, follows the finger.
+   Releasing past about 30%, or with a flick, springs into the book screen.
+   Otherwise it springs back to the peek. Tapping the peeking covers also
+   continues. The sentence slides up and fades with that motion. The pill
+   chevron calls the real `expandWordDetail`. The same
    record is written through `saveWords`. Replay does not overwrite a real
    `take` and does not add the sample when other words exist. Skipping to the
    choice screen still writes the sample under those rules.
 4. Built-in offline classics sit in a looping cover flow driven by one float
-   index. Either direction wraps with no jump and no dot pager. The centered
+   index. Either direction wraps with no jump and no dot pager. A trackpad
+   gesture advances one book, then waits until the gesture is quiet. Arrow
+   keys move the row without a prior click. The centered
    cover is largest and in front. Side covers are smaller, tilted, faded, and
    overlapped. Release uses momentum and a spring snap.
    The primary button names the centered book (`앨리스 바로 읽기`, and the

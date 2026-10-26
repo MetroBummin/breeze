@@ -358,7 +358,8 @@ is in `docs/reviews/breeze-post270-gestures/`.
 The first-run guide is a local word demonstration and a book choice on the
 Home background. `take` has one aurora and no ripple rings. The meaning is the
 real word pill, text `맡다` only, and its chevron opens the real word detail.
-The toast fades out on its own. The book row loops as a cover flow. Lookup glass,
+The toast fades out on its own. Book covers then peek up from the bottom and
+follow a swipe onto the looping cover flow. Lookup glass,
 the shared dock, and Reader gesture ownership stay as already approved. The
 in-reader long-press tip uses the existing sentence-glass fill, line, ink, and
 shadow, with a sky-blue sentence highlight. See `docs/decisions/006-reader-onboarding.md`.

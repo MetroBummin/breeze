@@ -71,7 +71,8 @@ try{
   assert.equal(await page.locator('#onboard-pill').count(),0);
   assert.match(copy.sentence,/She decided to take the job in London/);
   await page.screenshot({path:`${out}/pill.png`});
-  await page.locator('#onboard-continue').click();
+  await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady);
+  await page.evaluate(()=>{const s=onboardingSession;s.shift=0;s.shiftSpring=null;showChoice(s,false);});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   await page.screenshot({path:`${out}/choice.png`});
   const saved=await page.evaluate(()=>({ko:words.take&&words.take.ko,example:words.take&&words.take.example,sample:!!(words.take&&words.take.onboardingSample),events:window.__onboardEvents}));
@@ -134,7 +135,8 @@ try{
  }
  {
   const {context,page,errors}=await openPage({timing:fast,reducedMotion:'reduce',track:true});
-  await page.locator('#onboard-continue').click();
+  await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady);
+  await page.evaluate(()=>{const s=onboardingSession;s.shift=0;s.shiftSpring=null;showChoice(s,false);});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   assert.equal(await page.locator('.onboard-meaning').count(),0);
   assert.equal(await page.evaluate(()=>words.take.ko),'맡다');
@@ -267,7 +269,8 @@ try{
  }
  {
   const {context,page,errors}=await openPage({timing:fast,viewport:{width:320,height:568}});
-  await page.locator('#onboard-continue').click();
+  await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady);
+  await page.evaluate(()=>{const s=onboardingSession;s.shift=0;s.shiftSpring=null;showChoice(s,false);});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   for(const selector of ['#onboard-coverflow','#onboard-read','#onboard-file','#onboard-browse']){
    const box=await page.locator(selector).boundingBox();
