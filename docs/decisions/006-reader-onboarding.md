@@ -33,14 +33,18 @@ Scenes stay on one camera. There is no blank frame and no second copy of `take`.
    then zooms out to `She decided to take the job in London.` The real
    `#word-peek` pops under the word. Its meaning text is only `맡다`.
 3. Nothing advances by itself after the save. A green toast,
-   `단어장에 저장됐어요`, appears once, and a `+1` badge bumps the vocabulary
-   chip. About a second later, `계속하기` rises. A tap anywhere continues.
-   The same record is written through `saveWords`. Replay does not overwrite
-   a real `take` and does not add the sample when other words exist.
-   Skipping to the choice screen still writes the sample under those rules.
-4. Built-in offline classics sit in a cover flow driven by one float index.
-   The centered cover is largest and in front. Side covers are smaller,
-   tilted, faded, and overlapped. Release uses momentum and a spring snap.
+   `단어장에 저장됐어요`, appears once, fades out after about two seconds,
+   and a `+1` badge bumps the vocabulary chip. About a second after the toast
+   appears, `계속하기` rises. A tap anywhere continues. The sentence, pill,
+   toast, badge, and continue button fade out and stay hidden on the book
+   screen. The pill chevron calls the real `expandWordDetail`. The same
+   record is written through `saveWords`. Replay does not overwrite a real
+   `take` and does not add the sample when other words exist. Skipping to the
+   choice screen still writes the sample under those rules.
+4. Built-in offline classics sit in a looping cover flow driven by one float
+   index. Either direction wraps with no jump and no dot pager. The centered
+   cover is largest and in front. Side covers are smaller, tilted, faded, and
+   overlapped. Release uses momentum and a spring snap.
    The primary button names the centered book (`앨리스 바로 읽기`, and the
    matching label for each other book) and opens that book in the Reader
    without the preview step (`importLongRead`, then `openBook`). `내 파일 넣기`

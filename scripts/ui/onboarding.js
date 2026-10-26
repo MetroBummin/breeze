@@ -308,6 +308,18 @@ function bindOnboarding(session){
   },{signal});
   document.getElementById('onboard-browse').addEventListener('click',()=>chooseOnboardingBrowse(session),{signal});
   document.getElementById('onboard-fileinput').addEventListener('change',()=>importOnboardingFile(session),{signal});
+  document.getElementById('word-peek-more').addEventListener('click',()=>{
+    if(onboardingSession!==session||session.mode!=='demo')return;
+    const take=document.getElementById('onboard-take').getBoundingClientRect();
+    ensureOnboardingWord(session);
+    selKey='take';
+    wordPeekActive=true;
+    previewWordCard=null;
+    wordDetailAnchored=false;
+    wordPeekAnchor={left:take.left,right:take.right,top:take.top,bottom:take.bottom,direction:'below'};
+    const panel=adoptPanel(session);
+    panel.inert=false;
+  },{capture:true,signal});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'){
       event.preventDefault();event.stopPropagation();
@@ -559,8 +571,24 @@ function restorePeekHome(session){
   if(peek&&home&&home.parent&&home.parent.isConnected)home.parent.insertBefore(peek,home.next);
   if(session)session.peekHome=null;
 }
+function adoptPanel(session){
+  const panel=document.getElementById('panel');
+  if(!panel||session.panelHome)return panel;
+  session.panelHome={parent:panel.parentElement,next:panel.nextSibling};
+  document.body.append(panel);
+  return panel;
+}
+function restorePanelHome(session){
+  const panel=document.getElementById('panel');
+  const home=session&&session.panelHome;
+  if(panel&&home&&home.parent&&home.parent.isConnected)home.parent.insertBefore(panel,home.next);
+  if(session)session.panelHome=null;
+  if(panel&&document.body.classList.contains('onboarding-active'))panel.inert=true;
+}
 function renderPeek(session,f,reduced){
   const peek=adoptPeek(session);
+  if(document.getElementById('panel').classList.contains('on'))return;
+  restorePanelHome(session);
   const visible=reduced?session.clock>=session.B:f>=t2f(T.pill);
   if(!visible){
     if(!peek.hidden)releaseOnboardingPeek();
@@ -626,13 +654,13 @@ function syncMarks(session){
     session.didSave=true;
     const ms=stepMs(session);
     session.step='save';session.stepAt=performance.now();
-    const wrote=persistOnboardingTake(session);
-    if(wrote==='saved'){
-      if(typeof trackEvent==='function')trackEvent('vocab_save',{first:true});
-      onboardMirror('vocab_save',{word:'take',first:true});
-    }
+    ensureOnboardingWord(session);
     session.saved=true;
-    document.getElementById('onboard-toast').classList.add('on');
+    const toast=document.getElementById('onboard-toast');
+    toast.classList.remove('out');
+    toast.classList.add('on');
+    clearTimeout(session.toastTimer);
+    session.toastTimer=setTimeout(()=>{if(onboardingSession===session)dismissOnboardingToast();},2000);
     document.getElementById('onboard-vocab-bump').classList.add('on');
     if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'save',ms});
     onboardMirror('onboarding_step_complete',{step:'save',ms});
@@ -646,11 +674,39 @@ function syncMarks(session){
   const scene=!session.didWord?'word':!session.didBurst?'burst':!session.didSentence?'sentence':!session.didSave?'pill':'save';
   document.getElementById('onboarding').dataset.scene=scene;
 }
+function ensureOnboardingWord(session){
+  if(session.vocabTracked){
+    persistOnboardingTake(session);
+    return;
+  }
+  const wrote=persistOnboardingTake(session);
+  if(wrote==='saved'){
+    session.vocabTracked=true;
+    if(typeof trackEvent==='function')trackEvent('vocab_save',{first:true});
+    onboardMirror('vocab_save',{word:'take',first:true});
+  }
+}
+function dismissOnboardingToast(){
+  const toast=document.getElementById('onboard-toast');
+  if(!toast||!toast.classList.contains('on')||toast.classList.contains('out'))return;
+  toast.classList.add('out');
+  const done=()=>{toast.classList.remove('on','out');};
+  toast.addEventListener('animationend',done,{once:true});
+  setTimeout(done,450);
+}
+function hideDemoChrome(){
+  const toast=document.getElementById('onboard-toast');
+  const button=document.getElementById('onboard-continue');
+  const bump=document.getElementById('onboard-vocab-bump');
+  if(toast)toast.classList.remove('on','out');
+  if(button)button.classList.remove('on');
+  if(bump)bump.classList.remove('on');
+}
 function releaseOnboardingPeek(){
   const peek=document.getElementById('word-peek');
   if(!peek)return;
   peek.hidden=true;
-  peek.classList.remove('loading');
+  peek.classList.remove('loading','onboard-leave');
   peek.style.left='';
   peek.style.top='';
   peek.style.transform='';
@@ -680,12 +736,18 @@ function showChoice(session,animate){
   }
   session.mode='choice';
   session.step='choice';
+  clearTimeout(session.toastTimer);
   const root=document.getElementById('onboarding');
   root.dataset.scene='choice';
   document.getElementById('onboard-skip').hidden=true;
   document.getElementById('onboard-burst').replaceChildren();
   session.nodes=[];
-  releaseOnboardingPeek();
+  if(document.getElementById('panel').classList.contains('on')&&typeof closePanel==='function')closePanel();
+  restorePanelHome(session);
+  const peek=document.getElementById('word-peek');
+  if(animate&&peek&&!peek.hidden)peek.classList.add('onboard-leave');
+  if(animate)setTimeout(()=>{if(onboardingSession===session){hideDemoChrome();releaseOnboardingPeek(session);}},450);
+  else{hideDemoChrome();releaseOnboardingPeek(session);}
   if(!session.replay)save(ONBOARD_PROGRESS_KEY,{scene:'choice',version:ONBOARD_VERSION});
   if(!session.coversReady)buildCovers(session);
   root.classList.toggle('entering',!!animate);
@@ -742,13 +804,6 @@ function buildCovers(session){
     card.addEventListener('click',()=>coverActivate(session,index),{signal:session.controller.signal});
     flow.append(card);
   });
-  const dots=document.getElementById('onboard-dots');
-  dots.replaceChildren();
-  reads.forEach((read,index)=>{
-    const dot=document.createElement('i');
-    dot.addEventListener('click',()=>springTo(session,index,0),{signal:session.controller.signal});
-    dots.append(dot);
-  });
   bindCoverPointer(session,flow);
   session.coversReady=true;
 }
@@ -756,16 +811,28 @@ function coverStep(){
   const width=parseFloat(getComputedStyle(document.getElementById('onboarding')).getPropertyValue('--cover-w'))||184;
   return 118*(width/184);
 }
+function coverCount(session){return session.reads?session.reads.length:0;}
+function coverDelta(index,p,n){
+  let d=index-p;
+  d-=n*Math.round(d/n);
+  return d;
+}
+function coverIndex(p,n){
+  if(!n)return 0;
+  return ((Math.round(p)%n)+n)%n;
+}
 function coverActivate(session,index){
   if(session.dragMoved)return;
-  if(Math.round(session.p)===index)chooseOnboardingBook(session);
-  else springTo(session,index,0);
+  const n=coverCount(session);
+  if(!n)return;
+  if(coverIndex(session.p,n)===index)chooseOnboardingBook(session);
+  else springTo(session,session.p+coverDelta(index,session.p,n),0);
 }
-function springTo(session,index,velocity){
-  if(!session.reads.length)return;
-  const target=Math.max(0,Math.min(session.reads.length-1,index));
+function springTo(session,target,velocity){
+  const n=coverCount(session);
+  if(!n)return;
   if(session.reduced||session.motion.matches){
-    session.p=target;session.v=0;session.spring=null;
+    session.p=((target%n)+n)%n;session.v=0;session.spring=null;
     paintCovers(session);updateOnboardingChoiceLabel(session,true);return;
   }
   session.spring=target;
@@ -785,11 +852,7 @@ function bindCoverPointer(session,flow){
     if(!drag)return;
     const dx=event.clientX-drag.x;
     if(Math.abs(dx)>6){drag.moved=true;session.dragMoved=true;}
-    const max=Math.max(0,session.reads.length-1);
-    let p=drag.p-dx/coverStep();
-    if(p<0)p*=.35;
-    if(p>max)p=max+(p-max)*.35;
-    session.p=p;
+    session.p=drag.p-dx/coverStep();
     const now=performance.now();
     drag.samples.push({t:now,p});
     drag.samples=drag.samples.filter(sample=>now-sample.t<80);
@@ -806,9 +869,7 @@ function bindCoverPointer(session,flow){
     const first=samples[0]||{t:now,p:session.p};
     const dt=Math.max(.001,(now-first.t)/1000);
     const velocity=(session.p-first.p)/dt;
-    const max=Math.max(0,session.reads.length-1);
-    const target=Math.max(0,Math.min(max,Math.round(session.p+velocity*.22)));
-    springTo(session,target,velocity);
+    springTo(session,Math.round(session.p+velocity*.22),velocity);
     setTimeout(()=>{if(onboardingSession===session)session.dragMoved=false;},0);
   };
   flow.addEventListener('pointerup',release,{signal});
@@ -843,7 +904,10 @@ function tickCovers(session,dt){
       v+=a*h;x+=v*h;
     }
     session.p=x;session.v=v;
-    if(Math.abs(x-target)<.0008&&Math.abs(v)<.02){session.p=target;session.v=0;session.spring=null;}
+    if(Math.abs(x-target)<.0008&&Math.abs(v)<.02){
+      const n=coverCount(session)||1;
+      session.p=((target%n)+n)%n;session.v=0;session.spring=null;
+    }
   }
   paintCovers(session);
   updateOnboardingChoiceLabel(session);
@@ -852,9 +916,10 @@ function paintCovers(session){
   const flow=document.getElementById('onboard-coverflow');
   if(!flow||!session.reads)return;
   const unit=(parseFloat(getComputedStyle(document.getElementById('onboarding')).getPropertyValue('--cover-w'))||184)/184;
+  const n=session.reads.length||1;
   for(let i=0;i<flow.children.length;i++){
     const card=flow.children[i];
-    const d=i-session.p;
+    const d=coverDelta(i,session.p,n);
     const a=Math.abs(d);
     const sign=d<0?-1:1;
     const tx=lerpStops(a,[0,118,196,248])*sign*unit;
@@ -867,6 +932,7 @@ function paintCovers(session){
     card.style.opacity=String(op);
     card.style.zIndex=String(100-Math.round(a*10));
     card.style.filter=`brightness(${bright})`;
+    card.style.pointerEvents=a>2.4?'none':'';
     card.setAttribute('aria-selected',String(a<.5));
     const image=card.querySelector('img');
     const shadow=.18*(1-.5*Math.min(a,1));
@@ -875,7 +941,7 @@ function paintCovers(session){
 }
 function updateOnboardingChoiceLabel(session,force){
   if(!session.reads||!session.reads.length)return;
-  const index=Math.max(0,Math.min(session.reads.length-1,Math.round(session.p)));
+  const index=coverIndex(session.p,session.reads.length);
   if(!force&&session.labelIndex===index)return;
   session.labelIndex=index;
   const read=session.reads[index];
@@ -885,12 +951,10 @@ function updateOnboardingChoiceLabel(session,force){
   const meta=document.getElementById('onboard-bookmeta');
   meta.querySelector('b').textContent=read.title||'';
   meta.querySelector('span').textContent=read.author||'';
-  const dots=document.getElementById('onboard-dots').children;
-  for(let i=0;i<dots.length;i++)dots[i].classList.toggle('on',i===index);
 }
 async function chooseOnboardingBook(session){
   if(onboardingSession!==session||session.mode!=='choice'||session.importing)return;
-  const readSpec=session.reads[Math.max(0,Math.min(session.reads.length-1,Math.round(session.p)))];
+  const readSpec=session.reads[coverIndex(session.p,session.reads.length)];
   const read=readSpec&&typeof longReadDefinition==='function'?longReadDefinition(readSpec.id):null;
   const button=document.getElementById('onboard-read');
   if(!read){
@@ -971,10 +1035,13 @@ function endOnboarding(remember,options){
   session.stopped=true;
   if(session.raf)cancelAnimationFrame(session.raf);
   clearTimeout(session.timer);
+  clearTimeout(session.toastTimer);
   clearTimeout(session.wheelTimer);
   session.controller.abort();
   session.observer&&session.observer.disconnect();
   onboardingSession=null;
+  if(document.getElementById('panel').classList.contains('on')&&typeof closePanel==='function')closePanel();
+  restorePanelHome(session);
   releaseOnboardingPeek(session);
   const root=document.getElementById('onboarding');
   root.hidden=true;
