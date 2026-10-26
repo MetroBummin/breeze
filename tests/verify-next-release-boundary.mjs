@@ -87,7 +87,7 @@ const expected={
     "docs/privacy.html": "c50e28e84238acbbdc9bc50836585189683263c0f2d95f7cc1d132cf843809d9",
     "docs/qa/account-learning-20261015.md": "9df0549e17ffa6abb32666207cd7ee6d7287811a4fa0aec2392ba8fd0840874c",
     "docs/sync.html": "5ae428c9ba03d580539924422eec65525a1a37973653f24c68061827aeb2f8cf",
-    "index.html": "f45cd0c8c715c38c4463fcc7e4a8921eb53a2ab87c0329d48f3c5a99c7fde2a3",
+    "index.html": "b9bec96881b941e4545401eb535712225fe3e1415ae63c634266b7f8ca199944",
     "ios/App/App.xcodeproj/project.pbxproj": "80089d566abe37f4d674fc3d49f59d37e912391f6f27592148d1b8a44f6c2d2f",
     "ios/App/App/BreezePdfOcrPlugin.swift": "a7b590bde55e61ef37f7dde5cc6aeeeb8a6a4b0e40867df951bdfdde13c0a31e",
     "ios/App/App/SceneDelegate.swift": "7c4eb71789120a6e578f70abc8effd27c32b73c3bf6868bb3187ffb8b7b6ebe6",
