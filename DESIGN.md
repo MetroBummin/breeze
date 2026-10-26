@@ -356,7 +356,8 @@ is in `docs/reviews/breeze-post270-gestures/`.
 ## 2026-10-26 first-run onboarding v2
 
 The first-run guide is a local word demonstration and a book choice on the
-Home background. `take` has one aurora and no ripple rings. The meaning is the
+Home background. `take` has one aurora and no ripple rings. The large intro
+word crossfades into the real-size sentence. The meaning is the
 real word pill, text `맡다` only, and its chevron opens the real word detail.
 The toast fades out on its own. Book covers then peek up from the bottom and
 follow a swipe onto the looping cover flow. Lookup glass,

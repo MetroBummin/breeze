@@ -1,5 +1,5 @@
 /* First-run onboarding v2. The first screen keeps one blurred aurora behind
-   "take" — no ripple rings. Motion is transform, opacity, and short filters.
+   "take" — no ripple rings. Words move by transform and opacity only.
    The meaning uses the real #word-peek, not a custom capsule. */
 body.onboarding-active{overflow:hidden;}
 #onboarding[hidden]{display:none!important;}
@@ -25,23 +25,30 @@ body.onboarding-active{overflow:hidden;}
 #onboard-demo,#onboard-choice{position:absolute;inset:0;}
 #onboard-demo{overflow:hidden;}
 #onboard-aurora{
-  position:absolute;z-index:0;left:50%;top:50%;width:236px;height:236px;margin:-118px 0 0 -118px;
+  position:absolute;z-index:0;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;
   border-radius:50%;pointer-events:none;
   background:radial-gradient(closest-side, rgba(77,174,214,.18), rgba(77,174,214,.06) 60%, transparent);
   filter:blur(12px);
   animation:onboard-aurora 2.4s ease-in-out infinite;
 }
+#onboard-aurora.out{animation:none;opacity:0;transition:opacity .22s linear;}
 @keyframes onboard-aurora{
   0%,100%{transform:scale(.96);opacity:.55;}
   50%{transform:scale(1.04);opacity:.9;}
 }
+#onboarding #onboard-hero{
+  position:absolute;z-index:3;left:50%;top:50%;margin:0;padding:0;border:0;
+  background:transparent;transform:translate(-50%,-50%);
+  font:500 124px/1 var(--serif);letter-spacing:-.03em;color:inherit;min-height:0;
+}
 #onboard-world{
-  position:absolute;z-index:2;left:0;top:0;width:1170px;height:2532px;
-  transform-origin:0 0;pointer-events:none;
+  position:absolute;z-index:2;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
 }
 #onboard-line{
-  position:absolute;left:0;top:0;margin:0;white-space:nowrap;
-  font:400 calc(53.9px * 6.656)/1.2 var(--serif);letter-spacing:0;color:var(--sentence-glass-ink);
+  position:relative;margin:0;white-space:nowrap;
+  font:400 22px/1.35 var(--serif);letter-spacing:0;color:var(--sentence-glass-ink);
+  opacity:0;transform-origin:50% 50%;
 }
 #onboard-take-wrap{position:relative;display:inline-block;pointer-events:auto;}
 #onboard-hl{
@@ -55,16 +62,14 @@ body.onboarding-active{overflow:hidden;}
 }
 #onboarding #onboard-take::before,#onboarding #onboard-take::after{content:none;display:none;}
 .take-ink{position:relative;display:inline-block;}
-.take-glow{
-  position:absolute;left:0;top:0;opacity:0;pointer-events:none;filter:blur(9px);
-}
+.take-glow{display:none;}
 .take-glow::before{
   content:"take";color:transparent;background-image:var(--shim);
   -webkit-background-clip:text;background-clip:text;
 }
-#onboard-burst{position:absolute;z-index:1;inset:0;overflow:hidden;pointer-events:none;}
+#onboard-burst{position:absolute;z-index:4;inset:0;overflow:hidden;pointer-events:none;}
 .onboard-meaning{
-  position:absolute;left:0;top:0;margin:0;white-space:nowrap;pointer-events:none;
+  position:absolute;left:0;top:0;margin:0;white-space:nowrap;pointer-events:none;opacity:0;
   font-family:var(--ui);letter-spacing:-.025em;color:var(--sentence-glass-ink);
 }
 body.onboarding-active #word-peek{
@@ -79,7 +84,7 @@ body.onboarding-active #panel.on{z-index:190;}
   display:flex;align-items:center;gap:8px;padding:10px 16px 10px 10px;border-radius:999px;
   background:#2F9E5A;color:#fff;font:600 14px/1.2 var(--ui);white-space:nowrap;
   box-shadow:0 8px 22px rgba(31,120,64,.22);
-  opacity:0;visibility:hidden;transform:translate(-50%,-24px);filter:blur(6px);
+  opacity:0;visibility:hidden;transform:translate(-50%,-24px);
 }
 #onboard-toast.on{visibility:visible;animation:onboard-toast-in .506s var(--snappy) forwards;}
 #onboard-toast.on.out{animation:onboard-toast-out .4s ease forwards;}
@@ -89,12 +94,12 @@ body.onboarding-active #panel.on{z-index:190;}
 }
 .onboard-check svg{width:16px;height:16px;display:block;}
 @keyframes onboard-toast-in{
-  from{opacity:0;transform:translate(-50%,-24px);filter:blur(6px);}
-  to{opacity:1;transform:translate(-50%,0);filter:blur(0);}
+  from{opacity:0;transform:translate(-50%,-24px);}
+  to{opacity:1;transform:translate(-50%,0);}
 }
 @keyframes onboard-toast-out{
-  from{opacity:1;transform:translate(-50%,0);filter:blur(0);}
-  to{opacity:0;transform:translate(-50%,-12px);filter:blur(6px);visibility:hidden;}
+  from{opacity:1;transform:translate(-50%,0);}
+  to{opacity:0;transform:translate(-50%,-12px);visibility:hidden;}
 }
 #onboard-vocab-bump{
   position:fixed;z-index:178;left:22px;bottom:calc(22px + env(safe-area-inset-bottom));
@@ -130,8 +135,8 @@ body.onboarding-active #panel.on{z-index:190;}
   animation:onboard-demo-out .42s cubic-bezier(.4,0,.2,1) forwards!important;
 }
 @keyframes onboard-demo-out{
-  from{opacity:1;transform:translateY(0);filter:blur(0);}
-  to{opacity:0;transform:translateY(-28px);filter:blur(10px);}
+  from{opacity:1;transform:translateY(0);}
+  to{opacity:0;transform:translateY(-28px);}
 }
 #onboard-choice.peek{visibility:visible;opacity:1;pointer-events:auto;}
 #onboard-choice{
@@ -144,10 +149,13 @@ body.onboarding-active #panel.on{z-index:190;}
   position:relative;width:min(920px,100%);height:var(--cover-h);flex:none;
   perspective:1100px;overflow:hidden;touch-action:none;
 }
+#onboard-choice-copy{
+  display:flex;flex-direction:column;align-items:center;width:min(420px,100%);
+}
 #onboarding .onboard-cover{
   position:absolute;left:50%;top:50%;width:var(--cover-w);height:var(--cover-h);
   min-height:0;margin:0;padding:0;border:0;background:transparent;
-  transform-origin:50% 50%;transform-style:preserve-3d;will-change:transform;
+  transform-origin:50% 50%;transform-style:preserve-3d;
 }
 .onboard-cover img{
   width:100%;height:100%;object-fit:cover;border-radius:14px;background:#d7dbd6;display:block;pointer-events:none;
@@ -236,5 +244,5 @@ html.dark .longpress-tip-mark{background:rgba(41,75,87,.55);}
   #onboarding.leaving #onboard-vocab-bump,
   #word-peek.onboard-leave{animation:none!important;opacity:0!important;visibility:hidden!important;}
   #onboard-aurora{opacity:.72;transform:none;}
-  #onboard-toast.on{opacity:1;transform:translate(-50%,0);filter:none;}
+  #onboard-toast.on{opacity:1;transform:translate(-50%,0);}
 }

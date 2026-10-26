@@ -23,23 +23,26 @@ closes the overlay and leaves progress so the next launch resumes there.
 `건너뛰기` does the same jump and does not mark `done`.
 
 The overlay uses the Home background (`--home-background`), not Reader ivory.
-Scenes stay on one camera. There is no blank frame and no second copy of `take`.
+The intro word and the sentence are two elements. A scaled world is not used,
+because Safari could not composite it smoothly.
 
 1. The word `take` sits in the center, about 124px, with one blurred aurora
    and no caption, ripple, or finger. A tap, or about three seconds of idle,
-   bursts 44 local Korean glosses in eight rows. There is no network lookup,
-   no model call, and no speed lines.
-2. The glosses accelerate back into `take` with a short blur. The same word
-   then zooms out to `She decided to take the job in London.` The real
-   `#word-peek` pops under the word. Its meaning text is only `맡다`.
+   bursts 44 local Korean glosses in eight rows. Each gloss animates with
+   transform and opacity only. There is no network lookup, no model call,
+   no speed lines, and no per-frame blur.
+2. The glosses ease back into the center and fade. The large word then
+   crossfades to `She decided to take the job in London.` at its real size.
+   The real `#word-peek` pops under the word. Its meaning text is only `맡다`.
 3. Nothing advances by itself after the save. A green toast,
    `단어장에 저장됐어요`, appears once, fades out after about two seconds,
    and a `+1` badge bumps the vocabulary chip. About a second after the toast
    appears, the book covers spring up until their tops peek at the bottom.
    A drag or swipe up, or a downward trackpad scroll, follows the finger.
+   Only the cover row moves, by transform, and the choice copy fades by opacity.
    Releasing past about 30%, or with a flick, springs into the book screen.
    Otherwise it springs back to the peek. Tapping the peeking covers also
-   continues. The sentence slides up and fades with that motion. The pill
+   continues. The pill
    chevron calls the real `expandWordDetail`. The same
    record is written through `saveWords`. Replay does not overwrite a real
    `take` and does not add the sample when other words exist. Skipping to the

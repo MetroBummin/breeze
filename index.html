@@ -69,7 +69,7 @@
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
-  <link rel="stylesheet" href="styles/onboarding.css?v=15bab7f4">
+  <link rel="stylesheet" href="styles/onboarding.css?v=f2de44ec">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -163,7 +163,7 @@
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
   <script defer src="scripts/sync/sync.js?v=b0c5c6d2"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=33d0e1b1"></script>
+  <script defer src="scripts/ui/onboarding.js?v=6804a9b8"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=8202e181"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
@@ -599,11 +599,12 @@
 
   </div>
 </div>
-<!-- First-run guide v2: one continuous zoom, the real word pill, then a coverflow. -->
+<!-- First-run guide v2: a large "take", a crossfade to the sentence, then a coverflow. -->
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="브리즈 시작 안내" hidden>
   <button id="onboard-skip" type="button">건너뛰기</button>
   <div id="onboard-demo">
     <div id="onboard-aurora" aria-hidden="true"></div>
+    <button id="onboard-hero" type="button">take</button>
     <div id="onboard-world">
       <p id="onboard-line">
         <span id="onboard-before">She decided to </span><span id="onboard-take-wrap"><i id="onboard-hl" aria-hidden="true"></i><button id="onboard-take" type="button"><span class="take-glow" aria-hidden="true"></span><span class="take-ink">take</span></button></span><span id="onboard-after"> the job in London.</span>
@@ -618,6 +619,7 @@
   </div>
   <div id="onboard-choice">
     <div id="onboard-coverflow" tabindex="0" role="listbox" aria-label="기본으로 들어 있는 책"></div>
+    <div id="onboard-choice-copy">
     <p id="onboard-bookmeta"><b></b><span></span></p>
     <div id="onboard-dots" aria-hidden="true"></div>
     <h2>이제 읽어볼까요?</h2>
@@ -627,6 +629,7 @@
     <p id="onboard-file-status" role="status"></p>
     <button id="onboard-browse" type="button">둘러볼게요</button>
     <input id="onboard-fileinput" type="file" accept=".pdf,.epub,.txt" hidden>
+    </div>>
   </div>
 </div>
 <dialog id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
