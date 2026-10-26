@@ -503,7 +503,7 @@ const expected={
     "tests/measure-breeze271-baseline.mjs": "d1d581f9b119f1242c1cc5e693938fe630ef52074b8fce3a5335591acefbbaa7",
     "docs/events-funnel.sql": "6af5107177f55c3e6043d968465ff75e28ffd1aaf4eb6632b6b627130b71a57d",
     "scripts/core/events.js": "e9b5842f5dce24e6fef71611bc578d67c23c5ebc0a6540bfdeac9ece023b0d59",
-    "supabase/migrations/20261026120000_product_events.sql": "f731df1de9dbc9d98fc03b3d6d4fdf3765dafe1eddb01ecf826ad917ad5f41e3",
+    "supabase/migrations/20261026120000_product_events.sql": "1f06c92d337cc35118a627583cef698cdf2cb2fd8a0acf69ed13ef8b3ff48c81",
     "tests/verify-events.mjs": "a514fee8cfe1065ce09190e2fa3fe9713853494c2b2e0382fb080ab763eeb52d",
     "tests/verify-text-original-sync.mjs": "e092df7666406ec6c8bb86adb3171bbe56350db3de880d129c02159ba2fee9b5",
 };

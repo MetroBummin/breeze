@@ -155,7 +155,7 @@ create trigger product_events_guard
 
 revoke all on function events_private.clean_props(text, jsonb) from public, anon, authenticated, service_role;
 revoke all on function events_private.guard() from public, anon, authenticated, service_role;
-grant usage on schema events_private to anon, authenticated;
+grant usage on schema events_private to anon, authenticated, service_role;
 grant execute on function events_private.guard() to anon, authenticated;
 
 alter table public.product_events enable row level security;
