@@ -78,6 +78,10 @@ html.dark #onboard-live-highlight{background:#294B57;box-shadow:0 0 0 7.35px #29
 #onboard-live-meanings span{
   position:absolute;left:0;top:0;color:var(--sentence-glass-ink);
   font-family:'Pretendard',var(--ui);letter-spacing:-.025em;white-space:nowrap;
+  /* Cycle 8: single words, so no inherited line-height. Without this the
+     span box is ~1.5x the glyph height and neighbouring rows measure as
+     overlapping even though the glyphs are clearly apart. */
+  line-height:1;
   will-change:transform,opacity,filter;
 }
 #onboarding #onboard-take{
@@ -153,6 +157,12 @@ body.onboarding-active #onboard-vocab-bump{bottom:calc(96px + env(safe-area-inse
 }
 #onboard-vocab-bump.on .onboard-plus{animation:onboard-badge .431s cubic-bezier(.34,1.45,.64,1) .15s forwards;}
 #onboard-vocab-bump.on .mark{animation:onboard-icon .431s cubic-bezier(.34,1.45,.64,1) .15s;}
+/* Cycle 7: the wordbook bump is hidden for the whole onboarding. The toast
+   already says the word was saved, so the bump is redundant, and the real
+   wordbook lives on Home once onboarding ends. */
+body.onboarding-active #onboard-vocab-bump{
+  visibility:hidden!important;opacity:0!important;pointer-events:none!important;animation:none!important;
+}
 @keyframes onboard-badge{from{opacity:0;transform:scale(.6);}to{opacity:1;transform:scale(1);}}
 @keyframes onboard-icon{0%{transform:scale(1);}40%{transform:scale(1.12);}100%{transform:scale(1);}}
 #onboarding[data-scene="choice"] #onboard-demo{visibility:hidden;pointer-events:none;}

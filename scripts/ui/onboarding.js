@@ -473,7 +473,7 @@ function liveAspect(W,H){
   if(H>W)return W<=420?'portrait':'ipadportrait';
   return W>=1180?'ipadlandscape':'landscape';
 }
-function buildLiveItems(aspect,vw,vh){
+function buildLiveItems(aspect,vw,vh,sideClear,takeHalf){
   const out=[]; let mi=0;
   const CFG={
     portrait:{mul:1,ys:[-820,-640,-460,-285,285,460,640,820].map(y=>y*LIVE_K*1.217),counts:[6,5,6,5,6,5,6,5]},
@@ -499,50 +499,59 @@ function buildLiveItems(aspect,vw,vh){
     let x=-total/2+(liveRnd(r+40)-0.5)*260*LIVE_K;
     row.forEach(it=>{out.push({m:it.m,x:x+it.w/2,y:y+(liveRnd(mi+r)-0.5)*14*LIVE_K,size:it.size,weight:it.weight}); x+=it.w+gap;});
   });
+  // Cycle 8: fit the cloud by scaling it as a whole, never by squeezing
+  // positions alone. Squeezing positions while keeping word sizes made
+  // words touch on narrower windows (the 960px video showed rows
+  // colliding), because the spring overshoot widens words beyond their
+  // computed width. Scaling positions AND sizes together keeps every gap
+  // proportional, so words can never touch. Expansion works the same way.
+  // The leftover landscape words are placed after the fit, not before:
+  // beside the take they must clear the take's actual on-screen half
+  // width at burst scale, or they land on top of it (also visible in the
+  // 960px video). Their inner edge stays put; only their sizes shrink if
+  // the column would otherwise poke off-screen.
+  if(vw>0&&vh>0){
+    const measure=(items)=>{let mY=0,mX=0;items.forEach(it=>{const w=LIVE_WIDTH_EM[it.m]*it.size;mY=Math.max(mY,Math.abs(it.y)+it.size*0.6);mX=Math.max(mX,Math.abs(it.x)+w/2);});return{mY,mX};};
+    let {mY,mX}=measure(out);
+    const f=Math.min(1,(vh/2-24)/mY,(vw/2-36)/mX);
+    if(f<1)out.forEach(it=>{it.x*=f;it.y*=f;it.size*=f;});
+    ({mY,mX}=measure(out));
+    const g=Math.min(1.15,(vh/2-20)/mY,(vw/2-28)/mX);
+    if(g>1)out.forEach(it=>{it.x*=g;it.y*=g;it.size*=g;});
+  }
   if(aspect==='landscape'&&mi<LIVE_MEANINGS.length){
     const rest=take(LIVE_MEANINGS.length-mi);
     const half=Math.ceil(rest.length/2);
-    [rest.slice(0,half),rest.slice(half)].forEach((part,side)=>{
-      let x=side===0?-168:168;
+    const parts=[rest.slice(0,half),rest.slice(half)];
+    const inner0=(typeof sideClear==='number'&&sideClear>0)?sideClear:168;
+    const th=(typeof takeHalf==='number'&&takeHalf>0)?takeHalf:140;
+    // Column length beyond the inner edge, per side (independent of inner).
+    const colLen=Math.max(...parts.map(part=>
+      part.reduce((a,it)=>a+it.w,0)+gap*(part.length-1)));
+    const lim=vw>0?vw/2-36:Infinity;
+    // Pick the inner edge so that, after the uniform shrink below, it still
+    // clears the take: inner*lim/(inner+colLen) >= takeHalf.
+    let inner=inner0;
+    if(vw>0&&lim>th){
+      const required=th*colLen/(lim-th)+8;
+      if(required>inner)inner=required;
+    }
+    const sideItems=[];
+    parts.forEach((part,side)=>{
+      let x=side===0?-inner:inner;
       part.forEach(it=>{
         const cx=side===0?x-it.w/2:x+it.w/2;
-        out.push({m:it.m,x:cx,y:(liveRnd(mi+side)-0.5)*6,size:it.size,weight:it.weight});
+        const item={m:it.m,x:cx,y:(liveRnd(mi+side)-0.5)*6,size:it.size,weight:it.weight,side:true};
+        out.push(item); sideItems.push(item);
         x+=side===0?-(it.w+gap):it.w+gap;
       });
     });
-  }
-  // Cycle 5: fit the burst inside the viewport, like the old layout. The
-  // wide-screen rows are fixed px offsets, so on a shorter window the outer
-  // rows were sliced off at the top and bottom (and wide rows at the sides).
-  // Only the offsets are compressed, never the word sizes, and only when
-  // they would actually overflow, so phone and tall windows are untouched.
-  if(vw>0&&vh>0){
-    let maxY=0, maxX=0;
-    out.forEach(it=>{
-      const w=LIVE_WIDTH_EM[it.m]*it.size;
-      maxY=Math.max(maxY,Math.abs(it.y)+it.size*0.6);
-      maxX=Math.max(maxX,Math.abs(it.x)+w/2);
-    });
-    const fY=Math.min(1,(vh/2-24)/maxY);
-    // Side margin also covers the outward drift applied while rendering
-    // (up to 22*LIVE_K px) so a fitted word cannot drift back off-screen.
-    const fX=Math.min(1,(vw/2-36)/maxX);
-    if(fY<1)out.forEach(it=>{it.y*=fY;});
-    if(fX<1)out.forEach(it=>{it.x*=fX;});
-    // Cycle 6: spread the cloud wider around Take. The fit above only ever
-    // compresses, so on roomy windows the rows sat well inside the edges
-    // and felt bunched around the take. Expand offsets up to 15%, then
-    // refit so nothing can leave the viewport.
-    let mY=0, mX=0;
-    out.forEach(it=>{
-      const w=LIVE_WIDTH_EM[it.m]*it.size;
-      mY=Math.max(mY,Math.abs(it.y)+it.size*0.6);
-      mX=Math.max(mX,Math.abs(it.x)+w/2);
-    });
-    const gY=Math.min(1.15,(vh/2-20)/mY);
-    const gX=Math.min(1.15,(vw/2-28)/mX);
-    if(gY>1)out.forEach(it=>{it.y*=gY;});
-    if(gX>1)out.forEach(it=>{it.x*=gX;});
+    if(vw>0){
+      let sMax=0;
+      sideItems.forEach(it=>{sMax=Math.max(sMax,Math.abs(it.x)+LIVE_WIDTH_EM[it.m]*it.size/2);});
+      const sf=Math.min(1,lim/sMax);
+      if(sf<1)sideItems.forEach(it=>{it.x*=sf;it.size*=sf;});
+    }
   }
   out.forEach((it,i)=>{
     it.d=Math.hypot(it.x,it.y)/LIVE_K;
@@ -559,7 +568,14 @@ function buildLiveMeanings(session){
   const aspect=liveAspect(rect.width,rect.height);
   session.liveAspect=aspect;
   wrap.innerHTML='';
-  session.liveItems=buildLiveItems(aspect,rect.width,rect.height).map((it,i)=>{
+  // Cycle 8: the landscape side words must clear the take's on-screen half
+  // width at burst scale (take box width x burst zoom / 2, plus a gap).
+  const sEnd=liveFinalPx(rect.width)/LIVE_FS;
+  const sBig=(sEnd*6.4)/1.12;
+  const takeW=(session.liveTakeBox&&session.liveTakeBox.w)||(LIVE_TAKE_BOX.r-LIVE_TAKE_BOX.l);
+  const takeHalf=takeW*sBig/2;
+  const sideClear=takeHalf+28;
+  session.liveItems=buildLiveItems(aspect,rect.width,rect.height,sideClear,takeHalf).map((it,i)=>{
     const span=document.createElement('span');
     span.textContent=it.m;
     span.style.fontWeight=it.weight;
@@ -584,6 +600,17 @@ function measureLiveCenters(session){
   session.liveTake={x:tr.left-wr.left+tr.width/2,y:tr.top-wr.top+tr.height/2};
   session.liveTakeBox={l:tr.left-wr.left,t:tr.top-wr.top,w:tr.width,h:tr.height};
   session.liveSentCX=sr.left-wr.left+sr.width/2;
+  // Cycle 8: the highlight used to sit on the fixed Remotion take box, but
+  // the DOM word renders narrower (Georgia vs Gelasio), so the highlight
+  // landed off the word. Put it on the measured box instead, so it tracks
+  // the word that is actually on screen in every browser.
+  const hl=document.getElementById('onboard-live-highlight');
+  if(hl){
+    hl.style.left=session.liveTakeBox.l+'px';
+    hl.style.top=session.liveTakeBox.t+'px';
+    hl.style.width=session.liveTakeBox.w+'px';
+    hl.style.height=session.liveTakeBox.h+'px';
+  }
 }
 // Cycle 3: the final sentence is no longer a fixed 22px. On a phone it stays
 // 22px; on wider screens it grows with the viewport so the sentence does not
@@ -744,8 +771,10 @@ function resetLiveIntro(session){
   const live=document.getElementById('onboard-live');
   if(!live)return;
   live.hidden=false;
-  buildLiveMeanings(session);
+  // Cycle 8: measure first, so the meanings layout can use the real take
+  // box (the landscape side words must clear it).
   measureLiveCenters(session);
+  buildLiveMeanings(session);
   // Cycle 3: fresh style cache for the new run, and the glow copy gets its
   // gradient once here instead of rebuilt every frame (see renderLiveFrame).
   liveStyleCache=new WeakMap();
@@ -767,6 +796,9 @@ function resetLiveIntro(session){
 function liveIntroToSentence(session){
   if(session.liveSentence)return;
   session.liveSentence=true;
+  // Cycle 8: re-measure so the camera and the highlight use the take box as
+  // it renders now (a late font load can shift it after the reset measure).
+  measureLiveCenters(session);
   const bt=4000;
   const rect=document.getElementById('onboarding').getBoundingClientRect();
   const {s,px,py}=liveCamera(rect.width,rect.height,bt,session);
