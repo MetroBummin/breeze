@@ -473,7 +473,7 @@ function liveAspect(W,H){
   if(H>W)return W<=420?'portrait':'ipadportrait';
   return W>=1180?'ipadlandscape':'landscape';
 }
-function buildLiveItems(aspect){
+function buildLiveItems(aspect,vw,vh){
   const out=[]; let mi=0;
   const CFG={
     portrait:{mul:1,ys:[-820,-640,-460,-285,285,460,640,820].map(y=>y*LIVE_K*1.217),counts:[6,5,6,5,6,5,6,5]},
@@ -509,6 +509,25 @@ function buildLiveItems(aspect){
       });
     });
   }
+  // Cycle 5: fit the burst inside the viewport, like the old layout. The
+  // wide-screen rows are fixed px offsets, so on a shorter window the outer
+  // rows were sliced off at the top and bottom (and wide rows at the sides).
+  // Only the offsets are compressed, never the word sizes, and only when
+  // they would actually overflow, so phone and tall windows are untouched.
+  if(vw>0&&vh>0){
+    let maxY=0, maxX=0;
+    out.forEach(it=>{
+      const w=LIVE_WIDTH_EM[it.m]*it.size;
+      maxY=Math.max(maxY,Math.abs(it.y)+it.size*0.6);
+      maxX=Math.max(maxX,Math.abs(it.x)+w/2);
+    });
+    const fY=Math.min(1,(vh/2-24)/maxY);
+    // Side margin also covers the outward drift applied while rendering
+    // (up to 22*LIVE_K px) so a fitted word cannot drift back off-screen.
+    const fX=Math.min(1,(vw/2-36)/maxX);
+    if(fY<1)out.forEach(it=>{it.y*=fY;});
+    if(fX<1)out.forEach(it=>{it.x*=fX;});
+  }
   out.forEach((it,i)=>{
     it.d=Math.hypot(it.x,it.y)/LIVE_K;
     it.delay=(Math.hypot(it.x,it.y*1.3)/LIVE_K/1300)*196+liveRnd(i+30)*39;
@@ -524,7 +543,7 @@ function buildLiveMeanings(session){
   const aspect=liveAspect(rect.width,rect.height);
   session.liveAspect=aspect;
   wrap.innerHTML='';
-  session.liveItems=buildLiveItems(aspect).map((it,i)=>{
+  session.liveItems=buildLiveItems(aspect,rect.width,rect.height).map((it,i)=>{
     const span=document.createElement('span');
     span.textContent=it.m;
     span.style.fontWeight=it.weight;
