@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Breeze 온보딩 카드 캐러셀</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #F2F2F7;
+    font-family: -apple-system, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    color: #293034;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .skip {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    font-size: 13px; color: #6D6D72; opacity: .8;
+    background: none; border: 0; cursor: pointer;
+  }
+  .stage { height: 100%; display: flex; align-items: center; justify-content: center; }
+  /* Card width: big, but never taller than the screen.
+     No peek: the card is narrower than the screen, so the faint gray
+     margins at the sides are what hints at the next card. */
+  .wrap {
+    --cw: min(calc(100vw - 48px), calc(68vh * 9 / 16));
+    width: var(--cw);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wrap::-webkit-scrollbar { display: none; }
+  .track { display: flex; gap: 20px; }
+  .card {
+    flex: 0 0 var(--cw);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+  }
+  .card video {
+    display: block; width: 100%; aspect-ratio: 9 / 16;
+    object-fit: cover; background: #fff;
+    /* Hairline around the video area: card 1's video is mostly white
+       on a white card, so without this the video area has no edge. */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .05);
+  }
+  .dots { display: flex; justify-content: center; gap: 8px; padding: 16px 0 4px; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #D1D1D6; transition: background .2s; }
+  .dots i.on { background: #000; }
+  .copy { text-align: center; padding: 10px 16px 20px; }
+  .copy .t1 { font-size: 17px; font-weight: 600; line-height: 1.4; }
+  .copy .t2 { font-size: 14px; color: #6D6D72; line-height: 1.5; margin-top: 4px; }
+  /* Card 3: book choice in card form (mirrors the existing choice scene). */
+  .fan { position: relative; height: 240px; margin-top: 20px; overflow: hidden; }
+  .fan .cover {
+    position: absolute; left: 50%; top: 8px; width: 148px; height: 222px;
+    border-radius: 10px; overflow: hidden; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+    transition: transform .35s ease, opacity .35s ease;
+    transform-origin: 50% 50%;
+  }
+  .fan .cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .bookmeta { text-align: center; padding: 10px 16px 0; }
+  .bookmeta b { display: block; font-size: 16px; line-height: 1.4; }
+  .bookmeta span { display: block; font-size: 13px; color: #6D6D72; margin-top: 2px; }
+  .choice { padding: 16px 20px 8px; }
+  .choice h2 { font-size: 19px; text-align: center; margin-bottom: 14px; }
+  .btn-read {
+    display: block; width: 100%; padding: 14px; border: 0; border-radius: 999px;
+    background: #293034; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  .btn-file {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; margin-top: 10px; padding: 13px; border: 0; border-radius: 999px;
+    background: #E9E9EA; color: #293034; font-size: 15px; cursor: pointer;
+  }
+  .btn-file .tag { font-size: 12px; color: #6D6D72; }
+  .btn-browse {
+    display: block; width: 100%; margin-top: 12px; padding: 6px; border: 0;
+    background: none; color: #8A8A8E; font-size: 14px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<button class="skip" type="button">건너뛰기</button>
+<main class="stage">
+  <div class="wrap" id="wrap">
+    <div class="track">
+      <article class="card" data-card="0">
+        <video src="assets/onboarding-carousel/card1.mp4" autoplay muted loop playsinline></video>
+        <div class="dots"><i class="on"></i><i></i><i></i></div>
+        <div class="copy">
+          <div class="t1">단어를 탭해보세요</div>
+          <div class="t2">단어에 딱 맞는 뜻이 나옵니다</div>
+        </div>
+      </article>
+      <article class="card" data-card="1">
+        <video src="assets/onboarding-carousel/card2.mp4" autoplay muted loop playsinline></video>
+        <div class="dots"><i></i><i class="on"></i><i></i></div>
+        <div class="copy">
+          <div class="t1">홈에서 북마크를 탭해보세요</div>
+          <div class="t2">단어장에서 학습이 가능합니다</div>
+        </div>
+      </article>
+      <article class="card" data-card="2">
+        <div class="fan" id="fan"></div>
+        <div class="bookmeta"><b id="book-title"></b><span id="book-author"></span></div>
+        <div class="choice">
+          <h2>이제 읽어볼까요?</h2>
+          <button class="btn-read" id="btn-read" type="button"></button>
+          <button class="btn-file" type="button"><span class="tag">PDF · EPUB</span><span>내 파일 넣기</span></button>
+          <button class="btn-browse" type="button">둘러볼게요</button>
+        </div>
+        <div class="dots"><i></i><i></i><i class="on"></i></div>
+      </article>
+    </div>
+  </div>
+</main>
+<script>
+  const wrap = document.getElementById('wrap');
+  // Play only the card that is actually in view; pause the other one.
+  const videos = [...document.querySelectorAll('.card video')];
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      const v = e.target;
+      if (e.intersectionRatio >= 0.6) v.play().catch(() => {});
+      else v.pause();
+    }
+  }, { root: wrap, threshold: [0.6] });
+  videos.forEach(v => io.observe(v));
+  // Page dots follow the card in view.
+  const dots = [...document.querySelectorAll('.dots')];
+  const sync = () => {
+    const adv = wrap.querySelector('.card').offsetWidth + 20;
+    const cur = Math.max(0, Math.min(2, Math.round(wrap.scrollLeft / adv)));
+    dots.forEach(d => [...d.children].forEach((el, i) => el.classList.toggle('on', i === cur)));
+  };
+  wrap.addEventListener('scroll', sync, { passive: true });
+  sync();
+  // Card 3: book fan. Same 7 books as the existing choice scene,
+  // infinite wrap, tap a side cover to centre it.
+  const BOOKS = [
+    { img: 'assets/longreads/covers/the-great-gatsby.webp', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cta: '개츠비 바로 읽기' },
+    { img: 'assets/longreads/covers/alice-in-wonderland.webp', title: "Alice's Adventures in Wonderland", author: 'Lewis Carroll', cta: '앨리스 바로 읽기' },
+    { img: 'assets/longreads/covers/speckled-band.webp', title: 'The Adventure of the Speckled Band', author: 'Arthur Conan Doyle', cta: '얼룩무늬 띠 바로 읽기' },
+    { img: 'assets/longreads/covers/scandal-in-bohemia.webp', title: 'A Scandal in Bohemia', author: 'Arthur Conan Doyle', cta: '보헤미아 바로 읽기' },
+    { img: 'assets/longreads/covers/red-headed-league.webp', title: 'The Red-Headed League', author: 'Arthur Conan Doyle', cta: '빨간 머리 연맹 바로 읽기' },
+    { img: 'assets/longreads/covers/final-problem.webp', title: 'The Final Problem', author: 'Arthur Conan Doyle', cta: '마지막 사건 바로 읽기' },
+    { img: 'assets/longreads/covers/hound-of-the-baskervilles.webp', title: 'The Hound of the Baskervilles', author: 'Arthur Conan Doyle', cta: '바스커빌 바로 읽기' },
+  ];
+  const fan = document.getElementById('fan');
+  let centre = 1; // Alice, same default as the existing choice scene.
+  const els = BOOKS.map((b, i) => {
+    const d = document.createElement('div');
+    d.className = 'cover';
+    d.innerHTML = '<img src="' + b.img + '" alt="' + b.title + '">';
+    d.addEventListener('click', () => { centre = i; layout(); });
+    fan.appendChild(d);
+    return d;
+  });
+  function layout() {
+    els.forEach((el, i) => {
+      let off = (((i - centre) % BOOKS.length) + BOOKS.length) % BOOKS.length;
+      if (off > 3) off -= BOOKS.length;
+      const a = Math.abs(off);
+      const sc = 1 - Math.min(0.3, a * 0.13);
+      el.style.transform = 'translate(-50%, 0) translateX(' + (off * 64) + '%) scale(' + sc + ')';
+      el.style.opacity = a > 2 ? 0 : String(1 - Math.min(0.55, a * 0.22));
+      el.style.zIndex = String(10 - a);
+      el.style.pointerEvents = a > 2 ? 'none' : 'auto';
+    });
+    document.getElementById('book-title').textContent = BOOKS[centre].title;
+    document.getElementById('book-author').textContent = BOOKS[centre].author;
+    document.getElementById('btn-read').textContent = BOOKS[centre].cta;
+  }
+  layout();
+</script>
+</body>
+</html>
