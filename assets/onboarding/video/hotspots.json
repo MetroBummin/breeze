@@ -1,0 +1,413 @@
+{
+ "_notes": {
+  "coords": "rects are {x,y,w,h}; *_norm are fractions of video width/height (0-1); *_css are CSS px at the reference viewport (portrait 390x844, landscape 1024x666, ipadportrait 820x1180, ipadlandscape 1180x820). Video is composed natively at that viewport (portrait @3x = 1170x2532, landscape @2x = 2048x1332, ipadportrait @2x = 1640x2360, ipadlandscape @2x = 2360x1640), so css = norm * viewport.",
+  "word_box": "'take' line box (Georgia/Gelasio content box, like the app's .w span rect), not including the 3px .w.sel highlight spread",
+  "ink_box": "measured opaque glyph pixels from the rendered frame",
+  "pill": "real #word-peek size used in video: 145 x 46.67 CSS px (pill_cut.png = app capture @3x 435x140), top = word box bottom + 8px, centred on take (placeLookupPeek rule, clamp 16px)",
+  "fps": 60
+ },
+ "intro_idle_loop_portrait": {
+  "duration_s": 2.4,
+  "frames": 144,
+  "loop": "seamless (one 2.4s aurora period, frame 143 -> frame 0)",
+  "take_word_box_norm": {
+   "x": 0.195,
+   "y": 0.41433,
+   "w": 0.61,
+   "h": 0.17133
+  },
+  "take_word_box_css": {
+   "x": 76.05,
+   "y": 349.7,
+   "w": 237.9,
+   "h": 144.61
+  },
+  "take_ink_box_norm": {
+   "x": 0.19402,
+   "y": 0.44194,
+   "w": 0.58718,
+   "h": 0.11572
+  },
+  "take_ink_box_css": {
+   "x": 75.67,
+   "y": 373.0,
+   "w": 229.0,
+   "h": 97.67
+  },
+  "take_font_px_css": 125.71,
+  "suggested_tap_target_css": {
+   "x": 52.05,
+   "y": 325.7,
+   "w": 285.9,
+   "h": 192.61
+  }
+ },
+ "intro_main_portrait": {
+  "duration_s": 4.3667,
+  "frames": 262,
+  "tap_at_s": 0.0,
+  "burst_starts_s": 0.1167,
+  "final_frame_index": 261,
+  "final_frame_time_s": 4.35,
+  "static_from_frame": 240,
+  "static_from_s": 4.0,
+  "pill_box_norm": {
+   "x": 0.26805,
+   "y": 0.47447,
+   "w": 0.37179,
+   "h": 0.05529
+  },
+  "pill_box_css": {
+   "x": 104.54,
+   "y": 400.45,
+   "w": 145,
+   "h": 46.67
+  },
+  "pill_size_css": {
+   "w": 145,
+   "h": 46.67
+  },
+  "sentence_box_norm": {
+   "x": 0.02329,
+   "y": 0.43501,
+   "w": 0.95343,
+   "h": 0.02998
+  },
+  "sentence_box_css": {
+   "x": 9.08,
+   "y": 367.15,
+   "w": 371.84,
+   "h": 25.31
+  },
+  "sentence_ink_box_css": {
+   "x": 10.0,
+   "y": 371.0,
+   "w": 369.33,
+   "h": 22.0
+  },
+  "sentence_font_px_css": 22,
+  "sentence_line_centre_y_css": 379.8,
+  "take_word_box_norm": {
+   "x": 0.40058,
+   "y": 0.43501,
+   "w": 0.10675,
+   "h": 0.02998
+  },
+  "take_word_box_css": {
+   "x": 156.22,
+   "y": 367.15,
+   "w": 41.63,
+   "h": 25.31
+  },
+  "take_highlight_box_css": {
+   "x": 153.22,
+   "y": 364.15,
+   "w": 47.63,
+   "h": 31.31
+  },
+  "take_centre_x_css": 177.04
+ },
+ "intro_idle_loop_landscape": {
+  "duration_s": 2.4,
+  "frames": 144,
+  "loop": "seamless (one 2.4s aurora period, frame 143 -> frame 0)",
+  "take_word_box_norm": {
+   "x": 0.38384,
+   "y": 0.39144,
+   "w": 0.23233,
+   "h": 0.21713
+  },
+  "take_word_box_css": {
+   "x": 393.05,
+   "y": 260.7,
+   "w": 237.9,
+   "h": 144.61
+  },
+  "take_ink_box_norm": {
+   "x": 0.3833,
+   "y": 0.42568,
+   "w": 0.22363,
+   "h": 0.14715
+  },
+  "take_ink_box_css": {
+   "x": 392.5,
+   "y": 283.5,
+   "w": 229.0,
+   "h": 98.0
+  },
+  "take_font_px_css": 125.71,
+  "suggested_tap_target_css": {
+   "x": 369.05,
+   "y": 236.7,
+   "w": 285.9,
+   "h": 192.61
+  }
+ },
+ "intro_main_landscape": {
+  "duration_s": 4.3667,
+  "frames": 262,
+  "tap_at_s": 0.0,
+  "burst_starts_s": 0.1167,
+  "final_frame_index": 261,
+  "final_frame_time_s": 4.35,
+  "static_from_frame": 240,
+  "static_from_s": 4.0,
+  "pill_box_norm": {
+   "x": 0.41166,
+   "y": 0.48101,
+   "w": 0.1416,
+   "h": 0.07007
+  },
+  "pill_box_css": {
+   "x": 421.54,
+   "y": 320.35,
+   "w": 145,
+   "h": 46.67
+  },
+  "pill_size_css": {
+   "w": 145,
+   "h": 46.67
+  },
+  "sentence_box_norm": {
+   "x": 0.31844,
+   "y": 0.431,
+   "w": 0.36312,
+   "h": 0.038
+  },
+  "sentence_box_css": {
+   "x": 326.08,
+   "y": 287.05,
+   "w": 371.84,
+   "h": 25.31
+  },
+  "sentence_ink_box_css": {
+   "x": 327.0,
+   "y": 291.0,
+   "w": 369.5,
+   "h": 22.0
+  },
+  "sentence_font_px_css": 22,
+  "sentence_line_centre_y_css": 299.7,
+  "take_word_box_norm": {
+   "x": 0.46213,
+   "y": 0.431,
+   "w": 0.04066,
+   "h": 0.038
+  },
+  "take_word_box_css": {
+   "x": 473.22,
+   "y": 287.05,
+   "w": 41.63,
+   "h": 25.31
+  },
+  "take_highlight_box_css": {
+   "x": 470.22,
+   "y": 284.05,
+   "w": 47.63,
+   "h": 31.31
+  },
+  "take_centre_x_css": 494.04
+ },
+ "intro_idle_loop_ipadportrait": {
+  "duration_s": 2.4,
+  "frames": 144,
+  "loop": "seamless (one 2.4s aurora period, frame 143 -> frame 0)",
+  "take_word_box_norm": {
+   "x": 0.35494,
+   "y": 0.43873,
+   "w": 0.29012,
+   "h": 0.12255
+  },
+  "take_word_box_css": {
+   "x": 291.05,
+   "y": 517.7,
+   "w": 237.9,
+   "h": 144.61
+  },
+  "take_ink_box_norm": {
+   "x": 0.35427,
+   "y": 0.45805,
+   "w": 0.27927,
+   "h": 0.08305
+  },
+  "take_ink_box_css": {
+   "x": 290.5,
+   "y": 540.5,
+   "w": 229.0,
+   "h": 98.0
+  },
+  "take_font_px_css": 125.71,
+  "suggested_tap_target_css": {
+   "x": 267.05,
+   "y": 493.7,
+   "w": 285.9,
+   "h": 192.61
+  }
+ },
+ "intro_main_ipadportrait": {
+  "duration_s": 4.3667,
+  "frames": 262,
+  "tap_at_s": 0.0,
+  "burst_starts_s": 0.1167,
+  "final_frame_index": 261,
+  "final_frame_time_s": 4.35,
+  "static_from_frame": 240,
+  "static_from_s": 4.0,
+  "pill_box_norm": {
+   "x": 0.38968,
+   "y": 0.4675,
+   "w": 0.17683,
+   "h": 0.03955
+  },
+  "pill_box_css": {
+   "x": 319.54,
+   "y": 551.65,
+   "w": 145,
+   "h": 46.67
+  },
+  "pill_size_css": {
+   "w": 145,
+   "h": 46.67
+  },
+  "sentence_box_norm": {
+   "x": 0.27327,
+   "y": 0.43928,
+   "w": 0.45346,
+   "h": 0.02145
+  },
+  "sentence_box_css": {
+   "x": 224.08,
+   "y": 518.35,
+   "w": 371.84,
+   "h": 25.31
+  },
+  "sentence_ink_box_css": {
+   "x": 225.0,
+   "y": 522.0,
+   "w": 369.5,
+   "h": 22.0
+  },
+  "sentence_font_px_css": 22,
+  "sentence_line_centre_y_css": 531.0,
+  "take_word_box_norm": {
+   "x": 0.45271,
+   "y": 0.43928,
+   "w": 0.05077,
+   "h": 0.02145
+  },
+  "take_word_box_css": {
+   "x": 371.22,
+   "y": 518.35,
+   "w": 41.63,
+   "h": 25.31
+  },
+  "take_highlight_box_css": {
+   "x": 368.22,
+   "y": 515.35,
+   "w": 47.63,
+   "h": 31.31
+  },
+  "take_centre_x_css": 392.04
+ },
+ "intro_idle_loop_ipadlandscape": {
+  "duration_s": 2.4,
+  "frames": 144,
+  "loop": "seamless (one 2.4s aurora period, frame 143 -> frame 0)",
+  "take_word_box_norm": {
+   "x": 0.39919,
+   "y": 0.41183,
+   "w": 0.20161,
+   "h": 0.17635
+  },
+  "take_word_box_css": {
+   "x": 471.05,
+   "y": 337.7,
+   "w": 237.9,
+   "h": 144.61
+  },
+  "take_ink_box_norm": {
+   "x": 0.39873,
+   "y": 0.43963,
+   "w": 0.19407,
+   "h": 0.11951
+  },
+  "take_ink_box_css": {
+   "x": 470.5,
+   "y": 360.5,
+   "w": 229.0,
+   "h": 98.0
+  },
+  "take_font_px_css": 125.71,
+  "suggested_tap_target_css": {
+   "x": 447.05,
+   "y": 313.7,
+   "w": 285.9,
+   "h": 192.61
+  }
+ },
+ "intro_main_ipadlandscape": {
+  "duration_s": 4.3667,
+  "frames": 262,
+  "tap_at_s": 0.0,
+  "burst_starts_s": 0.1167,
+  "final_frame_index": 261,
+  "final_frame_time_s": 4.35,
+  "static_from_frame": 240,
+  "static_from_s": 4.0,
+  "pill_box_norm": {
+   "x": 0.42334,
+   "y": 0.47519,
+   "w": 0.12288,
+   "h": 0.05691
+  },
+  "pill_box_css": {
+   "x": 499.54,
+   "y": 389.65,
+   "w": 145,
+   "h": 46.67
+  },
+  "pill_size_css": {
+   "w": 145,
+   "h": 46.67
+  },
+  "sentence_box_norm": {
+   "x": 0.34244,
+   "y": 0.43457,
+   "w": 0.31512,
+   "h": 0.03086
+  },
+  "sentence_box_css": {
+   "x": 404.08,
+   "y": 356.35,
+   "w": 371.84,
+   "h": 25.31
+  },
+  "sentence_ink_box_css": {
+   "x": 405.0,
+   "y": 360.0,
+   "w": 369.5,
+   "h": 22.0
+  },
+  "sentence_font_px_css": 22,
+  "sentence_line_centre_y_css": 369.0,
+  "take_word_box_norm": {
+   "x": 0.46714,
+   "y": 0.43457,
+   "w": 0.03528,
+   "h": 0.03086
+  },
+  "take_word_box_css": {
+   "x": 551.22,
+   "y": 356.35,
+   "w": 41.63,
+   "h": 25.31
+  },
+  "take_highlight_box_css": {
+   "x": 548.22,
+   "y": 353.35,
+   "w": 47.63,
+   "h": 31.31
+  },
+  "take_centre_x_css": 572.04
+ }
+}

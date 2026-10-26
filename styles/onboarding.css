@@ -1,6 +1,6 @@
-/* First-run onboarding v2. The first screen keeps one blurred aurora behind
-   "take" — no ripple rings. Words move by transform and opacity only.
-   The meaning uses the real #word-peek, not a custom capsule. */
+/* First-run onboarding v2. The intro is a cover-fitted video on the Home
+   background. A transparent hotspot sits on "take". The meaning is the real
+   #word-peek, placed on the video pill. */
 body.onboarding-active{overflow:hidden;}
 #onboarding[hidden]{display:none!important;}
 #onboarding{
@@ -23,59 +23,35 @@ body.onboarding-active{overflow:hidden;}
 #onboarding #onboard-skip[hidden]{display:none!important;}
 #onboard-fileinput[hidden]{display:none!important;}
 #onboard-demo,#onboard-choice{position:absolute;inset:0;}
-#onboard-demo{overflow:hidden;}
-#onboard-aurora{
-  position:absolute;z-index:0;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;
-  border-radius:50%;pointer-events:none;
-  background:radial-gradient(closest-side, rgba(77,174,214,.18), rgba(77,174,214,.06) 60%, transparent);
-  filter:blur(12px);
-  animation:onboard-aurora 2.4s ease-in-out infinite;
+#onboard-demo{overflow:hidden;background:var(--home-background);}
+#onboard-video-idle,#onboard-video-main{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center center;
+  background:transparent;pointer-events:none;
 }
-#onboard-aurora.out{animation:none;opacity:0;transition:opacity .22s linear;}
-@keyframes onboard-aurora{
-  0%,100%{transform:scale(.96);opacity:.55;}
-  50%{transform:scale(1.04);opacity:.9;}
-}
-#onboarding #onboard-hero{
-  position:absolute;z-index:3;left:50%;top:50%;margin:0;padding:0;border:0;
-  background:transparent;transform:translate(-50%,-50%);
-  font:500 124px/1 var(--serif);letter-spacing:-.03em;color:inherit;min-height:0;
-}
-#onboard-world{
-  position:absolute;z-index:2;inset:0;display:flex;align-items:center;justify-content:center;
-  pointer-events:none;
-}
-#onboard-line{
-  position:relative;margin:0;white-space:nowrap;
-  font:400 22px/1.35 var(--serif);letter-spacing:0;color:var(--sentence-glass-ink);
-  opacity:0;transform-origin:50% 50%;
-}
-#onboard-take-wrap{position:relative;display:inline-block;pointer-events:auto;}
-#onboard-hl{
-  position:absolute;z-index:0;left:-3px;right:-3px;top:-1px;bottom:-1px;border-radius:6px;
-  background:var(--sky2);box-shadow:0 0 0 3px var(--sky2);opacity:0;pointer-events:none;
-}
+#onboard-video-idle{z-index:1;}
+#onboard-video-main{z-index:2;opacity:0;}
+#onboard-video-idle.is-out{opacity:0;transition:opacity .1s linear;}
+#onboard-video-main.is-in{opacity:1;transition:opacity .1s linear;}
 #onboarding #onboard-take{
-  position:relative;z-index:1;display:inline-block;min-height:0;margin:0;padding:0;border:0;
-  background:transparent;color:inherit;font:inherit;letter-spacing:0;line-height:inherit;
-  transform-origin:50% 60%;
+  position:absolute;z-index:5;margin:0;padding:0;border:0;border-radius:0;
+  background:transparent;color:transparent;min-width:0;min-height:0;
+  box-shadow:none;outline:none;-webkit-tap-highlight-color:transparent;
 }
-#onboarding #onboard-take::before,#onboarding #onboard-take::after{content:none;display:none;}
-.take-ink{position:relative;display:inline-block;}
-.take-glow{display:none;}
-.take-glow::before{
-  content:"take";color:transparent;background-image:var(--shim);
-  -webkit-background-clip:text;background-clip:text;
-}
-#onboard-burst{position:absolute;z-index:4;inset:0;overflow:hidden;pointer-events:none;}
-.onboard-meaning{
-  position:absolute;left:0;top:0;margin:0;white-space:nowrap;pointer-events:none;opacity:0;
-  font-family:var(--ui);letter-spacing:-.025em;color:var(--sentence-glass-ink);
+#onboarding #onboard-take:focus,#onboarding #onboard-take:focus-visible{outline:none;box-shadow:none;}
+.onboard-sr{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
 }
 body.onboarding-active #word-peek{
   z-index:176;animation:none;pointer-events:none;
   box-shadow:0 8px 18px rgba(25,35,45,.16), var(--sentence-glass-shadow-pill);
 }
+body.onboarding-active #word-peek.onboard-live{
+  box-sizing:border-box;max-width:none;pointer-events:auto;
+  transition:opacity .12s linear;
+}
+body.onboarding-active #word-peek-retry,
 body.onboarding-active #word-peek-more{pointer-events:auto;}
 body.onboarding-active #panel.on{z-index:190;}
 #word-peek.onboard-leave{animation:onboard-demo-out .42s cubic-bezier(.4,0,.2,1) forwards!important;pointer-events:none!important;}
@@ -234,15 +210,16 @@ html.dark .longpress-tip-mark{background:rgba(41,75,87,.55);}
   #onboard-choice .onboard-lead{margin-bottom:10px;}
 }
 @media(prefers-reduced-motion:reduce){
-  #onboard-aurora,#onboard-toast,#onboard-vocab-bump .onboard-plus,#onboard-vocab-bump .mark,#longpress-tip,
+  #onboard-toast,#onboard-vocab-bump .onboard-plus,#onboard-vocab-bump .mark,#longpress-tip,
   #onboarding.entering #onboard-coverflow,#onboarding.entering #onboard-bookmeta,#onboarding.entering #onboard-dots,
   #onboarding.entering #onboard-choice h2,#onboarding.entering #onboard-choice .onboard-lead,
   #onboarding.entering #onboard-read,#onboarding.entering #onboard-file,#onboarding.entering #onboard-browse,
   #onboarding.leaving #onboard-demo{animation:none;}
+  #onboard-video-idle.is-out,#onboard-video-main.is-in,
+  body.onboarding-active #word-peek.onboard-live{transition:none;}
   #onboarding.leaving #onboard-demo,
   #onboarding.leaving #onboard-toast,
   #onboarding.leaving #onboard-vocab-bump,
   #word-peek.onboard-leave{animation:none!important;opacity:0!important;visibility:hidden!important;}
-  #onboard-aurora{opacity:.72;transform:none;}
   #onboard-toast.on{opacity:1;transform:translate(-50%,0);}
 }

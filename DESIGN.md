@@ -355,10 +355,10 @@ is in `docs/reviews/breeze-post270-gestures/`.
 
 ## 2026-10-26 first-run onboarding v2
 
-The first-run guide is a local word demonstration and a book choice on the
-Home background. `take` has one aurora and no ripple rings. The large intro
-word crossfades into the real-size sentence. The meaning is the
-real word pill, text `맡다` only, and its chevron opens the real word detail.
+The first-run guide is a pre-rendered intro video and a book choice on the
+Home background. The clip matches the viewport's closest aspect and the light
+or dark theme. The meaning is the real word pill, text `맡다` only, placed on
+the video pill, and its chevron opens the real word detail.
 The toast fades out on its own. Book covers then peek up from the bottom and
 follow a swipe onto the looping cover flow. Lookup glass,
 the shared dock, and Reader gesture ownership stay as already approved. The

@@ -11,7 +11,21 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg'
 const server=createServer((req,res)=>{
  const path=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));
  if(!path.startsWith(root)){res.writeHead(403).end();return;}
- try{res.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');res.end(readFileSync(path));}
+ try{
+  const bytes=readFileSync(path);
+  const type=mime[extname(path)]||'application/octet-stream';
+  const range=req.headers.range;
+  const match=range&&/^bytes=(\d+)-(\d*)$/.exec(range);
+  if(match){
+   const start=Number(match[1]);
+   const end=match[2]?Math.min(Number(match[2]),bytes.length-1):bytes.length-1;
+   res.writeHead(206,{'Content-Type':type,'Accept-Ranges':'bytes','Content-Range':`bytes ${start}-${end}/${bytes.length}`,'Content-Length':end-start+1});
+   res.end(bytes.subarray(start,end+1));
+   return;
+  }
+  res.writeHead(200,{'Content-Type':type,'Accept-Ranges':'bytes','Content-Length':bytes.length});
+  res.end(bytes);
+ }
  catch{res.writeHead(404).end();}
 });
 await new Promise(resolveListen=>server.listen(0,'127.0.0.1',resolveListen));
@@ -43,33 +57,44 @@ try{
   const {context,page,errors}=await openPage();
   assert.equal(await page.evaluate(()=>onboardTiming().idle),3000);
   assert.equal(await page.locator('#onboarding').isVisible(),true);
-  assert.equal(await page.locator('#onboard-welcome,.breeze-wordmark').count(),0);
+  assert.equal(await page.locator('#onboard-welcome,.breeze-wordmark,#onboard-hero,#onboard-aurora,#onboard-burst').count(),0);
   assert.equal(await page.locator('#onboard-skip').innerText(),'건너뛰기');
   assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
-  const aurora=await page.evaluate(()=>{
-    const take=document.getElementById('onboard-take');
-    const before=getComputedStyle(take,'::before').content;
-    const after=getComputedStyle(take,'::after').content;
-    const glow=getComputedStyle(document.getElementById('onboard-aurora')).backgroundImage;
-    return {before,after,glow,rings:take.querySelectorAll('.ring,[class*=ripple]').length};
+  await page.waitForFunction(()=>{
+    const idle=document.getElementById('onboard-video-idle');
+    return idle&&idle.dataset.clip&&idle.dataset.clip.includes('intro_idle_loop_portrait_light')&&document.getElementById('onboarding').dataset.clip==='portrait';
   });
-  assert.equal(aurora.before,'none');
-  assert.equal(aurora.after,'none');
-  assert.equal(aurora.rings,0);
-  assert.match(aurora.glow,/radial-gradient/);
+  const hotspot=await page.evaluate(()=>{
+    const take=document.getElementById('onboard-take');
+    const style=getComputedStyle(take);
+    return {bg:style.backgroundColor,outline:style.outlineStyle,w:take.getBoundingClientRect().width};
+  });
+  assert.ok(hotspot.w>40);
+  assert.equal(hotspot.outline,'none');
   await context.close();
   assert.deepEqual(errors,[]);
  }
  {
   const {context,page,errors}=await openPage({timing:{...fast,toast:700,choice:500},track:true});
-  await page.waitForFunction(()=>document.querySelectorAll('.onboard-meaning.show').length>=10);
-  assert.equal(await page.locator('#onboard-burst svg,.speed-line,[class*=speed]').count(),0);
+  await page.waitForFunction(()=>{
+    const main=document.getElementById('onboard-video-main');
+    return main&&main.classList.contains('is-in')&&main.currentTime>0.05;
+  });
+  assert.equal(await page.locator('#onboard-burst svg,.speed-line,[class*=speed],.onboard-meaning').count(),0);
   await page.screenshot({path:`${out}/burst.png`});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='pill'||document.getElementById('onboarding').dataset.scene==='save');
   const copy=await page.evaluate(()=>({pill:document.getElementById('word-peek-meaning').textContent.trim(),sentence:document.getElementById('onboard-line').textContent}));
   assert.equal(copy.pill,'맡다');
   assert.equal(await page.locator('#onboard-pill').count(),0);
   assert.match(copy.sentence,/She decided to take the job in London/);
+  const aligned=await page.evaluate(()=>{
+    const session=onboardingSession;
+    const box=document.getElementById('onboard-demo').getBoundingClientRect();
+    const expect=onboardCoverRect(session.variant.pill,box.width,box.height,session.variant.w,session.variant.h);
+    const pill=document.getElementById('word-peek').getBoundingClientRect();
+    return {dx:Math.abs(pill.left-(box.left+expect.left)),dy:Math.abs(pill.top-(box.top+expect.top)),dw:Math.abs(pill.width-expect.width),dh:Math.abs(pill.height-expect.height)};
+  });
+  assert.ok(aligned.dx<=1.5&&aligned.dy<=1.5&&aligned.dw<=1.5&&aligned.dh<=1.5,JSON.stringify(aligned));
   await page.screenshot({path:`${out}/pill.png`});
   await page.waitForFunction(()=>onboardingSession&&onboardingSession.peekReady);
   await page.evaluate(()=>{const s=onboardingSession;s.shift=0;s.shiftSpring=null;showChoice(s,false);});
@@ -119,8 +144,9 @@ try{
  }
  {
   const {context,page,errors}=await openPage({timing:{...fast,idle:60000},track:true});
+  await page.waitForFunction(()=>document.getElementById('onboard-video-idle').dataset.clip);
   await page.locator('#onboard-take').evaluate(node=>node.click());
-  await page.waitForFunction(()=>document.querySelectorAll('.onboard-meaning').length>=10);
+  await page.waitForFunction(()=>document.getElementById('onboard-video-main').classList.contains('is-in'));
   const tapped=await page.evaluate(()=>window.__onboardEvents.find(event=>event.name==='first_word_tap'));
   assert.ok(tapped&&version(tapped.detail));
   await page.locator('#onboard-skip').click();
@@ -297,5 +323,38 @@ try{
   await context.close();
   assert.deepEqual(errors,[]);
  }
- console.log('Onboarding v2: word burst, canned pill, vocabulary save, choice, file, reader tip, and first-run detection passed');
+ {
+  for(const spec of [
+    {viewport:{width:1024,height:666},clip:'landscape',css:{x:421.54,y:320.35,w:145,h:46.67}},
+    {viewport:{width:820,height:1180},clip:'ipadportrait',css:{x:319.54,y:551.65,w:145,h:46.67}},
+    {viewport:{width:390,height:844},clip:'portrait',css:{x:104.54,y:400.45,w:145,h:46.67},dark:true},
+  ]){
+    const {context,page,errors}=await openPage({timing:fast,viewport:spec.viewport,seed:spec.dark?{'breeze.dark':'true'}:null});
+    await page.waitForFunction(clip=>document.getElementById('onboarding').dataset.clip===clip,spec.clip);
+    if(spec.dark)assert.match(await page.evaluate(()=>document.getElementById('onboard-video-idle').dataset.clip),/_dark\.mp4$/);
+    await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='pill'||document.getElementById('onboarding').dataset.scene==='save');
+    const aligned=await page.evaluate(css=>{
+      const pill=document.getElementById('word-peek').getBoundingClientRect();
+      const main=document.getElementById('onboard-video-main');
+      return {
+        dx:Math.abs(pill.left-css.x),dy:Math.abs(pill.top-css.y),
+        dw:Math.abs(pill.width-css.w),dh:Math.abs(pill.height-css.h),
+        paused:main.paused,time:main.currentTime,text:document.getElementById('word-peek-meaning').textContent.trim(),
+      };
+    },spec.css);
+    assert.equal(aligned.text,'맡다');
+    assert.ok(aligned.paused||aligned.time>=4,'main did not hold the static frame');
+    assert.ok(aligned.dx<=1.5&&aligned.dy<=1.5&&aligned.dw<=1.5&&aligned.dh<=1.5,`${spec.clip} ${JSON.stringify(aligned)}`);
+    if(spec.clip==='ipadportrait'){
+      await page.locator('#word-peek-retry').click();
+      assert.equal(await page.locator('#word-peek-meaning').innerText(),'맡다');
+      await page.locator('#word-peek-more').click();
+      await page.waitForFunction(()=>document.getElementById('panel').classList.contains('on'));
+    }
+    await page.screenshot({path:`${out}/pill-${spec.clip}${spec.dark?'-dark':''}.png`});
+    await context.close();
+    assert.deepEqual(errors,[]);
+  }
+ }
+ console.log('Onboarding v2: video intro, canned pill, vocabulary save, choice, file, reader tip, and first-run detection passed');
 }finally{await browser.close();await new Promise(resolveClose=>server.close(resolveClose));}

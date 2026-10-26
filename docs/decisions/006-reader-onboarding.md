@@ -23,17 +23,27 @@ closes the overlay and leaves progress so the next launch resumes there.
 `건너뛰기` does the same jump and does not mark `done`.
 
 The overlay uses the Home background (`--home-background`), not Reader ivory.
-The intro word and the sentence are two elements. A scaled world is not used,
-because Safari could not composite it smoothly.
+The intro is a pre-rendered video, `object-fit: cover`, centred on
+`#onboarding`. Portrait, landscape, iPad portrait, and iPad landscape each
+have a light and a dark idle loop and a main clip under
+`assets/onboarding/video/`. `hotspots.json` is the manifest. The guide reads
+it, keeps every variant that has both an idle loop and a main clip, and plays
+the one whose reference aspect (from that file's reference-viewport note, a
+`viewports` entry, or the clip's own `viewport`) is closest to the viewport.
+Adding another size is a new pair of keys plus its reference size in that
+file. Theme follows `html`/`body` class `dark`.
 
-1. The word `take` sits in the center, about 124px, with one blurred aurora
-   and no caption, ripple, or finger. A tap, or about three seconds of idle,
-   bursts 44 local Korean glosses in eight rows. Each gloss animates with
-   transform and opacity only. There is no network lookup, no model call,
-   no speed lines, and no per-frame blur.
-2. The glosses ease back into the center and fade. The large word then
-   crossfades to `She decided to take the job in London.` at its real size.
-   The real `#word-peek` pops under the word. Its meaning text is only `맡다`.
+1. The idle clip loops. A transparent button, with no focus ring, sits on the
+   normalized `take` rect mapped through the same cover transform and is
+   recomputed on resize. A tap, or about three seconds of idle, starts the
+   main clip. The main clip is preloaded during the idle loop. The switch
+   crossfades in about 100ms. There is no network lookup and no code-drawn
+   burst.
+2. The main clip holds its last frame once the picture is static (about 4
+   seconds). The real `#word-peek` crossfades in over about 120ms on the
+   normalized pill rect. Its meaning text is only `맡다`. Retry shows `맡다`
+   again and does not call the dictionary. The chevron, or a tap on the pill,
+   opens the real word detail.
 3. Nothing advances by itself after the save. A green toast,
    `단어장에 저장됐어요`, appears once, fades out after about two seconds,
    and a `+1` badge bumps the vocabulary chip. About a second after the toast
@@ -60,9 +70,9 @@ because Safari could not composite it smoothly.
    accepted). A failed or cancelled import stays on the choice screen.
    `둘러볼게요` marks the guide done and paints Home.
 
-`prefers-reduced-motion: reduce` drops the burst nodes and the timed motion,
-and still reaches the sentence, the pill, the save, and the choice screen.
-The idle wait stays unless the reader taps.
+`prefers-reduced-motion: reduce` skips the main clip and pins its last frame,
+and still reaches the pill, the save, and the choice screen. The idle wait
+stays unless the reader taps.
 
 `onboardingOwnsReader()` stays false. The empty hooks
 `onboardingAppearanceOpened`, `openOnboardingWord`, `renderOnboardingWordDetail`,
