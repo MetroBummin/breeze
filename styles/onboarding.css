@@ -53,11 +53,20 @@ body.onboarding-active{overflow:hidden;}
   background:#DCEAF0;border-radius:14.7px;box-shadow:0 0 0 7.35px #DCEAF0;
 }
 html.dark #onboard-live-highlight{background:#294B57;box-shadow:0 0 0 7.35px #294B57;}
+/* Cycle 4: the sentence and the highlight get their own layers. Before, the
+   take word was baked into the one giant 1170x2532 world layer, and at the
+   desktop camera scale the browser could not rasterise that layer at full
+   resolution, so it stretched a low-res bitmap and the take looked blurry.
+   The meanings stayed sharp in the same frame precisely because they are
+   separate small layers. Promoting the sentence layers the same way lets
+   each word rasterise at its own on-screen size. */
 .onboard-live-sentence{
   position:absolute;left:98.5px;top:671px;white-space:pre;
   color:var(--sentence-glass-ink);font-family:'Gelasio',var(--serif);
   font-size:53.9px;line-height:64.68px;
+  will-change:transform;
 }
+#onboard-live-highlight{will-change:transform;}
 .onboard-live-sentence .onboard-live-ctx{opacity:0;}
 #onboard-live-take-word,#onboard-live-take-glow-word{
   display:inline-block;transform-origin:50% 60%;will-change:transform;
@@ -69,7 +78,7 @@ html.dark #onboard-live-highlight{background:#294B57;box-shadow:0 0 0 7.35px #29
 #onboard-live-meanings span{
   position:absolute;left:0;top:0;color:var(--sentence-glass-ink);
   font-family:'Pretendard',var(--ui);letter-spacing:-.025em;white-space:nowrap;
-  will-change:transform,opacity;
+  will-change:transform,opacity,filter;
 }
 #onboarding #onboard-take{
   position:absolute;z-index:5;margin:0;padding:0;border:0;border-radius:0;

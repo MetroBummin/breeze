@@ -551,10 +551,16 @@ function measureLiveCenters(session){
   session.liveSentCX=sr.left-wr.left+sr.width/2;
 }
 // Cycle 3: the final sentence is no longer a fixed 22px. On a phone it stays
-// 22px; on wider screens it grows with the viewport (capped at 44px) so the
-// sentence does not look tiny on desktop. The whole camera path scales with
-// it, so the take zoom and the lock zoom keep their proportions.
-function liveFinalPx(W){return W<=390?22:Math.min(44,22*W/390);}
+// 22px; on wider screens it grows with the viewport so the sentence does not
+// look tiny on desktop. The whole camera path scales with it, so the take
+// zoom and the lock zoom keep their proportions.
+// Cycle 4: the cap is 32px, not 44px. At 44px the desktop take zoom reached
+// 4.66x, and the browser could no longer rasterise the world sharply at
+// that scale, so the take looked low-res and its glow smeared into a blob
+// (the sentence zoom-out stayed clean because it renders near 1x). At 32px
+// the take zoom peaks at 3.39x, the sentence is still clearly bigger than
+// the phone's 22px, and the raster stays sharp.
+function liveFinalPx(W){return W<=390?22:Math.min(32,22*W/390);}
 // Cycle 3: write a style only when it actually changed. After the intro lands,
 // every value is steady, so a steady frame writes nothing instead of dirtying
 // 44 meanings, the take word and the halo 60 times a second.
@@ -661,10 +667,11 @@ function renderLiveFrame(session){
   liveSet(glow,'opacity',String(shimOn));
   // meanings (hidden after lock+59ms, like Remotion's Burst render window)
   // Cycle 3: transform-only. The old code rewrote left/top (a layout pass)
-  // and a blur filter (a repaint) for all 44 meanings every frame; the spans
-  // now sit at 0,0 and only their transform/opacity change, which the browser
-  // can move on the compositor without repainting. The blur fade is dropped:
-  // the scale + opacity fade already reads as the same suck-in.
+  // for all 44 meanings every frame; the spans now sit at 0,0 and only their
+  // transform/opacity/filter change. Cycle 4 brings the blur back: dropping
+  // it made the entrance and the suck-in look hard and wrong, and with the
+  // layout passes gone the filter alone is affordable. Writes are still
+  // cached, so a steady frame writes nothing.
   const showMeanings=bt<2835;
   liveSet(meaningsWrap,'display',showMeanings?'':'none');
   if(showMeanings&&session.liveItems){
@@ -685,6 +692,9 @@ function renderLiveFrame(session){
       if(it._tf!==tf){it._tf=tf;it.el.style.transform=tf;}
       const opStr=String(op);
       if(it._op!==opStr){it._op=opStr;it.el.style.opacity=opStr;}
+      const blur=(!lock&&back>0&&back<1?back*6:(out<1?(1-out)*5:0))*LIVE_K;
+      const fl=blur>0.15?`blur(${blur.toFixed(2)}px)`:'';
+      if(it._fl!==fl){it._fl=fl;it.el.style.filter=fl;}
     });
   }
   // tap overlay follows the take box through the camera
