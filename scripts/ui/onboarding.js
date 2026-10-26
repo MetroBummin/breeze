@@ -481,7 +481,9 @@ function buildLiveItems(aspect,vw,vh){
     ipadportrait:{mul:1.35,ys:[-515,-415,-315,-215,-115,115,215,315,415,515],counts:[5,4,5,4,4,4,5,4,5,4]},
     ipadlandscape:{mul:1.35,ys:[-380,-290,-200,-110,110,200,290,380],counts:[5,6,5,6,6,5,6,5]},
   }[aspect];
-  const gap=72*LIVE_K;
+  // Cycle 6: wider word gaps on wide screens, so the cloud reads as spread
+  // around Take instead of bunched in the middle.
+  const gap=(aspect==='landscape'||aspect==='ipadlandscape'?110:72)*LIVE_K;
   const take=(n)=>{
     const row=[];
     for(let j=0;j<n&&mi<LIVE_MEANINGS.length;j++){
@@ -527,6 +529,20 @@ function buildLiveItems(aspect,vw,vh){
     const fX=Math.min(1,(vw/2-36)/maxX);
     if(fY<1)out.forEach(it=>{it.y*=fY;});
     if(fX<1)out.forEach(it=>{it.x*=fX;});
+    // Cycle 6: spread the cloud wider around Take. The fit above only ever
+    // compresses, so on roomy windows the rows sat well inside the edges
+    // and felt bunched around the take. Expand offsets up to 15%, then
+    // refit so nothing can leave the viewport.
+    let mY=0, mX=0;
+    out.forEach(it=>{
+      const w=LIVE_WIDTH_EM[it.m]*it.size;
+      mY=Math.max(mY,Math.abs(it.y)+it.size*0.6);
+      mX=Math.max(mX,Math.abs(it.x)+w/2);
+    });
+    const gY=Math.min(1.15,(vh/2-20)/mY);
+    const gX=Math.min(1.15,(vw/2-28)/mX);
+    if(gY>1)out.forEach(it=>{it.y*=gY;});
+    if(gX>1)out.forEach(it=>{it.x*=gX;});
   }
   out.forEach((it,i)=>{
     it.d=Math.hypot(it.x,it.y)/LIVE_K;
@@ -743,6 +759,8 @@ function resetLiveIntro(session){
   }
   session.liveStarted=false;session.liveBurst=false;session.liveShimmer=false;
   session.liveSuck=false;session.liveSentence=false;session.liveAt=0;
+  session.livePillShown=false;session.liveSaved=false;
+  session.livePillAt=Infinity;session.liveToastAt=Infinity;
   session.step='word';session.stepAt=performance.now();
   renderLiveFrame(session);
 }
@@ -780,6 +798,8 @@ function liveIntroToSentence(session){
   session.step='sentence';session.stepAt=performance.now();
   if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'sentence',ms});
   onboardMirror('onboarding_step_complete',{step:'sentence',ms});
+  // Cycle 6: the pill follows the sentence, like the old flow.
+  session.livePillAt=session.clock+700;
 }
 function startLiveIntro(session,reason){
   if(onboardingSession!==session||session.mode!=='demo'||session.liveStarted)return;
@@ -794,9 +814,18 @@ function startLiveIntro(session,reason){
   if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'word',ms});
   onboardMirror('onboarding_step_complete',{step:'word',ms});
 }
+function advanceLiveAfterSentence(session){
+  // Cycle 6: the live flow used to stop at the sentence. It now continues
+  // to the real app pill below the sentence, then the saved-to-wordbook
+  // toast, mirroring the old flow (pill at sentence+700ms, toast 700ms later).
+  if(!session.liveSentence)return;
+  if(!session.livePillShown&&session.clock>=session.livePillAt)showLivePill(session);
+  if(session.livePillShown&&!session.liveSaved&&session.clock>=session.liveToastAt)showLiveSaveToast(session);
+}
 function advanceLiveIntro(session){
   if(session.reduced||session.motion.matches){
     if(!session.liveSentence)liveIntroToSentence(session);
+    advanceLiveAfterSentence(session);
     return;
   }
   if(!session.liveStarted&&session.clock>=session.B)startLiveIntro(session,'timeout');
@@ -811,6 +840,7 @@ function advanceLiveIntro(session){
   }
   if(!session.liveSentence&&bt>=3647)liveIntroToSentence(session);
   else renderLiveFrame(session);
+  advanceLiveAfterSentence(session);
 }
 
 function showDemo(session){
@@ -1036,6 +1066,66 @@ function showOnboardPill(session){
     return;
   }
   requestAnimationFrame(()=>{if(onboardingSession===session&&session.pillShown)peek.style.opacity='1';});
+}
+function showLivePill(session){
+  // Cycle 6: the live flow has no video variant, so the pill is placed
+  // under the take word of the sentence itself (the take button already
+  // sits exactly over that word). Same '맡다' pill, same toast timing.
+  if(session.livePillShown||onboardingSession!==session)return;
+  if(document.getElementById('panel').classList.contains('on'))return;
+  const peek=adoptPeek(session);
+  if(!peek)return;
+  session.livePillShown=true;
+  session.pillShown=true;
+  session.liveToastAt=session.clock+700;
+  const meaning=document.getElementById('word-peek-meaning');
+  peek.classList.remove('loading');
+  peek.classList.add('onboard-live');
+  if(meaning)meaning.textContent=ONBOARD_MEANING;
+  peek.style.opacity='0';
+  peek.hidden=false;
+  placeLivePill(session);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{
+    if(onboardingSession===session&&session.livePillShown){placeLivePill(session);fitOnboardMeaning();}
+  });
+  if(session.reduced||session.motion.matches){
+    peek.style.opacity='1';
+    return;
+  }
+  requestAnimationFrame(()=>{if(onboardingSession===session&&session.livePillShown)peek.style.opacity='1';});
+}
+function placeLivePill(session){
+  const peek=document.getElementById('word-peek');
+  if(!peek||peek.hidden)return;
+  const btn=document.getElementById('onboard-take');
+  if(!btn)return;
+  // Drop any stale reader width so the pill sizes to its own content.
+  peek.style.width='';
+  peek.style.height='';
+  const r=btn.getBoundingClientRect();
+  const pw=peek.getBoundingClientRect().width;
+  peek.style.left=(r.left+r.width/2-pw/2)+'px';
+  peek.style.top=(r.bottom+14)+'px';
+  peek.style.transform='none';
+  peek.style.margin='0';
+  fitOnboardMeaning();
+}
+function showLiveSaveToast(session){
+  if(session.liveSaved||onboardingSession!==session)return;
+  session.liveSaved=true;
+  session.didSave=true;
+  session.saved=true;
+  ensureOnboardingWord(session);
+  const toast=document.getElementById('onboard-toast');
+  if(toast){toast.classList.remove('out');toast.classList.add('on');}
+  clearTimeout(session.toastTimer);
+  session.toastTimer=setTimeout(()=>{if(onboardingSession===session)dismissOnboardingToast();},2000);
+  const bump=document.getElementById('onboard-vocab-bump');
+  if(bump)bump.classList.add('on');
+  const ms=stepMs(session);
+  session.step='save';session.stepAt=performance.now();
+  if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'save',ms});
+  onboardMirror('onboarding_step_complete',{step:'save',ms});
 }
 function placeOnboardPill(session){
   const peek=document.getElementById('word-peek');
