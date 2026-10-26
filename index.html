@@ -69,7 +69,7 @@
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
-  <link rel="stylesheet" href="styles/onboarding.css?v=9936dd0c">
+  <link rel="stylesheet" href="styles/onboarding.css?v=cb0a62ed">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -91,6 +91,7 @@
   <script defer src="scripts/core/word-integrity.js?v=26df6591"></script>
   <script defer src="scripts/core/account-scope.js?v=2d083ed6"></script>
   <script defer src="scripts/core/state.js?v=604111d6"></script>
+  <script defer src="scripts/core/events.js?v=e2359ca5"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
@@ -123,7 +124,7 @@
   <script defer src="modules/lexical/core.js?v=85234ab5"></script>
   <script defer src="scripts/dictionary/sentence.js?v=3f5e51ca"></script>
   <script defer src="scripts/dictionary/lookup-feedback.js?v=d1f2d7c3"></script>
-  <script defer src="scripts/dictionary/dictionary.js?v=b5ac955c"></script>
+  <script defer src="scripts/dictionary/dictionary.js?v=9e3ee46c"></script>
   <script defer src="scripts/dictionary/easy-explanation.js?v=fc76e90e"></script>
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/study-motion.js?v=6ba528d8"></script>
@@ -162,13 +163,13 @@
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
   <script defer src="scripts/sync/sync.js?v=b0c5c6d2"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=f5b4c22a"></script>
+  <script defer src="scripts/ui/onboarding.js?v=33bbd489"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=8202e181"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
   <script defer src="scripts/ui/task-dialog.js?v=573fca03"></script>
   <script defer src="scripts/library/folders.js?v=0122ac7f"></script>
-  <script defer src="scripts/main.js?v=9d6bef93"></script>
+  <script defer src="scripts/main.js?v=e569dc7c"></script>
   <link rel="stylesheet" href="styles/study.css?v=ff988d52">
   <link rel="stylesheet" href="styles/surfaces.css?v=ee2a082b">
   <link rel="stylesheet" href="styles/header-controls.css?v=b58ebc34">
@@ -598,29 +599,28 @@
 
   </div>
 </div>
-<!-- First-run guide v2: one local word, one context pill, then a book choice. -->
+<!-- First-run guide v2: one continuous zoom, the real word pill, then a coverflow. -->
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="브리즈 시작 안내" hidden>
   <button id="onboard-skip" type="button">건너뛰기</button>
   <div id="onboard-demo">
-    <div id="onboard-word-stage">
-      <button id="onboard-take" type="button">take</button>
-      <div id="onboard-burst" aria-hidden="true"></div>
+    <div id="onboard-aurora" aria-hidden="true"></div>
+    <div id="onboard-world">
+      <p id="onboard-line">
+        <span id="onboard-before">She decided to </span><span id="onboard-take-wrap"><i id="onboard-hl" aria-hidden="true"></i><button id="onboard-take" type="button"><span class="take-glow" aria-hidden="true"></span><span class="take-ink">take</span></button></span><span id="onboard-after"> the job in London.</span>
+      </p>
     </div>
-    <div id="onboard-sentence-stage" hidden>
-      <p>She decided to <button id="onboard-sentence-take" type="button">take</button> the job in London.</p>
-      <div id="onboard-pill" hidden>
-        <p class="onboard-pill-body">맡다 · (일자리를) 받아들이다</p>
-        <p class="onboard-pill-label">문맥에 맞는 뜻</p>
-      </div>
+    <div id="onboard-burst" aria-hidden="true"></div>
+    <div id="onboard-toast" role="status"><span class="onboard-check" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.8 8.2 6.9 10.3 11.2 5.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>단어장에 저장됐어요</div>
+    <div id="onboard-vocab-bump" aria-hidden="true">
+      <span class="onboard-vocab-icon"><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3.2L6 20V5.5a1 1 0 0 1 1-1z"/></svg><span class="onboard-plus">+1</span></span>
+      <span class="onboard-vocab-label">단어장</span>
     </div>
-    <div id="onboard-toast" hidden role="status">✓ 단어장에 저장됐어요</div>
-    <div id="onboard-vocab-bump" hidden aria-hidden="true">
-      <span class="onboard-plus">+1</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8a2 2 0 0 1 2 2v14.2c0 .6-.6.9-1.1.6L12 17l-4.9 3.3c-.5.3-1.1 0-1.1-.6V5.5a2 2 0 0 1 2-2z"/></svg>
-    </div>
+    <button id="onboard-continue" type="button">계속하기</button>
   </div>
-  <div id="onboard-choice" hidden>
+  <div id="onboard-choice">
     <div id="onboard-coverflow" tabindex="0" role="listbox" aria-label="기본으로 들어 있는 책"></div>
+    <p id="onboard-bookmeta"><b></b><span></span></p>
+    <div id="onboard-dots" aria-hidden="true"></div>
     <h2>이제 읽어볼까요?</h2>
     <p class="onboard-lead">모르는 단어는 눌러만 보세요. 뜻을 보여드리고 단어장에 모아둘게요.</p>
     <button id="onboard-read" type="button">앨리스 바로 읽기</button>

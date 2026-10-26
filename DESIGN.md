@@ -355,8 +355,9 @@ is in `docs/reviews/breeze-post270-gestures/`.
 
 ## 2026-10-26 first-run onboarding v2
 
-The first-run guide is a local word demonstration and a book choice. It no
-longer draws the welcome pen or the feature-video carousel. Lookup glass, the
-shared dock, and Reader gesture ownership stay as already approved. The
+The first-run guide is a local word demonstration and a book choice on the
+Home background. `take` has one aurora and no ripple rings. The meaning is the
+real word pill, text `맡다` only. The book row is a cover flow. Lookup glass,
+the shared dock, and Reader gesture ownership stay as already approved. The
 in-reader long-press tip uses the existing sentence-glass fill, line, ink, and
-shadow. See `docs/decisions/006-reader-onboarding.md`.
+shadow, with a sky-blue sentence highlight. See `docs/decisions/006-reader-onboarding.md`.

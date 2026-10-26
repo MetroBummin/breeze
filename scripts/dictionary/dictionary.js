@@ -334,7 +334,7 @@ function createMeaning(root, text, source){
     if(from.example) base.example=from.example;
     if(from.book) base.book=from.book;
     base.pickedAt=Date.now(); base.up=Math.max(Date.now(),(base.up||0)+1,buriedMeaning+1);
-    saveWords([root,...dropSuggestion(root,meaning)]); queueSync(true); return root;
+    saveWords([root,...dropSuggestion(root,meaning)]); queueSync(true); if(typeof trackEvent==='function')trackEvent('vocab_save',{first:true}); return root;
   }
   /* 뜻 카드의 주소는 뜻 글자에서 나옵니다. 그래서 지웠던 뜻을 똑같이 다시 적으면
      주소도 똑같고, 그 주소에는 "지웠다"는 표(`dead`)가 아직 붙어 있습니다. 표를
@@ -353,6 +353,7 @@ function createMeaning(root, text, source){
     pickedAt:Date.now(), up:Math.max(Date.now(),buried+1)};
   if(typeof refreshWordIndex==='function')refreshWordIndex(id);
   saveWords([root,id,...dropSuggestion(root,meaning)]); queueSync(true);
+  if(typeof trackEvent==='function')trackEvent('vocab_save',{first:true});
   return id;
 }
 /* Keep one replaceable retry slot. During a new word's first lookup, update its
@@ -471,6 +472,7 @@ const wordLookupTargets=new WeakMap();
 function openWord(k, node, point){
   if(point&&node)wordTapPoints.set(node,point);
   if(typeof onboardingOwnsReader==='function' && onboardingOwnsReader()){ openOnboardingWord(node); return; }
+  if(typeof trackEvent==='function')trackEvent('first_word_tap');
   if(wordPeekSameTarget(k,node)){
     if(typeof wordLookupFeedback!=='undefined')wordLookupFeedback.repeat(wordLookupLife);
     // PDF/OCR and EPUB create a disposable marker before dispatching the tap.
@@ -524,6 +526,7 @@ async function resolveCurrentLookup(k,input,life,node){
   if(!current())return;
   const context=currentContext(k);
   if(!answer||!answer.ko){if(context){context.loading='';context.error=w.aiOff||'error';}renderWordLookup();return;}
+  if(typeof trackEvent==='function')trackEvent('first_lookup_success');
   const phrase=expressionFromMini(answer,input.sentence,input.clicked,input.clickedIndex);
   if(phrase){saveDetectedExpression(k,phrase,input.sentence,input.book,answer,life,{automatic:true,clickedIndex:input.clickedIndex});return;}
   const parsed=answerFromLook(answer,false);
@@ -1720,7 +1723,12 @@ function saveDetectedExpression(k,phrase,sentence,book,answer,life,opt={}){
   // Carry its cooldown so an immediate recheck is not a new learning event.
   recentWordOpens.set(id,Math.max(recentWordOpens.get(id)||0,recentWordOpens.get(base.root||k)||0,Date.now()));
   selKey=active;contextView=null;
-  saveWords([k,id,active,owner]);queueSync(true);refreshReaderWords();renderIfAlive(life);return active;
+  saveWords([k,id,active,owner]);queueSync(true);refreshReaderWords();renderIfAlive(life);
+  if(!previous&&typeof trackEvent==='function'){
+    trackEvent('first_lookup_success');
+    trackEvent('vocab_save',{first:true});
+  }
+  return active;
 }
 
 /* 답이 어디서 오느냐에 따라 기다림이 다릅니다. 둘은 사람에게 다른 사건입니다.
@@ -1886,7 +1894,8 @@ async function fetchLook(k, opt){
 
 function applyLook(w, j, k, opt){
   opt = opt || {};
-  const initial=!!(pendingWord&&pendingWord.key===k&&!String(w.ko||'').trim());
+  const hadMeaning=!!String(w.ko||'').trim();
+  const initial=!!(pendingWord&&pendingWord.key===k&&!hadMeaning);
   if(!wordLookRequests.has(w))delete w.aiLoading;
   delete w.aiOff;
   /* 사람이 이미 뜻을 정해 놨으면 AI 가 갈아 끼우지 않습니다. 직접 적은 뜻도,
@@ -1909,6 +1918,8 @@ function applyLook(w, j, k, opt){
   w.up = Date.now();
   if(initial&&String(w.ko||'').trim())firstLookupMeaning={root:k,life:opt.life===undefined?wordLookupLife:opt.life};
   saveWords(k); queueSync(true);
+  if(j&&j.ko&&typeof trackEvent==='function')trackEvent('first_lookup_success');
+  if(!hadMeaning&&String(w.ko||'').trim()&&typeof trackEvent==='function')trackEvent('vocab_save',{first:true});
   renderIfAlive(opt.life);
 }
 

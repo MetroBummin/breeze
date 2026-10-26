@@ -22,25 +22,27 @@ Escape on a demo scene jumps to the choice screen. Escape on the choice screen
 closes the overlay and leaves progress so the next launch resumes there.
 `건너뛰기` does the same jump and does not mark `done`.
 
-Scenes, in order, about fifteen seconds if the reader waits:
+The overlay uses the Home background (`--home-background`), not Reader ivory.
+Scenes stay on one camera. There is no blank frame and no second copy of `take`.
 
-1. The word `take` sits in the center with a soft pulsing ring and no caption.
-   A tap, or about three seconds of idle, bursts canned Korean glosses of
-   `take` across the screen. The list is local. There is no network lookup and
-   no model call. There are no speed lines or arrows.
-2. The glosses shrink, blur, and move back into the word. The view then settles
-   on `She decided to take the job in London.` with `take` highlighted. A tap,
-   or a short pause, shows one pill: `맡다 · (일자리를) 받아들이다`, labeled
-   `문맥에 맞는 뜻`.
-3. A green toast, `✓ 단어장에 저장됐어요`, slides down once, and a green `+1`
-   appears on a small vocabulary glyph. The same record is written through
-   `saveWords` so the vocabulary list is not empty afterwards. Replay does not
-   overwrite a real `take` and does not add the sample when other words exist.
+1. The word `take` sits in the center, about 124px, with one blurred aurora
+   and no caption, ripple, or finger. A tap, or about three seconds of idle,
+   bursts 44 local Korean glosses in eight rows. There is no network lookup,
+   no model call, and no speed lines.
+2. The glosses accelerate back into `take` with a short blur. The same word
+   then zooms out to `She decided to take the job in London.` The real
+   `#word-peek` pops under the word. Its meaning text is only `맡다`.
+3. Nothing advances by itself after the save. A green toast,
+   `단어장에 저장됐어요`, appears once, and a `+1` badge bumps the vocabulary
+   chip. About a second later, `계속하기` rises. A tap anywhere continues.
+   The same record is written through `saveWords`. Replay does not overwrite
+   a real `take` and does not add the sample when other words exist.
    Skipping to the choice screen still writes the sample under those rules.
-4. Built-in offline classics sit in a horizontal cover flow. The centered cover
-   is largest; neighbors are smaller, faded, and partly visible. Scrolling
-   snaps. The primary button names the centered book (`앨리스 바로 읽기`, and
-   the matching label for each other book) and opens that book in the Reader
+4. Built-in offline classics sit in a cover flow driven by one float index.
+   The centered cover is largest and in front. Side covers are smaller,
+   tilted, faded, and overlapped. Release uses momentum and a spring snap.
+   The primary button names the centered book (`앨리스 바로 읽기`, and the
+   matching label for each other book) and opens that book in the Reader
    without the preview step (`importLongRead`, then `openBook`). `내 파일 넣기`
    keeps the existing file import (`PDF · EPUB` is only a label; `.txt` stays
    accepted). A failed or cancelled import stays on the choice screen.
@@ -58,21 +60,19 @@ not throw. `goOnboardingPage(0)` shows the word; any later page shows the choice
 ## Long-press tip
 
 After three successful Reader word opens (`breeze.reader.word-taps`), once,
-the app highlights one sentence and shows a glass tooltip inside the page
-column: `문장을 꾹 눌러보세요` / `문장 전체 해석을 볼 수 있어요`, with a close
-control. `breeze.reader.longpress-tip` is `shown` at display and `dismissed`
-on close or on a sentence long-press. A long-press before the tip appears also
-dismisses it, so it never shows later. There is no separate vocabulary tip.
+the app highlights one sentence in a light sky blue (not the yellow saved-word
+mark) and shows a glass tooltip as wide as the page column:
+`문장을 꾹 눌러보세요` / `문장 전체 해석을 볼 수 있어요`, with a close
+control and no target icon. `breeze.reader.longpress-tip` is `shown` at
+display and `dismissed` on close or on a sentence long-press. A long-press
+before the tip appears also dismisses it, so it never shows later.
 
 ## Events
 
-`onboardTrack` calls `breezeTrack`, `trackEvent`, or `recordEvent` when one of
-those functions exists, and always adds `onboarding_version: 'v2'`. Until an
-events logger is present the call does nothing. Names used by this guide:
-`onboarding_start`, `onboarding_step_complete`, `onboarding_step_skip`,
-`first_word_tap`, `first_lookup_success` (`source` `canned` or `dict`),
-`vocab_save`, `onboarding_choice` (`choice` is a book id, `file`, or `browse`),
-`longpress_tip_shown`, `longpress_tip_dismissed`.
+The guide calls `trackEvent`. Rows use `BREEZE_ONBOARDING_VERSION` `'v2'`.
+Names: `onboarding_start`, `onboarding_step_complete`, `onboarding_step_skip`,
+`first_word_tap`, `first_lookup_success`, `vocab_save`, and
+`onboarding_choice` (`choice` is a book id, `import`, or `browse`).
 
 ## Retired
 

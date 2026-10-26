@@ -46,6 +46,17 @@ try{
   assert.equal(await page.locator('#onboard-welcome,.breeze-wordmark').count(),0);
   assert.equal(await page.locator('#onboard-skip').innerText(),'건너뛰기');
   assert.equal(await page.evaluate(()=>onboardingOwnsReader()),false);
+  const aurora=await page.evaluate(()=>{
+    const take=document.getElementById('onboard-take');
+    const before=getComputedStyle(take,'::before').content;
+    const after=getComputedStyle(take,'::after').content;
+    const glow=getComputedStyle(document.getElementById('onboard-aurora')).backgroundImage;
+    return {before,after,glow,rings:take.querySelectorAll('.ring,[class*=ripple]').length};
+  });
+  assert.equal(aurora.before,'none');
+  assert.equal(aurora.after,'none');
+  assert.equal(aurora.rings,0);
+  assert.match(aurora.glow,/radial-gradient/);
   await context.close();
   assert.deepEqual(errors,[]);
  }
@@ -55,15 +66,16 @@ try{
   assert.equal(await page.locator('#onboard-burst svg,.speed-line,[class*=speed]').count(),0);
   await page.screenshot({path:`${out}/burst.png`});
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='pill'||document.getElementById('onboarding').dataset.scene==='save');
-  const copy=await page.evaluate(()=>({pill:document.getElementById('onboard-pill').textContent.replace(/\s+/g,' ').trim(),sentence:document.getElementById('onboard-sentence-stage').textContent}));
-  assert.match(copy.pill,/맡다 · \(일자리를\) 받아들이다/);
-  assert.match(copy.pill,/문맥에 맞는 뜻/);
+  const copy=await page.evaluate(()=>({pill:document.getElementById('word-peek-meaning').textContent.trim(),sentence:document.getElementById('onboard-line').textContent}));
+  assert.equal(copy.pill,'맡다');
+  assert.equal(await page.locator('#onboard-pill').count(),0);
   assert.match(copy.sentence,/She decided to take the job in London/);
   await page.screenshot({path:`${out}/pill.png`});
+  await page.locator('#onboard-continue').click();
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   await page.screenshot({path:`${out}/choice.png`});
   const saved=await page.evaluate(()=>({ko:words.take&&words.take.ko,example:words.take&&words.take.example,sample:!!(words.take&&words.take.onboardingSample),events:window.__onboardEvents}));
-  assert.equal(saved.ko,'맡다 · (일자리를) 받아들이다');
+  assert.equal(saved.ko,'맡다');
   assert.equal(saved.example,'She decided to take the job in London.');
   assert.equal(saved.sample,true);
   assert.ok(saved.events.some(event=>event.name==='onboarding_start'&&version(event.detail)));
@@ -76,7 +88,8 @@ try{
   assert.equal(await page.locator('#onboard-skip').isVisible(),false);
   const last=page.locator('.onboard-cover').last();
   const lastId=await last.getAttribute('data-book');
-  await last.click();
+  await last.evaluate(node=>node.click());
+  await page.waitForFunction(id=>document.getElementById('onboard-read').dataset.book===id,lastId);
   assert.equal(await page.locator('#onboard-read').getAttribute('data-book'),lastId);
   assert.match(await page.locator('#onboard-read').innerText(),/바로 읽기$/);
   await page.keyboard.press('Escape');
@@ -105,7 +118,7 @@ try{
  }
  {
   const {context,page,errors}=await openPage({timing:{...fast,idle:60000},track:true});
-  await page.locator('#onboard-take').click();
+  await page.locator('#onboard-take').evaluate(node=>node.click());
   await page.waitForFunction(()=>document.querySelectorAll('.onboard-meaning').length>=10);
   const tapped=await page.evaluate(()=>window.__onboardEvents.find(event=>event.name==='first_word_tap'));
   assert.ok(tapped&&version(tapped.detail));
@@ -121,9 +134,10 @@ try{
  }
  {
   const {context,page,errors}=await openPage({timing:fast,reducedMotion:'reduce',track:true});
+  await page.locator('#onboard-continue').click();
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   assert.equal(await page.locator('.onboard-meaning').count(),0);
-  assert.equal(await page.evaluate(()=>words.take.ko),'맡다 · (일자리를) 받아들이다');
+  assert.equal(await page.evaluate(()=>words.take.ko),'맡다');
   assert.ok(await page.evaluate(()=>window.__onboardEvents.some(event=>event.name==='first_lookup_success'&&event.detail.source==='canned')));
   await page.screenshot({path:`${out}/reduced-choice.png`});
   await context.close();
@@ -253,6 +267,7 @@ try{
  }
  {
   const {context,page,errors}=await openPage({timing:fast,viewport:{width:320,height:568}});
+  await page.locator('#onboard-continue').click();
   await page.waitForFunction(()=>document.getElementById('onboarding').dataset.scene==='choice');
   for(const selector of ['#onboard-coverflow','#onboard-read','#onboard-file','#onboard-browse']){
    const box=await page.locator(selector).boundingBox();
