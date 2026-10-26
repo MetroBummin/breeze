@@ -352,3 +352,11 @@ chevron. Its24px SVG frame,44px shell, paired materials and all other icon optic
 remain unchanged. All Words adopts the existing shared vocabulary row scope;
 there is no new word-list design. Study and PDF gesture presentation evidence
 is in `docs/reviews/breeze-post270-gestures/`.
+
+## 2026-10-26 first-run onboarding v2
+
+The first-run guide is a local word demonstration and a book choice. It no
+longer draws the welcome pen or the feature-video carousel. Lookup glass, the
+shared dock, and Reader gesture ownership stay as already approved. The
+in-reader long-press tip uses the existing sentence-glass fill, line, ink, and
+shadow. See `docs/decisions/006-reader-onboarding.md`.

@@ -69,7 +69,7 @@
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
-  <link rel="stylesheet" href="styles/onboarding.css?v=6c403b8f">
+  <link rel="stylesheet" href="styles/onboarding.css?v=9936dd0c">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -162,7 +162,7 @@
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
   <script defer src="scripts/sync/sync.js?v=b0c5c6d2"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=4954f7e4"></script>
+  <script defer src="scripts/ui/onboarding.js?v=f5b4c22a"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=8202e181"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
@@ -581,7 +581,7 @@
     <button id="set-close" type="button" aria-label="설정 닫기" onclick="closeSettings()" class="task-close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
     <div class="set-row onboarding-setting">
-      <div class="set-label"><b>튜토리얼</b><span>단어와 문장 뜻 보는 방법을 따라 해봐요.</span></div>
+      <div class="set-label"><b>튜토리얼</b><span>단어와 문장 뜻을 보는 방법을 다시 보여드릴게요.</span></div>
       <button type="button" class="sm-mini" onclick="startOnboarding(true)">튜토리얼 다시보기</button>
     </div>
     <section id="review-settings" hidden><h3 class="settings-section-title">단어 학습</h3>
@@ -598,37 +598,37 @@
 
   </div>
 </div>
-<!-- Passive guide: recorded real app interactions; no Reader session or data writes. -->
+<!-- First-run guide v2: one local word, one context pill, then a book choice. -->
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="브리즈 시작 안내" hidden>
-  <section id="onboard-coach" aria-labelledby="onboard-prompt">
-    <div id="onboard-welcome"><span class="breeze-wordmark" role="img" aria-label="Breeze">
-      <svg viewBox="-20 -20 881 298" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="onboard-flow-light" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#aac4c4"/><stop offset=".55" stop-color="#718f9c"/><stop offset="1" stop-color="#94acbf"/></linearGradient>
-          <linearGradient id="onboard-flow-dark" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#d7ece8"/><stop offset=".55" stop-color="#9db8c5"/><stop offset="1" stop-color="#c7dbe9"/></linearGradient>
-        </defs>
-        <!-- A single visible pen centerline; no wide mask exposing nearby future strokes. -->
-        <g class="onboard-ink"><path id="onboard-pen-path" fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" pathLength="1" d="M13 225 Q60 195 77 171 Q161 91 164 41 Q162 -9 120 26 Q76 64 80 171 Q65 203 87 230 Q121 267 161 228 Q201 177 160 145 Q121 124 81 175 Q65 203 87 230 Q121 267 161 228 C187.666667 202 221 181 235 139 Q221 114 230 129 Q234 153 273 156 Q264 220 300 227 Q320 226 335 203 Q390 167 389 141 Q380 113 349 139 Q316 169 334 208 Q350 254 414 226 Q432 218 450 203 Q508 162 501 138 Q487 113 458 141 Q429 169 444 211 Q461 250 507 221 Q528 206 546 182 Q575 137 623 150 Q633 153 601 185 L568 231 Q563 252 657 227 Q674 221 685 204 Q746 161 740 139 Q730 113 700 139 Q663 165 676 204 Q688 254 744 230 Q791 209 828 162"/></g>
-      </svg>
-    </span></div>
-    <div id="onboard-carousel" role="region" aria-roledescription="캐러셀" aria-label="브리즈 기능 안내" tabindex="0" hidden></div>
-    <div id="onboard-finish" hidden aria-hidden="true"><div class="onboard-shelf"><div class="onboard-shelf-track"><div class="onboard-shelf-set">
-      <div class="casual cpal2"><div class="thumb has-cover"><img class="cover" alt="" src="assets/samples/starship-1.jpg"><div class="src">웹에서 가져온 글</div></div><div class="ct">Starship</div><div class="cm">6분 읽기</div></div><div class="bookcard classic has-cover"><img class="cover" alt="" src="assets/longreads/covers/backroom-homeward-bound.png" style="object-position:center top"><div class="author">BACKROOMS TALE SERIES</div><div class="bt">Backroom - Homeward Bound</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/alice-in-wonderland.webp" style="object-position:center top"><div class="author">BREEZE ORIGINAL</div><div class="bt">Alice's Adventures in Wonderland</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/the-great-gatsby.webp" style="object-position:center top"><div class="author">F. SCOTT FITZGERALD</div><div class="bt">The Great Gatsby</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/hound-of-the-baskervilles.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Hound of the Baskervilles</div></div>
-    </div><div class="onboard-shelf-set">
-      <div class="casual cpal2"><div class="thumb has-cover"><img class="cover" alt="" src="assets/samples/starship-1.jpg"><div class="src">웹에서 가져온 글</div></div><div class="ct">Starship</div><div class="cm">6분 읽기</div></div><div class="bookcard classic has-cover"><img class="cover" alt="" src="assets/longreads/covers/backroom-homeward-bound.png" style="object-position:center top"><div class="author">BACKROOMS TALE SERIES</div><div class="bt">Backroom - Homeward Bound</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/alice-in-wonderland.webp" style="object-position:center top"><div class="author">BREEZE ORIGINAL</div><div class="bt">Alice's Adventures in Wonderland</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/the-great-gatsby.webp" style="object-position:center top"><div class="author">F. SCOTT FITZGERALD</div><div class="bt">The Great Gatsby</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/hound-of-the-baskervilles.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Hound of the Baskervilles</div></div>
-    </div></div></div><div class="onboard-shelf reverse"><div class="onboard-shelf-track"><div class="onboard-shelf-set">
-      <div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/scandal-in-bohemia.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">A Scandal in Bohemia</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/red-headed-league.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Red-Headed League</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/final-problem.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Final Problem</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/speckled-band.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Adventure of the Speckled Band</div></div>
-    </div><div class="onboard-shelf-set">
-      <div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/scandal-in-bohemia.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">A Scandal in Bohemia</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/red-headed-league.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Red-Headed League</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/final-problem.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Final Problem</div></div><div class="bookcard pal0 has-cover"><img class="cover" alt="" src="assets/longreads/covers/speckled-band.webp" style="object-position:center top"><div class="author">ARTHUR CONAN DOYLE</div><div class="bt">The Adventure of the Speckled Band</div></div>
-    </div></div></div></div>
-    <span id="onboard-step" aria-live="polite"></span>
-    <p id="onboard-prompt" role="status" aria-live="polite"></p>
-    <p id="onboard-note">막힘없이 읽는 새로운 방법.</p>
-    <div id="onboard-pages" aria-hidden="true" hidden></div>
-    <div id="onboard-navigation"><button id="onboard-back" class="control-glass" type="button" aria-label="이전 안내" hidden>이전</button><button id="onboard-next" class="control-glass" type="button">시작하기</button></div>
-    <button id="onboard-skip" type="button" hidden>건너뛰기</button>
+  <button id="onboard-skip" type="button">건너뛰기</button>
+  <div id="onboard-demo">
+    <div id="onboard-word-stage">
+      <button id="onboard-take" type="button">take</button>
+      <div id="onboard-burst" aria-hidden="true"></div>
+    </div>
+    <div id="onboard-sentence-stage" hidden>
+      <p>She decided to <button id="onboard-sentence-take" type="button">take</button> the job in London.</p>
+      <div id="onboard-pill" hidden>
+        <p class="onboard-pill-body">맡다 · (일자리를) 받아들이다</p>
+        <p class="onboard-pill-label">문맥에 맞는 뜻</p>
+      </div>
+    </div>
+    <div id="onboard-toast" hidden role="status">✓ 단어장에 저장됐어요</div>
+    <div id="onboard-vocab-bump" hidden aria-hidden="true">
+      <span class="onboard-plus">+1</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8a2 2 0 0 1 2 2v14.2c0 .6-.6.9-1.1.6L12 17l-4.9 3.3c-.5.3-1.1 0-1.1-.6V5.5a2 2 0 0 1 2-2z"/></svg>
+    </div>
+  </div>
+  <div id="onboard-choice" hidden>
+    <div id="onboard-coverflow" tabindex="0" role="listbox" aria-label="기본으로 들어 있는 책"></div>
+    <h2>이제 읽어볼까요?</h2>
+    <p class="onboard-lead">모르는 단어는 눌러만 보세요. 뜻을 보여드리고 단어장에 모아둘게요.</p>
+    <button id="onboard-read" type="button">앨리스 바로 읽기</button>
+    <button id="onboard-file" type="button"><span class="onboard-file-tag">PDF · EPUB</span><span class="onboard-file-label">내 파일 넣기</span></button>
+    <p id="onboard-file-status" role="status"></p>
+    <button id="onboard-browse" type="button">둘러볼게요</button>
     <input id="onboard-fileinput" type="file" accept=".pdf,.epub,.txt" hidden>
-  </section>
+  </div>
 </div>
 <dialog id="add-modal" role="dialog" aria-modal="true" aria-label="글 또는 책 추가">
   <div id="am-card" class="task-surface">
