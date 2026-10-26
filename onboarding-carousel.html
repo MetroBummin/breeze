@@ -24,7 +24,7 @@
      No peek: the card is narrower than the screen, so the faint gray
      margins at the sides are what hints at the next card. */
   .wrap {
-    --cw: min(calc(100vw - 48px), calc(68vh * 9 / 16));
+    --cw: min(calc(100vw - 48px), calc(78vh * 9 / 16));
     width: var(--cw);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -33,7 +33,7 @@
     -webkit-overflow-scrolling: touch;
   }
   .wrap::-webkit-scrollbar { display: none; }
-  .track { display: flex; gap: 20px; }
+  .track { display: flex; gap: 20px; align-items: center; }
   .card {
     flex: 0 0 var(--cw);
     scroll-snap-align: start;
@@ -56,21 +56,32 @@
   .copy { text-align: center; padding: 10px 16px 20px; }
   .copy .t1 { font-size: 17px; font-weight: 600; line-height: 1.4; }
   .copy .t2 { font-size: 14px; color: #6D6D72; line-height: 1.5; margin-top: 4px; }
-  /* Card 3: book choice in card form (mirrors the existing choice scene). */
-  .fan { position: relative; height: 240px; margin-top: 20px; overflow: hidden; }
+  /* Card 3: book choice in card form (mirrors the existing choice scene).
+     The covers are a real horizontally scrolling strip, infinite by
+     wrapping around, so swiping the covers changes the book. */
+  .fan {
+    position: relative;
+    display: flex; gap: 12px; margin-top: 20px;
+    padding: 4px calc(var(--cw) * 0.23);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fan::-webkit-scrollbar { display: none; }
   .fan .cover {
-    position: absolute; left: 50%; top: 8px; width: 148px; height: 222px;
+    flex: 0 0 calc(var(--cw) * 0.54);
+    height: calc(var(--cw) * 0.81);
+    scroll-snap-align: center;
     border-radius: 10px; overflow: hidden; cursor: pointer;
     box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
-    transition: transform .35s ease, opacity .35s ease;
-    transform-origin: 50% 50%;
   }
   .fan .cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .bookmeta { text-align: center; padding: 10px 16px 0; }
   .bookmeta b { display: block; font-size: 16px; line-height: 1.4; }
   .bookmeta span { display: block; font-size: 13px; color: #6D6D72; margin-top: 2px; }
-  .choice { padding: 16px 20px 8px; }
-  .choice h2 { font-size: 19px; text-align: center; margin-bottom: 14px; }
+  .choice { padding: 16px 20px 20px; }
   .btn-read {
     display: block; width: 100%; padding: 14px; border: 0; border-radius: 999px;
     background: #293034; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
@@ -111,13 +122,12 @@
       <article class="card" data-card="2">
         <div class="fan" id="fan"></div>
         <div class="bookmeta"><b id="book-title"></b><span id="book-author"></span></div>
+        <div class="dots"><i></i><i></i><i class="on"></i></div>
         <div class="choice">
-          <h2>이제 읽어볼까요?</h2>
           <button class="btn-read" id="btn-read" type="button"></button>
           <button class="btn-file" type="button"><span class="tag">PDF · EPUB</span><span>내 파일 넣기</span></button>
           <button class="btn-browse" type="button">둘러볼게요</button>
         </div>
-        <div class="dots"><i></i><i></i><i class="on"></i></div>
       </article>
     </div>
   </div>
@@ -143,8 +153,10 @@
   };
   wrap.addEventListener('scroll', sync, { passive: true });
   sync();
-  // Card 3: book fan. Same 7 books as the existing choice scene,
-  // infinite wrap, tap a side cover to centre it.
+  // Card 3: book strip. Same 7 books as the existing choice scene,
+  // five copies so swiping the covers loops infinitely (a single long
+  // fling stays inside the strip; the wrap recentres between gestures).
+  // Tapping a cover centres it. The centred book drives meta + button.
   const BOOKS = [
     { img: 'assets/longreads/covers/the-great-gatsby.webp', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cta: '개츠비 바로 읽기' },
     { img: 'assets/longreads/covers/alice-in-wonderland.webp', title: "Alice's Adventures in Wonderland", author: 'Lewis Carroll', cta: '앨리스 바로 읽기' },
@@ -155,31 +167,67 @@
     { img: 'assets/longreads/covers/hound-of-the-baskervilles.webp', title: 'The Hound of the Baskervilles', author: 'Arthur Conan Doyle', cta: '바스커빌 바로 읽기' },
   ];
   const fan = document.getElementById('fan');
-  let centre = 1; // Alice, same default as the existing choice scene.
-  const els = BOOKS.map((b, i) => {
-    const d = document.createElement('div');
-    d.className = 'cover';
-    d.innerHTML = '<img src="' + b.img + '" alt="' + b.title + '">';
-    d.addEventListener('click', () => { centre = i; layout(); });
-    fan.appendChild(d);
-    return d;
-  });
-  function layout() {
-    els.forEach((el, i) => {
-      let off = (((i - centre) % BOOKS.length) + BOOKS.length) % BOOKS.length;
-      if (off > 3) off -= BOOKS.length;
-      const a = Math.abs(off);
-      const sc = 1 - Math.min(0.3, a * 0.13);
-      el.style.transform = 'translate(-50%, 0) translateX(' + (off * 64) + '%) scale(' + sc + ')';
-      el.style.opacity = a > 2 ? 0 : String(1 - Math.min(0.55, a * 0.22));
-      el.style.zIndex = String(10 - a);
-      el.style.pointerEvents = a > 2 ? 'none' : 'auto';
+  const COPIES = 5;
+  const els = [];
+  for (let c = 0; c < COPIES; c++) {
+    BOOKS.forEach((b, i) => {
+      const d = document.createElement('div');
+      d.className = 'cover';
+      d.dataset.idx = String(i);
+      d.innerHTML = '<img src="' + b.img + '" alt="' + b.title + '">';
+      d.addEventListener('click', () => centreCover(d));
+      fan.appendChild(d);
+      els.push(d);
     });
-    document.getElementById('book-title').textContent = BOOKS[centre].title;
-    document.getElementById('book-author').textContent = BOOKS[centre].author;
-    document.getElementById('btn-read').textContent = BOOKS[centre].cta;
   }
-  layout();
+  const step = () => els[0].offsetWidth + (parseFloat(getComputedStyle(fan).columnGap) || 12);
+  const setW = () => step() * BOOKS.length;
+  function centreCover(el) {
+    fan.scrollTo({ left: el.offsetLeft + el.offsetWidth / 2 - fan.clientWidth / 2, behavior: 'smooth' });
+  }
+  // Nearest cover to the strip's centre (offsetLeft is content-relative
+  // because .fan is positioned).
+  function centredIndex() {
+    const c = fan.scrollLeft + fan.clientWidth / 2;
+    let best = 0, bestD = Infinity;
+    els.forEach((el, p) => {
+      const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - c);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    return { p: best, idx: ((best % BOOKS.length) + BOOKS.length) % BOOKS.length };
+  }
+  function show(idx) {
+    document.getElementById('book-title').textContent = BOOKS[idx].title;
+    document.getElementById('book-author').textContent = BOOKS[idx].author;
+    document.getElementById('btn-read').textContent = BOOKS[idx].cta;
+  }
+  let settleTimer = null;
+  // Label follows the centre cover live.
+  fan.addEventListener('scroll', () => {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => show(centredIndex().idx), 150);
+  }, { passive: true });
+  // Wrap back into the middle copy so the strip never ends. The jump
+  // is deferred and re-checked: scrollend can fire mid-flight on a long
+  // smooth scroll, and jumping then would cancel the animation and
+  // land on the wrong book. Only jump when the strip is truly at rest.
+  fan.addEventListener('scrollend', () => {
+    const atEnd = fan.scrollLeft;
+    setTimeout(() => {
+      if (Math.abs(fan.scrollLeft - atEnd) > 2) return;
+      const { p, idx } = centredIndex();
+      show(idx);
+      const lo = BOOKS.length * 2, hi = BOOKS.length * 3;
+      if (p < lo) fan.scrollTo({ left: fan.scrollLeft + setW(), behavior: 'instant' });
+      else if (p >= hi) fan.scrollTo({ left: fan.scrollLeft - setW(), behavior: 'instant' });
+    }, 250);
+  });
+  // Start on Alice, the same default as the existing choice scene
+  // (middle copy, so there is room to scroll either way).
+  requestAnimationFrame(() => {
+    centreCover(els[BOOKS.length * 2 + 1]);
+    setTimeout(() => show(1), 50);
+  });
 </script>
 </body>
 </html>
