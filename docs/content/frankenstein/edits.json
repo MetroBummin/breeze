@@ -1,0 +1,568 @@
+[
+  {
+    "paragraph": 4,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 32,
+    "before": "Wherefore not?",
+    "after": "Why not?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 44,
+    "before": "inform me whither you are bound?",
+    "after": "tell me where you are headed?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 53,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 63,
+    "before": "acquirement",
+    "after": "acquisition",
+    "reason": "Use the current form of this noun."
+  },
+  {
+    "paragraph": 107,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 112,
+    "before": "In the university whither I was going",
+    "after": "At the university I was going to",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 122,
+    "before": "order would thence arise",
+    "after": "order would arise from that",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 129,
+    "before": "Whence, I often asked myself, did the principle of life proceed?",
+    "after": "From where, I often asked myself, did the principle of life proceed?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 132,
+    "before": "acquirement",
+    "after": "acquisition",
+    "reason": "Use the current form of this noun."
+  },
+  {
+    "paragraph": 138,
+    "before": "Cæsar",
+    "after": "Caesar",
+    "reason": "Use the current spelling of this name."
+  },
+  {
+    "paragraph": 162,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 176,
+    "before": "her disposition was gay",
+    "after": "her disposition was cheerful",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 178,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 191,
+    "before": "the intercourse of my fellow-creatures",
+    "after": "the company of my fellow creatures",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 193,
+    "before": "appeared gay and happy",
+    "after": "appeared cheerful and happy",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 198,
+    "before": "so gentle, yet so gay",
+    "after": "so gentle, yet so cheerful",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 214,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 216,
+    "before": "every thing",
+    "after": "everything",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 222,
+    "before": "every thing",
+    "after": "everything",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 223,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 238,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 257,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 281,
+    "before": "from thence to gather promise",
+    "after": "from that to gather promise",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 285,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 299,
+    "before": "awful and majestic",
+    "after": "awe-inspiring and majestic",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 302,
+    "before": "awful majesty",
+    "after": "awe-inspiring majesty",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 305,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 313,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 324,
+    "before": "dæmons",
+    "after": "demons",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 324,
+    "before": "Pandæmonium",
+    "after": "Pandemonium",
+    "reason": "Use the current spelling of this name."
+  },
+  {
+    "paragraph": 328,
+    "before": "seemingly incommoded by the burden",
+    "after": "seemingly inconvenienced by the burden",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 364,
+    "before": "Safie was always gay and happy",
+    "after": "Safie was always cheerful and happy",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 372,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 373,
+    "before": "shut out from intercourse with them",
+    "after": "shut out from contact with them",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 375,
+    "before": "claimed any intercourse with me",
+    "after": "claimed any connection with me",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 402,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 403,
+    "before": "Whence did I come?",
+    "after": "Where did I come from?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 410,
+    "before": "all the gay apparel of summer",
+    "after": "all the bright dress of summer",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 422,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 432,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 434,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 443,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 452,
+    "before": "whither should I bend my steps?",
+    "after": "where should I turn my steps?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 470,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 473,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 474,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 491,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 506,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 506,
+    "before": "habits of familiar intercourse",
+    "after": "habits of close companionship",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 506,
+    "before": "my fond fancy imaged",
+    "after": "my foolish fancy pictured",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 512,
+    "before": "hardly knowing whither I was going",
+    "after": "hardly knowing where I was going",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 513,
+    "before": "wherefore are you desponding",
+    "after": "why are you desponding",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 514,
+    "before": "whence we might take shipping for London",
+    "after": "from where we might take ship for London",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 515,
+    "before": "their gay appearance",
+    "after": "their cheerful appearance",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 519,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 522,
+    "before": "whence we proceeded by sea",
+    "after": "from where we proceeded by sea",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 525,
+    "before": "desired the intercourse of the men of genius",
+    "after": "desired the company of the men of genius",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 527,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 531,
+    "before": "From thence we proceeded",
+    "after": "From there we proceeded",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 536,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 537,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 549,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 550,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 551,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 560,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 561,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 567,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 571,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 573,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 629,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 631,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 631,
+    "before": "the happy and gay of heart",
+    "after": "the happy and light of heart",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 637,
+    "before": "share their intercourse",
+    "after": "share their company",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 640,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 655,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 666,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 677,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 696,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 711,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 714,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 714,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 720,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 721,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 731,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 735,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 740,
+    "before": "Or whither does your senseless curiosity lead you?",
+    "after": "Or where does your senseless curiosity lead you?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 757,
+    "before": "wherefore was it glorious?",
+    "after": "why was it glorious?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 773,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 782,
+    "before": "dæmon",
+    "after": "demon",
+    "reason": "Use the current spelling of this word."
+  },
+  {
+    "paragraph": 783,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 786,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 788,
+    "before": "which brought me thither",
+    "after": "which brought me here",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 789,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  }
+]

@@ -1232,10 +1232,10 @@
       "title": "Frankenstein",
       "author": "Mary Shelley",
       "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/frankenstein/cover.webp",
-      "bytes": 420812,
+      "bytes": 420764,
       "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/frankenstein/book.txt",
-      "contentVersion": "22cd6d8a68e8b721f9c670d505988d03e33d48458f70ec74221909695b294922",
-      "wordCount": 74975,
+      "contentVersion": "f1411b01b68ae4d96e16ad371ed88ea69ac8384a8267606e611ebadc623571c8",
+      "wordCount": 74941,
       "sourceUrl": "https://www.gutenberg.org/ebooks/84",
       "site": "Project Gutenberg",
       "license": "Public domain in the USA",
@@ -1243,18 +1243,18 @@
       "originalTitle": "Frankenstein; or, The Modern Prometheus (1831)",
       "series": "BREEZE ORIGINAL",
       "hook": "북극해를 항해하던 탐험가 월턴은 얼음 위에서 한 남자를 구조한다. 그는 빅터 프랑켄슈타인, 죽은 육체에 생명을 불어넣는 데 성공하고도 자신의 피조물을 보고 도망쳐 버린 창조자였다. 인간의 온정을 갈망하던 피조물은 버려진 끝에 복수를 결심하고 창조자를 집요하게 쫓는다. 창조와 책임, 고독과 복수를 그린 고딕 소설의 원점. 과연 둘 중 진짜 괴물은 누구인가.",
-      "edition": "Breeze Original text",
-      "editionNote": "Mary Shelley’s Frankenstein; or, The Modern Prometheus (1831), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #84, retrieved 2026-10-27. Gutenberg boilerplate, title pages, and the contents list are omitted. Walton’s letters and the 24 chapters follow the long-read text format, with curly quotes and em dashes. Shelley’s wording is not modernized. This is not a Project Gutenberg branded edition."
+      "edition": "Lightly modernized English edition",
+      "editionNote": "Lightly modernized English edition. Adapted from Mary Shelley's Frankenstein (1818). Source text: Project Gutenberg eBook #84 (1831 edition), retrieved 2026-10-27. Language lightly modernized for Breeze; this is not Shelley's verbatim text. The story, paragraph order and period setting are preserved."
     },
     {
       "id": "great-expectations",
       "title": "Great Expectations",
       "author": "Charles Dickens",
       "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/great-expectations/cover.webp",
-      "bytes": 1015888,
+      "bytes": 1015864,
       "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/great-expectations/book.txt",
-      "contentVersion": "0e94ef736dd1fd345ae9a919b404221089d25393c93487a638705f822aa71bad",
-      "wordCount": 184336,
+      "contentVersion": "709875fc6b0c70c50886088f7d41b486e119ade8814dd697f7b5c78aa1b03219",
+      "wordCount": 184333,
       "sourceUrl": "https://www.gutenberg.org/ebooks/1400",
       "site": "Project Gutenberg",
       "license": "Public domain in the USA",
@@ -1262,18 +1262,18 @@
       "originalTitle": "Great Expectations (1861)",
       "series": "BREEZE ORIGINAL",
       "hook": "습지에서 만난 탈옥수, 부유한 하비셤 양의 저택에서 만난 아름다운 소녀 에스텔라. 고아 핍의 인생은 그날부터 흔들리기 시작한다. 정체 모를 후원자의 도움으로 런던 신사가 된 핍은 부와 지위를 손에 넣지만, 그 대가로 소중한 것들을 하나씩 잃어간다. 욕망과 계급, 사랑과 속죄를 그린 디킨스의 대표작. 핍은 자신이 진짜 원하는 삶을 되찾을 수 있을까.",
-      "edition": "Breeze Original text",
-      "editionNote": "Charles Dickens’s Great Expectations (1861), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #1400, retrieved 2026-10-27. Gutenberg boilerplate, title pages, the contents list, and illustration placeholders are omitted. The 59 chapters follow the long-read text format, with chapter numbers converted from roman numerals, curly quotes, and em dashes. Dickens’s wording is not modernized. This is not a Project Gutenberg branded edition."
+      "edition": "Lightly modernized English edition",
+      "editionNote": "Lightly modernized English edition. Adapted from Charles Dickens's Great Expectations (1861). Source text: Project Gutenberg eBook #1400, retrieved 2026-10-27. Language lightly modernized for Breeze; this is not Dickens's verbatim text. The story, paragraph order and period setting are preserved."
     },
     {
       "id": "little-women",
       "title": "Little Women",
       "author": "Louisa May Alcott",
       "cover": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/little-women/cover.webp",
-      "bytes": 1028190,
+      "bytes": 1028327,
       "content": "https://hrtfhojbhqvaoiulspto.supabase.co/storage/v1/object/public/classics/little-women/book.txt",
-      "contentVersion": "faf331379023cb89d9dbfee83239e040643acffd10a5c062be197a8385181187",
-      "wordCount": 185890,
+      "contentVersion": "e3814d2f4b21c3c94afbd9fcf97ae65513bcec9135418cb6c7a16611fb3fa877",
+      "wordCount": 185883,
       "sourceUrl": "https://www.gutenberg.org/ebooks/514",
       "site": "Project Gutenberg",
       "license": "Public domain in the USA",
@@ -1281,8 +1281,8 @@
       "originalTitle": "Little Women (1868)",
       "series": "BREEZE ORIGINAL",
       "hook": "남북전쟁으로 아버지가 전장에 간 사이, 네 자매는 엄마와 함께 소박한 일상을 살아간다. 작가를 꿈꾸는 둘째 조, 그림에 재능 있는 막내 에이미, 피아노를 사랑하는 베스, 동생들을 돌보는 맏이 메그. 가난하지만 따뜻한 집, 사소한 다툼과 화해, 첫사랑과 이별 속에서 네 자매는 각자의 방식으로 어른이 되어 간다. 150년이 넘도록 사랑받아 온 성장 소설의 고전.",
-      "edition": "Breeze Original text",
-      "editionNote": "Louisa May Alcott’s Little Women (1868–1869), set as a Breeze Original text book. Prepared from Project Gutenberg eBook #514, retrieved 2026-10-27. Gutenberg boilerplate, title pages, and the contents list are omitted. The two parts and 47 chapters follow the long-read text format, with curly quotes and em dashes. Alcott’s wording is not modernized. This is not a Project Gutenberg branded edition."
+      "edition": "Lightly modernized English edition",
+      "editionNote": "Lightly modernized English edition. Adapted from Louisa May Alcott's Little Women (1868). Source text: Project Gutenberg eBook #514, retrieved 2026-10-27. Language lightly modernized for Breeze; this is not Alcott's verbatim text. The story, paragraph order and period setting are preserved."
     }
   ]
 }

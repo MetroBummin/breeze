@@ -1,0 +1,855 @@
+[
+  {
+    "paragraph": 6,
+    "before": "Pray don’t do it, sir",
+    "after": "Please don’t do it, sir",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 36,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 57,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 67,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 71,
+    "before": "To-night",
+    "after": "Tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 86,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 86,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 88,
+    "before": "“Hark!” said I",
+    "after": "“Listen!” said I",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 114,
+    "before": "despatch",
+    "after": "dispatch",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 178,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 218,
+    "before": "And pray what might you want with him?",
+    "after": "And please, what might you want with him?",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 249,
+    "before": "Nay, there seemed to be two or more shouts",
+    "after": "Indeed, there seemed to be two or more shouts",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 290,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 290,
+    "before": "I had had no intercourse with the world",
+    "after": "I had had no contact with the world",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 324,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 361,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 379,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 381,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 381,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 473,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 622,
+    "before": "on the top of a press in the state parlour",
+    "after": "on the top of a cupboard in the state parlour",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 625,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 671,
+    "before": "To-day",
+    "after": "Today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 793,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 801,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 801,
+    "before": "wherefore should I say it?",
+    "after": "why should I say it?",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 843,
+    "before": "a queer place",
+    "after": "a strange place",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 869,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 889,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 919,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 945,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 956,
+    "before": "people coming thence to examine the iron",
+    "after": "people coming from there to examine the iron",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 965,
+    "before": "Thereupon, I had brought in all our hammers",
+    "after": "After that, I had brought in all our hammers",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1013,
+    "before": "I was very much ill-used by somebody",
+    "after": "I was very much ill-treated by somebody",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1020,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1020,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1070,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1176,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1182,
+    "before": "my indentures from the press in the best parlour",
+    "after": "my indentures from the cupboard in the best parlour",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1239,
+    "before": "Thereupon he shook his head",
+    "after": "At that, he shook his head",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1266,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1267,
+    "before": "a gay figure, Pip",
+    "after": "a lively figure, Pip",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1269,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1282,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1311,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1311,
+    "before": "whence I should command a full view",
+    "after": "from which I should command a full view",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1311,
+    "before": "that awful personage like waxwork",
+    "after": "that imposing personage like waxwork",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1406,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1406,
+    "before": "Pray come in",
+    "after": "Please come in",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 1406,
+    "before": "Pray let me take these bags from you",
+    "after": "Please let me take these bags from you",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 1437,
+    "before": "familiar intercourse between them",
+    "after": "close acquaintance between them",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1480,
+    "before": "We were very gay and sociable",
+    "after": "We were very cheerful and sociable",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1523,
+    "before": "a queer sort of respectful pity",
+    "after": "a strange sort of respectful pity",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1523,
+    "before": "a queer sort of forgiving reproach",
+    "after": "a strange sort of forgiving reproach",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1525,
+    "before": "to be nice in their eating and drinking",
+    "after": "to be particular in their eating and drinking",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1602,
+    "before": "“Pray,” said I",
+    "after": "“Go on,” said I",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 1628,
+    "before": "Thither I went",
+    "after": "I went there",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1635,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1678,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1704,
+    "before": "Pray make the best use of your time",
+    "after": "Please make the best use of your time",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 1758,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1796,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1799,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1813,
+    "before": "I wouldn’t have incommoded none of you",
+    "after": "I wouldn’t have inconvenienced none of you",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1840,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1888,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1904,
+    "before": "I verily believe",
+    "after": "I truly believe",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1915,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1945,
+    "before": "“Pray, sir,” said I, “may I ask you a question?”",
+    "after": "“Please, sir,” said I, “may I ask you a question?”",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 1968,
+    "before": "despatched",
+    "after": "dispatched",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1985,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1988,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1991,
+    "before": "in his gay, hopeful way",
+    "after": "in his cheerful, hopeful way",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2028,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2032,
+    "before": "nice discrimination",
+    "after": "precise discrimination",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2068,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2070,
+    "before": "I was fain to be content",
+    "after": "I had to be content",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 2075,
+    "before": "and thereupon must have a word",
+    "after": "and after that must have a word",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 2099,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2149,
+    "before": "everything in our intercourse did give me pain",
+    "after": "everything in our dealings did give me pain",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2186,
+    "before": "a gay fiction among us",
+    "after": "a cheerful fiction among us",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2232,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2276,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2289,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2390,
+    "before": "this part of our intercourse",
+    "after": "this part of our conversation",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2402,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2457,
+    "before": "Whereupon I made him the extreme reply",
+    "after": "At that, I made him the extreme reply",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 2467,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2497,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2510,
+    "before": "Pray what is your business?",
+    "after": "Please, what is your business?",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 2529,
+    "before": "renew that chance intercourse with you",
+    "after": "renew that chance acquaintance with you",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2582,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2583,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2602,
+    "before": "I was fain to go out",
+    "after": "I had to go out",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 2803,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 2851,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2872,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2906,
+    "before": "you would not confound them with the others",
+    "after": "you would not confuse them with the others",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2936,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2950,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 2970,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3004,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3014,
+    "before": "the few queer houses",
+    "after": "the few odd houses",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3030,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3118,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3127,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3159,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3164,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3200,
+    "before": "pray do it!",
+    "after": "please do it!",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 3297,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3377,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3380,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3380,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3381,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3381,
+    "before": "To-morrow",
+    "after": "Tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3433,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3437,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3451,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3459,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3461,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3474,
+    "before": "to-night",
+    "after": "tonight",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3477,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3483,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 3484,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3495,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 3505,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3543,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3660,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3698,
+    "before": "To-morrow",
+    "after": "Tomorrow",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3719,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3745,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3745,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent.",
+    "count": 2
+  },
+  {
+    "paragraph": 3751,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent.",
+    "count": 2
+  },
+  {
+    "paragraph": 3760,
+    "before": "to-morrow",
+    "after": "tomorrow",
+    "reason": "Use current closed spelling.",
+    "count": 2
+  },
+  {
+    "paragraph": 3760,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3767,
+    "before": "betwixt",
+    "after": "between",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3823,
+    "before": "the window was open and gay with flowers",
+    "after": "the window was open and bright with flowers",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3837,
+    "before": "to-day",
+    "after": "today",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3839,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 3841,
+    "before": "pray tell me, both, that you forgive me!",
+    "after": "please tell me, both, that you forgive me!",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 3841,
+    "before": "Pray let me hear you say the words",
+    "after": "Please let me hear you say the words",
+    "reason": "Modernize a polite imperative."
+  }
+]
