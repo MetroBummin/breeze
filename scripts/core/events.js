@@ -1,7 +1,7 @@
 /* First-party product events. Fire-and-forget: the UI never waits, and a
    failed send is dropped. Rows live in public.product_events for 90 days.
    Prefer: return=minimal so an insert does not ship the row back. */
-const BREEZE_APP_VERSION='1.9.8';
+const BREEZE_APP_VERSION='1.9.9';
 const BREEZE_ONBOARDING_VERSION='v1';
 const EVENT_UTM_KEYS=['utm_source','utm_medium','utm_campaign','utm_content'];
 const EVENT_UTM_KEY='breeze.events.utm';

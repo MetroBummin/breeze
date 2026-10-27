@@ -141,6 +141,18 @@ stays 1.9.8 because 1.9.7 (338) is already the previous TestFlight build.
 Xcode Cloud run 295d8dcf produced App Store build 345 for commit 3423d020.
 That build was submitted for review and is waiting for review. Release stays manual.
 
+## Marketing version 1.9.9 (2026-10-27)
+
+App and Share Debug/Release `MARKETING_VERSION` move to 1.9.9, and their
+counters move from 299 to 300. The cloud bootstrap still replaces that baseline
+with `CI_BUILD_NUMBER`. Android `versionName` follows the same release. The
+checked-in Play version code stays 2. 1.9.8 is Ready for Distribution, so the
+next TestFlight build must carry the new marketing version; the owner expects
+the next Xcode Cloud counter to be 356. Xcode Cloud assigns the next counter,
+so this baseline is not that upload number. This archive contains the
+three-card carousel onboarding dialog. It is not submitted for App Store
+review. Release stays manual.
+
 The existing status request previously inspected only fixed build240. Read-only
 status now also inventories this app's builds and its associated Cloud product's
 runs, including actual build relationships for the latest five runs. It reports
