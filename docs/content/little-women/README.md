@@ -10,10 +10,14 @@ Gutenberg boilerplate, contents lists, prefaces, illustration placeholders, and 
 
 ## Modernization
 
-The baseline contains 3864 ordered blocks and 185890 words. The adapted text has the same 3864 blocks and 185883 words.
-`edits.json` records all 107 ordered paragraph-indexed before/after changes, reasons, and occurrence counts. Paragraphs are not split, merged, reordered, deleted, or inserted during modernization. Changes are limited to current spellings, dated polite imperatives, and archaic words whose meaning changed; the author's voice, British spelling, dialect, verse and quoted diction, and period setting remain.
+The baseline contains 3864 ordered blocks and 185890 words. The adapted text has 4100 blocks and 185883 words.
+`edits.json` records all 107 ordered paragraph-indexed before/after changes with reasons. Changes are limited to current spellings, dated polite imperatives, archaic words whose meaning changed, and (Great Expectations only) dialect spellings and agreement; the author's voice, British spelling, and period setting remain. Paragraph order is unchanged.
 The play, song, hymn, and quoted-verse diction (thou/thee/thy, hither), Mr. Bhaer's German-English speech (including the discussed word 'thou' itself), and the lowercase continuations after inserted verse are deliberately retained.
-Songs, poems, and play verse keep their joined-line rendering, matching the rest of the remote catalog; display line breaks are a separate reader task.
+
+## Verse presentation
+
+Verse presentation: 43 verse blocks (play spells, the Pickwick Club song, the cat elegy, the epitaph, the laundry song, gift verses, the hymn, the Kate Kearney song, the 'river' poem, and the keepsake poem) are split into one paragraph per line (279 verse paragraphs) and marked with verse roles in scripts/library/public-domain-layout.js, so the reader shows them as verse. Two short blocks that are not verse stay joined: the play-grading list and the telegram.
+Verse roles apply only when the paragraph still matches the shipped text, so an edited copy keeps reading.
 
 ## Validation
 

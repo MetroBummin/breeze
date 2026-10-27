@@ -10,10 +10,14 @@ Gutenberg boilerplate, contents lists, prefaces, illustration placeholders, and 
 
 ## Modernization
 
-The baseline contains 3894 ordered blocks and 184336 words. The adapted text has the same 3894 blocks and 184333 words.
-`edits.json` records all 141 ordered paragraph-indexed before/after changes, reasons, and occurrence counts. Paragraphs are not split, merged, reordered, deleted, or inserted during modernization. Changes are limited to current spellings, dated polite imperatives, and archaic words whose meaning changed; the author's voice, British spelling, dialect, verse and quoted diction, and period setting remain.
-Joe Gargery's dialect spellings (wot, oncommon), the grammar-lesson 'thou', and Dickens's two stage markers ('THIS IS THE END OF THE FIRST/SECOND STAGE OF PIP'S EXPECTATIONS.') are deliberately retained.
-The 'Lunnon town' song keeps its joined-line rendering, matching the rest of the remote catalog; display line breaks are a separate reader task.
+The baseline contains 3894 ordered blocks and 184336 words. The adapted text has 3899 blocks and 184381 words.
+`edits.json` records all 646 ordered paragraph-indexed before/after changes with reasons. Changes are limited to current spellings, dated polite imperatives, archaic words whose meaning changed, and (Great Expectations only) dialect spellings and agreement; the author's voice, British spelling, and period setting remain. Paragraph order is unchanged.
+Joe Gargery's dialect spellings and agreement are normalized to current spelling and grammar (562 changes, recorded in edits.json), keeping his word choice, repetitions, politeness, double negatives, and 'ain't'. Deliberately retained: Joe's phonetic letter, Magwitch's and Orlick's dialect grammar, 'wittles', the 'for to' infinitive, the a- progressive prefix, and Dickens's two stage markers ('THIS IS THE END OF THE FIRST/SECOND STAGE OF PIP'S EXPECTATIONS.').
+
+## Verse presentation
+
+Verse presentation: the 'Lunnon town' song is split into one paragraph per line (6 verse paragraphs) and marked with verse roles in scripts/library/public-domain-layout.js, so the reader shows it as verse.
+Verse roles apply only when the paragraph still matches the shipped text, so an edited copy keeps reading.
 
 ## Validation
 

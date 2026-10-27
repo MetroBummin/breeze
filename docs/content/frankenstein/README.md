@@ -10,10 +10,14 @@ Gutenberg boilerplate, contents lists, prefaces, illustration placeholders, and 
 
 ## Modernization
 
-The baseline contains 792 ordered blocks and 74975 words. The adapted text has the same 792 blocks and 74941 words.
-`edits.json` records all 94 ordered paragraph-indexed before/after changes, reasons, and occurrence counts. Paragraphs are not split, merged, reordered, deleted, or inserted during modernization. Changes are limited to current spellings, dated polite imperatives, and archaic words whose meaning changed; the author's voice, British spelling, dialect, verse and quoted diction, and period setting remain.
-The creature's thou/thee/thy diction, the quoted verse (Coleridge, Wordsworth), and the rhetorical 'nay' are deliberately retained.
-The quoted verse blocks keep their joined-line rendering, matching the rest of the remote catalog; display line breaks are a separate reader task.
+The baseline contains 792 ordered blocks and 74975 words. The adapted text has 811 blocks and 74941 words.
+`edits.json` records all 94 ordered paragraph-indexed before/after changes with reasons. Changes are limited to current spellings, dated polite imperatives, archaic words whose meaning changed, and (Great Expectations only) dialect spellings and agreement; the author's voice, British spelling, and period setting remain. Paragraph order is unchanged.
+The creature's thou/thee/thy diction, the quoted verse diction, and the rhetorical 'nay' are deliberately retained.
+
+## Verse presentation
+
+Verse presentation: the three quoted verse blocks (Coleridge's Ancient Mariner, Shelley's Mutability, Wordsworth's Tintern Abbey) are split into one paragraph per line (22 verse paragraphs) and marked with verse roles in scripts/library/public-domain-layout.js, so the reader shows them as verse.
+Verse roles apply only when the paragraph still matches the shipped text, so an edited copy keeps reading.
 
 ## Validation
 

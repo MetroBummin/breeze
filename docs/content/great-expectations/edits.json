@@ -6,16 +6,100 @@
     "reason": "Modernize a polite imperative."
   },
   {
+    "paragraph": 11,
+    "before": "Pint out the place",
+    "after": "Point out the place",
+    "reason": "Use the standard spelling of 'point'."
+  },
+  {
+    "paragraph": 14,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 16,
+    "before": "han’t",
+    "after": "haven’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 16,
+    "before": "to’t",
+    "after": "to it",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 16,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 18,
+    "before": "lookee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 24,
+    "before": "han’t",
+    "after": "haven’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 24,
+    "before": "supposin’",
+    "after": "supposing",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 28,
+    "before": "lookee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 33,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
     "paragraph": 36,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
+    "paragraph": 36,
+    "before": "partickler",
+    "after": "particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 36,
+    "before": "sumever",
+    "after": "whatever",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 36,
+    "before": "wery",
+    "after": "very",
+    "reason": "Use the standard spelling."
+  },
+  {
     "paragraph": 57,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 61,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
   },
   {
     "paragraph": 67,
@@ -28,6 +112,24 @@
     "before": "To-night",
     "after": "Tonight",
     "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 77,
+    "before": "elth’s",
+    "after": "health’s",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 81,
+    "before": "oncommon",
+    "after": "uncommon",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 81,
+    "before": "you and me is always friends",
+    "after": "you and I are always friends",
+    "reason": "Use standard subject and agreement."
   },
   {
     "paragraph": 86,
@@ -49,10 +151,88 @@
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
+    "paragraph": 103,
+    "before": "’cross",
+    "after": "across",
+    "reason": "Use the standard spelling."
+  },
+  {
     "paragraph": 114,
     "before": "despatch",
     "after": "dispatch",
     "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 114,
+    "before": "’prentice",
+    "after": "apprentice",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 125,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 129,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 152,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 152,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 152,
+    "before": "nothin’",
+    "after": "nothing",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 152,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 160,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 161,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 162,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 164,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 177,
+    "before": "Naterally",
+    "after": "Naturally",
+    "reason": "Use the standard spelling."
   },
   {
     "paragraph": 178,
@@ -67,10 +247,64 @@
     "reason": "Modernize a polite imperative."
   },
   {
+    "paragraph": 221,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 228,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 230,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
     "paragraph": 249,
     "before": "Nay, there seemed to be two or more shouts",
     "after": "Indeed, there seemed to be two or more shouts",
     "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 260,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 262,
+    "before": "Lookee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 262,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 277,
+    "before": "a’most",
+    "after": "almost",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 277,
+    "before": "this is another pint",
+    "after": "this is another point",
+    "reason": "Use the standard spelling of 'point'."
+  },
+  {
+    "paragraph": 277,
+    "before": "willage",
+    "after": "village",
+    "reason": "Use the standard spelling."
   },
   {
     "paragraph": 290,
@@ -85,10 +319,154 @@
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
+    "paragraph": 313,
+    "before": "Tho’",
+    "after": "Though",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 315,
+    "before": "On-common",
+    "after": "Uncommon",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 315,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 320,
+    "before": "a’most",
+    "after": "almost",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 320,
+    "before": "’xcepting",
+    "after": "excepting",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 322,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling."
+  },
+  {
     "paragraph": 324,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 324,
+    "before": "doo",
+    "after": "due",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 324,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 324,
+    "before": "my father were that good",
+    "after": "my father was that good",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 328,
+    "before": "Whatsume’er",
+    "after": "Whatsoever",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 328,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 328,
+    "before": "which were his too",
+    "after": "which was his too",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 347,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 349,
+    "before": "partickler",
+    "after": "particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 351,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 351,
+    "before": "candour compels fur to admit",
+    "after": "candour compels me to admit",
+    "reason": "Replace the dialect preposition with the intended sense."
+  },
+  {
+    "paragraph": 357,
+    "before": "I’d fur rather",
+    "after": "I’d far rather",
+    "reason": "Use the standard adverb 'far'."
+  },
+  {
+    "paragraph": 357,
+    "before": "afeerd",
+    "after": "afraid",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 357,
+    "before": "conwenienced",
+    "after": "inconvenienced",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 357,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 357,
+    "before": "t’other",
+    "after": "the other",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 357,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 359,
+    "before": "o’",
+    "after": "of",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 359,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
   },
   {
     "paragraph": 361,
@@ -122,6 +500,138 @@
     "reason": "Use current closed spelling."
   },
   {
+    "paragraph": 528,
+    "before": "Howsever",
+    "after": "However",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 544,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 554,
+    "before": "Howsever",
+    "after": "However",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 554,
+    "before": "lies is lies",
+    "after": "lies are lies",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 554,
+    "before": "oncommon",
+    "after": "uncommon",
+    "reason": "Use the standard spelling. (3 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 554,
+    "before": "they didn’t ought to come",
+    "after": "they ought not to come",
+    "reason": "Use the standard form of 'ought'."
+  },
+  {
+    "paragraph": 554,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 558,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 558,
+    "before": "be it son’t",
+    "after": "be it not",
+    "reason": "Use the standard negative."
+  },
+  {
+    "paragraph": 558,
+    "before": "oncommon",
+    "after": "uncommon",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 558,
+    "before": "when he were a unpromoted Prince",
+    "after": "when he was an unpromoted Prince",
+    "reason": "Use standard agreement and article."
+  },
+  {
+    "paragraph": 560,
+    "before": "oncommon",
+    "after": "uncommon",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 562,
+    "before": "Lookee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 562,
+    "before": "done intentional",
+    "after": "done intentionally",
+    "reason": "Use the standard adverb."
+  },
+  {
+    "paragraph": 562,
+    "before": "is a thing as can’t be looked into",
+    "after": "is a thing that can’t be looked into",
+    "reason": "Use the standard relative pronoun."
+  },
+  {
+    "paragraph": 562,
+    "before": "oncommon",
+    "after": "uncommon",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 562,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 564,
+    "before": "adwise",
+    "after": "advise",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 564,
+    "before": "outdacious",
+    "after": "audacious",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 564,
+    "before": "them were which I meantersay",
+    "after": "those were which I mean to say",
+    "reason": "Use the standard demonstrative and phrase."
+  },
+  {
+    "paragraph": 606,
+    "before": "Nevvy",
+    "after": "Nephew",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 607,
+    "before": "nevvy",
+    "after": "nephew",
+    "reason": "Use the standard word."
+  },
+  {
     "paragraph": 622,
     "before": "on the top of a press in the state parlour",
     "after": "on the top of a cupboard in the state parlour",
@@ -140,10 +650,82 @@
     "reason": "Use current closed spelling."
   },
   {
+    "paragraph": 791,
+    "before": "I were at the time",
+    "after": "I was at the time",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 791,
+    "before": "hup",
+    "after": "up",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 791,
+    "before": "if you was anyways inclined",
+    "after": "if you were anyways inclined",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 791,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
     "paragraph": 793,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 793,
+    "before": "calc’lated",
+    "after": "calculated",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 793,
+    "before": "for’ard",
+    "after": "forward",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 793,
+    "before": "sut",
+    "after": "soot",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 795,
+    "before": "beknown",
+    "after": "known",
+    "reason": "Use the standard participle."
+  },
+  {
+    "paragraph": 795,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 795,
+    "before": "it were the wish",
+    "after": "it was the wish",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 798,
+    "before": "’at",
+    "after": "hat",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 798,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
   },
   {
     "paragraph": 801,
@@ -158,698 +740,3146 @@
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
+    "paragraph": 801,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 801,
+    "before": "requiring a answer",
+    "after": "requiring an answer",
+    "reason": "Use the standard article."
+  },
+  {
+    "paragraph": 801,
+    "before": "that were not a question",
+    "after": "that was not a question",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 805,
+    "before": "conweyed",
+    "after": "conveyed",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 805,
+    "before": "nowheres",
+    "after": "nowhere",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 805,
+    "before": "wery",
+    "after": "very",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 813,
+    "before": "partick’ler",
+    "after": "particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 813,
+    "before": "wery",
+    "after": "very",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 821,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 823,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 823,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 842,
+    "before": "’un",
+    "after": "one",
+    "reason": "Use the standard word."
+  },
+  {
     "paragraph": 843,
     "before": "a queer place",
     "after": "a strange place",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 869,
+    "paragraph": 853,
+    "before": "’prentice",
+    "after": "apprentice",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 874,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 889,
+    "paragraph": 874,
+    "before": "p’r’aps",
+    "after": "perhaps",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 882,
+    "before": "As you was",
+    "after": "As you were",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 882,
+    "before": "Keep in sunders",
+    "after": "Keep asunder",
+    "reason": "Use the standard adverb."
+  },
+  {
+    "paragraph": 882,
+    "before": "Make a end on it",
+    "after": "Make an end of it",
+    "reason": "Use the standard idiom."
+  },
+  {
+    "paragraph": 882,
+    "before": "her meaning were",
+    "after": "her meaning was",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 882,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 887,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 887,
+    "before": "unless you was to turn her out",
+    "after": "unless you were to turn her out",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 887,
+    "before": "wacancy",
+    "after": "vacancy",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 891,
+    "before": "haim",
+    "after": "aim",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 891,
+    "before": "if I was yourself, Pip",
+    "after": "if I were you, Pip",
+    "reason": "Use the standard conditional."
+  },
+  {
+    "paragraph": 891,
+    "before": "oncommon",
+    "after": "uncommon",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 891,
+    "before": "oncommonest",
+    "after": "uncommonest",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 894,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 919,
+    "paragraph": 895,
+    "before": "rechris’ened",
+    "after": "rechristened",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 899,
+    "before": "’prentice",
+    "after": "apprentice",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 901,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 905,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 905,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 918,
+    "before": "good’un",
+    "after": "good one",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 924,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 945,
+    "paragraph": 937,
+    "before": "’prentice",
+    "after": "apprentice",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 938,
+    "before": "o’ clock",
+    "after": "o’clock",
+    "reason": "Use the standard spelling of 'o'clock'."
+  },
+  {
+    "paragraph": 950,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 956,
+    "paragraph": 961,
     "before": "people coming thence to examine the iron",
     "after": "people coming from there to examine the iron",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 965,
+    "paragraph": 970,
     "before": "Thereupon, I had brought in all our hammers",
     "after": "After that, I had brought in all our hammers",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1013,
+    "paragraph": 1018,
     "before": "I was very much ill-used by somebody",
     "after": "I was very much ill-treated by somebody",
     "reason": "Clarify the dated sense without changing the subject."
   },
   {
-    "paragraph": 1020,
+    "paragraph": 1025,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1020,
+    "paragraph": 1025,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1070,
+    "paragraph": 1075,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1176,
+    "paragraph": 1103,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 1142,
+    "before": "fortun’",
+    "after": "fortune",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1147,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'. (4 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 1147,
+    "before": "sech",
+    "after": "such",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1148,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 1163,
+    "before": "fortun’",
+    "after": "fortune",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1165,
+    "before": "ekervally",
+    "after": "equally",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1165,
+    "before": "partickler",
+    "after": "particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1181,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1182,
+    "paragraph": 1187,
     "before": "my indentures from the press in the best parlour",
     "after": "my indentures from the cupboard in the best parlour",
     "reason": "Clarify the dated sense without changing the subject."
   },
   {
-    "paragraph": 1239,
+    "paragraph": 1196,
+    "before": "it were only necessary",
+    "after": "it was only necessary",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1196,
+    "before": "the change come so oncommon plump",
+    "after": "the change came so suddenly",
+    "reason": "Use the standard verb and adverb."
+  },
+  {
+    "paragraph": 1244,
     "before": "Thereupon he shook his head",
     "after": "At that, he shook his head",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1266,
+    "paragraph": 1245,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1247,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1254,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1259,
+    "before": "fortun’",
+    "after": "fortune",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 1271,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1267,
+    "paragraph": 1272,
     "before": "a gay figure, Pip",
     "after": "a lively figure, Pip",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 1269,
+    "paragraph": 1274,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1282,
+    "paragraph": 1287,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1311,
+    "paragraph": 1316,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1311,
+    "paragraph": 1316,
     "before": "whence I should command a full view",
     "after": "from which I should command a full view",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1311,
+    "paragraph": 1316,
     "before": "that awful personage like waxwork",
     "after": "that imposing personage like waxwork",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 1406,
+    "paragraph": 1316,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1317,
+    "before": "’Melia",
+    "after": "Amelia",
+    "reason": "Use the standard name."
+  },
+  {
+    "paragraph": 1345,
+    "before": "t’other",
+    "after": "the other",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 1349,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1349,
+    "before": "o’",
+    "after": "of",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 1362,
+    "before": "’spectable",
+    "after": "respectable",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1411,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1406,
+    "paragraph": 1411,
     "before": "Pray come in",
     "after": "Please come in",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 1406,
+    "paragraph": 1411,
     "before": "Pray let me take these bags from you",
     "after": "Please let me take these bags from you",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 1437,
+    "paragraph": 1442,
     "before": "familiar intercourse between them",
     "after": "close acquaintance between them",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 1480,
+    "paragraph": 1485,
     "before": "We were very gay and sociable",
     "after": "We were very cheerful and sociable",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 1523,
+    "paragraph": 1510,
+    "before": "’Change",
+    "after": "Exchange",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1512,
+    "before": "drownded",
+    "after": "drowned",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1528,
     "before": "a queer sort of respectful pity",
     "after": "a strange sort of respectful pity",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 1523,
+    "paragraph": 1528,
     "before": "a queer sort of forgiving reproach",
     "after": "a strange sort of forgiving reproach",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 1525,
+    "paragraph": 1530,
     "before": "to be nice in their eating and drinking",
     "after": "to be particular in their eating and drinking",
     "reason": "Clarify the dated sense without changing the subject."
   },
   {
-    "paragraph": 1602,
+    "paragraph": 1604,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1607,
     "before": "“Pray,” said I",
     "after": "“Go on,” said I",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 1628,
+    "paragraph": 1616,
+    "before": "property’",
+    "after": "property",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 1616,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1633,
     "before": "Thither I went",
     "after": "I went there",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1635,
+    "paragraph": 1640,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1678,
+    "paragraph": 1640,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1648,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1679,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1683,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1704,
+    "paragraph": 1709,
     "before": "Pray make the best use of your time",
     "after": "Please make the best use of your time",
     "reason": "Modernize a polite imperative."
   },
   {
+    "paragraph": 1753,
+    "before": "growed",
+    "after": "grown",
+    "reason": "Use the standard past participle."
+  },
+  {
+    "paragraph": 1755,
+    "before": "’Ceptin",
+    "after": "Excepting",
+    "reason": "Use the standard spelling."
+  },
+  {
     "paragraph": 1758,
+    "before": "’and",
+    "after": "hand",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 1763,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1796,
+    "paragraph": 1763,
+    "before": "Partickler",
+    "after": "Particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1763,
+    "before": "calc’lated",
+    "after": "calculated",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1763,
+    "before": "continiwally",
+    "after": "continually",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1763,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1763,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 1763,
+    "before": "misfortun’",
+    "after": "misfortune",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1763,
+    "before": "there certainly were a peck",
+    "after": "there certainly was a peck",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1763,
+    "before": "when he see the ghost",
+    "after": "when he saw the ghost",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 1763,
+    "before": "’at",
+    "after": "hat",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 1765,
+    "before": "elths",
+    "after": "health",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1765,
+    "before": "its character do stand it",
+    "after": "its character does stand it",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1765,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 1765,
+    "before": "meller",
+    "after": "mellow",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1765,
+    "before": "werry",
+    "after": "very",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1770,
+    "before": "’eating",
+    "after": "heating",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 1776,
+    "before": "Ware’us",
+    "after": "Warehouse",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1776,
+    "before": "architectooralooral",
+    "after": "architectural",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 1776,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 1783,
+    "before": "my only wish were",
+    "after": "my only wish was",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1783,
+    "before": "what have led",
+    "after": "what has led",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1785,
+    "before": "t’other",
+    "after": "the other",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 1785,
+    "before": "’air",
+    "after": "hair",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1787,
+    "before": "his manners is given",
+    "after": "his manners are given",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1787,
+    "before": "his word were",
+    "after": "his word was",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1787,
+    "before": "it were, Pip",
+    "after": "it was, Pip",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1787,
+    "before": "stimilate",
+    "after": "stimulate",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1787,
+    "before": "though it signify little",
+    "after": "though it signifies little",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 1787,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1795,
+    "before": "asked her fur to write",
+    "after": "asked her to write",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 1801,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1799,
+    "paragraph": 1801,
+    "before": "You and me is not two figures",
+    "after": "You and I are not two figures",
+    "reason": "Use standard subject and agreement."
+  },
+  {
+    "paragraph": 1801,
+    "before": "anywheres",
+    "after": "anywhere",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 1801,
+    "before": "beknown",
+    "after": "known",
+    "reason": "Use the standard participle."
+  },
+  {
+    "paragraph": 1801,
+    "before": "something nigh the rights of this",
+    "after": "something near the truth of this",
+    "reason": "Use current words for the dialect phrase."
+  },
+  {
+    "paragraph": 1804,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1813,
+    "paragraph": 1816,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1817,
+    "before": "As fur as",
+    "after": "As far as",
+    "reason": "Use the standard adverb 'far'."
+  },
+  {
+    "paragraph": 1818,
     "before": "I wouldn’t have incommoded none of you",
     "after": "I wouldn’t have inconvenienced none of you",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1840,
+    "paragraph": 1824,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1825,
+    "before": "Giv",
+    "after": "Given",
+    "reason": "Use the standard past participle 'given'."
+  },
+  {
+    "paragraph": 1825,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1826,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1829,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 1829,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 1830,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 1830,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 1831,
+    "before": "ha’porth",
+    "after": "halfpennyworth",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 1845,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1888,
+    "paragraph": 1846,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 1893,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1904,
+    "paragraph": 1909,
     "before": "I verily believe",
     "after": "I truly believe",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 1915,
+    "paragraph": 1920,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1945,
+    "paragraph": 1950,
     "before": "“Pray, sir,” said I, “may I ask you a question?”",
     "after": "“Please, sir,” said I, “may I ask you a question?”",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 1968,
+    "paragraph": 1970,
+    "before": "’pon",
+    "after": "upon",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 1973,
     "before": "despatched",
     "after": "dispatched",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1985,
+    "paragraph": 1990,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1988,
+    "paragraph": 1993,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 1991,
+    "paragraph": 1996,
     "before": "in his gay, hopeful way",
     "after": "in his cheerful, hopeful way",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 2028,
+    "paragraph": 2033,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2032,
+    "paragraph": 2037,
     "before": "nice discrimination",
     "after": "precise discrimination",
     "reason": "Clarify the dated sense without changing the subject."
   },
   {
-    "paragraph": 2068,
+    "paragraph": 2053,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (3 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2073,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2070,
+    "paragraph": 2075,
     "before": "I was fain to be content",
     "after": "I had to be content",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 2075,
+    "paragraph": 2080,
     "before": "and thereupon must have a word",
     "after": "and after that must have a word",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 2099,
+    "paragraph": 2102,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2104,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2149,
+    "paragraph": 2108,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2109,
+    "before": "’prentices",
+    "after": "apprentices",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2114,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2154,
     "before": "everything in our intercourse did give me pain",
     "after": "everything in our dealings did give me pain",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 2186,
+    "paragraph": 2191,
     "before": "a gay fiction among us",
     "after": "a cheerful fiction among us",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 2232,
+    "paragraph": 2192,
+    "before": "’Change",
+    "after": "Exchange",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2221,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2221,
+    "before": "when she were a fine figure",
+    "after": "when she was a fine figure",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 2223,
+    "before": "harts",
+    "after": "hearts",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2223,
+    "before": "it were considered",
+    "after": "it was considered",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 2223,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2223,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2223,
+    "before": "would be of opinions as it were wanting in respect",
+    "after": "would be of the opinion that it was wanting in respect",
+    "reason": "Use the standard phrasing."
+  },
+  {
+    "paragraph": 2237,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2276,
+    "paragraph": 2244,
+    "before": "Joe’",
+    "after": "Joe",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 2281,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2289,
+    "paragraph": 2294,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2390,
+    "paragraph": 2395,
     "before": "this part of our intercourse",
     "after": "this part of our conversation",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 2402,
+    "paragraph": 2407,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2457,
+    "paragraph": 2462,
     "before": "Whereupon I made him the extreme reply",
     "after": "At that, I made him the extreme reply",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 2467,
+    "paragraph": 2472,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2497,
+    "paragraph": 2502,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2510,
+    "paragraph": 2515,
     "before": "Pray what is your business?",
     "after": "Please, what is your business?",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 2529,
+    "paragraph": 2522,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2522,
+    "before": "disapinting",
+    "after": "disappointing",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2522,
+    "before": "for’ard",
+    "after": "forward",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2522,
+    "before": "so fur",
+    "after": "so far",
+    "reason": "Use the standard adverb 'far'."
+  },
+  {
+    "paragraph": 2526,
+    "before": "arterwards",
+    "after": "afterwards",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2526,
+    "before": "grow’d",
+    "after": "grew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2534,
     "before": "renew that chance intercourse with you",
     "after": "renew that chance acquaintance with you",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 2582,
+    "paragraph": 2535,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2547,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 2561,
+    "before": "whiles",
+    "after": "while",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2565,
+    "before": "arterwards",
+    "after": "afterwards",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2565,
+    "before": "fur you to",
+    "after": "for you to",
+    "reason": "Use the standard preposition. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2565,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2565,
+    "before": "spec’lated",
+    "after": "speculated",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2565,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2567,
+    "before": "Look’ee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2567,
+    "before": "whiles",
+    "after": "while",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2567,
+    "before": "wos",
+    "after": "was",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2567,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2567,
+    "before": "yourn",
+    "after": "yours",
+    "reason": "Use the standard possessive. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2567,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2569,
+    "before": "Look’ee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2569,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2569,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (3 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2569,
+    "before": "’un",
+    "after": "one",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2571,
+    "before": "wos",
+    "after": "was",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2571,
+    "before": "wosn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 2573,
+    "before": "wos",
+    "after": "was",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2575,
+    "before": "growed",
+    "after": "grown",
+    "reason": "Use the standard past participle."
+  },
+  {
+    "paragraph": 2575,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2577,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2577,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 2577,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2577,
+    "before": "wotever",
+    "after": "whatever",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2577,
+    "before": "yourn",
+    "after": "yours",
+    "reason": "Use the standard possessive."
+  },
+  {
+    "paragraph": 2577,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2579,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 2579,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2579,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2579,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2579,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2581,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2587,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2583,
+    "paragraph": 2588,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2602,
+    "paragraph": 2589,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2607,
     "before": "I was fain to go out",
     "after": "I had to go out",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
+    "paragraph": 2631,
+    "before": "chrisen’d",
+    "after": "christened",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2648,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2651,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2651,
+    "before": "molloncolly",
+    "after": "melancholy",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2651,
+    "before": "t’other",
+    "after": "the other",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 2653,
+    "before": "It does me good fur to look at you",
+    "after": "It does me good to look at you",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 2653,
+    "before": "stip’late",
+    "after": "stipulate",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2655,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2655,
+    "before": "’uns",
+    "after": "ones",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2657,
+    "before": "afeerd",
+    "after": "afraid",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2657,
+    "before": "fur to see him do it",
+    "after": "to see him do it",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 2657,
+    "before": "fur to see my gentleman spend his money",
+    "after": "to see my gentleman spend his money",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 2657,
+    "before": "yourn",
+    "after": "yours",
+    "reason": "Use the standard possessive. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2657,
+    "before": "’ull",
+    "after": "will",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 2659,
+    "before": "Look’ee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2659,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 2659,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2661,
+    "before": "Look’ee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2663,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2663,
+    "before": "not fur to be low",
+    "after": "not to be low",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 2663,
+    "before": "so fur",
+    "after": "so far",
+    "reason": "Use the standard adverb 'far'."
+  },
+  {
+    "paragraph": 2665,
+    "before": "informed agen",
+    "after": "informed against",
+    "reason": "Use the standard preposition 'against' here."
+  },
+  {
+    "paragraph": 2667,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 2667,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2669,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 2671,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2671,
+    "before": "do agen",
+    "after": "do again",
+    "reason": "Use the standard spelling of 'again'."
+  },
+  {
+    "paragraph": 2673,
+    "before": "afeerd",
+    "after": "afraid",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2673,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2673,
+    "before": "fur from",
+    "after": "far from",
+    "reason": "Use the standard adverb 'far'."
+  },
+  {
+    "paragraph": 2673,
+    "before": "my gentleman agen",
+    "after": "my gentleman again",
+    "reason": "Use the standard spelling of 'again'."
+  },
+  {
+    "paragraph": 2673,
+    "before": "’ud",
+    "after": "would",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 2685,
+    "before": "informed’",
+    "after": "informed",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 2685,
+    "before": "told’",
+    "after": "told",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 2720,
+    "before": "sumever",
+    "after": "whatever",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2725,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 2725,
+    "before": "due to ye",
+    "after": "due to you",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2725,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2725,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2725,
+    "before": "not fur me not to know",
+    "after": "not for me not to know",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 2773,
+    "before": "Wotever",
+    "after": "Whatever",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2773,
+    "before": "look’ee",
+    "after": "look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 2777,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2777,
+    "before": "not a-going fur to tell you",
+    "after": "not going to tell you",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 2778,
+    "before": "Summun",
+    "after": "Someone",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2778,
+    "before": "kittle",
+    "after": "kettle",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2778,
+    "before": "wery",
+    "after": "very",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2779,
+    "before": "chrisen’d",
+    "after": "christened",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2779,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2779,
+    "before": "sparrer",
+    "after": "sparrow",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2780,
+    "before": "So fur",
+    "after": "So far",
+    "reason": "Use the standard adverb 'far'."
+  },
+  {
+    "paragraph": 2780,
+    "before": "grow’d",
+    "after": "grew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2780,
+    "before": "reg’larly",
+    "after": "regularly",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2780,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 2780,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2781,
+    "before": "Howsomever",
+    "after": "However",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2781,
+    "before": "afeerd",
+    "after": "afraid",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2781,
+    "before": "creetur",
+    "after": "creature",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2781,
+    "before": "giv",
+    "after": "given",
+    "reason": "Use the standard past participle 'given'."
+  },
+  {
+    "paragraph": 2781,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 2781,
+    "before": "went on agen me",
+    "after": "went on against me",
+    "reason": "Use the standard preposition 'against' here."
+  },
+  {
+    "paragraph": 2781,
+    "before": "wisitors",
+    "after": "visitors",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2781,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2782,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 2782,
+    "before": "taturs",
+    "after": "potatoes",
+    "reason": "Use the current word."
+  },
+  {
+    "paragraph": 2782,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2783,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2783,
+    "before": "wi’",
+    "after": "with",
+    "reason": "Use the standard preposition. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2784,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2784,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2784,
+    "before": "set up fur a gentleman",
+    "after": "set up for a gentleman",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 2787,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 2792,
+    "before": "giv",
+    "after": "given",
+    "reason": "Use the standard past participle 'given'."
+  },
+  {
+    "paragraph": 2793,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2793,
+    "before": "pardner",
+    "after": "partner",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2793,
+    "before": "pardners",
+    "after": "partners",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2794,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2794,
+    "before": "chrisen’d",
+    "after": "christened",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2795,
+    "before": "kept a careful account agen him",
+    "after": "kept a careful account against him",
+    "reason": "Use the standard preposition 'against' here."
+  },
+  {
+    "paragraph": 2795,
+    "before": "partick’ler",
+    "after": "particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2795,
+    "before": "wi’",
+    "after": "with",
+    "reason": "Use the standard preposition. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2795,
+    "before": "’ud",
+    "after": "would",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 2799,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 2799,
+    "before": "took him up to bed agen",
+    "after": "took him up to bed again",
+    "reason": "Use the standard spelling of 'again'."
+  },
+  {
+    "paragraph": 2800,
+    "before": "creetur",
+    "after": "creature",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2800,
+    "before": "giv",
+    "after": "given",
+    "reason": "Use the standard past participle 'given'."
+  },
+  {
     "paragraph": 2803,
+    "before": "wi’",
+    "after": "with",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 2803,
+    "before": "’ud",
+    "after": "would",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 2805,
+    "before": "a’most",
+    "after": "almost",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2805,
+    "before": "wi’",
+    "after": "with",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 2807,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2808,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 2851,
+    "paragraph": 2808,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2808,
+    "before": "agen me",
+    "after": "against me",
+    "reason": "Use the standard preposition 'against' here."
+  },
+  {
+    "paragraph": 2808,
+    "before": "for’ard",
+    "after": "forward",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2808,
+    "before": "giv",
+    "after": "given",
+    "reason": "Use the standard past participle 'given'."
+  },
+  {
+    "paragraph": 2808,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2808,
+    "before": "might a done so well",
+    "after": "might have done so well",
+    "reason": "Use the standard perfect form."
+  },
+  {
+    "paragraph": 2808,
+    "before": "nowt",
+    "after": "nothing",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 2808,
+    "before": "rascal’",
+    "after": "rascal",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 2808,
+    "before": "t’other",
+    "after": "the other",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 2808,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction. (8 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2808,
+    "before": "wiolent",
+    "after": "violent",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 2808,
+    "before": "wi’",
+    "after": "with",
+    "reason": "Use the standard preposition. (4 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2808,
+    "before": "yourn",
+    "after": "yours",
+    "reason": "Use the standard possessive."
+  },
+  {
+    "paragraph": 2808,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 2809,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 2811,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 2811,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 2813,
+    "before": "giv",
+    "after": "given",
+    "reason": "Use the standard past participle 'given'."
+  },
+  {
+    "paragraph": 2856,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2872,
+    "paragraph": 2877,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2906,
+    "paragraph": 2911,
     "before": "you would not confound them with the others",
     "after": "you would not confuse them with the others",
     "reason": "Clarify the dated sense without changing the subject."
   },
   {
-    "paragraph": 2936,
+    "paragraph": 2941,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2950,
+    "paragraph": 2955,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 2970,
+    "paragraph": 2975,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3004,
+    "paragraph": 3009,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3014,
+    "paragraph": 3019,
     "before": "the few queer houses",
     "after": "the few odd houses",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 3030,
+    "paragraph": 3035,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3118,
+    "paragraph": 3059,
+    "before": "shoot’",
+    "after": "shoot",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 3123,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3127,
+    "paragraph": 3132,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3159,
+    "paragraph": 3164,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3164,
+    "paragraph": 3169,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3200,
+    "paragraph": 3205,
     "before": "pray do it!",
     "after": "please do it!",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 3297,
+    "paragraph": 3287,
+    "before": "a’most",
+    "after": "almost",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3287,
+    "before": "o’",
+    "after": "of",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 3287,
+    "before": "wi’",
+    "after": "with",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 3302,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3377,
+    "paragraph": 3332,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 3382,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3380,
+    "paragraph": 3385,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3380,
+    "paragraph": 3385,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3381,
+    "paragraph": 3386,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3381,
+    "paragraph": 3386,
     "before": "To-morrow",
     "after": "Tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3433,
+    "paragraph": 3401,
+    "before": "han’t",
+    "after": "haven’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 3434,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3438,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 3437,
+    "paragraph": 3442,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3451,
+    "paragraph": 3444,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3450,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3450,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3453,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 3453,
+    "before": "somethink",
+    "after": "something",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3456,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3459,
+    "paragraph": 3456,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 3456,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 3462,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3462,
+    "before": "getting a easy living",
+    "after": "getting an easy living",
+    "reason": "Use the standard article."
+  },
+  {
+    "paragraph": 3462,
+    "before": "han’t",
+    "after": "haven’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 3462,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3464,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 3461,
+    "paragraph": 3464,
+    "before": "I’d thoughts o’ doing",
+    "after": "I’d thought of doing",
+    "reason": "Use the standard past participle and preposition."
+  },
+  {
+    "paragraph": 3464,
+    "before": "had most like wore",
+    "after": "had most likely worn",
+    "reason": "Use the standard adverb and participle."
+  },
+  {
+    "paragraph": 3464,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3464,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3464,
+    "before": "weazen",
+    "after": "windpipe",
+    "reason": "Use the current word for the throat."
+  },
+  {
+    "paragraph": 3464,
+    "before": "wot",
+    "after": "what",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3466,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3474,
+    "paragraph": 3466,
+    "before": "P’raps",
+    "after": "Perhaps",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3466,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3466,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3466,
+    "before": "nevvy",
+    "after": "nephew",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 3466,
+    "before": "’Ware",
+    "after": "Beware",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 3466,
+    "before": "’ware",
+    "after": "beware",
+    "reason": "Use the standard word. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3479,
     "before": "to-night",
     "after": "tonight",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3477,
+    "paragraph": 3482,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3483,
+    "paragraph": 3488,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling.",
     "count": 2
   },
   {
-    "paragraph": 3484,
+    "paragraph": 3489,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3495,
+    "paragraph": 3500,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling.",
     "count": 2
   },
   {
-    "paragraph": 3505,
+    "paragraph": 3510,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 3543,
+    "paragraph": 3510,
+    "before": "arter",
+    "after": "after",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3510,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3512,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 3514,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3514,
+    "before": "t’other",
+    "after": "the other",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 3519,
+    "before": "p’raps",
+    "after": "perhaps",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3519,
+    "before": "s’pose",
+    "after": "suppose",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3531,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 3531,
+    "before": "on’t",
+    "after": "on it",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 3535,
+    "before": "ha’",
+    "after": "have",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 3535,
+    "before": "pison",
+    "after": "poison",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3540,
+    "before": "’Us",
+    "after": "House",
+    "reason": "Use the standard word ('Custom House')."
+  },
+  {
+    "paragraph": 3546,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun. (3 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3548,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 3660,
+    "paragraph": 3548,
+    "before": "’Us",
+    "after": "House",
+    "reason": "Use the standard word ('Custom House'). (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3574,
+    "before": "Lookee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 3574,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3574,
+    "before": "o’",
+    "after": "of",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 3629,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 3657,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3661,
+    "before": "Thank’ee",
+    "after": "Thank you",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 3661,
+    "before": "thank’ee",
+    "after": "thank you",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 3665,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3698,
+    "paragraph": 3701,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 3703,
     "before": "To-morrow",
     "after": "Tomorrow",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3719,
+    "paragraph": 3705,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3705,
+    "before": "were brought by letter",
+    "after": "was brought by letter",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3705,
+    "before": "which it were brought by the post",
+    "after": "which it was brought by the post",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3716,
+    "before": "Arter",
+    "after": "After",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3716,
+    "before": "if you was put to it",
+    "after": "if you were put to it",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3716,
+    "before": "you was took ill",
+    "after": "you were taken ill",
+    "reason": "Use the standard passive."
+  },
+  {
+    "paragraph": 3718,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3718,
+    "before": "coddleshell",
+    "after": "codicil",
+    "reason": "Use the standard word for the legal document."
+  },
+  {
+    "paragraph": 3718,
+    "before": "it do appear",
+    "after": "it does appear",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3718,
+    "before": "meantersay",
+    "after": "mean to say",
+    "reason": "Use the standard phrase 'mean to say'."
+  },
+  {
+    "paragraph": 3718,
+    "before": "she had wrote out",
+    "after": "she had written out",
+    "reason": "Use the standard past participle."
+  },
+  {
+    "paragraph": 3721,
+    "before": "fur to buy pills",
+    "after": "to buy pills",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 3721,
+    "before": "perannium",
+    "after": "per annum",
+    "reason": "Use the standard phrase."
+  },
+  {
+    "paragraph": 3721,
+    "before": "she have twenty-five pound",
+    "after": "she has twenty-five pound",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3723,
+    "before": "fur to buy rushlights",
+    "after": "to buy rushlights",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 3723,
+    "before": "she have five pound",
+    "after": "she has five pound",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3723,
+    "before": "when she wake up",
+    "after": "when she wakes up",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3724,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3745,
+    "paragraph": 3724,
+    "before": "bustin’",
+    "after": "busting",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3724,
+    "before": "dwelling-ouse",
+    "after": "dwelling-house",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3726,
+    "before": "a Englishman’s",
+    "after": "an Englishman’s",
+    "reason": "Use the standard article."
+  },
+  {
+    "paragraph": 3726,
+    "before": "hart",
+    "after": "heart",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3726,
+    "before": "his manners is given to blusterous",
+    "after": "his manners are given to blusterous",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3726,
+    "before": "ouse",
+    "after": "house",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3726,
+    "before": "wotsume’er",
+    "after": "whatsoever",
+    "reason": "Use the standard word."
+  },
+  {
+    "paragraph": 3726,
+    "before": "’cept",
+    "after": "except",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3728,
+    "before": "bedpust",
+    "after": "bedpost",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3728,
+    "before": "drinked",
+    "after": "drank",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3728,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 3728,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3728,
+    "before": "prewent",
+    "after": "prevent",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3730,
+    "before": "draw’d",
+    "after": "drew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3730,
+    "before": "gradiwally",
+    "after": "gradually",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3730,
+    "before": "wegetable",
+    "after": "vegetable",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3730,
+    "before": "yourn",
+    "after": "yours",
+    "reason": "Use the standard possessive."
+  },
+  {
+    "paragraph": 3738,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 3746,
+    "before": "partickler",
+    "after": "particular",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3748,
+    "before": "Lookee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 3750,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3745,
+    "paragraph": 3750,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent.",
     "count": 2
   },
   {
-    "paragraph": 3751,
+    "paragraph": 3750,
+    "before": "Wery",
+    "after": "Very",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3750,
+    "before": "onnecessary",
+    "after": "unnecessary",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3750,
+    "before": "sech",
+    "after": "such",
+    "reason": "Use the standard spelling. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3752,
+    "before": "Lookee",
+    "after": "Look here",
+    "reason": "Use the standard phrase 'look here'."
+  },
+  {
+    "paragraph": 3752,
+    "before": "it were not so much",
+    "after": "it was not so much",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3752,
+    "before": "keep you and Tickler in sunders",
+    "after": "keep you and Tickler apart",
+    "reason": "Use the standard adverb."
+  },
+  {
+    "paragraph": 3752,
+    "before": "my power were not always",
+    "after": "my power was not always",
+    "reason": "Use standard agreement."
+  },
+  {
+    "paragraph": 3752,
+    "before": "naterally",
+    "after": "naturally",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3752,
+    "before": "to pint out the good",
+    "after": "to point out the good",
+    "reason": "Use the standard spelling of 'point'."
+  },
+  {
+    "paragraph": 3752,
+    "before": "’ud",
+    "after": "would",
+    "reason": "Use the standard verb."
+  },
+  {
+    "paragraph": 3756,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent.",
     "count": 2
   },
   {
-    "paragraph": 3760,
+    "paragraph": 3756,
+    "before": "Theerfore",
+    "after": "Therefore",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3756,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3756,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
+  },
+  {
+    "paragraph": 3756,
+    "before": "go a overdoing on it",
+    "after": "overdo it",
+    "reason": "Use the standard verb form."
+  },
+  {
+    "paragraph": 3756,
+    "before": "kep",
+    "after": "kept",
+    "reason": "Use the standard past tense. (2 occurrences in this paragraph.)"
+  },
+  {
+    "paragraph": 3756,
+    "before": "know’d",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3756,
+    "before": "onnecessary",
+    "after": "unnecessary",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3756,
+    "before": "o’",
+    "after": "of",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 3756,
+    "before": "power to part you and Tickler in sunders",
+    "after": "power to keep you and Tickler apart",
+    "reason": "Use the standard phrasing."
+  },
+  {
+    "paragraph": 3756,
+    "before": "sech",
+    "after": "such",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3762,
+    "before": "happy fur to see you able",
+    "after": "happy to see you able",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 3765,
     "before": "to-morrow",
     "after": "tomorrow",
     "reason": "Use current closed spelling.",
     "count": 2
   },
   {
-    "paragraph": 3760,
+    "paragraph": 3765,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3767,
+    "paragraph": 3768,
+    "before": "a’most",
+    "after": "almost",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3772,
     "before": "betwixt",
     "after": "between",
     "reason": "Replace an archaic word with its current equivalent."
   },
   {
-    "paragraph": 3823,
+    "paragraph": 3780,
+    "before": "I have departured fur you are well again",
+    "after": "I have departed, for you are well again",
+    "reason": "Use the standard verb and preposition."
+  },
+  {
+    "paragraph": 3798,
+    "before": "’em",
+    "after": "them",
+    "reason": "Use the standard pronoun."
+  },
+  {
+    "paragraph": 3800,
+    "before": "afore",
+    "after": "before",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3802,
+    "before": "air you a-going to Joseph",
+    "after": "are you going to Joseph",
+    "reason": "Use the standard verb form."
+  },
+  {
+    "paragraph": 3805,
+    "before": "’olesome",
+    "after": "wholesome",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3807,
+    "before": "M’ria",
+    "after": "Maria",
+    "reason": "Use the standard name."
+  },
+  {
+    "paragraph": 3809,
+    "before": "where you air a-going",
+    "after": "where you are going",
+    "reason": "Use the standard verb form."
+  },
+  {
+    "paragraph": 3809,
+    "before": "you air a-going to Joseph",
+    "after": "you are going to Joseph",
+    "reason": "Use the standard verb form."
+  },
+  {
+    "paragraph": 3813,
+    "before": "fortun’s",
+    "after": "fortune’s",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3819,
+    "before": "fortun’s",
+    "after": "fortune’s",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3819,
+    "before": "ingratitoode",
+    "after": "ingratitude",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3819,
+    "before": "knowed",
+    "after": "knew",
+    "reason": "Use the standard past tense."
+  },
+  {
+    "paragraph": 3819,
+    "before": "pinted",
+    "after": "pointed",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3825,
+    "before": "quietness’",
+    "after": "quietness",
+    "reason": "Drop the dialect apostrophe."
+  },
+  {
+    "paragraph": 3828,
     "before": "the window was open and gay with flowers",
     "after": "the window was open and bright with flowers",
     "reason": "Avoid the changed predominant meaning of this word."
   },
   {
-    "paragraph": 3837,
+    "paragraph": 3836,
+    "before": "fur to be surprised",
+    "after": "to be surprised",
+    "reason": "Drop the dialect infinitive marker."
+  },
+  {
+    "paragraph": 3836,
+    "before": "warn’t",
+    "after": "wasn’t",
+    "reason": "Use the standard contraction."
+  },
+  {
+    "paragraph": 3842,
     "before": "to-day",
     "after": "today",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3839,
+    "paragraph": 3844,
     "before": "for ever",
     "after": "forever",
     "reason": "Use current closed spelling."
   },
   {
-    "paragraph": 3841,
+    "paragraph": 3845,
+    "before": "a-going",
+    "after": "going",
+    "reason": "Drop the dialect prefix."
+  },
+  {
+    "paragraph": 3845,
+    "before": "natur",
+    "after": "nature",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3845,
+    "before": "nothink",
+    "after": "nothing",
+    "reason": "Use the standard spelling."
+  },
+  {
+    "paragraph": 3845,
+    "before": "o’",
+    "after": "of",
+    "reason": "Use the standard preposition."
+  },
+  {
+    "paragraph": 3846,
     "before": "pray tell me, both, that you forgive me!",
     "after": "please tell me, both, that you forgive me!",
     "reason": "Modernize a polite imperative."
   },
   {
-    "paragraph": 3841,
+    "paragraph": 3846,
     "before": "Pray let me hear you say the words",
     "after": "Please let me hear you say the words",
     "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 3854,
+    "before": "giv’",
+    "after": "give",
+    "reason": "Use the standard spelling of 'give'."
   }
 ]
