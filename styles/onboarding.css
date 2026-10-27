@@ -1,100 +1,139 @@
-/* Welcome geometry and flow wordmark selectively preserved from approved PR124. */
-body.onboarding-active{--onboard-paper:#fbfcfc;--onboard-ink:#202522;--onboard-muted:#65716e;}
-body.dark.onboarding-active{--onboard-paper:#20211e;--onboard-ink:#f3f6f4;--onboard-muted:#acb8b3;}
-#onboarding[hidden],#onboarding [hidden]{display:none!important;}
-#onboarding{position:fixed;inset:0;z-index:75;background:var(--onboard-paper);color:var(--onboard-ink);font-family:var(--ui);overflow:auto;overscroll-behavior:contain;}
-#onboarding button{min-height:44px;cursor:pointer;font:500 14px var(--ui);color:var(--onboard-ink);}
-#onboarding button:focus-visible,#onboard-carousel:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
-#onboarding #onboard-back{flex:1;border-radius:16px;min-height:52px;color:var(--sentence-glass-ink);}
-#onboard-navigation{display:flex;flex:none;width:100%;align-items:center;gap:12px;}
-#onboard-coach{box-sizing:border-box;width:min(416px,100%);margin-inline:auto;min-height:100dvh;padding:24px 28px calc(env(safe-area-inset-bottom) + 24px);display:flex;flex-direction:column;align-items:center;}
-#onboard-step{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);color:var(--onboard-muted);font:600 11px/1.4 var(--ui);letter-spacing:1px;margin-top:16px;}
-#onboard-prompt{align-self:stretch;font:600 24px/1.45 var(--ui);letter-spacing:-.6px;word-break:keep-all;margin:32px 0 8px;}
-#onboard-note{align-self:stretch;margin:0 0 16px;font:400 15px/1.65 var(--ui);color:var(--onboard-muted);word-break:keep-all;}
-#onboarding #onboard-next{flex:1;width:100%;margin-top:0;border-radius:16px;min-height:52px;font-weight:650;color:var(--sentence-glass-ink);}
-#onboard-next:disabled{opacity:.5;cursor:wait;}
-#onboard-coach{touch-action:pan-y;}
-#onboarding #onboard-skip{flex:none;display:flex;align-items:flex-start;justify-content:center;margin-top:10px;padding-top:4px;border:0;background:transparent;font-size:13px;font-weight:500;color:var(--onboard-muted);}
-#onboard-finish{display:flex;flex-direction:column;gap:12px;flex:1;min-height:184px;width:100%;align-items:center;justify-content:center;}
-/* The finish shelf reuses the landing carousel mechanism: two identical sets,
-   one 30s linear loop to -50%, edge fade, no pointer input. */
-.onboard-shelf{width:100%;overflow:hidden;pointer-events:none;mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent);}
-.onboard-shelf-track{display:flex;align-items:center;width:max-content;animation:onboard-shelf 40s linear infinite;}
-.onboard-shelf.reverse .onboard-shelf-track{animation-direction:reverse;animation-delay:-20s;}
-.onboard-shelf-set{display:flex;align-items:center;gap:12px;padding-right:12px;}
-.onboard-shelf .bookcard{flex:none;width:160px;height:208px;padding:17px 16px 0;box-shadow:var(--shadow-card);}
-.onboard-shelf .bookcard .bt{font-size:14.5px;}
-.onboard-shelf .casual{flex:none;position:relative;width:126px;height:208px;border-radius:15px;overflow:hidden;}
-.onboard-shelf .casual .thumb{height:100%;aspect-ratio:auto;box-sizing:border-box;border-radius:inherit;}
-.onboard-shelf .casual .thumb.has-cover .src{display:none;}
-.onboard-shelf .casual::after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.62));pointer-events:none;}
-.onboard-shelf .casual .ct{position:absolute;z-index:1;left:12px;right:12px;bottom:24px;margin:0;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.4);}
-.onboard-shelf .casual .cm{position:absolute;z-index:1;left:12px;bottom:9px;margin:0;color:rgba(255,255,255,.88);}
-/* Shelf cards are covers only: at this size the author/title/source lines
-   sit on top of the cover art and collide with it. */
-.onboard-shelf .bookcard .author,.onboard-shelf .bookcard .bt{display:none;}
-.onboard-shelf .casual .ct,.onboard-shelf .casual .cm{display:none;}
-.onboard-shelf .casual::after{display:none;}
-@keyframes onboard-shelf{to{transform:translateX(-50%);}}
-@media(prefers-reduced-motion:reduce){.onboard-shelf-track{animation:none;}}
-#onboarding[data-finish="true"] #onboard-navigation{margin-top:16px;}
-#onboarding[data-finish="true"] #onboard-note{min-height:50px;}
-@media(max-height:700px){#onboarding[data-finish="true"] #onboard-finish{min-height:124px;}#onboarding[data-finish="true"] .onboard-shelf .bookcard{width:124px;height:160px;padding:12px 11px 0;}#onboarding[data-finish="true"] .onboard-shelf .casual{width:98px;height:160px;}#onboarding[data-finish="true"] #onboard-prompt{margin-top:16px;}#onboarding[data-finish="true"] #onboard-note{min-height:40px;}}
-#onboard-welcome .breeze-wordmark{position:relative;display:block;width:min(292px,70vw);aspect-ratio:881/298;}
-#onboard-welcome svg{display:block;width:100%;height:100%;}
-#onboard-pen-path{stroke:url(#onboard-flow-light);}
-body.dark #onboard-pen-path{stroke:url(#onboard-flow-dark);}
-/* One open centerline has one advancing tip across every letter join. */
-@property --onboard-pen{syntax:"<number>";inherits:true;initial-value:0;}
-#onboarding[data-welcome="drawing"] #onboard-welcome svg{animation:onboard-write var(--welcome-write) linear forwards;}
-#onboarding[data-welcome="drawing"] #onboard-pen-path{stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--onboard-pen));}
-#onboarding[data-welcome="drawing"] #onboard-prompt,
-#onboarding[data-welcome="drawing"] #onboard-note,
-#onboarding[data-welcome="drawing"] #onboard-next{opacity:0;animation:onboard-welcome-copy var(--welcome-fade) cubic-bezier(.22,.61,.36,1) var(--welcome-copy-delay) forwards;}
-@keyframes onboard-write{from{--onboard-pen:0;}to{--onboard-pen:1;}}
-@keyframes onboard-welcome-copy{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-@media(prefers-reduced-motion:reduce){
-  #onboarding[data-welcome="drawing"] #onboard-pen-path{stroke-dashoffset:0;}
-  #onboarding[data-welcome="drawing"] #onboard-welcome svg{animation:none;}
-  #onboarding[data-welcome="drawing"] #onboard-prompt,
-  #onboarding[data-welcome="drawing"] #onboard-note,
-  #onboarding[data-welcome="drawing"] #onboard-next{animation:none;opacity:1;transform:none;}
+/* Three-card carousel dialog. Geometry, copy spacing and the card 3 fan are
+   ported from the reviewed standalone page (onboarding-carousel.html) so the
+   dialog shows exactly what was reviewed. Class names carry the onboard-
+   prefix so nothing here leaks into the app's own .card/.fan rules.
+   The carousel surface stays light in both themes: the standalone page is
+   light-only, and a light dialog surface keeps copy, hairlines and dots
+   readable without a second set of values. */
+#onboarding[hidden]{display:none!important;}
+#onboarding{position:fixed;inset:0;z-index:75;background:#F2F2F7;color:#293034;font-family:var(--ui);overflow:hidden;overscroll-behavior:contain;color-scheme:light;}
+#onboarding button{font-family:var(--ui);cursor:pointer;}
+#onboarding :focus{outline:none;}
+#onboarding #onboard-skip{position:absolute;z-index:10;top:calc(env(safe-area-inset-top, 0px) + 20px);right:24px;padding:14px 12px;border:0;background:none;font-size:13px;color:#6D6D72;opacity:.8;}
+.onboard-stage{height:100%;box-sizing:border-box;display:flex;overflow:auto;padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);-webkit-overflow-scrolling:touch;}
+.onboard-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+/* Card width: big, but never taller than the screen.
+   No peek: the card is narrower than the screen, so the faint gray
+   margins at the sides are what hints at the next card. */
+.onboard-wrap{
+  --cw:min(calc(100vw - 48px), calc(78vh * 9 / 16));
+  margin:auto;
+  width:var(--cw);
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
 }
-#onboarding[data-stage="0"] #onboard-coach{position:absolute;inset:0;min-height:100%;max-height:none;justify-content:center;padding:32px 28px calc(env(safe-area-inset-bottom) + 144px);}
-#onboarding[data-stage="0"] #onboard-prompt{font-size:34px;font-weight:650;line-height:1.25;letter-spacing:-1.2px;margin:56px 0 16px;}
-#onboarding[data-stage="0"] #onboard-note{font-size:15px;line-height:1.6;margin-bottom:24px;}
-#onboarding[data-stage="0"] #onboard-next{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 24px);width:calc(100% - 56px);}
-#onboard-carousel{width:100%;touch-action:pan-y;}
-.onboard-slide{margin:0;position:relative;width:100%;aspect-ratio:390/640;height:calc(100dvh - 366px);max-height:calc(100dvh - 366px);min-height:160px;}
-.onboard-slide video,.onboard-poster{width:100%;height:100%;object-fit:contain;display:block;border-radius:16px;}
-.onboard-poster{display:none;}
-.onboard-slide video.poster-only{display:none;}
-.onboard-slide video.poster-only + .onboard-poster{display:block;}
-/* Exact selected option 1: 5px dots, 8px gaps, 18px active mark; 96px for seven. */
-#onboard-pages{display:flex;align-items:center;justify-content:center;gap:8px;height:5px;flex:none;margin-top:auto;margin-bottom:25px;}
-#onboard-pages i{display:block;width:5px;height:5px;border-radius:20px;background:#d2d8d4;}
-#onboard-pages i[aria-current="true"]{width:18px;background:#657b73;}
-body.dark #onboard-pages i{background:#485048;}
-body.dark #onboard-pages i[aria-current="true"]{background:#bacbc2;}
-.onboard-slide[data-feature="word"],.onboard-slide[data-feature="details"],.onboard-slide[data-feature="sentence"],.onboard-slide[data-feature="easy"]{aspect-ratio:366/400;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--paper);border-radius:22px;border:1px solid var(--sentence-glass-line);height:calc(100dvh - 366px);}
-.onboard-slide[data-feature="word"] video,.onboard-slide[data-feature="details"] video,.onboard-slide[data-feature="sentence"] video,.onboard-slide[data-feature="easy"] video,.onboard-slide[data-feature="word"] img,.onboard-slide[data-feature="details"] img,.onboard-slide[data-feature="sentence"] img,.onboard-slide[data-feature="easy"] img{max-height:100%;height:auto;}
-@media(max-height:600px){#onboard-coach{padding-top:16px;}#onboard-prompt{font-size:18px;}#onboard-note{font-size:12px;margin-bottom:4px;}#onboard-step{margin-top:8px;}#onboard-welcome .breeze-wordmark{width:190px;}#onboarding[data-stage="0"] #onboard-prompt{font-size:26px;align-self:center;text-align:center;margin:8px 0;}#onboarding[data-stage="0"] #onboard-coach{padding-bottom:128px;}#onboarding[data-stage="0"] #onboard-note{align-self:center;margin:0;}}
-@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){#onboarding #onboard-next{background:var(--sentence-glass-solid);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;}}
-
-@media(max-width:360px){#onboard-coach{padding-inline:16px;}#onboarding[data-stage="0"] #onboard-coach{padding-inline:28px;}}
-
-#onboarding[data-stage="0"] #onboard-navigation{margin-top:0;}
-
-/* The study demonstration follows the existing passive media composition. */
-.onboard-slide[data-feature=study]{aspect-ratio:366/400;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--paper);border-radius:22px;border:1px solid var(--sentence-glass-line);height:calc(100dvh - 312px);}
-.onboard-slide[data-feature=study] video,.onboard-slide[data-feature=study] img{max-height:100%;height:auto;}
-@media(max-height:600px) and (min-width:600px){
-  #onboarding[data-feature=study] #onboard-coach{width:min(800px,100%);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto 1fr auto auto;column-gap:24px;padding:16px 24px calc(16px + env(safe-area-inset-bottom));}
-  #onboarding[data-feature=study] #onboard-carousel{grid-column:1;grid-row:1 / 6;}
-  #onboarding[data-feature=study] .onboard-slide{height:calc(100dvh - 32px - env(safe-area-inset-bottom));max-height:calc(100dvh - 32px - env(safe-area-inset-bottom));}
-  #onboarding[data-feature=study] #onboard-prompt{grid-column:2;grid-row:1;margin:0 0 8px;}
-  #onboarding[data-feature=study] #onboard-note{grid-column:2;grid-row:2;margin:0;}
-  #onboarding[data-feature=study] #onboard-pages{grid-column:2;grid-row:3;align-self:end;margin:12px 0;}
-  #onboarding[data-feature=study] #onboard-navigation{grid-column:2;grid-row:4;}
-  #onboarding[data-feature=study] #onboard-skip{grid-column:2;grid-row:5;}
+.onboard-wrap::-webkit-scrollbar{display:none;}
+.onboard-track{display:flex;gap:20px;align-items:center;}
+.onboard-card{
+  flex:0 0 var(--cw);
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  background:#fff;
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 8px 30px rgba(0, 0, 0, .08);
+}
+.onboard-card video{
+  display:block;width:100%;aspect-ratio:9 / 16;
+  object-fit:cover;background:#fff;
+  /* Hairline around the video area: card 1's video is mostly white
+     on a white card, so without this the video area has no edge. */
+  box-shadow:inset 0 0 0 1px rgba(0, 0, 0, .05);
+}
+.onboard-dots{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;}
+.onboard-dots i{width:8px;height:8px;border-radius:50%;background:#D1D1D6;transition:background .2s;}
+.onboard-dots i.on{background:#000;}
+.onboard-copy{text-align:center;padding:10px 16px 20px;}
+.onboard-copy .t1{font-size:17px;font-weight:600;line-height:1.4;}
+.onboard-copy .t2{font-size:14px;color:#6D6D72;line-height:1.5;margin-top:4px;}
+/* Card 3: book choice in card form. The covers are a real horizontally
+   scrolling strip, infinite by wrapping around, so swiping the covers
+   changes the book. Carousel depth: covers overlap (each one advances
+   only --step), and the script scales/stacks them by distance from the
+   centre, so the centre book is large and in front while two covers on
+   each side peek out from behind, each smaller and further back.
+   Snapping still uses the untransformed layout boxes. */
+.onboard-fan{
+  /* Covers are 2:3. Height also leaves room for meta, dots and the
+     three buttons, so short screens shrink the covers instead of
+     pushing the buttons off screen. The width factor keeps all five
+     covers inside a 390px-wide phone card. */
+  --cover-h:min(calc(var(--cw) * 0.84), max(80px, calc(100vh - 330px)));
+  --cover-w:calc(var(--cover-h) * 2 / 3);
+  --step:calc(var(--cover-w) * 0.3);
+  position:relative;
+  display:flex;margin-top:16px;
+  padding:10px calc((var(--cw) - var(--cover-w)) / 2) 18px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.onboard-fan::-webkit-scrollbar{display:none;}
+/* The .onboard-cover box is only the layout/snap slot and is never
+   transformed: Chrome snaps to transformed boxes, so moving it would
+   shift the snap points. The image inside is what gets moved/scaled
+   and tapped. */
+.onboard-fan .onboard-cover{
+  position:relative;
+  flex:0 0 var(--cover-w);
+  height:var(--cover-h);
+  margin-right:calc(var(--step) - var(--cover-w));
+  scroll-snap-align:center;
+  scroll-snap-stop:always;
+  pointer-events:none;
+}
+.onboard-fan .onboard-cover:last-child{margin-right:0;}
+.onboard-fan .onboard-cover img{
+  display:block;width:100%;height:100%;object-fit:cover;
+  border-radius:12px;cursor:pointer;pointer-events:auto;
+  /* Fades out inside the strip's 10px / 18px padding; a longer shadow
+     is cut off by the strip's scroll clip as a hard line. */
+  box-shadow:0 6px 16px rgba(0, 0, 0, .2);
+  transform-origin:50% 50%;
+  will-change:transform;
+}
+.onboard-bookmeta{text-align:center;padding:10px 16px 0;}
+.onboard-bookmeta b{display:block;font-size:16px;line-height:1.4;}
+.onboard-bookmeta span{display:block;font-size:13px;color:#6D6D72;margin-top:2px;}
+.onboard-choice{padding:16px 20px 20px;}
+.onboard-btn-read{
+  display:block;width:100%;padding:14px;border:0;border-radius:999px;
+  background:#293034;color:#fff;font-size:16px;font-weight:600;
+}
+.onboard-btn-read:disabled,.onboard-btn-file:disabled{opacity:.5;cursor:wait;}
+.onboard-btn-file{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;margin-top:10px;padding:14px;border:0;border-radius:999px;
+  background:#E9E9EA;color:#293034;font-size:15px;
+}
+.onboard-btn-file .tag{font-size:12px;color:#6D6D72;}
+.onboard-btn-browse{
+  display:block;width:100%;margin-top:12px;padding:14px 6px;border:0;
+  background:none;color:#8A8A8E;font-size:14px;
+}
+/* Import/read failure feedback, inside the dialog: the app-wide toast is
+   routed to the home notice behind this overlay, so the user would never
+   see it here. Empty takes no space. */
+.onboard-choice-note{margin:10px 4px 0;text-align:center;font-size:13px;line-height:1.5;color:#6D6D72;word-break:keep-all;}
+.onboard-choice-note:empty{display:none;}
+/* Tablet/desktop: the 4:3 renders. The card goes wider (same height
+   rule), the video switches aspect, and card 3's covers are capped
+   by viewport height so the book card never overflows short screens.
+   NOTE: this block must stay after the base .onboard-fan
+   .onboard-cover rule, or the base rule wins the cascade and the cap
+   silently stops working. */
+@media (min-width: 768px){
+  .onboard-wrap{--cw:min(calc(100vw - 48px), calc(78vh * 4 / 3));}
+  .onboard-card video{aspect-ratio:4 / 3;}
+  .onboard-fan{
+    --cover-h:min(calc(var(--cw) * 0.87), 58vh, max(80px, calc(100vh - 330px)));
+  }
+}
+@media (prefers-reduced-motion: reduce){
+  .onboard-wrap,.onboard-fan{scroll-behavior:auto;}
 }

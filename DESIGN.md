@@ -352,3 +352,17 @@ chevron. Its24px SVG frame,44px shell, paired materials and all other icon optic
 remain unchanged. All Words adopts the existing shared vocabulary row scope;
 there is no new word-list design. Study and PDF gesture presentation evidence
 is in `docs/reviews/breeze-post270-gestures/`.
+
+## Three-card onboarding carousel (2026-10-27)
+
+첫 실행과 설정 다시보기는 이전/다음 단추 없는 3장 카드 캐러셀 다이얼로그를
+띄웁니다. 스와이프만으로 넘기고 카드마다 dots가 따라갑니다. 1장은 단어 탭,
+2장은 단어장 학습, 3장은 책 고르기(DOM 표지 팬)입니다. 영상은 아이폰 9:16,
+태블릿/데스크탑 4:3으로 768px에서 바뀌고, 보이는 카드의 영상만 재생합니다.
+3장은 정지 상태에서 5장(가운데 1장 + 양옆 2장씩, 크기 1 / 0.82 / 0.66)이
+겹쳐 보이고, 옆 표지 조각을 탭하면 가운데로 오며 제목/저자/버튼이 따라갑니다.
+버튼은 바로 읽기·내 파일 넣기·둘러볼게요, 오른쪽 위에는 작은 회색 건너뛰기가
+있습니다. 안내 문구는 존댓말, 포커스 아웃라인은 없고, 다이얼로그 표면은
+라이트/다크 모두 `#F2F2F7` 바탕에 흰 카드로 유지합니다(스탠드얼론 페이지는
+light 전용이라, 다크에서까지 같은 표면을 씁니다). 예전 웰컴 펜 애니메이션과
+7장 패시브 가이드는 폐기했습니다. See docs/decisions/006-reader-onboarding.md.

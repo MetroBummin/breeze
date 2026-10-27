@@ -25,8 +25,25 @@ try{for(const [device,width,height] of [['phone',390,844],['ipad',820,1180],['sh
  }else if(scene==='study'){
   await page.evaluate(()=>{show('vocab');openStudySetsDirectory();});await page.locator('#study-sets-all').click();await capture('all-detail',['#study-sets-back'],3.6);assert.equal(await page.locator('#study-all-words-list .rowdel,[contenteditable]').count(),0);assert.equal(await page.locator('#study-all-words-list .study-sets-row-action').first().evaluate(node=>getComputedStyle(node).opacity),'0');await page.locator('#study-all-words-start').click();await page.waitForFunction(()=>activeAppView()==='study'&&!simpleStudyBusy);await capture('all-front',['#review-close'],3.6);assert.equal(await page.locator('#review-sentence').isVisible(),false);assert.equal(await page.locator('#review-sentence').textContent(),'');assert.equal(await page.locator('#review-meaning').isVisible(),false);
  }else{
-  await page.evaluate(()=>startOnboarding(true));await page.evaluate(()=>goOnboardingPage(onboardingSession.pages.length));await page.locator('.onboard-slide:not([hidden]) img').evaluate(i=>i.decode());await page.screenshot({path:`${out}/${device}-${dark?'dark':'light'}-onboarding.png`});assert.equal(await page.locator('#onboard-next').isEnabled(),true);await page.locator('#onboard-next').click();const shelf=await page.locator('#onboard-finish').evaluate(n=>({hidden:n.hidden,rows:n.querySelectorAll('.onboard-shelf').length,reverse:n.querySelectorAll('.onboard-shelf.reverse').length,covers:n.querySelectorAll('img.cover').length}));assert.equal(shelf.hidden,false);assert.equal(shelf.rows,2);assert.equal(shelf.reverse,1);assert.ok(shelf.covers>0);rows.push({device,dark,stage:'onboarding-finish',shelf,controls:'existing text controls; brand untouched'});
+  await page.evaluate(()=>startOnboarding(true));
+  await page.evaluate(()=>{const w=document.getElementById('onboard-wrap');const c=w.querySelector('.onboard-card');w.scrollTo({left:(c.offsetWidth+20)*2,behavior:'instant'});});
+  await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
+  await page.locator('#onboard-fan img').first().evaluate(i=>i.decode());
+  await page.screenshot({path:`${out}/${device}-${dark?'dark':'light'}-onboarding.png`});
+  const fan=await page.evaluate(()=>{
+    const card=document.querySelector('.onboard-card[data-card="2"]'),cr=card.getBoundingClientRect();
+    const visible=[...document.querySelectorAll('#onboard-fan img')].filter(img=>{
+     const r=img.getBoundingClientRect(),s=getComputedStyle(img.parentElement);
+     return s.visibility!=='hidden'&&Number(s.opacity)>0&&r.width>0&&r.left>=cr.left-1&&r.right<=cr.right+1;
+    }).sort((a,b)=>a.getBoundingClientRect().left-b.getBoundingClientRect().left);
+    return {count:visible.length,widths:visible.map(i=>Math.round(i.getBoundingClientRect().width)),title:document.getElementById('onboard-book-title').textContent,read:document.getElementById('onboard-read').disabled,file:document.getElementById('onboard-file').disabled,skip:document.getElementById('onboard-skip').textContent};
+  });
+  assert.equal(fan.count,5,'five covers at rest');
+  assert.ok(fan.widths[2]>fan.widths[1]&&fan.widths[1]>fan.widths[0]&&fan.widths[2]>fan.widths[3]&&fan.widths[3]>fan.widths[4],'fan grades outward');
+  assert.equal(fan.title,"Alice's Adventures in Wonderland");
+  assert.equal(fan.read,false);assert.equal(fan.file,false);assert.equal(fan.skip,'건너뛰기');
+  rows.push({device,dark,stage:'onboarding-fan',fan,controls:'existing text controls; brand untouched'});
  }
  assert.deepEqual(errors,[]);await context.close();
- }writeFileSync(`${out}/metrics.json`,JSON.stringify({engine:engine.name(),browser:browserVersion,native:false,rows},null,2)+'\n');console.log('Control optics: 3.6px chevrons, 2.6px toolbar/page/ink, selected fill, All Words front and passive guide on phone/iPad/short in both themes passed');
+ }writeFileSync(`${out}/metrics.json`,JSON.stringify({engine:engine.name(),browser:browserVersion,native:false,rows},null,2)+'\n');console.log('Control optics: 3.6px chevrons, 2.6px toolbar/page/ink, selected fill, All Words front and carousel on phone/iPad/short in both themes passed');
 }finally{await server.close();}

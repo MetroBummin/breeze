@@ -1,176 +1,100 @@
-# Passive onboarding carousel
+# Three-card onboarding carousel
 
 ## Decision
 
-The approved PR124 welcome is selectively preserved: flow wordmark proportions and palette,
-‘브리즈에 오신 걸 환영해요’, ‘막힘없이 읽는 새로운 방법.’ and ‘시작하기’.
-Fresh sessions always show it first; replay also starts there. The first welcome
-draws one open hand-authored centerline following the Breeze flow lettering.
-The visible stroke replaces the broad image mask, which exposed disconnected
-future ink near letter crossings. The same centerline renders the static welcome.
-Its connected cursive loops and joins replace six independent letter starts.
-The first glyph retains the brand's single-bowl looped b form, rather than
-redesigning it as a textbook two-bowl capital B. Its entry climbs the right
-side of the ascender loop, turns left at the top and descends the stem, then
-rises through the bowl and exits over the existing lower curve into r.
-This reverses the rejected ascender direction and removes its extra upper-bowl
-circuit. The short lower-curve retrace is intentional connected handwriting.
-The 2026-10-09 user-requested b-to-r repair keeps that entire b retrace and the
-original r entry/later letters. Only the two quadratic exit segments become one
-cubic segment with the same endpoints. Its first handle follows the incoming
-b tangent; its last handle preserves the former r-entry tangent. This removes
-the approximately 36-degree exit turn without redrawing any letter or changing
-the original cursive brand asset. The original stored wordmark and actual app
-middle/final frames are shown together in ../qa/welcome-join-20261009/README.md.
-Writing, hold, caption timing/easing and all welcome session behavior stay unchanged.
-Formation references: [Dynamilis](https://dynamilis.com/handwriting/cursive/b)
-and [Scribble](https://scribble.app/cursive/b); school capital B differs and
-Scribble explicitly lifts before the next letter. This brand adaptation keeps
-the required connected hand instead of claiming one universal B form.
-A single inherited pen timeline traverses its geometric length
-with one linear envelope, without resetting speed per letter.
-The pen writes for 3.8s, holds the complete word for 750ms, then
-shows the existing caption, note and Start button together over 900ms (opacity
-and 8px translation). Total: 4.65s. This replaces the rejected 2s preview.
-No Apple glyph, logo, font, path or shader is included in the app.
+First-run and Settings replay show one dialog with three swipe-only cards.
+There are no previous/next buttons: the cards move on a horizontal
+scroll-snap track, with dots under each card. The dialog replaces the
+former passive guide (welcome pen animation plus seven recorded scenes),
+which the owner discarded on 2026-10-27 in favour of the minimum-click
+carousel reviewed as the standalone `onboarding-carousel.html` page. The
+former guide's record stays in git history and `docs/qa/`; this record
+describes only the carousel that ships.
 
-The welcome viewBox carries 20 units of padding on every side. The authored
-centerline itself reaches the old viewBox edges and its 26-unit stroke was
-clipped by up to ~3 units at the first letter's extremes; the letterforms and
-centerline are unchanged.
+Card 1 plays the word-tap clip with “단어를 탭해보세요 / 단어에 딱 맞는
+뜻이 나옵니다”. Card 2 plays the wordbook clip with “홈에서 북마크를
+탭해보세요 / 단어장에서 학습이 가능합니다”. Card 3 is a DOM cover fan
+for choosing a book. Card 2's wide clip scrolls at one constant speed
+from start to end (linear, about 18.5px per frame): the earlier
+decelerating glide read as stutter on real displays, and the owner asked
+for the same constant feel as the flashcard swipe. The curve must not be
+changed back without re-checking per-frame travel on the encoded video.
+Each video carries a poster frame extracted from the video itself (tall
+and wide renders, swapped at the same 768px breakpoint), so
+reduced-motion users see a still instead of an empty area without any
+video download.
 
-The 750ms hold follows the installed Apple macOS HelloMetrics writeInHold
-runtime value. A 2026-10-21 frame analysis of recorded macOS setup-assistant
-hello cycles has since measured the Apple pen directly: normalized progress
-stays within ±0.04 of linear and writing time scales with path length
-(correlation 0.95). The timeline now follows that measurement — linear easing
-at a comparable pen speed (Apple writes 5–7 letter words in 2.5–2.9s).
-Owner review of the first cut found the measured 3.0s write too fast in
-context, so the write is 3.8s; the envelope stays linear.
+Videos switch by viewport, not by theme: phones play the 9:16 renders,
+tablets and desktops the 4:3 renders, through `<source media>` at 768px.
+Only the card in view plays; the other video stays paused. There is no
+autoplay attribute: with `preload="none"` nothing is fetched until a card
+is shown, and reduced motion fetches nothing at all — videos stay paused
+and the copy and dots still carry the meaning. The clips are silent
+H264 MP4s of the real production UI, the same no-reuse, no-upscale,
+60fps capture rules as the former guide's media.
 
-A tap anywhere completes the reveal immediately and consumes that tap without
-navigating. The independent `breeze.onboarding.welcome-seen` marker is set on
-first entry (including reduced motion), so cancellation/reload and Settings
-replay show the static welcome. Reduced motion, backgrounding, leaving welcome
-and cancellation finish/cancel the same session timer; replay never waits.
-Existing guide completion/progress keys and the rest of the carousel are unchanged. Interrupted first
-runs resume their saved explanation page. The original completion key
-`breeze.onboarding.v1` remains authoritative. Readers with existing local books,
-vocabulary, tombstones or positions are not interrupted.
+Card 3 shows five covers at rest: one main cover in the centre and two
+on each side, sized 1 / 0.82 / 0.66, each further pair behind the one
+before it. There are no arrows. Tapping a visible sliver of a side cover
+centres it; the strip wraps infinitely through five copies of the same
+seven books, and the title, author and read button follow the centred
+book. The centred book starts on Alice. The seven books are the bundled
+long reads (Gatsby, Alice, the four Holmes stories and Hound), opened
+through the existing long-read import, so a saved copy is reused and a
+new one opens in the Reader. The fan's layout boxes are never
+transformed — only the images inside move and scale — because Chrome
+snaps to transformed boxes and the snap points would drift. The
+media-query block that widens the card and caps cover height on
+tablet/desktop must stay after the base fan/cover rules or the cap
+silently stops working.
 
-The former action-gated temporary Reader is replaced by a passive overlay.
-Seven authored scenes describe word tap, chevron, sentence hold, easy explanation,
-right-side Aa settings, PDF annotation and finally Home bookmark → Breeze Memory.
-PDF is conditional on the annotation owner's capability. Until its shared public
-capability is available, the verified native iPad flag is the conservative fallback;
-web/phones do not receive a pen lesson based on viewport or touch guesses.
+Each card carries its own dots; the dialog itself has no page
+navigation. The three card 3 buttons are “바로 읽기” (the centred book),
+“내 파일 넣기” (the existing PDF/EPUB/TXT importer, same handoff as
+before: a successful durable import ends the guide, cancellation and
+failure leave the card available), and “둘러볼게요” (home). Import and
+book-open failures report on a status line inside card 3, because the
+app-wide toast is routed to the home notice behind the overlay and
+would never be seen here. Skip stays
+small and grey at the top right and ends the guide. Guidance copy stays
+polite (존댓말), there is no focus outline, and the dialog surface is
+the home background `#F2F2F7` in light mode.
 
-Each scene uses a silent H264 Baseline/AVC MP4 of the real production UI, plus a
-high-resolution JPEG poster. The approved 2026-10-08 refresh renders one new
-production frame at each 1/30s timeline sample, without old-video input, pixel
-upscaling or duplicated motion frames. The 2026-10-21 refresh supersedes the
-sampling rate: one new production frame at each 1/60s timeline sample, encoded
-at 60fps under the same no-reuse, no-upscale and no-duplicated-frame rules. Phone UI clips are captured at device
-scale2; the existing 820×1180 PDF viewport is encoded directly at its native
-resolution instead of the former 410×590 downsample. Encoding preserves each
-source frame once at60fps with adequate bitrate and fast-start metadata.
-Word/sentence clips contain a single authored sentence and the real
-result surfaces, cropped at capture time. Settings/PDF/Home retain their actual
-controls to teach their locations. No user, student or private document is used.
-Capture response fixtures supply authored Korean meanings and explanations;
-no AI request, auth change, quota charge or durable user-data write is performed
-by the guide. The film is not a simulated interactive Reader.
+The carousel surface stays light in both themes. The standalone page is
+light-only, and forcing the dialog light keeps copy, the video hairline
+and the dots readable without a second set of values; the rest of the
+app is unaffected because the dialog is a full-screen overlay.
 
-Selected layout 1 retains media above caption and compact centered progress.
-Explanation pages now expose two concise 52px Previous/Next buttons. Seven progress marks occupy exactly 96px (5px dot,
-18px active mark, 8px gaps), matching the selected original. Dots are indicators,
-not seven 44px buttons. Previous/Next, horizontal swipe over media or captions, and keyboard arrows own
-navigation. Swipe returns from the first explanation to welcome and clamps at
-both ends. The final non-video page offers “책 넣기” and “건너뛰기”. Every page
-except the welcome also offers Skip in a visually minimal form (13px, muted);
-the welcome keeps only the wordmark and its start button (owner review).
-On the study page Skip advances to the final import page, and on every other
-page it ends the guide like the final page's Skip. Above the final page's
-prompt, a decorative shelf reuses the landing carousel mechanism — two rows
-of book/article covers on 40s linear loops, the lower row reversed and
-phase-shifted, with edge fade and no pointer input. The rows share no title:
-nine covers (the Starship article, Backroom, Alice, Gatsby and five Holmes)
-are split five/four so the same cover never appears in both rows at once.
-On short viewports (≤700px) the cards step down a size so Skip stays on
-screen. In the shelf the cards show covers only — the
-author/title/source lines are hidden there because at shelf size they sit on
-top of the cover art and collide with it. Escape/browser Back cancels
-without recording completion; returning from Settings replays from welcome.
-
-The overlay never opens a book or changes its appearance, scroll, words, sync,
-cache or history. Existing Reader and dialog controls become inert during the
-guide and restore their exact previous inert state on exit. External navigation
-cancels the guide rather than covering the newly opened view. Startup does not
-render/feed-fetch hidden Home beneath the welcome. Explicit Skip or a successful durable book import reveals the prior
-view through its existing renderer and persists the original ‘done’ marker.
-The final file picker accepts PDF/EPUB/TXT and calls the existing `importFile`
-owner with a session AbortSignal. Picker cancellation and import failure leave
-the final page available for retry or Previous. Back, Skip, cancellation, replay
-and external navigation abort pending preparation and invalidate its completion
-callback. The importer owns durable commits; the guide does not roll back a
-book already committed. An interrupted fresh final page resumes on reload.
-Settings replay always starts from welcome and does not replace existing data.
-
-Only the visible video plays. While a scene plays, the next scene's video also
-receives a source and loads (primed), so a forward turn starts without the
-load hitch; navigation pauses and unloads every video beyond the active and
-next scenes, and priming stops in poster-only states (reduced motion, paused,
-hidden). Session cancellation invalidates outstanding play promises. Nothing
-is loaded during welcome. Background/pagehide pauses playback, pageshow resumes.
-Reduced motion shows posters without downloading video; autoplay/codec failures
-fall back to the poster. Media tap or Space/Enter pauses/replays without adding
-a visible playback bar. Image/video assets are loaded only for the current theme
-and current explanation. Native packaging contains both themes.
+The completion key `breeze.onboarding.v1` remains authoritative: readers
+who finished the former guide never see the carousel, and readers with
+existing local books, vocabulary, tombstones or positions are not
+interrupted. There is no per-page resume: an interrupted run reopens on
+the first card, and a stale progress marker from the former guide is
+removed on open. Settings replay always starts on the first card and
+does not replace existing data. Escape and browser Back cancel without
+recording completion; explicit Skip, a book choice, a successful import
+or Browse records completion. External navigation ends the guide. The
+guide never opens a book or changes appearance, scroll, words, sync,
+cache or history while it is open: the views behind it are inert and
+restore their exact previous state on exit.
 
 ## Verification
 
-`npm run test:onboarding` exercises web/native-shell emulation, six/seven-page
-capability selection, real Next taps, pointer swipe/cancel, keyboard previous,
-rapid navigation, first-run cancellation/reload/resume, completion persistence,
-replay, visibility interruption, autoplay failure, reduced motion, decoder source
-ownership and an existing Reader's data/position/appearance/history isolation.
-It checks phone, narrow, tablet, desktop and short/landscape in both themes and
-pins the approved progress geometry. The welcome preserves PR124's layout, copy and materials; its flow lettering
-uses the connected centerline candidate to avoid wide-mask leakage.
-Actual intermediate pen progress, delayed caption and completed-word hold are
-checked along with tap completion, close/restart/reload and live reduced motion.
+`npm run test:onboarding` exercises the carousel dialog: three cards
+and per-card dots, exact card copy, video source switching and
+play-only-the-visible-card, constant-speed card 2 travel is pinned by
+the reviewed video file itself, dots following scroll and arrow keys,
+the five-cover rest state, tap-to-centre with title/author/button
+following, read/file/browse/skip/Escape paths, import
+cancellation/failure/interruption, completion persistence and replay,
+existing Reader isolation, reduced motion (paused, no media fetched),
+visibility interruption, and the phone/tablet/desktop/short layouts in
+both themes with the light dialog surface. The standalone reference
+page stays in the repo at `onboarding-carousel.html` so the reviewed
+feel can be re-checked without the app shell.
 
-Production Reader/gesture/auth/native-launch boundaries remain pinned; full
-`npm test`, www packaging and exact-remote-SHA CI are required for this draft.
-Browser emulation and codec metadata do not prove physical iOS/Android playback
-or pen hardware acceptance. No merge, deployment or native upload is authorized.
-
-## Independent Settings authentication
-
-Settings social login is documented in [016](016-social-auth.md). Its request/session owner remains independent of the passive guide. The integration boundary verifies both approved scopes.
-
-## Welcome timeline ownership correction
-
-The welcome's CSS animations own writing3800ms, hold750ms and caption fade900ms.
-The former JS wall timer could remove those animations before a delayed WebKit
-animation timeline reached pen===1. Complete on the actual next-caption
-`onboard-welcome-copy` animationend instead, guarded by the current session and
-welcome state. Existing abort/skip/hidden/reduced-motion paths still finish
-explicitly. CSS durations, continuous stroke, exact pen===1, hold and30s test
-limits remain unchanged. Chromium passed the strict full suite; exact-head
-WebKit CI is required, not substituted by local Chromium evidence.
-
-
-## Study media follow-up after 269
-
-The appended study page now uses the same passive video/poster path as existing
-features, superseding the 269 required interactive practice. Next is immediately
-available; its Skip reaches the existing final import page. Settings replay and
-first-run interruption/resume retain the same owner and progress key. Examples
-in the media are isolated authored data captured from the real production card
-UI, with no AI/network lookup or changes to live vocabulary/study data. Muted
-inline loop playback, tap pause, reduced-motion poster and playback-error poster
-are shared with prior slides. No physical iOS playback claim follows from browser
-verification. The 2026-10-21 refresh re-renders the study media with the same
-stepped 1/60s method as the other scenes (780×1280 at deviceScaleFactor 2,
-60fps), replacing the earlier real-time 30fps recording.
+Production Reader/gesture/auth/native-launch boundaries remain pinned;
+full `npm test`, www packaging and exact-remote-SHA CI are required for
+this draft. Browser emulation and codec metadata do not prove physical
+iOS/Android playback. No merge, deployment or native upload is
+authorized.
