@@ -152,7 +152,7 @@ const expected={
     "server/classics/alice-in-wonderland/cover.webp": "6774d3409c021f94df94d1e1b0200deb60f95c4b67f5e301d32ef624a157512b",
     "server/classics/backroom-homeward-bound/book.txt": "f59669722ea53355943625768ec9e2b7aa0c01b94b826db8022471cb72c55b65",
     "server/classics/backroom-homeward-bound/cover.png": "dcd4c293e3c0714ad18ad66cb185275b183629b5c9120c8a18f4330f36cfad65",
-    "server/classics/catalog.json": "48082c67dba54c521b7383b291145381243d921ce49b952d8b0efa407f065c4b",
+    "server/classics/catalog.json": "da1bfb42c5c4f71a94a8a58c181a458ad18f568bf1d9e9ee2278d56b6921ad88",
     "server/classics/frankenstein/book.txt": "22cd6d8a68e8b721f9c670d505988d03e33d48458f70ec74221909695b294922",
     "server/classics/frankenstein/cover.webp": "ff7378424fcefe9a45e6272541fd7c2c11efd593569eb36d644d99502cbfbe15",
     "server/classics/great-expectations/book.txt": "0e94ef736dd1fd345ae9a919b404221089d25393c93487a638705f822aa71bad",
