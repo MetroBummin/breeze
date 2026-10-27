@@ -28,6 +28,7 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
     'pride-and-prejudice','alice-in-wonderland',
     'sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear',
     'the-great-gatsby','backroom-homeward-bound',
+    'frankenstein','great-expectations','little-women',
   ]);
   assert.equal(entry.id,'pride-and-prejudice');
   assert.equal(entry.hook,'시골 무도회. 부유한 총각이 들어섭니다. 엘리자베스는 첫눈에 그를 밀어냅니다. 오만해서일까요? 소문은 그보다 빨리 집안을 흔듭니다. 다아시는 정말 그런 남자일까요?');
@@ -420,6 +421,7 @@ test('Backrooms in the repo catalog matches the bundled text and the upload plan
     'pride-and-prejudice','alice-in-wonderland',
     'sherlock-holmes-a-study-in-scarlet','sherlock-holmes-the-sign-of-the-four','sherlock-holmes-the-valley-of-fear',
     'the-great-gatsby','backroom-homeward-bound',
+    'frankenstein','great-expectations','little-women',
   ];
   const expectedPaths=['catalog.json'];
   for(const id of shelfOrder){
@@ -493,7 +495,10 @@ test('the shelf groups Holmes by publication year',async()=>{
   await context.refreshRemoteClassics();
   assert.deepEqual(Array.from(context.orderClassicReads(context.pendingLongReads().concat(context.classicCatalogOffers())), read=>read.title),[
     'Pride and Prejudice',
+    'Frankenstein',
+    'Great Expectations',
     "Alice's Adventures in Wonderland",
+    'Little Women',
     'A Study in Scarlet',
     'The Sign of the Four',
     'A Scandal in Bohemia',

@@ -1,0 +1,644 @@
+[
+  {
+    "paragraph": 57,
+    "before": "chanted an awful incantation",
+    "after": "chanted a dreadful incantation",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 125,
+    "before": "the queer party",
+    "after": "the strange party",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 164,
+    "before": "an awful doom to Don Pedro",
+    "after": "a dreadful doom to Don Pedro",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 175,
+    "before": "He’s a capital fellow",
+    "after": "He’s a fine fellow",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 205,
+    "before": "What a queer smell!",
+    "after": "What a strange smell!",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 215,
+    "before": "Have you you both got nice pocket handkerchiefs?",
+    "after": "Have you both got nice pocket handkerchiefs?",
+    "reason": "Fix a doubled word in the source text."
+  },
+  {
+    "paragraph": 220,
+    "before": "any thing",
+    "after": "anything",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 221,
+    "before": "Isn’t that music gay?",
+    "after": "Isn’t that music lively?",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 297,
+    "before": "I had a capital time",
+    "after": "I had a great time",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 336,
+    "before": "gay friends, accomplishments",
+    "after": "lively friends, accomplishments",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 340,
+    "before": "queer pictures in his Latin books",
+    "after": "odd pictures in his Latin books",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 347,
+    "before": "queer specimens of art",
+    "after": "odd specimens of art",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 352,
+    "before": "I had a queer time with Aunt today",
+    "after": "I had a strange time with Aunt today",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 388,
+    "before": "her queer performances",
+    "after": "her strange performances",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 442,
+    "before": "queer tables, and bronzes",
+    "after": "odd tables, and bronzes",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 519,
+    "before": "such gay little parties",
+    "after": "such lively little parties",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 544,
+    "before": "I feel so queer!",
+    "after": "I feel so strange!",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 580,
+    "before": "fixed upon his awful countenance",
+    "after": "fixed upon his stern countenance",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 597,
+    "before": "too proud to cry or beseech",
+    "after": "too proud to cry or beg",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 748,
+    "before": "she did her best to seem gay",
+    "after": "she did her best to seem cheerful",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 757,
+    "before": "the queer look which the sisters exchanged",
+    "after": "the strange look which the sisters exchanged",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 783,
+    "before": "The ‘queer feeling’ did not pass away",
+    "after": "The ‘strange feeling’ did not pass away",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 902,
+    "before": "the useful, gay ‘P. C.’",
+    "after": "the useful, cheerful ‘P. C.’",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 908,
+    "before": "silence fell on the gay throng",
+    "after": "silence fell on the cheerful throng",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 913,
+    "before": "with a gay smile of triumph",
+    "after": "with a bright smile of triumph",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 979,
+    "before": "get up an awful frown",
+    "after": "get up a stern frown",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 989,
+    "before": "nearly as many queer things passed through it",
+    "after": "nearly as many strange things passed through it",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 989,
+    "before": "a capital little institution",
+    "after": "an excellent little institution",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 992,
+    "before": "about as gay as a churchyard",
+    "after": "about as cheerful as a churchyard",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1013,
+    "before": "a very queer thing for her to do",
+    "after": "a very strange thing for her to do",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1112,
+    "before": "How queer that he should come",
+    "after": "How strange that he should come",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1115,
+    "before": "it’s capital, so shady, light, and big",
+    "after": "it’s wonderful, so shady, light, and big",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1148,
+    "before": "the glitter of awful eyes",
+    "after": "the glitter of dreadful eyes",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1218,
+    "before": "a queer smile about Mr. Brooke’s mouth",
+    "after": "a strange smile about Mr. Brooke’s mouth",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1249,
+    "before": "for ever",
+    "after": "forever",
+    "reason": "Use current closed spelling."
+  },
+  {
+    "paragraph": 1445,
+    "before": "It was capital, but see what a guy",
+    "after": "It was wonderful, but see what a guy",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1472,
+    "before": "isn’t that queer?",
+    "after": "isn’t that strange?",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1492,
+    "before": "it will be gay inside",
+    "after": "it will be cheerful inside",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1509,
+    "before": "the next room whither he had withdrawn",
+    "after": "the next room to which he had withdrawn",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1524,
+    "before": "with a very queer expression of countenance",
+    "after": "with a very strange expression of countenance",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1541,
+    "before": "I felt queer when I saw the dear old hair",
+    "after": "I felt strange when I saw the dear old hair",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1638,
+    "before": "Pray make Brooke useful",
+    "after": "Please make Brooke useful",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 1658,
+    "before": ". . .",
+    "after": "...",
+    "reason": "Normalize spaced-dot ellipses to the current three-dot form."
+  },
+  {
+    "paragraph": 1669,
+    "before": "queer feelings like mine",
+    "after": "strange feelings like mine",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1680,
+    "before": "we’ll have capital times",
+    "after": "we’ll have great times",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1779,
+    "before": "“Hark!” cried Jo",
+    "after": "“Listen!” cried Jo",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 1784,
+    "before": "had capital times",
+    "after": "had great times",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1786,
+    "before": "full of queer drawers",
+    "after": "full of odd drawers",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1786,
+    "before": "the queer lockets, with portraits",
+    "after": "the odd lockets, with portraits",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1804,
+    "before": "in her gay suit",
+    "after": "in her bright suit",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1843,
+    "before": "So brilliant and gay without",
+    "after": "So brilliant and cheerful without",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1844,
+    "before": "like a capital little woman",
+    "after": "like a fine little woman",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 1964,
+    "before": "It’s gay there",
+    "after": "It’s lively there",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 1968,
+    "before": "have a capital time",
+    "after": "have a great time",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2040,
+    "before": "in a queer, breathless voice",
+    "after": "in a strange, breathless voice",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2082,
+    "before": "which was queer, since Father was safe",
+    "after": "which was strange, since Father was safe",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2088,
+    "before": "with a queer little smile",
+    "after": "with a strange little smile",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2103,
+    "before": "Pray sit down, I’ll call her",
+    "after": "Please sit down, I’ll call her",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 2113,
+    "before": ". . .",
+    "after": "...",
+    "reason": "Normalize spaced-dot ellipses to the current three-dot form."
+  },
+  {
+    "paragraph": 2170,
+    "before": "a corner of the parlor, whither all had adjourned",
+    "after": "a corner of the parlor, to which all had adjourned",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 2176,
+    "before": "We’ll have capital times after she is gone",
+    "after": "We’ll have great times after she is gone",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2185,
+    "before": "four gay girls in the house",
+    "after": "four lively girls in the house",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2432,
+    "before": "with a queer look on his face",
+    "after": "with a strange look on his face",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2434,
+    "before": "with awful visions of scalded hands",
+    "after": "with dreadful visions of scalded hands",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2466,
+    "before": "she was so gay and gracious",
+    "after": "she was so cheerful and gracious",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2472,
+    "before": "at the queer things women wanted",
+    "after": "at the strange things women wanted",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2476,
+    "before": "that awful fifty dollars!",
+    "after": "that dreadful fifty dollars!",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2479,
+    "before": ". . .",
+    "after": "...",
+    "reason": "Normalize spaced-dot ellipses to the current three-dot form."
+  },
+  {
+    "paragraph": 2542,
+    "before": "At this awful speech Amy contained herself",
+    "after": "At this dreadful speech Amy contained herself",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2547,
+    "before": "had a capital time",
+    "after": "had a great time",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2568,
+    "before": "Capital boys, aren’t they?",
+    "after": "Fine boys, aren’t they?",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2645,
+    "before": "Don’t do anything rude, pray Jo",
+    "after": "Don’t do anything rude, please, Jo",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 2723,
+    "before": "dandies in queer English hats",
+    "after": "dandies in odd English hats",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2733,
+    "before": "in the gay cafes",
+    "after": "in the lively cafes",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2744,
+    "before": "The baths at Nassau were very gay",
+    "after": "The baths at Nassau were very lively",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2799,
+    "before": "Jo looked a little queer likewise",
+    "after": "Jo looked a little strange likewise",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2910,
+    "before": "Pray forward Amy’s as soon as you can",
+    "after": "Please forward Amy’s as soon as you can",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 2920,
+    "before": "his queer darns",
+    "after": "his odd darns",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2930,
+    "before": "Beth’s new ‘ink bib’ was capital",
+    "after": "Beth’s new ‘ink bib’ was wonderful",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 2935,
+    "before": "had a gay time New Year’s Eve",
+    "after": "had a merry time New Year’s Eve",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2985,
+    "before": "Jo was in a gay mood that night",
+    "after": "Jo was in a cheerful mood that night",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 2985,
+    "before": ". . .",
+    "after": "...",
+    "reason": "Normalize spaced-dot ellipses to the current three-dot form."
+  },
+  {
+    "paragraph": 3040,
+    "before": "the girls are so queer you never know",
+    "after": "the girls are so strange you never know",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3056,
+    "before": "Pray, don’t fly into a passion",
+    "after": "Please, don’t fly into a passion",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 3150,
+    "before": "the spectacle is as gay and brilliant as a carnival",
+    "after": "the spectacle is as bright and brilliant as a carnival",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3150,
+    "before": "gay nets to keep their voluminous flounces",
+    "after": "bright nets to keep their voluminous flounces",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3171,
+    "before": "trying meantime to seem quite easy and gay",
+    "after": "trying meantime to seem quite easy and cheerful",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3191,
+    "before": "she looked unusually gay and graceful",
+    "after": "she looked unusually cheerful and graceful",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3234,
+    "before": "plenty of gay gossip",
+    "after": "plenty of lively gossip",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3261,
+    "before": "She is a capital nurse",
+    "after": "She is an excellent nurse",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 3272,
+    "before": "how gay we are tonight",
+    "after": "how cheerful we are tonight",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3305,
+    "before": "the bottom of the bed, whither he had wriggled",
+    "after": "the bottom of the bed, to which he had wriggled",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3323,
+    "before": "during the gay season",
+    "after": "during the lively season",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3331,
+    "before": "whence the solemn chanting of the monks came down",
+    "after": "from which the solemn chanting of the monks came down",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3332,
+    "before": "whence one looked down on the sunny Mediterranean",
+    "after": "from which one looked down on the sunny Mediterranean",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3412,
+    "before": "Pray do, it’s quite interesting",
+    "after": "Please do, it’s quite interesting",
+    "reason": "Modernize a polite imperative."
+  },
+  {
+    "paragraph": 3531,
+    "before": "roamed about the gay city",
+    "after": "roamed about the lively city",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3535,
+    "before": "a queer mixture of disappointment and relief",
+    "after": "a strange mixture of disappointment and relief",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 3738,
+    "before": "would joyfully depart thither whenever he liked",
+    "after": "would joyfully go there whenever he liked",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3779,
+    "before": "that capital old Professor",
+    "after": "that fine old Professor",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 3836,
+    "before": ". ..",
+    "after": "...",
+    "reason": "Normalize spaced-dot ellipses to the current three-dot form."
+  },
+  {
+    "paragraph": 3845,
+    "before": "‘a capital old fellow’ in public",
+    "after": "‘a fine old fellow’ in public",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 3910,
+    "before": "the little rills trickling thence upon his shoulders",
+    "after": "the little rills trickling down upon his shoulders",
+    "reason": "Replace an archaic word with its current equivalent."
+  },
+  {
+    "paragraph": 3935,
+    "before": "brave and gay When fastened there",
+    "after": "brave and bright When fastened there",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 4002,
+    "before": "Gay valentines, all ardent flames",
+    "after": "Bright valentines, all ardent flames",
+    "reason": "Avoid the changed predominant meaning of this word."
+  },
+  {
+    "paragraph": 4062,
+    "before": "in the light of a capital joke",
+    "after": "in the light of an excellent joke",
+    "reason": "Clarify the dated sense without changing the subject."
+  },
+  {
+    "paragraph": 4070,
+    "before": "Jo made queer mistakes",
+    "after": "Jo made odd mistakes",
+    "reason": "Avoid the changed predominant meaning of this word."
+  }
+]
