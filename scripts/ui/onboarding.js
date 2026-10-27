@@ -27,9 +27,23 @@ function onboardingAppearanceOpened(){}
 function openOnboardingWord(node,retry=false){}
 function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
+/* Media switching: the <source media> switch is CSS-driven, but the poster
+   is a single attribute per video, so swap it at the same breakpoint. */
+const onboardingWideQuery=typeof matchMedia==='function'?matchMedia('(min-width: 768px)'):null;
+function syncOnboardingVideoPosters(){
+  if(!onboardingWideQuery)return;
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
+    const next=onboardingWideQuery.matches?video.dataset.posterWide:video.dataset.poster;
+    if(next&&video.getAttribute('poster')!==next)video.setAttribute('poster',next);
+  }
+}
+if(onboardingWideQuery&&typeof onboardingWideQuery.addEventListener==='function'){
+  onboardingWideQuery.addEventListener('change',syncOnboardingVideoPosters);
+}
+
 function onboardingCardIndex(){
   const wrap=document.getElementById('onboard-wrap');
-  const card=wrap.querySelector('.onboard-card');
+  const card=wrap.querySelector(/** @type {'article'} */('.onboard-card'));
   if(!card)return 0;
   const advance=card.offsetWidth+20;
   return Math.max(0,Math.min(2,Math.round(wrap.scrollLeft/advance)));
@@ -49,7 +63,7 @@ function onboardingVideoVisible(video,wrap){
 }
 function syncOnboardingVideoPlayback(session){
   const wrap=document.getElementById('onboard-wrap');
-  for(const video of document.querySelectorAll('#onboarding .onboard-card video')){
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
     if(onboardingVideoVisible(video,wrap)&&!session.motion.matches&&!document.hidden)video.play().catch(()=>{});
     else video.pause();
   }
@@ -168,6 +182,10 @@ function buildOnboardingFan(session){
     setTimeout(()=>{if(onboardingSession===session)showOnboardingBook(session,1);},50);
   });
 }
+function setOnboardingChoiceNote(text){
+  const note=document.getElementById('onboard-choice-note');
+  if(note)note.textContent=text;
+}
 function setOnboardingChoiceBusy(busy){
   for(const id of ['onboard-read','onboard-file']){
     const button=/** @type {HTMLButtonElement|null} */(document.getElementById(id));
@@ -179,14 +197,18 @@ async function openOnboardingBook(session){
   const entry=ONBOARD_BOOKS[session.bookIndex];
   const read=typeof longReadDefinition==='function'?longReadDefinition(entry.id):null;
   if(!read){
-    if(typeof toast==='function')toast('책을 열지 못했어요. 잠시 뒤 다시 눌러 보세요.');
+    setOnboardingChoiceNote('책을 열지 못했어요. 잠시 뒤 다시 눌러 보세요.');
     return;
   }
   session.busy=true;
   setOnboardingChoiceBusy(true);
+  setOnboardingChoiceNote('');
   const saved=await importLongRead(read,null,{signal:session.controller.signal});
   if(onboardingSession!==session||!saved){
-    if(onboardingSession===session){session.busy=false;setOnboardingChoiceBusy(false);}
+    if(onboardingSession===session){
+      session.busy=false;setOnboardingChoiceBusy(false);
+      if(!saved)setOnboardingChoiceNote('책을 준비하지 못했어요. 잠시 뒤 다시 눌러 보세요.');
+    }
     return;
   }
   if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'read',book:entry.id});
@@ -210,6 +232,8 @@ function startOnboarding(replay){
   }
   const root=document.getElementById('onboarding');
   root.hidden=false;
+  setOnboardingChoiceNote('');
+  syncOnboardingVideoPosters();
   const signal=session.controller.signal;
   const wrap=document.getElementById('onboard-wrap');
   buildOnboardingFan(session);
@@ -249,6 +273,7 @@ function startOnboarding(replay){
     const controller=new AbortController();
     session.importController=controller;
     setOnboardingChoiceBusy(true);
+    setOnboardingChoiceNote('');
     try{
       const result=await importFile(file,null,{signal:controller.signal});
       // Back, Skip, replay and external navigation invalidate this handoff.
@@ -257,10 +282,10 @@ function startOnboarding(replay){
         if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'import'});
         endOnboarding(true);return;
       }
-      if(typeof toast==='function')toast('책을 넣지 못했어요. DRM이 없는 PDF · EPUB · TXT 파일을 다시 골라주세요.');
+      setOnboardingChoiceNote('책을 넣지 못했어요. DRM이 없는 PDF · EPUB · TXT 파일을 다시 골라주세요.');
     }catch{
       if(onboardingSession!==session||session.importController!==controller)return;
-      if(typeof toast==='function')toast('책을 넣지 못했어요. 파일을 다시 골라주세요.');
+      setOnboardingChoiceNote('책을 넣지 못했어요. 파일을 다시 골라주세요.');
     }finally{
       if(onboardingSession===session){session.importController=null;setOnboardingChoiceBusy(false);}
     }
@@ -273,7 +298,7 @@ function startOnboarding(replay){
     if(event.key==='Escape'){event.preventDefault();endOnboarding(false);return;}
     if(event.key==='ArrowLeft'||event.key==='ArrowRight'){
       event.preventDefault();
-      const card=wrap.querySelector('.onboard-card');
+      const card=wrap.querySelector(/** @type {'article'} */('.onboard-card'));
       const advance=card?card.offsetWidth+20:wrap.clientWidth;
       wrap.scrollBy({left:(event.key==='ArrowRight'?1:-1)*advance,behavior:session.motion.matches?'auto':'smooth'});
       return;
@@ -286,14 +311,14 @@ function startOnboarding(replay){
     }
   },{signal,capture:true});
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){for(const video of document.querySelectorAll('#onboarding .onboard-card video'))video.pause();}
+    if(document.hidden){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();}
     else syncOnboardingVideoPlayback(session);
   },{signal});
-  window.addEventListener('pagehide',()=>{for(const video of document.querySelectorAll('#onboarding .onboard-card video'))video.pause();},{signal});
+  window.addEventListener('pagehide',()=>{for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();},{signal});
   window.addEventListener('pageshow',()=>syncOnboardingVideoPlayback(session),{signal});
   window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
   session.motion.addEventListener('change',()=>{
-    if(session.motion.matches){for(const video of document.querySelectorAll('#onboarding .onboard-card video'))video.pause();}
+    if(session.motion.matches){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();}
     else syncOnboardingVideoPlayback(session);
   },{signal});
   session.theme=new MutationObserver(()=>{
@@ -313,7 +338,7 @@ function endOnboarding(remember,returnToPrevious=true){
   session.observer?.disconnect();
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
   clearTimeout(session.settleTimer);
-  for(const video of document.querySelectorAll('#onboarding .onboard-card video'))video.pause();
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();
   document.getElementById('onboarding').hidden=true;
   for(const [node,inert] of session.inert)node.inert=inert;
   if(remember){save(ONBOARD_KEY,'done');try{localStorage.removeItem(ONBOARD_PROGRESS_KEY);}catch{}}

@@ -69,7 +69,7 @@
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
-  <link rel="stylesheet" href="styles/onboarding.css?v=6c403b8f">
+  <link rel="stylesheet" href="styles/onboarding.css?v=65211848">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -113,7 +113,7 @@
   <script defer src="scripts/library/longreads.js?v=99518fa9"></script>
   <script defer src="scripts/library/remote-classics.js?v=327ea871"></script>
   <script defer src="scripts/library/holmes-layout.js?v=16ae497a"></script>
-  <script defer src="scripts/library/public-domain-layout.js?v=1d06314a"></script>
+  <script defer src="scripts/library/public-domain-layout.js?v=94fb7b3c"></script>
   <script defer src="scripts/library/homeward-lookup.js?v=24ab4083"></script>
   <script defer src="scripts/importers/importers.js?v=36710c99"></script>
   <script defer src="scripts/importers/article.js?v=761df2b4"></script>
@@ -163,7 +163,7 @@
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
   <script defer src="scripts/sync/sync.js?v=b0c5c6d2"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=083d8eda"></script>
+  <script defer src="scripts/ui/onboarding.js?v=d414f789"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=8202e181"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
@@ -607,7 +607,8 @@
     <div class="onboard-wrap" id="onboard-wrap" role="region" aria-roledescription="캐러셀" aria-label="브리즈 시작 안내">
       <div class="onboard-track">
         <article class="onboard-card" data-card="0">
-          <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1">
+          <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"
+                 poster="assets/onboarding-carousel/card1.jpg" data-poster="assets/onboarding-carousel/card1.jpg" data-poster-wide="assets/onboarding-carousel/card1-wide.jpg">
             <source src="assets/onboarding-carousel/card1-wide.mp4" media="(min-width: 768px)">
             <source src="assets/onboarding-carousel/card1.mp4">
           </video>
@@ -618,7 +619,8 @@
           </div>
         </article>
         <article class="onboard-card" data-card="1">
-          <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1">
+          <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"
+                 poster="assets/onboarding-carousel/card2.jpg" data-poster="assets/onboarding-carousel/card2.jpg" data-poster-wide="assets/onboarding-carousel/card2-wide.jpg">
             <source src="assets/onboarding-carousel/card2-wide.mp4" media="(min-width: 768px)">
             <source src="assets/onboarding-carousel/card2.mp4">
           </video>
@@ -636,6 +638,7 @@
             <button class="onboard-btn-read" id="onboard-read" type="button"></button>
             <button class="onboard-btn-file" id="onboard-file" type="button"><span class="tag">PDF · EPUB</span><span>내 파일 넣기</span></button>
             <button class="onboard-btn-browse" id="onboard-browse" type="button">둘러볼게요</button>
+            <p id="onboard-choice-note" class="onboard-choice-note" role="status" aria-live="polite"></p>
           </div>
         </article>
       </div>

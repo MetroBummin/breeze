@@ -19,6 +19,10 @@ from start to end (linear, about 18.5px per frame): the earlier
 decelerating glide read as stutter on real displays, and the owner asked
 for the same constant feel as the flashcard swipe. The curve must not be
 changed back without re-checking per-frame travel on the encoded video.
+Each video carries a poster frame extracted from the video itself (tall
+and wide renders, swapped at the same 768px breakpoint), so
+reduced-motion users see a still instead of an empty area without any
+video download.
 
 Videos switch by viewport, not by theme: phones play the 9:16 renders,
 tablets and desktops the 4:3 renders, through `<source media>` at 768px.
@@ -48,7 +52,10 @@ Each card carries its own dots; the dialog itself has no page
 navigation. The three card 3 buttons are “바로 읽기” (the centred book),
 “내 파일 넣기” (the existing PDF/EPUB/TXT importer, same handoff as
 before: a successful durable import ends the guide, cancellation and
-failure leave the card available), and “둘러볼게요” (home). Skip stays
+failure leave the card available), and “둘러볼게요” (home). Import and
+book-open failures report on a status line inside card 3, because the
+app-wide toast is routed to the home notice behind the overlay and
+would never be seen here. Skip stays
 small and grey at the top right and ends the guide. Guidance copy stays
 polite (존댓말), there is no focus outline, and the dialog surface is
 the home background `#F2F2F7` in light mode.

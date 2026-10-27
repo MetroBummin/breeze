@@ -116,6 +116,11 @@
   display:block;width:100%;margin-top:12px;padding:14px 6px;border:0;
   background:none;color:#8A8A8E;font-size:14px;
 }
+/* Import/read failure feedback, inside the dialog: the app-wide toast is
+   routed to the home notice behind this overlay, so the user would never
+   see it here. Empty takes no space. */
+.onboard-choice-note{margin:10px 4px 0;text-align:center;font-size:13px;line-height:1.5;color:#6D6D72;word-break:keep-all;}
+.onboard-choice-note:empty{display:none;}
 /* Tablet/desktop: the 4:3 renders. The card goes wider (same height
    rule), the video switches aspect, and card 3's covers are capped
    by viewport height so the book card never overflows short screens.
