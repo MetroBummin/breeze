@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Breeze 온보딩 카드 캐러셀</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #F2F2F7;
+    font-family: -apple-system, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    color: #293034;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .skip {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    font-size: 13px; color: #6D6D72; opacity: .8;
+    background: none; border: 0; cursor: pointer;
+  }
+  .stage { height: 100%; display: flex; align-items: center; justify-content: center; }
+  /* Card width: big, but never taller than the screen.
+     No peek: the card is narrower than the screen, so the faint gray
+     margins at the sides are what hints at the next card. */
+  .wrap {
+    --cw: min(calc(100vw - 48px), calc(78vh * 9 / 16));
+    width: var(--cw);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wrap::-webkit-scrollbar { display: none; }
+  .track { display: flex; gap: 20px; align-items: center; }
+  .card {
+    flex: 0 0 var(--cw);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+  }
+  .card video {
+    display: block; width: 100%; aspect-ratio: 9 / 16;
+    object-fit: cover; background: #fff;
+    /* Hairline around the video area: card 1's video is mostly white
+       on a white card, so without this the video area has no edge. */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .05);
+  }
+  .dots { display: flex; justify-content: center; gap: 8px; padding: 16px 0 4px; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #D1D1D6; transition: background .2s; }
+  .dots i.on { background: #000; }
+  .copy { text-align: center; padding: 10px 16px 20px; }
+  .copy .t1 { font-size: 17px; font-weight: 600; line-height: 1.4; }
+  .copy .t2 { font-size: 14px; color: #6D6D72; line-height: 1.5; margin-top: 4px; }
+  /* Card 3: book choice in card form (mirrors the existing choice scene).
+     The covers are a real horizontally scrolling strip, infinite by
+     wrapping around, so swiping the covers changes the book.
+     Carousel depth: covers overlap (each one advances only --step), and
+     the script scales/stacks them by distance from the centre, so the
+     centre book is large and in front while two covers on each side
+     peek out from behind, each smaller and further back. Snapping still
+     uses the untransformed layout boxes. */
+  .fan {
+    /* Covers are 2:3. Height also leaves room for meta, dots and the
+       three buttons, so short screens shrink the covers instead of
+       pushing the buttons off screen. The width factor keeps all five
+       covers inside a 390px-wide phone card. */
+    --cover-h: min(calc(var(--cw) * 0.84), max(80px, calc(100vh - 330px)));
+    --cover-w: calc(var(--cover-h) * 2 / 3);
+    --step: calc(var(--cover-w) * 0.3);
+    position: relative;
+    display: flex; margin-top: 16px;
+    padding: 10px calc((var(--cw) - var(--cover-w)) / 2) 18px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fan::-webkit-scrollbar { display: none; }
+  /* The .cover box is only the layout/snap slot and is never transformed:
+     Chrome snaps to transformed boxes, so moving it would shift the snap
+     points. The image inside is what gets moved/scaled and tapped. */
+  .fan .cover {
+    position: relative;
+    flex: 0 0 var(--cover-w);
+    height: var(--cover-h);
+    margin-right: calc(var(--step) - var(--cover-w));
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    pointer-events: none;
+  }
+  .fan .cover:last-child { margin-right: 0; }
+  .fan .cover img {
+    display: block; width: 100%; height: 100%; object-fit: cover;
+    border-radius: 12px; cursor: pointer; pointer-events: auto;
+    /* Fades out inside the strip's 10px / 18px padding; a longer shadow
+       is cut off by the strip's scroll clip as a hard line. */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .2);
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  .bookmeta { text-align: center; padding: 10px 16px 0; }
+  .bookmeta b { display: block; font-size: 16px; line-height: 1.4; }
+  .bookmeta span { display: block; font-size: 13px; color: #6D6D72; margin-top: 2px; }
+  .choice { padding: 16px 20px 20px; }
+  .btn-read {
+    display: block; width: 100%; padding: 14px; border: 0; border-radius: 999px;
+    background: #293034; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  .btn-file {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; margin-top: 10px; padding: 13px; border: 0; border-radius: 999px;
+    background: #E9E9EA; color: #293034; font-size: 15px; cursor: pointer;
+  }
+  .btn-file .tag { font-size: 12px; color: #6D6D72; }
+  .btn-browse {
+    display: block; width: 100%; margin-top: 12px; padding: 6px; border: 0;
+    background: none; color: #8A8A8E; font-size: 14px; cursor: pointer;
+  }
+  /* Tablet/desktop: the 4:3 renders. The card goes wider (same height
+     rule), the video switches aspect, and card 3's covers are capped
+     by viewport height so the book card never overflows short screens.
+     NOTE: this block must stay after the base .fan .cover rule, or the
+     base rule wins the cascade and the cap silently stops working. */
+  @media (min-width: 768px) {
+    .wrap { --cw: min(calc(100vw - 48px), calc(78vh * 4 / 3)); }
+    .card video { aspect-ratio: 4 / 3; }
+    .fan {
+      --cover-h: min(calc(var(--cw) * 0.87), 58vh, max(80px, calc(100vh - 330px)));
+    }
+  }
+</style>
+</head>
+<body>
+<button class="skip" type="button">건너뛰기</button>
+<main class="stage">
+  <div class="wrap" id="wrap">
+    <div class="track">
+      <article class="card" data-card="0">
+        <video autoplay muted loop playsinline>
+          <source src="assets/onboarding-carousel/card1-wide.mp4" media="(min-width: 768px)">
+          <source src="assets/onboarding-carousel/card1.mp4">
+        </video>
+        <div class="dots"><i class="on"></i><i></i><i></i></div>
+        <div class="copy">
+          <div class="t1">단어를 탭해보세요</div>
+          <div class="t2">단어에 딱 맞는 뜻이 나옵니다</div>
+        </div>
+      </article>
+      <article class="card" data-card="1">
+        <video autoplay muted loop playsinline>
+          <source src="assets/onboarding-carousel/card2-wide.mp4" media="(min-width: 768px)">
+          <source src="assets/onboarding-carousel/card2.mp4">
+        </video>
+        <div class="dots"><i></i><i class="on"></i><i></i></div>
+        <div class="copy">
+          <div class="t1">홈에서 북마크를 탭해보세요</div>
+          <div class="t2">단어장에서 학습이 가능합니다</div>
+        </div>
+      </article>
+      <article class="card" data-card="2">
+        <div class="fan" id="fan"></div>
+        <div class="bookmeta"><b id="book-title"></b><span id="book-author"></span></div>
+        <div class="dots"><i></i><i></i><i class="on"></i></div>
+        <div class="choice">
+          <button class="btn-read" id="btn-read" type="button"></button>
+          <button class="btn-file" type="button"><span class="tag">PDF · EPUB</span><span>내 파일 넣기</span></button>
+          <button class="btn-browse" type="button">둘러볼게요</button>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script>
+  const wrap = document.getElementById('wrap');
+  // Play only the card that is actually in view; pause the other one.
+  const videos = [...document.querySelectorAll('.card video')];
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      const v = e.target;
+      if (e.intersectionRatio >= 0.6) v.play().catch(() => {});
+      else v.pause();
+    }
+  }, { root: wrap, threshold: [0.6] });
+  videos.forEach(v => io.observe(v));
+  // Page dots follow the card in view.
+  const dots = [...document.querySelectorAll('.dots')];
+  const sync = () => {
+    const adv = wrap.querySelector('.card').offsetWidth + 20;
+    const cur = Math.max(0, Math.min(2, Math.round(wrap.scrollLeft / adv)));
+    dots.forEach(d => [...d.children].forEach((el, i) => el.classList.toggle('on', i === cur)));
+  };
+  wrap.addEventListener('scroll', sync, { passive: true });
+  sync();
+  // Card 3: book strip. Same 7 books as the existing choice scene,
+  // five copies so swiping the covers loops infinitely (a single long
+  // fling stays inside the strip; the wrap recentres between gestures).
+  // Tapping a cover centres it. The centred book drives meta + button.
+  const BOOKS = [
+    { img: 'assets/longreads/covers/the-great-gatsby.webp', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', cta: '개츠비 바로 읽기' },
+    { img: 'assets/longreads/covers/alice-in-wonderland.webp', title: "Alice's Adventures in Wonderland", author: 'Lewis Carroll', cta: '앨리스 바로 읽기' },
+    { img: 'assets/longreads/covers/speckled-band.webp', title: 'The Adventure of the Speckled Band', author: 'Arthur Conan Doyle', cta: '얼룩무늬 띠 바로 읽기' },
+    { img: 'assets/longreads/covers/scandal-in-bohemia.webp', title: 'A Scandal in Bohemia', author: 'Arthur Conan Doyle', cta: '보헤미아 바로 읽기' },
+    { img: 'assets/longreads/covers/red-headed-league.webp', title: 'The Red-Headed League', author: 'Arthur Conan Doyle', cta: '빨간 머리 연맹 바로 읽기' },
+    { img: 'assets/longreads/covers/final-problem.webp', title: 'The Final Problem', author: 'Arthur Conan Doyle', cta: '마지막 사건 바로 읽기' },
+    { img: 'assets/longreads/covers/hound-of-the-baskervilles.webp', title: 'The Hound of the Baskervilles', author: 'Arthur Conan Doyle', cta: '바스커빌 바로 읽기' },
+  ];
+  const fan = document.getElementById('fan');
+  const COPIES = 5;
+  const els = [];
+  for (let c = 0; c < COPIES; c++) {
+    BOOKS.forEach((b, i) => {
+      const d = document.createElement('div');
+      d.className = 'cover';
+      d.dataset.idx = String(i);
+      d.innerHTML = '<img src="' + b.img + '" alt="' + b.title + '">';
+      d.addEventListener('click', () => centreCover(d));
+      fan.appendChild(d);
+      els.push(d);
+    });
+  }
+  // Covers overlap, so one book of scrolling is the offset between two
+  // neighbouring layout boxes, not their width.
+  const step = () => els[1].offsetLeft - els[0].offsetLeft;
+  const setW = () => step() * BOOKS.length;
+  // Depth: d = distance from the centre in books (fractional while
+  // scrolling). At rest five covers show: the centre one full size and on
+  // top, then two on each side, each smaller and further back, peeking
+  // out from behind. Covers beyond them tuck behind the outer pair and
+  // fade in only while they travel into an outer slot.
+  // Per slot (0 = centre .. 3 = tucked): offset from the centre in steps,
+  // and scale. Slot 1 is exactly one step, so the centre cover follows
+  // the finger 1:1; positions in between are interpolated.
+  const SLOT_X = [0, 1, 5 / 3, 11 / 6];
+  const SLOT_SCALE = [1, 0.82, 0.66, 0.56];
+  const slot = (arr, a) => {
+    const i = Math.min(Math.floor(a), arr.length - 2);
+    return arr[i] + (arr[i + 1] - arr[i]) * (a - i);
+  };
+  let depthFrame = 0;
+  function layoutDepth() {
+    depthFrame = 0;
+    const s = step();
+    if (!s) return;
+    const half = fan.clientWidth / 2;
+    const c = fan.scrollLeft + half;
+    const w = els[0].offsetWidth;
+    for (const el of els) {
+      const d = (el.offsetLeft + w / 2 - c) / s;
+      const a = Math.abs(d);
+      if (a >= 3) { el.style.visibility = 'hidden'; continue; }
+      const scale = slot(SLOT_SCALE, a);
+      const pos = Math.sign(d) * slot(SLOT_X, a) * s;
+      // Covers that would cross the card edge on narrow cards fade out
+      // rather than being cut hard (outer pair first).
+      const overflow = Math.abs(pos) + (w / 2) * scale - half;
+      const fade = Math.min(1, Math.max(0, 1 - overflow / (0.15 * w)), Math.max(0, (2.9 - a) / 0.6));
+      el.style.visibility = fade > 0 ? '' : 'hidden';
+      el.style.opacity = String(fade);
+      el.style.zIndex = String(100 - Math.round(a * 10));
+      el.firstElementChild.style.transform = 'translateX(' + (pos - d * s).toFixed(2) + 'px) scale(' + scale.toFixed(4) + ')';
+    }
+  }
+  const queueDepth = () => { if (!depthFrame) depthFrame = requestAnimationFrame(layoutDepth); };
+  fan.addEventListener('scroll', queueDepth, { passive: true });
+  addEventListener('resize', queueDepth);
+  function centreCover(el) {
+    fan.scrollTo({ left: el.offsetLeft + el.offsetWidth / 2 - fan.clientWidth / 2, behavior: 'smooth' });
+  }
+  // Nearest cover to the strip's centre (offsetLeft is content-relative
+  // because .fan is positioned).
+  function centredIndex() {
+    const c = fan.scrollLeft + fan.clientWidth / 2;
+    let best = 0, bestD = Infinity;
+    els.forEach((el, p) => {
+      const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - c);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    return { p: best, idx: ((best % BOOKS.length) + BOOKS.length) % BOOKS.length };
+  }
+  function show(idx) {
+    document.getElementById('book-title').textContent = BOOKS[idx].title;
+    document.getElementById('book-author').textContent = BOOKS[idx].author;
+    document.getElementById('btn-read').textContent = BOOKS[idx].cta;
+  }
+  let settleTimer = null;
+  // Label follows the centre cover live.
+  fan.addEventListener('scroll', () => {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => show(centredIndex().idx), 150);
+  }, { passive: true });
+  // Wrap back into the middle copy so the strip never ends. The jump
+  // is deferred and re-checked: scrollend can fire mid-flight on a long
+  // smooth scroll, and jumping then would cancel the animation and
+  // land on the wrong book. Only jump when the strip is truly at rest.
+  fan.addEventListener('scrollend', () => {
+    const atEnd = fan.scrollLeft;
+    setTimeout(() => {
+      if (Math.abs(fan.scrollLeft - atEnd) > 2) return;
+      const { p, idx } = centredIndex();
+      show(idx);
+      const lo = BOOKS.length * 2, hi = BOOKS.length * 3;
+      if (p < lo) fan.scrollTo({ left: fan.scrollLeft + setW(), behavior: 'instant' });
+      else if (p >= hi) fan.scrollTo({ left: fan.scrollLeft - setW(), behavior: 'instant' });
+    }, 250);
+  });
+  // Start on Alice, the same default as the existing choice scene
+  // (middle copy, so there is room to scroll either way).
+  requestAnimationFrame(() => {
+    layoutDepth();
+    centreCover(els[BOOKS.length * 2 + 1]);
+    setTimeout(() => show(1), 50);
+  });
+</script>
+</body>
+</html>
