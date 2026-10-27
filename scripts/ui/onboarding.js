@@ -48,6 +48,30 @@ function onboardingCardIndex(){
   const advance=card.offsetWidth+20;
   return Math.max(0,Math.min(2,Math.round(wrap.scrollLeft/advance)));
 }
+/* Funnel steps keep the former guide's event names: moving to a later card
+   completes the card left behind, Skip skips the current card, and a choice
+   completes the dialog as 'finish'. Step keys stay in the event payload
+   alphabet ([a-z0-9_-]) so the logger keeps them. */
+const ONBOARD_STEP_KEYS=['word','study','books'];
+function onboardingStepName(session){return ONBOARD_STEP_KEYS[session.card]||'';}
+function onboardingStepMs(session){
+  return Math.max(0,Math.min(3600000,Date.now()-(session.stepAt||Date.now())));
+}
+function trackOnboardingFinish(session){
+  if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'finish',ms:onboardingStepMs(session)});
+}
+function noteOnboardingCard(session){
+  const index=onboardingCardIndex();
+  if(index===session.card)return;
+  const previous=session.card;
+  const ms=onboardingStepMs(session);
+  session.card=index;
+  session.stepAt=Date.now();
+  if(index>previous&&typeof trackEvent==='function'){
+    const step=ONBOARD_STEP_KEYS[previous];
+    if(step)trackEvent('onboarding_step_complete',{step,ms});
+  }
+}
 function syncOnboardingDots(){
   const current=onboardingCardIndex();
   for(const dots of document.querySelectorAll('#onboarding .onboard-dots')){
@@ -211,6 +235,7 @@ async function openOnboardingBook(session){
     }
     return;
   }
+  trackOnboardingFinish(session);
   if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'read',book:entry.id});
   endOnboarding(true);
   await openBook(saved);
@@ -224,7 +249,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
-    depthFrame:0,settleTimer:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false};
+    depthFrame:0,settleTimer:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now()};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
   for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
@@ -251,7 +276,9 @@ function startOnboarding(replay){
   },{root:wrap,threshold:[0.6]});
   for(const video of document.querySelectorAll('#onboarding .onboard-card video'))session.observer.observe(video);
   wrap.addEventListener('scroll',syncOnboardingDots,{passive:true,signal});
+  wrap.addEventListener('scroll',()=>noteOnboardingCard(session),{passive:true,signal});
   document.getElementById('onboard-skip').addEventListener('click',()=>{
+    if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'skip'});
     endOnboarding(true);
   },{signal});
@@ -261,6 +288,7 @@ function startOnboarding(replay){
     input.value='';input.click();
   },{signal});
   document.getElementById('onboard-browse').addEventListener('click',()=>{
+    trackOnboardingFinish(session);
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'browse'});
     endOnboarding(true);show('home');
   },{signal});
@@ -279,6 +307,7 @@ function startOnboarding(replay){
       // Back, Skip, replay and external navigation invalidate this handoff.
       if(onboardingSession!==session||session.importController!==controller)return;
       if(result?.bookId){
+        trackOnboardingFinish(session);
         if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'import'});
         endOnboarding(true);return;
       }

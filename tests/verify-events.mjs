@@ -100,7 +100,7 @@ test('batches inserts, dedupes milestones, and attaches the first-touch UTM',asy
   const body=JSON.parse(calls[0].init.body);
   assert.deepEqual(body.map(row=>row.name),['app_open','first_word_tap','vocab_save']);
   for(const row of body){
-    assert.equal(row.app_version,'1.9.8');
+    assert.equal(row.app_version,'1.9.9');
     assert.equal(row.platform,'web');
     assert.equal(row.onboarding_version,'v1');
     assert.equal(row.utm_source,'x');

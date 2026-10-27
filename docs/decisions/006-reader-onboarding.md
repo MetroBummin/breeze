@@ -74,6 +74,12 @@ removed on open. Settings replay always starts on the first card and
 does not replace existing data. Escape and browser Back cancel without
 recording completion; explicit Skip, a book choice, a successful import
 or Browse records completion. External navigation ends the guide. The
+first-party funnel events survive the carousel: moving to a later card
+reports `onboarding_step_complete` for the card left behind (steps
+`word`, `study`, `books`), Skip reports `onboarding_step_skip`, and a
+book choice, a successful import or Browse reports
+`onboarding_step_complete` with step `finish` alongside the choice
+event. Escape and browser Back report nothing. The
 guide never opens a book or changes appearance, scroll, words, sync,
 cache or history while it is open: the views behind it are inert and
 restore their exact previous state on exit.
