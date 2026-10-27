@@ -58,11 +58,21 @@
   .copy .t2 { font-size: 14px; color: #6D6D72; line-height: 1.5; margin-top: 4px; }
   /* Card 3: book choice in card form (mirrors the existing choice scene).
      The covers are a real horizontally scrolling strip, infinite by
-     wrapping around, so swiping the covers changes the book. */
+     wrapping around, so swiping the covers changes the book.
+     Carousel depth: covers overlap (each one advances only --step), and
+     the script scales/stacks them by distance from the centre, so the
+     centre book is large and in front while its neighbours peek out
+     from behind. Snapping still uses the untransformed layout boxes. */
   .fan {
+    /* Covers are 2:3. Height also leaves room for meta, dots and the
+       three buttons, so short screens shrink the covers instead of
+       pushing the buttons off screen. */
+    --cover-h: min(calc(var(--cw) * 0.87), max(80px, calc(100vh - 330px)));
+    --cover-w: calc(var(--cover-h) * 2 / 3);
+    --step: calc(var(--cover-w) * 0.4);
     position: relative;
-    display: flex; gap: 12px; margin-top: 20px;
-    padding: 4px calc(var(--cw) * 0.23);
+    display: flex; margin-top: 16px;
+    padding: 10px calc((var(--cw) - var(--cover-w)) / 2) 18px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
@@ -71,12 +81,18 @@
   }
   .fan::-webkit-scrollbar { display: none; }
   .fan .cover {
-    flex: 0 0 calc(var(--cw) * 0.54);
-    height: calc(var(--cw) * 0.81);
+    position: relative;
+    flex: 0 0 var(--cover-w);
+    height: var(--cover-h);
+    margin-right: calc(var(--step) - var(--cover-w));
     scroll-snap-align: center;
-    border-radius: 10px; overflow: hidden; cursor: pointer;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+    scroll-snap-stop: always;
+    border-radius: 12px; overflow: hidden; cursor: pointer;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
+    transform-origin: 50% 50%;
+    will-change: transform;
   }
+  .fan .cover:last-child { margin-right: 0; }
   .fan .cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .bookmeta { text-align: center; padding: 10px 16px 0; }
   .bookmeta b { display: block; font-size: 16px; line-height: 1.4; }
@@ -104,9 +120,8 @@
   @media (min-width: 768px) {
     .wrap { --cw: min(calc(100vw - 48px), calc(78vh * 4 / 3)); }
     .card video { aspect-ratio: 4 / 3; }
-    .fan .cover {
-      flex-basis: min(calc(var(--cw) * 0.54), calc(60vh * 2 / 3));
-      height: min(calc(var(--cw) * 0.81), 60vh);
+    .fan {
+      --cover-h: min(calc(var(--cw) * 0.87), 58vh, max(80px, calc(100vh - 330px)));
     }
   }
 </style>
@@ -199,8 +214,43 @@
       els.push(d);
     });
   }
-  const step = () => els[0].offsetWidth + (parseFloat(getComputedStyle(fan).columnGap) || 12);
+  // Covers overlap, so one book of scrolling is the offset between two
+  // neighbouring layout boxes, not their width.
+  const step = () => els[1].offsetLeft - els[0].offsetLeft;
   const setW = () => step() * BOOKS.length;
+  // Depth: d = distance from the centre in books (fractional while
+  // scrolling). Centre is full size and on top; the two neighbours
+  // shrink, sit behind and peek out. Covers further out tuck behind the
+  // neighbours and fade in only while they travel into a neighbour slot,
+  // so at rest exactly three covers show (the reference composition).
+  let depthFrame = 0;
+  function layoutDepth() {
+    depthFrame = 0;
+    const s = step();
+    if (!s) return;
+    const half = fan.clientWidth / 2;
+    const c = fan.scrollLeft + half;
+    const w = els[0].offsetWidth;
+    for (const el of els) {
+      const d = (el.offsetLeft + w / 2 - c) / s;
+      const a = Math.abs(d);
+      if (a >= 2) { el.style.visibility = 'hidden'; continue; }
+      const scale = 1 - 0.18 * Math.min(a, 1) - 0.1 * Math.max(a - 1, 0);
+      // Beyond the neighbour slot, covers slide only half as far (tucked).
+      const pos = Math.sign(d) * (Math.min(a, 1) + Math.max(a - 1, 0) * 0.5) * s;
+      // Neighbours that would cross the card edge on narrow cards fade
+      // out rather than being cut hard.
+      const overflow = Math.abs(pos) + (w / 2) * scale - half;
+      const fade = Math.min(1, Math.max(0, 1 - overflow / (0.15 * w)), Math.max(0, (1.9 - a) / 0.5));
+      el.style.visibility = fade > 0 ? '' : 'hidden';
+      el.style.opacity = String(fade);
+      el.style.zIndex = String(100 - Math.round(a * 10));
+      el.style.transform = 'translateX(' + (pos - d * s).toFixed(2) + 'px) scale(' + scale.toFixed(4) + ')';
+    }
+  }
+  const queueDepth = () => { if (!depthFrame) depthFrame = requestAnimationFrame(layoutDepth); };
+  fan.addEventListener('scroll', queueDepth, { passive: true });
+  addEventListener('resize', queueDepth);
   function centreCover(el) {
     fan.scrollTo({ left: el.offsetLeft + el.offsetWidth / 2 - fan.clientWidth / 2, behavior: 'smooth' });
   }
@@ -244,6 +294,7 @@
   // Start on Alice, the same default as the existing choice scene
   // (middle copy, so there is room to scroll either way).
   requestAnimationFrame(() => {
+    layoutDepth();
     centreCover(els[BOOKS.length * 2 + 1]);
     setTimeout(() => show(1), 50);
   });
