@@ -70,6 +70,17 @@ physical tap reuse the first one's decision. Once the clip plays, a tap
 advances as before; if a tap-started `play()` is refused too, the next tap
 advances so the reader cannot get stuck. Swipes, and taps on the copy or
 dots, always move the card.
+
+All of this covers every video card (1 and 2; card 3 is the cover fan and
+has no video). Card 2 was the one TestFlight 1.9.9 (build 361) still showed
+with the play button some of the time. It never autoplays from the
+attribute: it is paused at open, and `pause()` clears the element's
+can-autoplay flag, so its only start is the `play()` a scroll event issues
+in the middle of the swipe. If WebKit refuses that call while the card is
+still moving and its load events have already passed, nothing asked again.
+The carousel now asks the card in view once more when it comes to rest
+(`scrollend`, with a 140ms quiet-scroll fallback), and the retries also run
+on `loadedmetadata` and `canplaythrough`. A playing clip is left alone.
 Card 2 stays unloaded until it is the card in view. Reduced motion fetches
 nothing at all — videos stay paused and the copy and dots still carry the
 meaning. The clips are silent H264 MP4s of the real production UI, the
@@ -148,7 +159,9 @@ with no interaction (a phone is inside about 1.5s; the check allows
 2.5s for a slow runner and then requires the clock to keep moving), a Low Power-style `play()`
 rejection where a real touchscreen tap on card 1's video starts it and
 stays on card 1 (the next tap advances), no `controls` attribute and, on
-WebKit, the hidden start-playback button, advance by tap and swipe-up
+WebKit, the hidden start-playback button, the same refusal and tap on
+card 2, card 2 playing once the carousel settles after a refused mid-swipe
+`play()`, advance by tap and swipe-up
 even when `play()` rejects, constant-speed card 2 travel is pinned by
 the reviewed video file itself, dots following scroll and arrow keys,
 the five-cover rest state, tap-to-centre with title/author/button

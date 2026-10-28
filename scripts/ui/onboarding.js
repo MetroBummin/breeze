@@ -152,8 +152,7 @@ function bindOnboardingVideoRetries(video,session){
       if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
     });
   };
-  video.addEventListener('loadeddata',retry,{signal:session.controller.signal});
-  video.addEventListener('canplay',retry,{signal:session.controller.signal});
+  for(const type of ['loadedmetadata','loadeddata','canplay','canplaythrough'])video.addEventListener(type,retry,{signal:session.controller.signal});
   // autoplay can start the element again after pause(). A stopped clip
   // (hidden tab, other card, reduced motion) has to stay stopped.
   video.addEventListener('play',()=>{
@@ -193,6 +192,23 @@ function playOnboardingVideo(video,session){
   if(pending&&pending.then)pending.then(settle).catch(()=>{
     if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
   });
+}
+/* Card 2 (and card 1 after a swipe back) starts from a play() issued by a
+   scroll event in the middle of the swipe. It cannot rely on the autoplay
+   attribute: stopOnboardingVideo() paused it at open, and pause() clears
+   the element's can-autoplay flag. WebKit can refuse that mid-swipe call
+   (the card is only partly on screen) and then paints its play button;
+   loadeddata/canplay may already have fired, so nothing asked again. Once
+   the carousel comes to rest, ask the card in view once more. A playing
+   clip is left alone. */
+function settleOnboardingVideoPlayback(session){
+  if(onboardingSession!==session)return;
+  const video=currentOnboardingVideo();
+  if(video&&video.paused)playOnboardingVideo(video,session);
+}
+function queueOnboardingPlaybackSettle(session){
+  clearTimeout(session.playSettleTimer);
+  session.playSettleTimer=setTimeout(()=>settleOnboardingVideoPlayback(session),140);
 }
 function syncOnboardingVideoPlayback(session){
   const videos=[...document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))];
@@ -526,7 +542,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
-    depthFrame:0,playFrame:0,playTimer:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,playFrame:0,playTimer:0,playSettleTimer:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -581,7 +597,8 @@ function startOnboarding(replay){
   window.visualViewport?.addEventListener('scroll',relayout,{signal});
   window.addEventListener('resize',relayout,{signal});
   wrap.addEventListener('scroll',syncOnboardingDots,{passive:true,signal});
-  wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);syncOnboardingVideoPlayback(session);},{passive:true,signal});
+  wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);syncOnboardingVideoPlayback(session);queueOnboardingPlaybackSettle(session);},{passive:true,signal});
+  wrap.addEventListener('scrollend',()=>settleOnboardingVideoPlayback(session),{signal});
   document.getElementById('onboard-skip').addEventListener('click',()=>{
     if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'skip'});
@@ -673,6 +690,7 @@ function endOnboarding(remember,returnToPrevious=true){
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
   if(session.playFrame)cancelAnimationFrame(session.playFrame);
   clearTimeout(session.playTimer);
+  clearTimeout(session.playSettleTimer);
   clearTimeout(session.settleTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);
