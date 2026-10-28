@@ -42,7 +42,7 @@ const coverShapes=page=>page.evaluate(()=>{
 // Covers decode asynchronously; screenshots wait for the ones in view.
 const decodeCovers=page=>page.evaluate(()=>Promise.all([...document.querySelectorAll('#onboard-fan img')].filter(img=>getComputedStyle(img.parentElement).visibility!=='hidden').map(img=>img.decode().catch(()=>{}))));
 const assertCoverShapes=(shapes,label)=>{
-  assert.ok(shapes.length>=3,label+' fewer than three covers '+JSON.stringify(shapes));
+  assert.ok(shapes.length>=3&&shapes.length<=5,label+' covers at rest are not 3 to 5 '+JSON.stringify(shapes));
   for(const s of shapes)assert.ok(Math.abs(s.ratio-2/3)<0.02,label+' cover is not 2:3 '+JSON.stringify(s));
 };
 const waitDots=(page,index)=>page.waitForFunction(index=>[...document.querySelectorAll('#onboarding .onboard-dots')].every(d=>[...d.children].findIndex(el=>el.classList.contains('on'))===index),index);
@@ -468,7 +468,7 @@ try{
  }
  // Every card is the same box at every size, with videos playing (their
  // intrinsic size arrives with the data) and after landing on card 3.
- for(const [width,height] of [[390,844],[768,1024],[1440,900],[1920,1080],[1920,1113]]){
+ for(const [width,height] of [[390,844],[768,1024],[1440,900],[1920,1080],[1920,1113],[844,430]]){
   const {context,page}=await setup({viewport:{width,height}});await page.goto(url);await page.evaluate(()=>homeReady);
   await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.readyState>=2;});
   const boxes=()=>page.evaluate(()=>[...document.querySelectorAll('.onboard-card')].map(c=>{const r=c.getBoundingClientRect();
@@ -478,6 +478,9 @@ try{
   await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.readyState>=2;});
   await goCard(page,2);await wait(300);
   const atBooks=await boxes();
+  // Small covers (a short landscape card) once rounded far enough to let a
+  // seventh cover in at rest.
+  assertCoverShapes(await coverShapes(page),`${width}x${height}`);
   console.log(`card boxes ${width}x${height}`,JSON.stringify({atOpen,atBooks}));
   for(const set of [atOpen,atBooks]){
     assert.ok(set.every(b=>Math.abs(b.h-set[0].h)<0.5&&Math.abs(b.top-set[0].top)<0.5),`onboarding cards differ at ${width}x${height} `+JSON.stringify(set));

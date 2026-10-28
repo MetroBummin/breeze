@@ -129,6 +129,18 @@ outer pair sits 1.66 cover widths across, so five covers fit even at
 existing edge fade still hides any cover that would cross the card
 edge.
 
+The depth layout measures the cover slots with `getBoundingClientRect`,
+not `offsetLeft`, and places cover p at `d0 + p` books from the centre.
+`offsetLeft` rounds to whole pixels; with small covers (a short
+landscape card) the rounding error grew with distance from the centre
+until the ±3rd cover crossed the visibility cut and seven covers showed
+at rest. At rest there are five covers (three when the card is too
+narrow for the outer pair), all 2:3. All three cards are one box
+(`.onboard-card { height: 100% }` in one stretched track); there is no
+card-specific height. Measured identical in Chromium and WebKit at
+390×844, 768×1024, 1440×900, 1920×1080 and 1920×1113, at open and after
+landing on card 3.
+
 Each card carries its own dots; the dialog itself has no page
 navigation. The three card 3 buttons are “바로 읽기” (the centred book),
 “내 파일 넣기” (the existing PDF/EPUB/TXT importer, same handoff as

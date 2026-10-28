@@ -436,7 +436,11 @@ function buildOnboardingFan(session){
   session.fanEls=els;
   // Covers overlap, so one book of scrolling is the offset between two
   // neighbouring layout boxes, not their width.
-  const step=()=>els[1].offsetLeft-els[0].offsetLeft;
+  // Fractional layout boxes (the slots are never transformed). offsetLeft
+  // rounds to whole pixels, and with small covers that error grew with the
+  // distance from the centre until the ±3rd cover crossed the visibility
+  // cut and seven covers showed at rest.
+  const step=()=>els[1].getBoundingClientRect().left-els[0].getBoundingClientRect().left;
   const setW=()=>step()*ONBOARD_BOOKS.length;
   // Depth: d = distance from the centre in books (fractional while
   // scrolling). At rest five covers show: the centre one full size and on
@@ -454,10 +458,12 @@ function buildOnboardingFan(session){
     const s=step();
     if(!s)return;
     const half=fan.clientWidth/2;
-    const center=fan.scrollLeft+half;
-    const w=els[0].offsetWidth;
-    for(const el of els){
-      const d=(el.offsetLeft+w/2-center)/s;
+    const first=els[0].getBoundingClientRect(),box=fan.getBoundingClientRect();
+    const w=first.width;
+    // Offset of cover 0 from the fan's centre, in books; cover p is p further.
+    const d0=(first.left+w/2-(box.left+fan.clientLeft+half))/s;
+    for(const [p,el] of els.entries()){
+      const d=d0+p;
       const a=Math.abs(d);
       const img=/** @type {HTMLElement} */(el.firstElementChild);
       if(a>=3){el.style.visibility='hidden';continue;}
