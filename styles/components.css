@@ -79,12 +79,12 @@
   .sm-account{margin:0 0 13px; color:var(--soft); font-size:11px; line-height:1.4;}
   .sm-account b{display:block; overflow-wrap:anywhere; color:var(--ink); font-size:12px;}
   .sm-account span{display:block; margin-top:2px;}
-  #sm-email, #sm-password-email, #sm-password{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:16px;
+  #sm-email{width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:16px;
     font-family:var(--ui); outline:none; margin-bottom:12px; background:var(--field);}
-  #sm-email:focus, #sm-password-email:focus, #sm-password:focus{border-color:var(--blue);}
+  #sm-email:focus{border-color:var(--blue);}
   /* input 은 글자색을 물려받지 않습니다(브라우저 기본값이 이깁니다). 어두운
      화면에서만 잉크색을 줘야 검은 글자가 검은 칸에 깔리지 않습니다. */
-  body.dark #vsearch, body.dark #sm-email, body.dark #sm-password-email, body.dark #sm-password{color:var(--ink);}
+  body.dark #vsearch, body.dark #sm-email{color:var(--ink);}
   .sm-btn{width:100%; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:600;
     font-family:var(--ui); cursor:pointer; margin-bottom:10px;}
   .sm-btn.primary{background:var(--blue); color:var(--on-color);}
@@ -136,8 +136,6 @@
   /* iOS WKWebView는 16px보다 작은 편집 칸에 초점을 주면 화면을 자동 확대합니다.
      native shell의 실제 텍스트 입력만 올려 Reader의 수동 확대는 그대로 둡니다. */
   html.native-shell #sm-email,
-  html.native-shell #sm-password-email,
-  html.native-shell #sm-password,
   html.native-shell .sm-delete-confirm input,
   html.native-shell #am-text,
   html.native-shell #am-url,

@@ -29,15 +29,16 @@ const PROGRESS_ROW='__breeze_progress_v1__';
 const PROGRESS_LOCAL_CHANGED='breeze.progress.changed';
 const LS_HIDDEN='breeze.hidden';
 let vaultMaster=null, vaultMeta=null, vaultRemoteItems=[], serverBooks=[],progressRemoteRecords={};
-let accountDeleteOpen=false, accountDeleteError='', passwordLoginOpen=false;
+let accountDeleteOpen=false, accountDeleteError='';
 /** @type {null | {client:any,epoch:number,controller:AbortController,timer:any,native:any,nonce:string,nativeApple:boolean,rawNonce:string,accepted:boolean,releaseTokens?:()=>void}} */
 let socialLoginOperation=null;
 // Keep the current email step across settings dismissal/auth rerenders. Never
-// persist a password or OTP; Supabase continues to own session verification.
+// persist the OTP; Supabase continues to own session verification. There is
+// no password sign-in: email code, Google and Apple are the only entries.
 const emailLogin={email:'',sentTo:'',message:'',sending:false,request:0,retryAt:0,retryEmail:'',timer:null};
 let emailCodeBusy=false;
 function rememberLoginEmail(){
-  const input=syncInput('sm-email')||syncInput('sm-password-email');
+  const input=syncInput('sm-email');
   if(!input) return;
   const email=(input.value||'').trim();
   if(email.toLowerCase()!==emailLogin.email.toLowerCase()) emailLogin.message='';
@@ -58,7 +59,7 @@ function updateEmailLoginControls(showMessage=true){
   if(wrap) wrap.style.display=sent?'block':'none';
   const sentLine=document.getElementById('sm-code-sent');
   if(sentLine) sentLine.textContent=sent?(emailLogin.message.startsWith('코드를 보냈어요:')?emailLogin.message:`코드를 보냈어요: ${emailLogin.email}`):'';
-  if(showMessage&&!passwordLoginOpen) syncStatus(emailLogin.message);
+  if(showMessage) syncStatus(emailLogin.message);
   if(seconds) emailLogin.timer=setTimeout(()=>updateEmailLoginControls(false),1000);
 }
 function clearEmailLogin(){
@@ -308,13 +309,6 @@ function renderSyncModal(){
       ${legacyWordbookPending?'<p class="settings-sync-note">예전 암호화 단어장은 기존 기기에서 한 번 동기화하면 이 기기로 옮겨집니다.</p>':''}
       <h3 class="settings-section-title">계정 관리</h3>
       <div class="settings-actions-group"><button class="sm-btn ghost" onclick="sbLogout()">로그아웃 (이 기기에서만)</button>${deleteArea}</div>`;
-  }else if(passwordLoginOpen){
-    body.innerHTML=`<div class="desc">이미 비밀번호가 설정된 계정으로 로그인합니다.
-      새 비밀번호를 만들거나 바꾸는 곳은 아니에요.</div>
-      <input id="sm-password-email" type="email" value="${esc(emailLogin.email)}" placeholder="you@example.com" autocomplete="email">
-      <input id="sm-password" type="password" placeholder="비밀번호" autocomplete="current-password">
-      <button class="sm-btn primary" onclick="sbPasswordLogin()">비밀번호로 로그인</button>
-      <button class="sm-linkish neutral" onclick="closePasswordLogin()">이메일 코드 로그인으로 돌아가기</button>`;
   }else{
     const appleMark='<svg class="bz-apple" viewBox="0 0 17 20" aria-hidden="true"><path fill="currentColor" d="M14.1 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.5 1.3 0 1.8-.8 3.3-.8s2 .8 3.4.8c1.4 0 2.3-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4zM11.6 3c.7-.9 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>';
     body.innerHTML=`<p class="settings-sync-note">로그인하면 단어장을 다른 기기에서도 볼 수 있어요.</p>
@@ -341,7 +335,6 @@ function renderSyncModal(){
             <button id="sm-send-link" class="sm-btn primary" type="button" onclick="sbSendLink()">인증 코드 받기</button>
           </div>
         </div>
-        <button id="sm-password-login" class="sm-linkish neutral settings-password-link" type="button" onclick="openPasswordLogin()">비밀번호 로그인</button>
         <div class="bz-legal"><a href="https://breeze.io.kr/docs/terms.html" target="_blank" rel="noopener">이용약관</a><i>|</i><a href="https://breeze.io.kr/docs/privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a></div>
       </div>`;
   }
@@ -544,21 +537,9 @@ async function sbVerifyCode(){
     emailCodeBusy=false;
   }
 }
-function openPasswordLogin(){ passwordLoginOpen=true; renderSyncModal(); syncInput('sm-password-email')?.focus(); }
-function closePasswordLogin(){ passwordLoginOpen=false; renderSyncModal(); syncInput('sm-email')?.focus(); }
-async function sbPasswordLogin(){
-  const email=(syncInput('sm-password-email').value||'').trim();
-  const password=syncInput('sm-password').value||'';
-  if(!/.+@.+\..+/.test(email)){ syncStatus('이메일 형식을 확인해 주세요'); return; }
-  if(!password){ syncStatus('비밀번호를 입력해 주세요'); return; }
-  syncStatus('로그인 중…');
-  const result=await sb.auth.signInWithPassword({email,password});
-  if(result.error) syncStatus('로그인 실패: 이메일 또는 비밀번호를 확인해 주세요');
-}
 document.addEventListener('keydown',event=>{
   if(event.key==='Backspace') emailCodeKey(event);
   if(event.key==='Enter'&&event.target instanceof HTMLInputElement&&(event.target.id==='sm-code'||event.target.classList.contains('bz-otp-box'))){ event.preventDefault(); sbVerifyCode(); }
-  if(event.key==='Enter'&&event.target===document.getElementById('sm-password')){ event.preventDefault(); sbPasswordLogin(); }
 });
 document.addEventListener('paste',emailCodePaste);
 async function sbLogout(){

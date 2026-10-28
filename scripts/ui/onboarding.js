@@ -202,6 +202,54 @@ function syncOnboardingVideoPlayback(session){
     else stopOnboardingVideo(video);
   });
 }
+/* A tap on the card's video belongs to the video while the video is not
+   playing. If autoplay was refused (iOS Low Power Mode refuses even a muted
+   clip) or the clip has not started yet, WebKit used to paint its native
+   play button over the poster, and the same tap went to the carousel and
+   jumped to card 2. The native button is hidden in onboarding.css, and the
+   tap now starts the clip inside the gesture and stays on the card. A
+   playing clip's tap still advances. If a tap-started play() was refused
+   too, the next tap advances so the reader is never stuck.
+   Pointer and touch events both arrive for one physical tap, in either
+   order; the first one decides and the other reuses that decision. */
+function currentOnboardingVideo(){
+  const card=document.querySelectorAll('#onboarding .onboard-card')[onboardingCardIndex()];
+  return /** @type {HTMLVideoElement|null} */(card?.querySelector('video')||null);
+}
+function onboardingVideoWaiting(video){
+  return video.paused||video.ended||(video.currentTime===0&&video.readyState<HTMLMediaElement.HAVE_FUTURE_DATA);
+}
+function startOnboardingVideoFromTap(session,event){
+  if(onboardingSession!==session)return;
+  if(event.type==='pointerdown'&&event.button!=null&&event.button!==0)return;
+  const kind=event.type==='touchstart'?'touch':'pointer';
+  const now=Date.now();
+  const last=session.videoTap;
+  if(last&&last.kind!==kind&&now-last.at<700)return;
+  session.videoTap=null;
+  const target=event.target instanceof Element?event.target:null;
+  const video=currentOnboardingVideo();
+  if(!video||!target||target.closest('button,a,input,.onboard-fan'))return;
+  if(target!==video&&!target.contains(video))return;
+  if(session.motion.matches||document.hidden||!onboardingVideoWaiting(video))return;
+  if(video.dataset.onboardTapRefused==='1'){video.dataset.onboardTapRefused='';return;}
+  session.videoTap={kind,at:now};
+  bindOnboardingVideoRetries(video,session);
+  const token=String(++session.playToken);
+  video.dataset.onboardToken=token;
+  presentOnboardingVideo(video);
+  video.muted=true;
+  const pending=video.play();
+  if(pending&&pending.then)pending.then(()=>{
+    if(video.dataset.onboardToken===token)video.dataset.onboardRejected='';
+  }).catch(()=>{
+    if(video.dataset.onboardToken===token){video.dataset.onboardRejected='1';video.dataset.onboardTapRefused='1';}
+  });
+}
+function onboardingTapStartedVideo(session){
+  const tap=session.videoTap;
+  return !!tap&&Date.now()-tap.at<700;
+}
 function advanceOnboardingCard(session,dir){
   const wrap=document.getElementById('onboard-wrap');
   const card=/** @type {HTMLElement|null} */(wrap?.querySelector('.onboard-card'));
@@ -240,7 +288,7 @@ function bindOnboardingGestures(session){
     const dx=x-origin.x,dy=y-origin.y;
     if(origin.target.closest('button,a,input,.onboard-fan'))return;
     if(Math.hypot(dx,dy)<14){
-      if(onboardingCardIndex()<2)nudge(1);
+      if(!origin.startedVideo&&onboardingCardIndex()<2)nudge(1);
       return;
     }
     if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
@@ -257,7 +305,7 @@ function bindOnboardingGestures(session){
     if(event.button!=null&&event.button!==0)return;
     const target=event.target instanceof Element?event.target:null;
     if(!target||target.closest('button,a,input,.onboard-fan'))return;
-    session.gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,x2:event.clientX,y2:event.clientY,left:wrap.scrollLeft,target};
+    session.gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,x2:event.clientX,y2:event.clientY,left:wrap.scrollLeft,target,startedVideo:onboardingTapStartedVideo(session)};
     try{wrap.setPointerCapture(event.pointerId);}catch{}
   },{signal});
   wrap.addEventListener('pointermove',event=>{
@@ -276,7 +324,7 @@ function bindOnboardingGestures(session){
     return (x,y)=>{
       const dx=x-origin.x,dy=y-origin.y;
       if(origin.target.closest('button,a,input,.onboard-fan'))return;
-      if(Math.hypot(dx,dy)<14){if(onboardingCardIndex()<2)nudge(1);return;}
+      if(Math.hypot(dx,dy)<14){if(!origin.startedVideo&&onboardingCardIndex()<2)nudge(1);return;}
       if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
       if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
         clearTimeout(session.gestureTimer);
@@ -292,7 +340,7 @@ function bindOnboardingGestures(session){
     const target=event.target instanceof Element?event.target:null;
     const touch=event.changedTouches&&event.changedTouches[0];
     if(!target||!touch||target.closest('button,a,input,.onboard-fan'))return;
-    session.touch={x:touch.clientX,y:touch.clientY,left:wrap.scrollLeft,target};
+    session.touch={x:touch.clientX,y:touch.clientY,left:wrap.scrollLeft,target,startedVideo:onboardingTapStartedVideo(session)};
   },{passive:true,signal});
   wrap.addEventListener('touchend',event=>{
     const origin=session.touch;
@@ -474,7 +522,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
-    depthFrame:0,playFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,touchUnlock:false,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,playFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -508,17 +556,11 @@ function startOnboarding(replay){
     });
   });
   bindOnboardingGestures(session);
-  const unlock=()=>{
-    if(session.touchUnlock||onboardingSession!==session)return;
-    const video=[...document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))][onboardingCardIndex()];
-    if(!video||video.dataset.onboardRejected!=='1')return;
-    session.touchUnlock=true;
-    video.muted=true;
-    const pending=video.play();
-    if(pending&&pending.then)pending.then(()=>{video.dataset.onboardRejected='';}).catch(()=>{});
-  };
-  root.addEventListener('touchstart',unlock,{capture:true,passive:true,signal});
-  root.addEventListener('pointerdown',unlock,{capture:true,signal});
+  // Runs in the capture phase, before the carousel's own handlers read
+  // session.videoTap, and inside the touch so iOS accepts play().
+  const startOnTap=event=>startOnboardingVideoFromTap(session,event);
+  root.addEventListener('touchstart',startOnTap,{capture:true,passive:true,signal});
+  root.addEventListener('pointerdown',startOnTap,{capture:true,signal});
   const relayout=()=>{if(onboardingSession===session)layoutOnboardingViewport();};
   window.visualViewport?.addEventListener('resize',relayout,{signal});
   window.visualViewport?.addEventListener('scroll',relayout,{signal});
@@ -623,6 +665,7 @@ function endOnboarding(remember,returnToPrevious=true){
     delete video.dataset.onboardPresented;
     delete video.dataset.onboardBound;
     delete video.dataset.onboardRejected;
+    delete video.dataset.onboardTapRefused;
   }
   document.documentElement.classList.remove('onboarding-open');
   const root=document.getElementById('onboarding');

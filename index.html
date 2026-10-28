@@ -62,14 +62,14 @@
   <link rel="stylesheet" href="styles/pdf-ink.css?v=94029b49">
   <link rel="stylesheet" href="styles/reader.css?v=99b81fe1">
   <link rel="stylesheet" href="styles/dictionary.css?v=c7b494d3">
-  <link rel="stylesheet" href="styles/components.css?v=b3c93e6f">
+  <link rel="stylesheet" href="styles/components.css?v=60b839c5">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
   <link rel="stylesheet" href="styles/wordbook.css?v=50b031d0">
   <link rel="stylesheet" href="styles/study-sets.css?v=2fbc3c48">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
-  <link rel="stylesheet" href="styles/onboarding.css?v=652a3be3">
+  <link rel="stylesheet" href="styles/home-shell.css?v=2cb33e9c">
+  <link rel="stylesheet" href="styles/onboarding.css?v=baff76a9">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -157,13 +157,13 @@
   <script defer src="scripts/reader/book-opening.js?v=1c4a8bff"></script>
   <script defer src="scripts/reader/reader.js?v=1d2b091c"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
-  <script defer src="scripts/ui/preferences.js?v=0016cea7"></script>
+  <script defer src="scripts/ui/preferences.js?v=a315317b"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
-  <script defer src="scripts/sync/sync.js?v=b0c5c6d2"></script>
+  <script defer src="scripts/sync/sync.js?v=d03ff7f8"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=373866a0"></script>
+  <script defer src="scripts/ui/onboarding.js?v=02fca69b"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=8202e181"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
@@ -585,6 +585,18 @@
       <div class="set-label"><b>튜토리얼</b><span>단어와 문장 뜻 보는 방법을 따라 해봐요.</span></div>
       <button type="button" class="sm-mini" onclick="startOnboarding(true)">튜토리얼 다시보기</button>
     </div>
+    <!-- 다크 모드는 읽는 화면 Aa 의 스위치와 같은 값 하나('breeze.dark')를 봅니다.
+         어느 쪽에서 바꾸든 applyDark() 가 둘 다 맞춰 놓습니다. -->
+    <section id="appearance-settings"><h3 class="settings-section-title">화면</h3>
+      <div class="set-row settings-single">
+        <div class="set-label"><b data-i18n="settings.dark">다크 모드</b></div>
+        <div class="set-seg" id="set-theme" role="group" aria-label="다크 모드">
+          <button type="button" data-theme="system" onclick="setThemePreference('system')">시스템</button>
+          <button type="button" data-theme="light" onclick="setThemePreference('light')">라이트</button>
+          <button type="button" data-theme="dark" onclick="setThemePreference('dark')">다크</button>
+        </div>
+      </div>
+    </section>
     <section id="review-settings" hidden><h3 class="settings-section-title">단어 학습</h3>
     <form id="review-limit-form"><fieldset id="review-settings-controls" disabled>
       <label class="set-row"><span class="set-label"><b>하루 학습 최대 단어 수</b><span>신규·복습 합계 · 같은 단어 반복 제외</span></span><input id="review-daily-limit" type="number" min="0" max="100000" step="1" value="100" required inputmode="numeric" aria-label="하루 학습 최대 단어 수"></label>
@@ -595,6 +607,9 @@
       <div id="sm-body"></div>
       <div id="sm-status"></div>
     </div>
+    <section id="support-settings"><h3 class="settings-section-title">지원</h3>
+      <div class="settings-actions-group"><a id="settings-feedback" href="mailto:rhtkdqja2007@gmail.com?subject=Breeze%20%ED%94%BC%EB%93%9C%EB%B0%B1">개발자에게 피드백 보내기</a></div>
+    </section>
     <button id="settings-version" type="button" style="display:block;width:100%;margin:32px 0 0;padding:12px 8px;min-height:44px;border:0;background:transparent;color:var(--settings-muted,inherit);font:500 13px/1 var(--ui);text-align:center;touch-action:manipulation">Breeze</button>
 
   </div>

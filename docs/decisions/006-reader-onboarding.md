@@ -7,7 +7,9 @@ There are no previous/next buttons and nothing advances on a timer.
 The cards move on a horizontal scroll-snap track, with dots under each
 card. A tap or an upward swipe on card 1 or 2 moves one card forward,
 and a downward swipe moves back. That path does not wait on the video:
-if `play()` rejects, the poster stays and the card still changes.
+if `play()` rejects, the poster stays and the card still changes. The one
+exception is a tap on the card's video while that video is paused or has
+not started: the tap starts it and the card stays (see below).
 Horizontal swipe and the arrow keys do the same. The dialog replaces the
 former passive guide (welcome pen animation plus seven recorded scenes),
 which the owner discarded on 2026-10-27 in favour of the minimum-click
@@ -44,7 +46,23 @@ video, sets `muted`, `playsinline` and `autoplay` with `preload="auto"`
 while it is detached, and inserts it again. The `<source>` children move
 with the element; nothing assigns `src`. That is the same playback path a
 card change uses, including the card that is open at the start. A rejected
-`play()` retries on `loadeddata` / `canplay` and on the first touch.
+`play()` retries on `loadeddata` / `canplay`.
+
+On a real iPhone, card 1 could still open on WebKit's native start-playback
+button (autoplay refused, e.g. Low Power Mode, or the clip not started yet),
+and tapping that button jumped to card 2: the carousel owned the tap, and
+the old one-shot touch unlock only ran when a `play()` rejection had been
+recorded. The videos have no `controls` attribute, and `onboarding.css`
+hides `::-webkit-media-controls-start-playback-button` (plus the overlay
+play button and the controls container, one rule each). A tap whose target
+is the current card's video, while that video is paused, ended or has not
+started, is owned by the video: `startOnboardingVideoFromTap` calls
+`play()` inside the gesture (capture phase, before the carousel reads the
+tap) and the carousel does not advance. Pointer and touch events for one
+physical tap reuse the first one's decision. Once the clip plays, a tap
+advances as before; if a tap-started `play()` is refused too, the next tap
+advances so the reader cannot get stuck. Swipes, and taps on the copy or
+dots, always move the card.
 Card 2 stays unloaded until it is the card in view. Reduced motion fetches
 nothing at all — videos stay paused and the copy and dots still carry the
 meaning. The clips are silent H264 MP4s of the real production UI, the
@@ -121,7 +139,9 @@ and per-card dots, exact card copy, video source switching and
 play-only-the-visible-card, card 1's `currentTime` advancing on open
 with no interaction (a phone is inside about 1.5s; the check allows
 2.5s for a slow runner and then requires the clock to keep moving), a Low Power-style `play()`
-rejection that starts on the first touch, advance by tap and swipe-up
+rejection where a real touchscreen tap on card 1's video starts it and
+stays on card 1 (the next tap advances), no `controls` attribute and, on
+WebKit, the hidden start-playback button, advance by tap and swipe-up
 even when `play()` rejects, constant-speed card 2 travel is pinned by
 the reviewed video file itself, dots following scroll and arrow keys,
 the five-cover rest state, tap-to-centre with title/author/button

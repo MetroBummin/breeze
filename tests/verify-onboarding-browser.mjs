@@ -73,6 +73,14 @@ try{
   const t0=await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[0].currentTime);
   await page.waitForFunction(start=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.currentTime>start+0.04;},t0);
   assert.equal((await videoState(page))[0].src,'card1.mp4','phone plays the 9:16 render');
+  // No native controls: no controls attribute, and WebKit's start-playback
+  // button (painted when autoplay is refused) is hidden by onboarding.css.
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>v.controls||v.hasAttribute('controls'))),[false,false],'onboarding video has native controls');
+  if(process.env.BROWSER==='webkit'){
+    assert.equal(await page.evaluate(()=>[...document.styleSheets].some(sheet=>{
+      try{return [...sheet.cssRules].some(rule=>/::-webkit-media-controls-start-playback-button/.test(rule.selectorText||'')&&rule.style.getPropertyValue('display')==='none');}catch{return false;}
+    })),true,'WebKit start-playback button is not hidden');
+  }
   assert.equal((await videoState(page))[1].paused,true,'off-screen card stays paused');
   if(process.env.BROWSER==='webkit'){
     // WebKit probes each <source> at selection time even with preload="none";
@@ -323,11 +331,17 @@ try{
   const after=await page.evaluate(()=>{const v=document.querySelector('#onboarding .onboard-card video');return {t:v.currentTime,paused:v.paused};});
   assert.equal(after.paused,true,'card 1 played before a gesture');
   assert.ok(after.t-before.t<0.05,'card 1 advanced before a gesture '+JSON.stringify({before,after}));
-  await page.evaluate(()=>{
-    const video=document.querySelector('#onboarding .onboard-card video');
-    video.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:30,clientY:120}));
-  });
+  // A real tap on the paused video starts it inside the gesture and stays
+  // on card 1. It must not also advance to card 2.
+  const box=await page.locator('.onboard-card[data-card="0"] video').boundingBox();
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
   await page.waitForFunction(()=>{const v=document.querySelector('#onboarding .onboard-card video');return !v.paused&&v.currentTime>0.04;});
+  await wait(800);
+  assert.equal(await cardIndex(page),0,'the tap that started card 1 also advanced');
+  assert.deepEqual(await dotsActive(page),[0,0,0]);
+  // Once it plays, a tap on the video advances as before.
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+  await waitDots(page,1);
   await context.close();
  }
  // Card 1 still advances when play() rejects: tap and swipe-up, no video event.
