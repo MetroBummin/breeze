@@ -148,8 +148,8 @@ function bindOnboardingVideoRetries(video,session){
       }
       if(onboardingCardIndex()!==mine){stopOnboardingVideo(video);return;}
       video.dataset.onboardRejected='';
-    }).catch(()=>{
-      if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
+    }).catch(error=>{
+      if(video.dataset.onboardToken===token&&error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
     });
   };
   for(const type of ['loadedmetadata','loadeddata','canplay','canplaythrough'])video.addEventListener(type,retry,{signal:session.controller.signal});
@@ -189,8 +189,11 @@ function playOnboardingVideo(video,session){
     return;
   }
   const pending=video.play();
-  if(pending&&pending.then)pending.then(settle).catch(()=>{
-    if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
+  // Only a refusal (NotAllowedError) marks the clip; onboarding.css shows
+  // WebKit's play button for that state alone. A load failure (for example
+  // a server without byte ranges, which Safari needs) keeps the poster.
+  if(pending&&pending.then)pending.then(settle).catch(error=>{
+    if(video.dataset.onboardToken===token&&error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
   });
 }
 /* Card 2 (and card 1 after a swipe back) starts from a play() issued by a
@@ -258,8 +261,10 @@ function startOnboardingVideoFromTap(session,event){
   const pending=video.play();
   if(pending&&pending.then)pending.then(()=>{
     if(video.dataset.onboardToken===token)video.dataset.onboardRejected='';
-  }).catch(()=>{
-    if(video.dataset.onboardToken===token){video.dataset.onboardRejected='1';video.dataset.onboardTapRefused='1';}
+  }).catch(error=>{
+    if(video.dataset.onboardToken!==token)return;
+    video.dataset.onboardTapRefused='1';
+    if(error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
   });
 }
 function onboardingTapStartedVideo(session){
@@ -446,13 +451,19 @@ function buildOnboardingFan(session){
   };
   const layoutDepth=()=>{
     session.depthFrame=0;
-    const s=step();
-    if(!s)return;
+    // Fractional slot boxes (the slots are never transformed), all read
+    // before any write. offsetLeft rounds to whole pixels; with small covers
+    // that error let the ±3rd cover in and seven showed at rest. The step is
+    // the strip's mean spacing, so no single slot's rounding scales up.
+    const rects=els.map(el=>el.getBoundingClientRect());
+    const s=(rects[rects.length-1].left-rects[0].left)/(rects.length-1);
+    if(!(s>0))return;
     const half=fan.clientWidth/2;
-    const center=fan.scrollLeft+half;
-    const w=els[0].offsetWidth;
-    for(const el of els){
-      const d=(el.offsetLeft+w/2-center)/s;
+    const box=fan.getBoundingClientRect();
+    const center=box.left+fan.clientLeft+half;
+    const w=rects[0].width;
+    for(const [p,el] of els.entries()){
+      const d=(rects[p].left+w/2-center)/s;
       const a=Math.abs(d);
       const img=/** @type {HTMLElement} */(el.firstElementChild);
       if(a>=3){el.style.visibility='hidden';continue;}
@@ -470,9 +481,41 @@ function buildOnboardingFan(session){
   };
   session.layoutDepth=layoutDepth;
   const queueDepth=()=>{if(!session.depthFrame)session.depthFrame=requestAnimationFrame(layoutDepth);};
+  // The CSS cover size needs the fan's box as lengths (see onboarding.css).
+  // Width is the card's content width, not the fan's: the fan's padding is
+  // derived from --fan-w, so its own width would feed back. Height is the
+  // fan's (flex-basis 0, min-height 0), which the covers cannot change.
+  const card=/** @type {HTMLElement} */(fan.closest('.onboard-card'));
+  const measureFan=()=>{
+    const cs=getComputedStyle(card);
+    const w=Math.round(card.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)),h=fan.offsetHeight;
+    if(!w||!h||(w===session.fanW&&h===session.fanH))return;
+    // A later resize (fonts arriving, rotation) moves every slot. Keep the
+    // same book in the middle: WebKit does not re-snap the strip, which left
+    // it off centre with a stale depth layout (three covers on one side).
+    const keep=session.fanW?els[centredOnboardingIndex(session).p]:null;
+    session.fanW=w;session.fanH=h;
+    fan.style.setProperty('--fan-w',w+'px');
+    fan.style.setProperty('--fan-h',h+'px');
+    if(keep)centreOnboardingCover(session,keep,true);
+    queueDepth();
+  };
+  measureFan();
+  // Writing --fan-w changes the fan's padding, so its content box. Watch
+  // the border box (flex-sized, independent of the padding) and write on
+  // the next frame, outside the observer's delivery: a write inside it is
+  // what WebKit reports as a ResizeObserver loop.
+  if(typeof ResizeObserver==='function'){
+    let frame=0;
+    session.observer=new ResizeObserver(()=>{
+      if(frame)return;
+      frame=requestAnimationFrame(()=>{frame=0;if(onboardingSession===session)measureFan();});
+    });
+    session.observer.observe(fan,{box:'border-box'});
+  }
   const signal=session.controller.signal;
   fan.addEventListener('scroll',()=>{queueDepth();queueOnboardingSettle(session);},{passive:true,signal});
-  window.addEventListener('resize',queueDepth,{signal});
+  window.addEventListener('resize',()=>{measureFan();queueDepth();},{signal});
   // Wrap back into the middle copy so the strip never ends. The jump
   // is deferred and re-checked: scrollend can fire mid-flight on a long
   // smooth scroll, and jumping then would cancel the animation and
@@ -541,7 +584,7 @@ function startOnboarding(replay){
   try{localStorage.removeItem(ONBOARD_PROGRESS_KEY);}catch{}
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
-    motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
+    motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,fanW:0,fanH:0,
     depthFrame:0,playFrame:0,playTimer:0,playSettleTimer:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;

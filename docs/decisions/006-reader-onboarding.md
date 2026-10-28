@@ -61,7 +61,13 @@ button (autoplay refused, e.g. Low Power Mode, or the clip not started yet),
 and tapping that button jumped to card 2: the carousel owned the tap, and
 the old one-shot touch unlock only ran when a `play()` rejection had been
 recorded. The videos have no `controls` attribute, and `onboarding.css`
-hides `::-webkit-media-controls-start-playback-button`. A tap whose target
+hides `::-webkit-media-controls-start-playback-button` unless `play()` was
+actually refused (`data-onboard-rejected`, set only for `NotAllowedError`).
+In that state the button is the hint to tap; a load failure keeps the
+plain poster. Safari plays MP4 only from a server that answers byte-range
+requests with 206: `python3 -m http.server` ignores `Range` and returns
+200, so on Mac Safari the clip never loads there. GitHub Pages and the
+test server support ranges. A tap whose target
 is the current card's video, while that video is paused, ended or has not
 started, is owned by the video: `startOnboardingVideoFromTap` calls
 `play()` inside the gesture (capture phase, before the carousel reads the
@@ -98,10 +104,45 @@ new one opens in the Reader. The fan's layout boxes are never
 transformed — only the images inside move and scale — because Chrome
 snaps to transformed boxes and the snap points would drift. The
 media-query block that widens the card and caps cover height on
-tablet/desktop must stay after the base fan/cover rules or the cap
-silently stops working. The cap is the fan's own height (`100%`), not a
-`100vh` slice: every card is the same height, so a viewport cap on the
-cover alone was what left card 3 shorter than the video cards.
+tablet/desktop must stay after the base fan rule or the cap silently
+stops working. The cap is the fan's own height, not a `100vh` slice:
+every card is the same height, so a viewport cap on the cover alone was
+what left card 3 shorter than the video cards.
+
+Every cover, centre and peeking, is 2:3. Its size is one length,
+`--cover-h = min(0.84 × fan width, fan height − 52px)` (0.87 at 768px and
+up), and the box is `width: --cover-h × 2/3; aspect-ratio: 2/3;
+height: auto`. TestFlight 1.9.9 (build 361) showed tall, narrow covers
+with their titles cut off. The cause was the phone layout from #289
+setting `--cw: 100%`. A `%` inside a custom property resolves where it is
+used, so the same `--cover-h` meant 84% of the fan's *height* in `height`
+but 84% of its *width* in `flex-basis`, the overlap margin and the
+padding. At 390×844 that made a 122×427 box (0.29 instead of 0.67), and
+`object-fit: cover` cropped the art to fit it. Tablet and desktop were
+off too (0.84 and 0.73), because the `100%` height cap had the same
+mismatch. iOS 15 has no container query units, so `buildOnboardingFan`
+writes the card's content width and the fan's height as `--fan-w` /
+`--fan-h` px (ResizeObserver plus `resize`), and the CSS uses only those
+lengths. The cover width is capped at 0.56 × the card width, and the
+outer pair sits 1.66 cover widths across, so five covers fit even at
+320px without squeezing. They get smaller, not narrower, and the
+existing edge fade still hides any cover that would cross the card
+edge.
+
+The depth layout reads every slot's fractional box
+(`getBoundingClientRect`) before writing, and the step is the strip's
+mean spacing. `offsetLeft` rounds to whole pixels; with small covers (a
+short landscape card) that error let the ±3rd cover in and seven showed
+at rest. Scaling one slot's offset by its index instead overshot the
+other way in WebKit and left three. When the fan's size changes after
+open (fonts arriving, rotation), the book that was centred is centred
+again: Chromium re-snaps the strip by itself, WebKit does not, and its
+strip was left off centre with three covers on one side. At rest there
+are five covers, all 2:3. All three cards are one box
+(`.onboard-card { height: 100% }` in one stretched track); there is no
+card-specific height. Measured identical in Chromium and WebKit at
+390×844, 768×1024, 1440×900, 1920×1080 and 1920×1113, at open and after
+landing on card 3.
 
 Each card carries its own dots; the dialog itself has no page
 navigation. The three card 3 buttons are “바로 읽기” (the centred book),
@@ -111,8 +152,11 @@ failure leave the card available), and “둘러볼게요” (home). Import and
 book-open failures report on a status line inside card 3, because the
 app-wide toast is routed to the home notice behind the overlay and
 would never be seen here. Below 768px the onboarding fills the screen
-edge to edge: no rounded card, shadow or outer margin, and the background
-is the Home background `#F2F2F7`. Safe-area insets (`env(safe-area-inset-*)`)
+edge to edge: no rounded card, shadow or outer margin. The card is the
+same white on every screen, the white of the video frames, so the video
+area and the dots and copy under it show no seam (phones used to paint
+the card and video `#F2F2F7` under white frames, which drew a line under
+the video). Safe-area insets (`env(safe-area-inset-*)`)
 pad the copy and the controls. Skip is a small grey link at the top right
 of that screen, 18px below the safe area and 18px in from the right, on
 every screen. At 768px and above the inset white card is unchanged, and
@@ -123,8 +167,8 @@ gray margin. The dialog is one visual viewport: `#onboarding` is fixed to
 container. iOS Safari's toolbar is inside that measurement, so the page
 does not scroll. All three screens share one width, height and vertical
 position. Card 3's fan flexes inside that same box. Guidance copy stays
-polite (존댓말), there is no focus outline, and the dialog surface is
-the home background `#F2F2F7` in light mode.
+polite (존댓말), there is no focus outline, and the margin around the
+card at 768px and up is the home background `#F2F2F7`.
 
 The carousel surface stays light in both themes. The standalone page is
 light-only, and forcing the dialog light keeps copy, the video hairline
@@ -164,7 +208,8 @@ card 2, card 2 playing once the carousel settles after a refused mid-swipe
 `play()`, advance by tap and swipe-up
 even when `play()` rejects, constant-speed card 2 travel is pinned by
 the reviewed video file itself, dots following scroll and arrow keys,
-the five-cover rest state, tap-to-centre with title/author/button
+the five-cover rest state, every visible cover at 2:3 at each layout size
+and on the iPhone profile, tap-to-centre with title/author/button
 following, read/file/browse/skip/Escape paths, import
 cancellation/failure/interruption, completion persistence and replay,
 existing Reader isolation, reduced motion (paused, no media fetched),

@@ -59,12 +59,13 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
      on a white card, so without this the video area has no edge. */
   box-shadow:inset 0 0 0 1px rgba(0, 0, 0, .05);
 }
-/* iOS WebKit paints its own start-playback button over an inline video
-   whose autoplay was refused (Low Power Mode) or has not started. The
-   videos carry no controls attribute; a tap on the video starts it (see
-   startOnboardingVideoFromTap). Only this pseudo-element is hidden: hiding
-   the whole ::-webkit-media-controls tree is not needed for it. */
-#onboarding .onboard-card video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none;}
+/* WebKit paints its own start-playback button over an inline video that
+   has not started. The videos carry no controls attribute. The button is
+   hidden until play() was actually refused (data-onboard-rejected, set
+   only for NotAllowedError, e.g. iOS Low Power Mode); then it is the hint,
+   and a tap on the video starts it without moving the card (see
+   startOnboardingVideoFromTap). */
+#onboarding .onboard-card video:not([data-onboard-rejected="1"])::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none;}
 .onboard-dots,.onboard-copy,.onboard-bookmeta,.onboard-choice{flex:none;}
 .onboard-dots{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;}
 .onboard-dots i{width:8px;height:8px;border-radius:50%;background:#D1D1D6;transition:background .2s;}
@@ -74,13 +75,20 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
 .onboard-copy .t2{font-size:14px;color:#6D6D72;line-height:1.5;margin-top:4px;}
 /* Card 3 fills the same card box as the videos. The fan takes the space
    the video uses; covers stay capped so five of them fit the card width.
-   Snapping still uses the untransformed layout boxes. */
+   Snapping still uses the untransformed layout boxes.
+   Cover size is one length, --cover-h, and every cover is 2:3 from it.
+   It must be built from lengths only: a `%` inside a custom property
+   resolves against the fan's height in `height` but against its width in
+   flex-basis, margin and padding, which made covers tall and narrow on
+   phones (--cw is 100% there). --fan-w / --fan-h are the fan's own box in
+   px, written by buildOnboardingFan (iOS 15 has no container units).
+   52px is the fan's 44px + 8px vertical padding. */
 .onboard-fan{
-  --cover-h:min(calc(var(--cw) * 0.84), 100%);
+  --cover-h:max(0px, min(calc(var(--fan-w, 100vw) * 0.84), calc(var(--fan-h, 50vh) - 52px)));
   --cover-w:calc(var(--cover-h) * 2 / 3);
   --step:calc(var(--cover-w) * 0.3);
-  position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:center;
-  margin:0;padding:44px calc((var(--cw) - var(--cover-w)) / 2) 8px;
+  position:relative;flex:1 1 0;min-height:0;display:flex;align-items:center;
+  margin:0;padding:44px calc((var(--fan-w, 100vw) - var(--cover-w)) / 2) 8px;
   overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x;
 }
@@ -91,7 +99,7 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
    shift the snap points. The image inside is what gets moved/scaled
    and tapped. */
 .onboard-fan .onboard-cover{
-  position:relative;flex:0 0 var(--cover-w);height:var(--cover-h);
+  position:relative;flex:0 0 var(--cover-w);width:var(--cover-w);height:auto;aspect-ratio:2 / 3;
   margin-right:calc(var(--step) - var(--cover-w));
   scroll-snap-align:center;scroll-snap-stop:always;pointer-events:none;
 }
@@ -124,19 +132,21 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
 .onboard-choice-note{margin:10px 4px 0;text-align:center;font-size:13px;line-height:1.5;color:#6D6D72;word-break:keep-all;}
 .onboard-choice-note:empty{display:none;}
 /* Tablet/desktop: the 4:3 renders. This block must stay after the base
-   .onboard-fan .onboard-cover rule, or the base rule wins the cascade and
-   the wider card / cover cap silently stops working. Cover height is
-   capped by the fan (100%) so the equal-height card cannot overflow. */
+   .onboard-fan rule, or the base rule wins the cascade and the wider
+   card / cover cap silently stops working. Cover height is capped by the
+   fan's measured height so the equal-height card cannot overflow. */
 @media (min-width: 768px){
   #onboarding{
     --cw:min(calc(100vw - 48px), calc((var(--avail) - var(--chrome)) * 4 / 3));
     --card-h:min(var(--avail), calc(var(--cw) * 3 / 4 + var(--chrome)));
   }
-  .onboard-fan{--cover-h:min(calc(var(--cw) * 0.87), 100%);}
+  .onboard-fan{--cover-h:max(0px, min(calc(var(--fan-w, 100vw) * 0.87), calc(var(--fan-h, 50vh) - 52px)));}
 }
-/* Phones fill the screen. The white rounded card, its shadow and the
-   outer margin stay at 768px and above. The gray is the Home background,
-   edge to edge; safe-area insets pad the copy and the skip, not a frame. */
+/* Phones fill the screen with the card itself. The rounded corners, the
+   shadow and the outer gray margin stay at 768px and above. The card keeps
+   one white surface everywhere, the same white as the video frames, so the
+   video and the copy below it show no seam. Safe-area insets pad the copy
+   and the skip, not a frame. */
 @media (max-width: 767px){
   #onboarding{
     --cw:100%;
@@ -146,11 +156,11 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
   .onboard-stage{padding:0;}
   .onboard-column{width:100%;height:100%;}
   .onboard-card{
-    border-radius:0;box-shadow:none;background:#F2F2F7;
+    border-radius:0;box-shadow:none;
     padding-left:env(safe-area-inset-left, 0px);
     padding-right:env(safe-area-inset-right, 0px);
   }
-  .onboard-card video{box-shadow:none;background:#F2F2F7;}
+  .onboard-card video{box-shadow:none;}
   .onboard-copy{padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   .onboard-choice{padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   #onboarding #onboard-skip{
