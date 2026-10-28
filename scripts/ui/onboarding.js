@@ -92,32 +92,102 @@ function layoutOnboardingViewport(){
   root.style.setProperty('--vv-h',height+'px');
   root.style.setProperty('--vv-top',top+'px');
 }
-/* Playback follows the snapped card, not an intersection ratio. preload=none
-   plus a 0.6 observer missed card 1 on phones: the element had no box yet,
-   or play() rejected, and the rejection was ignored. A failed play retries
-   once with load(). Navigation never waits on this. Reduced motion does not
-   fetch. */
+/* Card 1 stays on its poster on iPhone Safari and iPhone Chrome, and plays
+   on desktop Chrome. The clip is parsed inside #onboarding[hidden]
+   (display:none), so iOS WebKit never gives it a renderer: preload is
+   ignored, and play() in the same turn the dialog opens is rejected
+   (no user gesture, and Low Power Mode rejects even a muted play). The
+   old catch called load() and play() once more, then gave up, so nothing
+   was waiting for canplay or a touch. A later swipe is a gesture, which
+   is why the clip starts only after leaving the card and coming back.
+   Desktop Chrome accepts the early play() and waits for data.
+   Once the dialog is visible, detach the current video, set muted,
+   playsinline and autoplay while it is detached, and insert it again.
+   Sources stay on the element — nothing assigns src. The same path runs
+   for the card a swipe lands on. A rejected play() retries on
+   loadeddata/canplay and on the first touch. Reduced motion does not fetch. */
 function stopOnboardingVideo(video){
   video.dataset.onboardToken='off';
+  video.autoplay=false;
+  video.removeAttribute('autoplay');
   try{video.pause();}catch{}
+}
+function presentOnboardingVideo(video){
+  if(video.dataset.onboardPresented==='1')return;
+  video.dataset.onboardPresented='1';
+  video.muted=true;
+  video.defaultMuted=true;
+  video.playsInline=true;
+  video.setAttribute('muted','');
+  video.setAttribute('playsinline','');
+  video.setAttribute('webkit-playsinline','');
+  video.autoplay=true;
+  video.setAttribute('autoplay','');
+  video.preload='auto';
+  const parent=video.parentNode,next=video.nextSibling;
+  if(!parent)return;
+  parent.removeChild(video);
+  parent.insertBefore(video,next);
+}
+function bindOnboardingVideoRetries(video,session){
+  if(video.dataset.onboardBound==='1')return;
+  video.dataset.onboardBound='1';
+  const retry=()=>{
+    if(onboardingSession!==session||video.dataset.onboardToken==='off')return;
+    const mine=[...document.querySelectorAll('#onboarding .onboard-card video')].indexOf(video);
+    if(mine!==onboardingCardIndex()||session.motion.matches||document.hidden)return;
+    if(!video.paused)return;
+    const token=video.dataset.onboardToken;
+    const pending=video.play();
+    if(pending&&pending.then)pending.then(()=>{
+      // A newer play() owns the element. Pausing here was stopping card 2
+      // when the open-frame attempt resolved late.
+      if(video.dataset.onboardToken!==token){
+        if(video.dataset.onboardToken==='off'){try{video.pause();}catch{}}
+        return;
+      }
+      if(onboardingCardIndex()!==mine){stopOnboardingVideo(video);return;}
+      video.dataset.onboardRejected='';
+    }).catch(()=>{
+      if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
+    });
+  };
+  video.addEventListener('loadeddata',retry,{signal:session.controller.signal});
+  video.addEventListener('canplay',retry,{signal:session.controller.signal});
 }
 function playOnboardingVideo(video,session){
   if(!video)return;
   const mine=[...document.querySelectorAll('#onboarding .onboard-card video')].indexOf(video);
   if(session.motion.matches||document.hidden||mine!==onboardingCardIndex()){stopOnboardingVideo(video);return;}
+  const root=document.getElementById('onboarding');
+  if(!root||root.hidden)return;
+  bindOnboardingVideoRetries(video,session);
+  presentOnboardingVideo(video);
   video.muted=true;
   video.playsInline=true;
+  video.autoplay=true;
+  video.setAttribute('autoplay','');
   const token=String(++session.playToken);
   video.dataset.onboardToken=token;
-  const settle=()=>{if(video.dataset.onboardToken!==token||onboardingCardIndex()!==mine)stopOnboardingVideo(video);};
-  const start=()=>video.play().then(settle).catch(()=>{
-    if(video.dataset.onboardToken!==token||onboardingCardIndex()!==mine)return;
-    if(video.dataset.onboardRetried==='1')return;
-    video.dataset.onboardRetried='1';
+  const settle=()=>{
+    if(video.dataset.onboardToken!==token){
+      if(video.dataset.onboardToken==='off'){try{video.pause();}catch{}}
+      return;
+    }
+    if(onboardingCardIndex()!==mine)stopOnboardingVideo(video);
+    else video.dataset.onboardRejected='';
+  };
+  // load() and play() in one turn aborts the fetch on iOS and the promise
+  // rejects before any frame exists. If nothing has been selected yet, start
+  // the resource and let loadeddata/canplay call play().
+  if(video.networkState===HTMLMediaElement.NETWORK_EMPTY&&video.readyState===0){
     try{video.load();}catch{}
-    video.play().then(settle).catch(()=>{});
+    return;
+  }
+  const pending=video.play();
+  if(pending&&pending.then)pending.then(settle).catch(()=>{
+    if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
   });
-  start();
 }
 function syncOnboardingVideoPlayback(session){
   const videos=[...document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))];
@@ -399,7 +469,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
-    depthFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,playFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,touchUnlock:false,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -408,6 +478,12 @@ function startOnboarding(replay){
   }
   const root=document.getElementById('onboarding');
   document.documentElement.classList.add('onboarding-open');
+  if(session.motion.matches){
+    for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
+      video.autoplay=false;video.removeAttribute('autoplay');video.preload='none';
+      try{video.pause();}catch{}
+    }
+  }
   layoutOnboardingViewport();
   root.hidden=false;
   setOnboardingChoiceNote('');
@@ -417,12 +493,27 @@ function startOnboarding(replay){
   buildOnboardingFan(session);
   wrap.scrollTo({left:0,behavior:'instant'});
   syncOnboardingDots();
-  // Play the snapped card only. No autoplay attribute: with preload="none"
-  // nothing is fetched until that card is shown, and reduced motion fetches
-  // nothing at all. A rejected play() does not block the next card.
-  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))delete video.dataset.onboardRetried;
-  syncOnboardingVideoPlayback(session);
+  // The initial card uses the same playback path as a swipe. Wait until the
+  // dialog has a renderer: play() in the turn that clears `hidden` is what
+  // iOS rejects. Two frames is enough for WebKit to build one.
+  session.playFrame=requestAnimationFrame(()=>{
+    session.playFrame=requestAnimationFrame(()=>{
+      session.playFrame=0;
+      if(onboardingSession===session)syncOnboardingVideoPlayback(session);
+    });
+  });
   bindOnboardingGestures(session);
+  const unlock=()=>{
+    if(session.touchUnlock||onboardingSession!==session)return;
+    const video=[...document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))][onboardingCardIndex()];
+    if(!video||video.dataset.onboardRejected!=='1')return;
+    session.touchUnlock=true;
+    video.muted=true;
+    const pending=video.play();
+    if(pending&&pending.then)pending.then(()=>{video.dataset.onboardRejected='';}).catch(()=>{});
+  };
+  root.addEventListener('touchstart',unlock,{capture:true,passive:true,signal});
+  root.addEventListener('pointerdown',unlock,{capture:true,signal});
   const relayout=()=>{if(onboardingSession===session)layoutOnboardingViewport();};
   window.visualViewport?.addEventListener('resize',relayout,{signal});
   window.visualViewport?.addEventListener('scroll',relayout,{signal});
@@ -518,10 +609,16 @@ function endOnboarding(remember,returnToPrevious=true){
   session.theme.disconnect();
   session.observer?.disconnect();
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
+  if(session.playFrame)cancelAnimationFrame(session.playFrame);
   clearTimeout(session.settleTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);
-  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
+    stopOnboardingVideo(video);
+    delete video.dataset.onboardPresented;
+    delete video.dataset.onboardBound;
+    delete video.dataset.onboardRejected;
+  }
   document.documentElement.classList.remove('onboarding-open');
   const root=document.getElementById('onboarding');
   root.hidden=true;
