@@ -426,8 +426,9 @@ function listeningWordSurfaceChanged(){
   listeningPlay(listening.sentence);
 }
 
-/* "여기서부터 듣기" — 문장 결과(#ps-listen)와 실패 필(#sentence-peek-listen)의 단추.
-   꾹 누르기만으로는 듣기 자리가 움직이지 않고, 이 단추를 눌렀을 때만 옮깁니다. */
+/* "여기서부터 듣기" — 문장 결과(#ps-listen)의 맨 위 단추. 실패 필은 승인된 그대로
+   (문구와 재시도 하나) 둡니다. 꾹 누르기만으로는 듣기 자리가 움직이지 않고, 이
+   단추를 눌렀을 때만 옮깁니다. */
 function listenFromSentence(){
   const origin=typeof sentenceOrigin==='undefined' ? null : sentenceOrigin;
   const block=origin && origin.block;

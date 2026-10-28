@@ -24,7 +24,7 @@ The engine is the device's Web Speech `speechSynthesis` with an English voice. I
 - **Gestures:** `gesture.js` stays the only judge. Before it opens a word, the text surface asks `listeningWordTap()` whether the tap belongs to listening.
   - A tap on the sentence being read replays that sentence.
   - A tap on a word in another sentence pauses playback and opens the normal popup. Playback resumes from the start of the same sentence when the popup closes.
-- **Long-press:** long-press behaviour is unchanged. The sentence surface gains a top item, "여기서부터 듣기". The failure pill gains the same action as an icon.
+- **Long-press:** long-press behaviour is unchanged. The sentence surface gains a top item, "여기서부터 듣기". The failure pill keeps its approved single retry action, so listening from a sentence needs a successful (or cached) translation; ⏮/⏭ still work offline.
 - **Sentences:** the same splitter as long-press, `bridgeSentences`, runs on the same `#rtext [data-pi]` elements.
 - **Highlighting:** CSS Custom Highlights drawn over offset ranges, so lazy word-span hydration is untouched. Without Highlight support, light rectangles are drawn instead and the other text is not dimmed.
 - **Auto-scroll:** uses `readerScrollTo`, so the bottom controls' collapse logic and the user-scroll detection both recognise it as a programmatic scroll.

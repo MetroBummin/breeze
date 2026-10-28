@@ -98,10 +98,6 @@ body.listening-available.sentence-anchored #ps-listen{display:flex; align-items:
 #ps-listen svg{flex:none; width:20px; height:20px; color:var(--selection-ink);}
 #ps-listen:active{opacity:.68;}
 #ps-listen:focus-visible{outline:2px solid var(--sentence-glass-secondary); outline-offset:2px; border-radius:8px;}
-#sentence-peek-listen{display:none;}
-body.listening-available #sentence-peek-listen{display:block;}
-body.listening-available #sentence-peek .word-peek-actions{flex-basis:88px;}
-#sentence-peek-listen svg{margin:auto;}
 
 @media (prefers-reduced-motion:reduce){
   #listen-bar.is-playing .listen-wave path{animation:none;}

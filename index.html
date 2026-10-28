@@ -156,7 +156,7 @@
   <script defer src="scripts/reader/gesture-diag.js?v=7245bb14"></script>
   <script defer src="scripts/reader/book-opening.js?v=1c4a8bff"></script>
   <script defer src="scripts/reader/reader.js?v=db006b41"></script>
-  <script defer src="scripts/reader/listening.js?v=48538f09"></script>
+  <script defer src="scripts/reader/listening.js?v=5cd25e18"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
   <script defer src="scripts/ui/preferences.js?v=0016cea7"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -174,7 +174,7 @@
   <link rel="stylesheet" href="styles/study.css?v=ff988d52">
   <link rel="stylesheet" href="styles/surfaces.css?v=ee2a082b">
   <link rel="stylesheet" href="styles/header-controls.css?v=b58ebc34">
-  <link rel="stylesheet" href="styles/listening.css?v=1ee1a1b0">
+  <link rel="stylesheet" href="styles/listening.css?v=f04b3bbd">
 </head>
 <body>
 <div id="app">
@@ -414,7 +414,6 @@
   <div id="sentence-peek" role="status" aria-live="polite" aria-atomic="true" hidden>
     <span id="sentence-peek-meaning"></span>
     <span class="word-peek-actions">
-      <button id="sentence-peek-listen" class="word-peek-action" type="button" aria-label="여기서부터 듣기" title="여기서부터 듣기" onclick="listenFromSentence()"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 15.5V12a7.5 7.5 0 0 1 15 0v3.5"/><rect x="3.5" y="14" width="4.5" height="6.5" rx="1.8"/><rect x="16" y="14" width="4.5" height="6.5" rx="1.8"/></svg></button>
       <button id="sentence-peek-retry" class="word-peek-action" type="button" aria-label="문장 해석 다시 시도" onclick="retrySentence()">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"
              stroke-linecap="round" stroke-linejoin="round">
