@@ -118,8 +118,9 @@ restore their exact previous state on exit.
 
 `npm run test:onboarding` exercises the carousel dialog: three cards
 and per-card dots, exact card copy, video source switching and
-play-only-the-visible-card, card 1's `currentTime` advancing within
-about 1.5s of open with no interaction, a Low Power-style `play()`
+play-only-the-visible-card, card 1's `currentTime` advancing on open
+with no interaction (a phone is inside about 1.5s; the check allows
+2.5s for a slow runner and then requires the clock to keep moving), a Low Power-style `play()`
 rejection that starts on the first touch, advance by tap and swipe-up
 even when `play()` rejects, constant-speed card 2 travel is pinned by
 the reviewed video file itself, dots following scroll and arrow keys,
