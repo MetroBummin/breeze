@@ -53,8 +53,7 @@ button (autoplay refused, e.g. Low Power Mode, or the clip not started yet),
 and tapping that button jumped to card 2: the carousel owned the tap, and
 the old one-shot touch unlock only ran when a `play()` rejection had been
 recorded. The videos have no `controls` attribute, and `onboarding.css`
-hides `::-webkit-media-controls-start-playback-button` (plus the overlay
-play button and the controls container, one rule each). A tap whose target
+hides `::-webkit-media-controls-start-playback-button`. A tap whose target
 is the current card's video, while that video is paused, ended or has not
 started, is owned by the video: `startOnboardingVideoFromTap` calls
 `play()` inside the gesture (capture phase, before the carousel reads the

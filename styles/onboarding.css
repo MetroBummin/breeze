@@ -62,11 +62,9 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
 /* iOS WebKit paints its own start-playback button over an inline video
    whose autoplay was refused (Low Power Mode) or has not started. The
    videos carry no controls attribute; a tap on the video starts it (see
-   startOnboardingVideoFromTap). One rule per pseudo-element: a browser that
-   does not know one of them drops the whole rule. */
+   startOnboardingVideoFromTap). Only this pseudo-element is hidden: hiding
+   the whole ::-webkit-media-controls tree is not needed for it. */
 #onboarding .onboard-card video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none;}
-#onboarding .onboard-card video::-webkit-media-controls-overlay-play-button{display:none!important;}
-#onboarding .onboard-card video::-webkit-media-controls{display:none!important;}
 .onboard-dots,.onboard-copy,.onboard-bookmeta,.onboard-choice{flex:none;}
 .onboard-dots{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;}
 .onboard-dots i{width:8px;height:8px;border-radius:50%;background:#D1D1D6;transition:background .2s;}
