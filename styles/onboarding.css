@@ -59,6 +59,12 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
      on a white card, so without this the video area has no edge. */
   box-shadow:inset 0 0 0 1px rgba(0, 0, 0, .05);
 }
+/* iOS WebKit paints its own start-playback button over an inline video
+   whose autoplay was refused (Low Power Mode) or has not started. The
+   videos carry no controls attribute; a tap on the video starts it (see
+   startOnboardingVideoFromTap). Only this pseudo-element is hidden: hiding
+   the whole ::-webkit-media-controls tree is not needed for it. */
+#onboarding .onboard-card video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none;}
 .onboard-dots,.onboard-copy,.onboard-bookmeta,.onboard-choice{flex:none;}
 .onboard-dots{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;}
 .onboard-dots i{width:8px;height:8px;border-radius:50%;background:#D1D1D6;transition:background .2s;}

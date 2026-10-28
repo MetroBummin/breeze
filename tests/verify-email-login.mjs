@@ -15,7 +15,7 @@ function device({native=false}={}){
     esc:value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),
     Date:class extends Date{static now(){return now;}},
     setTimeout:callback=>{const id=++sequence;timers.set(id,callback);return id;},clearTimeout:id=>timers.delete(id)});
-  vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,send:sbSendLink,password:openPasswordLogin,back:closePasswordLogin,changed:typeof emailLoginChanged==="function"?emailLoginChanged:()=>{},code:typeof emailCodeChanged==="function"?emailCodeChanged:()=>{},verify:sbVerifyCode,setClient:client=>sb=client,setUser:user=>sbUser=user,advanceEpoch:()=>syncSessionEpoch++};',context);
+  vm.runInContext(source+'\n globalThis.api={render:renderSyncModal,send:sbSendLink,changed:typeof emailLoginChanged==="function"?emailLoginChanged:()=>{},code:typeof emailCodeChanged==="function"?emailCodeChanged:()=>{},verify:sbVerifyCode,setClient:client=>sb=client,setUser:user=>sbUser=user,advanceEpoch:()=>syncSessionEpoch++};',context);
   context.api.setClient({auth}); context.api.render();
   const get=id=>document.getElementById(id)||(id==='sm-send-link'?document.querySelector('button[onclick="sbSendLink()"]'):null);
   return {api:context.api,requests,document,get,timers,
@@ -46,15 +46,12 @@ test('settings dismissal and rerender retain email and the code step without ret
   assert.equal(h.get('sm-email').value,'reader@example.com');assert.equal(h.get('sm-codewrap').style.display,'block');
   assert.equal(h.get('sm-code').value,'');assert.equal(h.requests.length,1);assert.match(h.get('sm-status').textContent,/코드를 보냈어요: reader@example.com/);
 });
-test('password round trip preserves email and code availability',async()=>{
-  const h=device();await sent(h);h.api.password();assert.equal(h.get('sm-password-email').value,'reader@example.com');
-  h.api.back();assert.equal(h.get('sm-email').value,'reader@example.com');assert.equal(h.get('sm-codewrap').style.display,'block');
-  assert.equal(h.requests.length,1);
-});
-test('late email result does not overwrite the password screen and is available on return',async()=>{
-  const h=device();h.email('reader@example.com');const send=h.api.send();h.api.password();h.get('sm-status').textContent='비밀번호 안내';
-  h.requests[0].resolve({error:null});await send;assert.equal(h.get('sm-status').textContent,'비밀번호 안내');
-  h.api.back();assert.equal(h.get('sm-codewrap').style.display,'block');assert.match(h.get('sm-status').textContent,/코드를 보냈어요/);
+test('signed-out settings offer no password sign-in',()=>{
+  const h=device();
+  assert.equal(h.document.querySelector('input[type="password"]'),null);
+  assert.equal(h.get('sm-password-login'),null);
+  assert.doesNotMatch(h.document.body.innerHTML,/비밀번호/);
+  assert.ok(h.get('sm-google-login')&&h.get('sm-apple-login')&&h.get('sm-email'));
 });
 test('server resend delay is shown in Korean and already received code remains usable',async()=>{
   const h=device();await sent(h);h.advance(60001);const again=h.api.send();
@@ -99,7 +96,7 @@ test('a throttled first request still lets an existing email code be entered',as
 
 test('an old send cannot unlock a newer request after sign-in and sign-out',async()=>{
   const h=device();h.email('first@example.com');const first=h.api.send();
-  h.api.advanceEpoch();h.api.setUser({id:'password-user',email:'password@example.com'});h.api.render();
+  h.api.advanceEpoch();h.api.setUser({id:'code-user',email:'code@example.com'});h.api.render();
   h.api.advanceEpoch();h.api.setUser(null);h.api.render();
   h.email('second@example.com');const second=h.api.send();
   h.requests[0].resolve({error:null});await first;

@@ -55,7 +55,7 @@ try{
       await page.locator('#sm-google-login').blur();
       const apple=await page.locator('#sm-apple-login').boundingBox(),google=await page.locator('#sm-google-login').boundingBox();
       assert.ok(google.y<apple.y && google.height===58 && apple.height===58 && Math.abs(google.width-apple.width)<1);
-      assert.equal(await page.locator('#sm-password-login').evaluate(n=>n.getBoundingClientRect().height>=44),true);
+      assert.equal(await page.locator('#sm-password-login, input[type="password"]').count(),0,'password sign-in is gone');
       assert.equal(await page.locator('#sm-email-login summary').count(),0);
       assert.equal(await page.locator('#sm-send-link').innerText(),'인증 코드 받기');
       assert.equal(await page.locator('.bz-legal a').nth(0).getAttribute('href'),'https://breeze.io.kr/docs/terms.html');
@@ -68,10 +68,6 @@ try{
       await page.locator('#sm-code-0').waitFor({state:'visible'});assert.equal(await page.locator('#sm-email').inputValue(),'reader@example.com');
       await page.locator('#set-close').click();await page.locator('#reopen').click();
       await page.locator('#sm-code-0').waitFor({state:'visible'});assert.equal(await page.locator('#sm-email').inputValue(),'reader@example.com');
-      await page.getByRole('button',{name:'비밀번호 로그인',exact:true}).click();
-      assert.equal(await page.locator('#sm-password-email').inputValue(),'reader@example.com');
-      await page.getByRole('button',{name:'이메일 코드 로그인으로 돌아가기',exact:true}).click();
-      await page.locator('#sm-code-0').waitFor({state:'visible'});
       assert.match(await page.locator('#sm-code-sent').innerText(),/코드를 보냈어요: reader@example.com/);
       assert.match(await page.locator('#sm-send-link').innerText(),/다시 보내기/);
       assert.equal(await page.locator('.bz-otp-box').count(),6);

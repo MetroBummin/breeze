@@ -138,11 +138,10 @@ assert.match(syncSource,/syncAgain=true/,
    로그아웃한 사람이 폰까지 로그아웃시킵니다. */
 assert.match(syncSource, /signOut\(\{\s*scope:\s*'local'\s*\}\)/,
   'Logging out again revokes the session on every device');
-/* 심사 계정도 실제 Supabase 자격증명으로만 로그인해야 합니다. 비밀번호 가입이나
-   재설정 UI를 만들면 일반 이메일 OTP 흐름이 달라지므로, 서버에서 미리 만든 계정의
-   sign-in 경로만 허용합니다. */
-assert.match(syncSource, /auth\.signInWithPassword\(\{email,password\}\)/,
-  'The provisioned password-account sign-in path is missing');
+/* 비밀번호 로그인은 없습니다. 로그인은 이메일 코드, Google, Apple 셋뿐이고
+   이미 로그인된 세션은 Supabase 가 그대로 이어 갑니다. */
+assert.doesNotMatch(syncSource, /signInWithPassword|sm-password|PasswordLogin/,
+  'Email and password sign-in came back');
 assert.doesNotMatch(syncSource, /auth\.signUp\(|resetPasswordForEmail\(/,
   'Review access added a public password enrollment or reset path');
 assert.doesNotMatch(syncSource, /localStorage[^\n]*password|save\([^\n]*password/,
@@ -152,7 +151,7 @@ const iosBuilds=[...project.matchAll(/CURRENT_PROJECT_VERSION = (\d+);/g)].map(m
 assert.ok(iosBuilds.length>=2 && new Set(iosBuilds).size===1 && iosBuilds.every(build=>build>=109),
   'iOS configurations disagree or regress below the App Review access build');
 const componentsCss = readFileSync(resolve(root, 'styles/components.css'), 'utf8');
-for(const selector of ['#sm-email','#sm-password-email','#sm-password',
+for(const selector of ['#sm-email',
   '.sm-delete-confirm input','#am-text','#am-url','#ed-title']){
   assert.ok(componentsCss.includes(`html.native-shell ${selector}`),
     `The iOS text field can still trigger focus zoom: ${selector}`);

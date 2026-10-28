@@ -91,20 +91,59 @@ function closeAa(){
   const p = document.getElementById('aa-pop');
   if(p) p.classList.remove('on');
 }
-let darkMode = load('breeze.dark', false);
+/* 다크 모드 값은 하나뿐입니다 — 'breeze.dark' 한 칸에 둡니다. 읽는 화면 Aa 의
+   스위치와 설정의 시스템/라이트/다크가 모두 이 값을 읽고 씁니다.
+   저장 모양은 예전 그대로 true(다크)·false(라이트)이고, 시스템을 따를 때만
+   'system' 입니다. 그래서 이미 저장된 true/false 는 옮길 것 없이 그대로 읽힙니다.
+   darkMode 는 지금 화면에 칠한 결과(boolean)입니다. */
+const SYSTEM_DARK_QUERY = typeof matchMedia==='function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+/** @param {unknown} stored @returns {'system'|'light'|'dark'} */
+function themePreferenceFrom(stored){
+  if(stored==='system' || stored==='light' || stored==='dark') return stored;
+  return stored===true ? 'dark' : 'light';
+}
+/** @type {'system'|'light'|'dark'} */
+let themePreference = themePreferenceFrom(load('breeze.dark', false));
+/** @param {'system'|'light'|'dark'} preference */
+function themePreferenceIsDark(preference){
+  return preference==='system' ? !!(SYSTEM_DARK_QUERY && SYSTEM_DARK_QUERY.matches) : preference==='dark';
+}
+let darkMode = themePreferenceIsDark(themePreference);
 function applyDark(){
   document.body.classList.toggle('dark', !!darkMode);
   document.documentElement.classList.toggle('dark', !!darkMode);   // 화면 맨 아래까지 어둡게
-  /* 다크 모드를 켜는 자리는 둘입니다 — 읽는 화면의 Aa 와 설정. 어느 쪽에서
-     켜든 나머지 하나도 같은 자리로 옮겨 놓습니다. */
-  const toggles = /** @type {NodeListOf<HTMLElement>} */
-    (document.querySelectorAll('#aa-dark, #set-dark'));
-  toggles.forEach(toggle => {
+  /* 다크 모드를 바꾸는 자리는 둘입니다 — 읽는 화면의 Aa 와 설정. 어느 쪽에서
+     바꾸든 나머지 하나도 같은 값으로 옮겨 놓습니다. */
+  const toggle = document.getElementById('aa-dark');
+  if(toggle){
     toggle.classList.toggle('on', !!darkMode);
     toggle.setAttribute('aria-pressed', darkMode ? 'true' : 'false');
+  }
+  const choices = /** @type {NodeListOf<HTMLElement>} */
+    (document.querySelectorAll('#set-theme button[data-theme]'));
+  choices.forEach(choice => {
+    const on = choice.dataset.theme===themePreference;
+    choice.classList.toggle('on', on);
+    choice.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
 }
-function toggleDark(){ darkMode = !darkMode; if(!curBook || !curBook.transient) save('breeze.dark', darkMode); applyDark(); }
+/** @param {'system'|'light'|'dark'} preference @param {boolean} [persist] */
+function setThemePreference(preference, persist=true){
+  themePreference = themePreferenceFrom(preference);
+  darkMode = themePreferenceIsDark(themePreference);
+  if(persist) save('breeze.dark', themePreference==='system' ? 'system' : themePreference==='dark');
+  applyDark();
+}
+/* Aa 스위치는 지금 보이는 것의 반대를 고릅니다. 시스템을 따르던 중이어도
+   누른 사람의 뜻은 "지금과 반대로"입니다. */
+function toggleDark(){ setThemePreference(darkMode ? 'light' : 'dark', !curBook || !curBook.transient); }
+if(SYSTEM_DARK_QUERY && typeof SYSTEM_DARK_QUERY.addEventListener==='function'){
+  SYSTEM_DARK_QUERY.addEventListener('change', () => {
+    if(themePreference!=='system') return;
+    darkMode = themePreferenceIsDark('system');
+    applyDark();
+  });
+}
 applyDark();
 
 /* 필기 줄을 옮기는 기능은 기본으로 꺼 둡니다. 다크 모드와 같은 기기 저장이고,
@@ -153,6 +192,22 @@ function settingsTab(name){
     if(typeof renderSyncModal==='function') renderSyncModal();
   }
 }
+/* 피드백은 메일 앱으로 보냅니다. 답장할 때 어느 판인지 알 수 있게 앱 버전과
+   실행 환경(web·ios·android)을 본문 끝에 적어 둡니다. 네이티브 셸에서도
+   mailto: 는 Capacitor 가 바깥 메일 앱으로 넘깁니다. */
+const FEEDBACK_EMAIL = 'rhtkdqja2007@gmail.com';
+function feedbackMailtoHref(){
+  const version = typeof BREEZE_APP_VERSION==='string' ? BREEZE_APP_VERSION : '';
+  const capacitor = window.Capacitor;
+  const platform = capacitor && typeof capacitor.getPlatform==='function' ? capacitor.getPlatform() : 'web';
+  const body = `\n\n\n---\n앱 버전: Breeze ${version} (${platform})`;
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('Breeze 피드백')}&body=${encodeURIComponent(body)}`;
+}
+function applyFeedbackLink(){
+  const link = document.getElementById('settings-feedback');
+  if(link) link.setAttribute('href', feedbackMailtoHref());
+}
+applyFeedbackLink();
 let settingsReturnFocus=null;
 /** @param {string} [tab] */
 function openSettings(tab){
