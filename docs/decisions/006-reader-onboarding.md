@@ -2,9 +2,13 @@
 
 ## Decision
 
-First-run and Settings replay show one dialog with three swipe-only cards.
-There are no previous/next buttons: the cards move on a horizontal
-scroll-snap track, with dots under each card. The dialog replaces the
+First-run and Settings replay show one dialog with three cards.
+There are no previous/next buttons and nothing advances on a timer.
+The cards move on a horizontal scroll-snap track, with dots under each
+card. A tap or an upward swipe on card 1 or 2 moves one card forward,
+and a downward swipe moves back. That path does not wait on the video:
+if `play()` rejects, the poster stays and the card still changes.
+Horizontal swipe and the arrow keys do the same. The dialog replaces the
 former passive guide (welcome pen animation plus seven recorded scenes),
 which the owner discarded on 2026-10-27 in favour of the minimum-click
 carousel reviewed as the standalone `onboarding-carousel.html` page. The
@@ -26,10 +30,14 @@ video download.
 
 Videos switch by viewport, not by theme: phones play the 9:16 renders,
 tablets and desktops the 4:3 renders, through `<source media>` at 768px.
-Only the card in view plays; the other video stays paused. There is no
-autoplay attribute: with `preload="none"` nothing is fetched until a card
-is shown, and reduced motion fetches nothing at all — videos stay paused
-and the copy and dots still carry the meaning. The clips are silent
+Only the snapped card plays; the other video stays paused. Playback is
+tied to that card index, not to an intersection ratio: `preload="none"`
+left card 1 with no box until metadata arrived, a 0.6 observer never
+fired, and a rejected `play()` was ignored, so the first screen stayed
+on its poster and a phone could not leave it. A rejected `play()` retries
+once via `load()`. There is no autoplay attribute: nothing is fetched
+until a card is shown, and reduced motion fetches nothing at all — videos
+stay paused and the copy and dots still carry the meaning. The clips are silent
 H264 MP4s of the real production UI, the same no-reuse, no-upscale,
 60fps capture rules as the former guide's media.
 
@@ -46,7 +54,9 @@ transformed — only the images inside move and scale — because Chrome
 snaps to transformed boxes and the snap points would drift. The
 media-query block that widens the card and caps cover height on
 tablet/desktop must stay after the base fan/cover rules or the cap
-silently stops working.
+silently stops working. The cap is the fan's own height (`100%`), not a
+`100vh` slice: every card is the same height, so a viewport cap on the
+cover alone was what left card 3 shorter than the video cards.
 
 Each card carries its own dots; the dialog itself has no page
 navigation. The three card 3 buttons are “바로 읽기” (the centred book),
@@ -56,7 +66,15 @@ failure leave the card available), and “둘러볼게요” (home). Import and
 book-open failures report on a status line inside card 3, because the
 app-wide toast is routed to the home notice behind the overlay and
 would never be seen here. Skip stays
-small and grey at the top right and ends the guide. Guidance copy stays
+a small grey link inside the card's top-right, 18px from the card's top
+and right edges, on every card. It is not pinned to the viewport corner
+and it does not sit in the gray margin when a card is shorter. The dialog
+is one visual viewport: `#onboarding` is fixed to `visualViewport` (with
+`100dvh` before that measurement), `html.onboarding-open` locks the
+document, and the stage is not a scroll container. iOS Safari's toolbar
+is inside that measurement, so the page does not scroll. All three cards
+share one width, height and vertical position, sized so the video, dots
+and copy fit. Card 3's fan flexes inside that same box. Guidance copy stays
 polite (존댓말), there is no focus outline, and the dialog surface is
 the home background `#F2F2F7` in light mode.
 
@@ -88,16 +106,19 @@ restore their exact previous state on exit.
 
 `npm run test:onboarding` exercises the carousel dialog: three cards
 and per-card dots, exact card copy, video source switching and
-play-only-the-visible-card, constant-speed card 2 travel is pinned by
+play-only-the-visible-card, advance by tap and swipe-up even when
+`play()` rejects, constant-speed card 2 travel is pinned by
 the reviewed video file itself, dots following scroll and arrow keys,
 the five-cover rest state, tap-to-centre with title/author/button
 following, read/file/browse/skip/Escape paths, import
 cancellation/failure/interruption, completion persistence and replay,
 existing Reader isolation, reduced motion (paused, no media fetched),
-visibility interruption, and the phone/tablet/desktop/short layouts in
-both themes with the light dialog surface. The standalone reference
-page stays in the repo at `onboarding-carousel.html` so the reviewed
-feel can be re-checked without the app shell.
+visibility interruption, equal card boxes, the skip inset inside the
+card, no document or stage scroll, and the phone/tablet/desktop/short
+layouts in both themes with the light dialog surface. The standalone
+reference page stays in the repo at `onboarding-carousel.html` so the
+reviewed feel can be re-checked without the app shell. The shipping
+dialog keeps that carousel, and also fits one visual viewport.
 
 Production Reader/gesture/auth/native-launch boundaries remain pinned;
 full `npm test`, www packaging and exact-remote-SHA CI are required for
