@@ -505,6 +505,7 @@ function show(v,options){
       if(typeof releaseReaderBodyImages==='function') releaseReaderBodyImages();
     }
     curBook=null; closePanel(); showReaderChrome();
+    if(typeof syncListeningControls==='function') syncListeningControls();
     /* 벌린 것은 종이였습니다. 두고 나갑니다 — scripts/reader/reader-scroll.js */
     resetOriginalZoom();
   }

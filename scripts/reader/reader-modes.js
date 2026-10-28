@@ -47,6 +47,7 @@ function updateReaderModeControls(){
   if(typeof updateOriginalZoomControls === 'function') updateOriginalZoomControls();
   if(typeof updatePdfNavigationControls==='function')updatePdfNavigationControls();
   if(typeof applyInkDockMove==='function')applyInkDockMove();
+  if(typeof syncListeningControls==='function')syncListeningControls();
 }
 
 function rememberReaderMode(mode){

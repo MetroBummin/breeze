@@ -779,8 +779,9 @@ function setReaderChrome(hidden){
    collapse and expansion, and an inert parent blocks every restored child. */
 function syncReaderControlInteractivity(){
   const collapsed=document.body.classList.contains('chrome-hidden');
-  const hidden=collapsed;
-  const side=['readback','aafab','reader-navigation','pdf-page-control','modefab']
+  // The listening bar takes the whole row; its side controls step aside.
+  const hidden=collapsed||document.body.classList.contains('reader-listening');
+  const side=['readback','aafab','reader-navigation','pdf-page-control','modefab','listenfab']
     .map(id=>document.getElementById(id));
   side.push(document.querySelector('#readpill .ink-pill-entry'));
   side.forEach(button=>{
@@ -948,6 +949,8 @@ registerReaderSurface({
   openWordAt(clientX, clientY){
     const span=textWordSpanAt(clientX, clientY);
     if(!span) return false;
+    /* 듣는 중에는 지금 읽는 문장의 탭이 다시 듣기입니다 — scripts/reader/listening.js */
+    if(typeof listeningWordTap==='function' && listeningWordTap(span)) return true;
     openWord(span.dataset.w,span,{x:clientX,y:clientY});
     return true;
   },
@@ -963,7 +966,7 @@ registerReaderSurface({
     let cueTarget=null;
     const peekTarget={ownerDocument:document,getBoundingClientRect:()=>
       cueTarget?cueTarget.getBoundingClientRect():block.getBoundingClientRect()};
-    return { sentence:found.sentence, peekTarget, pi:+block.dataset.pi, start:found.part.start, paint(){
+    return { sentence:found.sentence, peekTarget, pi:+block.dataset.pi, start:found.part.start, block, paint(){
       if(range && typeof showSentenceRangeCue==='function') cueTarget=showSentenceRangeCue(range);
       else if(block && typeof showElementModeCue==='function') showElementModeCue(block, 0);
     } };
