@@ -522,7 +522,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
-    depthFrame:0,playFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,playFrame:0,playTimer:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -549,6 +549,17 @@ function startOnboarding(replay){
   // The initial card uses the same playback path as a swipe. Wait until the
   // dialog has a renderer: play() in the turn that clears `hidden` is what
   // iOS rejects. Two frames is enough for WebKit to build one.
+  // Animation frames are not a clock: WebKit can hold the first frames of a
+  // busy boot for over a second (CI measured 1.0s and 1.6s gaps while timers
+  // still ran every ~0.1s), which held card 1 on its poster for ~3s. Force
+  // layout now so the video has a renderer, and also start from a short
+  // timer in a later turn. The two-frame path stays as the backstop; a
+  // second call on a playing clip changes nothing.
+  void root.offsetHeight;
+  session.playTimer=setTimeout(()=>{
+    session.playTimer=0;
+    if(onboardingSession===session)syncOnboardingVideoPlayback(session);
+  },60);
   session.playFrame=requestAnimationFrame(()=>{
     session.playFrame=requestAnimationFrame(()=>{
       session.playFrame=0;
@@ -657,6 +668,7 @@ function endOnboarding(remember,returnToPrevious=true){
   session.observer?.disconnect();
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
   if(session.playFrame)cancelAnimationFrame(session.playFrame);
+  clearTimeout(session.playTimer);
   clearTimeout(session.settleTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);

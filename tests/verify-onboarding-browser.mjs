@@ -39,17 +39,6 @@ try{
  {
   const {context,page}=await setup({iphone:true});
   const mediaRequests=[];page.on('request',r=>{if(/\.mp4/.test(r.url()))mediaRequests.push(r.url());});
-  await page.addInitScript(()=>{
-    const t=window.qaTicks={raf:[],timer:[],open:0,sync:[]};
-    const tick=()=>{t.raf.push(Math.round(performance.now()));if(performance.now()<8000)requestAnimationFrame(tick);};requestAnimationFrame(tick);
-    const id=setInterval(()=>{t.timer.push(Math.round(performance.now()));if(performance.now()>8000)clearInterval(id);},100);
-    document.addEventListener('DOMContentLoaded',()=>{
-      const root=document.getElementById('onboarding');
-      new MutationObserver(()=>{if(!root.hidden&&!t.open)t.open=Math.round(performance.now());}).observe(root,{attributes:true,attributeFilter:['hidden']});
-      const wrap=globalThis.syncOnboardingVideoPlayback;
-    });
-    window.addEventListener('load',()=>{t.load=Math.round(performance.now());});
-  });
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
   if(process.env.BROWSER==='webkit')assert.match(await page.evaluate(()=>navigator.userAgent),/iPhone/);
@@ -81,7 +70,6 @@ try{
   const elapsed=await page.evaluate(start=>performance.now()-start,openedAt);
   // A phone on a local file is well under 1.5s. The bound leaves room for
   // one slow CI media startup; a video that never moves still hits the wait.
-  console.log('ticks',JSON.stringify(await page.evaluate(()=>{const t=window.qaTicks;const gaps=a=>a.slice(1).map((x,i)=>x-a[i]).filter(g=>g>150);return {open:t.open,load:t.load,rafFirst:t.raf.slice(0,3),rafAfterOpen:t.raf.filter(x=>x>=t.open).slice(0,6),rafGaps:gaps(t.raf).slice(0,20),timerGaps:gaps(t.timer).slice(0,20),rafCount:t.raf.length};})));
   console.log(`card 1 playing after ${Math.round(elapsed)}ms`,JSON.stringify(await page.evaluate(start=>({open:Math.round(start),events:window.qaCard1,
     fetch:performance.getEntriesByType('resource').filter(e=>/card1\.mp4/.test(e.name)).map(e=>[Math.round(e.startTime),Math.round(e.responseEnd)])}),openedAt)));
   assert.ok(elapsed<2500,`card 1 currentTime did not advance promptly (${Math.round(elapsed)}ms)`);

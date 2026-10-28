@@ -48,6 +48,14 @@ with the element; nothing assigns `src`. That is the same playback path a
 card change uses, including the card that is open at the start. A rejected
 `play()` retries on `loadeddata` / `canplay`.
 
+The open path no longer waits only on two animation frames. On a busy boot
+WebKit can hold the first frames for over a second (CI measured 1.0s and
+1.6s gaps while 100ms timers kept running), so `play()` first ran about
+2.6s after the dialog appeared and card 1 sat on its poster for ~3s. The
+open now forces layout and starts playback from a 60ms timer, with the
+two-frame call kept as a backstop. The CI log prints the card 1 media
+timeline (play, metadata, canplay, playing and the fetch).
+
 On a real iPhone, card 1 could still open on WebKit's native start-playback
 button (autoplay refused, e.g. Low Power Mode, or the clip not started yet),
 and tapping that button jumped to card 2: the carousel owned the tap, and
