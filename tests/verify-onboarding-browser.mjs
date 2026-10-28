@@ -39,11 +39,21 @@ const coverShapes=page=>page.evaluate(()=>{
     return s.visibility!=='hidden'&&Number(s.opacity)>0&&r.width>0&&r.right>card.left&&r.left<card.right;
   }).map(img=>{const r=img.getBoundingClientRect();return {alt:img.alt,w:Math.round(r.width),h:Math.round(r.height),ratio:+(r.width/r.height).toFixed(3)};});
 });
+// Geometry of the strip, printed when the count is wrong.
+const fanState=page=>page.evaluate(()=>{
+  const fan=document.getElementById('onboard-fan'),box=fan.getBoundingClientRect();
+  const centre=box.left+fan.clientLeft+fan.clientWidth/2;
+  return {fan:[fan.clientWidth,fan.clientHeight,fan.scrollLeft],vars:fan.style.cssText,
+    slots:[...fan.children].map(el=>{const r=el.getBoundingClientRect();return [+(r.left+r.width/2-centre).toFixed(2),+r.width.toFixed(2),el.style.visibility||'v',el.style.opacity];}).filter(x=>x[2]!=='hidden')};
+});
 // Covers decode asynchronously; screenshots wait for the ones in view.
 const decodeCovers=page=>page.evaluate(()=>Promise.all([...document.querySelectorAll('#onboard-fan img')].filter(img=>getComputedStyle(img.parentElement).visibility!=='hidden').map(img=>img.decode().catch(()=>{}))));
-const assertCoverShapes=(shapes,label)=>{
-  assert.ok(shapes.length>=3&&shapes.length<=5,label+' covers at rest are not 3 to 5 '+JSON.stringify(shapes));
+// Five covers at rest: every tested size has room for the outer pair.
+const assertCoverShapes=async(page,label)=>{
+  const shapes=await coverShapes(page);
+  if(shapes.length!==5)assert.fail(label+' covers at rest are not five '+JSON.stringify({shapes,state:await fanState(page)}));
   for(const s of shapes)assert.ok(Math.abs(s.ratio-2/3)<0.02,label+' cover is not 2:3 '+JSON.stringify(s));
+  return shapes;
 };
 const waitDots=(page,index)=>page.waitForFunction(index=>[...document.querySelectorAll('#onboarding .onboard-dots')].every(d=>[...d.children].findIndex(el=>el.classList.contains('on'))===index),index);
 const dotsActive=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-dots')].map(d=>[...d.children].findIndex(el=>el.classList.contains('on'))));
@@ -125,10 +135,8 @@ try{
   const cardHeights=await page.evaluate(()=>[...document.querySelectorAll('.onboard-card')].map(c=>+c.getBoundingClientRect().height.toFixed(2)));
   console.log('iphone card heights',JSON.stringify(cardHeights));
   assert.equal(new Set(cardHeights).size,1,'onboarding cards differ in height '+JSON.stringify(cardHeights));
-  const iphoneCovers=await coverShapes(page);
+  const iphoneCovers=await assertCoverShapes(page,'iPhone');
   console.log('iphone card 3 covers',JSON.stringify(iphoneCovers));
-  assertCoverShapes(iphoneCovers,'iPhone');
-  assert.equal(iphoneCovers.length,5,'iPhone shows five covers at rest');
   await decodeCovers(page);
   // The test jumps to card 3 instantly; give async cover decode time to paint.
   await wait(1500);
@@ -480,7 +488,7 @@ try{
   const atBooks=await boxes();
   // Small covers (a short landscape card) once rounded far enough to let a
   // seventh cover in at rest.
-  assertCoverShapes(await coverShapes(page),`${width}x${height}`);
+  await assertCoverShapes(page,`${width}x${height}`);
   console.log(`card boxes ${width}x${height}`,JSON.stringify({atOpen,atBooks}));
   for(const set of [atOpen,atBooks]){
     assert.ok(set.every(b=>Math.abs(b.h-set[0].h)<0.5&&Math.abs(b.top-set[0].top)<0.5),`onboarding cards differ at ${width}x${height} `+JSON.stringify(set));
@@ -546,7 +554,7 @@ try{
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card2.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
-  assertCoverShapes(await coverShapes(page),`${width}x${height}`);
+  await assertCoverShapes(page,`${width}x${height}`);
   await decodeCovers(page);
   const skipOnCard3=await page.evaluate(()=>{
     const wrap=document.getElementById('onboard-wrap').getBoundingClientRect();

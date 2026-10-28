@@ -436,11 +436,7 @@ function buildOnboardingFan(session){
   session.fanEls=els;
   // Covers overlap, so one book of scrolling is the offset between two
   // neighbouring layout boxes, not their width.
-  // Fractional layout boxes (the slots are never transformed). offsetLeft
-  // rounds to whole pixels, and with small covers that error grew with the
-  // distance from the centre until the ±3rd cover crossed the visibility
-  // cut and seven covers showed at rest.
-  const step=()=>els[1].getBoundingClientRect().left-els[0].getBoundingClientRect().left;
+  const step=()=>els[1].offsetLeft-els[0].offsetLeft;
   const setW=()=>step()*ONBOARD_BOOKS.length;
   // Depth: d = distance from the centre in books (fractional while
   // scrolling). At rest five covers show: the centre one full size and on
@@ -455,15 +451,19 @@ function buildOnboardingFan(session){
   };
   const layoutDepth=()=>{
     session.depthFrame=0;
-    const s=step();
-    if(!s)return;
+    // Fractional slot boxes (the slots are never transformed), all read
+    // before any write. offsetLeft rounds to whole pixels; with small covers
+    // that error let the ±3rd cover in and seven showed at rest. The step is
+    // the strip's mean spacing, so no single slot's rounding scales up.
+    const rects=els.map(el=>el.getBoundingClientRect());
+    const s=(rects[rects.length-1].left-rects[0].left)/(rects.length-1);
+    if(!(s>0))return;
     const half=fan.clientWidth/2;
-    const first=els[0].getBoundingClientRect(),box=fan.getBoundingClientRect();
-    const w=first.width;
-    // Offset of cover 0 from the fan's centre, in books; cover p is p further.
-    const d0=(first.left+w/2-(box.left+fan.clientLeft+half))/s;
+    const box=fan.getBoundingClientRect();
+    const center=box.left+fan.clientLeft+half;
+    const w=rects[0].width;
     for(const [p,el] of els.entries()){
-      const d=d0+p;
+      const d=(rects[p].left+w/2-center)/s;
       const a=Math.abs(d);
       const img=/** @type {HTMLElement} */(el.firstElementChild);
       if(a>=3){el.style.visibility='hidden';continue;}
