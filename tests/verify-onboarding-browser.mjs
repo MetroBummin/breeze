@@ -56,7 +56,13 @@ try{
   assert.equal(await page.locator('#onboard-skip').textContent(),'건너뛰기');
   assert.equal(await page.locator('#onboard-status').textContent(),'1 / 3 · 단어 뜻 보기');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('onboard-wrap')).scrollSnapType),'x mandatory');
-  const openedAt=await page.evaluate(()=>performance.now());
+  const openedAt=await page.evaluate(()=>{
+    // Timeline for the CI log: where the startup time goes (fetch vs decode).
+    const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
+    window.qaCard1=[];
+    for(const type of ['loadstart','loadedmetadata','loadeddata','canplay','play','playing'])v.addEventListener(type,()=>window.qaCard1.push(type+'@'+Math.round(performance.now())),{once:true});
+    return performance.now();
+  });
   await page.waitForFunction(()=>{
     const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
     return v.muted&&v.loop&&v.playsInline&&v.hasAttribute('playsinline')&&v.preload==='auto'&&v.hasAttribute('autoplay')&&!v.hasAttribute('src')&&v.readyState>=2&&!v.paused&&v.currentTime>0.05;
@@ -64,7 +70,8 @@ try{
   const elapsed=await page.evaluate(start=>performance.now()-start,openedAt);
   // A phone on a local file is well under 1.5s. The bound leaves room for
   // one slow CI media startup; a video that never moves still hits the wait.
-  console.log(`card 1 playing after ${Math.round(elapsed)}ms`);
+  console.log(`card 1 playing after ${Math.round(elapsed)}ms`,JSON.stringify(await page.evaluate(start=>({open:Math.round(start),events:window.qaCard1,
+    fetch:performance.getEntriesByType('resource').filter(e=>/card1\.mp4/.test(e.name)).map(e=>[Math.round(e.startTime),Math.round(e.responseEnd)])}),openedAt)));
   assert.ok(elapsed<2500,`card 1 currentTime did not advance promptly (${Math.round(elapsed)}ms)`);
   assert.equal(await page.evaluate(()=>{
     const v=document.querySelectorAll('#onboarding .onboard-card video')[1];
@@ -73,6 +80,14 @@ try{
   const t0=await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[0].currentTime);
   await page.waitForFunction(start=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.currentTime>start+0.04;},t0);
   assert.equal((await videoState(page))[0].src,'card1.mp4','phone plays the 9:16 render');
+  // No native controls: no controls attribute, and WebKit's start-playback
+  // button (painted when autoplay is refused) is hidden by onboarding.css.
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>v.controls||v.hasAttribute('controls'))),[false,false],'onboarding video has native controls');
+  if(process.env.BROWSER==='webkit'){
+    assert.equal(await page.evaluate(()=>[...document.styleSheets].some(sheet=>{
+      try{return [...sheet.cssRules].some(rule=>/::-webkit-media-controls-start-playback-button/.test(rule.selectorText||'')&&rule.style.getPropertyValue('display')==='none');}catch{return false;}
+    })),true,'WebKit start-playback button is not hidden');
+  }
   assert.equal((await videoState(page))[1].paused,true,'off-screen card stays paused');
   if(process.env.BROWSER==='webkit'){
     // WebKit probes each <source> at selection time even with preload="none";
@@ -82,6 +97,15 @@ try{
     assert.deepEqual(mediaRequests.map(u=>u.split('/').pop()),['card1.mp4'],'the second video was fetched before its card');
   }
   assert.deepEqual(await dotsActive(page),[0,0,0]);
+  // Review evidence at iPhone size (iPhone 13 profile on WebKit): card 2
+  // playing on its own after the swipe, and the card 3 cover fan.
+  await goCard(page,1);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.3;});
+  await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card2-playing.png`)});
+  await goCard(page,2);
+  await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
+  await wait(400);
+  await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card3.png`)});
   await context.close();
  }
  // Dots follow scroll; arrow keys move between cards like a swipe.
@@ -323,11 +347,77 @@ try{
   const after=await page.evaluate(()=>{const v=document.querySelector('#onboarding .onboard-card video');return {t:v.currentTime,paused:v.paused};});
   assert.equal(after.paused,true,'card 1 played before a gesture');
   assert.ok(after.t-before.t<0.05,'card 1 advanced before a gesture '+JSON.stringify({before,after}));
-  await page.evaluate(()=>{
-    const video=document.querySelector('#onboarding .onboard-card video');
-    video.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:30,clientY:120}));
-  });
+  // A real tap on the paused video starts it inside the gesture and stays
+  // on card 1. It must not also advance to card 2.
+  const box=await page.locator('.onboard-card[data-card="0"] video').boundingBox();
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
   await page.waitForFunction(()=>{const v=document.querySelector('#onboarding .onboard-card video');return !v.paused&&v.currentTime>0.04;});
+  await wait(800);
+  assert.equal(await cardIndex(page),0,'the tap that started card 1 also advanced');
+  assert.deepEqual(await dotsActive(page),[0,0,0]);
+  // Once it plays, a tap on the video advances as before.
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+  await waitDots(page,1);
+  await context.close();
+ }
+ // Card 2 under the same Low Power-style refusal: it stays paused when it
+ // becomes the card in view, a tap on its video starts it without moving to
+ // card 3, and the next tap advances. Card 2 has no controls either.
+ {
+  const {context,page}=await setup({iphone:true});
+  await page.addInitScript(()=>{
+    const orig=HTMLMediaElement.prototype.play;
+    let gesture=false;
+    const arm=()=>{gesture=true;};
+    document.addEventListener('pointerdown',arm,{capture:true});
+    document.addEventListener('touchstart',arm,{capture:true});
+    HTMLMediaElement.prototype.play=function(){
+      if(!gesture)return Promise.reject(new DOMException('Low Power Mode','NotAllowedError'));
+      return orig.apply(this, arguments);
+    };
+    document.addEventListener('play',event=>{
+      if(!gesture&&event.target instanceof HTMLMediaElement)event.target.pause();
+    },true);
+  });
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.locator('#onboarding').waitFor({state:'visible'});
+  await goCard(page,1);
+  await page.waitForFunction(()=>document.querySelectorAll('#onboarding .onboard-card video')[1].dataset.onboardRejected==='1');
+  await wait(300);
+  assert.equal(await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[1].paused),true,'card 2 played before a gesture');
+  assert.equal(await page.evaluate(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.controls||v.hasAttribute('controls');}),false,'card 2 has native controls');
+  const box=await page.locator('.onboard-card[data-card="1"] video').boundingBox();
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.04;});
+  await wait(800);
+  assert.equal(await cardIndex(page),1,'the tap that started card 2 also advanced');
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+  await waitDots(page,2);
+  await context.close();
+ }
+ // WebKit can refuse card 2's play() while the carousel is still moving, and
+ // its load events can all arrive inside that window. Once the carousel is
+ // at rest, card 2 must be asked again and play with no gesture.
+ {
+  const {context,page}=await setup({iphone:true});
+  await page.addInitScript(()=>{
+    const orig=HTMLMediaElement.prototype.play;
+    window.qaLastScroll=0;window.qaRefused=0;
+    document.addEventListener('scroll',()=>{window.qaLastScroll=performance.now();},{capture:true,passive:true});
+    const card2=v=>v instanceof HTMLMediaElement&&v.closest('.onboard-card')?.dataset.card==='1';
+    const moving=()=>performance.now()-window.qaLastScroll<100;
+    HTMLMediaElement.prototype.play=function(){
+      if(card2(this)&&moving()){window.qaRefused++;return Promise.reject(new DOMException('not visible yet','NotAllowedError'));}
+      return orig.apply(this, arguments);
+    };
+    document.addEventListener('play',event=>{if(card2(event.target)&&moving())event.target.pause();},true);
+  });
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.locator('#onboarding').waitFor({state:'visible'});
+  await goCard(page,1);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.04;});
+  assert.ok(await page.evaluate(()=>window.qaRefused)>0,'the mid-swipe refusal was not exercised');
+  assert.equal(await cardIndex(page),1);
   await context.close();
  }
  // Card 1 still advances when play() rejects: tap and swipe-up, no video event.

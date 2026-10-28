@@ -44,14 +44,18 @@ the same sheet shows “코드를 보냈어요”, six outlined code boxes
 (`inputmode=numeric`, `autocomplete=one-time-code`), “다시 보내기” with the
 existing cooldown, and “이메일 변경”. Six digits submit through the existing
 `sbVerifyCode`. `sbSendLink` still calls `signInWithOtp`. The sheet does not
-tell the reader to open a mail link. “비밀번호 로그인” stays a muted link.
+tell the reader to open a mail link. There is no password sign-in: the
+“비밀번호 로그인” link, its email+password form and the `signInWithPassword`
+call were removed (owner decision 2026-10-28). Sessions that already exist,
+including ones first created with a password, keep restoring and refreshing
+through the same Supabase client; that path never depended on the method.
 이용약관 and 개인정보 처리방침 open `https://breeze.io.kr/docs/terms.html` and
 `https://breeze.io.kr/docs/privacy.html`.
 
 The original extraction record below describes the submitted 1.9 baseline.
 
-Settings adds Apple and Google alongside the existing email link/code and password
-flows. This extracts authentication from draft #122 onto the released main UI;
+Settings adds Apple and Google alongside the existing email link/code flow (the
+password flow that sat beside it at the time has since been removed). This extracts authentication from draft #122 onto the released main UI;
 the existing tutorial, completion marker, guest access, Reader, Memory, brand and
 native release configuration remain unchanged. Email form state survives closing
 and reopening Settings. Unsupported native shells keep social buttons disabled.

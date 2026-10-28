@@ -116,6 +116,15 @@ html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 #home-resume .completion-badge{margin-left:7px;}
 
 #settings-modal .set-row.onboarding-setting{border-radius:15px;margin-bottom:20px;}
+#settings-modal .set-row.settings-single{border-radius:15px;}
+#appearance-settings{margin-bottom:20px;}
+#appearance-settings>.settings-section-title{margin-top:0;}
+#settings-modal #appearance-settings .set-label{flex:1 1 auto;}
+/* 고른 칸은 리더 Aa 의 여백 띠와 같은 중립 강조입니다. 칸은 44px 안팎의 터치 높이를 지킵니다. */
+#settings-modal .set-seg button{min-width:52px;min-height:38px;font:500 13px/1 var(--ui);}
+#settings-modal .set-seg button:hover{color:var(--settings-ink);}
+#settings-modal .set-seg button.on{background:var(--seg-on);color:var(--seg-on-ink);}
+#settings-modal .settings-actions-group>a{display:flex;align-items:center;min-height:44px;margin:-6px 0;color:var(--settings-ink);font:400 14px/20px var(--ui);text-decoration:none;}
 
 /* The same control surface owns both ends of the Home/Reader journey. */
 html:is(.home-resuming,.home-returning) :is(#home-resume,#readpill){view-transition-name:reader-control;}
@@ -193,8 +202,6 @@ body.dark .bz-auth,html.dark .bz-auth,.dark .bz-auth{--bz-line:rgba(255,255,255,
 .bz-auth #sm-send-link:disabled{opacity:.4}
 .bz-auth .bz-text{all:unset;box-sizing:border-box;display:block;width:100%;min-height:44px;text-align:center;cursor:pointer;
   color:var(--bz-muted);font:400 15px/44px -apple-system,"Noto Sans CJK KR",system-ui,sans-serif}
-#settings-modal .bz-auth .settings-password-link{min-height:44px;margin-top:4px;padding:8px 0;font-size:15px;color:var(--bz-muted);text-decoration:none}
-#settings-modal .bz-auth .settings-password-link:hover{color:var(--bz-muted)}
 .bz-auth .bz-legal{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:8px;font:400 14px -apple-system,"Noto Sans CJK KR",system-ui,sans-serif;color:var(--bz-muted)}
 .bz-auth .bz-legal a{color:var(--bz-muted);text-decoration:underline;text-underline-offset:3px}
 .bz-auth .bz-legal i{font-style:normal;opacity:.6}
