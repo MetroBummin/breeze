@@ -277,6 +277,25 @@ try{
   await page.waitForFunction(()=>!document.querySelectorAll('#onboarding .onboard-card video')[0].paused);
   await context.close();
  }
+ // Card 1 still advances when play() rejects: tap and swipe-up, no video event.
+ {
+  const {context,page}=await setup();
+  await page.addInitScript(()=>{HTMLMediaElement.prototype.play=function(){return Promise.reject(new DOMException('blocked','NotAllowedError'));};});
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.locator('#onboarding').waitFor({state:'visible'});
+  await page.evaluate(()=>{
+    const video=document.querySelector('.onboard-card[data-card="0"] video');
+    const r=video.getBoundingClientRect();
+    const x=r.left+r.width/2,y=r.top+r.height*0.55;
+    const fire=(type,py)=>video.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:x,clientY:py}));
+    fire('pointerdown',y);fire('pointermove',y-90);fire('pointerup',y-180);
+  });
+  await waitDots(page,1);
+  await page.locator('.onboard-card[data-card="1"] .t1').click();
+  await waitDots(page,2);
+  assert.equal(await cardIndex(page),2,'tap reaches the book card without a playing video');
+  await context.close();
+ }
  // Layout and fallback at phone/tablet/desktop/short sizes, both themes.
  // The dialog surface stays light in dark mode.
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
@@ -288,6 +307,25 @@ try{
   const skipBox=await page.locator('#onboard-skip').boundingBox();
   assert.ok(skipBox.width>=44&&skipBox.height>=44,'skip touch target');
   assert.ok(skipBox.x>=0&&skipBox.x+skipBox.width<=width&&skipBox.y>=0&&skipBox.y+skipBox.height<=height,'skip outside viewport');
+  const fit=await page.evaluate(()=>{
+    const cards=[...document.querySelectorAll('.onboard-card')].map(node=>node.getBoundingClientRect());
+    const skip=document.getElementById('onboard-skip').getBoundingClientRect();
+    const card=cards[0],stage=document.querySelector('.onboard-stage'),root=document.getElementById('onboarding');
+    document.scrollingElement.scrollTop=400;
+    return {
+      tops:cards.map(r=>Math.round(r.top)),heights:cards.map(r=>Math.round(r.height)),
+      skipTop:Math.round(skip.top-card.top),skipRight:Math.round(card.right-skip.right),
+      skipInCard:skip.left>=card.left-0.5&&skip.right<=card.right+0.5&&skip.top>=card.top-0.5&&skip.bottom<=card.bottom+0.5,
+      cardInView:card.top>=-1&&card.bottom<=innerHeight+1,
+      stageScroll:stage.scrollHeight<=stage.clientHeight+1,
+      rootScroll:root.scrollHeight<=root.clientHeight+1,
+      docLocked:document.scrollingElement.scrollTop===0,
+    };
+  });
+  assert.ok(Math.max(...fit.heights)-Math.min(...fit.heights)<=1,'cards share a height '+JSON.stringify(fit));
+  assert.ok(Math.max(...fit.tops)-Math.min(...fit.tops)<=1,'cards share a vertical position '+JSON.stringify(fit));
+  assert.ok(fit.skipInCard&&fit.skipTop>=14&&fit.skipTop<=22&&fit.skipRight>=14&&fit.skipRight<=22,'skip inset '+JSON.stringify(fit));
+  assert.ok(fit.cardInView&&fit.stageScroll&&fit.rootScroll&&fit.docLocked,'onboarding scrolls '+JSON.stringify(fit));
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card1.png`)});
   await goCard(page,1);
   // Reduced motion never plays, so check the selected <source> structurally:
@@ -302,6 +340,13 @@ try{
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card2.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
+  const skipOnCard3=await page.evaluate(()=>{
+    const wrap=document.getElementById('onboard-wrap').getBoundingClientRect();
+    const card=[...document.querySelectorAll('.onboard-card')].map(node=>node.getBoundingClientRect()).find(rect=>Math.abs(rect.left-wrap.left)<2);
+    const skip=document.getElementById('onboard-skip').getBoundingClientRect();
+    return {top:Math.round(skip.top-card.top),right:Math.round(card.right-skip.right),in:skip.top>=card.top&&skip.right<=card.right&&skip.bottom<=card.bottom};
+  });
+  assert.ok(skipOnCard3.in&&skipOnCard3.top>=14&&skipOnCard3.top<=22&&skipOnCard3.right>=14&&skipOnCard3.right<=22,'skip on card 3 '+JSON.stringify(skipOnCard3));
   for(const id of ['onboard-read','onboard-file','onboard-browse']){
    const box=await page.locator('#'+id).boundingBox();assert.ok(box.width>=44&&box.height>=44,id+' touch target');
    assert.ok(box.x>=0&&box.x+box.width<=width&&box.y>=0&&box.y+box.height<=height,JSON.stringify({id,width,height,box})+' outside viewport');

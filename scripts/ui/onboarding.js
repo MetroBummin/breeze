@@ -80,17 +80,167 @@ function syncOnboardingDots(){
   const status=document.getElementById('onboard-status');
   if(status)status.textContent=`${current+1} / 3 · ${ONBOARD_CARD_TITLES[current]}`;
 }
-function onboardingVideoVisible(video,wrap){
-  const rect=video.getBoundingClientRect(),bounds=wrap.getBoundingClientRect();
-  const visible=Math.min(rect.right,bounds.right)-Math.max(rect.left,bounds.left);
-  return rect.width>0&&visible/rect.width>=0.6;
+function layoutOnboardingViewport(){
+  const root=document.getElementById('onboarding');
+  if(!root)return;
+  const vv=window.visualViewport;
+  const height=Math.max(1,Math.round(vv?vv.height:window.innerHeight));
+  const top=Math.round(vv?vv.offsetTop:0);
+  root.style.top=top+'px';
+  root.style.height=height+'px';
+  root.style.bottom='auto';
+  root.style.setProperty('--vv-h',height+'px');
+  root.style.setProperty('--vv-top',top+'px');
+}
+/* Playback follows the snapped card, not an intersection ratio. preload=none
+   plus a 0.6 observer missed card 1 on phones: the element had no box yet,
+   or play() rejected, and the rejection was ignored. A failed play retries
+   once with load(). Navigation never waits on this. Reduced motion does not
+   fetch. */
+function stopOnboardingVideo(video){
+  video.dataset.onboardToken='off';
+  try{video.pause();}catch{}
+}
+function playOnboardingVideo(video,session){
+  if(!video)return;
+  const mine=[...document.querySelectorAll('#onboarding .onboard-card video')].indexOf(video);
+  if(session.motion.matches||document.hidden||mine!==onboardingCardIndex()){stopOnboardingVideo(video);return;}
+  video.muted=true;
+  video.playsInline=true;
+  const token=String(++session.playToken);
+  video.dataset.onboardToken=token;
+  const settle=()=>{if(video.dataset.onboardToken!==token||onboardingCardIndex()!==mine)stopOnboardingVideo(video);};
+  const start=()=>video.play().then(settle).catch(()=>{
+    if(video.dataset.onboardToken!==token||onboardingCardIndex()!==mine)return;
+    if(video.dataset.onboardRetried==='1')return;
+    video.dataset.onboardRetried='1';
+    try{video.load();}catch{}
+    video.play().then(settle).catch(()=>{});
+  });
+  start();
 }
 function syncOnboardingVideoPlayback(session){
+  const videos=[...document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))];
+  const index=onboardingCardIndex();
+  videos.forEach((video,i)=>{
+    if(i===index)playOnboardingVideo(video,session);
+    else stopOnboardingVideo(video);
+  });
+}
+function advanceOnboardingCard(session,dir){
   const wrap=document.getElementById('onboard-wrap');
-  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
-    if(onboardingVideoVisible(video,wrap)&&!session.motion.matches&&!document.hidden)video.play().catch(()=>{});
-    else video.pause();
-  }
+  const card=/** @type {HTMLElement|null} */(wrap?.querySelector('.onboard-card'));
+  if(!wrap||!card)return;
+  const index=Math.max(0,Math.min(2,onboardingCardIndex()+dir));
+  const left=(card.offsetWidth+20)*index;
+  const before=wrap.scrollLeft;
+  wrap.scrollTo({left,behavior:session.motion.matches?'auto':'smooth'});
+  if(session.motion.matches||Math.abs(left-before)<2)return;
+  // Some WebKit builds ignore a smooth scrollTo on this scroller. If nothing
+  // has moved shortly after, jump. The card change must not depend on it.
+  clearTimeout(session.scrollTimer);
+  session.scrollTimer=setTimeout(()=>{
+    if(onboardingSession!==session)return;
+    if(Math.abs(wrap.scrollLeft-before)<2)wrap.scrollTo({left,behavior:'auto'});
+  },60);
+}
+function bindOnboardingGestures(session){
+  const wrap=document.getElementById('onboard-wrap');
+  const root=document.getElementById('onboarding');
+  const signal=session.controller.signal;
+  const nudge=dir=>{
+    const now=Date.now();
+    const from=onboardingCardIndex();
+    if(session.lastNudge&&now-session.lastNudge.at<80&&session.lastNudge.from===from)return;
+    session.lastNudge={at:now,from};
+    advanceOnboardingCard(session,dir);
+  };
+  const finishGesture=event=>{
+    const origin=session.gesture;
+    if(!origin)return;
+    if(event&&event.pointerId!=null&&event.pointerId!==origin.pointerId)return;
+    session.gesture=null;
+    const x=event&&Number.isFinite(event.clientX)?event.clientX:origin.x2;
+    const y=event&&Number.isFinite(event.clientY)?event.clientY:origin.y2;
+    const dx=x-origin.x,dy=y-origin.y;
+    if(origin.target.closest('button,a,input,.onboard-fan'))return;
+    if(Math.hypot(dx,dy)<14){
+      if(onboardingCardIndex()<2)nudge(1);
+      return;
+    }
+    if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
+      clearTimeout(session.gestureTimer);
+      session.gestureTimer=setTimeout(()=>{
+        if(onboardingSession!==session)return;
+        if(Math.abs(wrap.scrollLeft-origin.left)>4)return;
+        nudge(dx<0?1:-1);
+      },120);
+    }
+  };
+  wrap.addEventListener('pointerdown',event=>{
+    if(event.button!=null&&event.button!==0)return;
+    const target=event.target instanceof Element?event.target:null;
+    if(!target||target.closest('button,a,input,.onboard-fan'))return;
+    session.gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,x2:event.clientX,y2:event.clientY,left:wrap.scrollLeft,target};
+    try{wrap.setPointerCapture(event.pointerId);}catch{}
+  },{signal});
+  wrap.addEventListener('pointermove',event=>{
+    if(!session.gesture||event.pointerId!==session.gesture.pointerId)return;
+    session.gesture.x2=event.clientX;
+    session.gesture.y2=event.clientY;
+  },{signal});
+  // WebKit can cancel a vertical drag when the video only allows pan-x.
+  // pointercancel still has to advance, or the first card stays stuck.
+  wrap.addEventListener('pointerup',finishGesture,{signal});
+  wrap.addEventListener('pointercancel',finishGesture,{signal});
+  document.addEventListener('pointerup',event=>{if(session.gesture)finishGesture(event);},{signal,capture:true});
+  // Pointer events are flaky for a vertical drag in WebKit. Touch is what a
+  // phone actually sends, and it advances even when play() never resolves.
+  const dragFrom=origin=>{
+    return (x,y)=>{
+      const dx=x-origin.x,dy=y-origin.y;
+      if(origin.target.closest('button,a,input,.onboard-fan'))return;
+      if(Math.hypot(dx,dy)<14){if(onboardingCardIndex()<2)nudge(1);return;}
+      if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
+      if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
+        clearTimeout(session.gestureTimer);
+        session.gestureTimer=setTimeout(()=>{
+          if(onboardingSession!==session)return;
+          if(Math.abs(wrap.scrollLeft-origin.left)>4)return;
+          nudge(dx<0?1:-1);
+        },120);
+      }
+    };
+  };
+  wrap.addEventListener('touchstart',event=>{
+    const target=event.target instanceof Element?event.target:null;
+    const touch=event.changedTouches&&event.changedTouches[0];
+    if(!target||!touch||target.closest('button,a,input,.onboard-fan'))return;
+    session.touch={x:touch.clientX,y:touch.clientY,left:wrap.scrollLeft,target};
+  },{passive:true,signal});
+  wrap.addEventListener('touchend',event=>{
+    const origin=session.touch;
+    session.touch=null;
+    if(!origin)return;
+    const touch=event.changedTouches&&event.changedTouches[0];
+    if(!touch)return;
+    dragFrom(origin)(touch.clientX,touch.clientY);
+  },{signal});
+  wrap.addEventListener('touchcancel',()=>{session.touch=null;},{signal});
+  // A vertical drag must not scroll the document. Horizontal drags stay
+  // with the carousel or the cover fan.
+  root.addEventListener('touchmove',event=>{
+    const target=event.target instanceof Element?event.target:null;
+    const fan=target?.closest('.onboard-fan')||null;
+    const touch=event.touches&&event.touches[0];
+    const origin=session.gesture;
+    if(!touch){event.preventDefault();return;}
+    const dx=origin?touch.clientX-origin.x:0,dy=origin?touch.clientY-origin.y:0;
+    if(fan&&Math.abs(dx)>=Math.abs(dy))return;
+    if(!fan&&Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8)return;
+    event.preventDefault();
+  },{passive:false,signal});
 }
 function showOnboardingBook(session,idx){
   session.bookIndex=idx;
@@ -249,13 +399,16 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
-    depthFrame:0,settleTimer:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now()};
+    depthFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
   for(const node of document.querySelectorAll(/** @type {'div'} */('.view,#topbar,#word-peek,#panel,#aa-pop,#sentence-modal,#settings-modal,#add-modal'))){
     session.inert.push([node,node.inert]);node.inert=true;
   }
   const root=document.getElementById('onboarding');
+  document.documentElement.classList.add('onboarding-open');
+  layoutOnboardingViewport();
   root.hidden=false;
   setOnboardingChoiceNote('');
   syncOnboardingVideoPosters();
@@ -264,19 +417,18 @@ function startOnboarding(replay){
   buildOnboardingFan(session);
   wrap.scrollTo({left:0,behavior:'instant'});
   syncOnboardingDots();
-  // Play only the card that is actually in view; pause the other one.
-  // No autoplay attribute: with preload="none" nothing is fetched until
-  // a card is actually shown, and reduced motion fetches nothing at all.
-  session.observer=new IntersectionObserver(entries=>{
-    for(const entry of entries){
-      const video=/** @type {HTMLVideoElement} */(entry.target);
-      if(entry.intersectionRatio>=0.6&&!session.motion.matches&&!document.hidden)video.play().catch(()=>{});
-      else video.pause();
-    }
-  },{root:wrap,threshold:[0.6]});
-  for(const video of document.querySelectorAll('#onboarding .onboard-card video'))session.observer.observe(video);
+  // Play the snapped card only. No autoplay attribute: with preload="none"
+  // nothing is fetched until that card is shown, and reduced motion fetches
+  // nothing at all. A rejected play() does not block the next card.
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))delete video.dataset.onboardRetried;
+  syncOnboardingVideoPlayback(session);
+  bindOnboardingGestures(session);
+  const relayout=()=>{if(onboardingSession===session)layoutOnboardingViewport();};
+  window.visualViewport?.addEventListener('resize',relayout,{signal});
+  window.visualViewport?.addEventListener('scroll',relayout,{signal});
+  window.addEventListener('resize',relayout,{signal});
   wrap.addEventListener('scroll',syncOnboardingDots,{passive:true,signal});
-  wrap.addEventListener('scroll',()=>noteOnboardingCard(session),{passive:true,signal});
+  wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);syncOnboardingVideoPlayback(session);},{passive:true,signal});
   document.getElementById('onboard-skip').addEventListener('click',()=>{
     if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'skip'});
@@ -340,14 +492,14 @@ function startOnboarding(replay){
     }
   },{signal,capture:true});
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();}
+    if(document.hidden){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);}
     else syncOnboardingVideoPlayback(session);
   },{signal});
-  window.addEventListener('pagehide',()=>{for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();},{signal});
+  window.addEventListener('pagehide',()=>{for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);},{signal});
   window.addEventListener('pageshow',()=>syncOnboardingVideoPlayback(session),{signal});
   window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
   session.motion.addEventListener('change',()=>{
-    if(session.motion.matches){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();}
+    if(session.motion.matches){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);}
     else syncOnboardingVideoPlayback(session);
   },{signal});
   session.theme=new MutationObserver(()=>{
@@ -367,8 +519,18 @@ function endOnboarding(remember,returnToPrevious=true){
   session.observer?.disconnect();
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
   clearTimeout(session.settleTimer);
-  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))video.pause();
-  document.getElementById('onboarding').hidden=true;
+  clearTimeout(session.gestureTimer);
+  clearTimeout(session.scrollTimer);
+  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);
+  document.documentElement.classList.remove('onboarding-open');
+  const root=document.getElementById('onboarding');
+  root.hidden=true;
+  root.style.top='';
+  root.style.height='';
+  root.style.bottom='';
+  root.style.removeProperty('--vv-h');
+  root.style.removeProperty('--vv-top');
+  if(session.scrollY)window.scrollTo(0,session.scrollY);
   for(const [node,inert] of session.inert)node.inert=inert;
   if(remember){save(ONBOARD_KEY,'done');try{localStorage.removeItem(ONBOARD_PROGRESS_KEY);}catch{}}
   if(activeAppView()==='home'){if(typeof paintHome==='function')paintHome();else renderHome();}

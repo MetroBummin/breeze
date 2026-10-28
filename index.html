@@ -69,7 +69,7 @@
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
   <link rel="stylesheet" href="styles/home-shell.css?v=251e196b">
-  <link rel="stylesheet" href="styles/onboarding.css?v=65211848">
+  <link rel="stylesheet" href="styles/onboarding.css?v=51d6964e">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
   <!-- 동기화 SDK. 예전에는 jsDelivr 에서 받았는데, 서비스워커는 남의 서버를
@@ -91,7 +91,7 @@
   <script defer src="scripts/core/word-integrity.js?v=26df6591"></script>
   <script defer src="scripts/core/account-scope.js?v=2d083ed6"></script>
   <script defer src="scripts/core/state.js?v=604111d6"></script>
-  <script defer src="scripts/core/events.js?v=07d158b2"></script>
+  <script defer src="scripts/core/events.js?v=3fd906c0"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
   <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
@@ -163,7 +163,7 @@
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
   <script defer src="scripts/sync/sync.js?v=b0c5c6d2"></script>
   <script defer src="scripts/ui/interactions.js?v=363f440d"></script>
-  <script defer src="scripts/ui/onboarding.js?v=d414f789"></script>
+  <script defer src="scripts/ui/onboarding.js?v=1d08b53e"></script>
   <script defer src="scripts/ui/library-refresh.js?v=f10aefc3"></script>
   <script defer src="scripts/reader/study-preferences.js?v=8202e181"></script>
   <script defer src="scripts/reader/pdf-navigation.js?v=3dca77ac"></script>
@@ -599,15 +599,16 @@
 
   </div>
 </div>
-<!-- Three-card carousel: the reviewed standalone page (onboarding-carousel.html)
-     moved into the app dialog. Swipe only, no previous/next buttons. -->
+<!-- Three-card carousel. One viewport, equal cards, skip inside the card.
+     Swipe, swipe up, or tap. No previous/next buttons and no auto-advance. -->
 <div id="onboarding" role="dialog" aria-modal="true" aria-label="브리즈 시작 안내" hidden>
-  <button id="onboard-skip" type="button">건너뛰기</button>
   <div class="onboard-stage">
-    <div class="onboard-wrap" id="onboard-wrap" role="region" aria-roledescription="캐러셀" aria-label="브리즈 시작 안내">
+    <div class="onboard-column">
+      <button id="onboard-skip" type="button">건너뛰기</button>
+      <div class="onboard-wrap" id="onboard-wrap" role="region" aria-roledescription="캐러셀" aria-label="브리즈 시작 안내">
       <div class="onboard-track">
         <article class="onboard-card" data-card="0">
-          <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"
+          <video muted loop playsinline webkit-playsinline preload="none" aria-hidden="true" tabindex="-1"
                  poster="assets/onboarding-carousel/card1.jpg" data-poster="assets/onboarding-carousel/card1.jpg" data-poster-wide="assets/onboarding-carousel/card1-wide.jpg">
             <source src="assets/onboarding-carousel/card1-wide.mp4" media="(min-width: 768px)">
             <source src="assets/onboarding-carousel/card1.mp4">
@@ -619,7 +620,7 @@
           </div>
         </article>
         <article class="onboard-card" data-card="1">
-          <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"
+          <video muted loop playsinline webkit-playsinline preload="none" aria-hidden="true" tabindex="-1"
                  poster="assets/onboarding-carousel/card2.jpg" data-poster="assets/onboarding-carousel/card2.jpg" data-poster-wide="assets/onboarding-carousel/card2-wide.jpg">
             <source src="assets/onboarding-carousel/card2-wide.mp4" media="(min-width: 768px)">
             <source src="assets/onboarding-carousel/card2.mp4">
@@ -641,6 +642,7 @@
             <p id="onboard-choice-note" class="onboard-choice-note" role="status" aria-live="polite"></p>
           </div>
         </article>
+      </div>
       </div>
     </div>
   </div>

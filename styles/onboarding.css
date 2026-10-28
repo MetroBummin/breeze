@@ -1,101 +1,100 @@
-/* Three-card carousel dialog. Geometry, copy spacing and the card 3 fan are
-   ported from the reviewed standalone page (onboarding-carousel.html) so the
-   dialog shows exactly what was reviewed. Class names carry the onboard-
-   prefix so nothing here leaks into the app's own .card/.fan rules.
-   The carousel surface stays light in both themes: the standalone page is
-   light-only, and a light dialog surface keeps copy, hairlines and dots
-   readable without a second set of values. */
+/* Three-card carousel dialog. Copy, videos and the card 3 fan follow the
+   reviewed standalone page. The dialog itself is one visual viewport: the
+   page behind it does not scroll, and every card is the same box so card 3
+   cannot sit shorter in the gray margin. The skip link is inside that box.
+   Class names carry the onboard- prefix so nothing here leaks into the
+   app's own .card/.fan rules. The surface stays light in both themes. */
 #onboarding[hidden]{display:none!important;}
-#onboarding{position:fixed;inset:0;z-index:75;background:#F2F2F7;color:#293034;font-family:var(--ui);overflow:hidden;overscroll-behavior:contain;color-scheme:light;}
-#onboarding button{font-family:var(--ui);cursor:pointer;}
-#onboarding :focus{outline:none;}
-#onboarding #onboard-skip{position:absolute;z-index:10;top:calc(env(safe-area-inset-top, 0px) + 20px);right:24px;padding:14px 12px;border:0;background:none;font-size:13px;color:#6D6D72;opacity:.8;}
-.onboard-stage{height:100%;box-sizing:border-box;display:flex;overflow:auto;padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);-webkit-overflow-scrolling:touch;}
-.onboard-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
-/* Card width: big, but never taller than the screen.
-   No peek: the card is narrower than the screen, so the faint gray
-   margins at the sides are what hints at the next card. */
-.onboard-wrap{
-  --cw:min(calc(100vw - 48px), calc(78vh * 9 / 16));
-  margin:auto;
-  width:var(--cw);
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;
-  scrollbar-width:none;
-  -webkit-overflow-scrolling:touch;
+html.onboarding-open,html.onboarding-open body{
+  overflow:hidden;height:100%;min-height:0;overscroll-behavior:none;
 }
+html.onboarding-open body{position:fixed;inset:0;width:100%;}
+#onboarding{
+  --safe-top:env(safe-area-inset-top, 0px);
+  --safe-bot:env(safe-area-inset-bottom, 0px);
+  --vv:var(--vv-h, 100dvh);
+  /* Dots plus the two copy lines. A few extra pixels keep the copy from
+     clipping if the font is slightly taller; the video flexes into the rest. */
+  --chrome:112px;
+  --avail:calc(var(--vv) - var(--safe-top) - var(--safe-bot) - 24px);
+  --cw:min(calc(100vw - 48px), calc((var(--avail) - var(--chrome)) * 9 / 16));
+  --card-h:min(var(--avail), calc(var(--cw) * 16 / 9 + var(--chrome)));
+  position:fixed;left:0;right:0;top:var(--vv-top, 0px);
+  height:100vh;height:var(--vv);max-height:var(--vv);
+  z-index:75;background:#F2F2F7;color:#293034;font-family:var(--ui);
+  overflow:hidden;overscroll-behavior:none;color-scheme:light;touch-action:none;
+}
+#onboarding button{font-family:var(--ui);cursor:pointer;touch-action:manipulation;}
+#onboarding :focus{outline:none;}
+#onboarding *{touch-action:none;}
+#onboarding #onboard-skip{
+  position:absolute;z-index:10;top:18px;right:18px;box-sizing:border-box;
+  min-width:44px;min-height:44px;margin:0;padding:0 0 0 16px;border:0;background:none;
+  display:flex;align-items:flex-start;justify-content:flex-end;
+  font-size:13px;line-height:16px;color:#6D6D72;opacity:.8;
+}
+.onboard-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+.onboard-stage{
+  height:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:calc(var(--safe-top) + 12px) 0 calc(var(--safe-bot) + 12px);
+}
+.onboard-column{position:relative;width:var(--cw);height:var(--card-h);max-height:100%;flex:none;}
+.onboard-wrap{
+  width:100%;height:100%;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior:none;
+}
+#onboarding .onboard-wrap{touch-action:pan-x;}
+#onboarding .onboard-card,#onboarding .onboard-card video,#onboarding .onboard-copy,#onboarding .onboard-dots{touch-action:none;}
 .onboard-wrap::-webkit-scrollbar{display:none;}
-.onboard-track{display:flex;gap:20px;align-items:center;}
+.onboard-track{display:flex;gap:20px;height:100%;align-items:stretch;}
 .onboard-card{
-  flex:0 0 var(--cw);
-  scroll-snap-align:start;
-  scroll-snap-stop:always;
-  background:#fff;
-  border-radius:24px;
-  overflow:hidden;
+  flex:0 0 var(--cw);height:100%;min-height:0;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;background:#fff;border-radius:24px;overflow:hidden;
   box-shadow:0 8px 30px rgba(0, 0, 0, .08);
 }
 .onboard-card video{
-  display:block;width:100%;aspect-ratio:9 / 16;
-  object-fit:cover;background:#fff;
+  display:block;width:100%;flex:1 1 auto;min-height:0;object-fit:cover;background:#fff;
   /* Hairline around the video area: card 1's video is mostly white
      on a white card, so without this the video area has no edge. */
   box-shadow:inset 0 0 0 1px rgba(0, 0, 0, .05);
 }
+.onboard-dots,.onboard-copy,.onboard-bookmeta,.onboard-choice{flex:none;}
 .onboard-dots{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;}
 .onboard-dots i{width:8px;height:8px;border-radius:50%;background:#D1D1D6;transition:background .2s;}
 .onboard-dots i.on{background:#000;}
 .onboard-copy{text-align:center;padding:10px 16px 20px;}
 .onboard-copy .t1{font-size:17px;font-weight:600;line-height:1.4;}
 .onboard-copy .t2{font-size:14px;color:#6D6D72;line-height:1.5;margin-top:4px;}
-/* Card 3: book choice in card form. The covers are a real horizontally
-   scrolling strip, infinite by wrapping around, so swiping the covers
-   changes the book. Carousel depth: covers overlap (each one advances
-   only --step), and the script scales/stacks them by distance from the
-   centre, so the centre book is large and in front while two covers on
-   each side peek out from behind, each smaller and further back.
+/* Card 3 fills the same card box as the videos. The fan takes the space
+   the video uses; covers stay capped so five of them fit the card width.
    Snapping still uses the untransformed layout boxes. */
 .onboard-fan{
-  /* Covers are 2:3. Height also leaves room for meta, dots and the
-     three buttons, so short screens shrink the covers instead of
-     pushing the buttons off screen. The width factor keeps all five
-     covers inside a 390px-wide phone card. */
-  --cover-h:min(calc(var(--cw) * 0.84), max(80px, calc(100vh - 330px)));
+  --cover-h:min(calc(var(--cw) * 0.84), 100%);
   --cover-w:calc(var(--cover-h) * 2 / 3);
   --step:calc(var(--cover-w) * 0.3);
-  position:relative;
-  display:flex;margin-top:16px;
-  padding:10px calc((var(--cw) - var(--cover-w)) / 2) 18px;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;
-  scrollbar-width:none;
-  -webkit-overflow-scrolling:touch;
+  position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:center;
+  margin:0;padding:44px calc((var(--cw) - var(--cover-w)) / 2) 8px;
+  overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x;
 }
+#onboarding .onboard-fan,#onboarding .onboard-fan *{touch-action:pan-x;}
 .onboard-fan::-webkit-scrollbar{display:none;}
 /* The .onboard-cover box is only the layout/snap slot and is never
    transformed: Chrome snaps to transformed boxes, so moving it would
    shift the snap points. The image inside is what gets moved/scaled
    and tapped. */
 .onboard-fan .onboard-cover{
-  position:relative;
-  flex:0 0 var(--cover-w);
-  height:var(--cover-h);
+  position:relative;flex:0 0 var(--cover-w);height:var(--cover-h);
   margin-right:calc(var(--step) - var(--cover-w));
-  scroll-snap-align:center;
-  scroll-snap-stop:always;
-  pointer-events:none;
+  scroll-snap-align:center;scroll-snap-stop:always;pointer-events:none;
 }
 .onboard-fan .onboard-cover:last-child{margin-right:0;}
 .onboard-fan .onboard-cover img{
   display:block;width:100%;height:100%;object-fit:cover;
   border-radius:12px;cursor:pointer;pointer-events:auto;
-  /* Fades out inside the strip's 10px / 18px padding; a longer shadow
-     is cut off by the strip's scroll clip as a hard line. */
   box-shadow:0 6px 16px rgba(0, 0, 0, .2);
-  transform-origin:50% 50%;
-  will-change:transform;
+  transform-origin:50% 50%;will-change:transform;
 }
 .onboard-bookmeta{text-align:center;padding:10px 16px 0;}
 .onboard-bookmeta b{display:block;font-size:16px;line-height:1.4;}
@@ -116,23 +115,18 @@
   display:block;width:100%;margin-top:12px;padding:14px 6px;border:0;
   background:none;color:#8A8A8E;font-size:14px;
 }
-/* Import/read failure feedback, inside the dialog: the app-wide toast is
-   routed to the home notice behind this overlay, so the user would never
-   see it here. Empty takes no space. */
 .onboard-choice-note{margin:10px 4px 0;text-align:center;font-size:13px;line-height:1.5;color:#6D6D72;word-break:keep-all;}
 .onboard-choice-note:empty{display:none;}
-/* Tablet/desktop: the 4:3 renders. The card goes wider (same height
-   rule), the video switches aspect, and card 3's covers are capped
-   by viewport height so the book card never overflows short screens.
-   NOTE: this block must stay after the base .onboard-fan
-   .onboard-cover rule, or the base rule wins the cascade and the cap
-   silently stops working. */
+/* Tablet/desktop: the 4:3 renders. This block must stay after the base
+   .onboard-fan .onboard-cover rule, or the base rule wins the cascade and
+   the wider card / cover cap silently stops working. Cover height is
+   capped by the fan (100%) so the equal-height card cannot overflow. */
 @media (min-width: 768px){
-  .onboard-wrap{--cw:min(calc(100vw - 48px), calc(78vh * 4 / 3));}
-  .onboard-card video{aspect-ratio:4 / 3;}
-  .onboard-fan{
-    --cover-h:min(calc(var(--cw) * 0.87), 58vh, max(80px, calc(100vh - 330px)));
+  #onboarding{
+    --cw:min(calc(100vw - 48px), calc((var(--avail) - var(--chrome)) * 4 / 3));
+    --card-h:min(var(--avail), calc(var(--cw) * 3 / 4 + var(--chrome)));
   }
+  .onboard-fan{--cover-h:min(calc(var(--cw) * 0.87), 100%);}
 }
 @media (prefers-reduced-motion: reduce){
   .onboard-wrap,.onboard-fan{scroll-behavior:auto;}
