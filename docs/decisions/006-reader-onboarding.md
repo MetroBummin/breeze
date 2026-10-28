@@ -152,8 +152,11 @@ failure leave the card available), and “둘러볼게요” (home). Import and
 book-open failures report on a status line inside card 3, because the
 app-wide toast is routed to the home notice behind the overlay and
 would never be seen here. Below 768px the onboarding fills the screen
-edge to edge: no rounded card, shadow or outer margin, and the background
-is the Home background `#F2F2F7`. Safe-area insets (`env(safe-area-inset-*)`)
+edge to edge: no rounded card, shadow or outer margin. The card is the
+same white on every screen, the white of the video frames, so the video
+area and the dots and copy under it show no seam (phones used to paint
+the card and video `#F2F2F7` under white frames, which drew a line under
+the video). Safe-area insets (`env(safe-area-inset-*)`)
 pad the copy and the controls. Skip is a small grey link at the top right
 of that screen, 18px below the safe area and 18px in from the right, on
 every screen. At 768px and above the inset white card is unchanged, and
@@ -164,8 +167,8 @@ gray margin. The dialog is one visual viewport: `#onboarding` is fixed to
 container. iOS Safari's toolbar is inside that measurement, so the page
 does not scroll. All three screens share one width, height and vertical
 position. Card 3's fan flexes inside that same box. Guidance copy stays
-polite (존댓말), there is no focus outline, and the dialog surface is
-the home background `#F2F2F7` in light mode.
+polite (존댓말), there is no focus outline, and the margin around the
+card at 768px and up is the home background `#F2F2F7`.
 
 The carousel surface stays light in both themes. The standalone page is
 light-only, and forcing the dialog light keeps copy, the video hairline

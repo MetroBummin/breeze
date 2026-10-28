@@ -508,7 +508,7 @@ try{
     return {bg:s.backgroundColor,radius:s.borderRadius,shadow:s.boxShadow,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight};
   });
   if(phone){
-    assert.equal(surface.bg,'rgb(242, 242, 247)','phone screen matches the Home background');
+    assert.equal(surface.bg,'rgb(255, 255, 255)','phone card is the white of the video frames');
     assert.equal(surface.radius,'0px','phone has no rounded card');
     assert.equal(surface.shadow,'none','phone has no card shadow');
     assert.ok(surface.left<=1&&surface.top<=1&&surface.right>=width-1&&surface.bottom>=height-1,'phone is not edge to edge '+JSON.stringify(surface));
@@ -516,6 +516,22 @@ try{
     assert.equal(surface.bg,'rgb(255, 255, 255)','tablet and desktop keep the white card');
     assert.ok(surface.radius.startsWith('24px'),'desktop card radius '+surface.radius);
     assert.ok(surface.left>12,'desktop card should stay inset '+JSON.stringify(surface));
+  }
+  // No seam between a video and the dots/copy under it, in either theme:
+  // the video area, the dots and the copy all show the card's own surface,
+  // and the frames' bottom edge (the poster is a frame) is that same colour.
+  const seam=await page.evaluate(async()=>Promise.all([...document.querySelectorAll('.onboard-card video')].map(async v=>{
+    const card=getComputedStyle(v.closest('.onboard-card')).backgroundColor;
+    const own=[v,...v.closest('.onboard-card').querySelectorAll('.onboard-dots,.onboard-copy')].map(n=>getComputedStyle(n).backgroundColor);
+    const img=new Image();img.src=v.getAttribute('poster');await img.decode();
+    const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+    const g=c.getContext('2d');g.drawImage(img,0,0);
+    const [r,gr,b]=g.getImageData(c.width>>1,c.height-2,1,1).data;
+    return {card,own,frameEdge:`rgb(${r}, ${gr}, ${b})`};
+  })));
+  for(const s of seam){
+    assert.ok(s.own.every(bg=>bg===s.card||bg==='rgba(0, 0, 0, 0)'),'video/copy surface differs from the card '+JSON.stringify(s));
+    assert.equal(s.frameEdge,s.card,'video frame edge does not match the card surface '+JSON.stringify(s));
   }
   assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
   const skipBox=await page.locator('#onboard-skip').boundingBox();
