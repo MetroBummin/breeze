@@ -1,4 +1,4 @@
-/* Three-card carousel dialog. The layout, copy, video switching and card 3
+/* Three-card carousel dialog. The layout, copy, card animations and card 3
    cover fan are ported from the reviewed standalone page
    (onboarding-carousel.html) so the dialog shows exactly what was reviewed.
    The former passive guide (welcome pen animation plus seven recorded
@@ -27,20 +27,9 @@ function onboardingAppearanceOpened(){}
 function openOnboardingWord(node,retry=false){}
 function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
-/* Media switching: the <source media> switch is CSS-driven, but the poster
-   is a single attribute per video, so swap it at the same breakpoint. */
-const onboardingWideQuery=typeof matchMedia==='function'?matchMedia('(min-width: 768px)'):null;
-function syncOnboardingVideoPosters(){
-  if(!onboardingWideQuery)return;
-  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
-    const next=onboardingWideQuery.matches?video.dataset.posterWide:video.dataset.poster;
-    if(next&&video.getAttribute('poster')!==next)video.setAttribute('poster',next);
-  }
-}
-if(onboardingWideQuery&&typeof onboardingWideQuery.addEventListener==='function'){
-  onboardingWideQuery.addEventListener('change',syncOnboardingVideoPosters);
-}
-
+/* Cards 1 and 2 are looping animated WebP <img> elements chosen by
+   <picture> (viewport width, reduced motion). They need no script: no
+   autoplay, poster or play-button handling. */
 function onboardingCardIndex(){
   const wrap=document.getElementById('onboard-wrap');
   const card=wrap.querySelector(/** @type {'article'} */('.onboard-card'));
@@ -92,185 +81,6 @@ function layoutOnboardingViewport(){
   root.style.setProperty('--vv-h',height+'px');
   root.style.setProperty('--vv-top',top+'px');
 }
-/* Card 1 stays on its poster on iPhone Safari and iPhone Chrome, and plays
-   on desktop Chrome. The clip is parsed inside #onboarding[hidden]
-   (display:none), so iOS WebKit never gives it a renderer: preload is
-   ignored, and play() in the same turn the dialog opens is rejected
-   (no user gesture, and Low Power Mode rejects even a muted play). The
-   old catch called load() and play() once more, then gave up, so nothing
-   was waiting for canplay or a touch. A later swipe is a gesture, which
-   is why the clip starts only after leaving the card and coming back.
-   Desktop Chrome accepts the early play() and waits for data.
-   Once the dialog is visible, detach the current video, set muted,
-   playsinline and autoplay while it is detached, and insert it again.
-   Sources stay on the element — nothing assigns src. The same path runs
-   for the card a swipe lands on. A rejected play() retries on
-   loadeddata/canplay and on the first touch. Reduced motion does not fetch. */
-function stopOnboardingVideo(video){
-  video.dataset.onboardToken='off';
-  video.autoplay=false;
-  video.removeAttribute('autoplay');
-  try{video.pause();}catch{}
-}
-function presentOnboardingVideo(video){
-  if(video.dataset.onboardPresented==='1')return;
-  video.dataset.onboardPresented='1';
-  video.muted=true;
-  video.defaultMuted=true;
-  video.playsInline=true;
-  video.setAttribute('muted','');
-  video.setAttribute('playsinline','');
-  video.setAttribute('webkit-playsinline','');
-  video.autoplay=true;
-  video.setAttribute('autoplay','');
-  video.preload='auto';
-  const parent=video.parentNode,next=video.nextSibling;
-  if(!parent)return;
-  parent.removeChild(video);
-  parent.insertBefore(video,next);
-}
-function bindOnboardingVideoRetries(video,session){
-  if(video.dataset.onboardBound==='1')return;
-  video.dataset.onboardBound='1';
-  const retry=()=>{
-    if(onboardingSession!==session||video.dataset.onboardToken==='off')return;
-    const mine=[...document.querySelectorAll('#onboarding .onboard-card video')].indexOf(video);
-    if(mine!==onboardingCardIndex()||session.motion.matches||document.hidden)return;
-    if(!video.paused)return;
-    const token=video.dataset.onboardToken;
-    const pending=video.play();
-    if(pending&&pending.then)pending.then(()=>{
-      // A newer play() owns the element. Pausing here was stopping card 2
-      // when the open-frame attempt resolved late.
-      if(video.dataset.onboardToken!==token){
-        if(video.dataset.onboardToken==='off'){try{video.pause();}catch{}}
-        return;
-      }
-      if(onboardingCardIndex()!==mine){stopOnboardingVideo(video);return;}
-      video.dataset.onboardRejected='';
-    }).catch(error=>{
-      if(video.dataset.onboardToken===token&&error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
-    });
-  };
-  for(const type of ['loadedmetadata','loadeddata','canplay','canplaythrough'])video.addEventListener(type,retry,{signal:session.controller.signal});
-  // autoplay can start the element again after pause(). A stopped clip
-  // (hidden tab, other card, reduced motion) has to stay stopped.
-  video.addEventListener('play',()=>{
-    if(video.dataset.onboardToken==='off'||document.hidden||session.motion.matches){try{video.pause();}catch{}}
-  },{signal:session.controller.signal});
-}
-function playOnboardingVideo(video,session){
-  if(!video)return;
-  const mine=[...document.querySelectorAll('#onboarding .onboard-card video')].indexOf(video);
-  if(session.motion.matches||document.hidden||mine!==onboardingCardIndex()){stopOnboardingVideo(video);return;}
-  const root=document.getElementById('onboarding');
-  if(!root||root.hidden)return;
-  bindOnboardingVideoRetries(video,session);
-  const token=String(++session.playToken);
-  video.dataset.onboardToken=token;
-  presentOnboardingVideo(video);
-  video.muted=true;
-  video.playsInline=true;
-  video.autoplay=true;
-  video.setAttribute('autoplay','');
-  const settle=()=>{
-    if(video.dataset.onboardToken!==token){
-      if(video.dataset.onboardToken==='off'){try{video.pause();}catch{}}
-      return;
-    }
-    if(onboardingCardIndex()!==mine)stopOnboardingVideo(video);
-    else video.dataset.onboardRejected='';
-  };
-  // load() and play() in one turn aborts the fetch on iOS and the promise
-  // rejects before any frame exists. If nothing has been selected yet, start
-  // the resource and let loadeddata/canplay call play().
-  if(video.networkState===HTMLMediaElement.NETWORK_EMPTY&&video.readyState===0){
-    try{video.load();}catch{}
-    return;
-  }
-  const pending=video.play();
-  // Only a refusal (NotAllowedError) marks the clip; onboarding.css shows
-  // WebKit's play button for that state alone. A load failure (for example
-  // a server without byte ranges, which Safari needs) keeps the poster.
-  if(pending&&pending.then)pending.then(settle).catch(error=>{
-    if(video.dataset.onboardToken===token&&error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
-  });
-}
-/* Card 2 (and card 1 after a swipe back) starts from a play() issued by a
-   scroll event in the middle of the swipe. It cannot rely on the autoplay
-   attribute: stopOnboardingVideo() paused it at open, and pause() clears
-   the element's can-autoplay flag. WebKit can refuse that mid-swipe call
-   (the card is only partly on screen) and then paints its play button;
-   loadeddata/canplay may already have fired, so nothing asked again. Once
-   the carousel comes to rest, ask the card in view once more. A playing
-   clip is left alone. */
-function settleOnboardingVideoPlayback(session){
-  if(onboardingSession!==session)return;
-  const video=currentOnboardingVideo();
-  if(video&&video.paused)playOnboardingVideo(video,session);
-}
-function queueOnboardingPlaybackSettle(session){
-  clearTimeout(session.playSettleTimer);
-  session.playSettleTimer=setTimeout(()=>settleOnboardingVideoPlayback(session),140);
-}
-function syncOnboardingVideoPlayback(session){
-  const videos=[...document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))];
-  const index=onboardingCardIndex();
-  videos.forEach((video,i)=>{
-    if(i===index)playOnboardingVideo(video,session);
-    else stopOnboardingVideo(video);
-  });
-}
-/* A tap on the card's video belongs to the video while the video is not
-   playing. If autoplay was refused (iOS Low Power Mode refuses even a muted
-   clip) or the clip has not started yet, WebKit used to paint its native
-   play button over the poster, and the same tap went to the carousel and
-   jumped to card 2. The native button is hidden in onboarding.css, and the
-   tap now starts the clip inside the gesture and stays on the card. A
-   playing clip's tap still advances. If a tap-started play() was refused
-   too, the next tap advances so the reader is never stuck.
-   Pointer and touch events both arrive for one physical tap, in either
-   order; the first one decides and the other reuses that decision. */
-function currentOnboardingVideo(){
-  const card=document.querySelectorAll('#onboarding .onboard-card')[onboardingCardIndex()];
-  return /** @type {HTMLVideoElement|null} */(card?.querySelector('video')||null);
-}
-function onboardingVideoWaiting(video){
-  return video.paused||video.ended||(video.currentTime===0&&video.readyState<HTMLMediaElement.HAVE_FUTURE_DATA);
-}
-function startOnboardingVideoFromTap(session,event){
-  if(onboardingSession!==session)return;
-  if(event.type==='pointerdown'&&event.button!=null&&event.button!==0)return;
-  const kind=event.type==='touchstart'?'touch':'pointer';
-  const now=Date.now();
-  const last=session.videoTap;
-  if(last&&last.kind!==kind&&now-last.at<700)return;
-  session.videoTap=null;
-  const target=event.target instanceof Element?event.target:null;
-  const video=currentOnboardingVideo();
-  if(!video||!target||target.closest('button,a,input,.onboard-fan'))return;
-  if(target!==video&&!target.contains(video))return;
-  if(session.motion.matches||document.hidden||!onboardingVideoWaiting(video))return;
-  if(video.dataset.onboardTapRefused==='1'){video.dataset.onboardTapRefused='';return;}
-  session.videoTap={kind,at:now};
-  bindOnboardingVideoRetries(video,session);
-  const token=String(++session.playToken);
-  video.dataset.onboardToken=token;
-  presentOnboardingVideo(video);
-  video.muted=true;
-  const pending=video.play();
-  if(pending&&pending.then)pending.then(()=>{
-    if(video.dataset.onboardToken===token)video.dataset.onboardRejected='';
-  }).catch(error=>{
-    if(video.dataset.onboardToken!==token)return;
-    video.dataset.onboardTapRefused='1';
-    if(error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
-  });
-}
-function onboardingTapStartedVideo(session){
-  const tap=session.videoTap;
-  return !!tap&&Date.now()-tap.at<700;
-}
 function advanceOnboardingCard(session,dir){
   const wrap=document.getElementById('onboard-wrap');
   const card=/** @type {HTMLElement|null} */(wrap?.querySelector('.onboard-card'));
@@ -309,7 +119,7 @@ function bindOnboardingGestures(session){
     const dx=x-origin.x,dy=y-origin.y;
     if(origin.target.closest('button,a,input,.onboard-fan'))return;
     if(Math.hypot(dx,dy)<14){
-      if(!origin.startedVideo&&onboardingCardIndex()<2)nudge(1);
+      if(onboardingCardIndex()<2)nudge(1);
       return;
     }
     if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
@@ -326,7 +136,7 @@ function bindOnboardingGestures(session){
     if(event.button!=null&&event.button!==0)return;
     const target=event.target instanceof Element?event.target:null;
     if(!target||target.closest('button,a,input,.onboard-fan'))return;
-    session.gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,x2:event.clientX,y2:event.clientY,left:wrap.scrollLeft,target,startedVideo:onboardingTapStartedVideo(session)};
+    session.gesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,x2:event.clientX,y2:event.clientY,left:wrap.scrollLeft,target};
     try{wrap.setPointerCapture(event.pointerId);}catch{}
   },{signal});
   wrap.addEventListener('pointermove',event=>{
@@ -334,18 +144,18 @@ function bindOnboardingGestures(session){
     session.gesture.x2=event.clientX;
     session.gesture.y2=event.clientY;
   },{signal});
-  // WebKit can cancel a vertical drag when the video only allows pan-x.
+  // WebKit can cancel a vertical drag when the card only allows pan-x.
   // pointercancel still has to advance, or the first card stays stuck.
   wrap.addEventListener('pointerup',finishGesture,{signal});
   wrap.addEventListener('pointercancel',finishGesture,{signal});
   document.addEventListener('pointerup',event=>{if(session.gesture)finishGesture(event);},{signal,capture:true});
   // Pointer events are flaky for a vertical drag in WebKit. Touch is what a
-  // phone actually sends, and it advances even when play() never resolves.
+  // phone actually sends.
   const dragFrom=origin=>{
     return (x,y)=>{
       const dx=x-origin.x,dy=y-origin.y;
       if(origin.target.closest('button,a,input,.onboard-fan'))return;
-      if(Math.hypot(dx,dy)<14){if(!origin.startedVideo&&onboardingCardIndex()<2)nudge(1);return;}
+      if(Math.hypot(dx,dy)<14){if(onboardingCardIndex()<2)nudge(1);return;}
       if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
       if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
         clearTimeout(session.gestureTimer);
@@ -361,7 +171,7 @@ function bindOnboardingGestures(session){
     const target=event.target instanceof Element?event.target:null;
     const touch=event.changedTouches&&event.changedTouches[0];
     if(!target||!touch||target.closest('button,a,input,.onboard-fan'))return;
-    session.touch={x:touch.clientX,y:touch.clientY,left:wrap.scrollLeft,target,startedVideo:onboardingTapStartedVideo(session)};
+    session.touch={x:touch.clientX,y:touch.clientY,left:wrap.scrollLeft,target};
   },{passive:true,signal});
   wrap.addEventListener('touchend',event=>{
     const origin=session.touch;
@@ -423,8 +233,8 @@ function buildOnboardingFan(session){
       slot.dataset.idx=String(i);
       const img=document.createElement('img');
       // 35 covers (five copies of seven) are built on open. Decoding them on
-      // the main thread stalled WebKit's first frames, and card 1's clip
-      // with them; card 3 is off screen at that point.
+      // the main thread stalled WebKit's first frames, and card 1's
+      // animation with them; card 3 is off screen at that point.
       img.decoding='async';
       img.src=b.img;img.alt=b.title;
       slot.append(img);
@@ -585,7 +395,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,fanW:0,fanH:0,
-    depthFrame:0,playFrame:0,playTimer:0,playSettleTimer:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -594,54 +404,21 @@ function startOnboarding(replay){
   }
   const root=document.getElementById('onboarding');
   document.documentElement.classList.add('onboarding-open');
-  if(session.motion.matches){
-    for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
-      video.autoplay=false;video.removeAttribute('autoplay');video.preload='none';
-      try{video.pause();}catch{}
-    }
-  }
   layoutOnboardingViewport();
   root.hidden=false;
   setOnboardingChoiceNote('');
-  syncOnboardingVideoPosters();
   const signal=session.controller.signal;
   const wrap=document.getElementById('onboard-wrap');
   buildOnboardingFan(session);
   wrap.scrollTo({left:0,behavior:'instant'});
   syncOnboardingDots();
-  // The initial card uses the same playback path as a swipe. Wait until the
-  // dialog has a renderer: play() in the turn that clears `hidden` is what
-  // iOS rejects. Two frames is enough for WebKit to build one.
-  // Animation frames are not a clock: WebKit can hold the first frames of a
-  // busy boot for over a second (CI measured 1.0s and 1.6s gaps while timers
-  // still ran every ~0.1s), which held card 1 on its poster for ~3s. Force
-  // layout now so the video has a renderer, and also start from a short
-  // timer in a later turn. The two-frame path stays as the backstop; a
-  // second call on a playing clip changes nothing.
-  void root.offsetHeight;
-  session.playTimer=setTimeout(()=>{
-    session.playTimer=0;
-    if(onboardingSession===session)syncOnboardingVideoPlayback(session);
-  },60);
-  session.playFrame=requestAnimationFrame(()=>{
-    session.playFrame=requestAnimationFrame(()=>{
-      session.playFrame=0;
-      if(onboardingSession===session)syncOnboardingVideoPlayback(session);
-    });
-  });
   bindOnboardingGestures(session);
-  // Runs in the capture phase, before the carousel's own handlers read
-  // session.videoTap, and inside the touch so iOS accepts play().
-  const startOnTap=event=>startOnboardingVideoFromTap(session,event);
-  root.addEventListener('touchstart',startOnTap,{capture:true,passive:true,signal});
-  root.addEventListener('pointerdown',startOnTap,{capture:true,signal});
   const relayout=()=>{if(onboardingSession===session)layoutOnboardingViewport();};
   window.visualViewport?.addEventListener('resize',relayout,{signal});
   window.visualViewport?.addEventListener('scroll',relayout,{signal});
   window.addEventListener('resize',relayout,{signal});
   wrap.addEventListener('scroll',syncOnboardingDots,{passive:true,signal});
-  wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);syncOnboardingVideoPlayback(session);queueOnboardingPlaybackSettle(session);},{passive:true,signal});
-  wrap.addEventListener('scrollend',()=>settleOnboardingVideoPlayback(session),{signal});
+  wrap.addEventListener('scroll',()=>noteOnboardingCard(session),{passive:true,signal});
   document.getElementById('onboard-skip').addEventListener('click',()=>{
     if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'skip'});
@@ -704,17 +481,7 @@ function startOnboarding(replay){
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
     }
   },{signal,capture:true});
-  document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);}
-    else syncOnboardingVideoPlayback(session);
-  },{signal});
-  window.addEventListener('pagehide',()=>{for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);},{signal});
-  window.addEventListener('pageshow',()=>syncOnboardingVideoPlayback(session),{signal});
   window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
-  session.motion.addEventListener('change',()=>{
-    if(session.motion.matches){for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video')))stopOnboardingVideo(video);}
-    else syncOnboardingVideoPlayback(session);
-  },{signal});
   session.theme=new MutationObserver(()=>{
     if(activeAppView()!==session.previousView)endOnboarding(false);
   });
@@ -731,19 +498,9 @@ function endOnboarding(remember,returnToPrevious=true){
   session.theme.disconnect();
   session.observer?.disconnect();
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
-  if(session.playFrame)cancelAnimationFrame(session.playFrame);
-  clearTimeout(session.playTimer);
-  clearTimeout(session.playSettleTimer);
   clearTimeout(session.settleTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);
-  for(const video of document.querySelectorAll(/** @type {'video'} */('#onboarding .onboard-card video'))){
-    stopOnboardingVideo(video);
-    delete video.dataset.onboardPresented;
-    delete video.dataset.onboardBound;
-    delete video.dataset.onboardRejected;
-    delete video.dataset.onboardTapRefused;
-  }
   document.documentElement.classList.remove('onboarding-open');
   const root=document.getElementById('onboarding');
   root.hidden=true;

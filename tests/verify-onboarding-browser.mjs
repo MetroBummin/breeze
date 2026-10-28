@@ -57,13 +57,43 @@ const assertCoverShapes=async(page,label)=>{
 };
 const waitDots=(page,index)=>page.waitForFunction(index=>[...document.querySelectorAll('#onboarding .onboard-dots')].every(d=>[...d.children].findIndex(el=>el.classList.contains('on'))===index),index);
 const dotsActive=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-dots')].map(d=>[...d.children].findIndex(el=>el.classList.contains('on'))));
-const videoState=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>({src:v.currentSrc.split('/').pop(),ready:v.readyState,paused:v.paused})));
+// Cards 1 and 2 are animated WebP <img> elements; no video, no playback code.
+const mediaState=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card .onboard-media')].map(img=>({src:img.currentSrc.split('/').pop(),loaded:img.complete&&img.naturalWidth>0,w:img.naturalWidth,h:img.naturalHeight})));
+const waitMedia=(page,index)=>page.waitForFunction(index=>{const img=document.querySelectorAll('#onboarding .onboard-card .onboard-media')[index];return img.complete&&img.naturalWidth>0;},index);
+// The files themselves: animated, infinite loop, 60fps, same size as the
+// former 60fps clips (9:16 1080x1920 on phones, 4:3 1440x1080 wide).
+function webpAnimation(file){
+  const b=readFileSync(resolve(root,'assets/onboarding-carousel',file));
+  assert.equal(b.toString('ascii',0,4)+b.toString('ascii',8,12),'RIFFWEBP',file+' is not WebP');
+  let loop=null,width=0,height=0;const durations=[];
+  for(let o=12;o+8<=b.length;){
+    const id=b.toString('ascii',o,o+4),size=b.readUInt32LE(o+4),d=o+8;
+    if(id==='VP8X'){width=1+b.readUIntLE(d+4,3);height=1+b.readUIntLE(d+7,3);}
+    if(id==='ANIM')loop=b.readUInt16LE(d+4);
+    if(id==='ANMF')durations.push(b.readUIntLE(d+12,3));
+    o=d+size+(size&1);
+  }
+  // The encoder merges identical consecutive frames into one longer frame,
+  // so playback is 60fps where anything moves. Every frame boundary must
+  // still land on the 60fps grid (whole milliseconds, so within 1ms).
+  let t=0,offGrid=0;
+  for(const x of durations){t+=x;offGrid=Math.max(offGrid,Math.abs(t-Math.round(t*60/1000)*1000/60));}
+  return {width,height,loop,frames:durations.length,ms:t,minFrame:Math.min(...durations),offGrid:+offGrid.toFixed(2)};
+}
+// Durations of the former 60fps H264 masters (450, 451, 510, 538 frames).
+for(const [file,w,h,ms] of [['card1.webp',1080,1920,7500],['card2.webp',1080,1920,8500],['card1-wide.webp',1440,1080,7517],['card2-wide.webp',1440,1080,8967]]){
+  const a=webpAnimation(file);
+  console.log(file,JSON.stringify(a));
+  assert.deepEqual([a.width,a.height],[w,h],file+' size');
+  assert.equal(a.loop,0,file+' must loop forever');
+  assert.ok(a.frames>60,file+' is not animated');
+  assert.ok(a.minFrame>=16&&a.minFrame<=17&&a.offGrid<=1&&Math.abs(a.ms-ms)<=17,file+' is not 60fps '+JSON.stringify(a));
+}
 try{
- // Structure, copy, dots, video switching and play-only-the-visible-card.
+ // Structure, copy, dots, media switching.
  // WebKit uses the iPhone 13 profile (390 CSS px, mobile Safari UA).
  {
   const {context,page}=await setup({iphone:true});
-  const mediaRequests=[];page.on('request',r=>{if(/\.mp4/.test(r.url()))mediaRequests.push(r.url());});
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
   if(process.env.BROWSER==='webkit')assert.match(await page.evaluate(()=>navigator.userAgent),/iPhone/);
@@ -81,51 +111,17 @@ try{
   assert.equal(await page.locator('#onboard-skip').textContent(),'건너뛰기');
   assert.equal(await page.locator('#onboard-status').textContent(),'1 / 3 · 단어 뜻 보기');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('onboard-wrap')).scrollSnapType),'x mandatory');
-  const openedAt=await page.evaluate(()=>{
-    // Timeline for the CI log: where the startup time goes (fetch vs decode).
-    const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
-    window.qaCard1=[];
-    for(const type of ['loadstart','loadedmetadata','loadeddata','canplay','play','playing'])v.addEventListener(type,()=>window.qaCard1.push(type+'@'+Math.round(performance.now())),{once:true});
-    return performance.now();
-  });
-  await page.waitForFunction(()=>{
-    const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
-    return v.muted&&v.loop&&v.playsInline&&v.hasAttribute('playsinline')&&v.preload==='auto'&&v.hasAttribute('autoplay')&&!v.hasAttribute('src')&&v.readyState>=2&&!v.paused&&v.currentTime>0.05;
-  });
-  const elapsed=await page.evaluate(start=>performance.now()-start,openedAt);
-  // A phone on a local file is well under 1.5s. The bound leaves room for
-  // one slow CI media startup; a video that never moves still hits the wait.
-  console.log(`card 1 playing after ${Math.round(elapsed)}ms`,JSON.stringify(await page.evaluate(start=>({open:Math.round(start),events:window.qaCard1,
-    fetch:performance.getEntriesByType('resource').filter(e=>/card1\.mp4/.test(e.name)).map(e=>[Math.round(e.startTime),Math.round(e.responseEnd)])}),openedAt)));
-  assert.ok(elapsed<2500,`card 1 currentTime did not advance promptly (${Math.round(elapsed)}ms)`);
-  assert.equal(await page.evaluate(()=>{
-    const v=document.querySelectorAll('#onboarding .onboard-card video')[1];
-    return v.preload==='none'&&!v.hasAttribute('autoplay')&&!v.hasAttribute('src');
-  }),true,'card 2 stays unloaded until it is shown');
-  const t0=await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[0].currentTime);
-  await page.waitForFunction(start=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.currentTime>start+0.04;},t0);
-  assert.equal((await videoState(page))[0].src,'card1.mp4','phone plays the 9:16 render');
-  // No native controls: no controls attribute, and WebKit's start-playback
-  // button is hidden unless play() was actually refused.
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>v.controls||v.hasAttribute('controls'))),[false,false],'onboarding video has native controls');
-  if(process.env.BROWSER==='webkit'){
-    assert.equal(await page.evaluate(()=>[...document.styleSheets].some(sheet=>{
-      try{return [...sheet.cssRules].some(rule=>/:not\(\[data-onboard-rejected="1"\]\)::-webkit-media-controls-start-playback-button/.test(rule.selectorText||'')&&rule.style.getPropertyValue('display')==='none');}catch{return false;}
-    })),true,'WebKit start-playback button is not hidden');
-  }
-  assert.equal((await videoState(page))[1].paused,true,'off-screen card stays paused');
-  if(process.env.BROWSER==='webkit'){
-    // WebKit probes each <source> at selection time even with preload="none";
-    // the off-screen video must still hold no data and never play.
-    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>({ready:v.readyState,buffered:v.buffered.length,paused:v.paused}))[1]),{ready:0,buffered:0,paused:true},'off-screen card loaded data');
-  }else{
-    assert.deepEqual(mediaRequests.map(u=>u.split('/').pop()),['card1.mp4'],'the second video was fetched before its card');
-  }
+  assert.equal(await page.locator('#onboarding video').count(),0,'onboarding has no video');
+  assert.equal(await page.locator('#onboarding .onboard-card .onboard-media').count(),2);
+  await waitMedia(page,0);
+  assert.deepEqual((await mediaState(page))[0],{src:'card1.webp',loaded:true,w:1080,h:1920},'phone shows the 9:16 animation');
   assert.deepEqual(await dotsActive(page),[0,0,0]);
   // Review evidence at iPhone size (iPhone 13 profile on WebKit): card 2
-  // playing on its own after the swipe, and the card 3 cover fan.
+  // animating after the swipe, and the card 3 cover fan.
   await goCard(page,1);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.3;});
+  await waitMedia(page,1);
+  assert.equal((await mediaState(page))[1].src,'card2.webp');
+  await wait(300);
   await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card2-playing.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
@@ -149,8 +145,6 @@ try{
   await goCard(page,1);
   assert.deepEqual(await dotsActive(page),[1,1,1]);
   assert.equal(await page.locator('#onboard-status').textContent(),'2 / 3 · 단어장 학습');
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.readyState>=2&&!v.paused;});
-  assert.equal((await videoState(page))[0].paused,true,'leaving a card pauses it');
   await page.keyboard.press('ArrowRight');
   await waitDots(page,2);
   await page.keyboard.press('ArrowLeft');
@@ -317,173 +311,52 @@ try{
   assert.equal(await page.locator('#onboarding').isVisible(),false);assert.notEqual(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
   await context.close();
  }
- // Reduced motion: videos stay paused and fetch nothing; the fan still works.
+ // Reduced motion: the <picture> picks the still JPEG; no animation is
+ // fetched, and the fan still works.
  {
   const {context,page}=await setup({reducedMotion:'reduce'});
-  const mediaRequests=[];page.on('request',r=>{if(/\.mp4/.test(r.url()))mediaRequests.push(r.url());});
+  const mediaRequests=[];page.on('request',r=>{if(/onboarding-carousel\/.*\.webp/.test(r.url()))mediaRequests.push(r.url());});
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
-  assert.deepEqual(await videoState(page).then(s=>s.map(v=>v.paused)),[true,true]);
-  if(process.env.BROWSER==='webkit'){
-    // WebKit's <source> probe (see above) still fires; nothing may be loaded.
-    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>({ready:v.readyState,buffered:v.buffered.length}))),[{ready:0,buffered:0},{ready:0,buffered:0}],'reduced motion loaded video data');
-  }else{
-    assert.deepEqual(mediaRequests,[],'reduced motion fetched video');
-  }
-  // The still is a poster frame extracted from each video, swapped at the
-  // same 768px breakpoint as the <source> switch; no video is fetched.
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>v.getAttribute('poster').split('/').pop())),
-    ['card1.jpg','card2.jpg'],'poster is the tall render at phone width');
+  await waitMedia(page,0);
+  assert.equal((await mediaState(page))[0].src,'card1.jpg','reduced motion shows the still at phone width');
+  await goCard(page,1);
+  await waitMedia(page,1);
+  assert.equal((await mediaState(page))[1].src,'card2.jpg','reduced motion shows the still at phone width');
+  assert.deepEqual(mediaRequests,[],'reduced motion fetched an animation');
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
   assert.equal(await page.locator('#onboard-book-title').textContent(),"Alice's Adventures in Wonderland");
   await context.close();
  }
- // Visibility interruption pauses and resumes the visible video.
- {
-  const {context,page}=await setup();await page.addInitScript(()=>{window.qaHidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.qaHidden});});
-  await page.goto(url);await page.evaluate(()=>homeReady);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.readyState>=2&&!v.paused;});
-  await page.evaluate(()=>{qaHidden=true;document.dispatchEvent(new Event('visibilitychange'));});
-  assert.equal(await page.locator('#onboarding .onboard-card video').first().evaluate(v=>v.paused),true);
-  await page.evaluate(()=>{qaHidden=false;document.dispatchEvent(new Event('visibilitychange'));});
-  await page.waitForFunction(()=>!document.querySelectorAll('#onboarding .onboard-card video')[0].paused);
-  await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
-  assert.equal(await page.locator('#onboarding .onboard-card video').first().evaluate(v=>v.paused),true);
-  await page.evaluate(()=>window.dispatchEvent(new Event('pageshow')));
-  await page.waitForFunction(()=>!document.querySelectorAll('#onboarding .onboard-card video')[0].paused);
-  await context.close();
- }
- // iOS Low Power Mode rejects play() until the first touch. Card 1 stays
- // paused with no gesture, then currentTime advances after that touch.
- {
-  const {context,page}=await setup({iphone:true});
-  await page.addInitScript(()=>{
-    const orig=HTMLMediaElement.prototype.play;
-    let gesture=false;
-    const arm=()=>{gesture=true;};
-    document.addEventListener('pointerdown',arm,{capture:true});
-    document.addEventListener('touchstart',arm,{capture:true});
-    HTMLMediaElement.prototype.play=function(){
-      if(!gesture)return Promise.reject(new DOMException('Low Power Mode','NotAllowedError'));
-      return orig.apply(this, arguments);
-    };
-    // The autoplay attribute starts playback without calling play(). Low Power
-    // Mode blocks that path too, so a gesture-less start is paused again.
-    document.addEventListener('play',event=>{
-      if(!gesture&&event.target instanceof HTMLMediaElement)event.target.pause();
-    },true);
-  });
-  await page.goto(url);await page.evaluate(()=>homeReady);
-  await page.locator('#onboarding').waitFor({state:'visible'});
-  await page.waitForFunction(()=>document.querySelector('#onboarding .onboard-card video').dataset.onboardRejected==='1');
-  const before=await page.evaluate(()=>{const v=document.querySelector('#onboarding .onboard-card video');return {t:v.currentTime,paused:v.paused};});
-  await wait(300);
-  const after=await page.evaluate(()=>{const v=document.querySelector('#onboarding .onboard-card video');return {t:v.currentTime,paused:v.paused};});
-  assert.equal(after.paused,true,'card 1 played before a gesture');
-  assert.ok(after.t-before.t<0.05,'card 1 advanced before a gesture '+JSON.stringify({before,after}));
-  // A real tap on the paused video starts it inside the gesture and stays
-  // on card 1. It must not also advance to card 2.
-  const box=await page.locator('.onboard-card[data-card="0"] video').boundingBox();
-  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
-  await page.waitForFunction(()=>{const v=document.querySelector('#onboarding .onboard-card video');return !v.paused&&v.currentTime>0.04;});
-  await wait(800);
-  assert.equal(await cardIndex(page),0,'the tap that started card 1 also advanced');
-  assert.deepEqual(await dotsActive(page),[0,0,0]);
-  // Once it plays, a tap on the video advances as before.
-  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
-  await waitDots(page,1);
-  await context.close();
- }
- // Card 2 under the same Low Power-style refusal: it stays paused when it
- // becomes the card in view, a tap on its video starts it without moving to
- // card 3, and the next tap advances. Card 2 has no controls either.
- {
-  const {context,page}=await setup({iphone:true});
-  await page.addInitScript(()=>{
-    const orig=HTMLMediaElement.prototype.play;
-    let gesture=false;
-    const arm=()=>{gesture=true;};
-    document.addEventListener('pointerdown',arm,{capture:true});
-    document.addEventListener('touchstart',arm,{capture:true});
-    HTMLMediaElement.prototype.play=function(){
-      if(!gesture)return Promise.reject(new DOMException('Low Power Mode','NotAllowedError'));
-      return orig.apply(this, arguments);
-    };
-    document.addEventListener('play',event=>{
-      if(!gesture&&event.target instanceof HTMLMediaElement)event.target.pause();
-    },true);
-  });
-  await page.goto(url);await page.evaluate(()=>homeReady);
-  await page.locator('#onboarding').waitFor({state:'visible'});
-  await goCard(page,1);
-  await page.waitForFunction(()=>document.querySelectorAll('#onboarding .onboard-card video')[1].dataset.onboardRejected==='1');
-  await wait(300);
-  assert.equal(await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[1].paused),true,'card 2 played before a gesture');
-  assert.equal(await page.evaluate(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.controls||v.hasAttribute('controls');}),false,'card 2 has native controls');
-  const box=await page.locator('.onboard-card[data-card="1"] video').boundingBox();
-  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.04;});
-  await wait(800);
-  assert.equal(await cardIndex(page),1,'the tap that started card 2 also advanced');
-  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
-  await waitDots(page,2);
-  await context.close();
- }
- // WebKit can refuse card 2's play() while the carousel is still moving, and
- // its load events can all arrive inside that window. Once the carousel is
- // at rest, card 2 must be asked again and play with no gesture.
- {
-  const {context,page}=await setup({iphone:true});
-  await page.addInitScript(()=>{
-    const orig=HTMLMediaElement.prototype.play;
-    window.qaLastScroll=0;window.qaRefused=0;
-    document.addEventListener('scroll',()=>{window.qaLastScroll=performance.now();},{capture:true,passive:true});
-    const card2=v=>v instanceof HTMLMediaElement&&v.closest('.onboard-card')?.dataset.card==='1';
-    const moving=()=>performance.now()-window.qaLastScroll<100;
-    HTMLMediaElement.prototype.play=function(){
-      if(card2(this)&&moving()){window.qaRefused++;return Promise.reject(new DOMException('not visible yet','NotAllowedError'));}
-      return orig.apply(this, arguments);
-    };
-    document.addEventListener('play',event=>{if(card2(event.target)&&moving())event.target.pause();},true);
-  });
-  await page.goto(url);await page.evaluate(()=>homeReady);
-  await page.locator('#onboarding').waitFor({state:'visible'});
-  await goCard(page,1);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.04;});
-  assert.ok(await page.evaluate(()=>window.qaRefused)>0,'the mid-swipe refusal was not exercised');
-  assert.equal(await cardIndex(page),1);
-  await context.close();
- }
- // Card 1 still advances when play() rejects: tap and swipe-up, no video event.
+ // A tap or a swipe up on card 1's animation advances.
  {
   const {context,page}=await setup();
-  await page.addInitScript(()=>{HTMLMediaElement.prototype.play=function(){return Promise.reject(new DOMException('blocked','NotAllowedError'));};});
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
   await page.evaluate(()=>{
-    const video=document.querySelector('.onboard-card[data-card="0"] video');
-    const r=video.getBoundingClientRect();
+    const media=document.querySelector('.onboard-card[data-card="0"] .onboard-media');
+    const r=media.getBoundingClientRect();
     const x=r.left+r.width/2,y=r.top+r.height*0.55;
-    const fire=(type,py)=>video.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:x,clientY:py}));
+    const fire=(type,py)=>media.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:x,clientY:py}));
     fire('pointerdown',y);fire('pointermove',y-90);fire('pointerup',y-180);
   });
   await waitDots(page,1);
   await page.locator('.onboard-card[data-card="1"] .t1').click();
   await waitDots(page,2);
-  assert.equal(await cardIndex(page),2,'tap reaches the book card without a playing video');
+  assert.equal(await cardIndex(page),2,'tap reaches the book card');
   await context.close();
  }
- // Every card is the same box at every size, with videos playing (their
- // intrinsic size arrives with the data) and after landing on card 3.
+ // Every card is the same box at every size, with the animations loaded
+ // (their intrinsic size arrives with the data) and after landing on card 3.
  for(const [width,height] of [[390,844],[768,1024],[1440,900],[1920,1080],[1920,1113],[844,430]]){
   const {context,page}=await setup({viewport:{width,height}});await page.goto(url);await page.evaluate(()=>homeReady);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.readyState>=2;});
+  await waitMedia(page,0);
   const boxes=()=>page.evaluate(()=>[...document.querySelectorAll('.onboard-card')].map(c=>{const r=c.getBoundingClientRect();
     return {h:+r.height.toFixed(2),top:+r.top.toFixed(2),parts:[...c.children].map(x=>+x.getBoundingClientRect().height.toFixed(1))};}));
   const atOpen=await boxes();
   await goCard(page,1);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.readyState>=2;});
+  await waitMedia(page,1);
   await goCard(page,2);await wait(300);
   const atBooks=await boxes();
   // Small covers (a short landscape card) once rounded far enough to let a
@@ -508,7 +381,7 @@ try{
     return {bg:s.backgroundColor,radius:s.borderRadius,shadow:s.boxShadow,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight};
   });
   if(phone){
-    assert.equal(surface.bg,'rgb(255, 255, 255)','phone card is the white of the video frames');
+    assert.equal(surface.bg,'rgb(255, 255, 255)','phone card is the white of the animation frames');
     assert.equal(surface.radius,'0px','phone has no rounded card');
     assert.equal(surface.shadow,'none','phone has no card shadow');
     assert.ok(surface.left<=1&&surface.top<=1&&surface.right>=width-1&&surface.bottom>=height-1,'phone is not edge to edge '+JSON.stringify(surface));
@@ -517,21 +390,21 @@ try{
     assert.ok(surface.radius.startsWith('24px'),'desktop card radius '+surface.radius);
     assert.ok(surface.left>12,'desktop card should stay inset '+JSON.stringify(surface));
   }
-  // No seam between a video and the dots/copy under it, in either theme:
-  // the video area, the dots and the copy all show the card's own surface,
-  // and the frames' bottom edge (the poster is a frame) is that same colour.
-  const seam=await page.evaluate(async()=>Promise.all([...document.querySelectorAll('.onboard-card video')].map(async v=>{
+  // No seam between the media and the dots/copy under it, in either theme:
+  // the media area, the dots and the copy all show the card's own surface,
+  // and the frames' bottom edge (the still is a frame) is that same colour.
+  const seam=await page.evaluate(async()=>Promise.all([...document.querySelectorAll('.onboard-card .onboard-media')].map(async v=>{
     const card=getComputedStyle(v.closest('.onboard-card')).backgroundColor;
     const own=[v,...v.closest('.onboard-card').querySelectorAll('.onboard-dots,.onboard-copy')].map(n=>getComputedStyle(n).backgroundColor);
-    const img=new Image();img.src=v.getAttribute('poster');await img.decode();
+    const img=new Image();img.src=v.currentSrc||v.src;await img.decode();
     const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
     const g=c.getContext('2d');g.drawImage(img,0,0);
     const [r,gr,b]=g.getImageData(c.width>>1,c.height-2,1,1).data;
     return {card,own,frameEdge:`rgb(${r}, ${gr}, ${b})`};
   })));
   for(const s of seam){
-    assert.ok(s.own.every(bg=>bg===s.card||bg==='rgba(0, 0, 0, 0)'),'video/copy surface differs from the card '+JSON.stringify(s));
-    assert.equal(s.frameEdge,s.card,'video frame edge does not match the card surface '+JSON.stringify(s));
+    assert.ok(s.own.every(bg=>bg===s.card||bg==='rgba(0, 0, 0, 0)'),'media/copy surface differs from the card '+JSON.stringify(s));
+    assert.equal(s.frameEdge,s.card,'media frame edge does not match the card surface '+JSON.stringify(s));
   }
   assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
   const skipBox=await page.locator('#onboard-skip').boundingBox();
@@ -558,15 +431,12 @@ try{
   assert.ok(fit.cardInView&&fit.stageScroll&&fit.rootScroll&&fit.docLocked,'onboarding scrolls '+JSON.stringify(fit));
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card1.png`)});
   await goCard(page,1);
-  // Reduced motion never plays, so check the selected <source> structurally:
-  // the wide render is selected exactly at/above 768px, without fetching.
-  assert.equal(await page.evaluate(()=>{
-   const v=document.querySelectorAll('#onboarding .onboard-card video')[1];
-   const sources=[...v.querySelectorAll('source')];
-   const wide=sources.find(s=>s.media==='(min-width: 768px)');
-   const chosen=matchMedia('(min-width: 768px)').matches?wide:sources[sources.length-1];
-   return chosen.src.split('/').pop();
-  }),width>=768?'card2-wide.mp4':'card2.mp4','video render follows viewport width');
+  // The still (reduced motion) and the animation follow the same 768px
+  // breakpoint in the <picture>.
+  await waitMedia(page,1);
+  assert.equal((await mediaState(page))[1].src,width>=768?'card2-wide.jpg':'card2.jpg','media render follows viewport width');
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.onboard-card[data-card="1"] picture source')].map(s=>[s.media,s.srcset.split('/').pop()])),[
+    ['(min-width: 768px) and (prefers-reduced-motion: reduce)','card2-wide.jpg'],['(prefers-reduced-motion: reduce)','card2.jpg'],['(min-width: 768px)','card2-wide.webp']]);
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card2.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
@@ -589,7 +459,7 @@ try{
  }
  assert.deepEqual(errors,[]);
  writeFileSync(resolve(out,'test-receipt.json'),JSON.stringify(receipts,null,2));
- console.log('Carousel onboarding verified: cards/dots/copy, swipe and arrow keys, cover fan, read/file/browse/skip/Escape, import interruption, Reader isolation, reduced motion, visibility, responsive light/dark layouts.');
+ console.log('Carousel onboarding verified: cards/dots/copy, swipe and arrow keys, cover fan, read/file/browse/skip/Escape, import interruption, Reader isolation, reduced motion, 60fps looping WebP media, responsive light/dark layouts.');
 }catch(error){
  writeFileSync(resolve(out,'carousel-failure.json'),JSON.stringify({error:String(error),stack:error.stack},null,2));throw error;
 }finally{await browser.close();server.close();}

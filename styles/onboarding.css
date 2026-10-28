@@ -1,4 +1,4 @@
-/* Three-card carousel dialog. Copy, videos and the card 3 fan follow the
+/* Three-card carousel dialog. Copy, animations and the card 3 fan follow the
    reviewed standalone page. The dialog itself is one visual viewport: the
    page behind it does not scroll, and every card is the same box so card 3
    cannot sit shorter in the gray margin. The skip link is inside that box.
@@ -14,7 +14,7 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
   --safe-bot:env(safe-area-inset-bottom, 0px);
   --vv:var(--vv-h, 100dvh);
   /* Dots plus the two copy lines. A few extra pixels keep the copy from
-     clipping if the font is slightly taller; the video flexes into the rest. */
+     clipping if the font is slightly taller; the media flexes into the rest. */
   --chrome:112px;
   --avail:calc(var(--vv) - var(--safe-top) - var(--safe-bot) - 24px);
   --cw:min(calc(100vw - 48px), calc((var(--avail) - var(--chrome)) * 9 / 16));
@@ -45,7 +45,7 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
   -webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior:none;
 }
 #onboarding .onboard-wrap{touch-action:pan-x;}
-#onboarding .onboard-card,#onboarding .onboard-card video,#onboarding .onboard-copy,#onboarding .onboard-dots{touch-action:none;}
+#onboarding .onboard-card,#onboarding .onboard-media,#onboarding .onboard-copy,#onboarding .onboard-dots{touch-action:none;}
 .onboard-wrap::-webkit-scrollbar{display:none;}
 .onboard-track{display:flex;gap:20px;height:100%;align-items:stretch;}
 .onboard-card{
@@ -53,19 +53,17 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
   display:flex;flex-direction:column;background:#fff;border-radius:24px;overflow:hidden;
   box-shadow:0 8px 30px rgba(0, 0, 0, .08);
 }
-.onboard-card video{
+.onboard-card picture{display:contents;}
+/* Cards 1 and 2 are looping 60fps animated WebP images: no autoplay, no
+   poster and no play button. Reduced motion picks the still JPEG in the
+   <picture>. The image flexes into the space above the dots. */
+.onboard-media{
   display:block;width:100%;flex:1 1 auto;min-height:0;object-fit:cover;background:#fff;
-  /* Hairline around the video area: card 1's video is mostly white
-     on a white card, so without this the video area has no edge. */
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  /* Hairline around the media area: card 1 is mostly white on a white
+     card, so without this the media area has no edge. */
   box-shadow:inset 0 0 0 1px rgba(0, 0, 0, .05);
 }
-/* WebKit paints its own start-playback button over an inline video that
-   has not started. The videos carry no controls attribute. The button is
-   hidden until play() was actually refused (data-onboard-rejected, set
-   only for NotAllowedError, e.g. iOS Low Power Mode); then it is the hint,
-   and a tap on the video starts it without moving the card (see
-   startOnboardingVideoFromTap). */
-#onboarding .onboard-card video:not([data-onboard-rejected="1"])::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none;}
 .onboard-dots,.onboard-copy,.onboard-bookmeta,.onboard-choice{flex:none;}
 .onboard-dots{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;}
 .onboard-dots i{width:8px;height:8px;border-radius:50%;background:#D1D1D6;transition:background .2s;}
@@ -73,8 +71,8 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
 .onboard-copy{text-align:center;padding:10px 16px 20px;}
 .onboard-copy .t1{font-size:17px;font-weight:600;line-height:1.4;}
 .onboard-copy .t2{font-size:14px;color:#6D6D72;line-height:1.5;margin-top:4px;}
-/* Card 3 fills the same card box as the videos. The fan takes the space
-   the video uses; covers stay capped so five of them fit the card width.
+/* Card 3 fills the same card box as the animations. The fan takes the space
+   the animation uses; covers stay capped so five of them fit the card width.
    Snapping still uses the untransformed layout boxes.
    Cover size is one length, --cover-h, and every cover is 2:3 from it.
    It must be built from lengths only: a `%` inside a custom property
@@ -144,8 +142,8 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
 }
 /* Phones fill the screen with the card itself. The rounded corners, the
    shadow and the outer gray margin stay at 768px and above. The card keeps
-   one white surface everywhere, the same white as the video frames, so the
-   video and the copy below it show no seam. Safe-area insets pad the copy
+   one white surface everywhere, the same white as the animation frames, so the
+   animation and the copy below it show no seam. Safe-area insets pad the copy
    and the skip, not a frame. */
 @media (max-width: 767px){
   #onboarding{
@@ -160,7 +158,7 @@ html.onboarding-open body{position:fixed;inset:0;width:100%;}
     padding-left:env(safe-area-inset-left, 0px);
     padding-right:env(safe-area-inset-right, 0px);
   }
-  .onboard-card video{box-shadow:none;}
+  .onboard-media{box-shadow:none;}
   .onboard-copy{padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   .onboard-choice{padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));}
   #onboarding #onboard-skip{
