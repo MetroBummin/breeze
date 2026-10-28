@@ -2,17 +2,19 @@ import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
-import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {chromium,webkit,devices} from './helpers/bounded-playwright.mjs';
 const root=resolve('.'),out=process.env.BREEZE_ONBOARD_PROOF||'/tmp/breeze-onboarding-carousel';mkdirSync(out,{recursive:true});
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp','.txt':'text/plain','.mp4':'video/mp4','.woff2':'font/woff2'};
-const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{const data=readFileSync(p);res.setHeader('Content-Type',mime[extname(p)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
+const server=createServer((req,res)=>{const p=resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/^\/$/,'/index.html'));try{const data=readFileSync(p);res.setHeader('Content-Type',mime[extname(p)]||'application/octet-stream');res.setHeader('Accept-Ranges','bytes');const range=req.headers.range;if(range){const match=/bytes=(\d*)-(\d*)/.exec(String(range));const start=match&&match[1]?Number(match[1]):0;let end=match&&match[2]?Number(match[2]):data.length-1;if(!match||start>end||start>=data.length){res.writeHead(416).end();return;}end=Math.min(end,data.length-1);res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${data.length}`,'Content-Length':String(end-start+1)});res.end(data.subarray(start,end+1));return;}res.end(data);}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
 const engine=process.env.BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const errors=[];const receipts=[];
 async function setup(options={}){
- const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block',...options});
+ const {iphone,...rest}=options;
+ const device=iphone&&process.env.BROWSER==='webkit'?devices['iPhone 13']:{};
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,serviceWorkers:'block',...device,...rest});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.request().url().startsWith(url)||r.request().url().startsWith('blob:')?r.continue():r.abort());
  return {context,page};
@@ -33,11 +35,13 @@ const dotsActive=page=>page.evaluate(()=>[...document.querySelectorAll('#onboard
 const videoState=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>({src:v.currentSrc.split('/').pop(),ready:v.readyState,paused:v.paused})));
 try{
  // Structure, copy, dots, video switching and play-only-the-visible-card.
+ // WebKit uses the iPhone 13 profile (390 CSS px, mobile Safari UA).
  {
-  const {context,page}=await setup();
+  const {context,page}=await setup({iphone:true});
   const mediaRequests=[];page.on('request',r=>{if(/\.mp4/.test(r.url()))mediaRequests.push(r.url());});
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
+  if(process.env.BROWSER==='webkit')assert.match(await page.evaluate(()=>navigator.userAgent),/iPhone/);
   assert.equal(await page.locator('.onboard-card').count(),3);
   assert.equal(await page.locator('#onboarding .onboard-dots').count(),3);
   assert.equal(await page.locator('#onboarding .onboard-dots i').count(),9);
@@ -52,8 +56,19 @@ try{
   assert.equal(await page.locator('#onboard-skip').textContent(),'건너뛰기');
   assert.equal(await page.locator('#onboard-status').textContent(),'1 / 3 · 단어 뜻 보기');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('onboard-wrap')).scrollSnapType),'x mandatory');
-  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].every(v=>v.muted&&v.loop&&v.playsInline&&v.preload==='none'&&!v.hasAttribute('autoplay'))),true);
-  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.readyState>=2&&!v.paused;});
+  const openedAt=Date.now();
+  await page.waitForFunction(()=>{
+    const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
+    return v.muted&&v.loop&&v.playsInline&&v.hasAttribute('playsinline')&&v.preload==='auto'&&v.hasAttribute('autoplay')&&!v.hasAttribute('src');
+  });
+  assert.equal(await page.evaluate(()=>{
+    const v=document.querySelectorAll('#onboarding .onboard-card video')[1];
+    return v.preload==='none'&&!v.hasAttribute('autoplay')&&!v.hasAttribute('src');
+  }),true,'card 2 stays unloaded until it is shown');
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.readyState>=2&&!v.paused&&v.currentTime>0;});
+  const t0=await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[0].currentTime);
+  await page.waitForFunction(start=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.currentTime>start+0.04;},t0);
+  assert.ok(Date.now()-openedAt<1500,'card 1 currentTime did not advance within 1.5s of open');
   assert.equal((await videoState(page))[0].src,'card1.mp4','phone plays the 9:16 render');
   assert.equal((await videoState(page))[1].paused,true,'off-screen card stays paused');
   if(process.env.BROWSER==='webkit'){
@@ -277,6 +292,41 @@ try{
   await page.waitForFunction(()=>!document.querySelectorAll('#onboarding .onboard-card video')[0].paused);
   await context.close();
  }
+ // iOS Low Power Mode rejects play() until the first touch. Card 1 stays
+ // paused with no gesture, then currentTime advances after that touch.
+ {
+  const {context,page}=await setup({iphone:true});
+  await page.addInitScript(()=>{
+    const orig=HTMLMediaElement.prototype.play;
+    let gesture=false;
+    const arm=()=>{gesture=true;};
+    document.addEventListener('pointerdown',arm,{capture:true});
+    document.addEventListener('touchstart',arm,{capture:true});
+    HTMLMediaElement.prototype.play=function(){
+      if(!gesture)return Promise.reject(new DOMException('Low Power Mode','NotAllowedError'));
+      return orig.apply(this, arguments);
+    };
+    // The autoplay attribute starts playback without calling play(). Low Power
+    // Mode blocks that path too, so a gesture-less start is paused again.
+    document.addEventListener('play',event=>{
+      if(!gesture&&event.target instanceof HTMLMediaElement)event.target.pause();
+    },true);
+  });
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.locator('#onboarding').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelector('#onboarding .onboard-card video').dataset.onboardRejected==='1');
+  const before=await page.evaluate(()=>{const v=document.querySelector('#onboarding .onboard-card video');return {t:v.currentTime,paused:v.paused};});
+  await wait(300);
+  const after=await page.evaluate(()=>{const v=document.querySelector('#onboarding .onboard-card video');return {t:v.currentTime,paused:v.paused};});
+  assert.equal(after.paused,true,'card 1 played before a gesture');
+  assert.ok(after.t-before.t<0.05,'card 1 advanced before a gesture '+JSON.stringify({before,after}));
+  await page.evaluate(()=>{
+    const video=document.querySelector('#onboarding .onboard-card video');
+    video.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:30,clientY:120}));
+  });
+  await page.waitForFunction(()=>{const v=document.querySelector('#onboarding .onboard-card video');return !v.paused&&v.currentTime>0.04;});
+  await context.close();
+ }
  // Card 1 still advances when play() rejects: tap and swipe-up, no video event.
  {
   const {context,page}=await setup();
@@ -302,7 +352,22 @@ try{
   const {context,page}=await setup({viewport:{width,height},reducedMotion:'reduce'});await page.goto(url);await page.evaluate(()=>homeReady);
   await page.evaluate(dark=>{darkMode=dark;applyDark();},dark);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('onboarding')).backgroundColor),'rgb(242, 242, 247)','dialog surface must stay light in dark mode');
-  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.onboard-card')).backgroundColor),'rgb(255, 255, 255)');
+  const phone=width<768;
+  const surface=await page.evaluate(()=>{
+    const card=document.querySelector('.onboard-card');
+    const s=getComputedStyle(card),r=card.getBoundingClientRect();
+    return {bg:s.backgroundColor,radius:s.borderRadius,shadow:s.boxShadow,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight};
+  });
+  if(phone){
+    assert.equal(surface.bg,'rgb(242, 242, 247)','phone screen matches the Home background');
+    assert.equal(surface.radius,'0px','phone has no rounded card');
+    assert.equal(surface.shadow,'none','phone has no card shadow');
+    assert.ok(surface.left<=1&&surface.top<=1&&surface.right>=width-1&&surface.bottom>=height-1,'phone is not edge to edge '+JSON.stringify(surface));
+  }else{
+    assert.equal(surface.bg,'rgb(255, 255, 255)','tablet and desktop keep the white card');
+    assert.ok(surface.radius.startsWith('24px'),'desktop card radius '+surface.radius);
+    assert.ok(surface.left>12,'desktop card should stay inset '+JSON.stringify(surface));
+  }
   assert.equal(await page.evaluate(()=>document.getElementById('onboarding').scrollWidth>innerWidth),false,'horizontal overflow');
   const skipBox=await page.locator('#onboard-skip').boundingBox();
   assert.ok(skipBox.width>=44&&skipBox.height>=44,'skip touch target');

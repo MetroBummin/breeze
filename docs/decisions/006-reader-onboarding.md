@@ -31,15 +31,24 @@ video download.
 Videos switch by viewport, not by theme: phones play the 9:16 renders,
 tablets and desktops the 4:3 renders, through `<source media>` at 768px.
 Only the snapped card plays; the other video stays paused. Playback is
-tied to that card index, not to an intersection ratio: `preload="none"`
-left card 1 with no box until metadata arrived, a 0.6 observer never
-fired, and a rejected `play()` was ignored, so the first screen stayed
-on its poster and a phone could not leave it. A rejected `play()` retries
-once via `load()`. There is no autoplay attribute: nothing is fetched
-until a card is shown, and reduced motion fetches nothing at all — videos
-stay paused and the copy and dots still carry the meaning. The clips are silent
-H264 MP4s of the real production UI, the same no-reuse, no-upscale,
-60fps capture rules as the former guide's media.
+tied to that card index. Card 1's clip is parsed inside the hidden
+dialog (`display:none`). iOS WebKit (Safari and Chrome on iPhone) gives
+that element no renderer, ignores `preload`, and rejects `play()` in the
+same turn the dialog opens — there is no user gesture, and Low Power Mode
+rejects even a muted play. Desktop Chrome accepts that call and starts
+when data arrives, which is why a Windows laptop plays card 1 immediately.
+The previous retry called `load()` and `play()` once more and then stopped,
+so the poster stayed until a later swipe (a gesture) ran playback again.
+Opening the dialog now waits until it is visible, detaches the current
+video, sets `muted`, `playsinline` and `autoplay` with `preload="auto"`
+while it is detached, and inserts it again. The `<source>` children move
+with the element; nothing assigns `src`. That is the same playback path a
+card change uses, including the card that is open at the start. A rejected
+`play()` retries on `loadeddata` / `canplay` and on the first touch.
+Card 2 stays unloaded until it is the card in view. Reduced motion fetches
+nothing at all — videos stay paused and the copy and dots still carry the
+meaning. The clips are silent H264 MP4s of the real production UI, the
+same no-reuse, no-upscale, 60fps capture rules as the former guide's media.
 
 Card 3 shows five covers at rest: one main cover in the centre and two
 on each side, sized 1 / 0.82 / 0.66, each further pair behind the one
@@ -65,16 +74,19 @@ before: a successful durable import ends the guide, cancellation and
 failure leave the card available), and “둘러볼게요” (home). Import and
 book-open failures report on a status line inside card 3, because the
 app-wide toast is routed to the home notice behind the overlay and
-would never be seen here. Skip stays
-a small grey link inside the card's top-right, 18px from the card's top
-and right edges, on every card. It is not pinned to the viewport corner
-and it does not sit in the gray margin when a card is shorter. The dialog
-is one visual viewport: `#onboarding` is fixed to `visualViewport` (with
-`100dvh` before that measurement), `html.onboarding-open` locks the
-document, and the stage is not a scroll container. iOS Safari's toolbar
-is inside that measurement, so the page does not scroll. All three cards
-share one width, height and vertical position, sized so the video, dots
-and copy fit. Card 3's fan flexes inside that same box. Guidance copy stays
+would never be seen here. Below 768px the onboarding fills the screen
+edge to edge: no rounded card, shadow or outer margin, and the background
+is the Home background `#F2F2F7`. Safe-area insets (`env(safe-area-inset-*)`)
+pad the copy and the controls. Skip is a small grey link at the top right
+of that screen, 18px below the safe area and 18px in from the right, on
+every screen. At 768px and above the inset white card is unchanged, and
+Skip sits inside that card, 18px from its top and right edges, not in the
+gray margin. The dialog is one visual viewport: `#onboarding` is fixed to
+`visualViewport` (with `100dvh` before that measurement),
+`html.onboarding-open` locks the document, and the stage is not a scroll
+container. iOS Safari's toolbar is inside that measurement, so the page
+does not scroll. All three screens share one width, height and vertical
+position. Card 3's fan flexes inside that same box. Guidance copy stays
 polite (존댓말), there is no focus outline, and the dialog surface is
 the home background `#F2F2F7` in light mode.
 
@@ -106,22 +118,26 @@ restore their exact previous state on exit.
 
 `npm run test:onboarding` exercises the carousel dialog: three cards
 and per-card dots, exact card copy, video source switching and
-play-only-the-visible-card, advance by tap and swipe-up even when
-`play()` rejects, constant-speed card 2 travel is pinned by
+play-only-the-visible-card, card 1's `currentTime` advancing within
+about 1.5s of open with no interaction, a Low Power-style `play()`
+rejection that starts on the first touch, advance by tap and swipe-up
+even when `play()` rejects, constant-speed card 2 travel is pinned by
 the reviewed video file itself, dots following scroll and arrow keys,
 the five-cover rest state, tap-to-centre with title/author/button
 following, read/file/browse/skip/Escape paths, import
 cancellation/failure/interruption, completion persistence and replay,
 existing Reader isolation, reduced motion (paused, no media fetched),
-visibility interruption, equal card boxes, the skip inset inside the
-card, no document or stage scroll, and the phone/tablet/desktop/short
-layouts in both themes with the light dialog surface. The standalone
-reference page stays in the repo at `onboarding-carousel.html` so the
-reviewed feel can be re-checked without the app shell. The shipping
-dialog keeps that carousel, and also fits one visual viewport.
+visibility interruption, equal screen boxes, the skip inset, no document
+or stage scroll, full-bleed phone layout under 768px, the card layout at
+768px and above, and the phone/tablet/desktop/short layouts in both
+themes with the light dialog surface. WebKit runs the playback check
+with Playwright's iPhone 13 profile. The standalone reference page stays
+in the repo at `onboarding-carousel.html` so the reviewed feel can be
+re-checked without the app shell. The shipping dialog keeps that
+carousel, and also fits one visual viewport.
 
 Production Reader/gesture/auth/native-launch boundaries remain pinned;
-full `npm test`, www packaging and exact-remote-SHA CI are required for
-this draft. Browser emulation and codec metadata do not prove physical
-iOS/Android playback. No merge, deployment or native upload is
-authorized.
+full `npm test` stays green. Browser emulation, including an iPhone
+device profile, does not prove a physical iPhone. This playback and
+phone-layout change ships with the site that deploys from main. No
+native upload is part of it.
