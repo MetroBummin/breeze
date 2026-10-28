@@ -401,6 +401,10 @@ function buildOnboardingFan(session){
       slot.className='onboard-cover';
       slot.dataset.idx=String(i);
       const img=document.createElement('img');
+      // 35 covers (five copies of seven) are built on open. Decoding them on
+      // the main thread stalled WebKit's first frames, and card 1's clip
+      // with them; card 3 is off screen at that point.
+      img.decoding='async';
       img.src=b.img;img.alt=b.title;
       slot.append(img);
       slot.addEventListener('click',()=>centreOnboardingCover(session,slot),{signal:session.controller.signal});
