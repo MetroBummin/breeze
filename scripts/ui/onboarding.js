@@ -490,9 +490,14 @@ function buildOnboardingFan(session){
     const cs=getComputedStyle(card);
     const w=Math.round(card.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)),h=fan.offsetHeight;
     if(!w||!h||(w===session.fanW&&h===session.fanH))return;
+    // A later resize (fonts arriving, rotation) moves every slot. Keep the
+    // same book in the middle: WebKit does not re-snap the strip, which left
+    // it off centre with a stale depth layout (three covers on one side).
+    const keep=session.fanW?els[centredOnboardingIndex(session).p]:null;
     session.fanW=w;session.fanH=h;
     fan.style.setProperty('--fan-w',w+'px');
     fan.style.setProperty('--fan-h',h+'px');
+    if(keep)centreOnboardingCover(session,keep,true);
     queueDepth();
   };
   measureFan();

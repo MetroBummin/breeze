@@ -134,8 +134,11 @@ The depth layout reads every slot's fractional box
 mean spacing. `offsetLeft` rounds to whole pixels; with small covers (a
 short landscape card) that error let the ±3rd cover in and seven showed
 at rest. Scaling one slot's offset by its index instead overshot the
-other way in WebKit and left three. At rest there are five covers, all
-2:3. All three cards are one box
+other way in WebKit and left three. When the fan's size changes after
+open (fonts arriving, rotation), the book that was centred is centred
+again: Chromium re-snaps the strip by itself, WebKit does not, and its
+strip was left off centre with three covers on one side. At rest there
+are five covers, all 2:3. All three cards are one box
 (`.onboard-card { height: 100% }` in one stretched track); there is no
 card-specific height. Measured identical in Chromium and WebKit at
 390×844, 768×1024, 1440×900, 1920×1080 and 1920×1113, at open and after
