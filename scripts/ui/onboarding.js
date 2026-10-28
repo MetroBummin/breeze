@@ -148,8 +148,8 @@ function bindOnboardingVideoRetries(video,session){
       }
       if(onboardingCardIndex()!==mine){stopOnboardingVideo(video);return;}
       video.dataset.onboardRejected='';
-    }).catch(()=>{
-      if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
+    }).catch(error=>{
+      if(video.dataset.onboardToken===token&&error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
     });
   };
   for(const type of ['loadedmetadata','loadeddata','canplay','canplaythrough'])video.addEventListener(type,retry,{signal:session.controller.signal});
@@ -189,8 +189,11 @@ function playOnboardingVideo(video,session){
     return;
   }
   const pending=video.play();
-  if(pending&&pending.then)pending.then(settle).catch(()=>{
-    if(video.dataset.onboardToken===token)video.dataset.onboardRejected='1';
+  // Only a refusal (NotAllowedError) marks the clip; onboarding.css shows
+  // WebKit's play button for that state alone. A load failure (for example
+  // a server without byte ranges, which Safari needs) keeps the poster.
+  if(pending&&pending.then)pending.then(settle).catch(error=>{
+    if(video.dataset.onboardToken===token&&error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
   });
 }
 /* Card 2 (and card 1 after a swipe back) starts from a play() issued by a
@@ -258,8 +261,10 @@ function startOnboardingVideoFromTap(session,event){
   const pending=video.play();
   if(pending&&pending.then)pending.then(()=>{
     if(video.dataset.onboardToken===token)video.dataset.onboardRejected='';
-  }).catch(()=>{
-    if(video.dataset.onboardToken===token){video.dataset.onboardRejected='1';video.dataset.onboardTapRefused='1';}
+  }).catch(error=>{
+    if(video.dataset.onboardToken!==token)return;
+    video.dataset.onboardTapRefused='1';
+    if(error?.name==='NotAllowedError')video.dataset.onboardRejected='1';
   });
 }
 function onboardingTapStartedVideo(session){

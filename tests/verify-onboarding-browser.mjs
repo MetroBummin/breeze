@@ -96,11 +96,11 @@ try{
   await page.waitForFunction(start=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.currentTime>start+0.04;},t0);
   assert.equal((await videoState(page))[0].src,'card1.mp4','phone plays the 9:16 render');
   // No native controls: no controls attribute, and WebKit's start-playback
-  // button (painted when autoplay is refused) is hidden by onboarding.css.
+  // button is hidden unless play() was actually refused.
   assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>v.controls||v.hasAttribute('controls'))),[false,false],'onboarding video has native controls');
   if(process.env.BROWSER==='webkit'){
     assert.equal(await page.evaluate(()=>[...document.styleSheets].some(sheet=>{
-      try{return [...sheet.cssRules].some(rule=>/::-webkit-media-controls-start-playback-button/.test(rule.selectorText||'')&&rule.style.getPropertyValue('display')==='none');}catch{return false;}
+      try{return [...sheet.cssRules].some(rule=>/:not\(\[data-onboard-rejected="1"\]\)::-webkit-media-controls-start-playback-button/.test(rule.selectorText||'')&&rule.style.getPropertyValue('display')==='none');}catch{return false;}
     })),true,'WebKit start-playback button is not hidden');
   }
   assert.equal((await videoState(page))[1].paused,true,'off-screen card stays paused');
@@ -120,6 +120,11 @@ try{
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
   await wait(400);
+  // The three cards are one box size (CSS and visual viewport), including
+  // on the iPhone profile, so card 3 cannot sit shorter or taller.
+  const cardHeights=await page.evaluate(()=>[...document.querySelectorAll('.onboard-card')].map(c=>+c.getBoundingClientRect().height.toFixed(2)));
+  console.log('iphone card heights',JSON.stringify(cardHeights));
+  assert.equal(new Set(cardHeights).size,1,'onboarding cards differ in height '+JSON.stringify(cardHeights));
   const iphoneCovers=await coverShapes(page);
   console.log('iphone card 3 covers',JSON.stringify(iphoneCovers));
   assertCoverShapes(iphoneCovers,'iPhone');

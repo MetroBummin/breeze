@@ -61,7 +61,13 @@ button (autoplay refused, e.g. Low Power Mode, or the clip not started yet),
 and tapping that button jumped to card 2: the carousel owned the tap, and
 the old one-shot touch unlock only ran when a `play()` rejection had been
 recorded. The videos have no `controls` attribute, and `onboarding.css`
-hides `::-webkit-media-controls-start-playback-button`. A tap whose target
+hides `::-webkit-media-controls-start-playback-button` unless `play()` was
+actually refused (`data-onboard-rejected`, set only for `NotAllowedError`).
+In that state the button is the hint to tap; a load failure keeps the
+plain poster. Safari plays MP4 only from a server that answers byte-range
+requests with 206: `python3 -m http.server` ignores `Range` and returns
+200, so on Mac Safari the clip never loads there. GitHub Pages and the
+test server support ranges. A tap whose target
 is the current card's video, while that video is paused, ended or has not
 started, is owned by the video: `startOnboardingVideoFromTap` calls
 `play()` inside the gesture (capture phase, before the carousel reads the
