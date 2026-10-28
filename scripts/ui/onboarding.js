@@ -154,6 +154,11 @@ function bindOnboardingVideoRetries(video,session){
   };
   video.addEventListener('loadeddata',retry,{signal:session.controller.signal});
   video.addEventListener('canplay',retry,{signal:session.controller.signal});
+  // autoplay can start the element again after pause(). A stopped clip
+  // (hidden tab, other card, reduced motion) has to stay stopped.
+  video.addEventListener('play',()=>{
+    if(video.dataset.onboardToken==='off'||document.hidden||session.motion.matches){try{video.pause();}catch{}}
+  },{signal:session.controller.signal});
 }
 function playOnboardingVideo(video,session){
   if(!video)return;
@@ -162,13 +167,13 @@ function playOnboardingVideo(video,session){
   const root=document.getElementById('onboarding');
   if(!root||root.hidden)return;
   bindOnboardingVideoRetries(video,session);
+  const token=String(++session.playToken);
+  video.dataset.onboardToken=token;
   presentOnboardingVideo(video);
   video.muted=true;
   video.playsInline=true;
   video.autoplay=true;
   video.setAttribute('autoplay','');
-  const token=String(++session.playToken);
-  video.dataset.onboardToken=token;
   const settle=()=>{
     if(video.dataset.onboardToken!==token){
       if(video.dataset.onboardToken==='off'){try{video.pause();}catch{}}
