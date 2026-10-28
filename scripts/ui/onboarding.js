@@ -485,9 +485,17 @@ function buildOnboardingFan(session){
     queueDepth();
   };
   measureFan();
+  // Writing --fan-w changes the fan's padding, so its content box. Watch
+  // the border box (flex-sized, independent of the padding) and write on
+  // the next frame, outside the observer's delivery: a write inside it is
+  // what WebKit reports as a ResizeObserver loop.
   if(typeof ResizeObserver==='function'){
-    session.observer=new ResizeObserver(measureFan);
-    session.observer.observe(fan);
+    let frame=0;
+    session.observer=new ResizeObserver(()=>{
+      if(frame)return;
+      frame=requestAnimationFrame(()=>{frame=0;if(onboardingSession===session)measureFan();});
+    });
+    session.observer.observe(fan,{box:'border-box'});
   }
   const signal=session.controller.signal;
   fan.addEventListener('scroll',()=>{queueDepth();queueOnboardingSettle(session);},{passive:true,signal});
