@@ -34,7 +34,13 @@ import {spawnSync} from 'node:child_process';
 const DIR=resolve('assets/onboarding-carousel');
 const FPS=60;            // 60fps per the task
 const QUALITY=88;        // high quality, sharp on Retina phones (0-100)
-const FRAME_MS=16;       // ~1000/60 per-frame delay for the img2webp fallback
+// img2webp's -d takes an INTEGER millisecond per-frame delay, and 1000/60 =
+// 16.667ms is not expressible in whole ms. 16ms rounds to ~62.5fps (slightly
+// fast), 17ms to ~58.8fps. We use 16 so motion never drags. This is an
+// approximation: only the primary ffmpeg libwebp_anim path (`-vf fps=60`)
+// produces an exact-60fps encode, so ffmpeg stays the preferred engine and
+// img2webp is the ~60fps fallback used only when libwebp_anim is unavailable.
+const FRAME_MS=16;       // img2webp fallback only; ~62.5fps (see note above)
 const CARDS=[
  {src:'card1.mp4',out:'card1.webp',framing:'phone 9:16'},
  {src:'card1-wide.mp4',out:'card1-wide.webp',framing:'wide 4:3'},
@@ -88,7 +94,9 @@ function encodeWithFfmpeg(src,out){
 }
 
 // Fallback: ffmpeg extracts 60fps PNG frames at native size, img2webp stitches
-// them into an infinite-loop animated WebP with ~16ms per frame (~60fps).
+// them into an infinite-loop animated WebP with 16ms per frame (~62.5fps, the
+// closest whole-ms delay to 60fps; see FRAME_MS note). The exact-60fps result
+// comes only from the ffmpeg libwebp_anim path above.
 function encodeWithImg2webp(src,out){
  const frames=resolve('/tmp/breeze-onboarding-webp-frames',out.replace(/\W+/g,'_'));
  rmSync(frames,{recursive:true,force:true});
