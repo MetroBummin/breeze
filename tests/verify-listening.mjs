@@ -81,6 +81,23 @@ test('⏮ restarts, and a quick second press goes to the previous sentence acros
   assert.equal(step({index:0,start:0},-1),null,'Nothing before the first sentence');
 });
 
+test('chunks: the rest of the paragraph for boundary voices, one sentence otherwise', ()=>{
+  const whole=context.listeningChunk(blocks,{index:2,start:11},partsOf,true);
+  assert.equal(whole.index,2);
+  assert.equal(whole.text,'said the Rabbit. Then he ran.');
+  assert.deepEqual(JSON.parse(JSON.stringify(whole.sentences.map(s=>[s.start,s.offset,s.text]))),[[11,0,'said the Rabbit.'],[28,17,'Then he ran.']]);
+  // A word boundary inside the utterance names the sentence being read.
+  assert.equal(context.listeningChunkSentence(whole,0).text,'said the Rabbit.');
+  assert.equal(context.listeningChunkSentence(whole,16).text,'said the Rabbit.','The joining space belongs to the sentence before');
+  assert.equal(context.listeningChunkSentence(whole,17).text,'Then he ran.');
+  const single=context.listeningChunk(blocks,{index:0,start:0},partsOf,false);
+  assert.equal(single.text,'He was tired.');assert.equal(single.sentences.length,1);
+  // The queued-ahead chunk continues across the empty paragraph and stops at the end.
+  const next=context.listeningNextChunk(blocks,context.listeningChunk(blocks,{index:0,start:0},partsOf,true),partsOf,true);
+  assert.equal(next.text,'“Oh dear!” said the Rabbit. Then he ran.');
+  assert.equal(context.listeningNextChunk(blocks,context.listeningChunk(blocks,{index:3,start:0},partsOf,true),partsOf,true),null);
+});
+
 test('saved positions, speed and word boundaries', ()=>{
   assert.deepEqual({...context.listeningResolveCursor(blocks,{index:2,pi:4,start:11})},{index:2,start:11});
   // The rendered order changed: the paragraph number still finds the sentence.
@@ -104,6 +121,10 @@ test('the reader wiring keeps the existing gesture and sentence owners', ()=>{
   const index=read('index.html');
   const reader=read('scripts/reader/reader.js');
   assert.match(index,/<div id="readpill"[\s\S]*?<button id="listenfab"[^>]*hidden[\s\S]*?<div id="listen-bar"[^>]*hidden[\s\S]*?<div id="reader-pill-copy">/,'🎧 and the bar live in the title pill');
+  // Entry: a standard outline play triangle, named 듣기.
+  const fab=index.match(/<button id="listenfab"[^>]*>[\s\S]*?<\/button>/)[0];
+  assert.match(fab,/aria-label="듣기"/);
+  assert.match(fab,/<svg viewBox="0 0 24 24"[^>]*fill="none" stroke="currentColor"[^>]*><path class="listen-play-glyph" d="M8\.5 5\.5v13l10-6\.5z"\/><\/svg>/,'Entry is not the play triangle');
   for(const id of ['listen-prev','listen-toggle','listen-next','listen-rate','listen-close'])
     assert.match(index,new RegExp(`<div id="listen-bar"[\\s\\S]*id="${id}"[\\s\\S]*<div id="reader-pill-copy">`),id);
   assert.match(index,/<div id="ps-content">\s*<button id="ps-listen"[^>]*onclick="listenFromSentence\(\)">[\s\S]*?여기서부터 듣기/,'“여기서부터 듣기” is the first item of the sentence surface');
@@ -111,6 +132,13 @@ test('the reader wiring keeps the existing gesture and sentence owners', ()=>{
   // The text surface asks listening first, then opens the normal word popup.
   assert.match(reader,/listeningWordTap\(span\)\) return true;\n\s*openWord\(span\.dataset\.w,span,\{x:clientX,y:clientY\}\);/);
   // Listening never listens to raw pointer input; gesture.js stays the only judge.
-  assert.doesNotMatch(read('scripts/reader/listening.js'),/addEventListener\('(pointer\w+|click|touch\w+)'/);
+  const listeningSource=read('scripts/reader/listening.js');
+  assert.doesNotMatch(listeningSource,/addEventListener\('(pointer\w+|click|touch\w+)'/);
+  // Flow: speech is cancelled only by listeningHalt (people stopping or moving), never between chunks.
+  assert.equal(listeningSource.match(/\.cancel\(\)/g).length,1);
+  assert.match(listeningSource,/function listeningHalt\(\)\{[\s\S]*?synth\.cancel\(\);[\s\S]*?\n\}/);
+  // Emphasis is a class on the text, not ::highlight(), which WebKit does not colour.
+  assert.doesNotMatch(read('styles/listening.css').replace(/\/\*[\s\S]*?\*\//g,''),/::highlight/);
+  assert.match(read('styles/listening.css'),/#rtext \.listen-cur\{color:var\(--ink-body\);\}/);
   assert.match(read('scripts/core/state.js'),/curBook=null;[^\n]*\n\s*if\(typeof syncListeningControls==='function'\) syncListeningControls\(\);/,'Leaving the reader stops listening');
 });

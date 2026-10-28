@@ -15,7 +15,7 @@
 html body #readpill #listenfab{color:var(--am-ink);}
 #readpill #listenfab[hidden]{display:none;}
 #readpill #listenfab::after{content:''; position:absolute; inset:-3px -5px;}
-#readpill #listenfab svg{width:22px; height:22px;}
+#readpill #listenfab svg{width:24px; height:24px; stroke-width:var(--control-page-icon-stroke);}
 body.chrome-hidden #readpill #listenfab{width:0; opacity:0; visibility:hidden; pointer-events:none;
   transition-delay:0s,0s,var(--reader-chrome-duration);}
 
@@ -76,18 +76,15 @@ html body #listen-bar :is(#listen-prev,#listen-next,#listen-close){color:var(--a
 @keyframes listen-float-in{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
 
 /* ---- 지금 문장 · 지금 낱말 ----
-   글자색만 바꿉니다. 낱말 별점 바탕과 선택 표시는 그대로 남습니다. */
+   scripts/reader/listening.js 가 지금 문장의 글자에 `.listen-cur`, 지금 낱말에
+   `.listen-word` 를 붙입니다. 글자색만 바꾸므로 별점 바탕과 선택 표시는 그대로입니다.
+   `::highlight()` 를 쓰지 않습니다 — Mac Safari 에서 글자색이 바뀌지 않았습니다. */
 body{--listen-dim-ink:color-mix(in srgb, var(--ink-body) 52%, var(--paper));}
 body.reader-listening.listening-dim #rtext [data-pi]{color:var(--listen-dim-ink); transition:color .24s ease;}
 body.reader-listening.listening-dim.listening-fading #rtext [data-pi]{color:var(--ink-body);}
-::highlight(breeze-listen-sentence){color:var(--ink-body);}
-::highlight(breeze-listen-word){color:var(--ink); background-color:var(--selection-fill);}
-/* Custom Highlight 가 없는 WebKit: 흐리게 하지 않고 옅은 바탕만 깝니다. */
-body.listening-fallback #readwrap{position:relative;}
-.listen-cue-layer{position:absolute; inset:0; pointer-events:none; z-index:0;}
-.listen-cue{position:absolute; border-radius:4px; background:var(--selection-fill); opacity:.55;}
-.listen-cue-word{opacity:1;}
-body.listening-fading .listen-cue-word{display:none;}
+body.reader-listening #rtext .listen-cur{color:var(--ink-body);}
+body.reader-listening #rtext .listen-word{color:var(--ink); background-color:var(--selection-fill); border-radius:4px;}
+body.reader-listening.listening-fading #rtext .listen-word{background-color:transparent;}
 
 /* ---- 문장 메뉴의 맨 위 항목 ----
    꾹 누른 문장이 글자판의 것일 때만(`sentence-anchored`) 보입니다. */

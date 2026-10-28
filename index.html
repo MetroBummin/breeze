@@ -156,7 +156,7 @@
   <script defer src="scripts/reader/gesture-diag.js?v=7245bb14"></script>
   <script defer src="scripts/reader/book-opening.js?v=1c4a8bff"></script>
   <script defer src="scripts/reader/reader.js?v=db006b41"></script>
-  <script defer src="scripts/reader/listening.js?v=5cd25e18"></script>
+  <script defer src="scripts/reader/listening.js?v=8c4d4865"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
   <script defer src="scripts/ui/preferences.js?v=0016cea7"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -174,7 +174,7 @@
   <link rel="stylesheet" href="styles/study.css?v=ff988d52">
   <link rel="stylesheet" href="styles/surfaces.css?v=ee2a082b">
   <link rel="stylesheet" href="styles/header-controls.css?v=b58ebc34">
-  <link rel="stylesheet" href="styles/listening.css?v=f04b3bbd">
+  <link rel="stylesheet" href="styles/listening.css?v=c4cb8c92">
 </head>
 <body>
 <div id="app">
@@ -295,8 +295,8 @@
           </svg>
         </button>
         <!-- 듣기 모드: 함께 싣는 공개 저작물 고전에서만 보입니다 — scripts/reader/listening.js -->
-        <button id="listenfab" type="button" title="듣기" aria-label="듣기 모드 시작" onclick="startListening()" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 15.5V12a7.5 7.5 0 0 1 15 0v3.5"/><rect x="3.5" y="14" width="4.5" height="6.5" rx="1.8"/><rect x="16" y="14" width="4.5" height="6.5" rx="1.8"/></svg>
+        <button id="listenfab" type="button" title="듣기" aria-label="듣기" onclick="startListening()" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="listen-play-glyph" d="M8.5 5.5v13l10-6.5z"/></svg>
         </button>
         <div id="listen-bar" role="group" aria-label="듣기 모드" hidden>
           <span class="listen-state" aria-live="polite">
@@ -370,7 +370,7 @@
         <span id="ps-grabber" aria-hidden="true"></span>
       </header>
       <div id="ps-content">
-      <button id="ps-listen" type="button" onclick="listenFromSentence()"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 15.5V12a7.5 7.5 0 0 1 15 0v3.5"/><rect x="3.5" y="14" width="4.5" height="6.5" rx="1.8"/><rect x="16" y="14" width="4.5" height="6.5" rx="1.8"/></svg><span>여기서부터 듣기</span></button>
+      <button id="ps-listen" type="button" onclick="listenFromSentence()"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="listen-play-glyph" d="M8.5 5.5v13l10-6.5z"/></svg><span>여기서부터 듣기</span></button>
       <div id="ps-source">
         <div id="ps-en"></div>
       </div>

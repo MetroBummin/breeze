@@ -28,36 +28,44 @@ const server=createServer((req,res)=>{
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`;
 
+// A queueing engine like the real ones: speak() appends, the next utterance
+// starts as soon as the previous one ends, cancel() drops everything.
+// __speechNoBoundary models voices that send no word boundaries.
 function fakeSpeech(){
-  const log=window.__speech={spoken:[],cancels:0,current:null};
+  const log=window.__speech={spoken:[],started:[],cancels:0,current:null,queue:[]};
   class Utterance{
     constructor(text){this.text=String(text);this.rate=1;this.lang='';this.voice=null;
       this.onstart=null;this.onend=null;this.onerror=null;this.onboundary=null;}
   }
   const voice={name:'Scripted English',lang:'en-US',localService:true,default:true,voiceURI:'scripted'};
-  const synth={speaking:false,paused:false,pending:false,
-    getVoices(){return [voice];},
-    addEventListener(){},removeEventListener(){},
+  const synth={get speaking(){return !!log.current;},get pending(){return log.queue.length>0;},paused:false,
+    getVoices(){return [voice];},addEventListener(){},removeEventListener(){},
     resume(){this.paused=false;},pause(){this.paused=true;},
     cancel(){
       log.cancels++;
-      const current=log.current;log.current=null;this.speaking=false;
-      if(current){clearTimeout(current.timer);current.u.onerror?.({error:'interrupted'});}
+      const dropped=[log.current?.u,...log.queue].filter(Boolean);
+      if(log.current)clearTimeout(log.current.timer);
+      log.current=null;log.queue=[];
+      dropped.forEach(u=>u.onerror?.({error:'interrupted'}));
     },
     speak(u){
-      const words=[...u.text.matchAll(/[A-Za-z0-9’']+/g)];
-      const job={u,i:0,timer:0};log.current=job;log.spoken.push({text:u.text,rate:u.rate,lang:u.lang});
-      this.speaking=true;
-      const tick=()=>{
-        if(log.current!==job)return;
-        if(window.__speechHold){job.timer=setTimeout(tick,60);return;}
-        if(job.i>=words.length){log.current=null;this.speaking=false;u.onend?.({});return;}
-        const w=words[job.i++];
-        u.onboundary?.({name:'word',charIndex:w.index,charLength:w[0].length});
-        job.timer=setTimeout(tick,260/(u.rate||1));
-      };
-      u.onstart?.({});job.timer=setTimeout(tick,40);
+      log.spoken.push({text:u.text,rate:u.rate});log.queue.push(u);
+      if(!log.current)next();
     }};
+  function next(){
+    const u=log.queue.shift();if(!u){log.current=null;return;}
+    const words=[...u.text.matchAll(/[A-Za-z0-9’']+/g)];
+    const job={u,i:0,timer:0};log.current=job;log.started.push({text:u.text,rate:u.rate});
+    const tick=()=>{
+      if(log.current!==job)return;
+      if(window.__speechHold){job.timer=setTimeout(tick,40);return;}
+      if(job.i>=words.length){log.current=null;u.onend?.({});next();return;}
+      const w=words[job.i++];
+      if(!window.__speechNoBoundary)u.onboundary?.({name:'word',charIndex:w.index,charLength:w[0].length});
+      job.timer=setTimeout(tick,70/(u.rate||1));
+    };
+    u.onstart?.({});job.timer=setTimeout(tick,20);
+  }
   Object.defineProperty(window,'speechSynthesis',{value:synth,configurable:true});
   Object.defineProperty(window,'SpeechSynthesisUtterance',{value:Utterance,configurable:true});
 }
@@ -104,38 +112,84 @@ try{
       });
       await page.waitForFunction(()=>curBook?.longReadId==='alice-in-wonderland'&&document.querySelectorAll('#rtext [data-pi]').length>100&&!readerPositionRestoration);
       await page.locator('#listenfab').waitFor({state:'visible'});
+      // Entry: a play triangle named 듣기.
+      assert.equal(await page.locator('#listenfab').getAttribute('aria-label'),'듣기');
+      assert.equal(await page.locator('#listenfab svg path').getAttribute('d'),'M8.5 5.5v13l10-6.5z');
       // Read from the opening of Chapter I.
       await page.evaluate(()=>{
         const start=[...document.querySelectorAll('#rtext p[data-pi]')].find(p=>/^Alice was beginning/.test(p.textContent));
         readerScrollTo(readerScrollTop()+start.getBoundingClientRect().top-120);
       });
       await page.waitForTimeout(300);
+      await page.screenshot({path:resolve(out,`${engine.name()}-0-entry.png`)});
+      await page.evaluate(()=>{window.__speechHold=true;});
       await page.locator('#listenfab').click();
-      await page.waitForFunction(()=>window.__speech.spoken.length>0&&!document.getElementById('listen-bar').hidden);
-      const first=await page.evaluate(()=>window.__speech.spoken[0].text);
-      assert.match(first,/^Alice was beginning to get very tired/,'Did not start from the first visible sentence');
+      await page.waitForFunction(()=>window.__speech.started.length>0&&!document.getElementById('listen-bar').hidden);
+      const norm=text=>String(text).replace(/\s+/g,' ').trim();
+      const state=()=>page.evaluate(()=>({sentence:listening.sentence&&{index:listening.sentence.index,start:listening.sentence.start,text:listening.sentence.text},
+        marked:[...document.querySelectorAll('#rtext .listen-cur')].map(el=>el.textContent).join(''),
+        word:[...document.querySelectorAll('#rtext .listen-word')].map(el=>el.textContent).join(''),
+        spoken:window.__speech.spoken.length,started:window.__speech.started.length,cancels:window.__speech.cancels,
+        dim:getComputedStyle(document.querySelector('#rtext p[data-pi]:not(:has(.listen-cur))')).color,
+        cur:document.querySelector('#rtext .listen-cur')&&getComputedStyle(document.querySelector('#rtext .listen-cur')).color}));
+      const current=async()=>(await state()).sentence.text;
+      let now=await state();
+      assert.match(now.sentence.text,/^Alice was beginning to get very tired/,'Did not start from the first visible sentence');
+      // The next chunk is already queued in the engine while the first one plays.
+      assert.equal(now.started,1);assert.equal(now.spoken,2,'Next chunk was not queued ahead');
+      // The current sentence carries the class, at a different colour from the dimmed rest.
+      assert.equal(norm(now.marked),norm(now.sentence.text),'Current sentence is not marked');
+      assert.notEqual(now.cur,now.dim,'Current sentence is not emphasised over the dimmed text');
       assert.equal(await page.locator('#listen-hint').isVisible(),true,'One-time hint missing');
       await page.locator('#readback').waitFor({state:'hidden'});
       // A few words in, then hold the voice so captures are stable.
-      await page.waitForFunction(()=>CSS.highlights?.get('breeze-listen-word')||document.querySelector('.listen-cue-word'));
-      await page.waitForTimeout(700);
+      await page.evaluate(()=>{window.__speechHold=false;});
+      await page.waitForFunction(()=>document.querySelectorAll('#rtext .listen-word').length>0&&window.__speech.current?.i>6);
       await page.evaluate(()=>{window.__speechHold=true;});
       await page.waitForTimeout(100);
       await page.screenshot({path:resolve(out,`${engine.name()}-1-listening-light.png`)});
       await page.evaluate(()=>{darkMode=true;applyDark();});
       await page.waitForTimeout(150);
       await page.screenshot({path:resolve(out,`${engine.name()}-2-listening-dark.png`)});
-      await page.evaluate(()=>{darkMode=false;applyDark();window.__speechHold=false;});
+      now=await state();assert.notEqual(now.cur,now.dim,'Dark: current sentence is not emphasised');
+      await page.evaluate(()=>{darkMode=false;applyDark();});
+
+      // Continuous flow: the class moves from sentence to sentence, across paragraphs and
+      // inside one multi-sentence utterance, and nothing is cancelled between chunks.
+      const first=now.sentence, cancelsAtStart=now.cancels;
+      await page.evaluate(()=>{window.__speechHold=false;});
+      await page.waitForFunction(()=>{
+        const s=listening.sentence;const chunk=listening.queue[0];
+        return chunk&&chunk.sentences.length>1&&s.start>chunk.sentences[0].start;
+      },null,{timeout:40000,polling:50});
+      await page.evaluate(()=>{window.__speechHold=true;});
+      now=await state();
+      assert.ok(now.sentence.index>first.index,'Playback did not continue into the next paragraphs');
+      assert.equal(norm(now.marked),norm(now.sentence.text),'Class did not move with the sentence');
+      assert.ok(!now.marked.includes('Alice was beginning'),'Old sentence kept the class');
+      assert.equal(now.cancels,cancelsAtStart,'cancel() ran between chunks');
+
+      // Voices without word boundaries: one sentence per utterance, still queued ahead;
+      // each utterance's start moves the class.
+      await page.evaluate(()=>{window.__speechNoBoundary=true;listening.boundaries=false;window.__speechHold=false;});
+      await page.locator('#listen-next').click();
+      const before=await state();
+      await page.waitForFunction(b=>listening.sentence.index!==b.index||listening.sentence.start!==b.start,before.sentence,{timeout:30000,polling:50});
+      await page.evaluate(()=>{window.__speechHold=true;});
+      now=await state();
+      assert.equal(norm(now.marked),norm(now.sentence.text),'Without boundaries the class did not follow the utterance');
+      assert.equal(now.cancels,before.cancels,'cancel() ran between sentence utterances');
+      assert.ok(await page.evaluate(()=>window.__speech.started.slice(-2).every(item=>!/[.!?]\s+\S/.test(item.text.trim().slice(0,-1)))),'Boundary-less voice got multi-sentence chunks');
+      await page.evaluate(()=>{window.__speechNoBoundary=false;});
 
       // ⏭ next, ⏮ restart, ⏮⏮ previous.
-      const sentences=()=>page.evaluate(()=>window.__speech.spoken.map(item=>item.text));
+      const a=await current();
       await page.locator('#listen-next').click();
-      let spoken=await sentences();
-      assert.notEqual(spoken.at(-1),first);const second=spoken.at(-1);
+      const b=await current();assert.notEqual(b,a);
       await page.locator('#listen-prev').click();
-      spoken=await sentences();assert.equal(spoken.at(-1),second,'⏮ once restarts the current sentence');
+      assert.equal(await current(),b,'⏮ once restarts the current sentence');
       await page.locator('#listen-prev').click();
-      spoken=await sentences();assert.equal(spoken.at(-1),first,'⏮⏮ goes to the previous sentence');
+      assert.equal(await current(),a,'⏮⏮ goes to the previous sentence');
       // Speed cycles 1.0 → 1.25 → 0.75 → 1.0 and restarts the sentence at the new rate.
       await page.locator('#listen-rate').click();
       assert.equal(await page.locator('#listen-rate').textContent(),'1.25x');
@@ -143,16 +197,15 @@ try{
       await page.locator('#listen-rate').click();await page.locator('#listen-rate').click();
       assert.equal(await page.locator('#listen-rate').textContent(),'1.0x');
       // Tapping the current sentence replays it; no word popup.
-      const current=async()=>page.evaluate(()=>window.__speech.spoken.at(-1).text);
-      const before=await page.evaluate(()=>window.__speech.spoken.length);
-      const spanIn=async(predicate)=>page.evaluate(predicate);
-      const box=await spanIn(()=>{
+      const startedBefore=(await state()).started, replayed=await current();
+      const box=await page.evaluate(()=>{
         const range=listeningRange(listening.sentence);const rect=range.getClientRects()[0];
         return {x:rect.left+12,y:rect.top+rect.height/2};
       });
       await page.mouse.click(box.x,box.y);
       await page.waitForTimeout(80);
-      assert.equal(await page.evaluate(()=>window.__speech.spoken.length),before+1,'Tap on the current sentence did not replay');
+      now=await state();
+      assert.ok(now.started>startedBefore&&now.sentence.text===replayed,'Tap on the current sentence did not replay');
       assert.equal(await page.evaluate(()=>listeningWordSurfaceOpen()),false,'Replay tap opened a word popup');
       // A word in another sentence: pause, popup, resume on close at the same sentence.
       const playing=await current();
@@ -174,25 +227,26 @@ try{
       await page.waitForFunction(()=>listeningWordSurfaceOpen());
       assert.ok(await page.evaluate(c=>window.__speech.cancels>c&&!listening.playing,cancels),'Word tap did not pause listening');
       await page.evaluate(()=>closePanel());
-      await page.waitForFunction(p=>listening.playing&&window.__speech.spoken.at(-1).text===p,playing);
+      await page.waitForFunction(p=>listening.playing&&listening.sentence.text===p,playing);
       // Long-press another sentence: menu with "여기서부터 듣기" on top, playback unmoved.
       const target=await visibleOther();
       await page.evaluate(async text=>{
         await dictPut(sentKey(text.replace(/\s+/g,' ').trim()),{ko:'그래서 앨리스는 데이지 화환을 만드는 즐거움이 일어나서 꽃을 따는 수고만큼 가치가 있을지 (더운 날씨 때문에 몹시 졸리고 멍했지만) 곰곰이 생각하고 있었어요. 그때 갑자기 분홍 눈의 흰 토끼가 바로 옆을 달려 지나갔어요.',done:true});
       },target.text);
-      const countBefore=await page.evaluate(()=>window.__speech.spoken.length);
+      const heldAt=await current();
       await page.locator('#listen-hint').waitFor({state:'hidden',timeout:8000});
       await page.evaluate(()=>{window.__speechHold=true;});
       await page.mouse.move(target.x,target.y);await page.mouse.down();
       await page.waitForTimeout(900);await page.mouse.up();
       await page.locator('#ps-listen').waitFor({state:'visible'});
       assert.equal(await page.evaluate(()=>document.querySelector('#ps-content').firstElementChild.id),'ps-listen');
-      assert.equal(await page.evaluate(()=>window.__speech.spoken.length),countBefore,'Long-press alone moved playback');
+      assert.equal(await current(),heldAt,'Long-press alone moved playback');
       await page.waitForTimeout(300);
       await page.screenshot({path:resolve(out,`${engine.name()}-3-listen-from-here-menu.png`)});
       await page.evaluate(()=>{window.__speechHold=false;});
       await page.locator('#ps-listen').click();
-      await page.waitForFunction(t=>window.__speech.spoken.at(-1).text===t,target.text);
+      await page.waitForFunction(t=>listening.sentence.text===t,target.text);
+      now=await state();assert.equal(norm(now.marked),norm(target.text),'여기서부터 듣기 did not move the class');
 
       // Scroll away: auto-scroll pauses and "현재 위치로" appears; it jumps back.
       await page.evaluate(()=>{window.__speechHold=true;});
@@ -201,7 +255,7 @@ try{
       assert.equal(await page.evaluate(()=>listening.follow),false);
       await page.screenshot({path:resolve(out,`${engine.name()}-4-return-to-position.png`)});
       await page.locator('#listen-return').click();
-      await page.waitForFunction(()=>{const r=listeningRange(listening.sentence).getBoundingClientRect();return r.top>0&&r.bottom<innerHeight-80;});
+      await page.waitForFunction(()=>{const r=listeningRange(listening.sentence).getBoundingClientRect();return r.top>0&&r.top<innerHeight*.5;});
       assert.equal(await page.locator('#listen-return').isVisible(),false);
       await page.evaluate(()=>{window.__speechHold=false;});
 

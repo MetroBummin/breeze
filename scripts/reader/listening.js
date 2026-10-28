@@ -14,10 +14,19 @@
    · 손짓: 판정은 여전히 scripts/reader/gesture.js 하나입니다. 이 파일은 종이에
      손짓 리스너를 달지 않습니다. 글자판 surface가 낱말을 열기 직전에
      `listeningWordTap()`에 한 번 묻고, 단추들은 제 `onclick`을 받습니다.
-   · 표시: 문단 innerHTML을 건드리지 않습니다 — 낱말 상자는 화면 근처에서만
-     붙었다 떨어집니다(reader.js `hydrateWordSpanBatch`). 문장·낱말 강조는 글자
-     자리(offset)로 만든 Range를 CSS Custom Highlight로 칠하고, 문단 DOM이
-     바뀌면 다시 만듭니다.
+   · 말하기: 문장마다 utterance를 만들고 `end`를 기다려 다음을 `speak()`하면, 그리고
+     그 앞에서 `cancel()`하면 문장 사이마다 엔진이 다시 시작하느라 소리가 끊깁니다.
+     그래서 다음 덩어리를 미리 큐에 넣어 두고(늘 둘), 덩어리 사이에는 `cancel()`이
+     없습니다. 낱말 경계(`boundary`)를 주는 음성이면 덩어리는 문단의 남은 문장
+     전부이고 지금 문장은 경계의 `charIndex`가 알려 줍니다. 경계를 주지 않는
+     음성(Chrome의 원격 음성 등)은 문장 하나씩이고, 각 덩어리의 `start`가 알려
+     줍니다 — 시계로 짐작하지 않습니다.
+   · 표시: 지금 문장의 글자 마디에 `listen-cur`, 지금 낱말에 `listen-word` class를
+     붙입니다(`listeningMark`). 낱말 상자(.w)가 통째로 들어가면 그 상자에, 아니면
+     그 글자 조각만 span으로 감쌉니다. 글자는 바뀌지 않으므로 offset·낱말 찾기·
+     문장 찾기가 그대로입니다. 예전의 CSS `::highlight()`는 Mac Safari에서 글자색을
+     바꾸지 못해 지금 문장도 흐린 채로 남았습니다. 낱말 상자가 붙었다 떨어지면
+     (reader.js `hydrateWordSpanBatch`) 지금 문단만 지켜보다가 다시 붙입니다.
 
    ── 멈춤은 취소입니다 ──
    `speechSynthesis.pause()`는 Android Chrome에서 멈추지 않고, iOS에서는 다시
@@ -106,7 +115,32 @@ function listeningNextRate(rate){
 function listeningRateLabel(rate){
   return (rate===1 ? '1.0' : String(rate))+'x';
 }
-/* `boundary`의 charIndex는 말하는 문장 안의 자리입니다. charLength가 없는 엔진은
+/* 한 번에 말할 덩어리. `whole`이면 그 문단의 남은 문장 전부, 아니면 문장 하나.
+   문장들은 공백 하나로 잇고, 각 문장의 `offset`은 덩어리 글 안의 자리입니다. */
+function listeningChunk(blocks, cursor, partsOf, whole){
+  const first=listeningStep(blocks, cursor, 0, partsOf);
+  if(!first) return null;
+  const parts=partsOf(blocks[first.index]);
+  const from=listeningPartIndex(parts, first.start);
+  const sentences=[];
+  let text='';
+  for(const part of whole ? parts.slice(from) : [parts[from]]){
+    if(text) text+=' ';
+    sentences.push({index:first.index, pi:first.pi, start:part.start, end:part.end, text:part.text, offset:text.length});
+    text+=part.text;
+  }
+  return {index:first.index, sentences, text};
+}
+function listeningNextChunk(blocks, chunk, partsOf, whole){
+  const next=listeningStep(blocks, chunk.sentences[chunk.sentences.length-1], 1, partsOf);
+  return next ? listeningChunk(blocks, next, partsOf, whole) : null;
+}
+function listeningChunkSentence(chunk, charIndex){
+  let found=chunk.sentences[0];
+  for(const sentence of chunk.sentences) if(sentence.offset<=charIndex) found=sentence;
+  return found;
+}
+/* `boundary`의 charIndex는 말하는 덩어리 안의 자리입니다. charLength가 없는 엔진은
    그 자리에서 낱말 하나를 셉니다. 앞의 공백·따옴표는 건너뜁니다. */
 function listeningWordRange(text, charIndex, charLength){
   const source=String(text||'');
@@ -136,11 +170,11 @@ function listeningOverlapsBand(rect, band){
 
 const listening = {
   active:false, playing:false, book:null, sentence:null, word:null,
-  rate:1, generation:0, utterance:null, voice:null,
+  rate:1, generation:0, voice:null, queue:[], boundaries:false, keepAlive:0,
   follow:true, wordPause:null, lastPreviousAt:0,
   blocks:null, blocksFirst:null, blocksCount:0,
-  watched:null, observer:null, repaintFrame:0, scrollFrame:0, scrollToken:0,
-  hintTimer:0, fallbackLayer:null,
+  marked:null, marks:[], wordMarks:[], observer:null, repaintFrame:0, scrollFrame:0, scrollToken:0,
+  hintTimer:0,
 };
 
 function listeningStorage(){
@@ -182,10 +216,10 @@ function listeningPartsOf(block){
 function listeningIndexOf(element){
   return listeningBlocks().findIndex(block=>block.el===element);
 }
-function listeningRange(sentence, from, to){
+function listeningRange(sentence){
   const block=sentence && listeningBlocks()[sentence.index];
   if(!block || !block.el.isConnected || typeof domRangeForOffsets!=='function') return null;
-  return domRangeForOffsets(block.el, sentence.start+(from||0), sentence.start+(to==null ? sentence.end-sentence.start : to));
+  return domRangeForOffsets(block.el, sentence.start, sentence.end);
 }
 
 function listeningAvailable(){
@@ -243,58 +277,118 @@ function listeningBegin(cursor){
 
 function listeningPlay(sentence, options={}){
   if(!listening.active || !sentence) return;
-  listening.sentence=sentence;
-  listening.word=null;
-  listening.wordPause=null;
+  listeningHalt();
   listening.playing=true;
-  if(listening.book && !listening.book.transient)
-    listeningWrite(LISTEN_POSITION_KEY+listening.book.id, {index:sentence.index, pi:sentence.pi, start:sentence.start, t:Date.now()});
+  listening.wordPause=null;
+  listening.voice=listeningVoice();
+  listeningKeepAlive(listening.voice);
   listeningBodyClass('listening-fading', false);
-  listeningPaint();
+  listeningSetSentence(sentence, true);
   if(listening.follow || options.follow) listeningFollow(!!options.follow);
-  listeningSpeak(sentence);
+  listeningEnqueue(listeningChunk(listeningBlocks(), sentence, listeningPartsOf, listening.boundaries));
+  listeningFill();
   listeningRenderBar();
 }
-function listeningSpeak(sentence){
-  const synth=window.speechSynthesis;
-  const generation=++listening.generation;
-  try{ synth.cancel(); }catch(error){}
-  const utterance=new SpeechSynthesisUtterance(sentence.text);
-  const voice=listeningVoice();
+/* 지금 문장을 바꾸는 곳은 여기 하나입니다 — 자리 기억·칠하기·따라가기가 함께 갑니다. */
+function listeningSetSentence(sentence, repaint){
+  const current=listening.sentence;
+  const same=current && current.index===sentence.index && current.start===sentence.start;
+  listening.sentence=sentence;
+  if(same && !repaint) return;
+  listening.word=null;
+  if(listening.book && !listening.book.transient)
+    listeningWrite(LISTEN_POSITION_KEY+listening.book.id, {index:sentence.index, pi:sentence.pi, start:sentence.start, t:Date.now()});
+  listeningPaint();
+  if(!repaint && listening.follow) listeningFollow(false);
+}
+function listeningEnqueue(chunk){
+  if(!chunk) return;
+  const generation=listening.generation, voice=listening.voice;
+  const alive=()=>generation===listening.generation;
+  const utterance=new SpeechSynthesisUtterance(chunk.text);
   if(voice) utterance.voice=voice;
   utterance.lang=voice && voice.lang ? voice.lang : 'en-US';
   utterance.rate=listening.rate;
+  utterance.onstart=()=>{ if(alive()) listeningChunkStarted(chunk); };
   utterance.onboundary=event=>{
-    if(generation!==listening.generation || (event.name && event.name!=='word')) return;
-    listening.word=listeningWordRange(sentence.text, event.charIndex, /** @type {any} */(event).charLength);
-    listeningPaint();
+    if(!alive() || (event.name && event.name!=='word')) return;
+    listening.boundaries=true;
+    listeningChunkStarted(chunk);
+    const sentence=listeningChunkSentence(chunk, event.charIndex);
+    listeningSetSentence(sentence);
+    const word=listeningWordRange(chunk.text, event.charIndex, /** @type {any} */(event).charLength);
+    const inside=word && word.start>=sentence.offset && word.end<=sentence.offset+sentence.text.length;
+    listening.word=inside ? {start:sentence.start+word.start-sentence.offset, end:sentence.start+word.end-sentence.offset} : null;
+    listeningPaintWord();
     if(listening.follow) listeningFollowWord();
   };
-  utterance.onend=()=>{
-    if(generation!==listening.generation) return;
-    listeningAdvance();
-  };
+  utterance.onend=()=>{ if(alive()) listeningChunkEnded(chunk); };
   utterance.onerror=event=>{
-    if(generation!==listening.generation) return;
-    if(/interrupted|canceled|cancelled/i.test((event && event.error) || '')) return;
-    listening.playing=false;
+    if(!alive() || /interrupted|canceled|cancelled/i.test((event && event.error) || '')) return;
+    listeningHalt();
+    listeningPaint();
     listeningRenderBar();
     if(typeof toast==='function') toast('기기 음성으로 읽지 못했어요');
   };
-  /* Chrome은 붙잡는 곳이 없는 utterance를 치워 버려 `end`가 안 오는 일이 있습니다. */
-  listening.utterance=utterance;
-  try{ if(synth.paused) synth.resume(); }catch(error){}
-  synth.speak(utterance);
+  /* 큐가 utterance를 붙잡고 있습니다. Chrome은 붙잡는 곳이 없는 utterance를 치워 `end`를 잃습니다. */
+  chunk.utterance=utterance;
+  listening.queue.push(chunk);
+  window.speechSynthesis.speak(utterance);
 }
+/* 엔진 큐에는 늘 지금 덩어리와 다음 덩어리가 있습니다. 끝나는 순간 다음이 바로 이어집니다. */
+function listeningFill(){
+  while(listening.playing && listening.queue.length && listening.queue.length<2){
+    const next=listeningNextChunk(listeningBlocks(), listening.queue[listening.queue.length-1], listeningPartsOf, listening.boundaries);
+    if(!next) return;
+    listeningEnqueue(next);
+  }
+}
+function listeningChunkStarted(chunk){
+  if(chunk.started) return;
+  chunk.started=true;
+  const at=listening.queue.indexOf(chunk);
+  if(at>0) listening.queue.splice(0, at);
+  listeningSetSentence(chunk.sentences[0]);
+  listeningFill();
+}
+function listeningChunkEnded(chunk){
+  const at=listening.queue.indexOf(chunk);
+  if(at>=0) listening.queue.splice(0, at+1);
+  listeningFill();
+  const next=listening.queue[0];
+  /* 다음 덩어리의 `start`가 늦게 와도 표시는 지금 넘어갑니다. */
+  if(next){ if(!next.started) listeningSetSentence(next.sentences[0]); return; }
+  listeningFinish();
+}
+/* Chrome의 원격(네트워크) 음성은 한 utterance가 15초쯤 지나면 소리 없이 멈추고 `end`도
+   주지 않습니다. 그 음성일 때만 10초마다 pause/resume으로 깨웁니다. Safari에서는
+   pause/resume이 말을 끊으므로 하지 않습니다. */
+function listeningKeepAlive(voice){
+  clearInterval(listening.keepAlive);
+  listening.keepAlive=0;
+  const agent=typeof navigator==='undefined' ? '' : navigator.userAgent||'';
+  const safari=/safari/i.test(agent) && !/chrome|chromium|crios|android/i.test(agent);
+  if(!voice || voice.localService || safari) return;
+  listening.keepAlive=setInterval(()=>{
+    const synth=window.speechSynthesis;
+    if(listening.playing && synth.speaking && !synth.paused){ synth.pause(); synth.resume(); }
+  }, 10000);
+}
+/* 사람이 멈추거나 자리를 옮길 때만 취소합니다. 덩어리 사이에는 부르지 않습니다. */
 function listeningHalt(){
   listening.generation++;
   listening.playing=false;
   listening.word=null;
-  try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(error){}
+  clearInterval(listening.keepAlive);
+  listening.keepAlive=0;
+  const queued=listening.queue.length;
+  listening.queue=[];
+  try{
+    const synth=window.speechSynthesis;
+    if(synth && (queued || synth.speaking || synth.pending)) synth.cancel();
+  }catch(error){}
 }
-function listeningAdvance(){
-  const next=listeningStep(listeningBlocks(), listening.sentence, 1, listeningPartsOf);
-  if(next){ listeningPlay(next); return; }
+function listeningFinish(){
   const book=listening.book;
   stopListening();
   if(book) listeningWrite(LISTEN_POSITION_KEY+book.id, null);
@@ -327,7 +421,7 @@ function listeningNext(){
   if(!listening.active || !listening.sentence) return;
   const next=listeningStep(listeningBlocks(), listening.sentence, 1, listeningPartsOf);
   if(next) listeningPlay(next);
-  else listeningAdvance();
+  else listeningFinish();
 }
 function cycleListeningRate(){
   if(!listening.active) return;
@@ -402,7 +496,7 @@ function listeningWordTap(span){
     if(listening.playing){
       listeningHalt();
       listeningBodyClass('listening-fading', true);
-      listeningPaint();
+      listeningPaintWord();
       listeningRenderBar();
     }
     const pause={sawOpen:false, startedAt:Date.now(), timer:0};
@@ -482,73 +576,85 @@ function listeningFirstVisible(){
 }
 
 /* ---- 칠하기 ---- */
-function listeningHighlightApi(){
-  const view=/** @type {any} */(window);
-  return view.CSS && view.CSS.highlights && typeof view.Highlight==='function' ? view : null;
+/* 글자 [start,end) 를 class로 표시합니다. 글자 마디가 통째로 들어가는 낱말 상자(.w)는
+   그 상자에, 그 밖의 글자는 그 조각만 span으로 감쌉니다. 요소 경계를 넘는 감싸기가
+   없으므로 Holmes 문단 조각·이탤릭 표시가 섞여 있어도 됩니다. */
+function listeningMark(root, start, end, name){
+  const marks=[];
+  if(!root || !(end>start)) return marks;
+  const doc=root.ownerDocument||document;
+  const walker=doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const hits=[];
+  let at=0, node;
+  while((node=/** @type {Text} */(walker.nextNode()))){
+    const from=at;
+    at+=node.data.length;
+    if(at<=start) continue;
+    if(from>=end) break;
+    hits.push({text:node, a:Math.max(start,from)-from, b:Math.min(end,at)-from});
+  }
+  for(const {text, a, b} of hits){
+    const parent=text.parentElement;
+    if(a===0 && b===text.data.length && parent && parent.classList.contains('w') && parent.childNodes.length===1){
+      parent.classList.add(name);
+      marks.push({el:parent, wrap:false});
+      continue;
+    }
+    let piece=text;
+    if(b<piece.data.length) piece.splitText(b);
+    if(a>0) piece=piece.splitText(a);
+    const wrap=doc.createElement('span');
+    wrap.className='listen-mark '+name;
+    piece.replaceWith(wrap);
+    wrap.appendChild(piece);
+    marks.push({el:wrap, wrap:true});
+  }
+  return marks;
+}
+function listeningUnmark(marks, name){
+  for(const mark of marks){
+    if(!mark.el.isConnected) continue;
+    if(mark.wrap) mark.el.replaceWith(...mark.el.childNodes);
+    else mark.el.classList.remove(name);
+  }
 }
 function listeningClearPaint(){
-  if(typeof window==='undefined') return;
-  const api=listeningHighlightApi();
-  if(api){ api.CSS.highlights.delete('breeze-listen-sentence'); api.CSS.highlights.delete('breeze-listen-word'); }
-  if(listening.fallbackLayer){ listening.fallbackLayer.remove(); listening.fallbackLayer=null; }
-  listeningBodyClass('listening-fallback', false);
-  if(listening.observer) listening.observer.disconnect();
-  listening.watched=null;
+  if(typeof document==='undefined') return;
+  listeningUnmark(listening.wordMarks, 'listen-word');
+  listeningUnmark(listening.marks, 'listen-cur');
+  listening.wordMarks=[];
+  listening.marks=[];
+  listening.marked=null;
+  if(listening.observer){ listening.observer.takeRecords(); listening.observer.disconnect(); }
   if(listening.repaintFrame) cancelAnimationFrame(listening.repaintFrame);
   listening.repaintFrame=0;
   listeningBodyClass('listening-dim', false);
 }
 function listeningPaint(){
+  listeningClearPaint();
   const sentence=listening.sentence;
   const block=sentence && listeningBlocks()[sentence.index];
-  if(!listening.active || !block){ listeningClearPaint(); return; }
-  const range=listeningRange(sentence);
-  const word=listening.word ? listeningRange(sentence, listening.word.start, listening.word.end) : null;
-  const api=listeningHighlightApi();
-  if(api){
-    api.CSS.highlights.set('breeze-listen-sentence', new api.Highlight(range));
-    if(word){
-      const highlight=new api.Highlight(word);
-      highlight.priority=1;
-      api.CSS.highlights.set('breeze-listen-word', highlight);
-    }else api.CSS.highlights.delete('breeze-listen-word');
-    listeningBodyClass('listening-dim', true);
-  }else listeningPaintFallback(range, word);
-  /* 낱말 상자가 붙거나 떨어지면 문단의 글자 마디가 바뀌어 Range가 접힙니다.
-     지금 읽는 문단 하나만 지켜보고 다음 프레임에 다시 칠합니다. */
-  if(listening.watched!==block.el && typeof MutationObserver==='function'){
+  if(!listening.active || !block || !block.el.isConnected) return;
+  listening.marks=listeningMark(block.el, sentence.start, sentence.end, 'listen-cur');
+  listening.marked=block.el;
+  listeningBodyClass('listening-dim', true);
+  /* 낱말 상자가 붙거나 떨어지면(그 문단의 innerHTML이 바뀌면) 표시가 같이 지워집니다.
+     지금 문단 하나만 지켜보다가 다음 프레임에 다시 붙입니다. 우리가 낸 변화는 버립니다. */
+  if(typeof MutationObserver==='function'){
     if(!listening.observer) listening.observer=new MutationObserver(()=>{
       if(listening.repaintFrame) return;
       listening.repaintFrame=requestAnimationFrame(()=>{ listening.repaintFrame=0; listeningPaint(); });
     });
-    listening.observer.disconnect();
     listening.observer.observe(block.el, {childList:true, subtree:true, characterData:true});
-    listening.watched=block.el;
   }
+  listeningPaintWord();
 }
-/* Custom Highlight가 없는 WebKit(iOS 17.1 이하)에서는 글자색을 못 바꾸므로 흐리게
-   하지 않고, 문장·낱말 자리에 옅은 바탕만 깝니다. */
-function listeningPaintFallback(range, word){
-  const host=document.getElementById('readwrap');
-  if(!host || !range) return;
-  let layer=listening.fallbackLayer;
-  if(!layer){
-    layer=document.createElement('div');
-    layer.className='listen-cue-layer';
-    layer.setAttribute('aria-hidden','true');
-    listeningBodyClass('listening-fallback', true);
-    host.appendChild(layer);
-    listening.fallbackLayer=layer;
-  }
-  const base=host.getBoundingClientRect();
-  const rects=[...range.getClientRects()].map(rect=>['listen-cue',rect])
-    .concat(word ? [...word.getClientRects()].map(rect=>['listen-cue listen-cue-word',rect]) : []);
-  layer.replaceChildren(...rects.map(([name,rect])=>{
-    const cue=document.createElement('span');
-    cue.className=name;
-    cue.style.cssText=`left:${rect.left-base.left}px;top:${rect.top-base.top}px;width:${rect.width}px;height:${rect.height}px`;
-    return cue;
-  }));
+function listeningPaintWord(){
+  listeningUnmark(listening.wordMarks, 'listen-word');
+  listening.wordMarks=[];
+  const word=listening.word, el=listening.marked;
+  if(word && el && el.isConnected) listening.wordMarks=listeningMark(el, word.start, word.end, 'listen-word');
+  if(listening.observer) listening.observer.takeRecords();
 }
 
 /* ---- 따라가기 ----
@@ -562,15 +668,14 @@ function listeningFollow(force){
   listeningBring(range);
 }
 function listeningFollowWord(){
-  const sentence=listening.sentence, word=listening.word;
-  if(!sentence || !word) return;
-  listeningBring(listeningRange(sentence, word.start, word.end));
+  const mark=listening.wordMarks[0];
+  if(mark && mark.el.isConnected) listeningBring(mark.el);
 }
 /* 띠 밖에 있을 때만, 그 첫 줄을 화면 위쪽 1/3 쯤으로 옮깁니다. 띠보다 긴 문장은
    읽는 낱말이 띠 아래로 내려갈 때 다시 옮깁니다. */
-function listeningBring(range, always){
-  if(!range) return;
-  const rect=range.getBoundingClientRect(), band=listeningBand();
+function listeningBring(target, always){
+  if(!target) return;
+  const rect=target.getBoundingClientRect(), band=listeningBand();
   if(!always && !listeningOutsideBand(rect, band)) return;
   listeningScrollTo(readerScrollTop()+rect.top-(band.top+(band.bottom-band.top)*.28));
 }
