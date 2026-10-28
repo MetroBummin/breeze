@@ -56,7 +56,13 @@ try{
   assert.equal(await page.locator('#onboard-skip').textContent(),'건너뛰기');
   assert.equal(await page.locator('#onboard-status').textContent(),'1 / 3 · 단어 뜻 보기');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('onboard-wrap')).scrollSnapType),'x mandatory');
-  const openedAt=await page.evaluate(()=>performance.now());
+  const openedAt=await page.evaluate(()=>{
+    // Timeline for the CI log: where the startup time goes (fetch vs decode).
+    const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
+    window.qaCard1=[];
+    for(const type of ['loadstart','loadedmetadata','loadeddata','canplay','play','playing'])v.addEventListener(type,()=>window.qaCard1.push(type+'@'+Math.round(performance.now())),{once:true});
+    return performance.now();
+  });
   await page.waitForFunction(()=>{
     const v=document.querySelectorAll('#onboarding .onboard-card video')[0];
     return v.muted&&v.loop&&v.playsInline&&v.hasAttribute('playsinline')&&v.preload==='auto'&&v.hasAttribute('autoplay')&&!v.hasAttribute('src')&&v.readyState>=2&&!v.paused&&v.currentTime>0.05;
@@ -64,7 +70,8 @@ try{
   const elapsed=await page.evaluate(start=>performance.now()-start,openedAt);
   // A phone on a local file is well under 1.5s. The bound leaves room for
   // one slow CI media startup; a video that never moves still hits the wait.
-  console.log(`card 1 playing after ${Math.round(elapsed)}ms`);
+  console.log(`card 1 playing after ${Math.round(elapsed)}ms`,JSON.stringify(await page.evaluate(start=>({open:Math.round(start),events:window.qaCard1,
+    fetch:performance.getEntriesByType('resource').filter(e=>/card1\.mp4/.test(e.name)).map(e=>[Math.round(e.startTime),Math.round(e.responseEnd)])}),openedAt)));
   assert.ok(elapsed<2500,`card 1 currentTime did not advance promptly (${Math.round(elapsed)}ms)`);
   assert.equal(await page.evaluate(()=>{
     const v=document.querySelectorAll('#onboarding .onboard-card video')[1];
