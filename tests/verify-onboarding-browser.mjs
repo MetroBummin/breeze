@@ -466,6 +466,24 @@ try{
   assert.equal(await cardIndex(page),2,'tap reaches the book card without a playing video');
   await context.close();
  }
+ // Every card is the same box at every size, with videos playing (their
+ // intrinsic size arrives with the data) and after landing on card 3.
+ for(const [width,height] of [[390,844],[768,1024],[1440,900],[1920,1080],[1920,1113]]){
+  const {context,page}=await setup({viewport:{width,height}});await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[0];return v.readyState>=2;});
+  const boxes=()=>page.evaluate(()=>[...document.querySelectorAll('.onboard-card')].map(c=>{const r=c.getBoundingClientRect();
+    return {h:+r.height.toFixed(2),top:+r.top.toFixed(2),parts:[...c.children].map(x=>+x.getBoundingClientRect().height.toFixed(1))};}));
+  const atOpen=await boxes();
+  await goCard(page,1);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.readyState>=2;});
+  await goCard(page,2);await wait(300);
+  const atBooks=await boxes();
+  console.log(`card boxes ${width}x${height}`,JSON.stringify({atOpen,atBooks}));
+  for(const set of [atOpen,atBooks]){
+    assert.ok(set.every(b=>Math.abs(b.h-set[0].h)<0.5&&Math.abs(b.top-set[0].top)<0.5),`onboarding cards differ at ${width}x${height} `+JSON.stringify(set));
+  }
+  await context.close();
+ }
  // Layout and fallback at phone/tablet/desktop/short sizes, both themes.
  // The dialog surface stays light in dark mode.
  for(const [width,height] of [[390,844],[820,1180],[1440,900],[320,568],[844,390]])for(const dark of [false,true]){
