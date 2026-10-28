@@ -97,6 +97,15 @@ try{
     assert.deepEqual(mediaRequests.map(u=>u.split('/').pop()),['card1.mp4'],'the second video was fetched before its card');
   }
   assert.deepEqual(await dotsActive(page),[0,0,0]);
+  // Review evidence at iPhone size (iPhone 13 profile on WebKit): card 2
+  // playing on its own after the swipe, and the card 3 cover fan.
+  await goCard(page,1);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.3;});
+  await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card2-playing.png`)});
+  await goCard(page,2);
+  await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
+  await wait(400);
+  await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card3.png`)});
   await context.close();
  }
  // Dots follow scroll; arrow keys move between cards like a swipe.
@@ -349,6 +358,66 @@ try{
   // Once it plays, a tap on the video advances as before.
   await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
   await waitDots(page,1);
+  await context.close();
+ }
+ // Card 2 under the same Low Power-style refusal: it stays paused when it
+ // becomes the card in view, a tap on its video starts it without moving to
+ // card 3, and the next tap advances. Card 2 has no controls either.
+ {
+  const {context,page}=await setup({iphone:true});
+  await page.addInitScript(()=>{
+    const orig=HTMLMediaElement.prototype.play;
+    let gesture=false;
+    const arm=()=>{gesture=true;};
+    document.addEventListener('pointerdown',arm,{capture:true});
+    document.addEventListener('touchstart',arm,{capture:true});
+    HTMLMediaElement.prototype.play=function(){
+      if(!gesture)return Promise.reject(new DOMException('Low Power Mode','NotAllowedError'));
+      return orig.apply(this, arguments);
+    };
+    document.addEventListener('play',event=>{
+      if(!gesture&&event.target instanceof HTMLMediaElement)event.target.pause();
+    },true);
+  });
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.locator('#onboarding').waitFor({state:'visible'});
+  await goCard(page,1);
+  await page.waitForFunction(()=>document.querySelectorAll('#onboarding .onboard-card video')[1].dataset.onboardRejected==='1');
+  await wait(300);
+  assert.equal(await page.evaluate(()=>document.querySelectorAll('#onboarding .onboard-card video')[1].paused),true,'card 2 played before a gesture');
+  assert.equal(await page.evaluate(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return v.controls||v.hasAttribute('controls');}),false,'card 2 has native controls');
+  const box=await page.locator('.onboard-card[data-card="1"] video').boundingBox();
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.04;});
+  await wait(800);
+  assert.equal(await cardIndex(page),1,'the tap that started card 2 also advanced');
+  await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+  await waitDots(page,2);
+  await context.close();
+ }
+ // WebKit can refuse card 2's play() while the carousel is still moving, and
+ // its load events can all arrive inside that window. Once the carousel is
+ // at rest, card 2 must be asked again and play with no gesture.
+ {
+  const {context,page}=await setup({iphone:true});
+  await page.addInitScript(()=>{
+    const orig=HTMLMediaElement.prototype.play;
+    window.qaLastScroll=0;window.qaRefused=0;
+    document.addEventListener('scroll',()=>{window.qaLastScroll=performance.now();},{capture:true,passive:true});
+    const card2=v=>v instanceof HTMLMediaElement&&v.closest('.onboard-card')?.dataset.card==='1';
+    const moving=()=>performance.now()-window.qaLastScroll<100;
+    HTMLMediaElement.prototype.play=function(){
+      if(card2(this)&&moving()){window.qaRefused++;return Promise.reject(new DOMException('not visible yet','NotAllowedError'));}
+      return orig.apply(this, arguments);
+    };
+    document.addEventListener('play',event=>{if(card2(event.target)&&moving())event.target.pause();},true);
+  });
+  await page.goto(url);await page.evaluate(()=>homeReady);
+  await page.locator('#onboarding').waitFor({state:'visible'});
+  await goCard(page,1);
+  await page.waitForFunction(()=>{const v=document.querySelectorAll('#onboarding .onboard-card video')[1];return !v.paused&&v.currentTime>0.04;});
+  assert.ok(await page.evaluate(()=>window.qaRefused)>0,'the mid-swipe refusal was not exercised');
+  assert.equal(await cardIndex(page),1);
   await context.close();
  }
  // Card 1 still advances when play() rejects: tap and swipe-up, no video event.
