@@ -90,7 +90,7 @@
   <script defer src="scripts/core/book-identity.js?v=d6223950"></script>
   <script defer src="scripts/core/word-integrity.js?v=26df6591"></script>
   <script defer src="scripts/core/account-scope.js?v=2d083ed6"></script>
-  <script defer src="scripts/core/state.js?v=604111d6"></script>
+  <script defer src="scripts/core/state.js?v=02cc5cbf"></script>
   <script defer src="scripts/core/events.js?v=3fd906c0"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
@@ -152,10 +152,11 @@
   <script defer src="scripts/reader/pdf-original.js?v=764b35cd"></script>
   <script defer src="scripts/reader/epub-original.js?v=fdf61b95"></script>
   <script defer src="scripts/reader/original-formats.js?v=8536af42"></script>
-  <script defer src="scripts/reader/reader-modes.js?v=4f6c10b6"></script>
+  <script defer src="scripts/reader/reader-modes.js?v=728d8063"></script>
   <script defer src="scripts/reader/gesture-diag.js?v=7245bb14"></script>
   <script defer src="scripts/reader/book-opening.js?v=1c4a8bff"></script>
-  <script defer src="scripts/reader/reader.js?v=1d2b091c"></script>
+  <script defer src="scripts/reader/reader.js?v=db006b41"></script>
+  <script defer src="scripts/reader/listening.js?v=8c4d4865"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
   <script defer src="scripts/ui/preferences.js?v=a315317b"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
@@ -173,6 +174,7 @@
   <link rel="stylesheet" href="styles/study.css?v=ff988d52">
   <link rel="stylesheet" href="styles/surfaces.css?v=ee2a082b">
   <link rel="stylesheet" href="styles/header-controls.css?v=b58ebc34">
+  <link rel="stylesheet" href="styles/listening.css?v=c4cb8c92">
 </head>
 <body>
 <div id="app">
@@ -292,12 +294,40 @@
             <g class="mf-text"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></g>
           </svg>
         </button>
+        <!-- 듣기 모드: 함께 싣는 공개 저작물 고전에서만 보입니다 — scripts/reader/listening.js -->
+        <button id="listenfab" type="button" title="듣기" aria-label="듣기" onclick="startListening()" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="listen-play-glyph" d="M8.5 5.5v13l10-6.5z"/></svg>
+        </button>
+        <div id="listen-bar" role="group" aria-label="듣기 모드" hidden>
+          <span class="listen-state" aria-live="polite">
+            <svg class="listen-wave" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10.5v3"/><path d="M8 7.5v9"/><path d="M12 4.5v15"/><path d="M16 8.5v7"/><path d="M20 10.5v3"/></svg>
+            <span id="listen-label">듣는 중</span>
+          </span>
+          <button id="listen-prev" type="button" title="문장 처음부터 · 두 번 누르면 앞 문장" aria-label="문장 처음부터, 두 번 누르면 앞 문장" onclick="listeningPrevious()">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6v12"/><path d="M18 6.8v10.4L10.2 12z" fill="currentColor"/></svg>
+          </button>
+          <button id="listen-toggle" type="button" title="일시정지" aria-label="일시정지" onclick="toggleListening()">
+            <svg class="listen-pause" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M8.5 6v12"/><path d="M15.5 6v12"/></svg>
+            <svg class="listen-play" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M8 5.8v12.4L18.2 12z"/></svg>
+          </button>
+          <button id="listen-next" type="button" title="다음 문장" aria-label="다음 문장" onclick="listeningNext()">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6v12"/><path d="M6 6.8v10.4L13.8 12z" fill="currentColor"/></svg>
+          </button>
+          <button id="listen-rate" type="button" title="재생 속도" aria-label="재생 속도 1.0x · 눌러서 바꾸기" onclick="cycleListeningRate()">1.0x</button>
+          <button id="listen-close" type="button" title="듣기 끝내기" aria-label="듣기 끝내기" onclick="stopListening()">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10"/><path d="M17 7 7 17"/></svg>
+          </button>
+        </div>
         <div id="reader-pill-copy">
           <button id="readpill-title" type="button" onclick="expandReaderChrome()" aria-label="책 제목"></button>
           <span id="reader-notice" role="status" aria-live="polite" aria-atomic="true" hidden></span>
         </div>
       </div>
       <button class="control-glass" id="aafab" title="보기 설정" onclick="toggleAa(event)">Aa</button>
+      <div id="listen-float">
+        <p id="listen-hint" class="control-glass" role="status" hidden>문장을 꾹 누르면 거기서부터 들을 수 있어요</p>
+        <button id="listen-return" class="control-glass" type="button" onclick="returnToListeningSentence()" hidden>현재 위치로</button>
+      </div>
     </div>
     <span id="sentence-loading-status" role="status" aria-live="polite" aria-atomic="true"></span>
     <!-- 읽는 동안 스크롤하는 것은 문서가 아니라 이 칸 하나입니다.
@@ -340,6 +370,7 @@
         <span id="ps-grabber" aria-hidden="true"></span>
       </header>
       <div id="ps-content">
+      <button id="ps-listen" type="button" onclick="listenFromSentence()"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="listen-play-glyph" d="M8.5 5.5v13l10-6.5z"/></svg><span>여기서부터 듣기</span></button>
       <div id="ps-source">
         <div id="ps-en"></div>
       </div>
