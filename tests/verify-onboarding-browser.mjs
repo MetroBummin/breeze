@@ -30,6 +30,21 @@ async function goCard(page,index){
  await page.waitForFunction(index=>onboardingCardIndex()===index,index);
  await waitDots(page,index);
 }
+// Every cover in view, centre and peeking, keeps the art's 2:3 shape. The
+// images are scaled uniformly, so the on-screen rect ratio is the box ratio.
+const coverShapes=page=>page.evaluate(()=>{
+  const card=document.querySelector('.onboard-card[data-card="2"]').getBoundingClientRect();
+  return [...document.querySelectorAll('#onboard-fan img')].filter(img=>{
+    const r=img.getBoundingClientRect(),s=getComputedStyle(img.parentElement);
+    return s.visibility!=='hidden'&&Number(s.opacity)>0&&r.width>0&&r.right>card.left&&r.left<card.right;
+  }).map(img=>{const r=img.getBoundingClientRect();return {alt:img.alt,w:Math.round(r.width),h:Math.round(r.height),ratio:+(r.width/r.height).toFixed(3)};});
+});
+// Covers decode asynchronously; screenshots wait for the ones in view.
+const decodeCovers=page=>page.evaluate(()=>Promise.all([...document.querySelectorAll('#onboard-fan img')].filter(img=>getComputedStyle(img.parentElement).visibility!=='hidden').map(img=>img.decode().catch(()=>{}))));
+const assertCoverShapes=(shapes,label)=>{
+  assert.ok(shapes.length>=3,label+' fewer than three covers '+JSON.stringify(shapes));
+  for(const s of shapes)assert.ok(Math.abs(s.ratio-2/3)<0.02,label+' cover is not 2:3 '+JSON.stringify(s));
+};
 const waitDots=(page,index)=>page.waitForFunction(index=>[...document.querySelectorAll('#onboarding .onboard-dots')].every(d=>[...d.children].findIndex(el=>el.classList.contains('on'))===index),index);
 const dotsActive=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-dots')].map(d=>[...d.children].findIndex(el=>el.classList.contains('on'))));
 const videoState=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card video')].map(v=>({src:v.currentSrc.split('/').pop(),ready:v.readyState,paused:v.paused})));
@@ -105,6 +120,13 @@ try{
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
   await wait(400);
+  const iphoneCovers=await coverShapes(page);
+  console.log('iphone card 3 covers',JSON.stringify(iphoneCovers));
+  assertCoverShapes(iphoneCovers,'iPhone');
+  assert.equal(iphoneCovers.length,5,'iPhone shows five covers at rest');
+  await decodeCovers(page);
+  // The test jumps to card 3 instantly; give async cover decode time to paint.
+  await wait(1500);
   await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card3.png`)});
   await context.close();
  }
@@ -498,6 +520,8 @@ try{
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card2.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
+  assertCoverShapes(await coverShapes(page),`${width}x${height}`);
+  await decodeCovers(page);
   const skipOnCard3=await page.evaluate(()=>{
     const wrap=document.getElementById('onboard-wrap').getBoundingClientRect();
     const card=[...document.querySelectorAll('.onboard-card')].map(node=>node.getBoundingClientRect()).find(rect=>Math.abs(rect.left-wrap.left)<2);

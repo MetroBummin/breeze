@@ -470,9 +470,28 @@ function buildOnboardingFan(session){
   };
   session.layoutDepth=layoutDepth;
   const queueDepth=()=>{if(!session.depthFrame)session.depthFrame=requestAnimationFrame(layoutDepth);};
+  // The CSS cover size needs the fan's box as lengths (see onboarding.css).
+  // Width is the card's content width, not the fan's: the fan's padding is
+  // derived from --fan-w, so its own width would feed back. Height is the
+  // fan's (flex-basis 0, min-height 0), which the covers cannot change.
+  const card=/** @type {HTMLElement} */(fan.closest('.onboard-card'));
+  const measureFan=()=>{
+    const cs=getComputedStyle(card);
+    const w=Math.round(card.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)),h=fan.offsetHeight;
+    if(!w||!h||(w===session.fanW&&h===session.fanH))return;
+    session.fanW=w;session.fanH=h;
+    fan.style.setProperty('--fan-w',w+'px');
+    fan.style.setProperty('--fan-h',h+'px');
+    queueDepth();
+  };
+  measureFan();
+  if(typeof ResizeObserver==='function'){
+    session.observer=new ResizeObserver(measureFan);
+    session.observer.observe(fan);
+  }
   const signal=session.controller.signal;
   fan.addEventListener('scroll',()=>{queueDepth();queueOnboardingSettle(session);},{passive:true,signal});
-  window.addEventListener('resize',queueDepth,{signal});
+  window.addEventListener('resize',()=>{measureFan();queueDepth();},{signal});
   // Wrap back into the middle copy so the strip never ends. The jump
   // is deferred and re-checked: scrollend can fire mid-flight on a long
   // smooth scroll, and jumping then would cancel the animation and
@@ -541,7 +560,7 @@ function startOnboarding(replay){
   try{localStorage.removeItem(ONBOARD_PROGRESS_KEY);}catch{}
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
-    motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,
+    motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,fanW:0,fanH:0,
     depthFrame:0,playFrame:0,playTimer:0,playSettleTimer:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,videoTap:null,playToken:0,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
