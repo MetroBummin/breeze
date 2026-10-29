@@ -165,28 +165,11 @@ try{
    assert.equal(await settings.isVisible(),false,'first Pencil contact closes settings and draws');
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    assert.equal(await count(),1);
-   // The actual web admission path must wait for native ownership, including
-   // when a short Pencil contact ends before the asynchronous reply arrives.
-   await page.evaluate(()=>{
-    window.qaAdmissions=[];
-    window.webkit.messageHandlers.breezePencilAdmission={postMessage:request=>
-     new Promise(resolve=>window.qaAdmissions.push({request,resolve}))};
-   });
-   await stroke([[.55,.2],[.58,.22]]);
-   await page.waitForFunction(()=>window.qaAdmissions.length===1);
-   assert.equal(await count(),1,'unadmitted Pencil cannot preview or save');
-   assert.equal(await page.evaluate(()=>Number.isFinite(window.qaAdmissions[0].request.eventAt)),true);
-   await page.evaluate(()=>window.qaAdmissions.shift().resolve('blocked'));
-   await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,0)));
-   assert.equal(await count(),1,'native stopOnly contact cannot leave a mark');
+   // A quick stylus contact commits synchronously: no native reply is awaited.
    await stroke([[.55,.3],[.58,.32]]);
-   await page.waitForFunction(()=>window.qaAdmissions.length===1);
-   assert.equal(await count(),1);
-   await page.evaluate(()=>window.qaAdmissions.shift().resolve('ink'));
-   await page.waitForFunction(()=>document.querySelectorAll('.pdf-source-page[data-page="1"] .pdf-ink-layer polyline').length===2);
+   assert.equal(await count(),2,'quick Pencil contact draws without a native round trip');
    await page.locator('[data-ink-undo]').click();
-   assert.equal(await count(),1,'admitted quick contact remains undoable');
-   await page.evaluate(()=>delete window.webkit.messageHandlers.breezePencilAdmission);
+   assert.equal(await count(),1,'quick contact remains undoable');
    const traceRoutes=await page.evaluate(()=>window.qaInkTrace.map(row=>row.route));
    if(process.env.BREEZE_QA_INK_TRACE==='1'){assert.ok(traceRoutes.includes('stroke/start'));assert.ok(traceRoutes.includes('dispatch/finished'));}
    else assert.equal(traceRoutes.length,0,'diagnostics disabled by default');
@@ -196,7 +179,9 @@ try{
    await page.evaluate(()=>{closePanel();window.qaLookup=0;});
    assert.equal(await count(),1);
    await stroke([[.1,.3],[.2,.35]],{cancel:true});assert.equal(await count(),1);
-   await stroke([[.1,.3],[.2,.35]],{noncancel:true});assert.equal(await count(),1);
+   await stroke([[.1,.3],[.2,.35]],{noncancel:true});
+   assert.equal(await count(),2,'native scrolling mid-stroke keeps what was drawn');
+   await page.locator('[data-ink-undo]').click();assert.equal(await count(),1);
    assert.equal(await page.evaluate(()=>window.qaLookup),0);
    for(const zoom of [1,1.5,2.5,1]){
     await page.evaluate(z=>setOriginalZoom(z),zoom);
@@ -412,24 +397,26 @@ try{
     const freshAllowed=!send('touchstart',[palm,fresh],[fresh]) && BreezePdfInk.finger(fresh);
     send('touchend',[fresh],[palm]);send('touchend',[],[fresh]);
     const beforeLate=n();
-    // Finger first: reject late pen, do not turn it into the second pinch finger.
+    // Finger first: the late pen still draws, and the finger is ignored by ink
+    // rather than becoming the second pinch finger.
     send('touchstart',[fresh],[fresh]);send('touchstart',[fresh,pen],[pen]);
-    const noMixedPinch=!originalPinchBusy();
+    const noMixedPinch=!originalPinchBusy()&&!BreezePdfInk.finger(fresh);
     send('touchmove',[fresh,t(91,'stylus',.8)],[t(91,'stylus',.8)]);
     send('touchend',[fresh],[pen]);send('touchend',[],[fresh]);
     send('touchstart',[fresh],[fresh]);send('touchstart',[fresh,pen],[pen]);
     send('touchend',[pen],[fresh]);
     send('touchmove',[t(91,'stylus',.7)],[t(91,'stylus',.7)]);
     send('touchend',[],[pen]);
-    const lateUnchanged=n()===beforeLate;
-    // A genuine finger pinch stays owned when a late Pencil arrives.
+    const lateDraws=n()===beforeLate+2;
+    // The pen wins over a web pinch already on the paper: the pinch is
+    // cancelled, its fingers cannot zoom, and the stroke is kept.
     const f1=t(101,'direct',.25),f2=t(102,'direct',.6);
-    const zoom=originalZoom();send('touchstart',[f1],[f1]);send('touchstart',[f1,f2],[f2]);
+    const zoom=originalZoom(),beforePinchPen=n();send('touchstart',[f1],[f1]);send('touchstart',[f1,f2],[f2]);
     const acquired=originalPinchBusy();send('touchstart',[f1,pen,f2],[pen]);
-    const survived=originalPinchBusy();
+    const yielded=!originalPinchBusy();
     send('touchmove',[t(101,'direct',.2),pen,t(102,'direct',.7)],[t(101,'direct',.2),t(102,'direct',.7)]);
     send('touchend',[f1,f2],[pen]);send('touchend',[],[f1,f2]);
-    const zoomed=originalZoom()>zoom;
+    const notZoomed=originalZoom()===zoom&&n()===beforePinchPen+1;
     setOriginalZoom(1);
     send('touchstart',[pen],[pen]);send('touchcancel',[],[pen]);
     const cancelled=!BreezePdfInk.busy();
@@ -442,7 +429,7 @@ try{
     const stalePointerPreserved=n()===pointerCount+1;
     pointer('pointerdown',802);send('touchstart',[pen],[pen]);pointer('pointercancel',802);
     send('touchend',[],[pen]);const currentPointerCancelled=n()===pointerCount+1;
-    return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateUnchanged,acquired,survived,zoomed,cancelled,unlocked,stalePointerPreserved,currentPointerCancelled};
+    return{during,one:after===start+1,oldBlocked,palmDoesNotBlock,freshAllowed,noMixedPinch,lateDraws,acquired,yielded,notZoomed,cancelled,unlocked,stalePointerPreserved,currentPointerCancelled};
    });
    for(const [key,value] of Object.entries(collision))assert.equal(value,true,`collision: ${key}`);
    // A long Pencil move uses the contact's stable page bounds, not a layout read per sample.

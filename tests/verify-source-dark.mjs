@@ -199,6 +199,7 @@ test('dark source pages are baked, not filtered at pinch time',()=>{
   assert.doesNotMatch(readerCss,/\.epub-chapter-frame\{[^}]*filter/);
   assert.match(readerCss,/body\.dark \.pdf-source-page>\.breeze-original-word\{mix-blend-mode:screen;\}/);
   assert.match(inkCss,/body\.dark \.pdf-source-page > \.pdf-ink-layer\{mix-blend-mode:normal;\}/);
+  assert.match(inkCss,/\.pdf-ink-layer:not\(:has\(> \[data-ink-tool="highlighter"\]\)\)\{mix-blend-mode:normal;\}/,'pen-only pages are not blended');
   assert.match(tokens,/body\.dark\{[\s\S]*--source-page:#2c2a26;/);
   assert.match(design,/PDF·EPUB 쪽 바탕은 어두운 화면에서 어두운 종이/);
   assert.doesNotMatch(epub,/epub-chapter-frame[^;\n]*filter|iframe[^;\n]*filter/);

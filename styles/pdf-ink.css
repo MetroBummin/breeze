@@ -1,5 +1,11 @@
 /* The ink has no hit-test surface, including in reading mode. */
 .pdf-source-page > .pdf-ink-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;mix-blend-mode:multiply;}
+/* Multiply only keeps text dark under translucent highlighter ink. The layer's
+   z-index makes it an isolated group, so a blend on the highlighter elements
+   alone would not reach the PDF canvas (CSS Compositing; Chromium follows
+   this). Pages without highlighter ink skip the blend. Without :has() support
+   this rule is dropped and the layer keeps multiply, as before. */
+.pdf-source-page > .pdf-ink-layer:not(:has(> [data-ink-tool="highlighter"])){mix-blend-mode:normal;}
 body.dark .pdf-source-page > .pdf-ink-layer{mix-blend-mode:normal;}
 #readpill.ink-pill-ready{justify-content:flex-start;gap:0;padding-inline:9px;}
 #readpill.ink-pill-ready #reader-pill-copy{flex:1 1 150px;}
