@@ -91,34 +91,55 @@ try{
     controls:video.hasAttribute('controls')||video.controls,
     preload:video.getAttribute('preload'),
   })));
-  assert.deepEqual(flags,[{muted:true,inline:true,autoplay:true,loop:true,controls:false,preload:'auto'},{muted:true,inline:true,autoplay:true,loop:true,controls:false,preload:'auto'}],'video flags are on the element before playback');
+  // No autoplay: only the carousel calls play(), so nothing else starts or
+  // races the settled card.
+  assert.deepEqual(flags,[{muted:true,inline:true,autoplay:false,loop:true,controls:false,preload:'auto'},{muted:true,inline:true,autoplay:false,loop:true,controls:false,preload:'auto'}],'video flags are on the element before playback');
   assert.equal(await page.locator('#onboarding .onboard-poster').count(),2);
   assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card[data-card="0"] video source,#onboarding .onboard-card[data-card="1"] video source')].map(s=>({src:s.getAttribute('src').split('/').pop(),media:s.media}))),
     [{src:'card1-wide.mp4',media:'(min-width: 768px)'},{src:'card1.mp4',media:''},{src:'card2-wide.mp4',media:'(min-width: 768px)'},{src:'card2.mp4',media:''}],'wide MP4 is behind the 768px media switch');
   assert.deepEqual(await dotsActive(page),[0,0,0]);
-  // Settle on card 2 rewinds to 0, then play(). A refusal leaves the poster.
+  // Settle on card 2 rewinds to 0, then play(). Refused calls leave the
+  // poster up and are retried; the retry that plays hides it. The first
+  // refusal arrives late, after the clip already plays, and must not bring
+  // the poster back.
   const settled=await page.evaluate(async()=>{
     const video=document.querySelector('#onboarding .onboard-card[data-card="1"] video');
     const poster=video.parentElement.querySelector('.onboard-poster');
-    let timeAtPlay=null;
-    video.play=function(){timeAtPlay=video.currentTime;return Promise.reject(Object.assign(new Error('refused'),{name:'NotAllowedError'}));};
-    try{video.currentTime=1.5;}catch{}
+    if(video.readyState<HTMLMediaElement.HAVE_METADATA)await new Promise(r=>video.addEventListener('loadedmetadata',r,{once:true}));
+    const calls=[];let refuseLate=null;
+    const refusal=()=>Object.assign(new Error('refused'),{name:'NotAllowedError'});
+    video.play=function(){
+      calls.push(video.currentTime);
+      if(calls.length===1)return new Promise((_,reject)=>{refuseLate=()=>reject(refusal());});
+      if(calls.length===2)return Promise.reject(refusal());
+      return HTMLMediaElement.prototype.play.call(video);
+    };
+    video.currentTime=1.5;
+    await new Promise(r=>video.addEventListener('seeked',r,{once:true}));
     const wrap=document.getElementById('onboard-wrap');
     const card=wrap.querySelector('.onboard-card');
     wrap.scrollTo({left:(card.offsetWidth+20)*1,behavior:'instant'});
     wrap.dispatchEvent(new Event('scroll'));
     wrap.dispatchEvent(new Event('scrollend'));
-    await new Promise(r=>setTimeout(r,200));
-    return {index:onboardingCardIndex(),timeAtPlay,hidden:poster.hidden};
+    await new Promise(r=>setTimeout(r,60));
+    const refused={calls:calls.length,poster:!poster.hidden,paused:video.paused};
+    const until=Date.now()+5000;
+    while((video.paused||!poster.hidden)&&Date.now()<until)await new Promise(r=>setTimeout(r,50));
+    refuseLate();
+    await new Promise(r=>setTimeout(r,300));
+    delete video.play;
+    return {index:onboardingCardIndex(),timeAtPlay:calls[0],calls:calls.length,refused,paused:video.paused,hidden:poster.hidden};
   });
+  console.log('card 2 settle',JSON.stringify(settled));
   assert.equal(settled.index,1);
   assert.equal(settled.timeAtPlay,0,'settle calls play() only after currentTime is 0');
-  assert.equal(settled.hidden,false,'a rejected play() keeps the poster over the video');
-  await page.evaluate(()=>{
-    const video=document.querySelector('#onboarding .onboard-card[data-card="1"] video');
-    video.dispatchEvent(new Event('playing'));
-  });
-  assert.equal(await page.locator('.onboard-card[data-card="1"] .onboard-poster').evaluate(img=>img.hidden),true,'playing hides the poster');
+  // Native scroll/scrollend from scrollTo can add a second settle in the
+  // first 60ms, so only require that at least one refused call happened.
+  assert.ok(settled.refused.calls>=1,'settle calls play() '+JSON.stringify(settled.refused));
+  assert.deepEqual({poster:settled.refused.poster,paused:settled.refused.paused},{poster:true,paused:true},'a refused play() keeps the poster over the video');
+  assert.ok(settled.calls>=3,'refused play() calls are retried '+JSON.stringify(settled));
+  assert.equal(settled.paused,false,'the retry plays card 2');
+  assert.equal(settled.hidden,true,'a playing clip hides the poster, and a late refusal does not bring it back');
   await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card2-playing.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
@@ -328,15 +349,39 @@ try{
   const {context,page}=await setup();
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
-  // Swipe up on card 1 advances.
-  await page.evaluate(()=>{
+  // Swipe up on card 1 advances, and the finger lift itself calls play()
+  // for card 2, inside the gesture.
+  const primed=await page.evaluate(()=>{
     const media=document.querySelector('.onboard-card[data-card="0"] .onboard-media');
+    const next=document.querySelector('.onboard-card[data-card="1"] video');
+    let called=false;
+    next.play=function(){called=true;return HTMLMediaElement.prototype.play.call(next);};
     const r=media.getBoundingClientRect();
     const x=r.left+r.width/2,y=r.top+r.height*0.55;
     const fire=(type,py)=>media.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:x,clientY:py}));
-    fire('pointerdown',y);fire('pointermove',y-90);fire('pointerup',y-180);
+    fire('pointerdown',y);fire('pointermove',y-90);
+    const before=called;
+    fire('pointerup',y-180);
+    const during=called;
+    delete next.play;
+    return {before,during};
   });
+  assert.deepEqual(primed,{before:false,during:true},'pointerup calls play() for the next card synchronously');
   await waitDots(page,1);
+  // A settle that finds card 2 already playing still arms the watchdog: a
+  // pending gesture play() reports paused=false and can be refused later.
+  const lateRefusal=await page.evaluate(async()=>{
+    const video=document.querySelector('.onboard-card[data-card="1"] video');
+    const until=Date.now()+5000;
+    while(video.paused&&Date.now()<until)await new Promise(r=>setTimeout(r,50));
+    await new Promise(r=>setTimeout(r,400));
+    document.getElementById('onboard-wrap').dispatchEvent(new Event('scrollend'));
+    video.pause();
+    const retryUntil=Date.now()+2000;
+    while(video.paused&&Date.now()<retryUntil)await new Promise(r=>setTimeout(r,50));
+    return {paused:video.paused};
+  });
+  assert.deepEqual(lateRefusal,{paused:false},'the watchdog retries card 2 after a late refusal of a running play()');
   // A plain tap on card 2's media advances to the book card.
   await page.locator('.onboard-card[data-card="1"] .onboard-media').click();
   await waitDots(page,2);

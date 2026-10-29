@@ -3,7 +3,7 @@
    (onboarding-carousel.html) so the dialog shows exactly what was reviewed.
    Cards 1 and 2 are muted inline MP4s. Playback is owned by the carousel
    settle below: the settled card rewinds to frame 0 and plays, and a
-   first-frame poster covers the video until the 'playing' event.
+   first-frame poster covers the video until it is playing.
    The former passive guide (welcome pen animation plus seven recorded
    scenes) was discarded by owner decision 2026-10-27; see
    docs/decisions/006-reader-onboarding.md. This dialog never opens or
@@ -30,21 +30,25 @@ function onboardingAppearanceOpened(){}
 function openOnboardingWord(node,retry=false){}
 function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
-function onboardingCardIndex(){
+/** @param {number} [left] scroll position to read; defaults to the current one */
+function onboardingCardIndex(left){
   const wrap=document.getElementById('onboard-wrap');
   const card=wrap.querySelector(/** @type {'article'} */('.onboard-card'));
   if(!card)return 0;
   const advance=card.offsetWidth+20;
-  return Math.max(0,Math.min(2,Math.round(wrap.scrollLeft/advance)));
+  return Math.max(0,Math.min(2,Math.round((left??wrap.scrollLeft)/advance)));
 }
-/* Cards 1 and 2. The <video> is parsed with muted, playsinline and autoplay
-   already on the element, before its <source> loads. Capacitor's WKWebView
-   already allows inline playback without a gesture, so nothing here retunes
-   the native view. What broke TestFlight was pausing every off-screen clip
-   (pause() clears that element's autoplay) and calling play() from the
-   scroll listener while the card was still moving. WebKit refuses that
-   call and paints its own play button; a play() that did succeed was then
-   left running, so the card opened mid-clip. Settle is the only owner. */
+/* Cards 1 and 2. The <video> is parsed with muted and playsinline already
+   on the element, before its <source> loads, and has no autoplay: only
+   this code calls play(). Capacitor's WKWebView already allows inline
+   playback without a gesture, so nothing here retunes the native view.
+   The settled card is the owner. The finger lift that starts a card change
+   also calls play() for the card it heads to, inside the gesture, and a
+   short watchdog retries the settled card while it is still paused. Every
+   start takes a new token, so a late seek or retry from an older start
+   never plays a clip that is no longer the target. The poster covers the
+   video until it is actually playing ('playing' or 'timeupdate' with the
+   clip running); a refused play() leaves the poster as it is. */
 const onboardingWideQuery=matchMedia('(min-width: 768px)');
 function onboardingVideos(){
   return /** @type {HTMLVideoElement[]} */([...document.querySelectorAll('#onboarding .onboard-card video')]);
@@ -65,32 +69,44 @@ function rewindOnboardingVideo(video){
   if(video.readyState<HTMLMediaElement.HAVE_METADATA)return;
   try{if(video.currentTime>0.05)video.currentTime=0;}catch{}
 }
-function playSettledOnboardingVideo(video){
-  const poster=onboardingPoster(video);
+function startOnboardingVideo(session,video){
+  const token=++session.playToken;
   video.muted=true;
   video.playsInline=true;
+  let started=false,timer=0;
   const start=()=>{
-    const pending=video.play();
-    if(!pending||typeof pending.catch!=='function')return;
-    pending.catch(()=>{
-      if(poster)poster.hidden=false;
-      // Settle ran before the file could play. One retry when it can.
-      if(video.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA)return;
-      video.addEventListener('canplay',()=>{
-        if(onboardingSession==null)return;
-        if(onboardingVideos().indexOf(video)!==onboardingCardIndex())return;
-        if(!video.paused)return;
-        const again=video.play();
-        if(again&&typeof again.catch==='function')again.catch(()=>{if(poster)poster.hidden=false;});
-      },{once:true});
-    });
+    if(started)return;
+    started=true;
+    clearTimeout(timer);
+    if(onboardingSession!==session||session.playToken!==token)return;
+    try{video.play()?.catch?.(()=>{});}catch{}
   };
+  // A seek can stall on iOS without 'seeked'; play from wherever it got to.
   if(video.readyState>=HTMLMediaElement.HAVE_METADATA&&video.currentTime>0.05){
+    timer=setTimeout(start,200);
     video.addEventListener('seeked',start,{once:true});
     try{video.currentTime=0;}catch{start();}
     return;
   }
   start();
+}
+// Called from touchend/pointerup: a play() inside the gesture is one WebKit
+// honours even when a later, script-only play() would be refused.
+function primeOnboardingVideo(session,index){
+  if(session.motion.matches||document.hidden)return;
+  const video=onboardingVideos()[index];
+  if(!video||!video.paused)return;
+  session.mediaCard=index;
+  startOnboardingVideo(session,video);
+}
+function watchOnboardingVideo(session,video,tries){
+  clearTimeout(session.watchTimer);
+  session.watchTimer=setTimeout(()=>{
+    if(onboardingSession!==session||!video.paused)return;
+    if(session.motion.matches||document.hidden||onboardingVideos()[onboardingCardIndex()]!==video)return;
+    startOnboardingVideo(session,video);
+    if(tries>1)watchOnboardingVideo(session,video,tries-1);
+  },350);
 }
 function settleOnboardingVideos(session){
   if(onboardingSession!==session)return;
@@ -106,11 +122,14 @@ function settleOnboardingVideos(session){
       if(poster)poster.hidden=false;
       return;
     }
-    if(session.mediaCard===index&&!video.paused&&!video.ended)return;
+    // A primed gesture play() still pending reports paused=false yet can
+    // reject later, so the watchdog runs for the settled card either way.
+    const running=session.mediaCard===index&&!video.paused&&!video.ended;
     session.mediaCard=index;
-    playSettledOnboardingVideo(video);
+    if(!running)startOnboardingVideo(session,video);
+    watchOnboardingVideo(session,video,4);
   });
-  if(hold)session.mediaCard=-1;
+  if(hold){session.mediaCard=-1;session.playToken++;}
 }
 function queueOnboardingPlaybackSettle(session){
   clearTimeout(session.playSettleTimer);
@@ -186,6 +205,7 @@ function bindOnboardingGestures(session){
     const from=onboardingCardIndex();
     if(session.lastNudge&&now-session.lastNudge.at<80&&session.lastNudge.from===from)return;
     session.lastNudge={at:now,from};
+    primeOnboardingVideo(session,from+dir);
     advanceOnboardingCard(session,dir);
   };
   const finishGesture=event=>{
@@ -203,6 +223,7 @@ function bindOnboardingGestures(session){
     }
     if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
     if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
+      primeOnboardingVideo(session,onboardingCardIndex(origin.left)+(dx<0?1:-1));
       clearTimeout(session.gestureTimer);
       session.gestureTimer=setTimeout(()=>{
         if(onboardingSession!==session)return;
@@ -237,6 +258,7 @@ function bindOnboardingGestures(session){
       if(Math.hypot(dx,dy)<14){if(onboardingCardIndex()<2)nudge(1);return;}
       if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
       if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
+        primeOnboardingVideo(session,onboardingCardIndex(origin.left)+(dx<0?1:-1));
         clearTimeout(session.gestureTimer);
         session.gestureTimer=setTimeout(()=>{
           if(onboardingSession!==session)return;
@@ -474,7 +496,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,fanW:0,fanH:0,
-    depthFrame:0,settleTimer:0,playSettleTimer:0,mediaCard:-1,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,settleTimer:0,playSettleTimer:0,watchTimer:0,playToken:0,mediaCard:-1,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -494,30 +516,23 @@ function startOnboarding(replay){
   syncOnboardingPosters();
   onboardingWideQuery.addEventListener('change',()=>{if(onboardingSession===session)syncOnboardingPosters();},{signal});
   for(const video of onboardingVideos()){
-    video.addEventListener('playing',()=>{
+    // Hide the poster once the clip is really running. 'timeupdate' covers
+    // a 'playing' that fired before this card was the target; the paused
+    // check keeps a rewind's timeupdate from uncovering a stopped clip.
+    const reveal=()=>{
+      if(video.paused)return;
       const poster=onboardingPoster(video);
-      // autoplay can reach 'playing' after the reduced-motion pause, and
-      // that was hiding the poster again. Keep the still up and stay paused.
+      // A play() already in flight can land after reduced motion or a
+      // hidden page paused the cards. Keep the still up and stay paused.
       if(session.motion.matches||document.hidden){
         try{video.pause();}catch{}
         if(poster)poster.hidden=false;
         return;
       }
       if(poster)poster.hidden=true;
-    },{signal});
-    // Both clips carry autoplay, so the off-screen one would otherwise run
-    // ahead and the next settle would resume it mid-clip. Pause wins over
-    // that in-flight play(); the settled card is the only one left running.
-    video.addEventListener('play',()=>{
-      if(onboardingSession!==session)return;
-      const videos=onboardingVideos();
-      const active=videos.indexOf(video)===onboardingCardIndex()&&!session.motion.matches&&!document.hidden;
-      if(active)return;
-      try{video.pause();}catch{}
-      rewindOnboardingVideo(video);
-      const poster=onboardingPoster(video);
-      if(poster)poster.hidden=false;
-    },{signal});
+    };
+    video.addEventListener('playing',reveal,{signal});
+    video.addEventListener('timeupdate',reveal,{signal});
   }
   settleOnboardingVideos(session);
   bindOnboardingGestures(session);
@@ -610,6 +625,7 @@ function endOnboarding(remember,returnToPrevious=true){
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
   clearTimeout(session.settleTimer);
   clearTimeout(session.playSettleTimer);
+  clearTimeout(session.watchTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);
   for(const video of onboardingVideos()){try{video.pause();}catch{}}

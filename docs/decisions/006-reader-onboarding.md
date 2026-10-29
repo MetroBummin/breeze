@@ -56,9 +56,32 @@ from the scroll listener. When a card becomes the settled card, its
 `play()`, the attributes are already on the element before `<source>`
 loads), `currentTime` is set to 0, and `play()` is called. The other clip
 is paused and rewound. A first-frame `<img>` covers the video until the
-`playing` event; if `play()` rejects, the poster stays, so the native
-button is never visible. Reduced motion and a hidden document pause and
-rewind instead of playing. A tap still advances the card.
+clip is running (`playing`, or `timeupdate` while not paused); if
+`play()` rejects, the poster stays, so the native button is never
+visible. Reduced motion and a hidden document pause and rewind instead
+of playing. A tap still advances the card.
+
+Card 2 still froze after a swipe (2026-10-29). A refused `play()` was
+retried once on `canplay`, and not at all once the file was buffered;
+that single retry could be used up while card 1 was still showing. A
+late rejection from an older call put the poster back over a clip that
+was already playing, and a rewind waited on a `seeked` that iOS does not
+always send. The clips now have no `autoplay` attribute, so only this
+code starts them (the listener that paused autoplay's off-screen starts
+is gone). Every start takes a new token, and a deferred start from an
+older token does nothing. A rejection never touches the poster. The
+rewind waits at most 200ms for `seeked`, then plays anyway. The
+`touchend`/`pointerup` that starts a card change calls `play()` for the
+card it heads to, inside the gesture. After settle, a watchdog retries
+the settled clip every 350ms while it is still paused, at most four
+times.
+
+Card 1's clip (`card1.mp4`, `card1-wide.mp4`) used to open on one frame
+of the sentence screen and then hold the word “take” still for about
+1.25s before the meanings appeared. Both files are re-cut so frame 0 is
+“take” and the meanings start at about 0.27–0.3s. Each loop ends on the
+dictionary panel, not on the sentence screen. Each poster JPEG is
+regenerated from the new frame 0.
 
 Card 3 shows five covers at rest: one main cover in the centre and two
 on each side, sized 1 / 0.82 / 0.66, each further pair behind the one
@@ -166,10 +189,12 @@ restore their exact previous state on exit.
 
 `npm run test:onboarding` exercises the carousel dialog: three cards
 and per-card dots, exact card copy, cards 1 and 2 as muted inline looping
-MP4s (`playsinline`, `autoplay`, no `controls`) with the 768px source
-switch, a first-frame poster that stays up until `playing` and stays up
-when `play()` rejects, a settle that calls `play()` only after
-`currentTime` is 0, a tap and a swipe-up each advancing the card, the
+MP4s (`playsinline`, no `autoplay`, no `controls`) with the 768px source
+switch, a first-frame poster that stays up while `play()` is refused,
+refused calls retried until card 2 plays with its poster hidden, a late
+rejection that does not bring the poster back, a settle that calls
+`play()` only after `currentTime` is 0, `pointerup` calling `play()` for
+the next card inside the gesture, a tap and a swipe-up each advancing the card, the
 three cards staying equal height, dots following scroll and arrow keys,
 the five-cover rest state, every visible cover at 2:3 at each layout size
 and on the iPhone profile, tap-to-centre with title/author/button
