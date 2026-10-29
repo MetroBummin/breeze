@@ -94,16 +94,18 @@ function closeAa(){
 /* 다크 모드 값은 하나뿐입니다 — 'breeze.dark' 한 칸에 둡니다. 읽는 화면 Aa 의
    스위치와 설정의 시스템/라이트/다크가 모두 이 값을 읽고 씁니다.
    저장 모양은 예전 그대로 true(다크)·false(라이트)이고, 시스템을 따를 때만
-   'system' 입니다. 그래서 이미 저장된 true/false 는 옮길 것 없이 그대로 읽힙니다.
+   'system' 입니다. 그래서 예전 스위치로 저장된 true/false 는 옮길 것 없이
+   다크·라이트로 읽힙니다. 아무것도 저장한 적 없는 기기만 시스템을 따릅니다.
    darkMode 는 지금 화면에 칠한 결과(boolean)입니다. */
 const SYSTEM_DARK_QUERY = typeof matchMedia==='function' ? matchMedia('(prefers-color-scheme: dark)') : null;
 /** @param {unknown} stored @returns {'system'|'light'|'dark'} */
 function themePreferenceFrom(stored){
-  if(stored==='system' || stored==='light' || stored==='dark') return stored;
-  return stored===true ? 'dark' : 'light';
+  if(stored===true || stored==='dark') return 'dark';
+  if(stored===false || stored==='light') return 'light';
+  return 'system';
 }
 /** @type {'system'|'light'|'dark'} */
-let themePreference = themePreferenceFrom(load('breeze.dark', false));
+let themePreference = themePreferenceFrom(load('breeze.dark', 'system'));
 /** @param {'system'|'light'|'dark'} preference */
 function themePreferenceIsDark(preference){
   return preference==='system' ? !!(SYSTEM_DARK_QUERY && SYSTEM_DARK_QUERY.matches) : preference==='dark';

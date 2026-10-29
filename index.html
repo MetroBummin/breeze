@@ -52,10 +52,10 @@
   <link rel="preload" href="assets/fonts/fraunces-latin.woff2?v=48282a41" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/gowun-batang-ui-400.woff2?v=f8980cee" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/gowun-batang-ui-700.woff2?v=ccbe0a1b" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles/fonts.css?v=211a3f46">
+  <link rel="stylesheet" href="styles/fonts.css?v=b04997ae">
   <!-- 색·글꼴·그림자는 전부 이 첫 파일에 있습니다. 아래 파일들은 `var(--이름)`만
        씁니다 — 디자인을 바꾸는 일은 tokens.css 하나를 고치는 일입니다. -->
-  <link rel="stylesheet" href="styles/tokens.css?v=6ca89526">
+  <link rel="stylesheet" href="styles/tokens.css?v=936d21c4">
   <link rel="stylesheet" href="styles/base.css?v=489ca3ea">
   <link rel="stylesheet" href="styles/home.css?v=26c1961e">
   <link rel="stylesheet" href="styles/article-preview.css?v=6f944b5a">
@@ -68,7 +68,7 @@
   <link rel="stylesheet" href="styles/study-sets.css?v=2fbc3c48">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
-  <link rel="stylesheet" href="styles/home-shell.css?v=2cb33e9c">
+  <link rel="stylesheet" href="styles/home-shell.css?v=a7882583">
   <link rel="stylesheet" href="styles/onboarding.css?v=76773a1f">
   <!-- PDF·EPUB 라이브러리(418KB)는 파일을 처음 열 때 받습니다. 기사만 읽는
        사람에게 첫 화면에서 물리지 않습니다 — `scripts/core/lazy-lib.js` -->
@@ -94,7 +94,7 @@
   <script defer src="scripts/core/events.js?v=3fd906c0"></script>
   <!-- 화면에 쓰인 말은 여기 한 곳에서 옵니다. state.js 의 load/save 를 쓰므로
        그 뒤, 화면을 그리는 파일들보다는 앞에 둡니다. -->
-  <script defer src="scripts/ui/i18n.js?v=a6a4ae0d"></script>
+  <script defer src="scripts/ui/i18n.js?v=b57fd7a1"></script>
   <!-- 읽는 화면의 스크롤과 확대는 이 파일 하나가 맡습니다. 상단바·단추·시트가
        확대를 안 타는 이유가 여기 적혀 있습니다. -->
   <script defer src="scripts/reader/reader-scroll.js?v=4c953772"></script>
@@ -157,7 +157,7 @@
   <script defer src="scripts/reader/book-opening.js?v=1c4a8bff"></script>
   <script defer src="scripts/reader/reader.js?v=1d2b091c"></script>
   <script defer src="scripts/ui/reader-notifications.js?v=12776654"></script>
-  <script defer src="scripts/ui/preferences.js?v=a315317b"></script>
+  <script defer src="scripts/ui/preferences.js?v=b5d7b789"></script>
   <script defer src="scripts/sync/vault-crypto.js?v=2a0a61cc"></script>
   <script defer src="scripts/sync/progress-merge.js?v=0add3214"></script>
   <script defer src="scripts/sync/learning-sync.js?v=4a39c4f0"></script>
@@ -585,15 +585,15 @@
       <div class="set-label"><b>튜토리얼</b><span>단어와 문장 뜻 보는 방법을 따라 해봐요.</span></div>
       <button type="button" class="sm-mini" onclick="startOnboarding(true)">튜토리얼 다시보기</button>
     </div>
-    <!-- 다크 모드는 읽는 화면 Aa 의 스위치와 같은 값 하나('breeze.dark')를 봅니다.
+    <!-- 화면 모드는 읽는 화면 Aa 의 다크 스위치와 같은 값 하나('breeze.dark')를 봅니다.
          어느 쪽에서 바꾸든 applyDark() 가 둘 다 맞춰 놓습니다. -->
     <section id="appearance-settings"><h3 class="settings-section-title">화면</h3>
       <div class="set-row settings-single">
-        <div class="set-label"><b data-i18n="settings.dark">다크 모드</b></div>
-        <div class="set-seg" id="set-theme" role="group" aria-label="다크 모드">
-          <button type="button" data-theme="system" onclick="setThemePreference('system')">시스템</button>
-          <button type="button" data-theme="light" onclick="setThemePreference('light')">라이트</button>
-          <button type="button" data-theme="dark" onclick="setThemePreference('dark')">다크</button>
+        <div class="set-label"><b data-i18n="settings.theme">화면 모드</b></div>
+        <div class="set-seg" id="set-theme" role="group" aria-label="화면 모드">
+          <button type="button" data-theme="light" onclick="setThemePreference('light')"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg><span data-i18n="settings.theme.light">라이트</span></button>
+          <button type="button" data-theme="dark" onclick="setThemePreference('dark')"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1Z"/></svg><span data-i18n="settings.theme.dark">다크</span></button>
+          <button type="button" data-theme="system" onclick="setThemePreference('system')"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path class="fill" d="M8 2.5a5.5 5.5 0 0 1 0 11Z"/></svg><span data-i18n="settings.theme.system">시스템</span></button>
         </div>
       </div>
     </section>
