@@ -59,6 +59,39 @@ function syncOnboardingPosters(){
     if(next&&img.getAttribute('src')!==next)img.setAttribute('src',next);
   }
 }
+function rewindOnboardingVideo(video){
+  // Seeking before metadata aborts the load on iOS, so the later play()
+  // has nothing to play and never reaches canplay.
+  if(video.readyState<HTMLMediaElement.HAVE_METADATA)return;
+  try{if(video.currentTime>0.05)video.currentTime=0;}catch{}
+}
+function playSettledOnboardingVideo(video){
+  const poster=onboardingPoster(video);
+  video.muted=true;
+  video.playsInline=true;
+  const start=()=>{
+    const pending=video.play();
+    if(!pending||typeof pending.catch!=='function')return;
+    pending.catch(()=>{
+      if(poster)poster.hidden=false;
+      // Settle ran before the file could play. One retry when it can.
+      if(video.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA)return;
+      video.addEventListener('canplay',()=>{
+        if(onboardingSession==null)return;
+        if(onboardingVideos().indexOf(video)!==onboardingCardIndex())return;
+        if(!video.paused)return;
+        const again=video.play();
+        if(again&&typeof again.catch==='function')again.catch(()=>{if(poster)poster.hidden=false;});
+      },{once:true});
+    });
+  };
+  if(video.readyState>=HTMLMediaElement.HAVE_METADATA&&video.currentTime>0.05){
+    video.addEventListener('seeked',start,{once:true});
+    try{video.currentTime=0;}catch{start();}
+    return;
+  }
+  start();
+}
 function settleOnboardingVideos(session){
   if(onboardingSession!==session)return;
   const index=onboardingCardIndex();
@@ -69,18 +102,13 @@ function settleOnboardingVideos(session){
     const active=i===index&&!hold;
     if(!active){
       try{video.pause();}catch{}
-      try{video.currentTime=0;}catch{}
+      rewindOnboardingVideo(video);
       if(poster)poster.hidden=false;
       return;
     }
     if(session.mediaCard===index&&!video.paused&&!video.ended)return;
     session.mediaCard=index;
-    // Property, not only the attribute: iOS checks the property at play().
-    video.muted=true;
-    video.playsInline=true;
-    try{video.currentTime=0;}catch{}
-    const pending=video.play();
-    if(pending&&typeof pending.catch==='function')pending.catch(()=>{if(poster)poster.hidden=false;});
+    playSettledOnboardingVideo(video);
   });
   if(hold)session.mediaCard=-1;
 }
@@ -466,7 +494,17 @@ function startOnboarding(replay){
   syncOnboardingPosters();
   onboardingWideQuery.addEventListener('change',()=>{if(onboardingSession===session)syncOnboardingPosters();},{signal});
   for(const video of onboardingVideos()){
-    video.addEventListener('playing',()=>{const poster=onboardingPoster(video);if(poster)poster.hidden=true;},{signal});
+    video.addEventListener('playing',()=>{
+      const poster=onboardingPoster(video);
+      // autoplay can reach 'playing' after the reduced-motion pause, and
+      // that was hiding the poster again. Keep the still up and stay paused.
+      if(session.motion.matches||document.hidden){
+        try{video.pause();}catch{}
+        if(poster)poster.hidden=false;
+        return;
+      }
+      if(poster)poster.hidden=true;
+    },{signal});
     // Both clips carry autoplay, so the off-screen one would otherwise run
     // ahead and the next settle would resume it mid-clip. Pause wins over
     // that in-flight play(); the settled card is the only one left running.
@@ -476,7 +514,7 @@ function startOnboarding(replay){
       const active=videos.indexOf(video)===onboardingCardIndex()&&!session.motion.matches&&!document.hidden;
       if(active)return;
       try{video.pause();}catch{}
-      try{video.currentTime=0;}catch{}
+      rewindOnboardingVideo(video);
       const poster=onboardingPoster(video);
       if(poster)poster.hidden=false;
     },{signal});
