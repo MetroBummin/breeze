@@ -43,16 +43,14 @@
     overflow: hidden;
     box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
   }
-  /* Card media is an animated WebP <img>; the <picture> wrapper is
-     display:contents so the <img> fills the card like the old video. */
-  .card picture { display: contents; }
-  .card img {
+  .card .media { position: relative; background: #fff; }
+  .card .media video, .card .media .poster {
     display: block; width: 100%; aspect-ratio: 9 / 16;
     object-fit: cover; background: #fff;
-    /* Hairline around the media area: card 1 is mostly white
-       on a white card, so without this the image area has no edge. */
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .05);
   }
+  .card .media .poster { position: absolute; inset: 0; height: 100%; }
+  .card .media .poster[hidden] { display: none !important; }
   .dots { display: flex; justify-content: center; gap: 8px; padding: 16px 0 4px; }
   .dots i { width: 8px; height: 8px; border-radius: 50%; background: #D1D1D6; transition: background .2s; }
   .dots i.on { background: #000; }
@@ -132,7 +130,7 @@
      base rule wins the cascade and the cap silently stops working. */
   @media (min-width: 768px) {
     .wrap { --cw: min(calc(100vw - 48px), calc(78vh * 4 / 3)); }
-    .card img { aspect-ratio: 4 / 3; }
+    .card .media video, .card .media .poster { aspect-ratio: 4 / 3; }
     .fan {
       --cover-h: min(calc(var(--cw) * 0.87), 58vh, max(80px, calc(100vh - 330px)));
     }
@@ -145,10 +143,13 @@
   <div class="wrap" id="wrap">
     <div class="track">
       <article class="card" data-card="0">
-        <picture>
-          <source srcset="assets/onboarding-carousel/card1-wide.webp" media="(min-width: 768px)">
-          <img src="assets/onboarding-carousel/card1.webp" alt="" aria-hidden="true" tabindex="-1" decoding="async">
-        </picture>
+        <div class="media">
+          <video muted loop playsinline webkit-playsinline autoplay preload="auto" aria-hidden="true" tabindex="-1">
+            <source src="assets/onboarding-carousel/card1-wide.mp4" media="(min-width: 768px)">
+            <source src="assets/onboarding-carousel/card1.mp4">
+          </video>
+          <img class="poster" alt="" aria-hidden="true" src="assets/onboarding-carousel/card1.jpg">
+        </div>
         <div class="dots"><i class="on"></i><i></i><i></i></div>
         <div class="copy">
           <div class="t1">단어를 탭해보세요</div>
@@ -156,10 +157,13 @@
         </div>
       </article>
       <article class="card" data-card="1">
-        <picture>
-          <source srcset="assets/onboarding-carousel/card2-wide.webp" media="(min-width: 768px)">
-          <img src="assets/onboarding-carousel/card2.webp" alt="" aria-hidden="true" tabindex="-1" decoding="async">
-        </picture>
+        <div class="media">
+          <video muted loop playsinline webkit-playsinline autoplay preload="auto" aria-hidden="true" tabindex="-1">
+            <source src="assets/onboarding-carousel/card2-wide.mp4" media="(min-width: 768px)">
+            <source src="assets/onboarding-carousel/card2.mp4">
+          </video>
+          <img class="poster" alt="" aria-hidden="true" src="assets/onboarding-carousel/card2.jpg">
+        </div>
         <div class="dots"><i></i><i class="on"></i><i></i></div>
         <div class="copy">
           <div class="t1">홈에서 북마크를 탭해보세요</div>
@@ -181,8 +185,31 @@
 </main>
 <script>
   const wrap = document.getElementById('wrap');
-  // Cards 1 and 2 are animated WebP <img>; they loop on their own, so there
-  // is no play()/pause() to arrange per card.
+  // Same settle as the app: rewind the visible clip to frame 0 and play it.
+  // The poster covers the video until it is actually playing.
+  const videos = [...document.querySelectorAll('.card video')];
+  let mediaCard = -1, settleTimer = 0;
+  const posterOf = video => video.parentElement.querySelector('.poster');
+  videos.forEach(video => video.addEventListener('playing', () => { const poster = posterOf(video); if (poster) poster.hidden = true; }));
+  videos.forEach(video => video.addEventListener('play', () => {
+    const cur = Math.max(0, Math.min(2, Math.round(wrap.scrollLeft / (wrap.querySelector('.card').offsetWidth + 20))));
+    if (videos.indexOf(video) === cur) return;
+    video.pause(); try { video.currentTime = 0; } catch {}
+    const poster = posterOf(video); if (poster) poster.hidden = false;
+  }));
+  const settle = () => {
+    const cur = Math.max(0, Math.min(2, Math.round(wrap.scrollLeft / (wrap.querySelector('.card').offsetWidth + 20))));
+    videos.forEach((video, i) => {
+      const poster = posterOf(video);
+      if (i !== cur) { video.pause(); try { video.currentTime = 0; } catch {} if (poster) poster.hidden = false; return; }
+      if (mediaCard === cur && !video.paused) return;
+      mediaCard = cur;
+      video.muted = true; video.playsInline = true;
+      try { video.currentTime = 0; } catch {}
+      const pending = video.play();
+      if (pending && pending.catch) pending.catch(() => { if (poster) poster.hidden = false; });
+    });
+  };
   // Page dots follow the card in view.
   const dots = [...document.querySelectorAll('.dots')];
   const sync = () => {
@@ -190,8 +217,10 @@
     const cur = Math.max(0, Math.min(2, Math.round(wrap.scrollLeft / adv)));
     dots.forEach(d => [...d.children].forEach((el, i) => el.classList.toggle('on', i === cur)));
   };
-  wrap.addEventListener('scroll', sync, { passive: true });
+  wrap.addEventListener('scroll', () => { sync(); clearTimeout(settleTimer); settleTimer = setTimeout(settle, 140); }, { passive: true });
+  wrap.addEventListener('scrollend', settle);
   sync();
+  settle();
   // Card 3: book strip. Same 7 books as the existing choice scene,
   // five copies so swiping the covers loops infinitely (a single long
   // fling stays inside the strip; the wrap recentres between gestures).

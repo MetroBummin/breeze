@@ -57,17 +57,14 @@ const assertCoverShapes=async(page,label)=>{
 };
 const waitDots=(page,index)=>page.waitForFunction(index=>[...document.querySelectorAll('#onboarding .onboard-dots')].every(d=>[...d.children].findIndex(el=>el.classList.contains('on'))===index),index);
 const dotsActive=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-dots')].map(d=>[...d.children].findIndex(el=>el.classList.contains('on'))));
-// Cards 1 and 2 are animated-WebP <img> inside a <picture>. The resolved
-// source is currentSrc: the phone render by default, the wide render once
+// Cards 1 and 2 are muted inline MP4s. currentSrc is the phone file until
 // the <source media="(min-width: 768px)"> matches.
-const mediaState=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card[data-card="0"] img,#onboarding .onboard-card[data-card="1"] img')].map(img=>({src:(img.currentSrc||img.src).split('/').pop(),tag:img.tagName})));
+const mediaState=page=>page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card[data-card="0"] video,#onboarding .onboard-card[data-card="1"] video')].map(video=>({src:(video.currentSrc||video.querySelector('source:last-child')?.src||'').split('/').pop(),tag:video.tagName})));
 try{
- // Structure, copy, dots, and the animated-WebP <img> that replaced the
- // card videos. WebKit uses the iPhone 13 profile (390 CSS px, Safari UA).
+ // Structure, copy, dots, and the muted inline MP4s. WebKit uses the
+ // iPhone 13 profile (390 CSS px, Safari UA).
  {
   const {context,page}=await setup({iphone:true});
-  // Nothing may request an .mp4 anymore: there is no <video> left.
-  const mediaRequests=[];page.on('request',r=>{if(/onboarding-carousel\/card.*\.mp4/.test(r.url()))mediaRequests.push(r.url());});
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
   if(process.env.BROWSER==='webkit')assert.match(await page.evaluate(()=>navigator.userAgent),/iPhone/);
@@ -85,34 +82,43 @@ try{
   assert.equal(await page.locator('#onboard-skip').textContent(),'건너뛰기');
   assert.equal(await page.locator('#onboard-status').textContent(),'1 / 3 · 단어 뜻 보기');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('onboard-wrap')).scrollSnapType),'x mandatory');
-  // No <video> anywhere in the dialog: the autoplay/play() subsystem is gone.
-  assert.equal(await page.locator('#onboarding video').count(),0,'onboarding still has a <video> element');
-  // Cards 1 and 2 are animated <img> inside a <picture>, decorative
-  // (empty alt, aria-hidden) since the copy carries the meaning.
-  for(const card of ['0','1']){
-    assert.equal(await page.locator(`.onboard-card[data-card="${card}"] picture img`).count(),1,`card ${card} has no <img>`);
-    assert.equal(await page.locator(`.onboard-card[data-card="${card}"] img`).getAttribute('alt'),'',`card ${card} img alt must be empty/decorative`);
-    assert.equal(await page.locator(`.onboard-card[data-card="${card}"] img`).getAttribute('aria-hidden'),'true',`card ${card} img must be aria-hidden`);
-  }
-  // No controls and no autoplay/<video> attributes anywhere.
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding img')].map(i=>i.hasAttribute('controls')||i.hasAttribute('autoplay'))).then(a=>a.filter(Boolean)),[],'onboarding media carries video controls/autoplay');
-  // The <img> must decode (the .webp loads); wait for the first frame.
-  const openedAt=await page.evaluate(()=>performance.now());
-  await page.locator('.onboard-card[data-card="0"] img').evaluate(img=>img.complete?img.decode().catch(()=>{}):new Promise(r=>{img.addEventListener('load',r,{once:true});img.addEventListener('error',r,{once:true});}));
-  const elapsed=await page.evaluate(start=>performance.now()-start,openedAt);
-  console.log(`card 1 image settled after ${Math.round(elapsed)}ms`);
-  assert.equal((await mediaState(page))[0].src,'card1.webp','phone shows the 9:16 render');
-  assert.equal((await mediaState(page))[1].src,'card2.webp','phone shows the 9:16 render on card 2');
-  // The wide render is wired through a <source media="(min-width: 768px)">.
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card[data-card="0"] source,#onboarding .onboard-card[data-card="1"] source')].map(s=>({srcset:s.getAttribute('srcset').split('/').pop(),media:s.media}))),
-    [{srcset:'card1-wide.webp',media:'(min-width: 768px)'},{srcset:'card2-wide.webp',media:'(min-width: 768px)'}],'wide WebP is behind the 768px media switch');
+  assert.equal(await page.locator('#onboarding video').count(),2,'cards 1 and 2 are the two MP4s');
+  const flags=await page.evaluate(()=>[...document.querySelectorAll('#onboarding video')].map(video=>({
+    muted:video.muted&&video.hasAttribute('muted'),
+    inline:video.playsInline&&video.hasAttribute('playsinline'),
+    autoplay:video.hasAttribute('autoplay'),
+    loop:video.hasAttribute('loop'),
+    controls:video.hasAttribute('controls')||video.controls,
+    preload:video.getAttribute('preload'),
+  })));
+  assert.deepEqual(flags,[{muted:true,inline:true,autoplay:true,loop:true,controls:false,preload:'auto'},{muted:true,inline:true,autoplay:true,loop:true,controls:false,preload:'auto'}],'video flags are on the element before playback');
+  assert.equal(await page.locator('#onboarding .onboard-poster').count(),2);
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#onboarding .onboard-card[data-card="0"] video source,#onboarding .onboard-card[data-card="1"] video source')].map(s=>({src:s.getAttribute('src').split('/').pop(),media:s.media}))),
+    [{src:'card1-wide.mp4',media:'(min-width: 768px)'},{src:'card1.mp4',media:''},{src:'card2-wide.mp4',media:'(min-width: 768px)'},{src:'card2.mp4',media:''}],'wide MP4 is behind the 768px media switch');
   assert.deepEqual(await dotsActive(page),[0,0,0]);
-  // No .mp4 was ever requested.
-  assert.deepEqual(mediaRequests,[],'an onboarding .mp4 was requested');
-  // Review evidence at iPhone size (iPhone 13 profile on WebKit): card 2's
-  // looping WebP after the swipe, and the card 3 cover fan.
-  await goCard(page,1);
-  await page.locator('.onboard-card[data-card="1"] img').evaluate(img=>img.complete?img.decode().catch(()=>{}):new Promise(r=>{img.addEventListener('load',r,{once:true});img.addEventListener('error',r,{once:true});}));
+  // Settle on card 2 rewinds to 0, then play(). A refusal leaves the poster.
+  const settled=await page.evaluate(async()=>{
+    const video=document.querySelector('#onboarding .onboard-card[data-card="1"] video');
+    const poster=video.parentElement.querySelector('.onboard-poster');
+    let timeAtPlay=null;
+    video.play=function(){timeAtPlay=video.currentTime;return Promise.reject(Object.assign(new Error('refused'),{name:'NotAllowedError'}));};
+    try{video.currentTime=1.5;}catch{}
+    const wrap=document.getElementById('onboard-wrap');
+    const card=wrap.querySelector('.onboard-card');
+    wrap.scrollTo({left:(card.offsetWidth+20)*1,behavior:'instant'});
+    wrap.dispatchEvent(new Event('scroll'));
+    wrap.dispatchEvent(new Event('scrollend'));
+    await new Promise(r=>setTimeout(r,200));
+    return {index:onboardingCardIndex(),timeAtPlay,hidden:poster.hidden};
+  });
+  assert.equal(settled.index,1);
+  assert.equal(settled.timeAtPlay,0,'settle calls play() only after currentTime is 0');
+  assert.equal(settled.hidden,false,'a rejected play() keeps the poster over the video');
+  await page.evaluate(()=>{
+    const video=document.querySelector('#onboarding .onboard-card[data-card="1"] video');
+    video.dispatchEvent(new Event('playing'));
+  });
+  assert.equal(await page.locator('.onboard-card[data-card="1"] .onboard-poster').evaluate(img=>img.hidden),true,'playing hides the poster');
   await page.screenshot({path:resolve(out,`iphone-${process.env.BROWSER||'chromium'}-card2-playing.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
@@ -302,30 +308,29 @@ try{
   assert.equal(await page.locator('#onboarding').isVisible(),false);assert.notEqual(await page.evaluate(()=>load(ONBOARD_KEY,'')),'done');
   await context.close();
  }
- // Reduced motion: the animated <img> are still present (an animated WebP
- // has no pause API) and the dialog still works. No .mp4 is ever fetched.
+ // Reduced motion keeps the clips paused on their posters. The dialog
+ // still advances.
  {
   const {context,page}=await setup({reducedMotion:'reduce'});
-  const mediaRequests=[];page.on('request',r=>{if(/onboarding-carousel\/card.*\.mp4/.test(r.url()))mediaRequests.push(r.url());});
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
-  assert.equal(await page.locator('#onboarding video').count(),0,'reduced motion still has a <video>');
-  assert.deepEqual(await mediaState(page).then(s=>s.map(v=>v.src)),['card1.webp','card2.webp'],'reduced motion still references the WebP <img>');
-  assert.deepEqual(mediaRequests,[],'reduced motion fetched an .mp4');
+  await wait(200);
+  const held=await page.evaluate(()=>[...document.querySelectorAll('#onboarding video')].map(video=>({paused:video.paused,poster:video.parentElement.querySelector('.onboard-poster').hidden})));
+  assert.deepEqual(held,[{paused:true,poster:false},{paused:true,poster:false}],'reduced motion leaves both clips paused under their posters');
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");
   assert.equal(await page.locator('#onboard-book-title').textContent(),"Alice's Adventures in Wonderland");
   await context.close();
  }
- // A tap and a swipe-up each advance the card: cards 1 and 2 are <img>, so
- // there is no video tap carve-out that could keep the card.
+ // A tap and a swipe-up each advance the card. The poster and the video
+ // are not a play control, so neither one holds the card.
  {
   const {context,page}=await setup();
   await page.goto(url);await page.evaluate(()=>homeReady);
   await page.locator('#onboarding').waitFor({state:'visible'});
   // Swipe up on card 1 advances.
   await page.evaluate(()=>{
-    const media=document.querySelector('.onboard-card[data-card="0"] img');
+    const media=document.querySelector('.onboard-card[data-card="0"] .onboard-media');
     const r=media.getBoundingClientRect();
     const x=r.left+r.width/2,y=r.top+r.height*0.55;
     const fire=(type,py)=>media.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',button:0,clientX:x,clientY:py}));
@@ -333,7 +338,7 @@ try{
   });
   await waitDots(page,1);
   // A plain tap on card 2's media advances to the book card.
-  await page.locator('.onboard-card[data-card="1"] img').click();
+  await page.locator('.onboard-card[data-card="1"] .onboard-media').click();
   await waitDots(page,2);
   assert.equal(await cardIndex(page),2,'tap/swipe did not reach the book card');
   await context.close();
@@ -417,12 +422,12 @@ try{
   assert.ok(fit.cardInView&&fit.stageScroll&&fit.rootScroll&&fit.docLocked,'onboarding scrolls '+JSON.stringify(fit));
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card1.png`)});
   await goCard(page,1);
-  // The <picture> resolves the wide WebP at/above 768px and the phone WebP
-  // below it. currentSrc is what the browser actually chose for this width.
-  assert.equal(await page.evaluate(()=>{
-   const img=document.querySelector('#onboarding .onboard-card[data-card="1"] img');
-   return (img.currentSrc||img.src).split('/').pop();
-  }),width>=768?'card2-wide.webp':'card2.webp','WebP render follows viewport width');
+  // The <video> selects the wide MP4 at/above 768px and the phone MP4 below.
+  assert.equal(await page.evaluate(width=>{
+   const video=document.querySelector('#onboarding .onboard-card[data-card="1"] video');
+   const wide=[...video.querySelectorAll('source')].find(s=>s.media&&window.matchMedia(s.media).matches);
+   return ((wide?wide.src:video.querySelector('source:last-child').src)||'').split('/').pop();
+  },width),width>=768?'card2-wide.mp4':'card2.mp4','MP4 render follows viewport width');
   await page.screenshot({path:resolve(out,`${width}-${height}-${dark?'dark':'light'}-card2.png`)});
   await goCard(page,2);
   await page.waitForFunction(()=>document.getElementById('onboard-book-title').textContent!=="");

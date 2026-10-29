@@ -10,9 +10,9 @@ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch
 const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());await page.goto(url);await page.evaluate(()=>homeReady);
 const goCard=index=>page.evaluate(index=>{const w=document.getElementById('onboard-wrap');const c=w.querySelector('.onboard-card');w.scrollTo({left:(c.offsetWidth+20)*index,behavior:'smooth'});},index);
 const waitCard=index=>page.waitForFunction(index=>onboardingCardIndex()===index,index);
-// Cards 1 and 2 are animated-WebP <img> now (no <video>): wait for the card's
-// image to finish decoding its first frame before screenshotting.
-const waitVideo=index=>page.waitForFunction(index=>{const img=document.querySelectorAll('#onboarding .onboard-card img')[index];return !!img&&img.complete&&img.naturalWidth>0;},index);
+// Cards 1 and 2 are MP4s under a first-frame poster. Wait until that poster
+// has decoded before screenshotting.
+const waitVideo=index=>page.waitForFunction(index=>{const img=document.querySelector(`#onboarding .onboard-card[data-card="${index}"] .onboard-poster`);return !!img&&img.complete&&img.naturalWidth>0;},index);
 await page.screenshot({path:resolve(out,'final-card1.png')});
 const frames=resolve(out,'final-flow-frames');mkdirSync(frames,{recursive:true});let running=true,rows=[];const chapters=[{scene:'card1-word',at:0}];
 const start=Date.now();const capture=(async()=>{let i=0;while(running){const p=resolve(frames,String(i++).padStart(5,'0')+'.png');await page.screenshot({path:p});rows.push({p,t:Date.now()});await wait(85);}})();

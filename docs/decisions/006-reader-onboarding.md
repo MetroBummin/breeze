@@ -6,9 +6,8 @@ First-run and Settings replay show one dialog with three cards.
 There are no previous/next buttons and nothing advances on a timer.
 The cards move on a horizontal scroll-snap track, with dots under each
 card. A tap or an upward swipe on card 1 or 2 moves one card forward,
-and a downward swipe moves back. A tap always advances: cards 1 and 2
-are animated-WebP `<img>` that loop on their own, so there is no video
-to start and no tap-to-play exception.
+and a downward swipe moves back. A tap always advances; it is not a
+play control.
 Horizontal swipe and the arrow keys do the same. The dialog replaces the
 former passive guide (welcome pen animation plus seven recorded scenes),
 which the owner discarded on 2026-10-27 in favour of the minimum-click
@@ -19,43 +18,46 @@ describes only the carousel that ships.
 Card 1 shows the word-tap animation with “단어를 탭해보세요 / 단어에 딱 맞는
 뜻이 나옵니다”. Card 2 shows the wordbook animation with “홈에서 북마크를
 탭해보세요 / 단어장에서 학습이 가능합니다”. Card 3 is a DOM cover fan
-for choosing a book. Cards 1 and 2 are animated WebP (`card1.webp` /
-`card2.webp` and their `-wide` variants) rendered as a plain `<img>`:
-60fps, infinite loop, and always starting from frame 0. An `<img>` needs
-no autoplay, no `NotAllowedError` handling, no poster fallback, no
-`<video>` element and no play button, so the whole video-playback
-subsystem (`presentOnboardingVideo`, `playOnboardingVideo`,
-`stopOnboardingVideo`, `startOnboardingVideoFromTap`,
-`syncOnboardingVideoPosters`, the `IntersectionObserver` play/pause on the
-standalone page, and the `::-webkit-media-controls-start-playback-button`
-hide rule) was deleted rather than worked around — the best part is no
-part. The animations are the real production UI, the same no-reuse,
-no-upscale, 60fps capture rules as the former guide's media.
+for choosing a book. Cards 1 and 2 are the original muted MP4s
+(`card1.mp4` / `card2.mp4` and their `-wide` variants). The 60fps animated
+WebP from #297 is removed: it was several times larger than the MP4 and
+played slowly and glitchy on iPhone.
 
 The media switches by viewport, not by theme: phones show the 9:16
-render, tablets and desktops the 4:3 render, through a
-`<picture><source media="(min-width: 768px)">` at the same 768px
-breakpoint with the phone render as the `<img src>` default. There are no
-dark variants of these cards: the onboarding surface is forced light in
-both themes (see below and `DESIGN.md`), so there is no `card1-dark.webp`.
-`object-fit: cover` keeps the 9:16 / 4:3 framing, and the inset hairline
-box-shadow keeps card 1's mostly-white frame readable on the white card.
+render, tablets and desktops the 4:3 render, through
+`<source media="(min-width: 768px)">` on the `<video>`, with the phone
+file as the default source. The first-frame JPEG follows the same
+breakpoint. There are no dark variants: the onboarding surface is forced
+light in both themes (see below and `DESIGN.md`). `object-fit: cover`
+keeps the 9:16 / 4:3 framing. The inset hairline sits on the media box
+above 768px and is removed on phones, so the card stays one white surface.
 
-Reduced motion: an animated WebP still animates, and there is no API to
-pause a looping animated image. The former first-frame / empty-area and
-play-button concerns no longer apply because there is no autoplay to
-refuse and no play button to paint; the dialog keeps its
-`prefers-reduced-motion` handling for scroll behaviour (the carousel and
-fan jump instead of smooth-scrolling), and the copy and dots still carry
-the meaning. Keeping the looping WebP is the minimal choice; no extra
-part is added to freeze it.
+Why the native play button kept coming back (#293, #294, #297): Capacitor's
+WKWebView already sets `allowsInlineMediaPlayback` and
+`mediaTypesRequiringUserActionForPlayback = []`, and this app does not
+override that configuration. The button was not a missing native flag.
+The carousel paused every clip that was not under the finger, and
+`pause()` clears that element's autoplay. The next start was a `play()`
+from the scroll listener while the swipe was still moving. That call is
+not a user gesture and often ran before the `preload="none"` file had
+data, so WebKit rejected it and painted its start button on top of the
+video's own poster. The CSS hide of
+`::-webkit-media-controls-start-playback-button` was then turned off on
+purpose when the rejection was recorded, and on current iOS that
+pseudo-element is not the native overlay anyway. When the mid-swipe
+`play()` did succeed, the settle step left a playing clip alone and never
+set `currentTime` to 0, so the card opened part-way through.
 
-This was the TestFlight 1.9.9 (build 361) issue: on a real iPhone the
-card videos sometimes opened on WebKit's native start-playback button, or
-did not start from the first frame, and a tap on that button jumped to the
-next card. An animated `<img>` removes the whole cause — there is no
-`<video>` to refuse, no frame to force, and nothing to hide — so every
-card simply loops and a tap always advances.
+The owner is the carousel settle (`scrollend`, and the 140ms quiet-scroll
+timer for WebKit builds without it). Nothing calls `play()` or `pause()`
+from the scroll listener. When a card becomes the settled card, its
+`muted` and `playsInline` properties are set (iOS checks the property at
+`play()`, the attributes are already on the element before `<source>`
+loads), `currentTime` is set to 0, and `play()` is called. The other clip
+is paused and rewound. A first-frame `<img>` covers the video until the
+`playing` event; if `play()` rejects, the poster stays, so the native
+button is never visible. Reduced motion and a hidden document pause and
+rewind instead of playing. A tap still advances the card.
 
 Card 3 shows five covers at rest: one main cover in the centre and two
 on each side, sized 1 / 0.82 / 0.66, each further pair behind the one
@@ -162,28 +164,26 @@ restore their exact previous state on exit.
 ## Verification
 
 `npm run test:onboarding` exercises the carousel dialog: three cards
-and per-card dots, exact card copy, cards 1 and 2 rendering an animated
-`<img>` (inside a `<picture>`) whose resolved source is the expected
-per-breakpoint WebP — `card1.webp` / `card2.webp` on the phone profile and
-the `-wide` variants through the `<source media="(min-width: 768px)">` at
-and above 768px — with no `<video>`, no autoplay attribute and no native
-controls anywhere in the dialog, a tap and a swipe-up each advancing the
-card (no video tap carve-out), the three cards staying equal height,
-dots following scroll and arrow keys,
+and per-card dots, exact card copy, cards 1 and 2 as muted inline looping
+MP4s (`playsinline`, `autoplay`, no `controls`) with the 768px source
+switch, a first-frame poster that stays up until `playing` and stays up
+when `play()` rejects, a settle that calls `play()` only after
+`currentTime` is 0, a tap and a swipe-up each advancing the card, the
+three cards staying equal height, dots following scroll and arrow keys,
 the five-cover rest state, every visible cover at 2:3 at each layout size
 and on the iPhone profile, tap-to-centre with title/author/button
 following, read/file/browse/skip/Escape paths, import
 cancellation/failure/interruption, completion persistence and replay,
-existing Reader isolation, reduced motion (the `<img>` is present and the
-dialog still advances), visibility interruption, equal screen boxes, the
-skip inset, no document
-or stage scroll, full-bleed phone layout under 768px, the card layout at
-768px and above, and the phone/tablet/desktop/short layouts in both
-themes with the light dialog surface. WebKit runs the structure check
-with Playwright's iPhone 13 profile. The standalone reference page stays
-in the repo at `onboarding-carousel.html` so the reviewed feel can be
-re-checked without the app shell. The shipping dialog keeps that
-carousel, and also fits one visual viewport.
+existing Reader isolation, reduced motion (the clips stay paused on their
+posters and the dialog still advances), visibility interruption, equal
+screen boxes, the skip inset, no document or stage scroll, full-bleed
+phone layout under 768px, the card layout at 768px and above, and the
+phone/tablet/desktop/short layouts in both themes with the light dialog
+surface. WebKit runs the structure check with Playwright's iPhone 13
+profile. The standalone reference page stays in the repo at
+`onboarding-carousel.html` so the reviewed feel can be re-checked without
+the app shell. The shipping dialog keeps that carousel, and also fits one
+visual viewport.
 
 Production Reader/gesture/auth/native-launch boundaries remain pinned;
 full `npm test` stays green. Browser emulation, including an iPhone
