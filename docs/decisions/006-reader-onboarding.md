@@ -26,8 +26,9 @@ played slowly and glitchy on iPhone.
 The media switches by viewport, not by theme: phones show the 9:16
 render, tablets and desktops the 4:3 render, through
 `<source media="(min-width: 768px)">` on the `<video>`, with the phone
-file as the default source. The first-frame JPEG follows the same
-breakpoint. There are no dark variants: the onboarding surface is forced
+file as the default source. The first-frame JPEG is frame 0 of that
+same file (phone and wide), not an earlier hero still, and follows the
+same breakpoint. There are no dark variants: the onboarding surface is forced
 light in both themes (see below and `DESIGN.md`). `object-fit: cover`
 keeps the 9:16 / 4:3 framing. The inset hairline sits on the media box
 above 768px and is removed on phones, so the card stays one white surface.
