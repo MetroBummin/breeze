@@ -35,7 +35,6 @@ const I18N_STRINGS = {
     'settings.tab.sync':'Devices',
     'settings.language':'Language',
     'settings.language.note':'Headings only.',
-    'settings.dark':'Dark mode',
   },
   ko: {
     'nav.home':'책장',
@@ -56,7 +55,6 @@ const I18N_STRINGS = {
     'settings.tab.sync':'다른 기기와 연결하기',
     'settings.language':'언어',
     'settings.language.note':'표지 문구만 바뀝니다.',
-    'settings.dark':'다크 모드',
   },
 };
 
