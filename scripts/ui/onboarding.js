@@ -46,11 +46,15 @@ function onboardingCardIndex(){
    call and paints its own play button; a play() that did succeed was then
    left running, so the card opened mid-clip. Settle is the only owner. */
 const onboardingWideQuery=matchMedia('(min-width: 768px)');
+function onboardingVideos(){
+  return /** @type {HTMLVideoElement[]} */([...document.querySelectorAll('#onboarding .onboard-card video')]);
+}
+/** @param {HTMLVideoElement} video */
 function onboardingPoster(video){
-  return video.parentElement?.querySelector('.onboard-poster')||null;
+  return /** @type {HTMLImageElement|null} */(video.parentElement?.querySelector('.onboard-poster')||null);
 }
 function syncOnboardingPosters(){
-  for(const img of document.querySelectorAll('#onboarding .onboard-poster')){
+  for(const img of /** @type {NodeListOf<HTMLImageElement>} */(document.querySelectorAll('#onboarding .onboard-poster'))){
     const next=onboardingWideQuery.matches?img.dataset.posterWide:img.dataset.poster;
     if(next&&img.getAttribute('src')!==next)img.setAttribute('src',next);
   }
@@ -59,7 +63,7 @@ function settleOnboardingVideos(session){
   if(onboardingSession!==session)return;
   const index=onboardingCardIndex();
   const hold=session.motion.matches||document.hidden;
-  const videos=document.querySelectorAll('#onboarding .onboard-card video');
+  const videos=onboardingVideos();
   videos.forEach((video,i)=>{
     const poster=onboardingPoster(video);
     const active=i===index&&!hold;
@@ -461,14 +465,14 @@ function startOnboarding(replay){
   syncOnboardingDots();
   syncOnboardingPosters();
   onboardingWideQuery.addEventListener('change',()=>{if(onboardingSession===session)syncOnboardingPosters();},{signal});
-  for(const video of document.querySelectorAll('#onboarding .onboard-card video')){
+  for(const video of onboardingVideos()){
     video.addEventListener('playing',()=>{const poster=onboardingPoster(video);if(poster)poster.hidden=true;},{signal});
     // Both clips carry autoplay, so the off-screen one would otherwise run
     // ahead and the next settle would resume it mid-clip. Pause wins over
     // that in-flight play(); the settled card is the only one left running.
     video.addEventListener('play',()=>{
       if(onboardingSession!==session)return;
-      const videos=[...document.querySelectorAll('#onboarding .onboard-card video')];
+      const videos=onboardingVideos();
       const active=videos.indexOf(video)===onboardingCardIndex()&&!session.motion.matches&&!document.hidden;
       if(active)return;
       try{video.pause();}catch{}
@@ -570,7 +574,7 @@ function endOnboarding(remember,returnToPrevious=true){
   clearTimeout(session.playSettleTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);
-  for(const video of document.querySelectorAll('#onboarding .onboard-card video')){try{video.pause();}catch{}}
+  for(const video of onboardingVideos()){try{video.pause();}catch{}}
   document.documentElement.classList.remove('onboarding-open');
   const root=document.getElementById('onboarding');
   root.hidden=true;
