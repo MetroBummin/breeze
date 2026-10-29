@@ -120,10 +120,13 @@ html:has(:is(#v-home,#v-casuals,#v-longform).on){overscroll-behavior-y:contain;}
 #appearance-settings{margin-bottom:20px;}
 #appearance-settings>.settings-section-title{margin-top:0;}
 #settings-modal #appearance-settings .set-label{flex:1 1 auto;}
-/* 고른 칸은 리더 Aa 의 여백 띠와 같은 중립 강조입니다. 칸은 44px 안팎의 터치 높이를 지킵니다. */
-#settings-modal .set-seg button{min-width:52px;min-height:38px;font:500 13px/1 var(--ui);}
+/* 화면 모드 칸은 Cyan B 그대로입니다: 고른 칸이 밝은 화면에서 흰 pill, 어두운
+   화면에서 #636366 pill 이고 모서리는 9px 입니다. 리더 Aa 의 .aa-seg 는 그대로
+   --seg-on 을 쓰므로 여기서는 설정 세그먼트에만 scoped 토큰을 겹칩니다. */
+#settings-modal .set-seg button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:52px;min-height:38px;border-radius:9px;font:500 13px/1 var(--ui);}
+#settings-modal .set-seg button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 #settings-modal .set-seg button:hover{color:var(--settings-ink);}
-#settings-modal .set-seg button.on{background:var(--seg-on);color:var(--seg-on-ink);}
+#settings-modal .set-seg button.on{background:var(--settings-seg-on);color:var(--settings-seg-on-ink);}
 #settings-modal .settings-actions-group>a{display:flex;align-items:center;min-height:44px;margin:-6px 0;color:var(--settings-ink);font:400 14px/20px var(--ui);text-decoration:none;}
 
 /* The same control surface owns both ends of the Home/Reader journey. */
