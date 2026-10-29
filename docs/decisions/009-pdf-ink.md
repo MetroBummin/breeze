@@ -1,5 +1,83 @@
 # iPad PDF Pencil annotation
 
+## Pen wins, no admission round trip, scroll keeps the stroke (2026-10-29)
+
+Source: the read-only audit of palm rejection and ink latency at `43098f0e`
+(P1, P3, L1, L3, L4). Each statement below replaces an older one in this record;
+the older sections are edited to match. None of this has been checked on a
+physical iPad yet.
+
+**An earlier finger or palm no longer blocks the Pencil.** The native ledger used
+to mark any finger in the reader box as navigation and then block the Pencil for
+its whole contact. The web touchstart did the same with live unsuppressed
+fingers. Handwriting lifts the Pencil between strokes while the hand stays down,
+so a resting palm silently dropped strokes. iOS already tells the two apart:
+the Pencil arrives as `UITouch.type == .pencil` and as `Touch.touchType ==
+'stylus'`, and a palm arrives as a separate direct touch. Both rules are removed.
+At a stylus touchstart the web adds every live contact on the paper to
+`suppressed`, so palms cannot start ink, a web pinch or page navigation, and
+`beginStroke` cancels a web pinch already on the paper and the current Lookup
+gesture. The native ledger now holds only Pencil roles (`ink`, `stopOnly`,
+`blocked`) and live contact lifetimes; the navigation/suppressed/outside
+classification had no other reader and is deleted. A native pan that is already moving keeps the paper without any
+extra rule: Pencil is not in the pan's touch types, a touchstart that WebKit
+dispatches as noncancelable because it is already scrolling is still rejected,
+and if the paper moves anyway the stroke is committed as described below. The
+Android Pointer route keeps its finger/pinch admission check unchanged.
+
+**The native admission round trip before the first point is removed.** The web
+used to buffer each stylus contact, post `breezePencilAdmission`, and draw only
+after native `roleForWebPencil` replied. That cost a WebContent → UI → WebContent
+trip on every stroke, and short strokes appeared only at lift. The contact's own
+type is the admission: `touchType === 'stylus'` on iPad, `pointerType === 'pen'`
+on the Pointer route. The web draws at touchstart / pointerdown and cancels on
+touchcancel or pointercancel. The message handler, `roleForWebPencil`, the
+birth-time/position match table and the web `pendingAdmission` buffering and
+replay are deleted, along with their tests.
+
+The native stop-only role stays because stopping momentum still needs native
+`stopScrollingAndZooming` and costs no new part. Its second half (no ink for
+that contact) was enforced by the deleted reply, because Debug 189 showed that
+WebKit can still deliver a gate-consumed Pencil to the page as start/end. If
+WebKit cancels the DOM touch, the contact draws nothing as before. If it
+delivers start/end, the contact now draws (or erases) on the stopped paper, and
+a late momentum scroll event can commit only its first point. The same applies
+to a native `blocked` contact (scope not bound yet, or a second Pencil). This is
+the main device check for this change.
+
+**A scroll during a pen or highlighter stroke commits the stroke drawn so far.**
+Reader `scroll`, a noncancelable stylus touchmove and a noncancelable companion
+touchmove on the Pointer route call `finishStroke()` instead of discarding the
+stroke. Points before the scroll were mapped with the bounds cached at stroke
+start, which were still right then. The contact stays suppressed, so later
+samples and the lift add nothing. Eraser behavior is unchanged: completed cuts
+were already kept as one undoable edit. Touch/pointer cancellation, resize,
+blur, background, mode changes and page release still discard an unfinished
+pen stroke.
+
+**Multiply is skipped on pages without highlighter ink.** The ink layer is
+`z-index:3`, so it is an isolated group under CSS Compositing; a blend set on
+the highlighter elements alone would not reach the PDF canvas. Chromium follows
+that rule (the browser pixel check measured 746 lightened text pixels under a
+highlight with element-only multiply), WebKit currently does not. The layer
+therefore keeps `mix-blend-mode:multiply` only while it has a highlighter child
+(`:not(:has(> [data-ink-tool="highlighter"]))` → normal). Highlighter output is
+the same in light and dark mode, opacity groups included. Pen-only pages are
+drawn normally, so colored pen over dark print now shows the pen color. Pen
+strokes on a page that also has a highlight are still multiplied. Runtimes
+without `:has()` drop the rule and keep the previous multiply everywhere.
+
+**SVG point text is rounded to 2 decimals.** One formatter in
+`pdf-ink-geometry.js` (`svgPoint`) serves the live preview and repainted
+strokes, so preview and saved paths stay identical. Stored stroke points keep
+full precision. The live polyline is still re-serialized per move; incremental
+`SVGPointList` updates would add state and were not done.
+
+**Writing-mode palm-rest Lookup (audit P2) is intentionally kept.** A finger or
+palm held still on the paper for 0.75 s in writing mode still opens sentence
+Lookup, and a short contact still looks up a word. The suppression above only
+covers contacts on the paper when a Pencil lands.
+
 ## Read and handwriting glyphs (build 291)
 
 The pill toggle uses two outline glyphs at the toolbar weight, 23px with a 2.6
@@ -18,18 +96,16 @@ and the toolbar stayed responsive; the whole-screen incident remains unexplained
 On the native Touch route, each new start/move reconciles the previous active
 and non-ended pending Touch owner against `event.touches`. Absence is evidence
 that the prior contact ended. Its unfinished pen preview is cancelled, completed
-eraser cuts keep the existing durable undo transaction, and obsolete native
-admission replies cannot resurrect it. End/cancel first performs its normal
-matching-owner handling, then reconciles any other orphan. Suppressed contacts
-that remain live stay suppressed. An ended contact awaiting admission remains
-eligible for its legitimate delayed reply. A live long stroke/press never expires.
+eraser cuts keep the existing durable undo transaction. End/cancel first performs
+its normal matching-owner handling, then reconciles any other orphan. Suppressed
+contacts that remain live stay suppressed. A live long stroke/press never expires.
 
 No timeout, motion heuristic, synthetic event forwarding or Touch-to-Pointer ID
 matching is introduced. The Pointer geometry route and its `scrollend` admission
 gate are unchanged: the separate missing-scrollend experiment does not prove
 navigation stopped, so it cannot safely authorize a new pen contact. No native
 inertia policy changes. Tests include missing terminals, old/fresh palms and
-finger navigation, late second pen, delayed admission, interrupted eraser undo,
+finger navigation, late second pen, interrupted eraser undo,
 live ten-minute contacts, and disjoint Pointer/Touch namespaces. Browser and
 unit checks remain separate from physical Pencil/palm acceptance.
 
@@ -153,14 +229,18 @@ Touch identifiers and Pointer identifiers are tracked separately. During an acti
 stroke, new paper contacts are suppressed through their own end/cancel, even after
 the Pencil lifts. Fresh fingers after Pencil lifts can proceed while an old
 suppressed palm remains. Only the active stylus identifier appends/ends a stroke.
-A Pencil arriving during a pre-existing contact or pinch is ignored for that whole
-contact; it never steals the gesture. The existing pinch code filters out stylus
-and suppressed contacts, without manufacturing replacement TouchEvents. Mixed
-events with eligible fingers continue to the existing gesture handlers. A completed
-finger sequence clears the prior pan flag so the next pinch can acquire normally.
+A Pencil arriving while fingers or a palm are already on the paper draws, and
+those contacts are suppressed from then on; a web pinch on the paper is
+cancelled (2026-10-29, top of this record). A native pan that WebKit is already
+scrolling keeps the paper: its noncancelable touchstart is rejected. The existing
+pinch code filters out stylus and suppressed contacts, without manufacturing
+replacement TouchEvents. Mixed events with eligible fingers continue to the
+existing gesture handlers. A completed finger sequence clears the prior pan flag
+so the next pinch can acquire normally.
 
-Cancel unfinished strokes on pointer/touch cancellation, resize, blur, background
-or scroll. Completed erasures remain undoable. Blur/background/document closure
+Cancel unfinished strokes on pointer/touch cancellation, resize, blur or
+background. A scroll commits the stroke drawn so far. Completed erasures remain
+undoable. Blur/background/document closure
 clear contact ownership. There is no simultaneous drawing and page manipulation.
 Physical palm ordering and rapid input still need WKWebView verification; browser
 synthetic contacts cannot establish hardware palm rejection. Report any failure
@@ -214,7 +294,7 @@ or intervening edits cannot apply an old undo to a new session.
 
 ## Inertia follow-up (2026-09-25)
 
-### Native-to-web Pencil admission after Debug 189 reproduction (2026-09-28)
+### Debug 189: WebKit delivers gate-consumed Pencil contacts (2026-09-28)
 
 Debug 189 physically reproduced a mark on the first momentum-stopping Pencil.
 The captured native gate classified both sampled contacts `stopOnly` while the
@@ -223,33 +303,20 @@ and `stroke/end`. This disproves the gate-time classification race for those
 contacts. UIKit recognizer prevention alone does not guarantee WebKit will hide
 the same Pencil from the DOM.
 
-On iPad, web ink now waits for the native role before creating a preview,
-erasing or persisting. The existing native gate remains the source of truth for
-`stopOnly`, `ink` and blocked Pencil roles. A WebKit reply message matches the
-native contact by birth time and paper position, never by unrelated UIKit/DOM
-touch identifiers. The match is consumed once. Unknown, stale and rejected
-contacts fail closed; an admitted quick tap can complete after touchend. Web
-cancel, scroll, mode/document changes and blur discard pending ink. The time and
-position bounds are only correlation tolerances, not a motion debounce or a
-delay before assigning native ownership. Existing browser/older-shell fallback
-continues to use the original web Pencil path; physical iPad acceptance applies
-to the new native bridge only after device validation.
-
-This change does not alter page eviction, drawing coordinates, persistence,
-pinch, or the policy that the first Pencil during genuine inertia stops the
-paper for its entire contact and the next contact immediately edits.
+The response was a per-stroke native admission reply that the web awaited
+before drawing. It was removed on 2026-10-29 (top of this record) because it
+delayed the first point of every stroke. Native still stops momentum; whether a
+stop-only contact also leaves ink now depends on WebKit's delivery.
 
 Debug 190 then exposed the opposite failure on the connected iPad: later
 Pencil contacts sometimes made no ink. The native diagnostic observer saw the
 new Pencil `began` events, but UIKit reused the same `UITouch` object identifier
 and did not deliver the previous Pencil's end to this observer. The ledger
 retained the old `stopOnly` role, so the native route returned its cached role
-without publishing a fresh web admission; the web correctly rejected the
-unmatched touch. Track each native contact's `.began` timestamp as well as its
+and the contact was consumed again. Track each native contact's `.began` timestamp as well as its
 object identifier. A new birth on a reused object retires the old role before
 classification. Repeated callbacks for the same birth keep the assigned role.
-This is contact lifecycle repair, not a wait or debounce, and preserves a
-still-live finger's navigation ownership.
+This is contact lifecycle repair, not a wait or debounce.
 
 The user reports that rapid finger scrolling can make a subsequent Pencil drag
 scroll the PDF rather than edit. Stationary drawing works. This supersedes the
@@ -257,8 +324,8 @@ previous basic-device confirmation for rapid-input acceptance.
 
 The requested policy is now: consume the first Pencil contact during **actual
 residual scrolling** to stop inertia, without drawing or erasing for that entire
-contact. The next Pencil contact edits immediately. An existing eligible finger
-pan/pinch retains ownership; rejected Pencil must never become scroll input.
+contact. The next Pencil contact edits immediately. Pencil must never become
+scroll input. (Since 2026-10-29 an existing finger no longer blocks the Pencil.)
 Suppressed palms must not be counted as eligible active fingers. No fixed timeout,
 mode switch, storage migration, input-engine replacement, or global finger lock.
 
@@ -298,10 +365,8 @@ fixed delay, synthetic Touch, pointer-based drawing, storage/schema change or
 Reader rewrite. Earlier OS fallback uses a nonanimated current-offset setter;
 that fallback is unverified and not covered by this iPad's acceptance results.
 
-The web ownership check now counts eligible fingers rather than raw touches:
-a previously suppressed palm does not reject a fresh Pencil. A rejected Pencil
-never starts drawing midway through its sequence after the finger lifts. Browser
-regressions cover both sequences. Native gate geometry and momentum behavior
+The web finger-ownership check described here was removed on 2026-10-29;
+a live finger or palm no longer rejects a fresh Pencil. Native gate geometry and momentum behavior
 still require physical proof; installation/build success is not that proof.
 
 Physical follow-up: the user reports normal behavior across pen/eraser and
@@ -346,7 +411,8 @@ When a live stroke leaves its starting page, clip its final segment to that
 page boundary and commit the in-page portion through the existing serialized
 writer/history. Continue suppressing that contact until lift; do not connect
 across page gaps or resume the stroke on re-entry. Actual touch cancellation,
-scroll, resize, blur and mode changes still discard unfinished pen strokes.
+resize, blur and mode changes still discard unfinished pen strokes; a scroll
+commits the drawn part (2026-10-29).
 The four-edge/zoom/re-entry/undo/redo/reload regression runs without tracing.
 DEBUG tracing can capture native-only failures before any web trace arrives;
 ordinary Release builds still contain no input trace handler.
@@ -396,7 +462,7 @@ format and remain on the same document/page. One contact is one history operatio
 Persist the edited fragments on lift or cancellation, not every movement sample;
 completed erasures remain undoable even when that contact is interrupted.
 
-Cache paper bounds for one active contact: scroll/resize/blur already cancel it,
+Cache paper bounds for one active contact: a scroll commits it, resize/blur cancel it,
 and PDF repaint is held during input. A 120-sample regression checks two page
 layout reads including the harness, rather than a read per sample. Update only
 history availability during drawing, not every tool/setting control. Diagnostic
@@ -495,8 +561,8 @@ spread all stroke properties; history keeps those same immutable objects.
 Each live stroke is one SVG polyline with element opacity, preventing darker
 internal joins/self-overlaps. Completed highlighter fragments share a persisted
 strokeId and one SVG opacity group, so partial erasure cannot darken the remaining
-self-overlap. The SVG multiplies with the actual PDF; highlighter
-paths precede pen paths, so existing pen remains above translucent ink. Separate
+self-overlap. While a page has highlighter ink its SVG multiplies with the actual
+PDF (pen-only pages are not blended since 2026-10-29); highlighter paths precede pen paths, so existing pen remains above translucent ink. Separate
 strokes intentionally accumulate where they overlap. Drawing updates only the
 active path; it neither redraws the PDF canvas nor captures finger input.
 
@@ -669,16 +735,16 @@ crop/document ownership checks and 185 current-offset preview math. It supersede
 186's incomplete removal of Pencil exclusion with PR #40's idle-time type masks
 and native contact ledger, not live `ignore(touch,for:)` calls. Stop-only remains
 an entire contact; next stationary Pencil edits without a timer. Native and web
-IDs are separate. Outside controls never become navigation by later movement,
-and old native snapshots cannot clear newer owners. Scope binding is attempted
+IDs are separate. Old native snapshots cannot clear newer live contacts. (The
+native navigation classification was removed on 2026-10-29.) Scope binding is attempted
 immediately when idle; pending binding/repeated first-stroke rejection remains a
 physical acceptance gate, not a successful fallback.
 
 Web end/cancel applies only to the pinch's owners and keeps an original remaining
 finger; unrelated and stale ends cannot terminate a new pinch. Stroke cancellation
-uses its own Pointer identity independently of Touch identity. Real scroll,
-current cancel, blur/background and document closure retain unfinished-stroke
-cancellation. No offset clamp, gesture reset or retention bypass is introduced.
+uses its own Pointer identity independently of Touch identity. Current cancel,
+blur/background and document closure retain unfinished-stroke cancellation; a
+real scroll commits the drawn part (2026-10-29). No offset clamp, gesture reset or retention bypass is introduced.
 See `docs/qa/pdf-input-integration-2026-09-27.md` for evidence, baseline failure,
 PR relationships and the required uninterrupted physical acceptance sequence.
 
@@ -842,7 +908,7 @@ settings expose it. Pen/eraser stroke, palm/Pencil and pinch owners are unchange
 
 The Android internal-test request adds a second input adapter to the existing
 PDF ink engine. Native iPad still uses its explicit UIKit idiom flag, WebKit
-stylus Touch input and native Pencil admission ledger. Other runtimes can expose
+stylus Touch input and native Pencil gate. Other runtimes can expose
 the same PDF-only tools when they support PointerEvent, TouchEvent,
 navigator.maxTouchPoints > 0 and scrollend. This is a capability gate, not a
 user-agent or tablet-width test; touch-capable browsers without a pen may show
@@ -854,18 +920,16 @@ the final pointerup position use the existing smoothing, clipping, eraser,
 highlighter, undo/redo and serialized IndexedDB writer. Pointer and Touch IDs
 remain separate namespaces. Pointer input owns geometry and commits; companion
 Touch events only suppress browser defaults and feed the existing finger filter.
-The existing pending-admission lifecycle waits for a cancelable companion
-Touch to be prevented before creating a preview or erasing. Missing or
-noncancelable Touch admission fails closed, including for erasure. Any intervening
-different pointerdown invalidates that pending admission, so a later palm cannot
-stand in for a missing pen Touch. Ambiguous contact ordering is rejected. Touch events
-never append geometry or commit a second stroke on this route. Native iPad continues
+A pen pointerdown starts the stroke immediately (2026-10-29); a noncancelable
+companion touchstart cancels it, because the browser will pan with the pen.
+Touch events never append geometry or commit a second stroke on this route. Native iPad continues
 to use the original Touch geometry owner even when PointerEvent is available.
 
 Preventing pointerdown does not prevent native panning. The existing non-passive
 Touch listeners prevent the companion pen touchstart/move, preserving the
-paper's pan-x/pan-y policy for real fingers. A pen arriving while an earlier
-finger/pinch owns navigation is rejected for its entire contact. New paper
+paper's pan-x/pan-y policy for real fingers. On this Pointer route a pen arriving
+while an earlier finger/pinch owns navigation is still rejected for its entire
+contact (native iPad changed this on 2026-10-29). New paper
 contacts during a pen contact are suppressed through their own end; a fresh
 finger after pen lift is immediately eligible even if an older palm remains.
 There is no global touch-action:none, finger drawing, synthetic event forwarding,
@@ -874,8 +938,8 @@ fixed tap blackout or coordinate/ID-based pointer-to-Touch matching.
 The Pointer route also rejects a pen that starts in an observed scroll cycle,
 until the browser emits scrollend. The rejected contact cannot begin editing
 midway. Scrollend support is part of this route's capability gate, so a missing
-end event is not approximated with a timer. Actual scrolling cancels unfinished
-pen geometry, while completed erasures keep the existing undoable semantics.
+end event is not approximated with a timer. Actual scrolling commits the pen
+geometry drawn so far, and completed erasures keep the existing undoable semantics.
 This does not claim that JavaScript can stop every Android vendor's native
 momentum. Actual stop-only behavior and event delivery are physical-device gates.
 

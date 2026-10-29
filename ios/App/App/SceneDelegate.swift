@@ -56,21 +56,16 @@ private enum BreezeAppleTokenPolicy {
 
 // BEGIN PDF_CONTACT_POLICY
 // Native identities only: never compare these with DOM Touch/Pointer IDs.
-// Roles are assigned on admission and cannot change until that contact ends.
+// A Pencil role is assigned on admission and cannot change until that contact
+// ends. Finger and palm contacts never block the Pencil: UIKit reports them as
+// separate non-Pencil touches, and the web ink layer ignores them once the
+// Pencil lands. Their lifetimes only gate admission-mask changes (`live`).
 private struct BreezePdfContactLedger<ID: Hashable> {
-    enum Role { case navigation, suppressed, ink, stopOnly, blocked, outside }
+    enum Role { case ink, stopOnly, blocked }
     private(set) var roles: [ID: Role] = [:]
     private(set) var live: Set<ID> = []
-    var hasNavigation: Bool { roles.values.contains(.navigation) }
-    var pencilOwnsPaper: Bool { roles.values.contains(.ink) || roles.values.contains(.stopOnly) }
-    var hasPencil: Bool { pencilOwnsPaper || roles.values.contains(.blocked) }
 
-    mutating func observe(live: Set<ID>, nonPencil: Set<ID>, navigation: Set<ID>? = nil) {
-        // Classify new palms BEFORE retiring the lifting Pencil in a mixed event.
-        let suppressNewContacts = pencilOwnsPaper
-        for id in nonPencil where roles[id] == nil {
-            roles[id] = !(navigation ?? nonPencil).contains(id) ? .outside : (suppressNewContacts ? .suppressed : .navigation)
-        }
+    mutating func observe(live: Set<ID>) {
         roles = roles.filter { live.contains($0.key) }
         self.live = live
     }
@@ -78,7 +73,7 @@ private struct BreezePdfContactLedger<ID: Hashable> {
     mutating func beginPencil(_ id: ID, ready: Bool, decelerating: Bool) -> Role {
         if let role = roles[id] { return role }
         let role: Role
-        if !ready || hasNavigation || hasPencil { role = .blocked }
+        if !ready || !roles.isEmpty { role = .blocked }
         else if decelerating { role = .stopOnly }
         else { role = .ink }
         roles[id] = role
@@ -86,10 +81,8 @@ private struct BreezePdfContactLedger<ID: Hashable> {
     }
 
     mutating func interrupt() {
-        // A surviving contact must lift before it can enter a different mode.
-        for (id, role) in roles {
-            if role != .navigation && role != .suppressed && role != .outside { roles[id] = .blocked }
-        }
+        // A surviving Pencil must lift before it can enter a different mode.
+        roles = roles.mapValues { _ in .blocked }
     }
     mutating func forget(_ id: ID) {
         roles.removeValue(forKey: id)
@@ -118,8 +111,8 @@ private final class BreezePdfContactObserver: UIGestureRecognizer {
 }
 
 // Consume only this Pencil's stop-only/rejected sequence. A stop-only contact
-// must also win WebKit's competing touch recognizers, or JS may save a dot after
-// native momentum stops. A blocked Pencil during finger navigation cannot win.
+// also tries to win WebKit's competing touch recognizers so the page does not
+// draw on it; the web no longer asks native first. A blocked Pencil cannot win.
 private final class BreezePdfPencilGate: UIGestureRecognizer {
     var begin: ((UITouch, UIEvent) -> Bool)?
     var isStopOnly: ((UITouch) -> Bool)?
@@ -312,16 +305,12 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
     private var pdfContactBirths: [ObjectIdentifier: TimeInterval] = [:]
     private var pdfRoutingNeedsRefresh = false
     private var pdfRoutingRefreshScheduled = false
-    // Native and DOM touch IDs are unrelated. Match the birth time and paper
-    // point supplied by the web touchstart, then reply before any ink is made.
-    private var pdfRecentPencilRoles: [(at: TimeInterval, point: CGPoint, role: BreezePdfContactLedger<ObjectIdentifier>.Role)] = []
     // END PDF_ROUTING_STATE
     private static let themeMessageHandler = "breezeReaderTheme"
     private static let positionSyncHandler = "breezePositionSync"
     private var positionSyncTask: UIBackgroundTaskIdentifier = .invalid
     private static let speechMessageHandler = "breezeSpeech"
     private static let vocabularyExportHandler = "breezeVocabularyExport"
-    private static let pencilAdmissionHandler = "breezePencilAdmission"
     private static let shareInboxHandler = "breezeShareInbox"
     private static let authHandler = "breezeAuth"
     private var authSession: ASWebAuthenticationSession?
@@ -395,8 +384,6 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
 
         if inkPad {
             webView.configuration.userContentController.add(self, name: "breezeInkScope")
-            webView.configuration.userContentController.addScriptMessageHandler(
-                self, contentWorld: .page, name: Self.pencilAdmissionHandler)
             let contacts = BreezePdfContactObserver(target: nil, action: nil)
             contacts.requiresExclusiveTouchType = false
             contacts.delaysTouchesBegan = false
@@ -855,22 +842,13 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             }
             return
         }
-        guard message.name == Self.pencilAdmissionHandler,
-              message.frameInfo.isMainFrame,
-              message.frameInfo.securityOrigin.protocol == "breeze",
-              message.frameInfo.securityOrigin.host == "localhost",
-              let request = message.body as? [String: Any] else {
-            replyHandler("blocked", nil)
-            return
-        }
-        replyHandler(roleForWebPencil(request), nil)
+        replyHandler(nil, "Unsupported message")
     }
 
     // BEGIN PDF_ROUTING_METHODS
     private func applyPdfScope(_ scope: [String: Any]) {
         if inkNativeScope["enabled"] as? Bool == true && scope["enabled"] as? Bool != true {
             pdfContacts.interrupt()
-            pdfRecentPencilRoles.removeAll()
         }
         inkNativeScope = scope
         pdfRoutingNeedsRefresh = true
@@ -888,25 +866,10 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
             }
             pdfContactBirths[id] = touch.timestamp
         }
-        let live = touches.filter { $0.phase != .ended && $0.phase != .cancelled }
-        let liveIDs = Set(live.map(ObjectIdentifier.init))
+        let liveIDs = Set(touches.filter { $0.phase != .ended && $0.phase != .cancelled }.map(ObjectIdentifier.init))
         pdfContactBirths = pdfContactBirths.filter { liveIDs.contains($0.key) }
-        let nonPencil = live.filter { $0.type != .pencil }
-        let geometry = pdfScopeGeometry()
-        let excluded = inkNativeScope["excluded"] as? [[Double]] ?? []
-        let navigation = nonPencil.filter { touch in
-            guard let webView, let geometry else { return false }
-            let point = touch.location(in: webView)
-            return geometry.box.contains(point) && !excluded.contains { data in
-                guard data.count == 4 else { return false }
-                return CGRect(x: data[0]*geometry.scale, y: data[1]*geometry.scale,
-                              width: data[2]*geometry.scale, height: data[3]*geometry.scale).contains(point)
-            }
-        }
-        pdfContacts.observe(live: liveIDs,
-                            nonPencil: Set(nonPencil.map(ObjectIdentifier.init)),
-                            navigation: Set(navigation.map(ObjectIdentifier.init)))
-        if live.isEmpty && pdfRoutingNeedsRefresh { schedulePdfRoutingRefresh() }
+        pdfContacts.observe(live: liveIDs)
+        if liveIDs.isEmpty && pdfRoutingNeedsRefresh { schedulePdfRoutingRefresh() }
     }
 
     private func schedulePdfRoutingRefresh() {
@@ -991,10 +954,9 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
               pdfNavigationAdmission.covers(webView.scrollView.panGestureRecognizer),
               webView.scrollView.pinchGestureRecognizer.map(pdfNavigationAdmission.covers) ?? true else {
             // Do not edit or alter live recognizers while a fresh web scroller
-            // is still being bound. This entire contact is rejected, not retried
-            // halfway through a stroke. The next contact uses the ready scope.
-            let role = pdfContacts.beginPencil(id, ready: false, decelerating: false)
-            rememberPdfPencilRole(touch, role: role)
+            // is still being bound. This entire contact is consumed natively, not
+            // retried halfway through a stroke. The next contact uses the ready scope.
+            _ = pdfContacts.beginPencil(id, ready: false, decelerating: false)
             pdfRoutingNeedsRefresh = true
             recordPdfAdmission(role: "blocked-not-ready", event: event, scroll: webView.scrollView, before: webView.scrollView.contentOffset)
             return true
@@ -1014,7 +976,6 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         let preContactMotion = pdfMotionTraceEnabled ? pdfMotionProbe.before(touch.timestamp, scroll: scroll) : []
         #endif
         let role = pdfContacts.beginPencil(id, ready: true, decelerating: isDeceleratingAtGate)
-        rememberPdfPencilRole(touch, role: role)
         if role == .stopOnly {
             if #available(iOS 17.4, *) { scroll.stopScrollingAndZooming() }
             else { scroll.setContentOffset(scroll.contentOffset, animated: false) }
@@ -1029,41 +990,6 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         recordPdfAdmission(role: String(describing: role), event: event, scroll: scroll, before: before)
         return role == .stopOnly || role == .blocked
     }
-
-    private func rememberPdfPencilRole(_ touch: UITouch,
-                                       role: BreezePdfContactLedger<ObjectIdentifier>.Role) {
-        guard let webView else { return }
-        // UITouch.timestamp and the web Event.timeStamp describe the contact's
-        // birth, even if WebKit dispatches the DOM event after UIKit has ended it.
-        let at = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + touch.timestamp
-        pdfRecentPencilRoles.append((at, touch.location(in: webView), role))
-        if pdfRecentPencilRoles.count > 8 { pdfRecentPencilRoles.removeFirst() }
-    }
-
-    private func roleForWebPencil(_ request: [String: Any]) -> String {
-        guard let webView, inkNativeScope["enabled"] as? Bool == true,
-              let eventAt = request["eventAt"] as? Double, eventAt.isFinite,
-              let x = request["x"] as? Double, x.isFinite,
-              let y = request["y"] as? Double, y.isFinite,
-              let viewport = request["viewport"] as? Double, viewport.isFinite, viewport > 0 else {
-            return "blocked"
-        }
-        let scale = webView.bounds.width / CGFloat(viewport)
-        let point = CGPoint(x: x * scale, y: y * scale)
-        let candidates = pdfRecentPencilRoles.indices.filter {
-            abs(pdfRecentPencilRoles[$0].at - eventAt) <= 0.25 &&
-                hypot(pdfRecentPencilRoles[$0].point.x - point.x,
-                      pdfRecentPencilRoles[$0].point.y - point.y) <= 24
-        }
-        guard let index = candidates.min(by: {
-            abs(pdfRecentPencilRoles[$0].at - eventAt) < abs(pdfRecentPencilRoles[$1].at - eventAt)
-        }) else {
-            return "blocked" // Unknown native owner must never become web ink.
-        }
-        // An admission is one-use: a later, unmatched web event cannot borrow
-        // an earlier ink contact's role just because it started nearby.
-        return pdfRecentPencilRoles.remove(at: index).role == .ink ? "ink" : "blocked"
-    }
     // END PDF_ROUTING_METHODS
 
     private func recordPdfAdmission(role: String, event: UIEvent, scroll: UIScrollView, before: CGPoint) {
@@ -1072,7 +998,7 @@ final class BreezeBridgeViewController: CAPBridgeViewController, WKScriptMessage
         pdfStateScroll = scroll
         let row: [String: Any] = ["at": Date().timeIntervalSince1970, "phase": "gate",
             "uptime": event.timestamp, "role": role, "consume": role != "ink",
-            "navigation": pdfContacts.hasNavigation, "beforeX": before.x, "beforeY": before.y,
+            "beforeX": before.x, "beforeY": before.y,
             "afterX": scroll.contentOffset.x, "afterY": scroll.contentOffset.y,
             "deceleratingAfter": scroll.isDecelerating]
         if pdfStateEnabled { pdfGateRows.append(row); if pdfGateRows.count > 40 { pdfGateRows.removeFirst() } }

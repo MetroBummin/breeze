@@ -2,6 +2,9 @@
 const BreezeInkGeometry = (()=>{
   const epsilon=1e-8;
   const strokeBounds=new WeakMap();
+  // Display text only. Two decimals of a PDF unit is far below a device pixel;
+  // stored stroke points keep full precision.
+  const svgPoint=p=>Math.round(p[0]*100)/100+','+Math.round(p[1]*100)/100;
   function circleInterval(p,q,center,radius){
     const dx=q[0]-p[0],dy=q[1]-p[1],x=p[0]-center[0],y=p[1]-center[1];
     const a=dx*dx+dy*dy,c=x*x+y*y-radius*radius;
@@ -64,12 +67,12 @@ const BreezeInkGeometry = (()=>{
   // Existing v1 strokes are never re-smoothed (including erased fragments).
   function createSmoother(first){
     const points=[first.slice()];
-    let previous=null,last=first.slice(),text=first.join(',');
+    let previous=null,last=first.slice(),text=svgPoint(first);
     const midpoint=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
     function append(p){
       const end=points.at(-1);
       if(Math.hypot(p[0]-end[0],p[1]-end[1])<=epsilon)return;
-      points.push(p);text+=' '+p.join(',');
+      points.push(p);text+=' '+svgPoint(p);
     }
     function flatten(a,b,c,depth=0){
       // The quadratic's departure from its chord is bounded by half the
@@ -96,7 +99,7 @@ const BreezeInkGeometry = (()=>{
         }
         previous=last;last=p;
       },
-      svgPoints(){return text+' '+last.join(',');},
+      svgPoints(){return text+' '+svgPoint(last);},
       snapshot(){return points.concat([last]);},
       finish(){
         append(last);
@@ -104,5 +107,5 @@ const BreezeInkGeometry = (()=>{
       }
     };
   }
-  return {eraseStroke,createSmoother};
+  return {eraseStroke,createSmoother,svgPoint};
 })();

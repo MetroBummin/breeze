@@ -13,69 +13,51 @@
     static func main() {
         typealias Ledger = BreezePdfContactLedger<Int>
         test("stationary first Pencil owns ink") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[])
+            var l=Ledger(); l.observe(live:[1])
             assert(l.beginPencil(1,ready:true,decelerating:false) == .ink)
         }
         test("stop-only does not turn into ink after inertia stops") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[])
+            var l=Ledger(); l.observe(live:[1])
             assert(l.beginPencil(1,ready:true,decelerating:true) == .stopOnly)
             assert(l.beginPencil(1,ready:true,decelerating:false) == .stopOnly)
         }
         test("next Pencil after stopping edits immediately") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[])
+            var l=Ledger(); l.observe(live:[1])
             _=l.beginPencil(1,ready:true,decelerating:true)
-            l.observe(live:[],nonPencil:[]); l.observe(live:[2],nonPencil:[])
+            l.observe(live:[]); l.observe(live:[2])
             assert(l.beginPencil(2,ready:true,decelerating:false) == .ink)
         }
-        test("existing finger beats later Pencil even with deceleration flag") {
-            var l=Ledger(); l.observe(live:[1,2],nonPencil:[1])
-            assert(l.beginPencil(2,ready:true,decelerating:true) == .blocked)
+        test("an earlier finger or palm never blocks a later Pencil") {
+            var l=Ledger(); l.observe(live:[1,2])
+            assert(l.beginPencil(2,ready:true,decelerating:false) == .ink)
+            var m=Ledger(); m.observe(live:[1,2])
+            assert(m.beginPencil(2,ready:true,decelerating:true) == .stopOnly)
         }
-        test("rejected Pencil stays rejected after finger lifts") {
-            var l=Ledger(); l.observe(live:[1,2],nonPencil:[1]); _=l.beginPencil(2,ready:true,decelerating:false)
-            l.observe(live:[2],nonPencil:[])
-            assert(l.beginPencil(2,ready:true,decelerating:false) == .blocked)
-        }
-        test("two-finger navigation owns both contacts") {
-            var l=Ledger(); l.observe(live:[1,2,3],nonPencil:[1,2]); _=l.beginPencil(3,ready:true,decelerating:false)
-            l.observe(live:[2,3],nonPencil:[2]); assert(l.hasNavigation)
-            assert(l.roles[3] == .blocked)
-        }
-        test("late palm remains suppressed after Pencil lift") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[]); _=l.beginPencil(1,ready:true,decelerating:false)
-            l.observe(live:[1,2],nonPencil:[2]); assert(l.roles[2] == .suppressed)
-            l.observe(live:[2,3],nonPencil:[2]); assert(!l.hasNavigation)
+        test("a palm left from the previous stroke does not block the next Pencil") {
+            var l=Ledger(); l.observe(live:[1]); _=l.beginPencil(1,ready:true,decelerating:false)
+            l.observe(live:[1,2]); l.observe(live:[2,3])
             assert(l.beginPencil(3,ready:true,decelerating:false) == .ink)
         }
-        test("fresh finger can navigate with an old suppressed palm remaining") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[]); _=l.beginPencil(1,ready:true,decelerating:false)
-            l.observe(live:[1,2],nonPencil:[2]); l.observe(live:[2],nonPencil:[2])
-            l.observe(live:[2,3],nonPencil:[2,3]); assert(l.roles[2] == .suppressed && l.roles[3] == .navigation)
+        test("mode interruption quarantines a surviving Pencil only") {
+            var l=Ledger(); l.observe(live:[1,2]); _=l.beginPencil(2,ready:true,decelerating:false)
+            l.interrupt(); assert(l.roles[1] == nil && l.roles[2] == .blocked)
         }
-        test("mixed Pencil end and new palm do not transfer ownership") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[]); _=l.beginPencil(1,ready:true,decelerating:false)
-            l.observe(live:[2],nonPencil:[2]); assert(l.roles[2] == .suppressed)
-        }
-        test("mode interruption quarantines Pencil without stealing finger") {
-            var l=Ledger(); l.observe(live:[1,2],nonPencil:[1]); _=l.beginPencil(2,ready:true,decelerating:false)
-            l.interrupt(); assert(l.roles[1] == .navigation && l.roles[2] == .blocked)
-        }
-        test("held scrollbar is navigation without DOM contacts or movement") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[1])
-            for _ in 0..<1000 { l.observe(live:[1],nonPencil:[1]) }
-            l.observe(live:[1,2],nonPencil:[1]); assert(l.beginPencil(2,ready:true,decelerating:true) == .blocked)
+        test("a held scrollbar finger does not block a Pencil") {
+            var l=Ledger(); l.observe(live:[1])
+            for _ in 0..<1000 { l.observe(live:[1]) }
+            l.observe(live:[1,2]); assert(l.beginPencil(2,ready:true,decelerating:false) == .ink)
         }
         test("native live snapshot retires a missed end without a timer") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[]); _=l.beginPencil(1,ready:true,decelerating:false)
-            l.observe(live:[2],nonPencil:[]); assert(l.beginPencil(2,ready:true,decelerating:false) == .ink)
+            var l=Ledger(); l.observe(live:[1]); _=l.beginPencil(1,ready:true,decelerating:false)
+            l.observe(live:[2]); assert(l.beginPencil(2,ready:true,decelerating:false) == .ink)
         }
         test("not-ready contact cannot become ink when binding arrives") {
-            var l=Ledger(); l.observe(live:[1],nonPencil:[])
+            var l=Ledger(); l.observe(live:[1])
             assert(l.beginPencil(1,ready:false,decelerating:false) == .blocked)
             assert(l.beginPencil(1,ready:true,decelerating:false) == .blocked)
         }
         test("second Pencil does not steal the current Pencil") {
-            var l=Ledger(); l.observe(live:[1,2],nonPencil:[]); _=l.beginPencil(1,ready:true,decelerating:false)
+            var l=Ledger(); l.observe(live:[1,2]); _=l.beginPencil(1,ready:true,decelerating:false)
             assert(l.beginPencil(2,ready:true,decelerating:false) == .blocked)
         }
         test("admission removes only Pencil and restores every original type") {
@@ -123,46 +105,32 @@
             let next=UITouch(.pencil); gate.touchesBegan([next],with:UIEvent([next]))
             assert(gate.state == .failed && !gate.canPrevent(other) && s.stops == 1)
         }
-        test("a blocked Pencil cannot cancel an existing finger recognizer") {
+        test("a finger on the glass does not stop a Pencil from stopping inertia") {
             let (h,s)=fixture(), gate=BreezePdfPencilGate(), finger=UITouch(.direct), pen=UITouch(.pencil)
-            let pan=UIPanGestureRecognizer(); h.observe(UIEvent([finger])); s.isDecelerating=true
+            let other=UIGestureRecognizer(); h.observe(UIEvent([finger])); s.isDecelerating=true
             gate.begin={ touch,event in h.route(touch,event) }
             gate.isStopOnly={ touch in h.stopOnly(touch) }
             gate.touchesBegan([pen],with:UIEvent([finger,pen]))
-            assert(gate.state == .began && !gate.canPrevent(pan) && s.stops == 0)
+            assert(gate.state == .began && gate.canPrevent(other) && s.stops == 1)
         }
-        test("web admission uses native birth time and position, never DOM touch ID") {
-            let (h,s)=fixture(), stop=UITouch(.pencil,100,100)
-            s.isDecelerating=true
-            assert(h.route(stop,UIEvent([stop])))
-            let eventAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + stop.timestamp
-            func request(_ at: Double, _ x: Double, _ y: Double) -> [String: Any] {
-                ["eventAt":at,"x":x,"y":y,"viewport":600.0]
-            }
-            assert(h.webRole(request(eventAt,100,100)) == "blocked")
-            assert(h.webRole(request(eventAt,400,100)) == "blocked")
-            stop.phase = .ended; h.observe(UIEvent([stop]))
-            let ink=UITouch(.pencil,200,100)
-            assert(!h.route(ink,UIEvent([ink])))
-            let inkAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + ink.timestamp
-            assert(h.webRole(request(inkAt,200,100)) == "ink")
-            assert(h.webRole(request(inkAt,200,100)) == "blocked")
-            assert(h.webRole(request(inkAt+2,200,100)) == "blocked")
-            h.setScope(["enabled":false]); assert(h.webRole(request(inkAt,200,100)) == "blocked")
+        test("a blocked second Pencil cannot prevent other recognizers") {
+            let (h,s)=fixture(), first=UITouch(.pencil), second=UITouch(.pencil,200,100)
+            assert(!h.route(first,UIEvent([first])))
+            let gate=BreezePdfPencilGate(), other=UIGestureRecognizer()
+            gate.begin={ touch,event in h.route(touch,event) }
+            gate.isStopOnly={ touch in h.stopOnly(touch) }
+            gate.touchesBegan([second],with:UIEvent([first,second]))
+            assert(gate.state == .began && !gate.canPrevent(other) && s.stops == 0)
         }
         test("reused UIKit touch object after missing end gets a fresh role") {
             let (h,s)=fixture(), reused=UITouch(.pencil,250,300)
             s.isDecelerating=true
             assert(h.route(reused,UIEvent([reused])) && s.stops == 1)
-            let firstAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + reused.timestamp
-            assert(h.webRole(["eventAt":firstAt,"x":250.0,"y":300.0,"viewport":600.0]) == "blocked")
             // UIKit can omit the old end and recycle the same UITouch pointer.
             // Its new .began timestamp, rather than pointer identity, retires stopOnly.
             reused.timestamp += 0.4
             s.isDecelerating=false
             assert(!h.route(reused,UIEvent([reused])) && s.stops == 1)
-            let secondAt=Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime + reused.timestamp
-            assert(h.webRole(["eventAt":secondAt,"x":250.0,"y":300.0,"viewport":600.0]) == "ink")
         }
         test("gate owns only its admitted Pencil through end/reset") {
             let g=BreezePdfPencilGate(), pen=UITouch(.pencil), other=UITouch(.direct), event=UIEvent([pen,other])
@@ -189,11 +157,10 @@
             assert(h.route(p,UIEvent([p]))); p.phase = .ended; h.observe(UIEvent([p]))
             let next=UITouch(.pencil); assert(!h.route(next,UIEvent([next])) && s.stops == 1)
         }
-        test("production routing: native finger retains pan and later Pencil is consumed") {
+        test("production routing: a finger already on the glass leaves the Pencil to the web") {
             let (h,s)=fixture(), f=UITouch(.direct), p=UITouch(.pencil)
-            h.observe(UIEvent([f])); s.isDecelerating=true
-            assert(h.route(p,UIEvent([f,p])) && s.stops == 0)
-            f.phase = .ended; assert(h.route(p,UIEvent([f,p])) && s.stops == 0)
+            h.observe(UIEvent([f]))
+            assert(!h.route(p,UIEvent([f,p])) && s.stops == 0)
         }
         test("production routing: UI exclusion and page gaps never stop motion") {
             let (h,s)=fixture(); s.isDecelerating=true
@@ -217,17 +184,14 @@
             p.phase = .cancelled; o.touchesCancelled([p],with:UIEvent([p]))
             assert(o.state == .failed && reports == 2)
         }
-        test("outside direct contact never becomes navigation after moving onto paper") {
-            let (h,s)=fixture(), ui=UITouch(.direct,550,30)
-            h.observe(UIEvent([ui])); ui.point=CGPoint(x:100,y:100)
-            let p=UITouch(.pencil); assert(!h.route(p,UIEvent([ui,p])) && s.stops == 0)
-        }
-        test("late terminal snapshot cannot erase a newer navigation owner") {
+        test("late terminal snapshot cannot end a newer live contact early") {
             let (h,s)=fixture(), f=UITouch(.direct), old=UITouch(.direct)
             let current=UIEvent([f]); current.timestamp=20; h.observe(current)
             old.phase = .ended; let stale=UIEvent([old]); stale.timestamp=10; h.observe(stale)
-            s.isDecelerating=true; let p=UITouch(.pencil), next=UIEvent([f,p]); next.timestamp=21
-            assert(h.route(p,next) && s.stops == 0)
+            h.setScope(["enabled":false])
+            assert(!s.panGestureRecognizer.allowedTouchTypes.contains(2), "masks wait for the live finger")
+            f.phase = .ended; let end=UIEvent([f]); end.timestamp=30; h.observe(end); h.refresh()
+            assert(s.panGestureRecognizer.allowedTouchTypes.contains(2))
         }
         test("actual scope interruption quarantines surviving ink contact") {
             let (h,_)=fixture(), p=UITouch(.pencil)
@@ -248,11 +212,11 @@
             next.phase = .ended; palm.phase = .ended; h.observe(UIEvent([next,palm]))
             let a=UITouch(.direct), b=UITouch(.direct); h.observe(UIEvent([a,b]))
             a.phase = .cancelled; h.observe(UIEvent([a,b]))
-            let rejected=UITouch(.pencil); assert(h.route(rejected,UIEvent([b,rejected])))
-            rejected.phase = .ended; b.phase = .ended; h.observe(UIEvent([b,rejected]))
+            let withFinger=UITouch(.pencil); assert(!h.route(withFinger,UIEvent([b,withFinger])))
+            withFinger.phase = .ended; b.phase = .ended; h.observe(UIEvent([b,withFinger]))
             let bar=UITouch(.direct); h.observe(UIEvent([bar])); bar.phase = .stationary; h.observe(UIEvent([bar]))
-            bar.phase = .moved; let blocked=UITouch(.pencil); assert(h.route(blocked,UIEvent([bar,blocked])))
-            bar.phase = .ended; blocked.phase = .ended; h.observe(UIEvent([bar,blocked]))
+            bar.phase = .moved; let withBar=UITouch(.pencil); assert(!h.route(withBar,UIEvent([bar,withBar])))
+            bar.phase = .ended; withBar.phase = .ended; h.observe(UIEvent([bar,withBar]))
             assert(!h.route(UITouch(.pencil),UIEvent([])) && s.stops == 1)
         }
         print("\(passed) native ownership checks passed; UIKit delivery/latency still needs device QA.")

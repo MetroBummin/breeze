@@ -108,7 +108,6 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
   return {context,resolveCapabilities,engine:context.engine,qa,state,session,document,html,body,box,stage,zoom,paper,canvas,svg,posted,stored,writes,frames,Element,contact,event,pointerEvent,flush,mutate,changeAttribute,stroke,
     advance(ms){now+=ms;for(const [id,t] of timers)if(t.at<=now){timers.delete(id);t.fn();}},timers,
     controls:v=>{controls=v;},pinch:v=>{busy=v;},failWrite:v=>{failWrite=v;},
-    admission:v=>{context.window.webkit.messageHandlers.breezePencilAdmission=v;},
     emit:(type,target)=>{for(const fn of listeners.get(type)||[])fn({type,target});}};
 }
 
@@ -212,7 +211,10 @@ test('input: preview, stored v1 geometry and repainted geometry are identical',a
   const f=fixture();const preview=await f.stroke([[20,20],[70,45],[120,20]]);
   assert.equal(f.state.strokes.length,1);assert.ok(f.state.strokes[0].points.length>3);
   const points=plain(f.state.strokes[0].points);
-  assert.equal(preview,points.map(p=>p.join(',')).join(' '));
+  // Display text is rounded to 2 decimals; stored geometry keeps full precision.
+  assert.equal(preview,points.map(([x,y])=>Math.round(x*100)/100+','+Math.round(y*100)/100).join(' '));
+  assert.ok(preview.split(/[ ,]/).every(v=>/^-?\d+(\.\d{1,2})?$/.test(v)),preview);
+  assert.ok(points.flat().some(v=>Math.round(v*100)/100!==v),'stored points are not rounded');
   assert.equal(f.svg.children[0].getAttribute('points'),preview);
   assert.deepEqual(f.stored.get(f.state.key),{version:1,strokes:plain(f.state.strokes)});
 });
@@ -246,12 +248,60 @@ test('input: old saved strokes are not re-smoothed on repaint or undo',async()=>
   assert.deepEqual(plain(f.state.strokes[0]),legacy);f.qa.history(true);await tick();
   assert.deepEqual(plain(f.state.strokes),[legacy]);
 });
-test('input: existing finger ownership rejects a late Pencil for its entire contact',()=>{
-  const f=fixture(),finger=f.contact(10,10,2,'direct'),pen=f.contact(100,100);
-  f.qa.touchStart(f.event('touchstart',[finger]));
-  f.qa.touchStart(f.event('touchstart',[finger,pen],[pen]));
-  f.qa.touchMove(f.event('touchmove',[f.contact(120,120)]));
-  f.qa.touchEnd(f.event('touchend',[],[f.contact(120,120)]));assert.equal(f.state.strokes.length,0);
+test('input: a palm already on the paper does not block the Pencil and is ignored by ink',async()=>{
+  const f=fixture(),palm=f.contact(300,600,2,'direct'),pen=f.contact(100,100);
+  f.qa.touchStart(f.event('touchstart',[palm]));assert.equal(f.engine.finger(palm),true);
+  f.pinch(true);
+  const start=f.event('touchstart',[palm,pen],[pen]);f.qa.touchStart(start);
+  assert.ok(f.qa.active(),'pen draws at touchstart');assert.equal(start.defaultPrevented,true);
+  assert.equal(f.engine.finger(palm),false,'palm is suppressed once the pen lands');
+  assert.equal(f.context.originalPinchBusy(),false,'a pinch on the paper is cancelled');
+  const palmMove=f.event('touchmove',[palm,f.contact(120,120)],[f.contact(320,640,2,'direct')]);
+  f.qa.touchMove(palmMove);assert.equal(palmMove.defaultPrevented,true,'suppressed palm cannot pan');
+  f.qa.touchMove(f.event('touchmove',[palm,f.contact(120,120)],[f.contact(120,120)]));
+  f.qa.touchEnd(f.event('touchend',[palm],[f.contact(140,120)]));await tick();
+  assert.equal(f.state.strokes.length,1);assert.deepEqual(plain(f.state.strokes[0].points.at(-1)),[140,120]);
+  f.qa.touchEnd(f.event('touchend',[],[palm]));assert.equal(f.engine.busy(),false);
+});
+test('input: palm and pen in the same touchstart still draw',async()=>{
+  const f=fixture(),palm=f.contact(300,600,2,'direct'),pen=f.contact(100,100);
+  f.qa.touchStart(f.event('touchstart',[palm,pen],[palm,pen]));
+  assert.ok(f.qa.active());assert.equal(f.engine.finger(palm),false);
+  f.qa.touchEnd(f.event('touchend',[palm],[f.contact(140,120)]));await tick();
+  assert.equal(f.state.strokes.length,1);
+});
+test('input: a noncancelable Pencil start (WebKit already scrolling) never draws',()=>{
+  const f=fixture();
+  f.qa.touchStart({...f.event('touchstart',[f.contact(100,100)]),cancelable:false});
+  assert.equal(f.qa.active(),null);
+  f.qa.touchMove(f.event('touchmove',[f.contact(140,140)]));
+  f.qa.touchEnd(f.event('touchend',[],[f.contact(140,140)]));assert.equal(f.state.strokes.length,0);
+});
+test('input: a scroll or noncancelable move mid-stroke commits what was drawn',async()=>{
+  for(const interruption of ['scroll','noncancelable']){
+    const f=fixture();
+    f.qa.touchStart(f.event('touchstart',[f.contact(20,20)]));
+    f.qa.touchMove(f.event('touchmove',[f.contact(60,40)]));
+    if(interruption==='scroll')f.emit('scroll',f.box);
+    else f.qa.touchMove({...f.event('touchmove',[f.contact(80,50)]),cancelable:false});
+    assert.equal(f.qa.active(),null,interruption);
+    assert.equal(f.state.strokes.length,1,interruption);assert.equal(f.qa.undo().length,1,interruption);
+    const committed=plain(f.state.strokes[0].points);
+    assert.deepEqual(committed.at(-1),[60,40],interruption);
+    // The contact stays suppressed: later samples and the lift add nothing.
+    f.qa.touchMove(f.event('touchmove',[f.contact(200,200)]));
+    f.qa.touchEnd(f.event('touchend',[],[f.contact(220,220)]));await tick();
+    assert.equal(f.state.strokes.length,1,interruption);assert.deepEqual(plain(f.state.strokes[0].points),committed,interruption);
+    assert.deepEqual(f.stored.get(f.state.key).strokes,plain(f.state.strokes),interruption);
+  }
+});
+test('input: a scroll mid-erase keeps completed cuts as one undoable edit',async()=>{
+  const f=fixture();await f.stroke([[10,20],[90,20]]);f.qa.setMode('erase');
+  f.qa.touchStart(f.event('touchstart',[f.contact(50,20,10)]));assert.equal(f.state.strokes.length,2);
+  f.emit('scroll',f.box);assert.equal(f.qa.active(),null);
+  f.qa.touchMove(f.event('touchmove',[f.contact(80,20,10)]));
+  f.qa.touchEnd(f.event('touchend',[],[f.contact(80,20,10)]));await tick();
+  assert.equal(f.state.strokes.length,2);assert.equal(f.qa.undo().length,2);
 });
 test('input: failed save retains the latest smoothed stroke and retry persists it',async()=>{
   const f=fixture();f.failWrite(true);await f.stroke([[20,20],[70,45],[120,20]]);
@@ -464,13 +514,19 @@ test('pointer ink: late second pen cannot own or end the first stroke',()=>{
  f.pointerEvent('pointermove',500,500,9);f.pointerEvent('pointerup',500,500,9);assert.ok(f.qa.active());
  f.pointerEvent('pointerup',80,40);assert.equal(f.state.strokes.length,1);assert.deepEqual(plain(f.state.strokes[0].points.at(-1)),[80,40]);
 });
-test('pointer ink: pointer cancellation, lost capture, scroll, resize and background discard preview',()=>{
- for(const type of ['pointercancel','lostpointercapture','scroll','resize','blur','visibilitychange']){
+test('pointer ink: pointer cancellation, lost capture, resize and background discard preview',()=>{
+ for(const type of ['pointercancel','lostpointercapture','resize','blur','visibilitychange']){
   const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20);f.pointerEvent('pointermove',100,100);
   if(type.startsWith('pointer')||type==='lostpointercapture')f.pointerEvent(type,100,100);
   else {if(type==='visibilitychange')f.document.hidden=true;f.emit(type,type==='scroll'?f.box:f.document);}
   f.pointerEvent('pointerup',120,120);assert.equal(f.state.strokes.length,0,type);assert.equal(f.svg.children.length,0,type);
  }
+});
+test('pointer ink: scroll mid-stroke commits the drawn part; the rest of the contact is ignored',async()=>{
+ const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20);f.pointerEvent('pointermove',100,100);
+ f.emit('scroll',f.box);assert.equal(f.state.strokes.length,1);
+ f.pointerEvent('pointermove',200,200);f.pointerEvent('pointerup',220,220);await tick();
+ assert.equal(f.state.strokes.length,1);assert.deepEqual(plain(f.state.strokes[0].points.at(-1)),[100,100]);
 });
 test('pointer ink: noncancelable companion Touch fails closed instead of committing while scrolling',()=>{
  const f=fixture({pointer:true});f.pointerEvent('pointerdown',100,100,7,'pen',{companion:false});
@@ -504,58 +560,24 @@ test('pointer ink: scrolling rejects the entire pen contact, scrollend admits th
  f.pointerEvent('pointerdown',150,80);f.pointerEvent('pointerup',150,130);assert.equal(f.state.strokes.length,2);
 });
 
-test('pointer ink: missing or noncancelable companion Touch cannot preview, erase or save',()=>{
- for(const admit of ['missing','noncancelable']){
-  const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,100);f.pointerEvent('pointerup',280,100);
-  const before=plain(f.state.strokes);f.qa.setMode('erase');
-  f.pointerEvent('pointerdown',150,100,7,'pen',{companion:false});assert.equal(f.qa.active(),null);
-  assert.deepEqual(plain(f.state.strokes),before);
-  if(admit==='noncancelable')f.qa.touchStart({...f.event('touchstart',[f.contact(150,100,103,'direct')]),cancelable:false});
-  f.pointerEvent('pointermove',160,100);f.pointerEvent('pointerup',160,100);
-  assert.deepEqual(plain(f.state.strokes),before,admit);assert.equal(f.qa.undo().length,1);
- }
+test('pointer ink: a pen pointer draws at pointerdown, before its companion Touch',async()=>{
+ const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,100,7,'pen',{companion:false});
+ assert.ok(f.qa.active()?.preview,'pointerType pen is the admission');
+ f.pointerEvent('pointermove',160,100);f.pointerEvent('pointerup',160,100);await tick();
+ assert.equal(f.state.strokes.length,1);
 });
-test('pointer ink: rejected or interrupted pending admission never acts on a later contact',()=>{
+test('pointer ink: an interrupted pen contact never acts on a later companion Touch',()=>{
  const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20,7,'pen',{companion:false});f.emit('blur',f.document);
  f.qa.touchStart(f.event('touchstart',[f.contact(20,20,107,'direct')]));f.pointerEvent('pointerup',100,100);
  assert.equal(f.state.strokes.length,0);f.pointerEvent('pointerdown',40,40,8);f.pointerEvent('pointerup',80,80,8);assert.equal(f.state.strokes.length,1);
 });
 
-test('pointer ink: unrelated palm cannot admit a pen whose companion Touch is missing',async()=>{
- const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,100);f.pointerEvent('pointerup',280,100);
- const before=plain(f.state.strokes);f.qa.setMode('erase');
- f.pointerEvent('pointerdown',150,100,7,'pen',{companion:false});
- f.pointerEvent('pointerdown',400,400,8,'touch');
- f.qa.touchStart(f.event('touchstart',[f.contact(400,400,107,'direct')]));
- assert.equal(f.qa.active(),null);assert.deepEqual(plain(f.state.strokes),before);
- f.pointerEvent('pointercancel',150,100,7);f.pointerEvent('pointerup',400,400,8,'touch');
- f.qa.touchEnd(f.event('touchend',[],[f.contact(400,400,107,'direct')]));await tick();
- assert.deepEqual(plain(f.state.strokes),before);assert.equal(f.qa.undo().length,1);
- assert.deepEqual(f.stored.get(f.state.key).strokes,before);
- // The next complete pen sequence still edits without a time-based blackout.
- f.pointerEvent('pointerdown',150,80,9);f.pointerEvent('pointerup',150,130,9);assert.equal(f.state.strokes.length,2);
-});
-
-test('pointer ink: a second pen cannot provide the first pen missing Touch admission',()=>{
- const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20,7,'pen',{companion:false});
- f.pointerEvent('pointerdown',400,400,8);f.pointerEvent('pointerup',420,420,8);f.pointerEvent('pointerup',40,40,7);
- assert.equal(f.state.strokes.length,0);assert.equal(f.qa.active(),null);
- f.pointerEvent('pointerdown',40,40,9);f.pointerEvent('pointerup',80,80,9);assert.equal(f.state.strokes.length,1);
-});
-test('pointer ink: resize invalidates unadmitted geometry and the next clean pen recovers',()=>{
+test('pointer ink: resize discards the unfinished stroke and the next clean pen recovers',()=>{
  const f=fixture({pointer:true});f.pointerEvent('pointerdown',20,20,7,'pen',{companion:false});f.emit('resize',f.document);
  f.qa.touchStart(f.event('touchstart',[f.contact(20,20,107,'direct')]));f.pointerEvent('pointerup',100,100);
  assert.equal(f.state.strokes.length,0);f.qa.touchEnd(f.event('touchend',[],[f.contact(20,20,107,'direct')]));
  f.pointerEvent('pointerdown',40,40,8);f.pointerEvent('pointerup',80,80,8);assert.equal(f.state.strokes.length,1);
 });
-test('native ink: resize also retires a delayed UIKit admission before it can write stale geometry',async()=>{
- const f=fixture();let reply;f.admission({postMessage:()=>new Promise(resolve=>{reply=resolve;})});
- f.qa.touchStart(f.event('touchstart',[f.contact(20,20)]));await tick();
- assert.equal(typeof reply,'function');f.emit('resize',f.document);reply('ink');await tick();
- f.qa.touchEnd(f.event('touchend',[],[f.contact(100,100)]));await tick();
- assert.equal(f.qa.active(),null);assert.equal(f.state.strokes.length,0);assert.equal(f.writes.length,0);
-});
-
 test('native ink: a new Touch list without the old owner recovers after a missing end',async()=>{
  const f=fixture();f.pointerEvent('pointerdown',10,20,7);
  f.qa.touchStart(f.event('touchstart',[f.contact(10,20,1)]));
@@ -587,9 +609,9 @@ test('native ink: a fresh finger after an orphan remains navigation, never becom
  const finger=f.contact(80,80,5,'direct');
  f.qa.touchStart(f.event('touchstart',[finger]));
  assert.equal(f.qa.active(),null);assert.equal(f.engine.finger(finger),true);assert.equal(f.state.strokes.length,0);
- // Palm/finger FIRST still vetoes a later pen, despite reconciliation.
+ // A later pen still wins over that finger: it draws and the finger is ignored.
  f.qa.touchStart(f.event('touchstart',[finger,f.contact(20,30,6)],[f.contact(20,30,6)]));
- assert.equal(f.qa.active(),null);
+ assert.equal(f.qa.active().id,6);assert.equal(f.engine.finger(finger),false);
 });
 test('native ink: unrelated move/end can retire a proven orphan but cannot finish its geometry',()=>{
  for(const type of ['touchmove','touchend']){
@@ -608,15 +630,6 @@ test('native ink: orphaned eraser keeps completed cuts as one durable undoable e
  assert.equal(f.state.dirty,false);assert.equal(f.qa.undo().length,2,'original pen plus one interrupted erasure');
  f.qa.history(true);await tick();assert.equal(f.state.strokes.length,1);
  assert.deepEqual(plain(f.state.strokes[0].points),[[10,20],[90,20]]);
-});
-test('native ink: absent live admission loses ownership, late replies cannot resurrect it',async()=>{
- const f=fixture(),replies=[];f.admission({postMessage:()=>new Promise(r=>replies.push(r))});
- f.qa.touchStart(f.event('touchstart',[f.contact(10,20,1)]));await tick();
- f.qa.touchStart(f.event('touchstart',[f.contact(40,50,2)]));await tick();
- replies[0]('ink');await tick();assert.equal(f.qa.active(),null);
- f.qa.touchEnd(f.event('touchend',[],[f.contact(60,70,2)]));
- replies[1]('ink');await tick();assert.equal(f.state.strokes.length,1,'legitimately ended contact still commits after delayed reply');
- assert.deepEqual(plain(f.state.strokes[0].points),[[40,50],[60,70]]);
 });
 test('pointer ink: Touch absence never guesses that a different-namespace pen Pointer ended',()=>{
  const f=fixture({pointer:true});f.pointerEvent('pointerdown',100,100,7);
