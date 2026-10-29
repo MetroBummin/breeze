@@ -494,7 +494,17 @@ function startOnboarding(replay){
   syncOnboardingPosters();
   onboardingWideQuery.addEventListener('change',()=>{if(onboardingSession===session)syncOnboardingPosters();},{signal});
   for(const video of onboardingVideos()){
-    video.addEventListener('playing',()=>{const poster=onboardingPoster(video);if(poster)poster.hidden=true;},{signal});
+    video.addEventListener('playing',()=>{
+      const poster=onboardingPoster(video);
+      // autoplay can reach 'playing' after the reduced-motion pause, and
+      // that was hiding the poster again. Keep the still up and stay paused.
+      if(session.motion.matches||document.hidden){
+        try{video.pause();}catch{}
+        if(poster)poster.hidden=false;
+        return;
+      }
+      if(poster)poster.hidden=true;
+    },{signal});
     // Both clips carry autoplay, so the off-screen one would otherwise run
     // ahead and the next settle would resume it mid-clip. Pause wins over
     // that in-flight play(); the settled card is the only one left running.
