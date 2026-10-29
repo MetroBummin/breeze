@@ -1,8 +1,9 @@
 /* Three-card carousel dialog. The layout, copy, card media and card 3
    cover fan are ported from the reviewed standalone page
    (onboarding-carousel.html) so the dialog shows exactly what was reviewed.
-   Cards 1 and 2 show animated-WebP <img> that loop on their own, so there
-   is no autoplay, poster or play() machinery here.
+   Cards 1 and 2 are muted inline MP4s. Playback is owned by the carousel
+   settle below: the settled card rewinds to frame 0 and plays, and a
+   first-frame poster covers the video until the 'playing' event.
    The former passive guide (welcome pen animation plus seven recorded
    scenes) was discarded by owner decision 2026-10-27; see
    docs/decisions/006-reader-onboarding.md. This dialog never opens or
@@ -29,15 +30,63 @@ function onboardingAppearanceOpened(){}
 function openOnboardingWord(node,retry=false){}
 function renderOnboardingWordDetail(card){}
 async function explainOnboardingSentence(clean,life){}
-/* Cards 1 and 2 are animated-WebP <img>: the <picture><source media> switch
-   between phone and wide is CSS-driven and needs no script. */
-
 function onboardingCardIndex(){
   const wrap=document.getElementById('onboard-wrap');
   const card=wrap.querySelector(/** @type {'article'} */('.onboard-card'));
   if(!card)return 0;
   const advance=card.offsetWidth+20;
   return Math.max(0,Math.min(2,Math.round(wrap.scrollLeft/advance)));
+}
+/* Cards 1 and 2. The <video> is parsed with muted, playsinline and autoplay
+   already on the element, before its <source> loads. Capacitor's WKWebView
+   already allows inline playback without a gesture, so nothing here retunes
+   the native view. What broke TestFlight was pausing every off-screen clip
+   (pause() clears that element's autoplay) and calling play() from the
+   scroll listener while the card was still moving. WebKit refuses that
+   call and paints its own play button; a play() that did succeed was then
+   left running, so the card opened mid-clip. Settle is the only owner. */
+const onboardingWideQuery=matchMedia('(min-width: 768px)');
+function onboardingVideos(){
+  return /** @type {HTMLVideoElement[]} */([...document.querySelectorAll('#onboarding .onboard-card video')]);
+}
+/** @param {HTMLVideoElement} video */
+function onboardingPoster(video){
+  return /** @type {HTMLImageElement|null} */(video.parentElement?.querySelector('.onboard-poster')||null);
+}
+function syncOnboardingPosters(){
+  for(const img of /** @type {NodeListOf<HTMLImageElement>} */(document.querySelectorAll('#onboarding .onboard-poster'))){
+    const next=onboardingWideQuery.matches?img.dataset.posterWide:img.dataset.poster;
+    if(next&&img.getAttribute('src')!==next)img.setAttribute('src',next);
+  }
+}
+function settleOnboardingVideos(session){
+  if(onboardingSession!==session)return;
+  const index=onboardingCardIndex();
+  const hold=session.motion.matches||document.hidden;
+  const videos=onboardingVideos();
+  videos.forEach((video,i)=>{
+    const poster=onboardingPoster(video);
+    const active=i===index&&!hold;
+    if(!active){
+      try{video.pause();}catch{}
+      try{video.currentTime=0;}catch{}
+      if(poster)poster.hidden=false;
+      return;
+    }
+    if(session.mediaCard===index&&!video.paused&&!video.ended)return;
+    session.mediaCard=index;
+    // Property, not only the attribute: iOS checks the property at play().
+    video.muted=true;
+    video.playsInline=true;
+    try{video.currentTime=0;}catch{}
+    const pending=video.play();
+    if(pending&&typeof pending.catch==='function')pending.catch(()=>{if(poster)poster.hidden=false;});
+  });
+  if(hold)session.mediaCard=-1;
+}
+function queueOnboardingPlaybackSettle(session){
+  clearTimeout(session.playSettleTimer);
+  session.playSettleTimer=setTimeout(()=>settleOnboardingVideos(session),140);
 }
 /* Funnel steps keep the former guide's event names: moving to a later card
    completes the card left behind, Skip skips the current card, and a choice
@@ -397,7 +446,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,fanW:0,fanH:0,
-    depthFrame:0,settleTimer:0,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,settleTimer:0,playSettleTimer:0,mediaCard:-1,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -414,15 +463,34 @@ function startOnboarding(replay){
   buildOnboardingFan(session);
   wrap.scrollTo({left:0,behavior:'instant'});
   syncOnboardingDots();
-  // Cards 1 and 2 are animated WebP <img>; they loop on their own with no
-  // autoplay to arrange and no first-frame to force.
+  syncOnboardingPosters();
+  onboardingWideQuery.addEventListener('change',()=>{if(onboardingSession===session)syncOnboardingPosters();},{signal});
+  for(const video of onboardingVideos()){
+    video.addEventListener('playing',()=>{const poster=onboardingPoster(video);if(poster)poster.hidden=true;},{signal});
+    // Both clips carry autoplay, so the off-screen one would otherwise run
+    // ahead and the next settle would resume it mid-clip. Pause wins over
+    // that in-flight play(); the settled card is the only one left running.
+    video.addEventListener('play',()=>{
+      if(onboardingSession!==session)return;
+      const videos=onboardingVideos();
+      const active=videos.indexOf(video)===onboardingCardIndex()&&!session.motion.matches&&!document.hidden;
+      if(active)return;
+      try{video.pause();}catch{}
+      try{video.currentTime=0;}catch{}
+      const poster=onboardingPoster(video);
+      if(poster)poster.hidden=false;
+    },{signal});
+  }
+  settleOnboardingVideos(session);
   bindOnboardingGestures(session);
   const relayout=()=>{if(onboardingSession===session)layoutOnboardingViewport();};
   window.visualViewport?.addEventListener('resize',relayout,{signal});
   window.visualViewport?.addEventListener('scroll',relayout,{signal});
   window.addEventListener('resize',relayout,{signal});
   wrap.addEventListener('scroll',syncOnboardingDots,{passive:true,signal});
-  wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);},{passive:true,signal});
+  wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);queueOnboardingPlaybackSettle(session);},{passive:true,signal});
+  wrap.addEventListener('scrollend',()=>settleOnboardingVideos(session),{signal});
+  document.addEventListener('visibilitychange',()=>settleOnboardingVideos(session),{signal});
   document.getElementById('onboard-skip').addEventListener('click',()=>{
     if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'skip'});
@@ -503,8 +571,10 @@ function endOnboarding(remember,returnToPrevious=true){
   session.observer?.disconnect();
   if(session.depthFrame)cancelAnimationFrame(session.depthFrame);
   clearTimeout(session.settleTimer);
+  clearTimeout(session.playSettleTimer);
   clearTimeout(session.gestureTimer);
   clearTimeout(session.scrollTimer);
+  for(const video of onboardingVideos()){try{video.pause();}catch{}}
   document.documentElement.classList.remove('onboarding-open');
   const root=document.getElementById('onboarding');
   root.hidden=true;
