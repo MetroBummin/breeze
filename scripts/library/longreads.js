@@ -1184,6 +1184,69 @@ async function restoreMissingLongReadCovers(){
       await applyLongReadCover(read,{onlyMissing:true});
   }
 }
+/* ================= 웹소설 (Web novels) =================
+   Author-permitted Royal Road works, free forever, with NO ads and NO
+   monetization on Breeze. We do NOT scrape or bundle any chapter body text:
+   every chapter is a placeholder (available:false, '곧 공개') and the
+   work -> chapters[] shape is ready for real content to drop in later with
+   no UI change. The home card and the in-preview chapter list read this one
+   const; nothing here starts a Reader until a chapter has real content.
+
+   HARD RULES, encoded verbatim below:
+   - R. K. Goff's story: first 10 chapters only (chapters.length === 10), and
+     the credit string is EXACTLY 'R. K. Goff'.
+   - 'Cinnamon Bun' by RavensDagger: zero monetization — only the Royal Road
+     original link, no kindleUrl / affiliate / Patreon field at all.
+   - 'Chasing Sunlight' by InadvisablyCompelled: shows BOTH its Royal Road
+     page and its Kindle edition. Its genre descriptor is deliberately omitted
+     here — the intro stays plot-only and uses no blood-drinking-creature label
+     (or its Korean equivalents) anywhere in the metadata. */
+function webNovelPlaceholderChapters(count){
+  // No scraping, no bundled body: each chapter is a '곧 공개' placeholder.
+  const chapters=[];
+  for(let n=1;n<=count;n++)chapters.push({n,title:n+'화',available:false});
+  return chapters;
+}
+const WEB_NOVELS = [
+  {
+    id:'arkendrithyst',
+    title:"Ar'Kendrithyst",
+    koTitle:'아르켄드리시스트',
+    author:'R. K. Goff', credit:'R. K. Goff',
+    royalRoadUrl:'https://www.royalroad.com/fiction/36950/arkendrithyst',
+    cover:null, free:true, monetization:'none',
+    intro:'마법이 곧 언어인 세계. 한 남자가 폭력 없이 살아남는 길을 찾아 도시로 향합니다. 작가가 허락한 무료 공개본으로, 처음 10화를 준비하고 있어요.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+  {
+    id:'cinnamon-bun',
+    title:'Cinnamon Bun',
+    koTitle:'시나몬 번',
+    author:'RavensDagger', credit:'RavensDagger',
+    royalRoadUrl:'https://www.royalroad.com/fiction/39408/cinnamon-bun',
+    cover:null, free:true, monetization:'none',
+    intro:'누군가를 돕는 것만으로 힘을 얻는 소녀 브로콜리의 이야기. 따뜻하고 느긋한 모험담이에요. 작가가 허락한 무료 공개본으로 준비하고 있어요.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+  {
+    id:'chasing-sunlight',
+    title:'Chasing Sunlight',
+    koTitle:'체이싱 선라이트',
+    author:'InadvisablyCompelled', credit:'InadvisablyCompelled',
+    royalRoadUrl:'https://www.royalroad.com/fiction/40373/chasing-sunlight',
+    kindleUrl:'https://www.amazon.com/dp/B09JVF9V7T',
+    cover:null, free:true, monetization:'none',
+    intro:'깨어나 보니 낯선 몸, 낯선 힘, 그리고 햇빛을 쫓는 긴 여정이 시작됩니다. 작가가 허락한 무료 공개본으로 준비하고 있어요. 로열로드 원문과 킨들판 링크를 함께 둡니다.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+];
+function webNovelDefinition(id){
+  return typeof WEB_NOVELS==='undefined'?null:(WEB_NOVELS.find(work=>work&&work.id===id)||null);
+}
+function webNovelDisplayTitle(work){
+  return (work&&work.koTitle)||(work&&work.title)||'';
+}
+
 /* 카드와 미리보기에 보여 줄 제목. 한국 독자에게 익숙한 이름(koTitle)이 있으면
    그걸, 없으면 영어 제목을 씁니다. 짝 맞추기·반입 파일명·클라우드 meta.title·
    SHA/조회에는 절대 쓰지 않습니다. 그쪽은 늘 영어 `title` 입니다. */

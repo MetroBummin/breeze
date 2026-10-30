@@ -164,6 +164,7 @@ function articlePreviewClose(cancelOpening=true){
 
   articlePreviewDialog.dataset.preparing='false';
   articlePreviewDialog.dataset.kind='article';
+  if(typeof articlePreviewChapters!=='undefined'){articlePreviewChapters.hidden=true;articlePreviewChapters.replaceChildren();}
   articlePreviewGeneration++;
   articlePreviewBook=null;
   articlePreviewSummaryUrl='';
@@ -431,6 +432,87 @@ function openLongReadPreview(read){
   dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
   if(typeof remoteClassicOffline==='function'&&remoteClassicOffline(read))
     articlePreviewStatus('오프라인이에요. 연결되면 받을 수 있어요.');
+}
+/* ================= 웹소설 미리보기 =================
+   같은 #article-preview 시트를 그대로 씁니다. 따로 띄우는 화면은 없습니다.
+   dataset.kind='webnovel' 로 표시하고, 소개·작가 표기·원문 링크를 채운 뒤
+   시트 안(.ap-scroll)에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 본문이
+   있는 회차(available && url/content)는 기존 리더 경로로 열고, 아직 없는
+   회차는 '곧 공개' 로 표시하고 이동하지 않습니다. */
+const articlePreviewChapters=document.createElement('section');
+articlePreviewChapters.className='ap-chapters';articlePreviewChapters.hidden=true;
+articlePreviewChapters.setAttribute('aria-label','회차 목록');
+articlePreviewDetails.after(articlePreviewChapters);
+function webNovelPreviewLink(label,url){
+  const link=document.createElement('a');
+  link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label;
+  return link;
+}
+function openWebNovelChapter(work,chapter){
+  // No scraping / no bundled text yet: a placeholder chapter never navigates.
+  // When real content arrives (available + url/content), open it via the
+  // existing reader path; a url opens the original, content opens in Reader.
+  if(chapter&&chapter.available&&(chapter.url||chapter.content)){
+    if(typeof openWebNovelChapterContent==='function'){openWebNovelChapterContent(work,chapter);return;}
+    if(chapter.url){window.open(chapter.url,'_blank','noopener,noreferrer');return;}
+    return;
+  }
+  articlePreviewStatus('곧 공개될 회차예요.');
+}
+function renderWebNovelChapters(work){
+  const list=articlePreviewChapters;
+  list.replaceChildren();
+  const heading=document.createElement('div');
+  heading.className='ap-chapters-heading';heading.textContent='회차';
+  list.append(heading);
+  const chapters=Array.isArray(work.chapters)?work.chapters:[];
+  for(const chapter of chapters){
+    const row=document.createElement('button');
+    row.type='button';
+    row.className='ap-chapter-row';
+    const available=!!(chapter.available&&(chapter.url||chapter.content));
+    if(!available){row.classList.add('is-soon');row.setAttribute('aria-disabled','true');}
+    const label=document.createElement('span');
+    label.className='ap-chapter-title';
+    label.textContent=chapter.title||(chapter.n+'화');
+    const state=document.createElement('span');
+    state.className='ap-chapter-state';
+    state.textContent=available?'읽기':'곧 공개';
+    row.append(label,state);
+    row.onclick=()=>openWebNovelChapter(work,chapter);
+    list.append(row);
+  }
+  list.hidden=!chapters.length;
+}
+function openWebNovelPreview(work){
+  cancelPendingBookOpen();articlePreviewClose();
+  const dialog=articlePreviewDialog;
+  dialog.dataset.kind='webnovel';
+  articlePreviewBook={id:'webnovel:'+work.id,kind:'webnovel',webNovel:work};
+  dialog.querySelector('.ap-art').innerHTML=coverArtwork(work.id);
+  dialog.querySelector('.ap-source').textContent=work.credit||work.author||'';
+  dialog.querySelector('.ap-title').textContent=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):(work.koTitle||work.title);
+  articlePreviewPaint({summaryKo:work.intro||''});articlePreviewMetadataState('ready');
+  // Intro + author credit + original links. Royal Road for all; Kindle ONLY
+  // when the work carries a kindleUrl (Chasing Sunlight).
+  articlePreviewDetails.hidden=false;
+  articlePreviewDetails.replaceChildren();
+  const credit=document.createElement('div');
+  credit.textContent=(work.credit||work.author||'')+' · 작가 공개 무료 연재';
+  articlePreviewDetails.append(credit);
+  const links=document.createElement('div');links.className='ap-links';
+  if(work.royalRoadUrl)links.append(webNovelPreviewLink('Royal Road 원문',work.royalRoadUrl));
+  if(work.kindleUrl)links.append(webNovelPreviewLink('Kindle 판',work.kindleUrl));
+  articlePreviewDetails.append(links);
+  renderWebNovelChapters(work);
+  const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
+  if(work.cover){image.src=work.cover;image.hidden=false;image.onerror=()=>{image.hidden=true;};}
+  else{image.hidden=true;image.removeAttribute('src');}
+  // No single-book CTA for a web novel: chapters are the entry points.
+  const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
+  start.onclick=()=>articlePreviewClose();start.disabled=false;start.textContent='닫기';start.removeAttribute('aria-busy');
+  articlePreviewStatus('');dialog.querySelector('.ap-scroll').scrollTop=0;
+  dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
 }
 const articlePreviewStatusNode=document.createElement('p');
 articlePreviewStatusNode.className='ap-status';articlePreviewStatusNode.setAttribute('role','status');

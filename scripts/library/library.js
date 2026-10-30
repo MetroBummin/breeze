@@ -572,6 +572,61 @@ function renderHomeRecommendBooks(rail){
     empty.textContent=none?'시작한 책은 서재에 있어요.':'';
   }
 }
+/* ================= 웹소설 한 줄 =================
+   고전 줄과 '내 책' 줄 사이의 두 번째 줄. 작가가 허락한 무료 로열로드 작품을
+   보여 줍니다. 카드는 표지(없으면 글자 장식)·제목·작가 표기·'N화 읽는 중'을
+   담고, 누르면 기존 미리보기 시트(#article-preview) 안에서 회차 목록이 뜹니다.
+   따로 띄우는 화면은 없습니다. */
+const WEBNOVEL_PROGRESS_KEY='breeze.webnovel-progress.v1';
+function webNovelProgress(){
+  const value=load(WEBNOVEL_PROGRESS_KEY,{});
+  return value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+}
+function webNovelChapterAt(id){
+  const n=Number(webNovelProgress()[id]);
+  return Number.isFinite(n)&&n>=1?Math.floor(n):0;
+}
+/* 저장해 둔 회차가 있으면 'N화 읽는 중', 없으면 빈 글귀(카드가 깔끔하게). */
+function webNovelProgressLabel(work){
+  const n=webNovelChapterAt(work&&work.id);
+  return n?n+'화 읽는 중':'';
+}
+function webNovelCard(work){
+  const card=el('div','bookcard classic home-recommend-book webnovel');
+  card.dataset.webnovelId=work.id;
+  card.innerHTML='<img class="cover" alt="" hidden><div class="author"></div><div class="bt"></div>';
+  const title=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):(work.koTitle||work.title);
+  fillCard(card,{'.author':work.credit||work.author||'','.bt':title});
+  const image=card.querySelector('.cover');
+  if(work.cover){
+    image.onload=()=>{image.hidden=false;card.classList.add('has-cover');};
+    image.onerror=()=>{image.hidden=true;};
+    image.src=work.cover;
+  }else{
+    // Graceful local ornament when there is no cover asset, like elsewhere.
+    const art=el('div','webnovel-cover-art');
+    art.innerHTML=coverArtwork(work.id);
+    card.prepend(art);
+  }
+  const label=webNovelProgressLabel(work);
+  if(label){const slot=el('div','prog',label);card.append(slot);}
+  card.title=[work.title,work.credit||work.author].filter(Boolean).join(' · ');
+  accessibleLibraryCard(card,[title,work.credit||work.author].filter(Boolean).join(' · '));
+  card.onclick=()=>{if(typeof openWebNovelPreview==='function')openWebNovelPreview(work);};
+  return card;
+}
+function renderHomeWebNovels(rail){
+  if(!rail)return;
+  const works=typeof WEB_NOVELS==='undefined'?[]:WEB_NOVELS;
+  const specs=works.map(work=>({
+    key:'webnovel:'+work.id,
+    stamp:JSON.stringify([work.id,work.koTitle,work.title,work.credit,work.cover,webNovelChapterAt(work.id)]),
+    create:()=>webNovelCard(work),
+  }));
+  reconcileHomeCards(rail,specs);
+  const section=document.getElementById('webnovels');
+  if(section)section.hidden=!specs.length;
+}
 function renderHome(){
   renderLibraryStorageNotice();
   renderHomeResume();
@@ -579,6 +634,7 @@ function renderHome(){
      않습니다. 저장해 둔 'articles' 선택이 있어도 빈 줄이 아니라 고전이 뜹니다. */
   const rail=document.getElementById('casual-rail');
   renderHomeRecommendBooks(rail);
+  renderHomeWebNovels(document.getElementById('webnovel-rail'));
   const longform=longformBooks(),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
   for(const row of serverOnlyBooks()){
