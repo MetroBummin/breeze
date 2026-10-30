@@ -61,27 +61,27 @@ try {
 
   await page.goto(base);
   await page.evaluate(() => homeReady);
-  assert.equal(await page.evaluate(() => homeRecommendKind()), 'books', 'a new reader opens on 책');
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
+  // The 기사/책 toggle is gone: the home top row is always 고전, so even a stored
+  // 'articles' preference still fetches the classics catalog and paints classics.
   await page.evaluate(() => save('breeze.home-recommend', 'articles'));
   await page.reload();
   await page.evaluate(() => homeReady);
-  assert.equal(await page.evaluate(() => remoteClassicCatalogReads().length), 0, 'A saved 기사 choice fetched the classics catalog');
-  await page.locator('#home-recommend-kind [data-kind="books"]').click();
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
   assert.equal(bookFetches, 0, 'The catalog fetch downloaded the novel');
 
-  await page.locator('#home-recommend-kind [data-kind="books"]').click();
   await page.locator(card).scrollIntoViewIfNeeded();
   await page.waitForFunction(selector => {
     const image = document.querySelector(`${selector} img.cover`);
     return image && !image.hidden && image.naturalWidth === 768;
   }, card);
   const titles = await page.locator('#casual-rail .home-recommend-book .bt').allTextContents();
-  assert.ok(titles.includes('Pride and Prejudice'), titles.join(' | '));
-  assert.ok(titles.includes('The Adventure of the Speckled Band'));
-  assert.ok(titles.includes("Alice's Adventures in Wonderland"));
-  assert.ok(titles.includes('Backroom - Homeward Bound'), titles.join(' | '));
+  // Visible captions are the friendly Korean display titles; the underlying
+  // data-longread-id stays the canonical English catalog id (asserted below).
+  assert.ok(titles.includes('Pride and Prejudice'), titles.join(' | ')); // remote row has no koTitle, falls back to English
+  assert.ok(titles.includes('셜록 홈즈: 얼룩 끈'), titles.join(' | '));
+  assert.ok(titles.includes('이상한 나라의 앨리스'), titles.join(' | '));
+  assert.ok(titles.includes('백룸: 집으로 가는 길'), titles.join(' | '));
   const homeward = '#casual-rail .longread[data-longread-id="backroom-homeward-bound"]';
   assert.equal(await page.locator(homeward).count(), 1, 'Homeward Bound is offered once from the remote catalog');
   const surfaced = await page.evaluate(() => {
@@ -201,10 +201,9 @@ try {
   catalogFails = true;
   await page.reload();
   await page.evaluate(() => homeReady);
-  await page.locator('#home-recommend-kind [data-kind="books"]').click();
   assert.equal(await page.locator(card).count(), 0, 'A saved book returns to the rail when the catalog cannot refresh');
   await page.locator(homeward).waitFor();
-  assert.equal(await page.locator(homeward).count(), 1, 'A cached dormant book stays on the 책 rail when the catalog cannot refresh');
+  assert.equal(await page.locator(homeward).count(), 1, 'A cached dormant book stays on the 고전 rail when the catalog cannot refresh');
   await openSaved();
   assert.equal(bookFetches, before, 'A cached book was fetched again after the catalog failed');
 
@@ -279,7 +278,6 @@ try {
   const holmesCard = `#casual-rail .longread[data-longread-id="${holmesId}"]`;
   await holmesPage.goto(base);
   await holmesPage.evaluate(() => homeReady);
-  await holmesPage.locator('#home-recommend-kind [data-kind="books"]').click();
   await holmesPage.locator(holmesCard).waitFor();
   await holmesPage.locator(holmesCard).click();
   assert.equal(await holmesPage.locator('#article-preview .ap-summary').textContent(), '크리스마스 아침, 길에서 주운 낡은 모자 하나와 거위 한 마리.');

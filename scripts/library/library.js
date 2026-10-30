@@ -517,35 +517,9 @@ function longReadOfferStamp(read){
 function homeRecommendClassics(){
   return typeof CLASSICS==='undefined'?[]:CLASSICS.filter(classic=>!homeRecommendCatalogOwned(classic.id));
 }
-function syncHomeRecommendToggle(){
-  const group=document.getElementById('home-recommend-kind');
-  if(!group)return;
-  const kind=homeRecommendKind();
-  group.querySelectorAll('button').forEach(button=>{
-    button.setAttribute('aria-pressed',button.dataset.kind===kind?'true':'false');
-  });
-  if(group.dataset.bound)return;
-  group.dataset.bound='true';
-  group.addEventListener('keydown',event=>{
-    if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
-    const buttons=[...group.querySelectorAll('button')];
-    const index=buttons.findIndex(button=>button===document.activeElement);
-    if(index<0)return;
-    event.preventDefault();
-    const next=buttons[(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];
-    next.focus();
-    setHomeRecommendKind(next.dataset.kind);
-  });
-}
-function setHomeRecommendKind(kind){
-  const next=kind==='books'?'books':'articles';
-  if(next===homeRecommendKind()){syncHomeRecommendToggle();return;}
-  save('breeze.home-recommend',next);
-  const rail=document.getElementById('casual-rail');
-  if(rail){delete rail.dataset.homeUserScrolled;rail.scrollLeft=0;}
-  renderHome();
-  if(next==='books'&&typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
-}
+/* The 기사/책 toggle was removed: the home top row is always 고전 (classics /
+   long reads), never RSS. clearHomeRssCards stays so any RSS cards left on the
+   rail from an older build are swept before the classics cards are laid in. */
 function clearHomeRssCards(rail){
   if(typeof rssCoverCancel==='function'&&typeof rssCoverOwners!=='undefined')rssCoverCancel(rssCoverOwners.get(rail));
   rail.querySelectorAll('.rss-card,.rss-loading').forEach(node=>{
@@ -567,11 +541,12 @@ function homeRecommendClassicCard(classic){
   const card=el('div','bookcard classic home-recommend-book');
   card.dataset.classicId=classic.id;
   card.innerHTML='<img class="cover" alt=""><div class="author"></div><div class="bt"></div>';
-  fillCard(card,{'.author':classic.author||'','.bt':classic.title});
+  const displayTitle=typeof classicDisplayTitle==='function'?classicDisplayTitle(classic):classic.title;
+  fillCard(card,{'.author':classic.author||'','.bt':displayTitle});
   const image=card.querySelector('.cover');
   image.onload=()=>card.classList.add('has-cover');
   image.src=classicCoverFile(classic.id);
-  accessibleLibraryCard(card,[classic.title,classic.author].filter(Boolean).join(' · '));
+  accessibleLibraryCard(card,[displayTitle,classic.author].filter(Boolean).join(' · '));
   card.onclick=()=>{void openHomeRecommendClassic(classic);};
   return card;
 }
@@ -600,17 +575,10 @@ function renderHomeRecommendBooks(rail){
 function renderHome(){
   renderLibraryStorageNotice();
   renderHomeResume();
-  syncHomeRecommendToggle();
+  /* 고전 한 줄만 올립니다. '기사/책' 토글은 사라졌고 RSS 카드는 홈에 뜨지
+     않습니다. 저장해 둔 'articles' 선택이 있어도 빈 줄이 아니라 고전이 뜹니다. */
   const rail=document.getElementById('casual-rail');
-  const recommendBooks=homeRecommendKind()==='books';
-  if(recommendBooks)renderHomeRecommendBooks(rail);
-  else{
-    rail.hidden=false;
-    const empty=document.getElementById('home-feed-empty');
-    if(empty)empty.hidden=true;
-    reconcileHomeCards(rail,[]);
-    if(typeof appendRssCards==='function')appendRssCards(rail);
-  }
+  renderHomeRecommendBooks(rail);
   const longform=longformBooks(),shelf=document.getElementById('shelf');
   const specs=longform.map(book=>homeBookSpec(book,false));
   for(const row of serverOnlyBooks()){

@@ -96,6 +96,7 @@ const LONG_READS = [
     site:'Backrooms Wiki', license:'CC BY-SA 3.0',
     licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
     series:'BACKROOMS TALE SERIES',
+    koTitle:'백룸: 집으로 가는 길',
     hook:'아내 미아가 사라졌습니다. 하루가 지났습니다. 작업실은 실종자 사진과 붉은 실로 가득합니다. 노트북에는 노란 복도. 현실의 주소가 없습니다. 그 방은 어디일까요? 문을 닫아도 같은 벽지가 이어진다면, 제임스는 무엇을 따라가는 걸까요?',
     edition:'English original · Chapters 1–2', wordCount:4035,
   },
@@ -103,6 +104,7 @@ const LONG_READS = [
     id:'sherlock-holmes-speckled-band', file:'assets/longreads/speckled-band.txt',
     cover:'assets/longreads/covers/speckled-band.webp', coverPosition:'center top',
     title:'The Adventure of the Speckled Band',
+    koTitle:'셜록 홈즈: 얼룩 끈',
     originalTitle:'The Adventure of the Speckled Band (1892)',
     author:'Arthur Conan Doyle',
     sourceUrl:'https://www.gutenberg.org/ebooks/1661', site:'Project Gutenberg',
@@ -121,6 +123,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/scandal-in-bohemia.webp",
     "coverPosition": "center top",
     "title": "A Scandal in Bohemia",
+    "koTitle": "셜록 홈즈: 보헤미아 왕국의 스캔들",
     "originalTitle": "A Scandal in Bohemia (1891)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/1661",
@@ -141,6 +144,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/red-headed-league.webp",
     "coverPosition": "center top",
     "title": "The Red-Headed League",
+    "koTitle": "셜록 홈즈: 빨간 머리 연맹",
     "originalTitle": "The Red-Headed League (1891)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/1661",
@@ -161,6 +165,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/final-problem.webp",
     "coverPosition": "center top",
     "title": "The Final Problem",
+    "koTitle": "셜록 홈즈: 마지막 사건",
     "originalTitle": "The Final Problem (1893)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/834",
@@ -181,6 +186,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/hound-of-the-baskervilles.webp",
     "coverPosition": "center top",
     "title": "The Hound of the Baskervilles",
+    "koTitle": "셜록 홈즈: 바스커빌 가문의 개",
     "originalTitle": "The Hound of the Baskervilles (1902)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/2852",
@@ -202,6 +208,7 @@ const CLASSIC_FALLBACKS = [
     file:'assets/longreads/alice-in-wonderland.txt',
     cover:'assets/longreads/covers/alice-in-wonderland.webp', coverPosition:'center top',
     title:"Alice's Adventures in Wonderland",
+    koTitle:'이상한 나라의 앨리스',
     originalTitle:"Alice's Adventures in Wonderland (1865)",
     author:'Lewis Carroll',
     sourceUrl:'https://www.gutenberg.org/ebooks/11', site:'Project Gutenberg',
@@ -218,6 +225,7 @@ const CLASSIC_FALLBACKS = [
     file:'assets/longreads/the-great-gatsby.txt',
     cover:'assets/longreads/covers/the-great-gatsby.webp', coverPosition:'center top',
     title:'The Great Gatsby',
+    koTitle:'위대한 개츠비',
     originalTitle:'The Great Gatsby (1925)',
     author:'F. Scott Fitzgerald',
     sourceUrl:'https://www.gutenberg.org/ebooks/64317', site:'Project Gutenberg',
@@ -1176,20 +1184,26 @@ async function restoreMissingLongReadCovers(){
       await applyLongReadCover(read,{onlyMissing:true});
   }
 }
+/* 카드와 미리보기에 보여 줄 제목. 한국 독자에게 익숙한 이름(koTitle)이 있으면
+   그걸, 없으면 영어 제목을 씁니다. 짝 맞추기·반입 파일명·클라우드 meta.title·
+   SHA/조회에는 절대 쓰지 않습니다. 그쪽은 늘 영어 `title` 입니다. */
+function classicDisplayTitle(read){
+  return (read&&read.koTitle)||(read&&read.title)||'';
+}
 function longReadCard(read){
   const card=el('div','bookcard classic longread');
   card.dataset.longreadId=read.id;
   card.innerHTML=`<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
     <div class="get">미리보기</div>`;
-  fillCard(card,{'.author':read.series,'.bt':read.title});
+  fillCard(card,{'.author':read.series,'.bt':classicDisplayTitle(read)});
   const image=card.querySelector('.cover');
   image.onload=()=>{image.hidden=false;card.classList.add('has-cover');};
   image.style.objectPosition=read.coverPosition;
   if(read.cover)image.src=read.cover;
   if(typeof remoteClassicOffline==='function'&&remoteClassicOffline(read))card.classList.add('is-offline');
   card.title=`${read.originalTitle} · ${read.author} · ${read.series}`;
-  accessibleLibraryCard(card,read.title);
+  accessibleLibraryCard(card,classicDisplayTitle(read));
   card.onclick=()=>openLongReadPreviewOrReader(read);
   return card;
 }

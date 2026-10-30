@@ -702,8 +702,8 @@ assert.match(librarySource, /homeRegularTile\(casualCard\(book,null,false\)/,
 assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
   'Saved long content should use the neutral regular-card layout');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
-  'Home recommendation must be a plain heading');
+assert.match(index, /id="home-recommend-title"[^>]*>고전<\/h2>/,
+  'Home top row must be the 고전 heading');
 assert.match(index, /class="section-link"[^>]*aria-label="가벼운 글 모아보기"[^>]*onclick="show\('casuals'\)"/,
   'The saved Casuals heading lost its shelf chevron');
 assert.match(index, /class="section-link"[^>]*aria-label="책 모아보기"[^>]*onclick="show\('longform'\)"/,
