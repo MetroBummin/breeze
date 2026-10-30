@@ -146,6 +146,18 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #review-grade small{font:400 11px/1.3 var(--ui);color:var(--sentence-glass-secondary);}
 #review-grade{margin-top:16px;}
 #review-reveal{margin-top:16px;}
+/* English pronunciation reuses the shared speak() path; the button mirrors the
+   lookup #p-speak circle. 44px touch target and a .playing state in the
+   existing blue/sky tokens. It is pinned to the top of the front face, clear of
+   the card's large centered tap/flip area, so a card tap still flips and the
+   button's own tap only pronounces. It never grows the card's width, so the
+   centered flashcard keeps zero horizontal overflow. */
+#review-flip{position:relative;}
+#vocabulary-review-page #review-speak{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1;flex:none;display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;border:1px solid var(--speak-line);background:var(--speak-bg);color:var(--blue);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
+#vocabulary-review-page #review-speak:hover{background:var(--sky);}
+#vocabulary-review-page #review-speak.playing{background:var(--blue);color:var(--on-color);border-color:var(--blue);}
+#review-speak svg{width:20px;height:20px;}
+@media(prefers-reduced-motion:reduce){#vocabulary-review-page #review-speak{transition:none;}}
 #review-back:not([hidden]){animation:review-card-turn .2s ease-out;transform-origin:center;}
 @keyframes review-card-turn{from{opacity:.3;transform:rotateY(-18deg);}to{opacity:1;transform:rotateY(0);}}
 @media(prefers-reduced-motion:reduce){#review-back:not([hidden]){animation:none;}}

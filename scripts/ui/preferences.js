@@ -412,6 +412,14 @@ function miniToast(msg){
    1순위: 사전이 주는 원어민 녹음(mp3)   2순위: 기기 내장 음성(TTS)
    앱(Capacitor)으로 옮길 때도 이 함수 안쪽만 교체하면 됩니다.            */
 let curAudio = null, speakGeneration = 0;
+/* speak() 는 재생 중 표시를 누른 단추 하나에만 켭니다. 사전 팝업은 #p-speak,
+   단어 카드는 자기 단추를 넘깁니다. 네이티브 'breezeNativeSpeech' 이벤트가
+   뒤늦게 돌아왔을 때도 지금 세대를 시작한 단추를 알아야 하므로 여기 적어 둡니다. */
+let speakButton = null;
+function resolveSpeakButton(button){
+  if(button instanceof HTMLElement) return button;
+  return document.getElementById('p-speak');
+}
 function nativeSpeechHandler(){
   const webkit=/** @type {any} */ (window).webkit;
   return webkit&&webkit.messageHandlers&&webkit.messageHandlers.breezeSpeech;
@@ -444,7 +452,7 @@ window.addEventListener('breezeNativeSpeech', event=>{
     console.error('[BreezeSpeech]',detail);
   }else console.info('[BreezeSpeech]',detail);
   if(Number(detail.generation)!==speakGeneration) return;
-  const btn=document.getElementById('p-speak');
+  const btn=speakButton;
   if(detail.state==='start') btn&&btn.classList.add('playing');
   if(detail.state==='end'||detail.state==='cancel'||detail.state==='error')
     btn&&btn.classList.remove('playing');
@@ -453,8 +461,12 @@ window.addEventListener('breezeNativeSpeech', event=>{
     showNativeSpeechDiagnostic(detail);
   }
 });
-function speak(text){
-  const btn = document.getElementById('p-speak');
+function speak(text, button){
+  const btn = resolveSpeakButton(button);
+  /* 앞 세대가 다른 단추에서 재생 중이었다면 그 표시를 먼저 끕니다 — 취소된
+     세대의 뒤늦은 콜백은 세대가 달라 자기 표시를 끄지 못하기 때문입니다. */
+  if(speakButton && speakButton!==btn) speakButton.classList.remove('playing');
+  speakButton = btn;
   const mark = on => btn && btn.classList.toggle('playing', on);
   const generation=++speakGeneration;
   try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
@@ -491,6 +503,19 @@ function speak(text){
 function speakWord(){
   const w = displayedWord(selKey); if(!w) return;
   speak(w.word);
+}
+/* 다음 카드로 넘어갈 때 앞 카드의 발음이 이어서 들리지 않게 멈춥니다. 새
+   발음을 시작하지 않고, speak() 와 같은 취소 길(세대 증가 + 오디오/음성 취소)만
+   밟습니다. 네이티브 셸에서는 다음 generation 이 와도 이미 바뀐 세대를 무시하고,
+   브라우저에서는 speechSynthesis.cancel() 이 현재 발화를 끝냅니다. */
+function cancelSpeak(){
+  ++speakGeneration;
+  try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
+  try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
+  const native=nativeSpeechHandler();
+  if(native){ try{ native.postMessage({command:'cancel'}); }catch(e){} }
+  if(speakButton) speakButton.classList.remove('playing');
+  speakButton = null;
 }
 
 let toastTimer;

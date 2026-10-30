@@ -243,6 +243,9 @@ function renderSimpleWordCards(){
   document.getElementById('review-source').hidden=true;
   document.getElementById('review-reveal').hidden=!record||simpleWordCards.flipped;
   document.getElementById('review-reveal').textContent='정답 확인';
+  /* 발음 단추는 영어 낱말이 보이는 앞면에서만 뜹니다 — 완료/빈 화면에는 없습니다. */
+  const speakButton=document.getElementById('review-speak');
+  speakButton.hidden=!record;
   const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${simpleWordCards.flipped?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
@@ -251,6 +254,7 @@ function flipSimpleWordCard(){
 }
 async function restartSimpleWordStudy(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;
+  stopSimpleWordCardSpeech();
   simpleStudyBusy=true;const epoch=simpleStudyEpoch;
   try{
     const current=await loadSimpleStudySession();
@@ -264,6 +268,7 @@ document.getElementById('simple-study-complete-back').addEventListener('click',c
 document.getElementById('simple-study-restart').addEventListener('click',restartSimpleWordStudy);
 async function gradeSimpleWordCard(outcome){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy||!simpleWordCards.flipped)return;
+  stopSimpleWordCardSpeech();
   simpleStudyBusy=true;
   const token=SimpleStudySession.token(ensureSimpleStudySession()),epoch=simpleStudyEpoch;
   let next;
@@ -283,6 +288,7 @@ async function gradeSimpleWordCard(outcome){
 }
 async function undoSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;
+  stopSimpleWordCardSpeech();
   simpleStudyBusy=true;const epoch=simpleStudyEpoch;
   try{const current=await loadSimpleStudySession(),next=SimpleStudySession.undo(current);
     if(epoch!==simpleStudyEpoch||activeAppView()!=='study'||next===current)return;
@@ -299,6 +305,34 @@ window.addEventListener('keydown',event=>{
     event.preventDefault();gradeSimpleWordCard(event.key==='ArrowLeft'?'again':'remember');
   }
 });
+/* 카드의 영어 낱말을 공용 speak() 길로 읽습니다 — 두 번째 TTS 경로를 만들지
+   않고 사전 팝업과 같은 네이티브 브리지/Web Speech 를 재사용합니다. 발음 단추를
+   눌러도 카드가 뒤집히거나 넘어가면 안 되므로(탭/스와이프는 카드 몫) 이벤트
+   전파를 멈춥니다. 발음이 없는 환경이어도 speak() 가 조용히 실패/토스트할 뿐
+   예외를 던지지 않습니다. */
+function speakSimpleWordCard(){
+  if(typeof speak!=='function')return;
+  const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
+  if(!record||!record.word)return;
+  speak(record.word,document.getElementById('review-speak'));
+}
+/* 다음 카드로 넘어갈 때 앞 카드 발음이 이어지지 않게 멈춥니다. speak() 와 같은
+   취소 길만 밟고 새 발음은 시작하지 않습니다. */
+function stopSimpleWordCardSpeech(){
+  if(typeof cancelSpeak==='function')cancelSpeak();
+}
+(()=>{
+  const button=document.getElementById('review-speak');
+  button.addEventListener('click',event=>{event.stopPropagation();speakSimpleWordCard();});
+  /* role=button 인 카드가 Enter/Space 를 듣기 전에 단추가 먼저 처리하고 전파를
+     멈춰, 같은 키가 카드까지 내려가 뒤집히지 않게 합니다. */
+  button.addEventListener('keydown',event=>{
+    if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();speakSimpleWordCard();}
+  });
+  /* pointerdown 전파도 멈춰, 카드의 studyCardMotion 드래그가 단추 위에서
+     시작되지 않게 합니다(탭이 스와이프로 오인되지 않도록). */
+  button.addEventListener('pointerdown',event=>event.stopPropagation());
+})();
 const simpleCardMotion=studyCardMotion(document.getElementById('review-flip'),{
  ready:()=>simpleWordCards.flipped,
  enabled:()=>!ADVANCED_VOCABULARY_REVIEW_ENABLED&&!simpleStudyBusy&&activeAppView()==='study',
@@ -471,6 +505,7 @@ document.getElementById('review-more').addEventListener('click',()=>{
   openVocabularyReview(!vocabularyReviewView?.state?.session?.practice,!!journey?.milestone&&journey.done>=journey.target);
 });
 function resetVocabularyReviewSurface(){
+  stopSimpleWordCardSpeech();
   ++simpleStudyEpoch;simpleCardMotion.reset();
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleWordCards.flipped=false;
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
