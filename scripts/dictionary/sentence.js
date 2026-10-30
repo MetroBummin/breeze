@@ -33,6 +33,17 @@
 const sentKey = text => 's:' + sentenceHash(text);
 const LS_SENT_LEFT = 'breeze.ai-left';
 const sentenceRecoveries=new Map();
+/* 문장 해석은 언제나 한국어입니다. 언어 설정은 표지 문구만 바꿉니다(scripts/ui/i18n.js).
+   AI가 중국어 등으로 답한 적이 있어 서버(server/dict/sentence-translation.ts)와 같은
+   기준으로 한 번 더 봅니다. 예전에 저장된 다른 언어 답은 쓰지 않고 다시 묻습니다. */
+const SENTENCE_TARGET='ko';
+function koreanSentenceText(text){
+  if(typeof text!=='string')return false;
+  const count=re=>(text.match(re)||[]).length;
+  const hangul=count(/[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3]/g);
+  if(!hangul||count(/[\u3040-\u30FF\u31F0-\u31FF]/g))return false;
+  return count(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g)*10<=hangul;
+}
 
 /* 서버가 답할 때마다 남은 횟수를 알려 줍니다. 화면에 몇 번 남았는지 적는 줄은
    단어 팝업에서 덜어냈습니다 — 읽는 중에 셈이 보일 이유가 없습니다. */
@@ -387,7 +398,7 @@ async function openSentence(text,origin){
     // A previously stored answer never waits for an optional asset download.
     const hit=await dictGet(key);
     if(!sentenceAlive(life))return;
-    if(hit&&hit.ko){paintSentenceFor(life,{en:clean,ko:hit.ko});return;}
+    if(hit&&koreanSentenceText(hit.ko)){paintSentenceFor(life,{en:clean,ko:hit.ko});return;}
     if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
       try{await ensureHomewardLookupData();}
       catch{paintSentenceFor(life,{en:clean,retry:true,foot:'읽기 자료를 준비하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'});return;}
@@ -412,11 +423,14 @@ async function openSentence(text,origin){
   let lookupId=sentenceRecoveries.get(recoveryKey);
   if(!lookupId){lookupId=crypto.randomUUID();sentenceRecoveries.set(recoveryKey,lookupId);}
   if(sentenceRecoveries.size>32)sentenceRecoveries.delete(sentenceRecoveries.keys().next().value);
-  const answer = await dictCall({ op:'explain',lookupId,device:sbUser?'':deviceId(), sentence:clean, book:(curBook && curBook.title) || '' },
+  const answer = await dictCall({ op:'explain',target:SENTENCE_TARGET,lookupId,device:sbUser?'':deviceId(), sentence:clean, book:(curBook && curBook.title) || '' },
                                 ctrl ? ctrl.signal : null);
   if(sentCtrl === ctrl) sentCtrl = null;
 
-  if(!answer || answer.error || !answer.ko){
+  // A non-Korean answer is a failed lookup. Drop its id so 다시 시도 asks anew instead of replaying it.
+  const wrongLanguage=!!(answer && !answer.error && answer.ko && !koreanSentenceText(answer.ko));
+  if(wrongLanguage) sentenceRecoveries.delete(recoveryKey);
+  if(!answer || answer.error || !answer.ko || wrongLanguage){
     const why = answer && answer.error;
     if(!sentenceAlive(life)) return;
     if(why === 'quota_exceeded') rememberSentLeft(0,answer.day);
