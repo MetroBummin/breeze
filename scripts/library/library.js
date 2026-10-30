@@ -484,8 +484,11 @@ function homeBookSpec(book,casual){
       slot.textContent=label;
     }};
 }
+/* 추천 줄의 세 칸: 고전(기본) · 웹소설 · 기사. 예전 두 칸 시절의 'books'는
+   고전으로, 'articles'는 그대로 기사 칸으로 이어집니다. 모르는 값은 고전입니다. */
 function homeRecommendKind(){
-  return load('breeze.home-recommend','books')==='books'?'books':'articles';
+  const value=load('breeze.home-recommend','classics');
+  return value==='articles'||value==='webnovels'?value:'classics';
 }
 /* A started catalog book is one library record. Bundled text keeps the catalog
    id on longReadId, a bundled EPUB keeps it on classicId, and a copy migrated
@@ -517,9 +520,36 @@ function longReadOfferStamp(read){
 function homeRecommendClassics(){
   return typeof CLASSICS==='undefined'?[]:CLASSICS.filter(classic=>!homeRecommendCatalogOwned(classic.id));
 }
-/* The 기사/책 toggle was removed: the home top row is always 고전 (classics /
-   long reads), never RSS. clearHomeRssCards stays so any RSS cards left on the
-   rail from an older build are swept before the classics cards are laid in. */
+function syncHomeRecommendToggle(){
+  const group=document.getElementById('home-recommend-kind');
+  if(!group)return;
+  const kind=homeRecommendKind();
+  group.querySelectorAll('button').forEach(button=>{
+    button.setAttribute('aria-pressed',button.dataset.kind===kind?'true':'false');
+  });
+  if(group.dataset.bound)return;
+  group.dataset.bound='true';
+  group.addEventListener('keydown',event=>{
+    if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
+    const buttons=[...group.querySelectorAll('button')];
+    const index=buttons.findIndex(button=>button===document.activeElement);
+    if(index<0)return;
+    event.preventDefault();
+    const next=buttons[(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];
+    next.focus();
+    setHomeRecommendKind(next.dataset.kind);
+  });
+}
+function setHomeRecommendKind(kind){
+  const next=kind==='articles'||kind==='webnovels'?kind:'classics';
+  if(next===homeRecommendKind()){syncHomeRecommendToggle();return;}
+  save('breeze.home-recommend',next);
+  const rail=document.getElementById('casual-rail');
+  if(rail){delete rail.dataset.homeUserScrolled;rail.scrollLeft=0;}
+  renderHome();
+  if(next==='classics'&&typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
+}
+/* 고전·웹소설 칸으로 바꿀 때 기사 칸의 RSS 카드와 표지 작업을 걷어 냅니다. */
 function clearHomeRssCards(rail){
   if(typeof rssCoverCancel==='function'&&typeof rssCoverOwners!=='undefined')rssCoverCancel(rssCoverOwners.get(rail));
   rail.querySelectorAll('.rss-card,.rss-loading').forEach(node=>{
@@ -572,11 +602,11 @@ function renderHomeRecommendBooks(rail){
     empty.textContent=none?'시작한 책은 서재에 있어요.':'';
   }
 }
-/* ================= 웹소설 한 줄 =================
-   고전 줄과 '내 책' 줄 사이의 두 번째 줄. 작가가 허락한 무료 로열로드 작품을
-   보여 줍니다. 카드는 표지(없으면 글자 장식)·제목·작가 표기·'N화 읽는 중'을
-   담고, 누르면 기존 미리보기 시트(#article-preview) 안에서 회차 목록이 뜹니다.
-   따로 띄우는 화면은 없습니다. */
+/* ================= 추천 · 웹소설 칸 =================
+   작가가 허락한 무료 로열로드 작품을 고전과 같은 #casual-rail 에 깝니다. 카드는
+   고전 카드와 같은 틀(표지·제목·작가)이고 표지는 Breeze 가 만든 글자 표지입니다
+   (작가의 원래 표지 그림은 쓰지 않습니다). 누르면 기존 미리보기 시트
+   (#article-preview) 안에서 회차 목록이 뜹니다. 따로 띄우는 화면은 없습니다. */
 const WEBNOVEL_PROGRESS_KEY='breeze.webnovel-progress.v1';
 function webNovelProgress(){
   const value=load(WEBNOVEL_PROGRESS_KEY,{});
@@ -594,29 +624,23 @@ function webNovelProgressLabel(work){
 function webNovelCard(work){
   const card=el('div','bookcard classic home-recommend-book webnovel');
   card.dataset.webnovelId=work.id;
-  card.innerHTML='<img class="cover" alt="" hidden><div class="author"></div><div class="bt"></div>';
+  card.innerHTML='<img class="cover" alt=""><div class="author"></div><div class="bt"></div>';
   const title=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):(work.koTitle||work.title);
-  fillCard(card,{'.author':work.credit||work.author||'','.bt':title});
+  const credit=work.credit||work.author||'';
+  fillCard(card,{'.author':credit,'.bt':title});
   const image=card.querySelector('.cover');
-  if(work.cover){
-    image.onload=()=>{image.hidden=false;card.classList.add('has-cover');};
-    image.onerror=()=>{image.hidden=true;};
-    image.src=work.cover;
-  }else{
-    // Graceful local ornament when there is no cover asset, like elsewhere.
-    const art=el('div','webnovel-cover-art');
-    art.innerHTML=coverArtwork(work.id);
-    card.prepend(art);
-  }
+  image.onload=()=>card.classList.add('has-cover');
+  if(work.cover)image.src=work.cover;
   const label=webNovelProgressLabel(work);
-  if(label){const slot=el('div','prog',label);card.append(slot);}
-  card.title=[work.title,work.credit||work.author].filter(Boolean).join(' · ');
-  accessibleLibraryCard(card,[title,work.credit||work.author].filter(Boolean).join(' · '));
+  if(label)card.append(el('div','get',label));
+  card.title=[work.title,credit].filter(Boolean).join(' · ');
+  accessibleLibraryCard(card,[title,credit].filter(Boolean).join(' · '));
   card.onclick=()=>{if(typeof openWebNovelPreview==='function')openWebNovelPreview(work);};
   return card;
 }
 function renderHomeWebNovels(rail){
   if(!rail)return;
+  clearHomeRssCards(rail);
   const works=typeof WEB_NOVELS==='undefined'?[]:WEB_NOVELS;
   const specs=works.map(work=>({
     key:'webnovel:'+work.id,
@@ -624,20 +648,46 @@ function renderHomeWebNovels(rail){
     create:()=>webNovelCard(work),
   }));
   reconcileHomeCards(rail,specs);
-  const section=document.getElementById('webnovels');
-  if(section)section.hidden=!specs.length;
+  rail.hidden=!specs.length;
+  const empty=document.getElementById('home-feed-empty');
+  if(empty){empty.hidden=true;empty.textContent='';}
+}
+function renderHomeArticles(rail){
+  rail.hidden=false;
+  const empty=document.getElementById('home-feed-empty');
+  if(empty)empty.hidden=true;
+  reconcileHomeCards(rail,[]);
+  if(typeof appendRssCards==='function')appendRssCards(rail);
+}
+/* ================= 이어 읽기 =================
+   홈 맨 위 줄. 이 기기에서 열어 본 책·글 중 아직 다 읽지 않은 것을 최근에 읽은
+   순서로 둡니다. 같은 책은 아래 '내 책'에도 그대로 있습니다. 읽은 적이 없으면
+   줄 자체를 숨깁니다. */
+const HOME_CONTINUE_LIMIT=12;
+function homeContinueBooks(){
+  return byRecentlyRead(books.filter(book=>!book.transient&&localReadAt(book.id)>0&&posOf(book.id).p<1))
+    .slice(0,HOME_CONTINUE_LIMIT);
+}
+function renderHomeContinue(){
+  const rail=document.getElementById('continue-rail');
+  if(!rail)return;
+  const list=homeContinueBooks();
+  reconcileHomeCards(rail,list.map(book=>homeBookSpec(book,isCasual(book))));
+  const section=document.getElementById('continue');
+  if(section)section.hidden=!list.length;
 }
 function renderHome(){
   renderLibraryStorageNotice();
   renderHomeResume();
-  /* 고전 한 줄만 올립니다. '기사/책' 토글은 사라졌고 RSS 카드는 홈에 뜨지
-     않습니다. 저장해 둔 'articles' 선택이 있어도 빈 줄이 아니라 고전이 뜹니다. */
+  renderHomeContinue();
+  syncHomeRecommendToggle();
   const rail=document.getElementById('casual-rail');
-  renderHomeRecommendBooks(rail);
-  renderHomeWebNovels(document.getElementById('webnovel-rail'));
-  /* '내 책' 한 줄로 합칩니다. 예전의 'Books'(긴 글)와 '가볍게 읽기'(casual)가
-     하나의 레일에 같이 깔립니다. 작은 거르개(전체/책/글)로 한쪽만 볼 수
-     있습니다. 머리글 링크는 그대로 서재(#v-longform)로 갑니다. */
+  const kind=homeRecommendKind();
+  if(kind==='classics')renderHomeRecommendBooks(rail);
+  else if(kind==='webnovels')renderHomeWebNovels(rail);
+  else renderHomeArticles(rail);
+  /* '내 책' 한 줄. 긴 글(책)과 가벼운 글이 같은 레일에 깔리고, 전체/책/글
+     거르개로 한쪽만 볼 수 있습니다. 머리글 링크는 서재(#v-longform)로 갑니다. */
   syncMyBooksFilter();
   const filter=myBooksFilter(),shelf=document.getElementById('shelf');
   const specs=[];
@@ -665,8 +715,8 @@ function renderHome(){
 
 /* ================= '내 책' 거르개 =================
    한 줄에 책과 글이 섞여 있으니, 보고 싶은 쪽만 고르는 작은 띠를 둡니다.
-   전체(기본)·책·글 셋뿐이고, 고른 값은 localStorage 에 남습니다. 색은 더
-   쓰지 않고 중립 표면만 씁니다(설정의 화면 모드 띠와 같은 결). */
+   전체(기본)·책·글 셋뿐이고, 고른 값은 localStorage 에 남습니다. 모양은
+   추천 줄의 고전/웹소설/기사 띠(.home-kind)와 같습니다. */
 const MYBOOKS_FILTER_KEY='breeze.mybooks-filter';
 function myBooksFilter(){
   const value=load(MYBOOKS_FILTER_KEY,'all');
@@ -682,7 +732,7 @@ function setMyBooksFilter(next){
 function syncMyBooksFilter(){
   const current=myBooksFilter();
   document.querySelectorAll('#mybooks-filter button').forEach(button=>{
-    const on=button.dataset.mybooks===current;
+    const on=button.getAttribute('data-mybooks')===current;
     button.setAttribute('aria-pressed',on?'true':'false');
     button.classList.toggle('on',on);
   });

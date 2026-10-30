@@ -27,11 +27,13 @@ homeReady.then(()=>startSharedFileImports());
 homeReady.then(()=>{ if(typeof startAo3Inbox==='function') startAo3Inbox(); });
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
-/* The home top row is always 고전 now, so the classics catalog is always the
-   right thing to ask for on home paint. The longform library asks for it too. */
+/* A saved 기사 or 웹소설 choice must not request the classics catalog. RSS
+   discovery treats any other origin as a leak. The 고전 tab and the longform
+   library ask for it. */
 function paintHome(){
   renderHome();
-  if(typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
+  if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='classics'&&typeof refreshRemoteClassics==='function')
+    void refreshRemoteClassics();
 }
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----
    무엇을 어떻게 담는지는 sw.js 맨 위에 적혀 있습니다. 여기서는 등록만 합니다.

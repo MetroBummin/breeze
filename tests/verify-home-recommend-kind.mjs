@@ -24,15 +24,29 @@ function extractFunction(source,name){
   throw new Error('unclosed '+name);
 }
 
-test('the top row is 고전 with no 기사/책 toggle on home',()=>{
-  // Row 1 is now 고전 (classics / long reads). The old 기사/책 toggle and its
-  // CSS are gone, and RSS never appears on home.
-  assert.match(index,/id="home-recommend-title"[^>]*>고전<\/h2>/);
-  assert.doesNotMatch(index,/id="home-recommend-kind"/);
-  assert.doesNotMatch(index,/data-kind="articles"/);
-  assert.doesNotMatch(index,/data-kind="books"/);
-  assert.doesNotMatch(shellCss,/#home-recommend-kind/);
+test('추천 is the heading and 고전/웹소설/기사 is its toggle, in that order',()=>{
+  // 고전 is a toggle label only, never the big row heading.
+  assert.match(index,/id="home-recommend-title"[^>]*>추천<\/h2>/);
+  assert.doesNotMatch(index,/<h2[^>]*>고전<\/h2>/);
+  assert.match(index,/id="home-recommend-kind"[^>]*role="group"/);
+  const kinds=[...index.matchAll(/data-kind="([a-z]+)"[^>]*>([^<]+)<\/button>/g)].map(match=>[match[1],match[2]]);
+  assert.deepEqual(kinds,[['classics','고전'],['webnovels','웹소설'],['articles','기사']]);
+  assert.match(index,/data-kind="classics" aria-pressed="true"/);
+  // 이어 읽기 sits above 추천, 내 책 below. The 가볍게 읽기 row is gone.
+  const order=[...index.matchAll(/<section id="(continue|casuals|longform|home-casuals|webnovels)"/g)].map(match=>match[1]);
+  assert.deepEqual(order,['continue','casuals','longform']);
+  assert.match(index,/id="home-continue-title"[^>]*>이어 읽기<\/h2>/);
+  assert.match(shellCss,/#v-home :is\(#casuals,#longform\) > \.sec-head\{[^}]*height:30px/);
   assert.match(shellCss,/#v-home #home-recommend-title\{[^}]*color:var\(--settings-ink\)/);
+  // One toggle look for 추천 and 내 책.
+  assert.match(index,/id="mybooks-filter" class="home-kind"/);
+  assert.match(index,/id="home-recommend-kind" class="home-kind"/);
+  assert.match(shellCss,/#v-home \.home-kind\{[^}]*border:1px solid var\(--settings-line\)[^}]*border-radius:7px/);
+  assert.match(shellCss,/#v-home \.home-kind button\[aria-pressed="true"\]\{[^}]*background:var\(--settings-close\)[^}]*color:var\(--settings-ink\)/);
+  assert.match(shellCss,/#v-home \.home-kind button\{[^}]*color:var\(--settings-muted\)[^}]*font:600 12\.5px/);
+  assert.match(shellCss,/#v-home \.home-kind button::after\{[^}]*height:44px/);
+  const kindCss=shellCss.slice(shellCss.indexOf('#v-home .home-kind{'),shellCss.indexOf('@media(prefers-reduced-motion:reduce){#v-home .home-kind'));
+  assert.doesNotMatch(kindCss,/#[0-9a-fA-F]{3,8}/,'The toggle introduces a color outside the existing variables');
 });
 
 test('book captions sit under the picture inside the article card box',()=>{
@@ -45,7 +59,7 @@ test('book captions sit under the picture inside the article card box',()=>{
   assert.match(homeCss,new RegExp(rail+String.raw` > \.home-recommend-book \.get\{[^}]*text-shadow:none`));
   assert.match(homeCss,/\.bookcard\.has-cover \.author, \.bookcard\.has-cover \.bt\{[^}]*text-shadow:var\(--cover-text-shadow\)/);
   assert.match(homeCss,/\.home-cover-meta\{[^}]*text-shadow:0 1px 5px rgba\(0,0,0,\.7\)/);
-  const block=homeCss.slice(homeCss.indexOf(':is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book{'),homeCss.indexOf('#v-home #longform{'));
+  const block=homeCss.slice(homeCss.indexOf(':is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book{'),homeCss.indexOf('#v-home #longform,'));
   assert.doesNotMatch(block,/#[0-9a-fA-F]{3,8}/,'Book rail styling introduces a new color');
 });
 
@@ -53,8 +67,9 @@ function harness(){
   /* 홈 아래줄은 '내 책' 하나로 합쳐졌습니다(#shelf 한 레일 + 전체/책/글 거르개).
      가볍게 읽기(home-casual-rail) 섹션은 없어졌고, 고전과 내 책 사이에 웹소설
      줄(#webnovel-rail)이 들어옵니다. */
-  const {document}=parseHTML(`<div id="casual-rail"></div><p id="home-feed-empty"></p>
-    <section id="webnovels"><div id="webnovel-rail"></div></section>
+  const {document}=parseHTML(`<section id="continue" hidden><div id="continue-rail"></div></section>
+    <div id="home-recommend-kind" role="group"><button type="button" data-kind="classics" aria-pressed="true">고전</button><button type="button" data-kind="webnovels" aria-pressed="false">웹소설</button><button type="button" data-kind="articles" aria-pressed="false">기사</button></div>
+    <div id="casual-rail"></div><p id="home-feed-empty"></p>
     <section id="longform"><div id="mybooks-filter"><button data-mybooks="all" aria-pressed="true"></button><button data-mybooks="books" aria-pressed="false"></button><button data-mybooks="casuals" aria-pressed="false"></button></div></section>
     <div id="shelf"></div>
     <span id="longform-cnt"></span><div id="longform-grid"></div><div id="longform-empty" hidden></div>
@@ -68,12 +83,14 @@ function harness(){
     renderLibraryStorageNotice(){},renderHomeResume(){},
     longformBooks:()=>books.filter(book=>book.kind!=='paste'&&book.kind!=='article'),
     homeBookSpec:book=>({key:'book:'+book.id,stamp:book.id,create(){const tile=document.createElement('div');tile.dataset.bookId=book.id;tile.className='saved-book';return tile;}}),
-    serverOnlyBooks:()=>[],serverOnlyCasuals:()=>[],casualBooks:()=>[],localReadAt:()=>0,
+    serverOnlyBooks:()=>[],serverOnlyCasuals:()=>[],casualBooks:()=>[],
+    readAt:{},positions:{},
+    isCasual:book=>book.kind==='paste'||book.kind==='article',
     homeRegularTile(card){const tile=document.createElement('div');tile.className='home-regular-tile';tile.append(card);return tile;},
     homeAddTile(card){const tile=document.createElement('div');tile.className='home-add-tile';tile.append(card);return tile;},
     longformAddCard(){const card=document.createElement('button');card.className='bookcard add';return card;},
     casualAddCard:()=>document.createElement('button'),
-    // RSS must never land on the home rail now; this spy proves it is not called there.
+    // The 기사 tab paints RSS through this spy; other tabs must never call it.
     appendRssCards(rail){rss.push(rail.id);rail.dataset.rssStamp='articles';const card=document.createElement('article');card.className='casual rss-card';rail.append(card);},
     openLongReadPreviewOrReader(read){opened.push(read.id);},
     openCasualPreviewOrReader(book){opened.push(book.id);},
@@ -82,15 +99,15 @@ function harness(){
     bookCard(book){const card=document.createElement('div');card.className='bookcard owned';card.dataset.localBook=book.id;return card;},
     cloudBookCard(){return document.createElement('div');},
     cloudCasualCard(){return document.createElement('div');},
-    // 웹소설 줄은 이 테스트의 관심사(고전/RSS/한글 제목)와 무관합니다 — no-op.
-    renderHomeWebNovels(){},activeAppView:()=>'home',
+    openWebNovelPreview(work){opened.push('webnovel:'+work.id);},
+    activeAppView:()=>'home',
   });
-  vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}',context);
-  for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards'])
+  vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}function localReadAt(id){return readAt[id]||0;}function posOf(id){return positions[id]||{p:0,t:0};}var HOME_CONTINUE_LIMIT=12,WEBNOVEL_PROGRESS_KEY="breeze.webnovel-progress.v1",MYBOOKS_FILTER_KEY="breeze.mybooks-filter";',context);
+  for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards','byRecentlyRead'])
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};
-  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','myBooksFilter','setMyBooksFilter','syncMyBooksFilter','renderHome','renderLongformRecommend','renderLongformLibrary'])
+  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','webNovelProgress','webNovelChapterAt','webNovelProgressLabel','webNovelCard','renderHomeWebNovels','renderHomeArticles','homeContinueBooks','renderHomeContinue','myBooksFilter','setMyBooksFilter','syncMyBooksFilter','renderHome','renderLongformRecommend','renderLongformLibrary'])
     vm.runInContext(extractFunction(library,name),context);
   return {context,books,opened,rss,store,document};
 }
@@ -105,28 +122,71 @@ function railLongreadIds(document){
   return [...document.querySelectorAll('#casual-rail .home-recommend-book[data-longread-id]')].map(node=>node.dataset.longreadId);
 }
 
-test('the home top row shows classics and never RSS, even with a saved 기사 choice',()=>{
+test('고전 is the default tab; old 기사 and 책 choices migrate to 기사 and 고전',()=>{
   const {context:c,rss,store,document}=harness();
-  assert.equal(c.homeRecommendKind(),'books');
+  assert.equal(c.homeRecommendKind(),'classics');
   c.renderHome();
+  const pressed=()=>[...document.querySelectorAll('#home-recommend-kind button')].filter(button=>button.getAttribute('aria-pressed')==='true').map(button=>button.dataset.kind);
+  assert.deepEqual(pressed(),['classics']);
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,0);
   assert.ok(document.querySelectorAll('#casual-rail .home-recommend-book').length>0);
-  // A stored 'articles' preference must still paint the classics, not an empty
-  // rail and not RSS.
+  assert.equal(rss.length,0,'고전 must not ask RSS');
+  // Two-tab era values: 'books' was the 책 rail (now 고전), 'articles' is 기사.
+  store.set('breeze.home-recommend','books');
+  assert.equal(c.homeRecommendKind(),'classics');
   store.set('breeze.home-recommend','articles');
+  assert.equal(c.homeRecommendKind(),'articles');
   c.renderHome();
+  assert.deepEqual(pressed(),['articles']);
+  assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,1);
+  assert.equal(document.querySelectorAll('#casual-rail .home-recommend-book').length,0);
+  assert.equal(rss.length,1);
+  store.set('breeze.home-recommend','nonsense');
+  assert.equal(c.homeRecommendKind(),'classics');
+});
+
+test('the toggle switches the one rail between 고전, 웹소설 and 기사',()=>{
+  const {context:c,rss,store,document,opened}=harness();
+  c.renderHome();
+  c.setHomeRecommendKind('webnovels');
+  assert.equal(store.get('breeze.home-recommend'),'webnovels');
+  const novels=[...document.querySelectorAll('#casual-rail .home-recommend-book.webnovel')];
+  assert.deepEqual(novels.map(card=>card.dataset.webnovelId),['arkendrithyst','cinnamon-bun','chasing-sunlight']);
+  assert.equal(document.querySelectorAll('#casual-rail [data-longread-id],#casual-rail .rss-card').length,0);
+  // Breeze-made typographic covers, never empty cards.
+  for(const card of novels)
+    assert.match(card.querySelector('img.cover').getAttribute('src'),new RegExp('^assets/webnovels/covers/'+card.dataset.webnovelId+'\\.webp$'));
+  assert.equal(novels[0].querySelector('.author').textContent,'R. K. Goff');
+  novels[2].click();
+  assert.equal(opened.at(-1),'webnovel:chasing-sunlight');
+  c.setHomeRecommendKind('articles');
+  assert.equal(document.querySelectorAll('#casual-rail .webnovel').length,0);
+  assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,1);
+  assert.equal(rss.length,1);
+  c.setHomeRecommendKind('classics');
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,0);
-  assert.ok(document.querySelectorAll('#casual-rail .home-recommend-book').length>0);
-  assert.equal(document.getElementById('casual-rail').hidden,false);
-  assert.equal(document.getElementById('home-feed-empty').hidden,true);
-  // appendRssCards is never called from the home rail.
-  assert.equal(rss.length,0);
-  // Home renders only the classics path now.
-  assert.doesNotMatch(extractFunction(library,'renderHome'),/appendRssCards/);
+  assert.ok(document.querySelectorAll('#casual-rail [data-longread-id]').length>0);
+  assert.equal(rss.length,1);
+});
+
+test('이어 읽기 lists opened, unfinished books with the most recent first',()=>{
+  const {context:c,books,document}=harness();
+  c.renderHome();
+  assert.equal(document.getElementById('continue').hidden,true,'Nothing read yet hides the row');
+  books.push({id:'old',kind:'pdf',title:'Old'},{id:'new',kind:'article',title:'New'},
+    {id:'done',kind:'epub',title:'Done'},{id:'never',kind:'epub',title:'Never'},{id:'draft',kind:'article',transient:true});
+  Object.assign(c.readAt,{old:10,new:30,done:40,draft:50});
+  Object.assign(c.positions,{old:{p:.4,t:10},new:{p:.1,t:30},done:{p:1,t:40}});
+  c.renderHome();
+  assert.equal(document.getElementById('continue').hidden,false);
+  assert.deepEqual([...document.querySelectorAll('#continue-rail [data-book-id]')].map(node=>node.dataset.bookId),['new','old']);
+  // The same books are still in 내 책.
+  assert.ok(document.querySelector('#shelf [data-book-id="old"]'));
 });
 
 test('the rail shows friendly Korean titles while ids and English titles still match ownership',()=>{
   const {context:c,books,opened,document}=harness();
+  books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
   books.push({id:'saved-odyssey',kind:'epub',title:'The Odyssey',author:'Homer',classicId:'odyssey'});
   c.renderHome();
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,0);
@@ -233,7 +293,7 @@ test('a remote catalog book uses the same id, and an empty rail says the books a
   const empty=document.getElementById('home-feed-empty');
   assert.equal(empty.hidden,false);
   assert.equal(empty.textContent,'시작한 책은 서재에 있어요.');
-  // No RSS fallback exists any more: an empty classics rail stays empty copy.
+  // An empty 고전 tab stays empty copy; it never falls back to RSS.
   assert.equal(document.querySelectorAll('#casual-rail .rss-card').length,0);
   assert.equal(rss.length,0);
   books.length=0;

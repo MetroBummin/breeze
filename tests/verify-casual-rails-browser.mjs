@@ -49,12 +49,11 @@ try{
         positions={'saved-short':{t:10,p:.2},'saved-long':{t:20,p:.4}};
         renderHome();
       });
-      /* 홈 아래줄은 '내 책' 하나로 합쳐졌습니다: 긴 글(책)과 가볍게 읽기(글)가
-         같은 #shelf 레일에 전체/책/글 거르개로 깔립니다. 가볍게 읽기(home-casuals)
-         섹션은 사라졌고, 웹소설 줄이 고전과 내 책 사이에 있습니다. */
+      /* 홈은 위에서부터 이어 읽기 · 추천(고전/웹소설/기사) · 내 책입니다. 가볍게
+         읽기 줄은 없고, 그 글은 '내 책'(#shelf)에 전체/책/글 거르개로 깔립니다. */
       assert.deepEqual(await page.locator('#v-home > section').evaluateAll(nodes=>nodes.map(node=>node.id)),
-        ['casuals','webnovels','longform'],'Home section order changed');
-      assert.equal(await page.locator('#home-casuals,#home-casual-rail').count(),0,'The merged 가볍게 읽기 section is gone');
+        ['continue','casuals','longform'],'Home section order changed');
+      assert.equal(await page.locator('#home-casuals,#home-casual-rail,#webnovels').count(),0,'Old home rows are gone');
       assert.equal(await page.locator('#casual-rail [data-home-key^="book:"]').count(),0,'Saved book entered recommendation');
       // 전체(기본) 거르개에서는 책과 글이 한 레일(#shelf)에 함께 뜹니다.
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"]').count(),1);

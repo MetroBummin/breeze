@@ -53,11 +53,9 @@ test('Pride and Prejudice payload matches the catalog and stays out of the app b
   assert.doesNotMatch(text('scripts/library/longreads.js'),/pride-and-prejudice/);
   assert.doesNotMatch(text('tools/build-www.mjs'),/server\/classics/);
   assert.doesNotMatch(text('scripts/main.js'),/homeReady\.then\(\(\)=>\{if\(typeof refreshRemoteClassics/);
-  // The 기사/책 toggle is gone: the home top row is always 고전, so paintHome
-  // asks for the classics catalog unconditionally (no homeRecommendKind guard).
-  assert.match(text('scripts/main.js'),/function paintHome\(\)\{[\s\S]*?if\(typeof refreshRemoteClassics==='function'\)void refreshRemoteClassics\(\);/);
-  assert.doesNotMatch(text('scripts/main.js'),/homeRecommendKind\(\)==='books'/);
-  assert.doesNotMatch(text('scripts/library/library.js'),/next==='books'&&typeof refreshRemoteClassics==='function'/);
+  // Only the 고전 tab asks for the classics catalog on home paint.
+  assert.match(text('scripts/main.js'),/homeRecommendKind\(\)==='classics'&&typeof refreshRemoteClassics==='function'/);
+  assert.match(text('scripts/library/library.js'),/next==='classics'&&typeof refreshRemoteClassics==='function'/);
   assert.match(text('scripts/core/state.js'),/v==='longform'\)\{[\s\S]*refreshRemoteClassics/);
 });
 

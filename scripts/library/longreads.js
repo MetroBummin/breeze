@@ -1192,6 +1192,9 @@ async function restoreMissingLongReadCovers(){
    no UI change. The home card and the in-preview chapter list read this one
    const; nothing here starts a Reader until a chapter has real content.
 
+   Covers are Breeze-made typographic covers (title + author on one colour,
+   tools/make-webnovel-covers.mjs), never the authors' own cover art.
+
    HARD RULES, encoded verbatim below:
    - R. K. Goff's story: first 10 chapters only (chapters.length === 10), and
      the credit string is EXACTLY 'R. K. Goff'.
@@ -1214,7 +1217,7 @@ const WEB_NOVELS = [
     koTitle:'아르켄드리시스트',
     author:'R. K. Goff', credit:'R. K. Goff',
     royalRoadUrl:'https://www.royalroad.com/fiction/36950/arkendrithyst',
-    cover:null, free:true, monetization:'none',
+    cover:'assets/webnovels/covers/arkendrithyst.webp', free:true, monetization:'none',
     intro:'마법이 곧 언어인 세계. 한 남자가 폭력 없이 살아남는 길을 찾아 도시로 향합니다. 작가가 허락한 무료 공개본으로, 처음 10화를 준비하고 있어요.',
     chapters:webNovelPlaceholderChapters(10),
   },
@@ -1224,7 +1227,7 @@ const WEB_NOVELS = [
     koTitle:'시나몬 번',
     author:'RavensDagger', credit:'RavensDagger',
     royalRoadUrl:'https://www.royalroad.com/fiction/39408/cinnamon-bun',
-    cover:null, free:true, monetization:'none',
+    cover:'assets/webnovels/covers/cinnamon-bun.webp', free:true, monetization:'none',
     intro:'누군가를 돕는 것만으로 힘을 얻는 소녀 브로콜리의 이야기. 따뜻하고 느긋한 모험담이에요. 작가가 허락한 무료 공개본으로 준비하고 있어요.',
     chapters:webNovelPlaceholderChapters(10),
   },
@@ -1235,7 +1238,7 @@ const WEB_NOVELS = [
     author:'InadvisablyCompelled', credit:'InadvisablyCompelled',
     royalRoadUrl:'https://www.royalroad.com/fiction/40373/chasing-sunlight',
     kindleUrl:'https://www.amazon.com/dp/B09JVF9V7T',
-    cover:null, free:true, monetization:'none',
+    cover:'assets/webnovels/covers/chasing-sunlight.webp', free:true, monetization:'none',
     intro:'깨어나 보니 낯선 몸, 낯선 힘, 그리고 햇빛을 쫓는 긴 여정이 시작됩니다. 작가가 허락한 무료 공개본으로 준비하고 있어요. 로열로드 원문과 킨들판 링크를 함께 둡니다.',
     chapters:webNovelPlaceholderChapters(10),
   },
@@ -1251,7 +1254,11 @@ function webNovelDisplayTitle(work){
    그걸, 없으면 영어 제목을 씁니다. 짝 맞추기·반입 파일명·클라우드 meta.title·
    SHA/조회에는 절대 쓰지 않습니다. 그쪽은 늘 영어 `title` 입니다. */
 function classicDisplayTitle(read){
-  return (read&&read.koTitle)||(read&&read.title)||'';
+  if(!read)return '';
+  // A remote catalog row for a bundled book (Alice, Gatsby…) keeps the bundled
+  // Korean name even when the catalog does not carry one.
+  const bundled=read.koTitle||typeof LONG_READS==='undefined'||typeof CLASSIC_FALLBACKS==='undefined'?null:[...LONG_READS,...CLASSIC_FALLBACKS].find(item=>item.id===read.id);
+  return read.koTitle||bundled?.koTitle||read.title||'';
 }
 function longReadCard(read){
   const card=el('div','bookcard classic longread');

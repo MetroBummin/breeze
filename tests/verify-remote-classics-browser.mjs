@@ -61,15 +61,17 @@ try {
 
   await page.goto(base);
   await page.evaluate(() => homeReady);
+  assert.equal(await page.evaluate(() => homeRecommendKind()), 'classics', 'a new reader opens on 고전');
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
-  // The 기사/책 toggle is gone: the home top row is always 고전, so even a stored
-  // 'articles' preference still fetches the classics catalog and paints classics.
   await page.evaluate(() => save('breeze.home-recommend', 'articles'));
   await page.reload();
   await page.evaluate(() => homeReady);
+  assert.equal(await page.evaluate(() => remoteClassicCatalogReads().length), 0, 'A saved 기사 choice fetched the classics catalog');
+  await page.locator('#home-recommend-kind [data-kind="classics"]').click();
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
   assert.equal(bookFetches, 0, 'The catalog fetch downloaded the novel');
 
+  await page.locator('#home-recommend-kind [data-kind="classics"]').click();
   await page.locator(card).scrollIntoViewIfNeeded();
   await page.waitForFunction(selector => {
     const image = document.querySelector(`${selector} img.cover`);

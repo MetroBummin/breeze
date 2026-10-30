@@ -155,6 +155,20 @@ catalog id returns nothing and does not throw; a cloud-only record falls back
 to reconnecting the reader's own file. The last choice is stored locally at
 `breeze.home-recommend` and is not ranked or uploaded.
 
+### 고전 / 웹소설 / 기사 (2026-10-30)
+
+The toggle beside 추천 now has three tabs, in this order: 고전 (the book rail
+above, the default), 웹소설 (the three author-permitted Royal Road works), and
+기사 (the external RSS row). All three paint the same `#casual-rail`; only the
+기사 tab calls `appendRssCards`, and only the 고전 tab asks for the remote
+classics catalog. Stored values migrate: `'articles'` stays 기사, the old
+`'books'` and anything unknown open 고전. Reading a 기사 card still saves it
+through the preview CTA (`commitArticleDraft`), so it then appears in 내 책.
+
+Home order is 이어 읽기 (opened, unfinished items on this device, most recent
+first; hidden when empty), then 추천, then 내 책 (books and 글 together with a
+전체/책/글 filter). The separate 가볍게 읽기 row is gone.
+
 Holmes, Alice, and Gatsby cards open through `openLongReadPreviewOrReader`.
 `CLASSICS` is empty, so no bundled EPUB is offered. Personal library cards
 still do not enter the article rail. The bundled Holmes offers are not placed

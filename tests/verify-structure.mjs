@@ -702,10 +702,14 @@ assert.match(librarySource, /homeRegularTile\(casualCard\(book,null,false\)/,
 assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
   'Saved long content should use the neutral regular-card layout');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /id="home-recommend-title"[^>]*>고전<\/h2>/,
-  'Home top row must be the 고전 heading');
-/* 가볍게 읽기(home-casuals) 줄은 '내 책' 줄에 합쳐졌습니다. 홈 아래줄은
-   이제 '내 책' 하나뿐이고, 머리글 셰브런은 그 한 줄만 서재(#v-longform)로
+assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
+  'Home recommendation must be the plain 추천 heading');
+assert.match(index, /id="home-recommend-kind"[\s\S]*?data-kind="classics"[\s\S]*?data-kind="webnovels"[\s\S]*?data-kind="articles"/,
+  'The 추천 toggle must be 고전 / 웹소설 / 기사, in that order');
+assert.match(index, /<section id="continue"[\s\S]*?<section id="casuals"[\s\S]*?<section id="longform"/,
+  'Home order must be 이어 읽기, 추천, 내 책');
+/* 가볍게 읽기(home-casuals) 줄은 '내 책' 줄에 합쳐졌습니다. 홈 맨 아래줄은
+   '내 책'이고, 머리글 셰브런은 그 한 줄만 서재(#v-longform)로
    넘깁니다. 전체/책/글 거르개가 그 머리글 오른쪽에 붙습니다. */
 assert.doesNotMatch(index, /onclick="show\('casuals'\)"/,
   'The removed home 가볍게 읽기 chevron still points at the Casuals view');

@@ -164,7 +164,7 @@ function articlePreviewClose(cancelOpening=true){
 
   articlePreviewDialog.dataset.preparing='false';
   articlePreviewDialog.dataset.kind='article';
-  if(typeof articlePreviewChapters!=='undefined'){articlePreviewChapters.hidden=true;articlePreviewChapters.replaceChildren();}
+  if(typeof articlePreviewChapters!=='undefined'){articlePreviewChapters.hidden=true;articlePreviewChapters.textContent='';}
   articlePreviewGeneration++;
   articlePreviewBook=null;
   articlePreviewSummaryUrl='';
@@ -436,9 +436,9 @@ function openLongReadPreview(read){
 /* ================= 웹소설 미리보기 =================
    같은 #article-preview 시트를 그대로 씁니다. 따로 띄우는 화면은 없습니다.
    dataset.kind='webnovel' 로 표시하고, 소개·작가 표기·원문 링크를 채운 뒤
-   시트 안(.ap-scroll)에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 본문이
-   있는 회차(available && url/content)는 기존 리더 경로로 열고, 아직 없는
-   회차는 '곧 공개' 로 표시하고 이동하지 않습니다. */
+   시트 안(.ap-scroll)에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 주소가
+   있는 회차(available && url)는 원문을 열고, 아직 없는 회차는 '곧 공개' 로
+   표시하고 이동하지 않습니다. */
 const articlePreviewChapters=document.createElement('section');
 articlePreviewChapters.className='ap-chapters';articlePreviewChapters.hidden=true;
 articlePreviewChapters.setAttribute('aria-label','회차 목록');
@@ -449,14 +449,9 @@ function webNovelPreviewLink(label,url){
   return link;
 }
 function openWebNovelChapter(work,chapter){
-  // No scraping / no bundled text yet: a placeholder chapter never navigates.
-  // When real content arrives (available + url/content), open it via the
-  // existing reader path; a url opens the original, content opens in Reader.
-  if(chapter&&chapter.available&&(chapter.url||chapter.content)){
-    if(typeof openWebNovelChapterContent==='function'){openWebNovelChapterContent(work,chapter);return;}
-    if(chapter.url){window.open(chapter.url,'_blank','noopener,noreferrer');return;}
-    return;
-  }
+  // No scraping and no bundled text yet: a placeholder chapter never navigates.
+  // A chapter that later carries its original url opens there.
+  if(chapter&&chapter.available&&chapter.url){window.open(chapter.url,'_blank','noopener,noreferrer');return;}
   articlePreviewStatus('곧 공개될 회차예요.');
 }
 function renderWebNovelChapters(work){
@@ -470,7 +465,7 @@ function renderWebNovelChapters(work){
     const row=document.createElement('button');
     row.type='button';
     row.className='ap-chapter-row';
-    const available=!!(chapter.available&&(chapter.url||chapter.content));
+    const available=!!(chapter.available&&chapter.url);
     if(!available){row.classList.add('is-soon');row.setAttribute('aria-disabled','true');}
     const label=document.createElement('span');
     label.className='ap-chapter-title';

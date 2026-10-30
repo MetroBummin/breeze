@@ -52,7 +52,7 @@ try {
       assert.equal(await page.locator('#casual-rail [data-home-key="book:reading"]').count(),0);
       // 가벼운 글은 이제 '내 책' 레일(#shelf)에 함께 깔립니다(기본 거르개 전체).
       assert.equal(await page.locator('#shelf [data-home-key="book:reading"]').count(),1);
-      assert.equal(await page.locator('#shelf .casual.add').count(),1);
+      assert.equal(await page.locator('#shelf .home-add-tile').count(),1);
       assert.equal(await page.locator('#v-casuals .feed-categories,#v-casuals #casual-discover-rail').count(),0);
       assert.equal(await page.evaluate(()=>sharedLinks.length),2,'Pending App Group records were discarded');
       await page.evaluate(()=>{save('breeze.feed-category','saved');renderHome();});
