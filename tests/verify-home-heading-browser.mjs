@@ -22,7 +22,9 @@ const server=createServer((req,res)=>{
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const url=`http://127.0.0.1:${server.address().port}/`,reports=[];
-const headings=[['longform','longform'],['home-casuals','casuals']];
+/* 가볍게 읽기(home-casuals) 줄은 '내 책'(longform) 줄에 합쳐졌습니다. 홈
+   아래줄의 머리글 셰브런은 이제 '내 책' 하나뿐입니다. */
+const headings=[['longform','longform']];
 
 async function geometry(page){
  return page.locator('#v-home .section-link').evaluateAll(buttons=>buttons.map(button=>{
@@ -90,7 +92,7 @@ try{
      }
      await baseline.evaluate(node=>node.remove());
      const after=await geometry(page);
-     assert.equal(after.length,2);
+     assert.equal(after.length,1);
      for(let i=0;i<after.length;i++){
       const row=after[i];
       assert.equal(row.align,'center',`${key}: shared flex alignment owns centering`);

@@ -704,10 +704,15 @@ assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
 assert.match(index, /id="home-recommend-title"[^>]*>고전<\/h2>/,
   'Home top row must be the 고전 heading');
-assert.match(index, /class="section-link"[^>]*aria-label="가벼운 글 모아보기"[^>]*onclick="show\('casuals'\)"/,
-  'The saved Casuals heading lost its shelf chevron');
-assert.match(index, /class="section-link"[^>]*aria-label="책 모아보기"[^>]*onclick="show\('longform'\)"/,
-  'The Books heading lost its shelf chevron');
+/* 가볍게 읽기(home-casuals) 줄은 '내 책' 줄에 합쳐졌습니다. 홈 아래줄은
+   이제 '내 책' 하나뿐이고, 머리글 셰브런은 그 한 줄만 서재(#v-longform)로
+   넘깁니다. 전체/책/글 거르개가 그 머리글 오른쪽에 붙습니다. */
+assert.doesNotMatch(index, /onclick="show\('casuals'\)"/,
+  'The removed home 가볍게 읽기 chevron still points at the Casuals view');
+assert.match(index, /class="section-link"[^>]*aria-label="내 책 모아보기"[^>]*onclick="show\('longform'\)"/,
+  'The 내 책 heading lost its shelf chevron');
+assert.match(index, /id="mybooks-filter"[\s\S]*?data-mybooks="all"[\s\S]*?data-mybooks="books"[\s\S]*?data-mybooks="casuals"/,
+  'The 내 책 section lost its 전체/책/글 filter');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
 assert.match(librarySource, /function renderLongformLibrary/,
   'Nothing fills the long-form library view');

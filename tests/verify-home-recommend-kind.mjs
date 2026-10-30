@@ -50,7 +50,13 @@ test('book captions sit under the picture inside the article card box',()=>{
 });
 
 function harness(){
-  const {document}=parseHTML(`<div id="casual-rail"></div><p id="home-feed-empty"></p><div id="shelf"></div><div id="home-casual-rail"></div>
+  /* 홈 아래줄은 '내 책' 하나로 합쳐졌습니다(#shelf 한 레일 + 전체/책/글 거르개).
+     가볍게 읽기(home-casual-rail) 섹션은 없어졌고, 고전과 내 책 사이에 웹소설
+     줄(#webnovel-rail)이 들어옵니다. */
+  const {document}=parseHTML(`<div id="casual-rail"></div><p id="home-feed-empty"></p>
+    <section id="webnovels"><div id="webnovel-rail"></div></section>
+    <section id="longform"><div id="mybooks-filter"><button data-mybooks="all" aria-pressed="true"></button><button data-mybooks="books" aria-pressed="false"></button><button data-mybooks="casuals" aria-pressed="false"></button></div></section>
+    <div id="shelf"></div>
     <span id="longform-cnt"></span><div id="longform-grid"></div><div id="longform-empty" hidden></div>
     <section id="longform-recommend" hidden><h2 id="longform-recommend-title">추천</h2><div id="longform-recommend-rail"></div></section>`);
   const store=new Map(),opened=[],rss=[];
@@ -75,13 +81,16 @@ function harness(){
     renderFolderControls(){},folderBooks:list=>list,folderMatches:()=>true,
     bookCard(book){const card=document.createElement('div');card.className='bookcard owned';card.dataset.localBook=book.id;return card;},
     cloudBookCard(){return document.createElement('div');},
+    cloudCasualCard(){return document.createElement('div');},
+    // 웹소설 줄은 이 테스트의 관심사(고전/RSS/한글 제목)와 무관합니다 — no-op.
+    renderHomeWebNovels(){},activeAppView:()=>'home',
   });
   vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}',context);
   for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards'])
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};
-  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','renderHome','renderLongformRecommend','renderLongformLibrary'])
+  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','myBooksFilter','setMyBooksFilter','syncMyBooksFilter','renderHome','renderLongformRecommend','renderLongformLibrary'])
     vm.runInContext(extractFunction(library,name),context);
   return {context,books,opened,rss,store,document};
 }

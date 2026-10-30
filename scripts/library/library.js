@@ -635,24 +635,57 @@ function renderHome(){
   const rail=document.getElementById('casual-rail');
   renderHomeRecommendBooks(rail);
   renderHomeWebNovels(document.getElementById('webnovel-rail'));
-  const longform=longformBooks(),shelf=document.getElementById('shelf');
-  const specs=longform.map(book=>homeBookSpec(book,false));
-  for(const row of serverOnlyBooks()){
-    specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
+  /* '내 책' 한 줄로 합칩니다. 예전의 'Books'(긴 글)와 '가볍게 읽기'(casual)가
+     하나의 레일에 같이 깔립니다. 작은 거르개(전체/책/글)로 한쪽만 볼 수
+     있습니다. 머리글 링크는 그대로 서재(#v-longform)로 갑니다. */
+  syncMyBooksFilter();
+  const filter=myBooksFilter(),shelf=document.getElementById('shelf');
+  const specs=[];
+  if(filter!=='casuals'){
+    for(const book of longformBooks())specs.push(homeBookSpec(book,false));
+    for(const row of serverOnlyBooks()){
+      specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
+    }
+    if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
   }
-  if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
-  specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
+  if(filter!=='books'){
+    const entries=[
+      ...casualBooks().map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
+      ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
+    ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
+    for(const entry of entries){
+      specs.push(entry.kind==='book'
+        ? homeBookSpec(entry.value,true)
+        : {key:'cloudcasual:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
+    }
+  }
+  specs.push({key:'add',stamp:filter,create:()=>homeAddTile(filter==='casuals'?casualAddCard():longformAddCard(),filter==='casuals'?'글 추가':'파일 추가')});
   reconcileHomeCards(shelf,specs);
-  const light=document.getElementById('home-casual-rail');
-  const entries=[
-    ...casualBooks().map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
-    ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
-  ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
-  const lightSpecs=entries.map(entry=>entry.kind==='book'
-    ? homeBookSpec(entry.value,true)
-    : {key:'cloud:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
-  lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
-  reconcileHomeCards(light,lightSpecs);
+}
+
+/* ================= '내 책' 거르개 =================
+   한 줄에 책과 글이 섞여 있으니, 보고 싶은 쪽만 고르는 작은 띠를 둡니다.
+   전체(기본)·책·글 셋뿐이고, 고른 값은 localStorage 에 남습니다. 색은 더
+   쓰지 않고 중립 표면만 씁니다(설정의 화면 모드 띠와 같은 결). */
+const MYBOOKS_FILTER_KEY='breeze.mybooks-filter';
+function myBooksFilter(){
+  const value=load(MYBOOKS_FILTER_KEY,'all');
+  return value==='books'||value==='casuals'?value:'all';
+}
+function setMyBooksFilter(next){
+  const value=next==='books'||next==='casuals'?next:'all';
+  if(value===myBooksFilter()){syncMyBooksFilter();return;}
+  save(MYBOOKS_FILTER_KEY,value);
+  syncMyBooksFilter();
+  if(typeof activeAppView==='function'&&activeAppView()==='home')renderHome();
+}
+function syncMyBooksFilter(){
+  const current=myBooksFilter();
+  document.querySelectorAll('#mybooks-filter button').forEach(button=>{
+    const on=button.dataset.mybooks===current;
+    button.setAttribute('aria-pressed',on?'true':'false');
+    button.classList.toggle('on',on);
+  });
 }
 
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에

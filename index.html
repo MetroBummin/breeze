@@ -218,16 +218,14 @@
 
   <section id="longform">
     <div class="sec-head">
-      <h2><button class="section-link" type="button" aria-label="책 모아보기" onclick="show('longform')"><span data-i18n="sec.books">Books</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></h2>
+      <h2><button class="section-link" type="button" aria-label="내 책 모아보기" onclick="show('longform')"><span data-i18n="sec.mybooks">My Books</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></h2>
+      <div id="mybooks-filter" class="home-seg" role="group" aria-label="내 책 거르기">
+        <button type="button" data-mybooks="all" aria-pressed="true" onclick="setMyBooksFilter('all')" data-i18n="filter.all">전체</button>
+        <button type="button" data-mybooks="books" aria-pressed="false" onclick="setMyBooksFilter('books')" data-i18n="filter.books">책</button>
+        <button type="button" data-mybooks="casuals" aria-pressed="false" onclick="setMyBooksFilter('casuals')" data-i18n="filter.casuals">글</button>
+      </div>
     </div>
     <div id="shelf"></div>
-  </section>
-
-  <section id="home-casuals">
-    <div class="sec-head">
-      <h2><button class="section-link" type="button" aria-label="가벼운 글 모아보기" onclick="show('casuals')"><span data-i18n="home.light">가볍게 읽기</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></h2>
-    </div>
-    <div id="home-casual-rail"></div>
   </section>
   <input type="file" id="fileinput" accept=".pdf,.epub,.txt" style="display:none">
 </div>
@@ -246,7 +244,7 @@
 <!-- ================= LONG-FORM LIBRARY ================= -->
 <div class="view" id="v-longform">
   <div class="head">
-    <h1 data-i18n="sec.books">Books</h1><span class="cnt" id="longform-cnt"></span>
+    <h1 data-i18n="sec.mybooks">My Books</h1><span class="cnt" id="longform-cnt"></span>
   </div>
   <div id="longform-grid"></div>
   <div id="longform-empty" hidden></div>
