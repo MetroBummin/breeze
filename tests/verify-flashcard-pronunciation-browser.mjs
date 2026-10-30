@@ -50,6 +50,12 @@ try{
  assert.deepEqual(await state(),ON);
  const box=await speak.boundingBox();
  assert.ok(box.width>=44&&box.height>=44,'speaker button is smaller than the 44px touch target');
+ // Outline speaker in the card's top-right corner: no fill, no border, inside the card.
+ const corner=await page.evaluate(()=>{const b=document.getElementById('review-speak'),c=document.getElementById('review-flip'),br=b.getBoundingClientRect(),cr=c.getBoundingClientRect(),s=getComputedStyle(b);
+  return {right:cr.right-br.right,top:br.top-cr.top,centerRight:br.left+br.width/2>cr.left+cr.width/2,bg:s.backgroundColor,border:s.borderTopWidth};});
+ assert.ok(corner.centerRight&&corner.right>=0&&corner.right<=24&&corner.top>=0&&corner.top<=24,'speaker is not in the card top-right corner: '+JSON.stringify(corner));
+ assert.equal(corner.bg,'rgba(0, 0, 0, 0)','speaker button has a filled background');
+ assert.equal(corner.border,'0px','speaker button has a border');
  assert.deepEqual(await spoken(),['thunderhead'],'default did not auto-play the English side once');
  // Re-rendering the same front must not replay.
  await page.evaluate(()=>{renderSimpleWordCards();renderSimpleWordCards();});

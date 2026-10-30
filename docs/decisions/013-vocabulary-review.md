@@ -349,6 +349,14 @@ generation, audio and `speechSynthesis.cancel`, native `{command:'cancel'}`) so
 in-flight pronunciation stops when the card changes (grade, undo, restart, reset,
 and leaving study), and audio from the previous card never bleeds into the next.
 
+**Revised 2026-10-30 (owner feedback on #310): look and position.** The button is
+a plain outline speaker in the card's secondary icon ink (`--sentence-glass-secondary`,
+the same ink as the star buttons), with no circle, border or fill. It sits in the
+card's top-right corner (`top:12px; right:12px` on `#review-flip`, so the 22px glyph
+lines up with the card's 24px inset) and keeps the 44px touch target. Muted keeps the
+same spot and shape, with a slash/× in a lighter gray. Playing switches to the
+primary card ink.
+
 The speaker button sits above the card's large centered tap/flip area and stops
 its own click/keydown/pointerdown propagation, so tapping it only pronounces and
 never flips or advances the card; flip and swipe stay owned by the card's
