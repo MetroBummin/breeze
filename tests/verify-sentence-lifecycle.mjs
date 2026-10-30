@@ -36,7 +36,7 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
     sentenceHash:text=>text, aiDay:()=>'', save(){}, clearReaderModeCue(){},
     sentenceGestureStillPressed:()=>contact.pressed,
     dictGet:get||(()=>Promise.resolve(null)),
-    dictCall:call||(()=>Promise.resolve({ko:'ok',points:[]})),
+    dictCall:call||(()=>Promise.resolve({ko:'확인',points:[]})),
     dictPut:put||(()=>Promise.resolve()),
   });
   const reader=readFileSync(resolve(root,'scripts/reader/reader.js'),'utf8');
@@ -75,10 +75,10 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const cache=deferred(), app=boot({get:()=>cache.promise});
   const opening=app.context.openSentence('A');
   app.context.closeSentence();
-  cache.resolve({ko:'old A',points:[]});
+  cache.resolve({ko:'예전 A',points:[]});
   await opening;
   assert.equal(app.element('sentence-modal').hidden,true,'stale cache hit reopened a closed sentence');
-  assert.notEqual(app.element('ps-ko').textContent,'old A','stale cache hit painted after close');
+  assert.notEqual(app.element('ps-ko').textContent,'예전 A','stale cache hit painted after close');
 }
 
 /* Offline/failure leaves pending and uses the compact bottom retry surface. */
@@ -97,11 +97,11 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const app=boot({get:key=>key==='s:A'?a.promise:b.promise});
   const openingA=app.context.openSentence('A');
   const openingB=app.context.openSentence('B');
-  a.resolve({ko:'old A',points:[]}); await openingA;
+  a.resolve({ko:'예전 A',points:[]}); await openingA;
   assert.equal(app.element('ps-en').textContent,'B','A cache response replaced B waiting UI');
-  b.resolve({ko:'new B',points:[]}); await openingB;
+  b.resolve({ko:'새 B',points:[]}); await openingB;
   assert.equal(app.element('ps-en').textContent,'B');
-  assert.equal(app.element('ps-ko').textContent,'new B');
+  assert.equal(app.element('ps-ko').textContent,'새 B');
 }
 
 /* A response can outrun abort and may still be cached, but it cannot paint B. */
@@ -114,11 +114,11 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   });
   const openingA=app.context.openSentence('A'); await tick();
   const openingB=app.context.openSentence('B'); await tick();
-  calls.get('A').resolve({ko:'old A',points:[],left:9}); await openingA;
+  calls.get('A').resolve({ko:'예전 A',points:[],left:9}); await openingA;
   assert.equal(app.element('ps-en').textContent,'B','network A replaced B after abort race');
   assert.ok(puts.some(([key])=>key==='s:A'),'valid stale answer was not retained in cache');
-  calls.get('B').resolve({ko:'new B',points:[],left:8}); await openingB;
-  assert.equal(app.element('ps-ko').textContent,'new B');
+  calls.get('B').resolve({ko:'새 B',points:[],left:8}); await openingB;
+  assert.equal(app.element('ps-ko').textContent,'새 B');
 }
 
 /* A slow cache write cannot delay a usable result or reopen it after close. */
@@ -126,11 +126,47 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const answer=deferred(),write=deferred();
   const app=boot({get:()=>Promise.resolve(null),call:()=>answer.promise,put:()=>write.promise});
   const opening=app.context.openSentence('A'); await tick();
-  answer.resolve({ko:'late A',points:[],left:7}); await tick();
-  assert.equal(app.element('ps-ko').textContent,'late A','ready answer waited for cache storage');
+  answer.resolve({ko:'늦은 A',points:[],left:7}); await tick();
+  assert.equal(app.element('ps-ko').textContent,'늦은 A','ready answer waited for cache storage');
   assert.equal(app.element('sentence-modal').hidden,false);
   app.context.closeSentence(); write.resolve(); await opening;
   assert.equal(app.element('sentence-modal').hidden,true,'dictPut completion reopened the sentence');
+}
+
+/* #319: translations are always Korean. The request names the target, a cached
+   Chinese answer is skipped and replaced, and a Chinese answer from the server
+   is a retryable failure that asks again with a fresh lookup id. */
+const chinese='从支点城到英里高城，在高速公路上本是一条直线，他的拾荒工作将在那里进行。';
+const korean='펄크럼 시티에서 마일 하이 시티까지는 고속도로로 곧장 가는 길이었다.';
+{
+  const app=boot();const is=app.context.koreanSentenceText;
+  assert.equal(is(korean),true);assert.equal(is('Mile High City로 갔다.'),true);
+  assert.equal(is('그는 오래된 책에서 漢字를 찾아 공책에 천천히 옮겨 적었다고 말했다.'),true,'a short Hanja gloss inside Korean was rejected');
+  for(const text of [chinese,'これは日本語です。','A plain English echo.','',null])assert.equal(is(text),false,String(text));
+}
+{
+  const calls=[],puts=[];
+  const app=boot({get:()=>Promise.resolve({ko:chinese,done:true}),
+    call:payload=>{calls.push(payload);return Promise.resolve({ko:korean,left:4});},
+    put:(key,value)=>{puts.push([key,value]);return Promise.resolve();}});
+  await app.context.openSentence('A passage that was cached in Chinese.');
+  assert.equal(calls.length,1,'a cached Chinese answer was shown instead of asking again');
+  assert.equal(calls[0].op,'explain');assert.equal(calls[0].target,'ko','translation request lacks the Korean target');
+  assert.equal(app.element('ps-ko').textContent,korean);
+  assert.deepEqual(puts.map(([,value])=>value.ko),[korean],'the Chinese cache entry was not replaced');
+}
+{
+  const calls=[],puts=[];
+  const app=boot({call:payload=>{calls.push(payload);return Promise.resolve(calls.length===1?{ko:chinese,left:4}:{ko:korean,left:3});},
+    put:(key,value)=>{puts.push(value);return Promise.resolve();}});
+  await app.context.openSentence('A passage answered in Chinese.');
+  assert.notEqual(app.element('ps-ko').textContent,chinese,'a Chinese translation was painted');
+  assert.equal(app.element('ps-retry').hidden,false,'a wrong-language answer is not retryable');
+  assert.equal(puts.length,0,'a Chinese translation was cached');
+  await app.context.openSentence('A passage answered in Chinese.');
+  assert.equal(calls.length,2);
+  assert.notEqual(calls[1].lookupId,calls[0].lookupId,'retry replays the receipt of the Chinese answer');
+  assert.equal(app.element('ps-ko').textContent,korean);
 }
 
 console.log('Sentence lifecycle ownership verified');
