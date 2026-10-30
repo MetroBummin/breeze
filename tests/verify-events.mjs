@@ -24,7 +24,8 @@ function install(options={}){
   const context={
     localStorage,URL,URLSearchParams,JSON,Date,Math,Number,String,Object,Array,
     Promise,setTimeout,clearTimeout,crypto,console,
-    location:{search:options.search||'',protocol:'https:'},
+    location:{search:options.search||'',hash:options.hash||'',protocol:'https:'},
+    document:{referrer:options.referrer||''},
     BREEZE_CONFIG:{SB_URL:'https://example.supabase.co',SB_KEY:'anon-key'},
     fetch:async(url,init)=>{
       calls.push({url,init});
@@ -34,6 +35,7 @@ function install(options={}){
   };
   context.globalThis=context;
   context.window=context;
+  if(options.sb)context.sb=options.sb;
   vm.createContext(context);
   vm.runInContext(readFileSync(new URL('../scripts/core/events.js',import.meta.url),'utf8'),context,{filename:'events.js'});
   return {context,memory,calls,failFetch(error){fetchError=error;},failStorage(){storageError=true;}};
@@ -112,6 +114,70 @@ test('batches inserts, dedupes milestones, and attaches the first-touch UTM',asy
   }
   assert.deepEqual(body[2].props,{first:true});
   assert.equal(JSON.stringify(body).includes('secret'),false);
+});
+
+test('captures first-touch UTM from the hash when the search is empty',async()=>{
+  const {context,memory,calls}=install({
+    hash:'#/app?utm_source=toss&utm_medium=webview&utm_campaign=261030-x&utm_content=c1'
+  });
+  context.captureLandingUtm();
+  assert.deepEqual(JSON.parse(memory.get('breeze.events.utm')),{
+    utm_source:'toss',utm_medium:'webview',utm_campaign:'261030-x',utm_content:'c1'
+  });
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].utm_source,'toss');
+  assert.equal(body[0].utm_medium,'webview');
+});
+
+test('captures a sanitized first-touch referrer, immutably, and attaches it',async()=>{
+  const {context,memory,calls}=install({referrer:'https://www.google.com/search?q=secret+query'});
+  context.captureLandingUtm();
+  // Only the origin survives; the query/path that could carry PII is dropped.
+  assert.equal(JSON.parse(memory.get('breeze.events.ref')),'https://www.google.com');
+  // First touch is immutable: a later referrer does not overwrite it.
+  context.document.referrer='https://evil.example.com';
+  context.captureLandingUtm();
+  assert.equal(JSON.parse(memory.get('breeze.events.ref')),'https://www.google.com');
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].referrer,'https://www.google.com');
+});
+
+test('drops an over-long or unsanitary referrer rather than storing it',()=>{
+  const long='https://'+'a'.repeat(200)+'.example.com';
+  const {context,memory}=install({referrer:long});
+  context.captureLandingUtm();
+  assert.equal(memory.has('breeze.events.ref'),false);
+
+  const bad=install({referrer:'android-app://com.sneaky app/with spaces'});
+  bad.context.captureLandingUtm();
+  assert.equal(bad.memory.has('breeze.events.ref'),false);
+});
+
+test('a signed-in session sends the session JWT, not the anon key',async()=>{
+  const sb={auth:{getSession:async()=>({data:{session:{access_token:'signed-in-jwt'}}})}};
+  const {context,calls}=install({sb});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer signed-in-jwt');
+  assert.equal(calls[0].init.headers.apikey,'anon-key');
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].user_id,undefined);
+});
+
+test('a logged-out reader still inserts with the anon key and no user_id',async()=>{
+  const {context,calls}=install();
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer anon-key');
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].user_id,undefined);
+  assert.equal(body[0].referrer,undefined);
 });
 
 test('the app wires each funnel event through the logger',()=>{

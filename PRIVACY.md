@@ -40,6 +40,7 @@ HTML·이미지를 저장하지 않고 전달합니다. AI·영어 사전 조회
 | 보기 설정 — 글자 크기, 좌우 여백, 다크 모드 | `localStorage` |
 | 기기 표시 `breeze.device` | `localStorage` |
 | 처음 들어온 주소의 유입 값(utm) | `localStorage: breeze.events.utm` |
+| 처음 들어올 때의 유입 출처(referrer) — 주소의 도메인 부분만 (경로·질의는 버립니다) | `localStorage: breeze.events.ref` |
 | 같은 사용 기록을 하루·한 번만 보내려고 적는 표시 | `localStorage: breeze.events.app-open-day`, `breeze.events.once`, `breeze.events.sent` |
 | 앱 자신의 파일(HTML · CSS · JS · 글꼴) — 빨리 켜지려고 | 캐시 저장소 `breeze-…` |
 
@@ -163,6 +164,10 @@ lookup에만 사용합니다.
 - 앱 버전, 웹·iOS·Android, 온보딩 버전 (지금 안내는 `v1`)
 - 이 기기가 처음 들어온 주소에 있던 `utm_source`, `utm_medium`, `utm_campaign`,
   `utm_content`. 한 번 적히면 다음 주소로 바뀌지 않고, 없는 값은 비웁니다
+- 처음 들어올 때의 유입 출처(`referrer`) — 바로 앞 페이지 주소의 **도메인 부분만**
+  남깁니다(예: `https://www.google.com`). 경로·질의 문자열은 버려서 개인정보가
+  담기지 않게 하고, 128자를 넘거나 형식이 맞지 않으면 비웁니다. utm 과 마찬가지로
+  한 번 적히면 바뀌지 않고, 없으면 비웁니다
 
 남기는 사건은 아래가 전부입니다.
 
