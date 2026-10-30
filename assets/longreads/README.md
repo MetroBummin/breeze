@@ -53,3 +53,22 @@ included here.
 `covers/backroom-homeward-bound.png` is a lossless crop of the left panel from
 the user-supplied 1536 × 1024 image. The card uses top alignment so the source
 title stays visible in Breeze's shorter portrait card frame.
+
+## 웹소설 (Royal Road, used with the authors' permission)
+
+`cinnamon-bun.txt`, `chasing-sunlight.txt` and `mr-penn.txt` are Breeze Text
+books built by `tools/build-webnovels.mjs` from the public Royal Road chapter
+pages. Each author allowed Breeze to carry these chapters free to readers,
+with no ads and no monetization. Scope is fixed: Cinnamon Bun (RavensDagger)
+Chapter Zero–Nine, Chasing Sunlight (InadvisablyCompelled) Chapter One–Ten,
+and The Unexpected Engagement of the Marvelous Mr. Penn (R. K. Goff) Chapter
+1–10 only; Mr. Penn's Introduction is not included.
+
+The author's words, paragraphs and scene breaks are kept; italics, bold and
+chapter headings live in `scripts/library/webnovel-layout.js`. Author notes,
+site chrome, story images other than R. K. Goff's divider (shown as `* * *`)
+and Royal Road's hidden anti-copy lines are removed; the build fails if any
+anti-copy wording survives. A status table in Cinnamon Bun becomes one
+`Label: value` paragraph per row. The Reader ends each book with a note
+linking the full story on Royal Road, plus the Kindle edition for Chasing
+Sunlight. Do not edit the text by hand; rebuild it with the tool.

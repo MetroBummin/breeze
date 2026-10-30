@@ -584,6 +584,12 @@ body.reader-notice-visible #readpill .completion-badge{visibility:hidden;}
 #rtext .article-table-row{font-family:monospace;overflow-wrap:anywhere}
 #rtext .article-links{display:flex;flex-wrap:wrap;gap:.5em 1em;font-size:.7em;margin:-.5em 0 1.4em}
 #rtext .article-links a{color:inherit;text-decoration:underline;overflow-wrap:anywhere}
+/* 웹소설: after the last bundled chapter, where the story continues. */
+#rtext .webnovel-continue{font-family:var(--ui);font-size:.72em;line-height:1.6;color:var(--soft2);
+  margin:3em 0 1em;padding-top:1.4em;border-top:1px solid var(--line);text-align:center}
+#rtext .webnovel-continue p{margin:0 0 .7em;text-indent:0}
+#rtext .webnovel-continue-links{display:flex;flex-wrap:wrap;justify-content:center;gap:.4em 1.2em}
+#rtext .webnovel-continue a{color:var(--ink);text-decoration:underline;text-underline-offset:.2em;overflow-wrap:anywhere}
 /* A narrow PDF title slot cannot carry recovery guidance beside the mode
    button. Let status text use the capsule width above the unchanged mode hit
    target. Ordinary and wide controls retain their existing geometry. */

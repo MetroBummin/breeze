@@ -117,7 +117,6 @@ body:has(#article-preview[open]){overflow:hidden;}
 .ap-chapter-row + .ap-chapter-row{margin-top:8px;}
 .ap-chapter-row:hover{background:var(--sentence-glass-action-hover);}
 .ap-chapter-row:focus-visible{outline:2px solid var(--sentence-glass-muted);outline-offset:3px;}
-.ap-chapter-title{font:500 15px/1.4 var(--ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ap-chapter-title{min-width:0;font:500 15px/1.4 var(--ui);text-align:left;overflow-wrap:anywhere;}
 .ap-chapter-state{flex:none;color:var(--sentence-glass-muted);font:600 12px/1.3 var(--ui);}
-.ap-chapter-row.is-soon{cursor:default;opacity:.72;}
-.ap-chapter-row.is-soon:hover{background:var(--sentence-glass-action);}
+.ap-chapter-row.is-current .ap-chapter-state{color:var(--sentence-glass-ink);}

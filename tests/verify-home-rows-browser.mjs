@@ -85,12 +85,9 @@ try{
       assert.equal(bun.subtitle,'시나몬 번 · 청소와 다정함으로 세상을 구하는 모험');
       assert.deepEqual(bun.image,[768,'contain'],'The sheet shows the whole cover');
       assert.equal(bun.rows.length,10);
-      assert.deepEqual(bun.rows[0],['1화','곧 공개']);
-      assert.ok(bun.rows.every(([,state])=>state==='곧 공개'));
+      assert.deepEqual(bun.rows[0],['Chapter Zero - A Call to Adventure','읽기']);
+      assert.ok(bun.rows.every(([,state])=>state==='읽기'));
       assert.deepEqual(bun.links,['Royal Road 원문'],'Cinnamon Bun has no monetized link');
-      await page.locator('#article-preview .ap-chapter-row').first().evaluate(row=>row.click());
-      assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
-      assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'A 곧 공개 chapter does not navigate');
       await page.locator('#article-preview .ap-close').click();
       const sun=await openPreview(page,'chasing-sunlight');
       assert.equal(sun.title,'Chasing Sunlight');

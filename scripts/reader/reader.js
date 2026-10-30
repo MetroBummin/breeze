@@ -383,6 +383,9 @@ function renderBookBody(b){
     }
     pageChars += bl.t.length;
   });
+  const webNovel=b.kind==='txt'&&typeof webNovelDefinition==='function'?webNovelDefinition(b.longReadId):null;
+  const lastPage=frag.lastElementChild; // the last .page section; page numbers follow it
+  if(webNovel&&lastPage&&typeof webNovelContinueNote==='function')lastPage.appendChild(webNovelContinueNote(webNovel));
   const no = document.createElement('div');
   no.className='pageno'; no.textContent = '— '+pageNo+' —';
   frag.appendChild(no);

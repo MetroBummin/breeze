@@ -364,7 +364,8 @@ function bundledLongReadForMeta(meta){
   const bundled=typeof LONG_READS!=='undefined'&&LONG_READS.find(read=>read.id===id&&!read.dormant);
   if(bundled) return bundled;
   const offers=typeof classicCatalogOffers==='function'?classicCatalogOffers():[];
-  return offers.find(read=>read.id===id)||null;
+  return offers.find(read=>read.id===id)
+    ||(typeof webNovelRead==='function'&&typeof webNovelDefinition==='function'&&webNovelRead(webNovelDefinition(id)))||null;
 }
 async function restoreBundledLongRead(read, meta){
   const book=await importLongRead(read);
@@ -616,14 +617,10 @@ function renderHomeRecommendBooks(rail){
    고전 카드와 같은 틀(표지·제목·작가)이고 표지는 Breeze 가 만든 글자 표지입니다
    (작가의 원래 표지 그림은 쓰지 않습니다). 누르면 기존 미리보기 시트
    (#article-preview) 안에서 회차 목록이 뜹니다. 따로 띄우는 화면은 없습니다. */
-const WEBNOVEL_PROGRESS_KEY='breeze.webnovel-progress.v1';
-function webNovelProgress(){
-  const value=load(WEBNOVEL_PROGRESS_KEY,{});
-  return value&&typeof value==='object'&&!Array.isArray(value)?value:{};
-}
+/* 읽던 회차는 따로 적지 않습니다. 내 책에 담긴 그 책의 읽던 자리에서 셉니다. */
 function webNovelChapterAt(id){
-  const n=Number(webNovelProgress()[id]);
-  return Number.isFinite(n)&&n>=1?Math.floor(n):0;
+  const work=typeof webNovelDefinition==='function'?webNovelDefinition(id):null;
+  return work&&typeof webNovelReadingChapter==='function'?webNovelReadingChapter(work):0;
 }
 /* 저장해 둔 회차가 있으면 'N화 읽는 중', 없으면 빈 글귀(카드가 깔끔하게). */
 function webNovelProgressLabel(work){

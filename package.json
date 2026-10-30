@@ -21,6 +21,7 @@
     "test:bohemia-progress": "node tests/verify-bohemia-progress-browser.mjs",
     "test:home-reading-cards": "node tests/verify-home-reading-cards-browser.mjs",
     "test:home-rows": "node tests/verify-home-rows-browser.mjs",
+    "test:webnovels": "node --test tests/verify-web-novels.mjs && node tests/verify-webnovels-browser.mjs",
     "test:home-boot-banner": "node tests/verify-home-boot-banner-browser.mjs",
     "test:ao3": "node --test tests/verify-ao3-import.mjs",
     "test:ingestion": "npm run test:import-durability && node tests/verify-import-feedback-browser.mjs && node tests/verify-import-identity-browser.mjs && node tests/verify-social-import-browser.mjs && node tests/verify-ingestion-browser.mjs && node tests/verify-share-home-browser.mjs && node tests/verify-rss-card-browser.mjs && node tests/verify-article-preview-browser.mjs && node tests/verify-shared-files-browser.mjs",
