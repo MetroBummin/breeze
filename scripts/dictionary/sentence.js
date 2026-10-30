@@ -114,15 +114,22 @@ function placeSentenceResult(){
   const panel=document.getElementById('p-sentence'),content=document.getElementById('ps-content');
   const anchor=wordPeekNodeRect(sentenceOrigin.peekTarget);
   if(!anchor||!anchor.width||!anchor.height){closeSentence();return;}
-  const viewport=window.visualViewport,edge=16,gap=8;
-  const x=viewport?viewport.offsetLeft:0,y=viewport?viewport.offsetTop:0;
-  const width=viewport?viewport.width:innerWidth,height=viewport?viewport.height:innerHeight;
-  const css=getComputedStyle(panel),chrome=document.getElementById('readchrome').getBoundingClientRect();
-  const top=y+edge+(parseFloat(css.getPropertyValue('--word-safe-top'))||0);
-  const bottom=Math.max(top+1,Math.min(y+height-edge,chrome.height&&chrome.top>top?chrome.top-gap:y+height-edge));
-  const left=x+edge+(parseFloat(css.getPropertyValue('--word-safe-left'))||0);
-  const right=x+width-edge-(parseFloat(css.getPropertyValue('--word-safe-right'))||0);
+  const viewport=window.visualViewport,gap=8;
+  const width=viewport?viewport.width:innerWidth;
+  const css=getComputedStyle(panel);
+  // Shared Lookup-safe region: inside the viewport/safe insets and outside the
+  // Reader control bar on whichever edge the writing dock parked it.
+  const region=lookupSafeRegion(panel);
+  const top=region.top,left=region.left,right=region.right;
+  const bottom=Math.max(top+1,region.bottom);
   const available=Math.max(1,bottom-top),cap=Math.min(520,available);
+  // Width candidate is 0.64 of the full visual-viewport width, floored at the
+  // phone width (360) and capped at 600; the final Math.min against the usable
+  // band (right-left) is the real bound, so it can never overflow a side dock.
+  // The .64 stays keyed to the viewport (not the band) on purpose: the band is
+  // the hard cap, and keying the target to the band would shrink the panel
+  // below its established phone width on wide tablets (regression guarded by the
+  // 'tablet retains phone width' unit assertion).
   panel.style.width=Math.max(1,Math.min(600,Math.max(360,width*.64),right-left))+'px';
   panel.style.maxHeight=cap+'px';
   // Only this overlay is measured. Source adapters own/cache the sentence union;

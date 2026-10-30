@@ -1,0 +1,58 @@
+name: PDF ink side-dock lookup pill
+on:
+  pull_request:
+    paths:
+      - scripts/dictionary/dictionary.js
+      - scripts/dictionary/sentence.js
+      - scripts/reader/pdf-ink-dock.js
+      - styles/dictionary.css
+      - styles/pdf-ink.css
+      - tests/verify-sentence-success-pill.mjs
+      - tests/verify-pdf-ink-side-pill-browser.mjs
+      - tests/helpers/pdf-geometry-fixture.mjs
+      - .github/workflows/pdf-ink-side-pill.yml
+permissions:
+  contents: read
+concurrency:
+  group: pdf-ink-side-pill-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Deterministic per-edge placement geometry
+        run: node --test tests/verify-sentence-success-pill.mjs
+      - name: Before - reproduce the side-dock offset/clip against pre-fix placement
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_SIDE_PILL_BASELINE: '1'
+          BREEZE_SIDE_PILL_PROOF: /tmp/breeze-pdf-side-pill
+        run: timeout --kill-after=5s 300s node tests/verify-pdf-ink-side-pill-browser.mjs
+      - name: After - mini pill anchored and expanded pill unclipped on every edge
+        if: ${{ !cancelled() }}
+        env:
+          BREEZE_QA_ENGINE: ${{ matrix.engine }}
+          BREEZE_SIDE_PILL_PROOF: /tmp/breeze-pdf-side-pill
+        run: timeout --kill-after=5s 300s node tests/verify-pdf-ink-side-pill-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pdf-ink-side-pill-${{ matrix.engine }}
+          path: /tmp/breeze-pdf-side-pill/
+          if-no-files-found: error
+          retention-days: 7
