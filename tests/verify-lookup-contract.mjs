@@ -9,7 +9,7 @@ const box={Response,AbortSignal,AbortController,setTimeout,clearTimeout,console,
 vm.createContext(box);
 const run=code=>vm.runInContext(ts.transpileModule(code.replace(/^import .*;$/gm,'').replace(/^export /gm,''),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText,box);
 run(readFileSync(new URL('modules/lexical/core.js',root),'utf8'));
-run(readFileSync(new URL('server/dict/logical-lookup.ts',root),'utf8'));run(lookup);run(server);
+run(readFileSync(new URL('server/dict/logical-lookup.ts',root),'utf8'));run(readFileSync(new URL('server/dict/sentence-translation.ts',root),'utf8'));run(lookup);run(server);
 const input=box.lookupInput({word:'apple',clicked:'apple',sentence:'He upset the apple cart.',clickedIndex:3});
 const valid={kind:'expression',canonical:'upset the apple cart',members:[1,2,3,4],ko:'계획을 망치다'};
 assert.equal(box.validateLook(valid,input).kind,'expression');
@@ -286,6 +286,46 @@ await box.ask({action:'explain',prompt:'문장',maxTokens:600,schema:{type:'obje
 assert.deepEqual(sentenceBudgets,[15000]);
 box.AbortSignal.timeout=realTimeout;
 console.log('Lookup contract, target alignment, hedged word lookup, cancellation and fail-closed checks passed');
+
+// #319: sentence translation is pinned to Korean on every provider path.
+{
+  const chinese='从支点城到英里高城，在高速公路上本是一条直线，他的拾荒工作将在那里进行。';
+  const korean='펄크럼 시티에서 마일 하이 시티까지는 고속도로로 곧장 가는 길이었다.';
+  const passage='a straight line on a high-speed highway from Fulcrum City to Mile High City, where his gleaning would take place.';
+  run(`globalThis.providerCalls=[];globalThis.receiptAnswers=[];providerKeys=()=>({oKey:'o',gKey:'g'});
+  callOpenRouter=async(key,a)=>{providerCalls.push({provider:'openrouter',prompt:a.prompt,system:a.system});return {text:JSON.stringify({ko:openrouterAnswers.shift()})};};
+  callGemini=async(key,a)=>{providerCalls.push({provider:'gemini',prompt:a.prompt,system:a.system});return {text:JSON.stringify({ko:geminiAnswer})};};
+  const realRpc=SR.rpc;SR.rpc=async(name,p)=>{if(name==='sentence_lookup_receipt'&&p.p_answer)receiptAnswers.push(p.p_answer.ko);return realRpc(name,p);};`);
+  assert.equal(box.isKoreanText(korean),true);
+  for(const text of [chinese,'これは日本語の文です。','An English echo of the passage.',''])assert.equal(box.isKoreanText(text),false,text);
+  assert.equal(box.isKoreanText('그는 오래된 책에서 漢字를 찾아 공책에 천천히 옮겨 적었다고 말했다.'),true);
+  assert.throws(()=>box.koreanTranslation(chinese),/invalid_language/);
+  assert.match(box.explainPrompt(passage),/출력 언어: 한국어/);
+  assert.match(vm.runInContext('EXPLAIN_SYSTEM',box),/Korean/);assert.match(vm.runInContext('EXPLAIN_SYSTEM',box),/Never answer in Chinese/);
+  // DeepSeek drifts into Chinese once: one corrected retry on the same provider.
+  box.openrouterAnswers=[chinese,korean];box.geminiAnswer=korean;
+  let reply=await box.opExplain({sentence:passage,target:'ko'},'fixture-user');
+  assert.deepEqual(await reply.json(),{ko:korean,provider:'openrouter',left:8});
+  assert.deepEqual(Array.from(box.providerCalls,c=>c.provider),['openrouter','openrouter']);
+  assert.ok(box.providerCalls.every(c=>c.system===vm.runInContext('EXPLAIN_SYSTEM',box)),'a provider call lost the Korean system prompt');
+  assert.match(box.providerCalls[1].prompt,/previous response was not Korean/);
+  // Both DeepSeek attempts are Chinese: Gemini fallback answers under the same Korean pin.
+  box.providerCalls.length=0;box.openrouterAnswers=[chinese,chinese];
+  reply=await box.opExplain({sentence:passage},'fixture-user');
+  assert.deepEqual(await reply.json(),{ko:korean,provider:'gemini',left:8});
+  assert.deepEqual(Array.from(box.providerCalls,c=>c.provider),['openrouter','openrouter','gemini']);
+  assert.equal(box.providerCalls[2].system,vm.runInContext('EXPLAIN_SYSTEM',box));
+  // Every provider answers in Chinese: fail closed, nothing is stored for replay.
+  box.providerCalls.length=0;box.openrouterAnswers=[chinese,chinese];box.geminiAnswer=chinese;
+  await assert.rejects(()=>box.opExplain({sentence:passage},'fixture-user'),/invalid_language/);
+  assert.ok(!Array.from(box.receiptAnswers).includes(chinese),'a Chinese translation reached the receipt');
+  // Only Korean is a supported target.
+  box.providerCalls.length=0;
+  reply=await box.opExplain({sentence:passage,target:'zh'},'fixture-user');
+  assert.equal(reply.status,400);assert.equal((await reply.json()).error,'bad_target');
+  assert.equal(box.providerCalls.length,0);
+  console.log('Sentence translation Korean target and fallback checks passed');
+}
 
 // Sentence lookup generates only the translation while preserving quota/errors.
 run(`globalThis.explainCalls=[];
