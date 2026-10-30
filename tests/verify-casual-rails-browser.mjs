@@ -50,20 +50,20 @@ try{
         renderHome();
       });
       assert.deepEqual(await page.locator('#v-home > section').evaluateAll(nodes=>nodes.map(node=>node.id)),
-        ['casuals','longform','home-casuals'],'Home section order changed');
+        ['casuals','home-webnovels','longform'],'Home section order changed');
       assert.equal(await page.locator('#casual-rail [data-home-key^="book:"]').count(),0,'Saved book entered recommendation');
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"]').count(),1);
-      assert.equal(await page.locator('#home-casual-rail [data-home-key="book:saved-short"]').count(),1);
-      assert.equal(await page.locator('#home-casual-rail .bar,#home-casual-rail .now-ring,#shelf .now-ring').count(),0);
+      assert.equal(await page.locator('#shelf [data-home-key="book:saved-short"]').count(),1);
+      assert.equal(await page.locator('#shelf .bar,#shelf .now-ring,#shelf .now-ring').count(),0);
       const footprints=await page.evaluate(()=>{
         const book=document.querySelector('#shelf [data-home-key="book:saved-long"]').getBoundingClientRect();
-        const light=document.querySelector('#home-casual-rail [data-home-key="book:saved-short"]').getBoundingClientRect();
+        const light=document.querySelector('#shelf [data-home-key="book:saved-short"]').getBoundingClientRect();
         return [Math.round(book.width),Math.round(book.height),Math.round(light.width),Math.round(light.height)];
       });
       assert.deepEqual(footprints.slice(0,2),footprints.slice(2),'Regular Home cards should share a footprint');
       const covers=await page.evaluate(()=>[
         document.querySelector('#shelf [data-home-key="book:saved-long"] .bookcard').getBoundingClientRect(),
-        document.querySelector('#home-casual-rail [data-home-key="book:saved-short"] .thumb').getBoundingClientRect(),
+        document.querySelector('#shelf [data-home-key="book:saved-short"] .thumb').getBoundingClientRect(),
       ].map(rect=>[Math.round(rect.width),Math.round(rect.height)]));
       assert.deepEqual(covers[0],covers[1],'Long and light image areas should match exactly');
       for(const width of [390,768,1180]){
@@ -75,16 +75,16 @@ try{
           };
           return [
             measure('#shelf [data-home-key="book:saved-long"]'),
-            measure('#home-casual-rail [data-home-key="book:saved-short"]'),
+            measure('#shelf [data-home-key="book:saved-short"]'),
             measure('#shelf [data-home-key="book:saved-long"] .bookcard'),
-            measure('#home-casual-rail [data-home-key="book:saved-short"] .thumb'),
+            measure('#shelf [data-home-key="book:saved-short"] .thumb'),
           ];
         });
         assert.deepEqual(dimensions[0],dimensions[1],`${engine.name()} ${width}px tile mismatch`);
         assert.deepEqual(dimensions[2],dimensions[3],`${engine.name()} ${width}px cover mismatch`);
       }
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
-      assert.equal(await page.locator('#home-casual-rail .home-regular-title').filter({hasText:'Saved story'}).count(),1);
+      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),1);
       assert.equal(await page.locator('#shelf .home-cover-meta').filter({hasText:'Author'}).count(),1);
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"] .bookcard.editorial-cover .cover-art').count(),1);
       const coverText=await page.locator('#shelf [data-home-key="book:saved-long"] .bookcard').evaluate(card=>{
@@ -104,10 +104,10 @@ try{
       assert.equal(coverText.inside,true);
       assert.equal(coverText.hit,false);
       assert.equal(coverText.under,true);
-      assert.equal(await page.locator('#home-casual-rail .home-cover-meta').count(),1);
-      assert.equal(await page.locator('#shelf .home-regular-meta,#home-casual-rail .home-regular-meta').count(),0);
+      assert.equal(await page.locator('#shelf .home-cover-meta').count(),2,'Merged 내 책 shows both saved covers');
+      assert.equal(await page.locator('#shelf .home-regular-meta,#shelf .home-regular-meta').count(),0);
       const addSizes=await page.evaluate(()=>[
-        ...['#shelf .home-add-tile','#home-casual-rail .home-add-tile'].map(selector=>{
+        ...['#shelf .home-add-tile','#shelf .home-add-tile'].map(selector=>{
           const tile=document.querySelector(selector),cover=tile.querySelector('.bookcard,.thumb');
           return [Math.round(tile.getBoundingClientRect().width),Math.round(cover.getBoundingClientRect().height)];
         }),

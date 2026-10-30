@@ -484,9 +484,6 @@ function homeBookSpec(book,casual){
       slot.textContent=label;
     }};
 }
-function homeRecommendKind(){
-  return load('breeze.home-recommend','books')==='books'?'books':'articles';
-}
 /* A started catalog book is one library record. Bundled text keeps the catalog
    id on longReadId, a bundled EPUB keeps it on classicId, and a copy migrated
    from EPUB can carry either. Server catalog books use that same id. */
@@ -517,50 +514,14 @@ function longReadOfferStamp(read){
 function homeRecommendClassics(){
   return typeof CLASSICS==='undefined'?[]:CLASSICS.filter(classic=>!homeRecommendCatalogOwned(classic.id));
 }
-function syncHomeRecommendToggle(){
-  const group=document.getElementById('home-recommend-kind');
-  if(!group)return;
-  const kind=homeRecommendKind();
-  group.querySelectorAll('button').forEach(button=>{
-    button.setAttribute('aria-pressed',button.dataset.kind===kind?'true':'false');
-  });
-  if(group.dataset.bound)return;
-  group.dataset.bound='true';
-  group.addEventListener('keydown',event=>{
-    if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
-    const buttons=[...group.querySelectorAll('button')];
-    const index=buttons.findIndex(button=>button===document.activeElement);
-    if(index<0)return;
-    event.preventDefault();
-    const next=buttons[(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];
-    next.focus();
-    setHomeRecommendKind(next.dataset.kind);
-  });
-}
-function setHomeRecommendKind(kind){
-  const next=kind==='books'?'books':'articles';
-  if(next===homeRecommendKind()){syncHomeRecommendToggle();return;}
-  save('breeze.home-recommend',next);
-  const rail=document.getElementById('casual-rail');
-  if(rail){delete rail.dataset.homeUserScrolled;rail.scrollLeft=0;}
-  renderHome();
-  if(next==='books'&&typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
-}
-function clearHomeRssCards(rail){
-  if(typeof rssCoverCancel==='function'&&typeof rssCoverOwners!=='undefined')rssCoverCancel(rssCoverOwners.get(rail));
-  rail.querySelectorAll('.rss-card,.rss-loading').forEach(node=>{
-    const src=node.querySelector('img.cover')?.getAttribute('src')||'';
-    if(src.startsWith('blob:'))URL.revokeObjectURL(src);
-    node.remove();
-  });
-  delete rail.dataset.rssStamp;
-  delete rail.dataset.rssRecommendationStamp;
-}
 function homeRecommendLongReadCard(read){
   const card=longReadCard(read);
   card.classList.add('home-recommend-book');
   const author=card.querySelector('.author');
   if(author)author.textContent=read.author||'';
+  const title=card.querySelector('.bt'),korean=typeof classicDisplayTitle==='function'?classicDisplayTitle(read):read.title;
+  if(title)title.textContent=korean;
+  card.setAttribute('aria-label',korean);
   return card;
 }
 function homeRecommendClassicCard(classic){
@@ -583,7 +544,6 @@ async function openHomeRecommendClassic(classic){
   if(book)return openCasualPreviewOrReader(book);
 }
 function renderHomeRecommendBooks(rail){
-  clearHomeRssCards(rail);
   const specs=[
     ...homeRecommendReads().map(read=>({key:'recommend:'+read.id,stamp:read.remote?longReadOfferStamp(read):read.id,create:()=>homeRecommendLongReadCard(read)})),
     ...homeRecommendClassics().map(classic=>({key:'recommend:'+classic.id,stamp:classic.id,create:()=>homeRecommendClassicCard(classic)})),
@@ -597,38 +557,33 @@ function renderHomeRecommendBooks(rail){
     empty.textContent=none?'시작한 책은 서재에 있어요.':'';
   }
 }
+/* Home has three rows: 고전 (catalog offers), 웹소설 (author-permitted works),
+   and 내 책 (everything the reader saved: books first-class with pasted text
+   and articles, most recently read first). RSS discovery is not on Home. */
+function homeMyBookEntries(){
+  return [
+    ...books.map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
+    ...serverOnlyBooks().map(row=>({kind:'cloud-book',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
+    ...serverOnlyCasuals().map(row=>({kind:'cloud-casual',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
+  ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
+}
 function renderHome(){
   renderLibraryStorageNotice();
   renderHomeResume();
-  syncHomeRecommendToggle();
-  const rail=document.getElementById('casual-rail');
-  const recommendBooks=homeRecommendKind()==='books';
-  if(recommendBooks)renderHomeRecommendBooks(rail);
-  else{
-    rail.hidden=false;
-    const empty=document.getElementById('home-feed-empty');
-    if(empty)empty.hidden=true;
-    reconcileHomeCards(rail,[]);
-    if(typeof appendRssCards==='function')appendRssCards(rail);
-  }
-  const longform=longformBooks(),shelf=document.getElementById('shelf');
-  const specs=longform.map(book=>homeBookSpec(book,false));
-  for(const row of serverOnlyBooks()){
-    specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
-  }
+  renderHomeRecommendBooks(document.getElementById('casual-rail'));
+  const novels=document.getElementById('webnovel-rail');
+  if(novels&&typeof renderHomeWebNovels==='function')renderHomeWebNovels(novels);
+  const shelf=document.getElementById('shelf');
+  const specs=homeMyBookEntries().map(entry=>{
+    if(entry.kind==='book')return homeBookSpec(entry.value,isCasual(entry.value));
+    const row=entry.value;
+    return entry.kind==='cloud-book'
+      ? {key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')}
+      : {key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')};
+  });
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
   specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
-  const light=document.getElementById('home-casual-rail');
-  const entries=[
-    ...casualBooks().map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
-    ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
-  ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
-  const lightSpecs=entries.map(entry=>entry.kind==='book'
-    ? homeBookSpec(entry.value,true)
-    : {key:'cloud:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
-  lightSpecs.push({key:'add',stamp:'',create:()=>homeAddTile(casualAddCard(),'글 추가')});
-  reconcileHomeCards(light,lightSpecs);
 }
 
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에

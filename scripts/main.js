@@ -27,12 +27,11 @@ homeReady.then(()=>startSharedFileImports());
 homeReady.then(()=>{ if(typeof startAo3Inbox==='function') startAo3Inbox(); });
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
-/* A saved 기사 choice must not request the classics catalog. RSS discovery
-   treats any other origin as a leak. The 책 rail and the longform library ask for it. */
+/* Home always shows the 고전 row, so it asks for the public classics catalog.
+   RSS discovery no longer runs on Home. */
 function paintHome(){
   renderHome();
-  if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='books'&&typeof refreshRemoteClassics==='function')
-    void refreshRemoteClassics();
+  if(typeof refreshRemoteClassics==='function')void refreshRemoteClassics();
 }
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----
    무엇을 어떻게 담는지는 sw.js 맨 위에 적혀 있습니다. 여기서는 등록만 합니다.

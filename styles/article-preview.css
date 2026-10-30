@@ -20,6 +20,22 @@ body:has(#article-preview[open]){overflow:hidden;}
 #article-preview[data-kind="longread"] .ap-hero{height:min(32dvh,280px);min-height:140px;}
 .ap-details{white-space:pre-line;font:400 12px/1.6 var(--ui);color:var(--sentence-glass-muted);margin:16px 0 0;}
 .ap-details a{color:inherit;text-underline-offset:3px;}
+/* 웹소설 회차 목록: only the webnovel preview shows it. */
+#article-preview:not([data-kind="webnovel"]) .ap-chapters{display:none;}
+.ap-chapters{margin:20px 0 4px;}
+.ap-chapters[hidden]{display:none;}
+.ap-chapters-heading{margin:0 0 6px;color:var(--sentence-glass-ink);font:600 15px/1.4 var(--ui);}
+.ap-chapter-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--sentence-glass-line-soft);}
+.ap-chapter-list li{border-bottom:1px solid var(--sentence-glass-line-soft);}
+.ap-chapter{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:0 2px;border:0;background:none;
+  color:var(--sentence-glass-ink);font:500 14px/1.4 var(--ui);text-align:left;cursor:pointer;touch-action:manipulation;}
+.ap-chapter[aria-disabled="true"]{color:var(--sentence-glass-muted);cursor:default;}
+.ap-chapter[aria-current="true"] .ap-chapter-n{color:var(--blue);}
+.ap-chapter:focus-visible{outline:2px solid var(--blue);outline-offset:-2px;}
+.ap-chapter-n{flex:none;min-width:3em;font-weight:600;}
+.ap-chapter-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ap-chapter-state{flex:none;color:var(--sentence-glass-muted);font:500 12px/1.4 var(--ui);}
+#article-preview[data-kind="webnovel"] .ap-hero{height:min(26dvh,220px);min-height:120px;}
 .ap-art{position:absolute;inset:0;display:grid;place-items:center;color:var(--sentence-glass-muted);}
 .ap-art svg{width:min(46%,190px);height:min(70%,190px);}
 .ap-hero:has(img:not([hidden])) .ap-art{display:none;}

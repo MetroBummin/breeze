@@ -183,6 +183,20 @@ The book card's outer box matches the article card, so the sections below do
 not move when the control appears or the choice changes. The picture ends above
 the title and author, and the author is not painted over the cover art.
 
+## Home three rows replace the toggle (2026-10-30, #304)
+
+Supersedes the articles / books toggle above for Home. Home now has three
+rows: 고전 (the former 책 rail, same catalog, ownership and ordering rules),
+웹소설 (author-permitted Royal Road works in `scripts/library/webnovels.js`),
+and 내 책 (the former 긴 글 shelf with the 가볍게 읽기 items merged in, most
+recently read first). The 기사/책 control and `homeRecommendKind` are gone.
+Home never calls `appendRssCards`; a saved `breeze.home-recommend` value is
+ignored, so a reader who chose 기사 lands on the 고전 row instead of an empty
+one. `rss.js` stays loaded for its helpers (`rssDate` in Reader, the
+`rotateRss` cursor in library refresh); the URL article importer is
+unchanged. Classic cards and their preview show Korean display titles from
+`scripts/library/classic-titles.js`; catalog and saved titles stay English.
+
 ## Selected-article intent and optional catalog (2026-10-05)
 
 [Decision 015](015-rss-intent-and-public-catalog.md) removes background article

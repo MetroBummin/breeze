@@ -409,10 +409,11 @@ function openLongReadPreview(read){
   articlePreviewBook={id:'preview:'+read.id,kind:'txt',bundledRead:read};
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(read.id);
   dialog.querySelector('.ap-source').textContent=read.author;
-  dialog.querySelector('.ap-title').textContent=read.title;
+  // Korean display title; the English original stays in the details line.
+  dialog.querySelector('.ap-title').textContent=typeof classicDisplayTitle==='function'?classicDisplayTitle(read):read.title;
   articlePreviewPaint({summaryKo:read.hook});articlePreviewMetadataState('ready');
   articlePreviewDetails.hidden=false;
-  articlePreviewDetails.textContent=`${read.edition} · ${read.wordCount.toLocaleString()} words · ${Math.max(1,Math.round(read.wordCount/180))} min (approx.)\n${read.license}`;
+  articlePreviewDetails.textContent=`${read.originalTitle||read.title}\n${read.edition} · ${read.wordCount.toLocaleString()} words · ${Math.max(1,Math.round(read.wordCount/180))} min (approx.)\n${read.license}`;
   const source=document.createElement('a');
   source.href=read.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';
   source.textContent=`Source acknowledgment: ${read.site}`;

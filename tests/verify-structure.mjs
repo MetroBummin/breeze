@@ -702,12 +702,11 @@ assert.match(librarySource, /homeRegularTile\(casualCard\(book,null,false\)/,
 assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
   'Saved long content should use the neutral regular-card layout');
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
-assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
-  'Home recommendation must be a plain heading');
-assert.match(index, /class="section-link"[^>]*aria-label="가벼운 글 모아보기"[^>]*onclick="show\('casuals'\)"/,
-  'The saved Casuals heading lost its shelf chevron');
-assert.match(index, /class="section-link"[^>]*aria-label="책 모아보기"[^>]*onclick="show\('longform'\)"/,
-  'The Books heading lost its shelf chevron');
+assert.match(index, /id="home-recommend-title"[^>]*>고전<\/h2>/,
+  'The Home 고전 row must be a plain heading');
+assert.match(index, /id="webnovel-rail"/, 'The Home 웹소설 row is missing');
+assert.match(index, /class="section-link"[^>]*aria-label="내 책 모아보기"[^>]*onclick="show\('longform'\)"/,
+  'The 내 책 heading lost its shelf chevron');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
 assert.match(librarySource, /function renderLongformLibrary/,
   'Nothing fills the long-form library view');
