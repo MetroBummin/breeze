@@ -114,6 +114,7 @@ function remoteClassicEntry(raw){
     license:remoteClassicText(raw.license,120),
     licenseUrl:remoteClassicUrl(raw.licenseUrl),
     originalTitle:remoteClassicText(raw.originalTitle,200)||title,
+    koTitle:remoteClassicText(raw.koTitle,200),
     series:remoteClassicText(raw.series,80)||'FREE CLASSIC',
     hook:remoteClassicText(raw.hook,400),
     edition:remoteClassicText(raw.edition,120)||'Project Gutenberg text',

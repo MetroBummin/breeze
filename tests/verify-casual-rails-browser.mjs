@@ -41,29 +41,35 @@ try{
       assert.equal(await page.locator('#v-casuals #casual-discover-rail,#v-casuals .feed-categories').count(),0);
       assert.equal(await page.locator('#casual-rail .casual.add,#casual-rail .casual.refresh').count(),0,
         'Recommendation should contain only external discovery cards');
-      await page.evaluate(()=>{
+      // Saved through bookPut so a later library reload keeps them.
+      await page.evaluate(async()=>{
         books=[
           {id:'saved-short',kind:'paste',title:'Saved story',paras:['Saved story','Readable body'],addedAt:2},
           {id:'saved-long',kind:'txt',title:'Saved book',author:'Author',paras:['Saved book','Readable body'],addedAt:1},
         ];
+        for(const book of books)await bookPut(book);
         positions={'saved-short':{t:10,p:.2},'saved-long':{t:20,p:.4}};
         renderHome();
       });
+      /* 홈은 위에서부터 추천(고전/웹소설/기사) · 내 책입니다. 이어 읽기·가볍게
+         읽기 줄은 없고, 그 글은 '내 책'(#shelf)에 전체/책/글 거르개로 깔립니다. */
       assert.deepEqual(await page.locator('#v-home > section').evaluateAll(nodes=>nodes.map(node=>node.id)),
-        ['casuals','longform','home-casuals'],'Home section order changed');
+        ['casuals','longform'],'Home section order changed');
+      assert.equal(await page.locator('#home-casuals,#home-casual-rail,#webnovels').count(),0,'Old home rows are gone');
       assert.equal(await page.locator('#casual-rail [data-home-key^="book:"]').count(),0,'Saved book entered recommendation');
+      // 전체(기본) 거르개에서는 책과 글이 한 레일(#shelf)에 함께 뜹니다.
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"]').count(),1);
-      assert.equal(await page.locator('#home-casual-rail [data-home-key="book:saved-short"]').count(),1);
-      assert.equal(await page.locator('#home-casual-rail .bar,#home-casual-rail .now-ring,#shelf .now-ring').count(),0);
+      assert.equal(await page.locator('#shelf [data-home-key="book:saved-short"]').count(),1);
+      assert.equal(await page.locator('#shelf .bar,#shelf .now-ring').count(),0);
       const footprints=await page.evaluate(()=>{
         const book=document.querySelector('#shelf [data-home-key="book:saved-long"]').getBoundingClientRect();
-        const light=document.querySelector('#home-casual-rail [data-home-key="book:saved-short"]').getBoundingClientRect();
+        const light=document.querySelector('#shelf [data-home-key="book:saved-short"]').getBoundingClientRect();
         return [Math.round(book.width),Math.round(book.height),Math.round(light.width),Math.round(light.height)];
       });
       assert.deepEqual(footprints.slice(0,2),footprints.slice(2),'Regular Home cards should share a footprint');
       const covers=await page.evaluate(()=>[
         document.querySelector('#shelf [data-home-key="book:saved-long"] .bookcard').getBoundingClientRect(),
-        document.querySelector('#home-casual-rail [data-home-key="book:saved-short"] .thumb').getBoundingClientRect(),
+        document.querySelector('#shelf [data-home-key="book:saved-short"] .thumb').getBoundingClientRect(),
       ].map(rect=>[Math.round(rect.width),Math.round(rect.height)]));
       assert.deepEqual(covers[0],covers[1],'Long and light image areas should match exactly');
       for(const width of [390,768,1180]){
@@ -75,16 +81,25 @@ try{
           };
           return [
             measure('#shelf [data-home-key="book:saved-long"]'),
-            measure('#home-casual-rail [data-home-key="book:saved-short"]'),
+            measure('#shelf [data-home-key="book:saved-short"]'),
             measure('#shelf [data-home-key="book:saved-long"] .bookcard'),
-            measure('#home-casual-rail [data-home-key="book:saved-short"] .thumb'),
+            measure('#shelf [data-home-key="book:saved-short"] .thumb'),
           ];
         });
         assert.deepEqual(dimensions[0],dimensions[1],`${engine.name()} ${width}px tile mismatch`);
         assert.deepEqual(dimensions[2],dimensions[3],`${engine.name()} ${width}px cover mismatch`);
       }
+      // 전체 거르개에서 책(saved-long)과 글(saved-short)이 한 줄에 함께 보입니다.
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
-      assert.equal(await page.locator('#home-casual-rail .home-regular-title').filter({hasText:'Saved story'}).count(),1);
+      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),1);
+      // 책 거르개: 긴 글만. 글 거르개: 가벼운 글만.
+      await page.evaluate(()=>setMyBooksFilter('books'));
+      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
+      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),0);
+      await page.evaluate(()=>setMyBooksFilter('casuals'));
+      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),0);
+      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),1);
+      await page.evaluate(()=>setMyBooksFilter('all'));
       assert.equal(await page.locator('#shelf .home-cover-meta').filter({hasText:'Author'}).count(),1);
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"] .bookcard.editorial-cover .cover-art').count(),1);
       const coverText=await page.locator('#shelf [data-home-key="book:saved-long"] .bookcard').evaluate(card=>{
@@ -104,15 +119,20 @@ try{
       assert.equal(coverText.inside,true);
       assert.equal(coverText.hit,false);
       assert.equal(coverText.under,true);
-      assert.equal(await page.locator('#home-casual-rail .home-cover-meta').count(),1);
-      assert.equal(await page.locator('#shelf .home-regular-meta,#home-casual-rail .home-regular-meta').count(),0);
-      const addSizes=await page.evaluate(()=>[
-        ...['#shelf .home-add-tile','#home-casual-rail .home-add-tile'].map(selector=>{
-          const tile=document.querySelector(selector),cover=tile.querySelector('.bookcard,.thumb');
-          return [Math.round(tile.getBoundingClientRect().width),Math.round(cover.getBoundingClientRect().height)];
-        }),
-      ]);
-      assert.deepEqual(addSizes[0],addSizes[1],'The two add cards should align');
+      // 글(saved-short)의 출처가 표지 위 쪽지(.home-cover-meta)로 뜹니다.
+      assert.equal(await page.locator('#shelf [data-home-key="book:saved-short"] .home-cover-meta').count(),1);
+      assert.equal(await page.locator('#shelf .home-regular-meta').count(),0);
+      // 합쳐진 #shelf 레일에는 더하기 타일이 하나뿐입니다.
+      assert.equal(await page.locator('#shelf .home-add-tile').count(),1);
+      const addSize=await page.evaluate(()=>{
+        const tile=document.querySelector('#shelf .home-add-tile'),cover=tile.querySelector('.bookcard,.thumb');
+        return [Math.round(tile.getBoundingClientRect().width),Math.round(cover.getBoundingClientRect().height)];
+      });
+      const savedTile=await page.evaluate(()=>{
+        const tile=document.querySelector('#shelf [data-home-key="book:saved-long"]'),cover=tile.querySelector('.bookcard,.thumb');
+        return [Math.round(tile.getBoundingClientRect().width),Math.round(cover.getBoundingClientRect().height)];
+      });
+      assert.deepEqual(addSize,savedTile,'The add card should align with the saved cards');
       assert.equal(await page.locator('#home-casual-empty').count(),0);
       assert.equal(await page.locator('.home-add-tile .home-regular-title:visible').count(),0);
       const crops=await page.evaluate(()=>[

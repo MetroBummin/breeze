@@ -96,6 +96,7 @@ const LONG_READS = [
     site:'Backrooms Wiki', license:'CC BY-SA 3.0',
     licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/',
     series:'BACKROOMS TALE SERIES',
+    koTitle:'백룸: 집으로 가는 길',
     hook:'아내 미아가 사라졌습니다. 하루가 지났습니다. 작업실은 실종자 사진과 붉은 실로 가득합니다. 노트북에는 노란 복도. 현실의 주소가 없습니다. 그 방은 어디일까요? 문을 닫아도 같은 벽지가 이어진다면, 제임스는 무엇을 따라가는 걸까요?',
     edition:'English original · Chapters 1–2', wordCount:4035,
   },
@@ -103,6 +104,7 @@ const LONG_READS = [
     id:'sherlock-holmes-speckled-band', file:'assets/longreads/speckled-band.txt',
     cover:'assets/longreads/covers/speckled-band.webp', coverPosition:'center top',
     title:'The Adventure of the Speckled Band',
+    koTitle:'셜록 홈즈: 얼룩 끈',
     originalTitle:'The Adventure of the Speckled Band (1892)',
     author:'Arthur Conan Doyle',
     sourceUrl:'https://www.gutenberg.org/ebooks/1661', site:'Project Gutenberg',
@@ -121,6 +123,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/scandal-in-bohemia.webp",
     "coverPosition": "center top",
     "title": "A Scandal in Bohemia",
+    "koTitle": "셜록 홈즈: 보헤미아 왕국의 스캔들",
     "originalTitle": "A Scandal in Bohemia (1891)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/1661",
@@ -141,6 +144,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/red-headed-league.webp",
     "coverPosition": "center top",
     "title": "The Red-Headed League",
+    "koTitle": "셜록 홈즈: 빨간 머리 연맹",
     "originalTitle": "The Red-Headed League (1891)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/1661",
@@ -161,6 +165,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/final-problem.webp",
     "coverPosition": "center top",
     "title": "The Final Problem",
+    "koTitle": "셜록 홈즈: 마지막 사건",
     "originalTitle": "The Final Problem (1893)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/834",
@@ -181,6 +186,7 @@ const LONG_READS = [
     "cover": "assets/longreads/covers/hound-of-the-baskervilles.webp",
     "coverPosition": "center top",
     "title": "The Hound of the Baskervilles",
+    "koTitle": "셜록 홈즈: 바스커빌 가문의 개",
     "originalTitle": "The Hound of the Baskervilles (1902)",
     "author": "Arthur Conan Doyle",
     "sourceUrl": "https://www.gutenberg.org/ebooks/2852",
@@ -202,6 +208,7 @@ const CLASSIC_FALLBACKS = [
     file:'assets/longreads/alice-in-wonderland.txt',
     cover:'assets/longreads/covers/alice-in-wonderland.webp', coverPosition:'center top',
     title:"Alice's Adventures in Wonderland",
+    koTitle:'이상한 나라의 앨리스',
     originalTitle:"Alice's Adventures in Wonderland (1865)",
     author:'Lewis Carroll',
     sourceUrl:'https://www.gutenberg.org/ebooks/11', site:'Project Gutenberg',
@@ -218,6 +225,7 @@ const CLASSIC_FALLBACKS = [
     file:'assets/longreads/the-great-gatsby.txt',
     cover:'assets/longreads/covers/the-great-gatsby.webp', coverPosition:'center top',
     title:'The Great Gatsby',
+    koTitle:'위대한 개츠비',
     originalTitle:'The Great Gatsby (1925)',
     author:'F. Scott Fitzgerald',
     sourceUrl:'https://www.gutenberg.org/ebooks/64317', site:'Project Gutenberg',
@@ -1176,20 +1184,135 @@ async function restoreMissingLongReadCovers(){
       await applyLongReadCover(read,{onlyMissing:true});
   }
 }
+/* ================= 웹소설 (Web novels) =================
+   Author-permitted Royal Road works, free forever, with NO ads and NO
+   monetization on Breeze. We do NOT scrape or bundle any chapter body text:
+   every chapter is a placeholder (available:false, '곧 공개') and the
+   work -> chapters[] shape is ready for real content to drop in later with
+   no UI change. The home card and the in-preview chapter list read this one
+   const; nothing here starts a Reader until a chapter has real content.
+
+   Titles, authors and links were checked on 2026-10-30 against Royal Road's
+   own feed (royalroad.com/fiction/syndication/<id> returns the story title)
+   and the Kindle store page. `title` is the real English title; `koTitle` is
+   its Korean reading and `koSubtitle` a short Korean line about the story.
+
+   Covers are Breeze-made typographic covers (title + author only,
+   tools/make-webnovel-covers.mjs), never the authors' own cover art.
+
+   HARD RULES, encoded verbatim below:
+   - 'Cinnamon Bun' by RavensDagger: zero monetization — only the Royal Road
+     original link, no kindleUrl / affiliate / Patreon field at all.
+   - 'Chasing Sunlight' by InadvisablyCompelled: shows BOTH its Royal Road
+     page and its Kindle edition. The intro stays plot-only and uses no
+     blood-drinking-creature label (or its Korean equivalents) anywhere.
+   - 'The Unexpected Engagement of the Marvelous Mr. Penn' by R. K. Goff
+     (royalroad.com/fiction/54508, author profile royalroad.com/profile/255768):
+     first 10 chapters only, credit exactly 'R. K. Goff', Royal Road link
+     only. (Ar'Kendrithyst, royalroad.com/fiction/26727, is by Arcs, not
+     R. K. Goff, and is not listed.) */
+function webNovelPlaceholderChapters(count){
+  // No scraping, no bundled body: each chapter is a '곧 공개' placeholder.
+  const chapters=[];
+  for(let n=1;n<=count;n++)chapters.push({n,title:n+'화',available:false});
+  return chapters;
+}
+const WEB_NOVELS = [
+  {
+    id:'cinnamon-bun',
+    title:'Cinnamon Bun',
+    koTitle:'시나몬 번',
+    koSubtitle:'청소와 다정함으로 세상을 구하는 모험',
+    author:'RavensDagger', credit:'RavensDagger',
+    royalRoadUrl:'https://www.royalroad.com/fiction/31429/cinnamon-bun',
+    cover:'assets/webnovels/covers/cinnamon-bun.webp', free:true, monetization:'none',
+    intro:'세상은 큰 악을 물리칠 영웅을 불렀습니다. 그런데 온 것은 브로콜리 번치. 탐험가이자 청소의 달인, 가끔은 유령도 쫓는 사람입니다. 적을 말로 달래 친구로 만들고, 메뉴 창을 끌어안고, 청소와 정원 가꾸기 스킬로 길을 여는 다정한 판타지 모험이에요.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+  {
+    id:'chasing-sunlight',
+    title:'Chasing Sunlight',
+    koTitle:'체이싱 선라이트',
+    koSubtitle:'햇빛을 찾아 어둠 너머로 떠나는 비행선 탐험',
+    author:'InadvisablyCompelled', credit:'InadvisablyCompelled',
+    royalRoadUrl:'https://www.royalroad.com/fiction/73475/chasing-sunlight',
+    kindleUrl:'https://www.amazon.com/dp/B0CPYXGYNW',
+    cover:'assets/webnovels/covers/chasing-sunlight.webp', free:true, monetization:'none',
+    intro:'하늘에 빛이 없는 세계. 사람들은 끝없는 어둠 속에서 불빛을 지키며 삽니다. 노련한 탐험가 조너선 하이츠는 햇빛을 본 적이 있다고 말하고, 그 빛을 다시 보려고 비행선 엔데버호에 원정대를 태워 아무도 가지 않는 동쪽으로 떠납니다. 쥘 베른의 모험과 러브크래프트의 기이함이 섞인 이야기예요.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+  {
+    id:'mr-penn',
+    title:'The Unexpected Engagement of the Marvelous Mr. Penn',
+    koTitle:'마블러스 미스터 펜의 뜻밖의 약혼',
+    koSubtitle:'1899년, 신사 도둑과 영문 모를 청첩장',
+    author:'R. K. Goff', credit:'R. K. Goff',
+    royalRoadUrl:'https://www.royalroad.com/fiction/54508/the-unexpected-engagement-of-the-marvelous-mr',
+    cover:'assets/webnovels/covers/mr-penn.webp', free:true, monetization:'none',
+    intro:'1899년 5월, 도시 곳곳의 집에 봉투 백오십 통이 배달됩니다. 레이디 엘리너 서스와 이름난 신사 도둑 라이스 펜의 결혼식 청첩장이에요. 신문은 들썩이고 엘리너의 아버지는 펄쩍 뛰지만, 정작 엘리너는 그 사람을 만난 적도 없다고 말합니다. 신문 투고와 편지로 시작하는 유쾌한 추리 소설이에요. 앞의 10화만 소개합니다.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+];
+function webNovelDefinition(id){
+  return typeof WEB_NOVELS==='undefined'?null:(WEB_NOVELS.find(work=>work&&work.id===id)||null);
+}
+/* 카드와 시트의 큰 제목은 영어 원제 그대로, 그 아래 한 줄에 한국어 읽기와 소개를 둡니다. */
+function webNovelDisplayTitle(work){
+  return (work&&work.title)||'';
+}
+function webNovelKoreanLine(work){
+  if(!work)return '';
+  return [work.koTitle,work.koSubtitle].filter(Boolean).join(' · ');
+}
+
+/* 원격 목록(catalog.json)에만 있는 고전도 익숙한 한국어 제목으로 보이게 하는
+   표입니다. 열쇠는 영어 제목(소문자)입니다. 목록 줄이 koTitle 을 싣고 오면
+   그쪽이 먼저입니다. */
+const CLASSIC_KO_TITLES = {
+  "pride and prejudice":'오만과 편견',
+  "alice's adventures in wonderland":'이상한 나라의 앨리스',
+  "a study in scarlet":'셜록 홈즈: 주홍색 연구',
+  "the sign of the four":'셜록 홈즈: 네 개의 서명',
+  "the valley of fear":'셜록 홈즈: 공포의 계곡',
+  "the great gatsby":'위대한 개츠비',
+  "backroom - homeward bound":'백룸: 집으로 가는 길',
+  "frankenstein":'프랑켄슈타인',
+  "great expectations":'위대한 유산',
+  "little women":'작은 아씨들',
+};
+function classicKoTitleFor(title){
+  const key=String(title||'').replace(/\s*\(\d{4}\)\s*$/,'').replace(/[\u2018\u2019]/g,"'").trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(CLASSIC_KO_TITLES,key)?CLASSIC_KO_TITLES[key]:'';
+}
+
+/* 카드와 미리보기에 보여 줄 제목. 한국 독자에게 익숙한 이름이 있으면 그걸,
+   없으면 영어 제목을 씁니다. 순서: 그 줄의 koTitle → 같은 id 의 내장 책
+   koTitle → 영어 제목(원제)으로 찾은 CLASSIC_KO_TITLES. 짝 맞추기·반입
+   파일명·클라우드 meta.title·SHA/조회에는 절대 쓰지 않습니다. 그쪽은 늘
+   영어 `title` 입니다. */
+function classicDisplayTitle(read){
+  if(!read)return '';
+  if(read.koTitle)return read.koTitle;
+  // A remote catalog row for a bundled book (Alice, Gatsby…) keeps the bundled
+  // Korean name even when the catalog does not carry one.
+  const bundled=typeof LONG_READS==='undefined'||typeof CLASSIC_FALLBACKS==='undefined'?null:[...LONG_READS,...CLASSIC_FALLBACKS].find(item=>item.id===read.id);
+  const mapped=typeof classicKoTitleFor==='function'?classicKoTitleFor(read.title)||classicKoTitleFor(read.originalTitle):'';
+  return bundled?.koTitle||mapped||read.title||'';
+}
 function longReadCard(read){
   const card=el('div','bookcard classic longread');
   card.dataset.longreadId=read.id;
   card.innerHTML=`<img class="cover" alt="" hidden>
     <div class="author"></div><div class="bt"></div>
     <div class="get">미리보기</div>`;
-  fillCard(card,{'.author':read.series,'.bt':read.title});
+  fillCard(card,{'.author':read.series,'.bt':classicDisplayTitle(read)});
   const image=card.querySelector('.cover');
   image.onload=()=>{image.hidden=false;card.classList.add('has-cover');};
   image.style.objectPosition=read.coverPosition;
   if(read.cover)image.src=read.cover;
   if(typeof remoteClassicOffline==='function'&&remoteClassicOffline(read))card.classList.add('is-offline');
   card.title=`${read.originalTitle} · ${read.author} · ${read.series}`;
-  accessibleLibraryCard(card,read.title);
+  accessibleLibraryCard(card,classicDisplayTitle(read));
   card.onclick=()=>openLongReadPreviewOrReader(read);
   return card;
 }

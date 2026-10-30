@@ -233,6 +233,13 @@ try{
    await page.locator('#article-preview .ap-start').click();
    await page.waitForFunction(()=>curBook?.sourceUrl==='https://content.example/reddit-article');
    assert.equal(await page.locator('#rdiscovery').getAttribute('href'),redditLinkEntry.url);
+   // Reading a 기사 card saves it into 내 책, the same as a book.
+   assert.equal(await page.evaluate(async()=>{
+     const book=books.find(item=>item.sourceUrl==='https://content.example/reddit-article');
+     if(!book||book.transient||!(await bookAll()).some(item=>item.id===book.id))return 'not saved';
+     save('breeze.mybooks-filter','all');renderHome();
+     return document.querySelector(`#shelf [data-home-key="book:${book.id}"]`)?'shelf':'missing from 내 책';
+   }),'shelf');
    await page.evaluate(async entry=>{
      // A real feed card is tappable only after its cover has decoded.
      const readyEntry={...entry,photo:'https://content.example/photo.png'};

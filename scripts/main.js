@@ -27,11 +27,12 @@ homeReady.then(()=>startSharedFileImports());
 homeReady.then(()=>{ if(typeof startAo3Inbox==='function') startAo3Inbox(); });
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
-/* A saved 기사 choice must not request the classics catalog. RSS discovery
-   treats any other origin as a leak. The 책 rail and the longform library ask for it. */
+/* A saved 기사 or 웹소설 choice must not request the classics catalog. RSS
+   discovery treats any other origin as a leak. The 고전 tab and the longform
+   library ask for it. */
 function paintHome(){
   renderHome();
-  if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='books'&&typeof refreshRemoteClassics==='function')
+  if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='classics'&&typeof refreshRemoteClassics==='function')
     void refreshRemoteClassics();
 }
 /* ---- 다음부터는 네트워크를 기다리지 않고 켜집니다 ----

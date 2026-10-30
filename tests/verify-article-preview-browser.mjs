@@ -64,7 +64,7 @@ try{
         await page.waitForFunction(()=>curBook?.id==='preview-one'&&!readerPositionPending());
         assert((await page.evaluate(()=>positions['preview-one']?.t))>0);
         await page.evaluate(()=>{renderHome();show('home');});
-        await page.locator('#home-casual-rail .casual').filter({hasText:'First article'}).first().click();
+        await page.locator('#shelf .casual').filter({hasText:'First article'}).first().click();
         assert.equal(await page.locator('#article-preview').evaluate(node=>node.open),false,'started article skips preview');
         assert.equal(await page.locator('#v-read').isVisible(),true);
         await page.evaluate(()=>show('casuals'));
