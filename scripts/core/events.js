@@ -250,6 +250,34 @@ function eventConfig(){
   if(!url||!key||typeof fetch!=='function')return null;
   return {url:url.replace(/\/$/,''),key:key};
 }
+// Whether the server has the product_events.referrer column: 'unknown' until a
+// send with referrer answers, 'ok' once one is accepted, 'missing' once
+// PostgREST rejects the column. Lives for this page session only, so the
+// column is picked up again on the next launch after the migration lands.
+let eventReferrerReady='unknown';
+function eventHasReferrer(batch){
+  for(let i=0;i<batch.length;i++)if(batch[i]&&Object.prototype.hasOwnProperty.call(batch[i],'referrer'))return true;
+  return false;
+}
+function eventWithoutReferrer(batch){
+  if(!eventHasReferrer(batch))return batch;
+  return batch.map(row=>{
+    const copy={};
+    for(const key in row)if(key!=='referrer')copy[key]=row[key];
+    return copy;
+  });
+}
+// PostgREST answers an unknown insert column with 400 and code PGRST204
+// ("Could not find the 'referrer' column of 'product_events' in the schema
+// cache"). Postgres itself would say 42703. Anything else is not ours to retry.
+function eventIsMissingReferrer(response){
+  if(!response||response.status!==400||typeof response.json!=='function')return Promise.resolve(false);
+  return Promise.resolve().then(()=>response.json()).then(body=>{
+    const code=body&&typeof body.code==='string'?body.code:'';
+    const text=body?String(body.message||'')+' '+String(body.details||''):'';
+    return (code==='PGRST204'||code==='42703')&&/referrer/.test(text);
+  }).catch(()=>false);
+}
 function eventDispatch(url,key,token,batch){
   return fetch(url+'/rest/v1/product_events',{
     method:'POST',
@@ -282,7 +310,9 @@ function eventFlush(unload){
     eventFlushing=true;
     try{
       const token=eventStoredToken();
-      const result=eventDispatch(cfg.url,cfg.key,token,batch);
+      // We cannot read the response here, so only send referrer once this
+      // session has seen the server accept it.
+      const result=eventDispatch(cfg.url,cfg.key,token,eventReferrerReady==='ok'?batch:eventWithoutReferrer(batch));
       eventNoteSent(batch.length);
       const done=result&&typeof result.then==='function'
         ?result.then(()=>{}).catch(()=>{})
@@ -293,9 +323,26 @@ function eventFlush(unload){
   eventFlushing=true;
   // Only the internal flush awaits the async token lookup; trackEvent() stays
   // fire-and-forget so callers never block on getSession().
-  return Promise.resolve().then(()=>eventAccessToken()).then(token=>eventDispatch(cfg.url,cfg.key,token,batch)).then(response=>{
+  let sent=eventReferrerReady==='missing'?eventWithoutReferrer(batch):batch;
+  let token='';
+  return Promise.resolve().then(()=>eventAccessToken()).then(value=>{
+    token=value;
+    return eventDispatch(cfg.url,cfg.key,token,sent);
+  }).then(response=>{
+    if(response&&response.ok||!eventHasReferrer(sent))return response;
+    return eventIsMissingReferrer(response).then(missing=>{
+      if(!missing)return response;
+      // The product_events.referrer column (migration
+      // 20261030130000_product_events_referrer.sql) is not applied yet. Keep
+      // the events: retry once without referrer and stop sending it this session.
+      eventReferrerReady='missing';
+      sent=eventWithoutReferrer(batch);
+      return eventDispatch(cfg.url,cfg.key,token,sent);
+    });
+  }).then(response=>{
     eventFlushing=false;
     if(response&&response.ok){
+      if(eventHasReferrer(sent))eventReferrerReady='ok';
       eventNoteSent(batch.length);
       if(eventQueue.length)return eventFlush();
     }

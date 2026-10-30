@@ -30,6 +30,7 @@ function install(options={}){
     fetch:async(url,init)=>{
       calls.push({url,init});
       if(fetchError)throw fetchError;
+      if(options.respond)return options.respond(url,init,calls.length);
       return {ok:options.ok!==false,status:options.ok===false?500:201};
     }
   };
@@ -235,4 +236,70 @@ test('the app wires each funnel event through the logger',()=>{
   const detected=dictionary.slice(dictionary.indexOf('function saveDetectedExpression'),dictionary.indexOf('async function loadCachedLook'));
   assert.match(detected,/trackEvent\('first_lookup_success'\)/);
   assert.match(dictionary,/trackEvent\('vocab_save',\{first:true\}\)/);
+});
+
+// Production product_events has no referrer column until
+// 20261030130000_product_events_referrer.sql is applied. PostgREST then answers
+// 400 PGRST204 for any batch that carries referrer.
+function schemaWithoutReferrer(){
+  return (url,init)=>{
+    const rows=JSON.parse(init.body);
+    if(rows.some(row=>'referrer' in row)){
+      return {ok:false,status:400,json:async()=>({
+        code:'PGRST204',details:null,hint:null,
+        message:"Could not find the 'referrer' column of 'product_events' in the schema cache"
+      })};
+    }
+    return {ok:true,status:201};
+  };
+}
+
+test('without the referrer column, retries once without referrer and stops sending it',async()=>{
+  const {context,memory,calls}=install({referrer:'https://www.google.com/x',respond:schemaWithoutReferrer()});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,2);
+  assert.equal(JSON.parse(calls[0].init.body)[0].referrer,'https://www.google.com');
+  const retried=JSON.parse(calls[1].init.body);
+  assert.equal(retried[0].name,'app_open');
+  assert.equal('referrer' in retried[0],false);
+  assert.equal(JSON.parse(memory.get('breeze.events.sent')).n,1);
+
+  // Later batches this session go out without referrer on the first try.
+  context.trackEvent('first_word_tap');
+  await context.eventFlush();
+  assert.equal(calls.length,3);
+  assert.equal('referrer' in JSON.parse(calls[2].init.body)[0],false);
+
+  // The stored first-touch value is kept for when the column exists.
+  assert.equal(JSON.parse(memory.get('breeze.events.ref')),'https://www.google.com');
+});
+
+test('other 400s are not retried as a missing referrer column',async()=>{
+  const {context,calls}=install({referrer:'https://www.google.com',respond:()=>({
+    ok:false,status:400,json:async()=>({code:'23514',message:'new row violates check constraint "product_events_referrer_chk"'})
+  })});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,1);
+});
+
+test('once the column exists, referrer keeps flowing, including on pagehide',async()=>{
+  const {context,calls}=install({referrer:'https://www.google.com'});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(JSON.parse(calls[0].init.body)[0].referrer,'https://www.google.com');
+  context.trackEvent('first_word_tap');
+  await context.eventFlush(true);
+  assert.equal(JSON.parse(calls[1].init.body)[0].referrer,'https://www.google.com');
+});
+
+test('a pagehide flush before the column is confirmed omits referrer',async()=>{
+  // The unload path cannot read the response to retry, so it must not risk a
+  // PGRST204 that would drop the final batch.
+  const {context,calls}=install({referrer:'https://www.google.com',respond:schemaWithoutReferrer()});
+  context.trackEvent('app_open');
+  await context.eventFlush(true);
+  assert.equal(calls.length,1);
+  assert.equal('referrer' in JSON.parse(calls[0].init.body)[0],false);
 });
