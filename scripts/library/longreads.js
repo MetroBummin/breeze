@@ -1197,8 +1197,8 @@ async function restoreMissingLongReadCovers(){
    and the Kindle store page. `title` is the real English title; `koTitle` is
    its Korean reading and `koSubtitle` a short Korean line about the story.
 
-   Covers are Breeze-made typographic covers (title + author only,
-   tools/make-webnovel-covers.mjs), never the authors' own cover art.
+   Covers are original movie-poster art made for Breeze (supplied files, see
+   assets/webnovels/covers/README.md), never the authors' own cover art.
 
    HARD RULES, encoded verbatim below:
    - 'Cinnamon Bun' by RavensDagger: zero monetization — only the Royal Road
@@ -1259,6 +1259,10 @@ function webNovelDefinition(id){
 /* 카드와 시트의 큰 제목은 영어 원제 그대로, 그 아래 한 줄에 한국어 읽기와 소개를 둡니다. */
 function webNovelDisplayTitle(work){
   return (work&&work.title)||'';
+}
+/* 표지 그림의 대체 글: 영어 원제 + 작가 표기 그대로. */
+function webNovelCoverAlt(work){
+  return work?[work.title,work.credit||work.author].filter(Boolean).join(' — '):'';
 }
 function webNovelKoreanLine(work){
   if(!work)return '';

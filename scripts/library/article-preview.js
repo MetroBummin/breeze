@@ -171,7 +171,7 @@ function articlePreviewClose(cancelOpening=true){
   articlePreviewSummaryUrl='';
   articlePreviewSummaryPending=null;
   const image=/** @type {HTMLImageElement} */(articlePreviewDialog.querySelector('.ap-hero img'));
-  image.hidden=true;image.removeAttribute('src');
+  image.hidden=true;image.removeAttribute('src');image.alt='';
   if(articlePreviewImageUrl){URL.revokeObjectURL(articlePreviewImageUrl);articlePreviewImageUrl='';}
   if(articlePreviewDialog.open)articlePreviewDialog.close();
 }
@@ -508,7 +508,7 @@ function openWebNovelPreview(work){
   articlePreviewDetails.append(links);
   renderWebNovelChapters(work);
   const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
-  if(work.cover){image.src=work.cover;image.hidden=false;image.onerror=()=>{image.hidden=true;};}
+  if(work.cover){image.src=work.cover;image.alt=webNovelCoverAlt(work);image.hidden=false;image.onerror=()=>{image.hidden=true;};}
   else{image.hidden=true;image.removeAttribute('src');}
   // No single-book CTA for a web novel: chapters are the entry points.
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));

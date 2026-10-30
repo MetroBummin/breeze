@@ -613,8 +613,9 @@ function renderHomeRecommendBooks(rail){
 }
 /* ================= 추천 · 웹소설 칸 =================
    작가가 허락한 무료 로열로드 작품을 고전과 같은 #casual-rail 에 깝니다. 카드는
-   고전 카드와 같은 틀(표지·제목·작가)이고 표지는 Breeze 가 만든 글자 표지입니다
-   (작가의 원래 표지 그림은 쓰지 않습니다). 누르면 기존 미리보기 시트
+   고전 카드와 같은 틀(표지·제목·작가)이고 표지는 Breeze 를 위해 그린 포스터
+   그림입니다(작가의 원래 표지 그림은 쓰지 않습니다). 웹소설은 내 책에 저장되지
+   않으므로 고쳐 씌울 저장 표지 Blob 이 없고, 카드와 시트가 파일을 바로 엽니다. 누르면 기존 미리보기 시트
    (#article-preview) 안에서 회차 목록이 뜹니다. 따로 띄우는 화면은 없습니다. */
 const WEBNOVEL_PROGRESS_KEY='breeze.webnovel-progress.v1';
 function webNovelProgress(){
@@ -639,6 +640,7 @@ function webNovelCard(work){
   const credit=work.credit||work.author||'';
   fillCard(card,{'.bt':title,'.ko':work.koTitle||'','.author':credit});
   const image=card.querySelector('.cover');
+  image.alt=webNovelCoverAlt(work);
   image.onload=()=>card.classList.add('has-cover');
   if(work.cover)image.src=work.cover;
   const label=webNovelProgressLabel(work);

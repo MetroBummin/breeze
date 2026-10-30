@@ -161,9 +161,11 @@ test('the toggle switches the one rail between 고전, 웹소설 and 기사',()=
   const novels=[...document.querySelectorAll('#casual-rail .home-recommend-book.webnovel')];
   assert.deepEqual(novels.map(card=>card.dataset.webnovelId),['cinnamon-bun','chasing-sunlight','mr-penn']);
   assert.equal(document.querySelectorAll('#casual-rail [data-longread-id],#casual-rail .rss-card').length,0);
-  // Breeze-made typographic covers, never empty cards.
+  // Supplied poster covers made for Breeze, never empty cards; alt = title — author.
   for(const card of novels)
     assert.match(card.querySelector('img.cover').getAttribute('src'),new RegExp('^assets/webnovels/covers/'+card.dataset.webnovelId+'\\.webp$'));
+  assert.deepEqual(novels.map(card=>card.querySelector('img.cover').getAttribute('alt')),
+    ['Cinnamon Bun — RavensDagger','Chasing Sunlight — InadvisablyCompelled','The Unexpected Engagement of the Marvelous Mr. Penn — R. K. Goff']);
   // Real English title on the card, its Korean reading under it, exact-case author.
   assert.deepEqual(novels.map(card=>[card.querySelector('.bt').textContent,card.querySelector('.ko').textContent,card.querySelector('.author').textContent]),
     [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','마블러스 미스터 펜의 뜻밖의 약혼','R. K. Goff']]);
