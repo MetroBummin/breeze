@@ -36,7 +36,7 @@ function boot({get,call,put,width=390,height=844,pressed=false}={}){
     sentenceHash:text=>text, aiDay:()=>'', save(){}, clearReaderModeCue(){},
     sentenceGestureStillPressed:()=>contact.pressed,
     dictGet:get||(()=>Promise.resolve(null)),
-    dictCall:call||(()=>Promise.resolve({ko:'ok',points:[]})),
+    dictCall:call||(()=>Promise.resolve({ko:'네',points:[]})),
     dictPut:put||(()=>Promise.resolve()),
   });
   const reader=readFileSync(resolve(root,'scripts/reader/reader.js'),'utf8');
@@ -75,10 +75,10 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const cache=deferred(), app=boot({get:()=>cache.promise});
   const opening=app.context.openSentence('A');
   app.context.closeSentence();
-  cache.resolve({ko:'old A',points:[]});
+  cache.resolve({ko:'옛날 가',points:[]});
   await opening;
   assert.equal(app.element('sentence-modal').hidden,true,'stale cache hit reopened a closed sentence');
-  assert.notEqual(app.element('ps-ko').textContent,'old A','stale cache hit painted after close');
+  assert.notEqual(app.element('ps-ko').textContent,'옛날 가','stale cache hit painted after close');
 }
 
 /* Offline/failure leaves pending and uses the compact bottom retry surface. */
@@ -97,11 +97,11 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const app=boot({get:key=>key==='s:A'?a.promise:b.promise});
   const openingA=app.context.openSentence('A');
   const openingB=app.context.openSentence('B');
-  a.resolve({ko:'old A',points:[]}); await openingA;
+  a.resolve({ko:'옛날 가',points:[]}); await openingA;
   assert.equal(app.element('ps-en').textContent,'B','A cache response replaced B waiting UI');
-  b.resolve({ko:'new B',points:[]}); await openingB;
+  b.resolve({ko:'새 나',points:[]}); await openingB;
   assert.equal(app.element('ps-en').textContent,'B');
-  assert.equal(app.element('ps-ko').textContent,'new B');
+  assert.equal(app.element('ps-ko').textContent,'새 나');
 }
 
 /* A response can outrun abort and may still be cached, but it cannot paint B. */
@@ -114,11 +114,11 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   });
   const openingA=app.context.openSentence('A'); await tick();
   const openingB=app.context.openSentence('B'); await tick();
-  calls.get('A').resolve({ko:'old A',points:[],left:9}); await openingA;
+  calls.get('A').resolve({ko:'옛날 가',points:[],left:9}); await openingA;
   assert.equal(app.element('ps-en').textContent,'B','network A replaced B after abort race');
   assert.ok(puts.some(([key])=>key==='s:A'),'valid stale answer was not retained in cache');
-  calls.get('B').resolve({ko:'new B',points:[],left:8}); await openingB;
-  assert.equal(app.element('ps-ko').textContent,'new B');
+  calls.get('B').resolve({ko:'새 나',points:[],left:8}); await openingB;
+  assert.equal(app.element('ps-ko').textContent,'새 나');
 }
 
 /* A slow cache write cannot delay a usable result or reopen it after close. */
@@ -126,8 +126,8 @@ for(const viewport of [{width:390,height:844,compact:true},{width:1100,height:80
   const answer=deferred(),write=deferred();
   const app=boot({get:()=>Promise.resolve(null),call:()=>answer.promise,put:()=>write.promise});
   const opening=app.context.openSentence('A'); await tick();
-  answer.resolve({ko:'late A',points:[],left:7}); await tick();
-  assert.equal(app.element('ps-ko').textContent,'late A','ready answer waited for cache storage');
+  answer.resolve({ko:'늦은 가',points:[],left:7}); await tick();
+  assert.equal(app.element('ps-ko').textContent,'늦은 가','ready answer waited for cache storage');
   assert.equal(app.element('sentence-modal').hidden,false);
   app.context.closeSentence(); write.resolve(); await opening;
   assert.equal(app.element('sentence-modal').hidden,true,'dictPut completion reopened the sentence');

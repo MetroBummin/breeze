@@ -6,6 +6,7 @@ import { deleteAccountBookCloud } from "../books/handler.ts";
 import { runEasyExplanation, easyPrompt, type EasyInput } from "./easy-explanation.ts";
 import { runSentenceEasyExplanation, sentenceEasyPrompt, type SentenceEasyInput } from "./sentence-easy-explanation.ts";
 import { LOOK_SCHEMA, lookupInput, miniPrompt, recoverableLook, validateLook } from "./lookup.ts";
+import { isKoreanTranslation, explainAcceptsText } from "./korean.ts";
 import { meteredFetch, newAiTrace, type AiAction, type AiTrace } from "./telemetry.ts";
 import { logicalLookup, lookupFingerprint } from "./logical-lookup.ts";
 import { clientLookupFailureResponse } from "./client-failure.ts";
@@ -26,7 +27,7 @@ const ANON_DAILY_CAP=Number(Deno.env.get("AI_ANON_DAILY_CAP")??2000);
 
 const SYSTEM="You are a precise bilingual dictionary for Korean learners reading English books. Reply with ONLY minified JSON. No markdown, no code fence, no commentary.";
 const SR=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
-type Ask={prompt:string;maxTokens:number;schema?:unknown;system?:string;action:AiAction;trace?:AiTrace;temperature?:number;signal?:AbortSignal;validate?:(value:any)=>unknown};
+type Ask={prompt:string;maxTokens:number;schema?:unknown;system?:string;action:AiAction;trace?:AiTrace;temperature?:number;signal?:AbortSignal;validate?:(value:any)=>unknown;accept?:(text:string)=>boolean};
 
 async function callOpenRouter(key:string,ask:Ask){
   const body:Record<string,unknown>={model:OPENROUTER_MODEL,messages:[{role:"system",content:ask.system??SYSTEM},{role:"user",content:ask.prompt}],temperature:ask.temperature??0.2,max_tokens:ask.maxTokens,stream:false,reasoning:{enabled:false},provider:{sort:"throughput",max_price:{prompt:0.10,completion:0.30}}};
@@ -226,6 +227,10 @@ async function ask(input:Ask){
       attempts++;
       try{
         const out=provider==="openrouter"?await callOpenRouter(oKey!,a):await callGemini(gKey!,a);
+        // A sequential (non-word) call may reject a provider's raw text after the
+        // fact (e.g. #319 non-Korean sentence output). A rejected answer is a
+        // provider failure: advance to the next provider instead of returning it.
+        if(input.accept&&!input.accept(out.text))throw new Error("sentence_not_korean");
         return {...out,provider,attempts};
       }catch(error){
         lastError=error;if(input.signal?.aborted)throw error;
@@ -279,7 +284,7 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
 }
 
 const EXPLAIN_SCHEMA={type:"object",additionalProperties:false,required:["ko"],properties:{ko:{type:"string"}}};
-function explainPrompt(sentence:string){return `문장: ${sentence}\n\n영어를 읽는 한국인에게 이 문장을 자연스러운 한국어로 번역하세요.\n\n- ko: 문장 전체의 자연스러운 한국어 해석.\n- 영어 어순과 표현을 그대로 옮기지 말고, 원문의 의미를 보존하면서 한국어 화자가 실제로 말하거나 글로 쓸 법한 자연스러운 문장으로 작성하세요.\n- 해석에서 원문의 의미를 임의로 추가하거나 빼지 마세요.\n\n{"ko":""}`}
+function explainPrompt(sentence:string){return `문장: ${sentence}\n\n영어를 읽는 한국인에게 이 문장을 자연스러운 한국어로 번역하세요.\n\n- ko: 문장 전체의 자연스러운 한국어 해석.\n- 반드시 한국어(한글)로만 작성하세요. 중국어(한자)나 영어 등 다른 언어로 번역하지 마세요. 고유명사는 그대로 두되 해석 본문은 한글이어야 합니다.\n- 영어 어순과 표현을 그대로 옮기지 말고, 원문의 의미를 보존하면서 한국어 화자가 실제로 말하거나 글로 쓸 법한 자연스러운 문장으로 작성하세요.\n- 해석에서 원문의 의미를 임의로 추가하거나 빼지 마세요.\n\n{"ko":""}`}
 async function opExplain(body:any,userId:string|null,signal?:AbortSignal){
   const sentence=clean(body.sentence,600);if(sentence.length<12)return json({error:"bad_sentence"},400);
   const requestId=body.lookupId??crypto.randomUUID();
@@ -289,9 +294,15 @@ async function opExplain(body:any,userId:string|null,signal?:AbortSignal){
     const {data,error}=await SR.rpc("sentence_lookup_receipt",{p_user:userId,p_device:clean(body.device,64),p_request:requestId,p_fingerprint:fingerprint,p_answer:answer??null,p_limit:DEFAULT_DAILY_LIMIT,p_anon_limit:ANON_SENT_FREE,p_anon_cap:ANON_DAILY_CAP});
     if(error||!data||typeof data.status!=="string")throw new Error("quota_unavailable");return data;
   },async()=>{
-    const out=await ask({action:"explain",prompt:explainPrompt(sentence),maxTokens:600,schema:EXPLAIN_SCHEMA,signal});
+    // #319: a provider can answer in Chinese. `accept` lets ask()'s provider loop
+    // treat non-Korean output as a provider failure and advance to the other
+    // provider; if every provider fails the check, ask() throws (retryable) and
+    // nothing is returned or cached. The post-parse guard is defense in depth.
+    const out=await ask({action:"explain",prompt:explainPrompt(sentence),maxTokens:600,schema:EXPLAIN_SCHEMA,signal,
+      accept:explainAcceptsText});
     const parsed=parseJson(out.text);if(!parsed)throw new Error("sentence_parse_failed");
     const ko=clean(parsed.ko,500);if(!ko)throw new Error("sentence_empty_answer");
+    if(!isKoreanTranslation(ko))throw new Error("sentence_not_korean");
     return {ko,provider:out.provider};
   });
   if(verdict.status==="replay")return json({...verdict.answer,left:verdict.left});

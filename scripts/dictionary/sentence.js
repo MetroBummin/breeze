@@ -31,6 +31,24 @@
    소금을 섞은 지문과 낱말 수뿐입니다 — 낱말 조회와 완전히 같은 규칙입니다. */
 
 const sentKey = text => 's:' + sentenceHash(text);
+
+/* #319: 서버가 중국어(한자)로 번역을 내놓은 적이 있고, 그 답이 캐시에 남아 다시
+   열 때마다 되살아났습니다. 이 작은 검사는 언어 감지기가 아니라 안전망입니다 —
+   한글이 거의 없이 한자가 지배하는 답(중국어)만 걸러 냅니다. 한글이 섞인 정상
+   번역(고유명사·숫자·약간의 한자 포함)은 그대로 통과합니다. 서버 쪽
+   server/dict/korean.ts 의 isKoreanTranslation 과 같은 규칙입니다. */
+function sentenceLooksKorean(text){
+  const s = String(text || '').trim();
+  if(!s) return false;
+  let hangul = 0, han = 0;
+  for(const ch of s){
+    const c = ch.codePointAt(0);
+    if((c>=0xAC00&&c<=0xD7A3)||(c>=0x1100&&c<=0x11FF)||(c>=0x3130&&c<=0x318F)) hangul++;
+    else if((c>=0x4E00&&c<=0x9FFF)||(c>=0x3400&&c<=0x4DBF)) han++;
+  }
+  if(han===0) return hangul>0;
+  return hangul>0 && hangul>=han;
+}
 const LS_SENT_LEFT = 'breeze.ai-left';
 const sentenceRecoveries=new Map();
 
@@ -387,7 +405,9 @@ async function openSentence(text,origin){
     // A previously stored answer never waits for an optional asset download.
     const hit=await dictGet(key);
     if(!sentenceAlive(life))return;
-    if(hit&&hit.ko){paintSentenceFor(life,{en:clean,ko:hit.ko});return;}
+    // #319: a previously cached non-Korean (Chinese) answer is ignored so it is
+    // re-fetched from the server instead of being painted again.
+    if(hit&&hit.ko&&sentenceLooksKorean(hit.ko)){paintSentenceFor(life,{en:clean,ko:hit.ko});return;}
     if(typeof homewardNeedsLookupData==='function'&&homewardNeedsLookupData(curBook)){
       try{await ensureHomewardLookupData();}
       catch{paintSentenceFor(life,{en:clean,retry:true,foot:'읽기 자료를 준비하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'});return;}
@@ -430,7 +450,8 @@ async function openSentence(text,origin){
   sentenceRecoveries.delete(recoveryKey);
   if(sentenceAlive(life)&&sbUser)rememberSentLeft(answer.left,answer.day);
   paintSentenceFor(life,{ en:clean, ko:answer.ko });
-  await dictPut(key, { ko:answer.ko, done:true });
+  // #319: defense in depth — never persist a non-Korean answer to the dict cache.
+  if(sentenceLooksKorean(answer.ko)) await dictPut(key, { ko:answer.ko, done:true });
 }
 
 document.addEventListener('keydown', event=>{
