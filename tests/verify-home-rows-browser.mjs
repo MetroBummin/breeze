@@ -1,4 +1,4 @@
-// Home rows: 이어 읽기 · 추천 (고전 / 웹소설 / 기사) · 내 책.
+// Home: 추천 (고전 / 웹소설 / 기사) on top, 내 책 below, both 2-column grids on a phone.
 // Deterministic: every request outside the local server is aborted.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -27,6 +27,9 @@ async function openPreview(page,id){
   return page.locator('#article-preview').evaluate(dialog=>({
     kind:dialog.dataset.kind,
     source:dialog.querySelector('.ap-source').textContent,
+    title:dialog.querySelector('.ap-title').textContent,
+    subtitle:dialog.querySelector('.ap-subtitle').textContent,
+    image:(()=>{const image=dialog.querySelector('.ap-hero img');return [image.naturalWidth,getComputedStyle(image).objectFit];})(),
     rows:[...dialog.querySelectorAll('.ap-chapter-row')].map(row=>[row.querySelector('.ap-chapter-title').textContent,row.querySelector('.ap-chapter-state').textContent]),
     links:[...dialog.querySelectorAll('.ap-links a')].map(link=>link.textContent),
     text:dialog.textContent,
@@ -43,7 +46,7 @@ try{
       await page.goto(base);await page.evaluate(()=>homeReady);
 
       assert.deepEqual(await page.locator('#v-home > section').evaluateAll(nodes=>nodes.map(node=>[node.id,!node.hidden])),
-        [['continue',false],['casuals',true],['longform',true]],'A new reader has no 이어 읽기 row');
+        [['casuals',true],['longform',true]],'추천 on top, 내 책 below, no 이어 읽기 row');
       assert.equal(await page.locator('#home-recommend-title').textContent(),'추천');
       assert.deepEqual(await page.locator('#home-recommend-kind button').evaluateAll(nodes=>nodes.map(node=>[node.textContent,node.getAttribute('aria-pressed')])),
         [['고전','true'],['웹소설','false'],['기사','false']]);
@@ -51,7 +54,7 @@ try{
 
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
       assert.equal(await page.evaluate(()=>load('breeze.home-recommend')),'webnovels');
-      await page.waitForFunction(()=>[...document.querySelectorAll('#casual-rail .webnovel img.cover')].filter(image=>image.naturalWidth===768).length===3);
+      await page.waitForFunction(()=>[...document.querySelectorAll('#casual-rail .webnovel img.cover')].filter(image=>image.naturalWidth===768).length===2);
       assert.equal(await page.locator('#casual-rail [data-longread-id],#casual-rail .rss-card').count(),0);
       // Web-novel cards share the classic card frame.
       const frames=await page.evaluate(()=>{
@@ -59,25 +62,39 @@ try{
         return size(document.querySelector('#casual-rail .webnovel .cover'));
       });
       await page.locator('#home-recommend-kind [data-kind="classics"]').click();
+      await page.waitForFunction(()=>{const image=document.querySelector('#casual-rail [data-longread-id] img.cover');return image&&!image.hidden&&image.naturalWidth>0;});
       const classicFrame=await page.locator('#casual-rail [data-longread-id] .cover').first().evaluate(node=>{const rect=node.getBoundingClientRect();return [Math.round(rect.width),Math.round(rect.height)];});
       assert.deepEqual(frames,classicFrame,'Web-novel covers use the classic cover frame');
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
 
-      const goff=await openPreview(page,'arkendrithyst');
-      assert.equal(goff.kind,'webnovel');
-      assert.equal(goff.source,'R. K. Goff');
-      assert.equal(goff.rows.length,10,'R. K. Goff: first 10 chapters only');
-      assert.deepEqual(goff.rows[0],['1화','곧 공개']);
-      assert.ok(goff.rows.every(([,state])=>state==='곧 공개'));
-      assert.deepEqual(goff.links,['Royal Road 원문']);
+      // Two columns on a phone; covers keep their 2:3 shape (nothing cropped).
+      const grid=await page.evaluate(()=>{
+        const cards=[...document.querySelectorAll('#casual-rail .webnovel')].map(card=>card.getBoundingClientRect());
+        const cover=document.querySelector('#casual-rail .webnovel .cover').getBoundingClientRect();
+        return {sameRow:Math.round(cards[0].top)===Math.round(cards[1].top),side:cards[1].left>cards[0].right,ratio:cover.height/cover.width,
+          columns:getComputedStyle(document.getElementById('casual-rail')).gridTemplateColumns.split(' ').length};
+      });
+      assert.equal(grid.columns,2);assert.equal(grid.sameRow,true);assert.equal(grid.side,true);
+      assert.ok(Math.abs(grid.ratio-1.5)<.02,`cover ratio ${grid.ratio}`);
+      assert.deepEqual(await page.locator('#casual-rail .webnovel').evaluateAll(nodes=>nodes.map(node=>[node.querySelector('.bt').textContent,node.querySelector('.ko').textContent,node.querySelector('.author').textContent])),
+        [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled']]);
+      const bun=await openPreview(page,'cinnamon-bun');
+      assert.equal(bun.kind,'webnovel');
+      assert.equal(bun.source,'RavensDagger');
+      assert.equal(bun.title,'Cinnamon Bun');
+      assert.equal(bun.subtitle,'시나몬 번 · 청소와 다정함으로 세상을 구하는 모험');
+      assert.deepEqual(bun.image,[768,'contain'],'The sheet shows the whole cover');
+      assert.equal(bun.rows.length,10);
+      assert.deepEqual(bun.rows[0],['1화','곧 공개']);
+      assert.ok(bun.rows.every(([,state])=>state==='곧 공개'));
+      assert.deepEqual(bun.links,['Royal Road 원문'],'Cinnamon Bun has no monetized link');
       await page.locator('#article-preview .ap-chapter-row').first().evaluate(row=>row.click());
       assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
       assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'A 곧 공개 chapter does not navigate');
       await page.locator('#article-preview .ap-close').click();
-      const bun=await openPreview(page,'cinnamon-bun');
-      assert.deepEqual(bun.links,['Royal Road 원문'],'Cinnamon Bun has no monetized link');
-      await page.locator('#article-preview .ap-close').click();
       const sun=await openPreview(page,'chasing-sunlight');
+      assert.equal(sun.title,'Chasing Sunlight');
+      assert.equal(sun.source,'InadvisablyCompelled');
       assert.deepEqual(sun.links,['Royal Road 원문','Kindle 판']);
       assert.doesNotMatch(sun.text,/vampire|뱀파이어|흡혈/i);
       await page.locator('#article-preview .ap-close').click();
@@ -92,32 +109,42 @@ try{
       await page.keyboard.press('ArrowRight');
       assert.equal(await page.evaluate(()=>homeRecommendKind()),'classics');
 
-      // 이어 읽기 shows opened, unfinished books, the most recent first.
+      // 내 책: opened, unfinished items first (most recent first), then the rest.
       await page.evaluate(async()=>{
         const make=(id,title,kind)=>({id,title,kind,author:'Writer',site:'Example',paras:[title,'Body text for '+title+'.'],addedAt:1});
         const list=[make('older','Older book','txt'),make('newer','Newer article','paste'),make('finished','Finished book','txt'),make('fresh','Never opened','txt')];
         for(const book of list)await bookPut(book);
         books=list;
         positions={older:{p:.3,t:1},newer:{p:.2,t:2},finished:{p:1,t:3}};
-        rememberLocalReading(list[2]);rememberLocalReading(list[0]);rememberLocalReading(list[1]);
+        rememberLocalReading(list[0]);rememberLocalReading(list[1]);rememberLocalReading(list[2]);
         renderHome();
       });
-      assert.equal(await page.locator('#continue').isVisible(),true);
-      assert.deepEqual(await page.locator('#continue-rail [data-home-key]').evaluateAll(nodes=>nodes.map(node=>node.dataset.homeKey)),
-        ['book:newer','book:older']);
+      assert.equal(await page.locator('#continue,#continue-rail').count(),0);
+      assert.deepEqual(await page.locator('#shelf [data-home-key^="book:"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.homeKey)),
+        ['book:newer','book:older','book:finished','book:fresh']);
       const top=await page.evaluate(()=>[...document.querySelectorAll('#v-home > section:not([hidden])')].map(node=>node.getBoundingClientRect().top));
-      assert.ok(top[0]<top[1]&&top[1]<top[2],'이어 읽기 sits above 추천 and 내 책');
-      // 내 책 still holds everything, books and notes, behind 전체/책/글.
-      assert.equal(await page.locator('#shelf [data-home-key^="book:"]').count(),4);
+      assert.ok(top[0]<top[1],'추천 sits above 내 책');
+      const shelf=await page.evaluate(()=>{
+        const tiles=[...document.querySelectorAll('#shelf > .home-regular-tile')].map(tile=>tile.getBoundingClientRect());
+        return {columns:getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length,
+          sameRow:Math.round(tiles[0].top)===Math.round(tiles[1].top),nextRow:tiles[2].top>tiles[0].bottom};
+      });
+      assert.deepEqual(shelf,{columns:2,sameRow:true,nextRow:true},'내 책 is a 2-column grid');
       await page.locator('#mybooks-filter [data-mybooks="casuals"]').click();
       assert.deepEqual(await page.locator('#shelf [data-home-key^="book:"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.homeKey)),['book:newer']);
       await page.locator('#mybooks-filter [data-mybooks="all"]').click();
+      // Wider screens use more columns.
+      await page.setViewportSize({width:820,height:1180});
+      assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),3);
+      await page.setViewportSize({width:1180,height:820});
+      assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),4);
+      await page.setViewportSize({width:390,height:844});
       // The floating resume pill and + stay.
       assert.equal(await page.locator('#home-resume').isVisible(),true);
       assert.equal(await page.locator('#home-add').isVisible(),true);
-      assert.equal(await page.locator('#home-resume-title').textContent(),'Newer article');
+      assert.equal(await page.locator('#home-resume-title').textContent(),'Finished book','The pill opens the last opened book');
       await page.close();
     }finally{await browser.close();}
-    console.log(`${engine.name()}: home rows, 고전/웹소설/기사 toggle, web-novel chapter sheets, 이어 읽기 and 내 책 passed`);
+    console.log(`${engine.name()}: 추천 grid with 고전/웹소설/기사, web-novel sheets, 내 책 grid in recent order passed`);
   }
 }finally{server.close();}

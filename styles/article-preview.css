@@ -99,7 +99,12 @@ body:has(#article-preview[open]){overflow:hidden;}
 /* ---- 웹소설 미리보기: 시트 안의 회차 목록 ----
    따로 띄우는 화면 없이 같은 시트(.ap-scroll) 안에 1화·2화… 를 눌러지는 줄로
    깝니다. 새 흐림/장식 이모지 없이 기존 preview surface 토큰만 씁니다. */
-#article-preview[data-kind="webnovel"] .ap-hero img{object-fit:cover;}
+/* 표지는 2:3 그대로 보입니다(잘리지 않게 contain). */
+#article-preview[data-kind="webnovel"] .ap-hero img{object-fit:contain;}
+#article-preview[data-kind="webnovel"] .ap-hero{height:min(40dvh,340px);min-height:160px;}
+#article-preview[data-kind="webnovel"] .ap-title{margin-bottom:6px;}
+.ap-subtitle{margin:0 0 18px;color:var(--sentence-glass-muted);font:500 14px/1.5 var(--ui);}
+.ap-subtitle[hidden]{display:none;}
 .ap-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;}
 .ap-links a{color:inherit;text-underline-offset:3px;font-weight:600;}
 .ap-chapters{margin:18px 0 4px;}

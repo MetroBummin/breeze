@@ -26,9 +26,9 @@ function workText(work){
   return JSON.stringify(work);
 }
 
-test('web novels: three author-permitted, free-forever works, no monetization', () => {
+test('web novels: author-permitted, free-forever works, no monetization', () => {
   assert.ok(Array.isArray(WEB_NOVELS), 'WEB_NOVELS must be an array');
-  assert.equal(WEB_NOVELS.length, 3, 'There must be exactly three web-novel works');
+  assert.deepEqual(Array.from(WEB_NOVELS, work => work.id), ['cinnamon-bun', 'chasing-sunlight']);
   for(const work of WEB_NOVELS){
     assert.equal(work.free, true, `${work.id} must be free:true`);
     assert.equal(work.monetization, 'none', `${work.id} must declare monetization 'none'`);
@@ -41,19 +41,31 @@ test('web novels: three author-permitted, free-forever works, no monetization', 
       assert.equal(chapter.available, false, `${work.id} chapter ${chapter.n} must be a placeholder (available:false)`);
       assert.ok(!chapter.content, `${work.id} chapter ${chapter.n} must not bundle body text`);
     }
+    // Real English title plus a Korean reading; no placeholder titles.
+    assert.ok(work.title && work.koTitle && work.koSubtitle, `${work.id} needs title, koTitle and koSubtitle`);
+    assert.doesNotMatch(JSON.stringify(work), /연재작/, `${work.id} carries a placeholder title`);
   }
 });
 
-test('R. K. Goff work: first 10 chapters only, credit exactly "R. K. Goff"', () => {
-  const work = byId('arkendrithyst');
-  assert.ok(work, 'The R. K. Goff work must exist');
-  assert.equal(work.credit, 'R. K. Goff', 'Credit string must be exactly "R. K. Goff"');
-  assert.equal(work.author, 'R. K. Goff', 'Author must be "R. K. Goff"');
-  assert.equal(work.chapters.length, 10, 'Only the first 10 chapters may be listed');
-  assert.deepEqual(Array.from(work.chapters, c => c.n), Array.from({length:10}, (_, i) => i + 1),
-    'Chapters must be numbered 1..10');
-  // No Kindle/affiliate/monetization attached.
-  assert.ok(!work.kindleUrl, 'The R. K. Goff work must not carry a Kindle link');
+/* Royal Road ids checked on 2026-10-30 through royalroad.com/fiction/syndication/<id>,
+   whose channel title is the story title. The earlier ids pointed at other stories. */
+test('Royal Road links use the verified fiction ids', () => {
+  assert.equal(byId('cinnamon-bun').royalRoadUrl, 'https://www.royalroad.com/fiction/31429/cinnamon-bun');
+  assert.equal(byId('chasing-sunlight').royalRoadUrl, 'https://www.royalroad.com/fiction/73475/chasing-sunlight');
+  assert.equal(byId('chasing-sunlight').kindleUrl, 'https://www.amazon.com/dp/B0CPYXGYNW');
+});
+
+/* Ar'Kendrithyst (Royal Road 26727) is by Arcs, not R. K. Goff. The R. K. Goff
+   slot waits for the owner to name the permitted story; when it returns it
+   keeps the rules below. */
+test('R. K. Goff rules: never paired with Ar\'Kendrithyst; at most 10 chapters, exact credit', () => {
+  assert.doesNotMatch(JSON.stringify(WEB_NOVELS), /Kendrithyst/i);
+  for(const work of WEB_NOVELS.filter(work => /goff/i.test(work.author + work.credit))){
+    assert.equal(work.credit, 'R. K. Goff');
+    assert.equal(work.author, 'R. K. Goff');
+    assert.ok(work.chapters.length <= 10, 'R. K. Goff: first 10 chapters only');
+    assert.ok(!work.kindleUrl);
+  }
 });
 
 test('Cinnamon Bun by RavensDagger: zero monetization, Royal Road link only', () => {

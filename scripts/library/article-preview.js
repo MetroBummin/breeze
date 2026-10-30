@@ -165,6 +165,7 @@ function articlePreviewClose(cancelOpening=true){
   articlePreviewDialog.dataset.preparing='false';
   articlePreviewDialog.dataset.kind='article';
   if(typeof articlePreviewChapters!=='undefined'){articlePreviewChapters.hidden=true;articlePreviewChapters.textContent='';}
+  if(typeof articlePreviewSubtitle!=='undefined'){articlePreviewSubtitle.hidden=true;articlePreviewSubtitle.textContent='';}
   articlePreviewGeneration++;
   articlePreviewBook=null;
   articlePreviewSummaryUrl='';
@@ -443,6 +444,10 @@ const articlePreviewChapters=document.createElement('section');
 articlePreviewChapters.className='ap-chapters';articlePreviewChapters.hidden=true;
 articlePreviewChapters.setAttribute('aria-label','회차 목록');
 articlePreviewDetails.after(articlePreviewChapters);
+/* 웹소설의 영어 원제 아래에 두는 한국어 한 줄(읽기 · 소개). 다른 미리보기에서는 숨깁니다. */
+const articlePreviewSubtitle=document.createElement('p');
+articlePreviewSubtitle.className='ap-subtitle';articlePreviewSubtitle.hidden=true;
+articlePreviewDialog.querySelector('.ap-title').after(articlePreviewSubtitle);
 function webNovelPreviewLink(label,url){
   const link=document.createElement('a');
   link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label;
@@ -486,7 +491,9 @@ function openWebNovelPreview(work){
   articlePreviewBook={id:'webnovel:'+work.id,kind:'webnovel',webNovel:work};
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(work.id);
   dialog.querySelector('.ap-source').textContent=work.credit||work.author||'';
-  dialog.querySelector('.ap-title').textContent=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):(work.koTitle||work.title);
+  dialog.querySelector('.ap-title').textContent=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title;
+  articlePreviewSubtitle.textContent=typeof webNovelKoreanLine==='function'?webNovelKoreanLine(work):(work.koTitle||'');
+  articlePreviewSubtitle.hidden=!articlePreviewSubtitle.textContent;
   articlePreviewPaint({summaryKo:work.intro||''});articlePreviewMetadataState('ready');
   // Intro + author credit + original links. Royal Road for all; Kindle ONLY
   // when the work carries a kindleUrl (Chasing Sunlight).

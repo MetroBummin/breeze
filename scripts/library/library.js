@@ -624,17 +624,18 @@ function webNovelProgressLabel(work){
 function webNovelCard(work){
   const card=el('div','bookcard classic home-recommend-book webnovel');
   card.dataset.webnovelId=work.id;
-  card.innerHTML='<img class="cover" alt=""><div class="author"></div><div class="bt"></div>';
-  const title=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):(work.koTitle||work.title);
+  card.innerHTML='<img class="cover" alt=""><div class="bt"></div><div class="ko"></div><div class="author"></div>';
+  const title=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title;
+  const korean=typeof webNovelKoreanLine==='function'?webNovelKoreanLine(work):(work.koTitle||'');
   const credit=work.credit||work.author||'';
-  fillCard(card,{'.author':credit,'.bt':title});
+  fillCard(card,{'.bt':title,'.ko':work.koTitle||'','.author':credit});
   const image=card.querySelector('.cover');
   image.onload=()=>card.classList.add('has-cover');
   if(work.cover)image.src=work.cover;
   const label=webNovelProgressLabel(work);
   if(label)card.append(el('div','get',label));
-  card.title=[work.title,credit].filter(Boolean).join(' · ');
-  accessibleLibraryCard(card,[title,credit].filter(Boolean).join(' · '));
+  card.title=[work.title,korean,credit].filter(Boolean).join(' · ');
+  accessibleLibraryCard(card,[title,work.koTitle,credit].filter(Boolean).join(' · '));
   card.onclick=()=>{if(typeof openWebNovelPreview==='function')openWebNovelPreview(work);};
   return card;
 }
@@ -644,7 +645,7 @@ function renderHomeWebNovels(rail){
   const works=typeof WEB_NOVELS==='undefined'?[]:WEB_NOVELS;
   const specs=works.map(work=>({
     key:'webnovel:'+work.id,
-    stamp:JSON.stringify([work.id,work.koTitle,work.title,work.credit,work.cover,webNovelChapterAt(work.id)]),
+    stamp:JSON.stringify([work.id,work.title,work.koTitle,work.koSubtitle,work.credit,work.cover,webNovelChapterAt(work.id)]),
     create:()=>webNovelCard(work),
   }));
   reconcileHomeCards(rail,specs);
@@ -659,56 +660,46 @@ function renderHomeArticles(rail){
   reconcileHomeCards(rail,[]);
   if(typeof appendRssCards==='function')appendRssCards(rail);
 }
-/* ================= 이어 읽기 =================
-   홈 맨 위 줄. 이 기기에서 열어 본 책·글 중 아직 다 읽지 않은 것을 최근에 읽은
-   순서로 둡니다. 같은 책은 아래 '내 책'에도 그대로 있습니다. 읽은 적이 없으면
-   줄 자체를 숨깁니다. */
-const HOME_CONTINUE_LIMIT=12;
-function homeContinueBooks(){
-  return byRecentlyRead(books.filter(book=>!book.transient&&localReadAt(book.id)>0&&posOf(book.id).p<1))
-    .slice(0,HOME_CONTINUE_LIMIT);
-}
-function renderHomeContinue(){
-  const rail=document.getElementById('continue-rail');
-  if(!rail)return;
-  const list=homeContinueBooks();
-  reconcileHomeCards(rail,list.map(book=>homeBookSpec(book,isCasual(book))));
-  const section=document.getElementById('continue');
-  if(section)section.hidden=!list.length;
+/* ================= 내 책 =================
+   추천 아래 한 칸입니다. 책과 글이 같은 격자에 깔리고, 전체/책/글 거르개로
+   한쪽만 볼 수 있습니다. 순서는 이 기기에서 연 시각입니다: 열어 보고 아직
+   다 읽지 않은 것이 맨 앞(가장 최근 것부터), 그다음 나머지를 최근에 연
+   순서로, 한 번도 열지 않은 것은 넣은 순서로 둡니다. 따로 '이어 읽기' 줄을
+   두지 않아도 읽던 책이 첫 칸에 있습니다. 머리글 링크는 서재(#v-longform)로
+   갑니다. */
+function myBooksEntries(filter){
+  const entries=[];
+  const add=(spec,readAt,addedAt,progress)=>entries.push({spec,readAt:Number(readAt)||0,addedAt:Number(addedAt)||0,progress:Number(progress)||0});
+  if(filter!=='casuals'){
+    for(const book of books.filter(book=>!isCasual(book)))add(homeBookSpec(book,false),localReadAt(book.id),book.addedAt,posOf(book.id).p);
+    for(const row of serverOnlyBooks())
+      add({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')},
+        row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
+    if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())
+      add({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')},0,0,0);
+  }
+  if(filter!=='books'){
+    for(const book of books.filter(isCasual))add(homeBookSpec(book,true),localReadAt(book.id),book.addedAt,posOf(book.id).p);
+    for(const row of serverOnlyCasuals())
+      add({key:'cloudcasual:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')},
+        row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
+  }
+  const reading=entry=>entry.readAt>0&&entry.progress<1?1:0;
+  entries.sort((a,b)=>reading(b)-reading(a)||b.readAt-a.readAt||b.addedAt-a.addedAt);
+  return entries.map(entry=>entry.spec);
 }
 function renderHome(){
   renderLibraryStorageNotice();
   renderHomeResume();
-  renderHomeContinue();
   syncHomeRecommendToggle();
   const rail=document.getElementById('casual-rail');
   const kind=homeRecommendKind();
   if(kind==='classics')renderHomeRecommendBooks(rail);
   else if(kind==='webnovels')renderHomeWebNovels(rail);
   else renderHomeArticles(rail);
-  /* '내 책' 한 줄. 긴 글(책)과 가벼운 글이 같은 레일에 깔리고, 전체/책/글
-     거르개로 한쪽만 볼 수 있습니다. 머리글 링크는 서재(#v-longform)로 갑니다. */
   syncMyBooksFilter();
   const filter=myBooksFilter(),shelf=document.getElementById('shelf');
-  const specs=[];
-  if(filter!=='casuals'){
-    for(const book of longformBooks())specs.push(homeBookSpec(book,false));
-    for(const row of serverOnlyBooks()){
-      specs.push({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')});
-    }
-    if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())specs.push({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')});
-  }
-  if(filter!=='books'){
-    const entries=[
-      ...casualBooks().map(book=>({kind:'book',value:book,readAt:localReadAt(book.id),addedAt:book.addedAt||0})),
-      ...serverOnlyCasuals().map(row=>({kind:'cloud',value:row,readAt:Number(row.meta?.position?.t)||0,addedAt:Number(row.meta?.addedAt)||0})),
-    ].sort((a,b)=>b.readAt-a.readAt || b.addedAt-a.addedAt);
-    for(const entry of entries){
-      specs.push(entry.kind==='book'
-        ? homeBookSpec(entry.value,true)
-        : {key:'cloudcasual:'+entry.value.book_id,stamp:JSON.stringify(entry.value),create:()=>homeRegularTile(cloudCasualCard(entry.value,false),entry.value.meta?.title||'(제목 없음)',entry.value.meta?.site||'내 글')});
-    }
-  }
+  const specs=myBooksEntries(filter);
   specs.push({key:'add',stamp:filter,create:()=>homeAddTile(filter==='casuals'?casualAddCard():longformAddCard(),filter==='casuals'?'글 추가':'파일 추가')});
   reconcileHomeCards(shelf,specs);
 }

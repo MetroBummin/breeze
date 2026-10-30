@@ -165,9 +165,23 @@ classics catalog. Stored values migrate: `'articles'` stays 기사, the old
 `'books'` and anything unknown open 고전. Reading a 기사 card still saves it
 through the preview CTA (`commitArticleDraft`), so it then appears in 내 책.
 
-Home order is 이어 읽기 (opened, unfinished items on this device, most recent
-first; hidden when empty), then 추천, then 내 책 (books and 글 together with a
-전체/책/글 filter). The separate 가볍게 읽기 row is gone.
+Home order is 추천, then 내 책 (books and 글 together with a 전체/책/글
+filter). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
+this device's open times: opened, unfinished items first (most recent first),
+then the rest by when they were opened, then never-opened items by when they
+were added. Both sections are grids: 2 columns on a phone, 3 from 700px,
+4 from 1024px. Book and web-novel covers keep their 2:3 shape so nothing is
+cropped. The floating resume pill and + stay as they were.
+
+웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429) and Chasing
+Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW). Each
+card shows the English title, its Korean reading, and the exact-case author.
+Ids were checked on 2026-10-30 against Royal Road's syndication feed. The
+R. K. Goff slot is empty for now: Ar'Kendrithyst (Royal Road 26727) is by
+Arcs, not R. K. Goff, so it is not shown until the owner names the R. K. Goff
+story that was permitted. Remote-only classics show a Korean title from the
+bundled `CLASSIC_KO_TITLES` map (keyed by English title) when the catalog row
+carries no `koTitle`.
 
 Holmes, Alice, and Gatsby cards open through `openLongReadPreviewOrReader`.
 `CLASSICS` is empty, so no bundled EPUB is offered. Personal library cards

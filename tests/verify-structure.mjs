@@ -706,8 +706,10 @@ assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
   'Home recommendation must be the plain 추천 heading');
 assert.match(index, /id="home-recommend-kind"[\s\S]*?data-kind="classics"[\s\S]*?data-kind="webnovels"[\s\S]*?data-kind="articles"/,
   'The 추천 toggle must be 고전 / 웹소설 / 기사, in that order');
-assert.match(index, /<section id="continue"[\s\S]*?<section id="casuals"[\s\S]*?<section id="longform"/,
-  'Home order must be 이어 읽기, 추천, 내 책');
+assert.match(index, /<section id="casuals"[\s\S]*?<section id="longform"/,
+  'Home order must be 추천, then 내 책');
+assert.doesNotMatch(index, /id="continue(?:-rail)?"/,
+  'The separate 이어 읽기 row is back; 내 책 already opens with the books being read');
 /* 가볍게 읽기(home-casuals) 줄은 '내 책' 줄에 합쳐졌습니다. 홈 맨 아래줄은
    '내 책'이고, 머리글 셰브런은 그 한 줄만 서재(#v-longform)로
    넘깁니다. 전체/책/글 거르개가 그 머리글 오른쪽에 붙습니다. */

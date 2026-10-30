@@ -80,7 +80,7 @@ try {
   const titles = await page.locator('#casual-rail .home-recommend-book .bt').allTextContents();
   // Visible captions are the friendly Korean display titles; the underlying
   // data-longread-id stays the canonical English catalog id (asserted below).
-  assert.ok(titles.includes('Pride and Prejudice'), titles.join(' | ')); // remote row has no koTitle, falls back to English
+  assert.ok(titles.includes('오만과 편견'), titles.join(' | ')); // remote row has no koTitle; the bundled title map supplies it
   assert.ok(titles.includes('셜록 홈즈: 얼룩 끈'), titles.join(' | '));
   assert.ok(titles.includes('이상한 나라의 앨리스'), titles.join(' | '));
   assert.ok(titles.includes('백룸: 집으로 가는 길'), titles.join(' | '));

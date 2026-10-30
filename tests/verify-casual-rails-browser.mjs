@@ -41,18 +41,20 @@ try{
       assert.equal(await page.locator('#v-casuals #casual-discover-rail,#v-casuals .feed-categories').count(),0);
       assert.equal(await page.locator('#casual-rail .casual.add,#casual-rail .casual.refresh').count(),0,
         'Recommendation should contain only external discovery cards');
-      await page.evaluate(()=>{
+      // Saved through bookPut so a later library reload keeps them.
+      await page.evaluate(async()=>{
         books=[
           {id:'saved-short',kind:'paste',title:'Saved story',paras:['Saved story','Readable body'],addedAt:2},
           {id:'saved-long',kind:'txt',title:'Saved book',author:'Author',paras:['Saved book','Readable body'],addedAt:1},
         ];
+        for(const book of books)await bookPut(book);
         positions={'saved-short':{t:10,p:.2},'saved-long':{t:20,p:.4}};
         renderHome();
       });
-      /* 홈은 위에서부터 이어 읽기 · 추천(고전/웹소설/기사) · 내 책입니다. 가볍게
+      /* 홈은 위에서부터 추천(고전/웹소설/기사) · 내 책입니다. 이어 읽기·가볍게
          읽기 줄은 없고, 그 글은 '내 책'(#shelf)에 전체/책/글 거르개로 깔립니다. */
       assert.deepEqual(await page.locator('#v-home > section').evaluateAll(nodes=>nodes.map(node=>node.id)),
-        ['continue','casuals','longform'],'Home section order changed');
+        ['casuals','longform'],'Home section order changed');
       assert.equal(await page.locator('#home-casuals,#home-casual-rail,#webnovels').count(),0,'Old home rows are gone');
       assert.equal(await page.locator('#casual-rail [data-home-key^="book:"]').count(),0,'Saved book entered recommendation');
       // 전체(기본) 거르개에서는 책과 글이 한 레일(#shelf)에 함께 뜹니다.

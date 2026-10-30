@@ -1192,18 +1192,25 @@ async function restoreMissingLongReadCovers(){
    no UI change. The home card and the in-preview chapter list read this one
    const; nothing here starts a Reader until a chapter has real content.
 
-   Covers are Breeze-made typographic covers (title + author on one colour,
+   Titles, authors and links were checked on 2026-10-30 against Royal Road's
+   own feed (royalroad.com/fiction/syndication/<id> returns the story title)
+   and the Kindle store page. `title` is the real English title; `koTitle` is
+   its Korean reading and `koSubtitle` a short Korean line about the story.
+
+   Covers are Breeze-made typographic covers (title + author only,
    tools/make-webnovel-covers.mjs), never the authors' own cover art.
 
    HARD RULES, encoded verbatim below:
-   - R. K. Goff's story: first 10 chapters only (chapters.length === 10), and
-     the credit string is EXACTLY 'R. K. Goff'.
    - 'Cinnamon Bun' by RavensDagger: zero monetization — only the Royal Road
      original link, no kindleUrl / affiliate / Patreon field at all.
    - 'Chasing Sunlight' by InadvisablyCompelled: shows BOTH its Royal Road
-     page and its Kindle edition. Its genre descriptor is deliberately omitted
-     here — the intro stays plot-only and uses no blood-drinking-creature label
-     (or its Korean equivalents) anywhere in the metadata. */
+     page and its Kindle edition. The intro stays plot-only and uses no
+     blood-drinking-creature label (or its Korean equivalents) anywhere.
+   - R. K. Goff's work (first 10 chapters only, credit exactly 'R. K. Goff')
+     is not listed yet. The story it was filed under, Ar'Kendrithyst
+     (royalroad.com/fiction/26727), is written by Arcs, not R. K. Goff, so it
+     stays off Home until the owner confirms which R. K. Goff story was
+     permitted. Any work credited to R. K. Goff must list at most 10 chapters. */
 function webNovelPlaceholderChapters(count){
   // No scraping, no bundled body: each chapter is a '곧 공개' placeholder.
   const chapters=[];
@@ -1212,53 +1219,74 @@ function webNovelPlaceholderChapters(count){
 }
 const WEB_NOVELS = [
   {
-    id:'arkendrithyst',
-    title:"Ar'Kendrithyst",
-    koTitle:'아르켄드리시스트',
-    author:'R. K. Goff', credit:'R. K. Goff',
-    royalRoadUrl:'https://www.royalroad.com/fiction/36950/arkendrithyst',
-    cover:'assets/webnovels/covers/arkendrithyst.webp', free:true, monetization:'none',
-    intro:'마법이 곧 언어인 세계. 한 남자가 폭력 없이 살아남는 길을 찾아 도시로 향합니다. 작가가 허락한 무료 공개본으로, 처음 10화를 준비하고 있어요.',
-    chapters:webNovelPlaceholderChapters(10),
-  },
-  {
     id:'cinnamon-bun',
     title:'Cinnamon Bun',
     koTitle:'시나몬 번',
+    koSubtitle:'청소와 다정함으로 세상을 구하는 모험',
     author:'RavensDagger', credit:'RavensDagger',
-    royalRoadUrl:'https://www.royalroad.com/fiction/39408/cinnamon-bun',
+    royalRoadUrl:'https://www.royalroad.com/fiction/31429/cinnamon-bun',
     cover:'assets/webnovels/covers/cinnamon-bun.webp', free:true, monetization:'none',
-    intro:'누군가를 돕는 것만으로 힘을 얻는 소녀 브로콜리의 이야기. 따뜻하고 느긋한 모험담이에요. 작가가 허락한 무료 공개본으로 준비하고 있어요.',
+    intro:'세상은 큰 악을 물리칠 영웅을 불렀습니다. 그런데 온 것은 브로콜리 번치. 탐험가이자 청소의 달인, 가끔은 유령도 쫓는 사람입니다. 적을 말로 달래 친구로 만들고, 메뉴 창을 끌어안고, 청소와 정원 가꾸기 스킬로 길을 여는 다정한 판타지 모험이에요.',
     chapters:webNovelPlaceholderChapters(10),
   },
   {
     id:'chasing-sunlight',
     title:'Chasing Sunlight',
     koTitle:'체이싱 선라이트',
+    koSubtitle:'햇빛을 찾아 어둠 너머로 떠나는 비행선 탐험',
     author:'InadvisablyCompelled', credit:'InadvisablyCompelled',
-    royalRoadUrl:'https://www.royalroad.com/fiction/40373/chasing-sunlight',
-    kindleUrl:'https://www.amazon.com/dp/B09JVF9V7T',
+    royalRoadUrl:'https://www.royalroad.com/fiction/73475/chasing-sunlight',
+    kindleUrl:'https://www.amazon.com/dp/B0CPYXGYNW',
     cover:'assets/webnovels/covers/chasing-sunlight.webp', free:true, monetization:'none',
-    intro:'깨어나 보니 낯선 몸, 낯선 힘, 그리고 햇빛을 쫓는 긴 여정이 시작됩니다. 작가가 허락한 무료 공개본으로 준비하고 있어요. 로열로드 원문과 킨들판 링크를 함께 둡니다.',
+    intro:'하늘에 빛이 없는 세계. 사람들은 끝없는 어둠 속에서 불빛을 지키며 삽니다. 노련한 탐험가 조너선 하이츠는 햇빛을 본 적이 있다고 말하고, 그 빛을 다시 보려고 비행선 엔데버호에 원정대를 태워 아무도 가지 않는 동쪽으로 떠납니다. 쥘 베른의 모험과 러브크래프트의 기이함이 섞인 이야기예요.',
     chapters:webNovelPlaceholderChapters(10),
   },
 ];
 function webNovelDefinition(id){
   return typeof WEB_NOVELS==='undefined'?null:(WEB_NOVELS.find(work=>work&&work.id===id)||null);
 }
+/* 카드와 시트의 큰 제목은 영어 원제 그대로, 그 아래 한 줄에 한국어 읽기와 소개를 둡니다. */
 function webNovelDisplayTitle(work){
-  return (work&&work.koTitle)||(work&&work.title)||'';
+  return (work&&work.title)||'';
+}
+function webNovelKoreanLine(work){
+  if(!work)return '';
+  return [work.koTitle,work.koSubtitle].filter(Boolean).join(' · ');
 }
 
-/* 카드와 미리보기에 보여 줄 제목. 한국 독자에게 익숙한 이름(koTitle)이 있으면
-   그걸, 없으면 영어 제목을 씁니다. 짝 맞추기·반입 파일명·클라우드 meta.title·
-   SHA/조회에는 절대 쓰지 않습니다. 그쪽은 늘 영어 `title` 입니다. */
+/* 원격 목록(catalog.json)에만 있는 고전도 익숙한 한국어 제목으로 보이게 하는
+   표입니다. 열쇠는 영어 제목(소문자)입니다. 목록 줄이 koTitle 을 싣고 오면
+   그쪽이 먼저입니다. */
+const CLASSIC_KO_TITLES = {
+  "pride and prejudice":'오만과 편견',
+  "alice's adventures in wonderland":'이상한 나라의 앨리스',
+  "a study in scarlet":'셜록 홈즈: 주홍색 연구',
+  "the sign of the four":'셜록 홈즈: 네 개의 서명',
+  "the valley of fear":'셜록 홈즈: 공포의 계곡',
+  "the great gatsby":'위대한 개츠비',
+  "backroom - homeward bound":'백룸: 집으로 가는 길',
+  "frankenstein":'프랑켄슈타인',
+  "great expectations":'위대한 유산',
+  "little women":'작은 아씨들',
+};
+function classicKoTitleFor(title){
+  const key=String(title||'').replace(/\s*\(\d{4}\)\s*$/,'').replace(/[\u2018\u2019]/g,"'").trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(CLASSIC_KO_TITLES,key)?CLASSIC_KO_TITLES[key]:'';
+}
+
+/* 카드와 미리보기에 보여 줄 제목. 한국 독자에게 익숙한 이름이 있으면 그걸,
+   없으면 영어 제목을 씁니다. 순서: 그 줄의 koTitle → 같은 id 의 내장 책
+   koTitle → 영어 제목(원제)으로 찾은 CLASSIC_KO_TITLES. 짝 맞추기·반입
+   파일명·클라우드 meta.title·SHA/조회에는 절대 쓰지 않습니다. 그쪽은 늘
+   영어 `title` 입니다. */
 function classicDisplayTitle(read){
   if(!read)return '';
+  if(read.koTitle)return read.koTitle;
   // A remote catalog row for a bundled book (Alice, Gatsby…) keeps the bundled
   // Korean name even when the catalog does not carry one.
-  const bundled=read.koTitle||typeof LONG_READS==='undefined'||typeof CLASSIC_FALLBACKS==='undefined'?null:[...LONG_READS,...CLASSIC_FALLBACKS].find(item=>item.id===read.id);
-  return read.koTitle||bundled?.koTitle||read.title||'';
+  const bundled=typeof LONG_READS==='undefined'||typeof CLASSIC_FALLBACKS==='undefined'?null:[...LONG_READS,...CLASSIC_FALLBACKS].find(item=>item.id===read.id);
+  const mapped=typeof classicKoTitleFor==='function'?classicKoTitleFor(read.title)||classicKoTitleFor(read.originalTitle):'';
+  return bundled?.koTitle||mapped||read.title||'';
 }
 function longReadCard(read){
   const card=el('div','bookcard classic longread');
