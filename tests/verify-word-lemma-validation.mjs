@@ -8,6 +8,7 @@ import {holdout} from '../benchmarks/lookup-quality/holdout.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const receipts=new Map();let charged=0,providerCalls=0,answer,transientFailures=0;
 const box={console,Response,AbortSignal,AbortController,setTimeout,clearTimeout,crypto,TextEncoder,Deno:{env:{get:()=>''},serve(){}},
+  recordLookup:(_client,record)=>{(globalThis.__lookups??=[]).push(record);},lookupOutcome:s=>['ok','replay','failed','timeout','quota_exceeded','anon_exhausted','login_required','request_conflict','quota_unavailable'].includes(s)?s:'failed',
   newAiTrace:()=>({}),createClient:()=>({rpc:async(name,p)=>{
     const old=receipts.get(p.p_request);
     if(old)return {data:{status:'replay',answer:old,left:3000-charged},error:null};

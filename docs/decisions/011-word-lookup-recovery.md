@@ -289,3 +289,31 @@ hedge only copies `hedged`, `winner`, and `loser`, so
 new keys into the same meta object. Until that migration is applied the insert
 still succeeds and the new keys are dropped. This change does not apply the
 migration or deploy `dict`.
+
+## Lookup-level rows in dict_events (2026-10-30, issue #316)
+
+`dict_events` had no lookup-level rows. The edge stopped inserting them in
+316d6212 (2026-09-20), and `opLog` has only validated its input since then.
+After that the only writer was the per-attempt provider row from
+`record_dict_ai_usage` (`telemetry_version` 2). Its `action` cannot separate a
+word from a sentence: `explain` also covers easy explanations and study-set
+grading. That writer swallowed errors into an `ai_metric_write_failed` log line
+with only a code. Those rows stopped around the hedge deploy (#231/#232,
+2026-10-21). This repository and the local hedge harness both still produce the
+RPC calls, so the cause is on the deployed side (function body, grants, or
+deploy). Read the function logs and `pg_get_functiondef` to confirm it. This
+change does not touch production.
+
+`opLook` (word, not seed) and `opExplain` (sentence) now record one row per
+logical lookup through `record_dict_lookup`
+(`supabase/migrations/20261030150100_dict_lookup_rows.sql`). The row has
+`lookup_type` (`word` | `sentence`), `action` (`look`, `retry`, `explain`),
+`provider`, the account id when signed in, and `meta` with `telemetry_version`
+3, `request_id`, `outcome`, `duration_ms`, and `signed_in`. A retried request id
+updates its own row, and another account cannot overwrite it. No headword,
+sentence, or answer is stored. The write is a background task and never delays
+or fails the lookup. A failed write logs `lookup_metric_write_failed` with the
+database code and message. Provider-attempt telemetry is unchanged. Its failure
+log now also carries the message.
+
+Apply the migration before deploying `dict`. This change does neither.

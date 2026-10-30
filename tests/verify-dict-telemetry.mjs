@@ -154,6 +154,67 @@ assert.equal(Object.hasOwn(sentenceMeta,'reject_reason'),false);
 assert.equal(Object.hasOwn(sentenceMeta,'downgraded'),false);
 await assert.rejects(db.query(`select public.record_dict_ai_usage($1,5,'look','gemini','gemini-3.5-flash-lite',200,10,'api_ok',$2::jsonb)`,[request,JSON.stringify({reject_reason:'Not a code',downgraded:true})]));
 await assert.rejects(db.query(`select public.record_dict_ai_usage($1,5,'look','gemini','gemini-3.5-flash-lite',200,10,'api_ok',$2::jsonb)`,[request,JSON.stringify({reject_reason:'invalid_members',downgraded:false})]));
+
+// Lookup-level rows (telemetry_version 3): one per word or sentence lookup.
+await db.exec(`create schema auth;create table auth.users(id uuid primary key);
+  insert into auth.users values ('44444444-4444-4444-8444-444444444444');
+  create role service_role;create role anon;create role authenticated;
+  grant usage on schema public to service_role,anon,authenticated;`);
+await db.exec(readFileSync(new URL('../supabase/migrations/20261030150100_dict_lookup_rows.sql',import.meta.url),'utf8'));
+const reader='44444444-4444-4444-8444-444444444444';
+const lookupCall=(id,userId,type,action,outcome,provider,ms)=>db.query(`select public.record_dict_lookup($1,$2,$3,$4,$5,$6,$7) as id`,[id,userId,type,action,outcome,provider,ms]);
+await db.exec('set role service_role');
+const wordLookup='66666666-6666-4666-8666-666666666666';
+assert.ok(Number((await lookupCall(wordLookup,reader,'word','look','failed',null,8000)).rows[0].id)>0);
+// The same logical lookup retried with its lookupId updates its one row.
+const again=await lookupCall(wordLookup,reader,'word','look','ok','gemini',1900);
+await lookupCall('77777777-7777-4777-8777-777777777777',null,'sentence','explain','ok','openrouter',2400);
+// An unknown account is stored as anonymous instead of failing the FK.
+await lookupCall('88888888-8888-4888-8888-888888888888','99999999-9999-4999-8999-999999999999','word','retry','replay',null,30);
+// Another account cannot take over a row by reusing the lookupId.
+assert.equal((await lookupCall(wordLookup,null,'word','look','failed',null,1)).rows[0].id,null);
+await db.exec('reset role');
+const lookups=(await db.query(`select id,user_id,action,provider,lookup_type,word,meta from public.dict_events where meta->>'telemetry_version'='3' order by id`)).rows;
+assert.equal(lookups.length,3);
+assert.equal(lookups[0].id,again.rows[0].id);
+assert.deepEqual(lookups.map(r=>[r.lookup_type,r.action,r.provider,r.meta.outcome,r.word]),[
+  ['word','look','gemini','ok',''],['sentence','explain','openrouter','ok',''],['word','retry',null,'replay','']]);
+assert.equal(lookups[0].user_id,reader);
+assert.equal(lookups[0].meta.signed_in,true);
+assert.equal(lookups[0].meta.duration_ms,1900);
+assert.equal(lookups[2].user_id,null);
+assert.deepEqual(Object.keys(lookups[1].meta).sort(),['duration_ms','lookup_type','outcome','request_id','signed_in','telemetry_version']);
+const split=(await db.query(`select lookup_type,count(*)::int as n from public.dict_events where lookup_type is not null group by 1 order by 1`)).rows;
+assert.deepEqual(split.map(r=>[r.lookup_type,r.n]),[['sentence',1],['word',2]]);
+for(const bad of [['word','explain','ok'],['sentence','look','ok'],['word','look','weird'],['phrase','look','ok']]){
+  await assert.rejects(lookupCall(crypto.randomUUID(),null,bad[0],bad[1],bad[2],null,1),/invalid lookup fields/,bad.join());
+}
+await assert.rejects(lookupCall(crypto.randomUUID(),null,'word','look','ok','claude',1),/invalid lookup fields/);
+for(const role of ['anon','authenticated']){
+  await db.exec('set role '+role);
+  await assert.rejects(lookupCall(crypto.randomUUID(),null,'word','look','ok',null,1),/permission denied/);
+  await db.exec('reset role');
+}
+// The provider-attempt rows from above are untouched by the new column.
+assert.equal((await db.query(`select count(*)::int as n from public.dict_events where meta->>'telemetry_version'='2' and lookup_type is null`)).rows[0].n,4);
+
+// The edge helper sends exactly the RPC arguments the function accepts.
+const {recordLookup,lookupOutcome}=await import('../server/dict/telemetry.ts');
+let lookupArgs,lookupName;
+const lookupClient={rpc(name,args){lookupName=name;lookupArgs=args;return{abortSignal(){return db.query(`select public.record_dict_lookup($1,$2,$3,$4,$5,$6,$7) as id`,[args.p_request_id,args.p_user,args.p_lookup_type,args.p_action,args.p_outcome,args.p_provider,args.p_duration_ms]).then(r=>({data:r.rows[0].id,error:null}),error=>({data:null,error:{code:error.code,message:error.message}}));}};}};
+recordLookup(lookupClient,{requestId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',userId:reader,type:'sentence',action:'explain',outcome:lookupOutcome('replay'),provider:'fixture',durationMs:12.6});
+await backgroundTask;
+assert.equal(lookupName,'record_dict_lookup');
+assert.equal(lookupArgs.p_provider,null);
+assert.equal(lookupArgs.p_duration_ms,13);
+assert.equal(lookupOutcome('something_new'),'failed');
+assert.equal((await db.query(`select lookup_type from public.dict_events where meta->>'request_id'='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'`)).rows[0].lookup_type,'sentence');
+const logged=[];const realError=console.error;console.error=(...args)=>logged.push(args.join(' '));
+recordLookup(lookupClient,{requestId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',userId:null,type:'word',action:'explain',outcome:'ok',provider:null,durationMs:1});
+await backgroundTask;
+console.error=realError;
+assert.equal(logged.length,1);
+assert.match(logged[0],/lookup_metric_write_failed.*22023.*invalid lookup fields/);
 await db.close();
 
 console.log('Dictionary telemetry persists behind the provider response');

@@ -221,6 +221,7 @@ const pendingTimers=new Set();
 const backgroundTasks=[];
 const receiptLog=[];
 const telemetryLog=[];
+const lookupLog=[];
 const unhandled=[];
 process.on('unhandledRejection',error=>{unhandled.push(error instanceof Error?error:new Error(String(error)));});
 
@@ -234,6 +235,10 @@ function handleRpc(name,args){
   if(name==='record_dict_ai_usage'){
     telemetryLog.push({requestId:args.p_request_id,attempt:args.p_attempt,usage:args.p_usage,outcome:args.p_outcome});
     return {data:'metric',error:null};
+  }
+  if(name==='record_dict_lookup'){
+    lookupLog.push({requestId:args.p_request_id,type:args.p_lookup_type,outcome:args.p_outcome});
+    return {data:1,error:null};
   }
   return {data:null,error:{message:'unexpected rpc '+name,code:'unexpected'}};
 }
@@ -358,6 +363,7 @@ async function pool(count,width,fn){
 function resetLogs(){
   receiptLog.length=0;
   telemetryLog.length=0;
+  lookupLog.length=0;
   plans.clear();
 }
 
@@ -418,6 +424,7 @@ async function runScenario(name){
     leakedTimers:pendingTimers.size,
     openRequests:openRequests.size,
     receiptDups,telemetryDups,
+    lookupRows:lookupLog.filter(row=>row.type==='word').length,lookupDups:duplicates(lookupLog,row=>row.requestId),
     failureCauses:failureBreakdown(results.filter(result=>!(result.status===200&&result.body?.ko==='둑'))),
   };
 }
@@ -451,6 +458,7 @@ for(const row of rows){
     pct(row.loserAborted,row.traces||row.n),String(row.overDeadline),String(row.unhandled),String(row.leakedTimers),
     String(row.openRequests),String(row.receiptDups),String(row.telemetryDups),
   ]);
+  if(row.lookupRows!==row.n||row.lookupDups)failures.push(`${row.name}: ${row.lookupRows} word lookup rows for ${row.n} lookups (${row.lookupDups} duplicated)`);
   if(row.thrown)failures.push(`${row.name}: ${row.thrown} lookups threw out of opLook`);
   if(row.overDeadline)failures.push(`${row.name}: ${row.overDeadline} lookups exceeded the 8s deadline (max ${Math.round(row.max)}ms, nominal >8000 ${row.overNominal})`);
   if(row.unhandled)failures.push(`${row.name}: ${row.unhandled} unhandled rejections`);

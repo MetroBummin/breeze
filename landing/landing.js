@@ -499,3 +499,32 @@ if(lpCarouselSet){
   lpCarouselTrack.appendChild(lpCarouselSet.cloneNode(true));
   lpCarouselTrack.classList.add('ready');
 }
+
+/* ---- 유입 경로 넘겨주기 ----
+   광고·게시물 링크는 대개 이 랜딩에 utm 값을 붙여 들어옵니다. 그런데 "웹에서
+   읽기"는 `../` 로 가는 평범한 링크라서 그 값이 앱 주소에서 사라졌고, 앱이 보는
+   referrer 도 이 랜딩뿐이었습니다. 그래서 앱으로 가는 링크에만 utm 네 값과,
+   바깥에서 왔다면 그 호스트 이름(경로 없음)을 `ref_host` 로 붙입니다. 요청을
+   보내지 않고 링크 주소만 바꿉니다. 받는 쪽은 scripts/core/events.js 입니다. */
+function lpForwardTouch(search, referrer){
+  const from = new URLSearchParams(search || '');
+  const keep = new URLSearchParams();
+  ['utm_source','utm_medium','utm_campaign','utm_content'].forEach(key => {
+    const value = (from.get(key) || '').trim().slice(0,64);
+    if(/^[A-Za-z0-9._~-]{1,64}$/.test(value)) keep.set(key, value);
+  });
+  let host = (from.get('ref_host') || '').trim().toLowerCase();
+  if(!host && referrer){ try{ host = new URL(referrer).hostname.toLowerCase(); }catch(e){ host = ''; } }
+  host = host.replace(/^www\./,'');
+  const own = (location.hostname || '').toLowerCase().replace(/^www\./,'');
+  if(/^[a-z0-9.-]{1,253}$/.test(host) && host.includes('.') && host !== own && !host.endsWith('.' + own)) keep.set('ref_host', host);
+  return keep.toString();
+}
+(function lpForwardLinks(){
+  let query = '';
+  try{ query = lpForwardTouch(location.search, document.referrer); }catch(e){ return; }
+  if(!query) return;
+  document.querySelectorAll('a.lp-wordmark[href="../"], a.lp-cta-web[href="../"]').forEach(link => {
+    link.setAttribute('href', '../?' + query);
+  });
+})();

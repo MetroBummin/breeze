@@ -6,7 +6,7 @@ import { deleteAccountBookCloud } from "../books/handler.ts";
 import { runEasyExplanation, easyPrompt, type EasyInput } from "./easy-explanation.ts";
 import { runSentenceEasyExplanation, sentenceEasyPrompt, type SentenceEasyInput } from "./sentence-easy-explanation.ts";
 import { LOOK_SCHEMA, lookupInput, miniPrompt, recoverableLook, validateLook } from "./lookup.ts";
-import { meteredFetch, newAiTrace, type AiAction, type AiTrace } from "./telemetry.ts";
+import { meteredFetch, newAiTrace, recordLookup, lookupOutcome, type AiAction, type AiTrace, type LookupOutcome } from "./telemetry.ts";
 import { logicalLookup, lookupFingerprint } from "./logical-lookup.ts";
 import { clientLookupFailureResponse } from "./client-failure.ts";
 
@@ -247,8 +247,11 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
   const requestId=body.op==="look_v2"?String(body.lookupId??""):crypto.randomUUID();
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId))return json({error:"bad_lookup_id"},400);
   const fingerprint=await lookupFingerprint(input);
+  const started=Date.now();
+  let outcome:LookupOutcome="failed",provider:unknown=null,generated=false;
   try{
     const generate=async()=>{
+      generated=true;
       const out=await ask({action:seeding?"seed":input.retry?"retry":"look",prompt:miniPrompt(input),maxTokens:120,schema:LOOK_SCHEMA,temperature:0.2,signal,validate:value=>{
         try{return validateLook(value,input);}
         catch(error){
@@ -268,13 +271,17 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
       if(error||!data||typeof data.status!=="string")throw new Error("quota_unavailable");
       return data;
     },generate);
-    if(verdict.status==="replay")return json({...verdict.answer,left:verdict.left,lookupId:requestId});
+    if(verdict.status==="replay"){outcome=generated?"ok":"replay";provider=verdict.answer?.provider;return json({...verdict.answer,left:verdict.left,lookupId:requestId});}
+    outcome=lookupOutcome(verdict.status);
     const code=verdict.status==="quota_exceeded"||verdict.status==="anon_exhausted"?429:verdict.status==="request_conflict"?409:401;
     return json({error:verdict.status,limit:verdict.limit??DEFAULT_DAILY_LIMIT,left:verdict.left},code);
   }catch(error){
+    outcome=String(error).includes("quota_unavailable")?"quota_unavailable":signal?.aborted||abortedError(error)?"timeout":"failed";
     if(String(error).includes("quota_unavailable"))throw error;
     if(signal?.aborted)throw error;
     return json({error:"lookup_failed"},502);
+  }finally{
+    if(!seeding)recordLookup(SR,{requestId,userId,type:"word",action:input.retry?"retry":"look",outcome,provider,durationMs:Date.now()-started});
   }
 }
 
@@ -285,18 +292,29 @@ async function opExplain(body:any,userId:string|null,signal?:AbortSignal){
   const requestId=body.lookupId??crypto.randomUUID();
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId))return json({error:"bad_lookup_id"},400);
   const fingerprint=await lookupFingerprint({op:"explain",sentence});
+  const started=Date.now();
+  let outcome:LookupOutcome="failed",provider:unknown=null,generated=false;
+  try{
   const verdict=await logicalLookup(async answer=>{
     const {data,error}=await SR.rpc("sentence_lookup_receipt",{p_user:userId,p_device:clean(body.device,64),p_request:requestId,p_fingerprint:fingerprint,p_answer:answer??null,p_limit:DEFAULT_DAILY_LIMIT,p_anon_limit:ANON_SENT_FREE,p_anon_cap:ANON_DAILY_CAP});
     if(error||!data||typeof data.status!=="string")throw new Error("quota_unavailable");return data;
   },async()=>{
+    generated=true;
     const out=await ask({action:"explain",prompt:explainPrompt(sentence),maxTokens:600,schema:EXPLAIN_SCHEMA,signal});
     const parsed=parseJson(out.text);if(!parsed)throw new Error("sentence_parse_failed");
     const ko=clean(parsed.ko,500);if(!ko)throw new Error("sentence_empty_answer");
     return {ko,provider:out.provider};
   });
-  if(verdict.status==="replay")return json({...verdict.answer,left:verdict.left});
+  if(verdict.status==="replay"){outcome=generated?"ok":"replay";provider=verdict.answer?.provider;return json({...verdict.answer,left:verdict.left});}
+  outcome=lookupOutcome(verdict.status);
   return json({error:verdict.status,left:verdict.left,limit:verdict.limit??DEFAULT_DAILY_LIMIT},
     ['quota_exceeded','anon_exhausted'].includes(verdict.status)?429:verdict.status==='request_conflict'?409:401);
+  }catch(error){
+    outcome=String(error).includes("quota_unavailable")?"quota_unavailable":signal?.aborted||abortedError(error)?"timeout":"failed";
+    throw error;
+  }finally{
+    recordLookup(SR,{requestId,userId,type:"sentence",action:"explain",outcome,provider,durationMs:Date.now()-started});
+  }
 }
 
 async function opEasyExplanation(body:any,userId:string|null,signal?:AbortSignal){

@@ -72,6 +72,7 @@ try{
   runInNewContext(transpileModule(edge,{compilerOptions:{target:99,module:99}}).outputText,{
     ...lookup,logicalLookup,lookupFingerprint,crypto,TextEncoder,AbortSignal,AbortController,setTimeout,clearTimeout,Response,console,
     createClient:()=>sr,newAiTrace:()=>({}),
+    recordLookup:(_client,record)=>{(globalThis.__lookups??=[]).push(record);},lookupOutcome:s=>['ok','replay','failed','timeout','quota_exceeded','anon_exhausted','login_required','request_conflict','quota_unavailable'].includes(s)?s:'failed',
     meteredFetch:async()=>{providerCalls++;return Response.json({choices:[{message:{content:broken?'invalid JSON':JSON.stringify(providerAnswer)}}]});},
     Deno:{env:{get:key=>key==='OPENROUTER_API_KEY'?'fixture':key==='SUPABASE_URL'?'fixture':null},serve:fn=>handler=fn}
   });

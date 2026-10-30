@@ -39,7 +39,7 @@ HTML·이미지를 저장하지 않고 전달합니다. AI·영어 사전 조회
 | 읽던 자리 · 진행도 | `localStorage: breeze.pos` |
 | 보기 설정 — 글자 크기, 좌우 여백, 다크 모드 | `localStorage` |
 | 기기 표시 `breeze.device` | `localStorage` |
-| 처음 들어온 주소의 유입 값(utm) | `localStorage: breeze.events.utm` |
+| 처음 들어온 주소의 유입 값(utm, 거쳐 온 바깥 호스트 이름) | `localStorage: breeze.events.utm` |
 | 같은 사용 기록을 하루·한 번만 보내려고 적는 표시 | `localStorage: breeze.events.app-open-day`, `breeze.events.once`, `breeze.events.sent` |
 | 앱 자신의 파일(HTML · CSS · JS · 글꼴) — 빨리 켜지려고 | 캐시 저장소 `breeze-…` |
 
@@ -122,6 +122,11 @@ lookup에만 사용합니다.
 표에 넣지 않습니다. 계정에 묶인 줄은 계정을 지우면 함께 지워집니다. 로그인
 전 줄은 기기 표시에 묶여 있고, 따로 기한을 두고 지우지는 않습니다.
 
+낱말 조회와 문장 해석이 끝날 때마다 `dict_events`에 한 줄을 남깁니다. 낱말인지
+문장인지, 결과(성공·실패·한도 등), 답한 제공자, 걸린 시간, 그리고 로그인해 있으면
+계정 id입니다. 낱말, 문장, 뜻은 이 줄에 넣지 않습니다. 계정을 지우면 이 줄도 함께
+지웁니다.
+
 하루에 몇 번 불렀는지(`ai_usage`)는 한도를 지키기 위해 따로 셉니다.
 
 자세한 설계는 [DICT.md](DICT.md) 에 있습니다.
@@ -159,10 +164,15 @@ lookup에만 사용합니다.
 매번 같이 가는 것은 이것뿐입니다.
 
 - 기기 표시 (`breeze.device`)
-- 로그인해 있으면 계정 id. 없으면 비웁니다
+- 로그인해 있으면 계정 id. 없으면 비웁니다. 계정 id는 앱이 보내는 값이 아니라
+  서버가 로그인 토큰에서 읽어 적습니다
 - 앱 버전, 웹·iOS·Android, 온보딩 버전 (지금 안내는 `v1`)
 - 이 기기가 처음 들어온 주소에 있던 `utm_source`, `utm_medium`, `utm_campaign`,
   `utm_content`. 한 번 적히면 다음 주소로 바뀌지 않고, 없는 값은 비웁니다
+- 이 기기가 처음 Breeze에 들어올 때 거쳐 온 바깥 사이트의 호스트 이름
+  (`referrer_host`, 예: `threads.net`). 주소의 경로와 검색어는 남기지 않고,
+  Breeze 자신의 페이지는 적지 않습니다. utm 값과 함께 한 번만 적힙니다. 랜딩
+  페이지는 앱으로 가는 링크에 이 값과 utm 값을 붙여 넘깁니다
 
 남기는 사건은 아래가 전부입니다.
 

@@ -24,12 +24,14 @@ function install(options={}){
   const context={
     localStorage,URL,URLSearchParams,JSON,Date,Math,Number,String,Object,Array,
     Promise,setTimeout,clearTimeout,crypto,console,
-    location:{search:options.search||'',protocol:'https:'},
+    location:{search:options.search||'',hostname:options.hostname||'breeze.io.kr',protocol:'https:'},
+    document:{referrer:options.referrer||''},
     BREEZE_CONFIG:{SB_URL:'https://example.supabase.co',SB_KEY:'anon-key'},
     fetch:async(url,init)=>{
       calls.push({url,init});
       if(fetchError)throw fetchError;
-      return {ok:options.ok!==false,status:options.ok===false?500:201};
+      const status=options.status?options.status(init,calls.length):(options.ok===false?500:201);
+      return {ok:status>=200&&status<300,status};
     }
   };
   context.globalThis=context;
@@ -132,4 +134,78 @@ test('the app wires each funnel event through the logger',()=>{
   const detected=dictionary.slice(dictionary.indexOf('function saveDetectedExpression'),dictionary.indexOf('async function loadCachedLook'));
   assert.match(detected,/trackEvent\('first_lookup_success'\)/);
   assert.match(dictionary,/trackEvent\('vocab_save',\{first:true\}\)/);
+});
+
+test('stores the first external referrer host with the UTM, never the landing page itself',()=>{
+  const parsed=value=>JSON.parse(JSON.stringify(value));
+  const external=install({referrer:'https://www.google.com/search?q=secret'});
+  assert.deepEqual(parsed(external.context.captureLandingUtm()),{referrer_host:'google.com'});
+  assert.equal(JSON.stringify(parsed(external.context.captureLandingUtm('?utm_source=later'))).includes('later'),false);
+  const own=install({search:'?utm_source=x',referrer:'https://breeze.io.kr/landing/'});
+  assert.deepEqual(parsed(own.context.captureLandingUtm()),{utm_source:'x'});
+  const forwarded=install({search:'?utm_source=threads&ref_host=www.threads.net',referrer:'https://breeze.io.kr/landing/'});
+  assert.deepEqual(parsed(forwarded.context.captureLandingUtm()),{utm_source:'threads',referrer_host:'threads.net'});
+  const junk=install({search:'?ref_host=https://evil.example/path',referrer:'not a url'});
+  assert.deepEqual(parsed(junk.context.captureLandingUtm()),{});
+});
+
+function signIn(memory,{expiresIn=3600,token='user-token'}={}){
+  memory.set('sb-example-auth-token',JSON.stringify({access_token:token,expires_at:Math.floor(Date.now()/1000)+expiresIn,user:{id:'44444444-4444-4444-8444-444444444444'}}));
+}
+
+test('a signed-in reader sends the access token so the database sets user_id',async()=>{
+  const {context,memory,calls}=install();
+  signIn(memory);
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls[0].init.headers.Authorization,'Bearer user-token');
+  assert.equal(JSON.parse(calls[0].init.body)[0].user_id,undefined,'the client must not claim a user id');
+});
+
+test('an expired stored token waits for the SDK session instead of sending anon',async()=>{
+  const {context,memory,calls}=install();
+  signIn(memory,{expiresIn:-60,token:'stale'});
+  let asked=0;
+  context.trackEvent('app_open');
+  setTimeout(()=>{context.sb={auth:{getSession:async()=>{asked++;return {data:{session:{access_token:'refreshed',expires_at:Math.floor(Date.now()/1000)+3600}}};}}};},200);
+  await context.eventFlush();
+  assert.equal(asked,1);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer refreshed');
+});
+
+test('an anonymous device never waits for a session',async()=>{
+  const {context,calls}=install();
+  const started=Date.now();
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.ok(Date.now()-started<500);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer anon-key');
+});
+
+test('a rejected token resends as anonymous, and a missing column resends without referrer_host',async()=>{
+  const rejected=install({status:init=>init.headers.Authorization==='Bearer user-token'?401:201});
+  signIn(rejected.memory);
+  rejected.context.trackEvent('app_open');
+  await rejected.context.eventFlush();
+  assert.deepEqual(rejected.calls.map(c=>c.init.headers.Authorization),['Bearer user-token','Bearer anon-key']);
+  assert.equal(rejected.context.eventSentToday(),1);
+
+  const old=install({referrer:'https://t.co/x',status:init=>init.body.includes('referrer_host')?400:201});
+  old.context.trackEvent('app_open');
+  await old.context.eventFlush();
+  assert.equal(old.calls.length,2);
+  assert.equal(JSON.parse(old.calls[0].init.body)[0].referrer_host,'t.co');
+  assert.equal(JSON.parse(old.calls[1].init.body)[0].referrer_host,undefined);
+  assert.equal(old.context.eventSentToday(),1);
+});
+
+test('the landing page forwards UTM and the external referrer to the app links only',()=>{
+  const source=readFileSync(new URL('../landing/landing.js',import.meta.url),'utf8');
+  const fn=source.slice(source.indexOf('function lpForwardTouch'),source.indexOf('(function lpForwardLinks'));
+  const run=(search,referrer)=>vm.runInNewContext(fn+';lpForwardTouch(search,referrer)',{URL,URLSearchParams,location:{hostname:'breeze.io.kr'},search,referrer});
+  assert.equal(run('?utm_source=x&utm_medium=reply&utm_campaign=261030-a&utm_content=t1&other=1','https://www.threads.net/@breeze'),
+    'utm_source=x&utm_medium=reply&utm_campaign=261030-a&utm_content=t1&ref_host=threads.net');
+  assert.equal(run('','https://breeze.io.kr/'),'');
+  assert.equal(run('?utm_source=<b>',''),'');
+  assert.match(source,/a\.lp-cta-web\[href="\.\.\/"\]/);
 });

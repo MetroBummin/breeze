@@ -4,6 +4,7 @@
 const BREEZE_APP_VERSION='1.9.9';
 const BREEZE_ONBOARDING_VERSION='v1';
 const EVENT_UTM_KEYS=['utm_source','utm_medium','utm_campaign','utm_content'];
+const EVENT_TOUCH_KEYS=EVENT_UTM_KEYS.concat('referrer_host');
 const EVENT_UTM_KEY='breeze.events.utm';
 const EVENT_OPEN_KEY='breeze.events.app-open-day';
 const EVENT_ONCE_KEY='breeze.events.once';
@@ -51,17 +52,46 @@ function parseEventUtm(search){
   }catch(e){}
   return out;
 }
-function captureLandingUtm(search){
+/* Host name only, lowercased, no path or query. Anything else is dropped. */
+function eventCleanHost(raw){
+  const host=String(raw||'').trim().toLowerCase().replace(/^www\./,'').slice(0,253);
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(host)?host:'';
+}
+function eventOwnHost(){
+  try{return eventCleanHost(typeof location!=='undefined'&&location?location.hostname:'');}catch(e){return '';}
+}
+/* The landing page forwards the visitor's external referrer as ref_host,
+   because the app itself only sees the landing page as its referrer. */
+function parseEventReferrer(search,referrer){
+  let host='';
+  try{
+    const text=String(search||'');
+    host=eventCleanHost(new URLSearchParams(text.charAt(0)==='?'?text:'?'+text).get('ref_host'));
+  }catch(e){host='';}
+  if(!host){
+    try{host=referrer?eventCleanHost(new URL(String(referrer)).hostname):'';}catch(e){host='';}
+  }
+  const own=eventOwnHost();
+  if(!host||(own&&(host===own||host.endsWith('.'+own))))return '';
+  return host;
+}
+function captureLandingUtm(search,referrer){
   try{
     const existing=eventStoreGet(EVENT_UTM_KEY);
     if(existing&&typeof existing==='object'&&!Array.isArray(existing)){
-      for(let i=0;i<EVENT_UTM_KEYS.length;i++)if(typeof existing[EVENT_UTM_KEYS[i]]==='string')return existing;
+      for(let i=0;i<EVENT_TOUCH_KEYS.length;i++)if(typeof existing[EVENT_TOUCH_KEYS[i]]==='string')return existing;
     }
     let source=search;
     if(source==null){
       try{source=typeof location!=='undefined'&&location?location.search:'';}catch(e){source='';}
     }
+    let from=referrer;
+    if(from==null){
+      try{from=typeof document!=='undefined'&&document?document.referrer:'';}catch(e){from='';}
+    }
     const parsed=parseEventUtm(source);
+    const host=parseEventReferrer(source,from);
+    if(host)parsed.referrer_host=host;
     if(Object.keys(parsed).length)eventStoreSet(EVENT_UTM_KEY,parsed);
     return parsed;
   }catch(e){return {};}
@@ -118,18 +148,58 @@ function eventMarkOnce(name){
   eventStoreSet(EVENT_ONCE_KEY,flags);
   return true;
 }
-function eventAccessToken(){
+function eventAuthRecord(){
   try{
     const config=globalThis.BREEZE_CONFIG||{};
     const url=typeof config.SB_URL==='string'?config.SB_URL:'';
-    if(!url)return '';
+    if(!url)return null;
     const ref=new URL(url).hostname.split('.')[0];
     const parsed=JSON.parse(localStorage.getItem('sb-'+ref+'-auth-token')||'null');
-    const token=parsed&&typeof parsed.access_token==='string'?parsed.access_token:'';
-    if(!token)return '';
-    if(typeof parsed.expires_at==='number'&&parsed.expires_at*1000<Date.now()+15000)return '';
-    return token;
-  }catch(e){return '';}
+    return parsed&&typeof parsed==='object'?parsed:null;
+  }catch(e){return null;}
+}
+function eventFreshToken(record){
+  const token=record&&typeof record.access_token==='string'?record.access_token:'';
+  if(!token)return '';
+  if(typeof record.expires_at==='number'&&record.expires_at*1000<Date.now()+15000)return '';
+  return token;
+}
+function eventAccessToken(){return eventFreshToken(eventAuthRecord());}
+function eventAuthClient(){
+  try{
+    const client=typeof sb!=='undefined'?sb:null;
+    return client&&client.auth&&typeof client.auth.getSession==='function'?client:null;
+  }catch(e){return null;}
+}
+const EVENT_AUTH_WAIT_MS=3000;
+/* A signed-in reader's stored access token is usually expired when the app
+   opens (it lasts an hour), and app_open fires before supabase-js refreshes it.
+   Sending the anon key then records user_id = null. So when this device has a
+   stored session but no fresh token, wait briefly for the SDK's own session.
+   An anonymous device has no stored session and never waits. */
+function eventAuthToken(){
+  const record=eventAuthRecord();
+  const fresh=eventFreshToken(record);
+  if(fresh||!record||!record.user)return Promise.resolve(fresh);
+  const until=Date.now()+EVENT_AUTH_WAIT_MS;
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=value=>{if(!done){done=true;resolve(typeof value==='string'?value:'');}};
+    setTimeout(()=>finish(eventAccessToken()),EVENT_AUTH_WAIT_MS);
+    const attempt=()=>{
+      if(done)return;
+      const client=eventAuthClient();
+      if(!client){
+        if(Date.now()<until)setTimeout(attempt,150);
+        return;
+      }
+      Promise.resolve().then(()=>client.auth.getSession()).then(result=>{
+        const session=result&&result.data&&result.data.session;
+        finish(eventFreshToken(session)||eventAccessToken());
+      }).catch(()=>finish(eventAccessToken()));
+    };
+    attempt();
+  });
 }
 function eventRow(name,props){
   const cleaned=eventProps(name,props);
@@ -145,8 +215,8 @@ function eventRow(name,props){
     props:cleaned
   };
   const utm=captureLandingUtm();
-  for(let i=0;i<EVENT_UTM_KEYS.length;i++){
-    const key=EVENT_UTM_KEYS[i];
+  for(let i=0;i<EVENT_TOUCH_KEYS.length;i++){
+    const key=EVENT_TOUCH_KEYS[i];
     if(utm&&typeof utm[key]==='string')row[key]=utm[key];
   }
   return row;
@@ -168,8 +238,8 @@ function eventFlush(){
   }catch(e){return Promise.resolve();}
   if(!url||!key||typeof fetch!=='function')return Promise.resolve();
   eventFlushing=true;
-  const token=eventAccessToken();
-  return Promise.resolve().then(()=>fetch(url.replace(/\/$/,'')+'/rest/v1/product_events',{
+  const endpoint=url.replace(/\/$/,'')+'/rest/v1/product_events';
+  const send=(rows,token)=>fetch(endpoint,{
     method:'POST',
     keepalive:true,
     headers:{
@@ -178,7 +248,20 @@ function eventFlush(){
       Authorization:'Bearer '+(token||key),
       Prefer:'return=minimal'
     },
-    body:JSON.stringify(batch)
+    body:JSON.stringify(rows)
+  });
+  let rows=batch;
+  return eventAuthToken().catch(()=>'').then(token=>send(rows,token).then(response=>{
+    if(response&&response.ok)return response;
+    const status=response&&response.status;
+    // A rejected user token still records the rows, as anonymous.
+    if(token&&status===401)return send(rows,'');
+    // A database without the referrer_host column rejects the whole batch.
+    if(status===400&&rows.some(row=>'referrer_host' in row)){
+      rows=rows.map(row=>{const copy=Object.assign({},row);delete copy.referrer_host;return copy;});
+      return send(rows,token);
+    }
+    return response;
   })).then(response=>{
     eventFlushing=false;
     if(response&&response.ok){
