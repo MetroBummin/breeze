@@ -199,8 +199,10 @@ function eventStoredToken(){
 // to no token here and fall back to the anon key in eventFlush.
 async function eventAccessToken(){
   try{
-    const sb=typeof window!=='undefined'?window.sb:(globalThis?globalThis.sb:null);
-    const getSession=sb&&sb.auth&&typeof sb.auth.getSession==='function'?sb.auth.getSession.bind(sb.auth):null;
+    // sync.js declares `let sb`, a script-scope global that is not a window
+    // property, so read the shared binding directly instead of window.sb.
+    const client=typeof sb!=='undefined'?sb:null;
+    const getSession=client&&client.auth&&typeof client.auth.getSession==='function'?client.auth.getSession.bind(client.auth):null;
     if(getSession){
       const result=await getSession();
       const token=result&&result.data&&result.data.session&&typeof result.data.session.access_token==='string'
