@@ -699,13 +699,9 @@ function placeWordPeek(){
 }
 function placeLookupPeek(pill,anchor,reserveDetail=true){
   if(!pill||pill.hidden||!anchor) return;
-  const view=window.visualViewport;
-  const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
-  const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
-  const gap=8,edge=16,box=pill.getBoundingClientRect();
-  const chrome=document.getElementById('readchrome').getBoundingClientRect();
-  const safeTop=vy+edge+(parseFloat(getComputedStyle(pill).getPropertyValue('--word-safe-top'))||0);
-  const safeBottom=Math.min(vy+vh-edge,chrome.height&&chrome.top>safeTop?chrome.top-gap:vy+vh-edge);
+  const gap=8,box=pill.getBoundingClientRect();
+  const region=lookupSafeRegion(pill);
+  const safeTop=region.top,safeBottom=region.bottom;
   const above=Math.max(0,anchor.top-gap-safeTop);
   const below=Math.max(0,safeBottom-anchor.bottom-gap);
   // Reserve room for the future detail surface, not only today's 44px pill.
@@ -715,13 +711,73 @@ function placeLookupPeek(pill,anchor,reserveDetail=true){
     anchor.direction=below>=detailHeight?'below':above>=detailHeight?'above':below>=above?'below':'above';
   }
   let left=(anchor.left+anchor.right-box.width)/2;
-  left=Math.max(vx+edge,Math.min(left,vx+vw-edge-box.width));
+  left=Math.max(region.left,Math.min(left,region.right-box.width));
   let top=anchor.direction==='above' ? anchor.top-gap-box.height : anchor.bottom+gap;
   top=Math.max(safeTop,Math.min(top,safeBottom-box.height));
   pill.dataset.expandDirection=anchor.direction;
   pill.style.transformOrigin=anchor.direction==='below'?'50% 0%':'50% 100%';
   pill.style.left=`${Math.round(left)}px`;pill.style.top=`${Math.round(top)}px`;
 
+}
+// Single source of truth for the Lookup-safe region. The mini pill, the
+// expanded word detail and the expanded sentence result all live in the band
+// that is inside the visual viewport, inside the --word-safe-* insets, and
+// outside the Reader control bar (#readchrome). The control bar is NOT always
+// a bottom strip: the writing dock (styles/pdf-ink.css) can move #readchrome to
+// the top edge or into a vertical bar on the left/right. The dock publishes the
+// edge it parked on in document.body.dataset.inkDock ('bottom'|'top'|'left'|
+// 'right') via pdf-ink-dock.js applyEdge(); prefer that authoritative signal.
+// When it is absent (EPUB/text readers that never dock, or the unit-test VM
+// which has no document.body) fall back to classifying the edge from the bar's
+// own rectangle. Carve the bar out of the matching side instead of always
+// shrinking the bottom.
+function lookupSafeRegion(pill){
+  const view=window.visualViewport;
+  const vx=view?view.offsetLeft:0,vy=view?view.offsetTop:0;
+  const vw=view?view.width:window.innerWidth,vh=view?view.height:window.innerHeight;
+  const edge=16,gap=8;
+  const style=getComputedStyle(pill);
+  const safeTop=parseFloat(style.getPropertyValue('--word-safe-top'))||0;
+  const safeLeft=parseFloat(style.getPropertyValue('--word-safe-left'))||0;
+  const safeRight=parseFloat(style.getPropertyValue('--word-safe-right'))||0;
+  const vLeft=vx,vTop=vy,vRight=vx+vw,vBottom=vy+vh;
+  let left=vLeft+edge+safeLeft,top=vTop+edge+safeTop;
+  let right=vRight-edge-safeRight,bottom=vBottom-edge;
+  const chrome=document.getElementById('readchrome').getBoundingClientRect();
+  if(chrome&&chrome.height>0){
+    // Fill in coordinates the mock may omit: a bar with no reported horizontal
+    // extent is the ordinary full-width strip, which keeps the bottom path.
+    const cTop=chrome.top,cBottom=chrome.bottom!=null?chrome.bottom:chrome.top+chrome.height;
+    const cLeft=chrome.left!=null?chrome.left:vLeft,cRight=chrome.right!=null?chrome.right:vRight;
+    const cWidth=cRight-cLeft,cHeight=cBottom-cTop;
+    // Authoritative dock edge, when the writing dock has published one. Missing
+    // document.body/dataset (EPUB/text, or the pure-Node unit-test VM) means no
+    // declarative signal, so fall back to the rect-geometry classification.
+    const docked=typeof document!=='undefined'&&document.body&&document.body.dataset?document.body.dataset.inkDock:null;
+    const isSide=docked==='left'||docked==='right'?true
+      :docked==='top'||docked==='bottom'?false
+      :(cWidth<vw*0.5&&cHeight>cWidth);
+    const isTop=docked==='top'?true
+      :docked==='bottom'?false
+      :((cTop+cBottom)/2<vTop+vh/2);
+    if(isSide){
+      // A vertical side bar: narrow the horizontal region on the hugging side.
+      // The dataset names the side directly; geometry picks the nearer edge.
+      const hugsLeft=docked==='left'?true:docked==='right'?false:(cLeft-vLeft<=vRight-cRight);
+      if(hugsLeft)left=Math.max(left,cRight+gap);
+      else right=Math.min(right,cLeft-gap);
+    }else if(isTop){
+      // A top strip: lower the top of the region past the bar.
+      top=Math.max(top,cBottom+gap);
+    }else if(cTop>top){
+      // A bottom strip (the default): raise the bottom of the region above it.
+      bottom=Math.min(bottom,cTop-gap);
+    }
+  }
+  // Never let a dock collapse the region past itself.
+  if(right<left)right=left;
+  if(bottom<top)bottom=top;
+  return {left,top,right,bottom};
 }
 function stopWordMorph(){
   wordMorphGeneration++;
@@ -731,17 +787,14 @@ function stopWordMorph(){
   document.getElementById('word-peek').style.visibility='';
 }
 function anchoredDetailRect(){
-  const viewport=window.visualViewport,edge=16,gap=8;
-  const x=viewport?viewport.offsetLeft:0,y=viewport?viewport.offsetTop:0;
-  const width=viewport?viewport.width:innerWidth,height=viewport?viewport.height:innerHeight;
-  const chrome=document.getElementById('readchrome').getBoundingClientRect();
-  const safeTop=y+edge+(parseFloat(getComputedStyle(document.getElementById('word-peek')).getPropertyValue('--word-safe-top'))||0);
-  const bottom=Math.min(y+height-edge,chrome.height&&chrome.top>safeTop?chrome.top-gap:y+height-edge);
+  const gap=8;
+  const region=lookupSafeRegion(document.getElementById('word-peek'));
+  const safeTop=region.top,bottom=region.bottom;
   const below=wordPeekAnchor.direction==='below';
   const hinge=below?Math.min(bottom-44,Math.max(safeTop,wordPeekAnchor.bottom+gap)):Math.max(safeTop+44,Math.min(bottom,wordPeekAnchor.top-gap));
   const h=Math.max(44,Math.min(380,below?bottom-hinge:hinge-safeTop));
-  const w=Math.min(360,width-edge*2);
-  const left=Math.max(x+edge,Math.min((wordPeekAnchor.left+wordPeekAnchor.right-w)/2,x+width-edge-w));
+  const w=Math.min(360,region.right-region.left);
+  const left=Math.max(region.left,Math.min((wordPeekAnchor.left+wordPeekAnchor.right-w)/2,region.right-w));
   return {left,top:below?hinge:hinge-h,width:w,height:h};
 }
 function placeWordDetail(){
