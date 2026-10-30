@@ -29,6 +29,9 @@ const SIMPLE_STUDY_STORAGE='breeze.simple-study-session.v1';
 let simpleStudySession=null,simpleStudyBusy=false,simpleStudyTimer=0,simpleStudySuppressClickUntil=0;
 let simpleStudyReadValue,simpleStudyReadScope,simpleStudyEpoch=0,simpleStudyResumeJob=Promise.resolve();
 let simpleWordCards={keys:[],index:0,flipped:false};
+/* 지금 보이는 앞면에서 이미 자동 발음한 카드 키. 같은 앞면을 다시 그려도
+   두 번 읽지 않고, 뒤집거나 화면을 떠나면 비워 다음 앞면에서 한 번 읽습니다. */
+let simpleCardAutoSpokenKey=null;
 let simpleStudyMeanings=new Map(),simpleStudyKeys=[];
 function decodeSimpleStudySession(raw){
   if(raw===null)return null;
@@ -246,6 +249,8 @@ function renderSimpleWordCards(){
   /* 발음 단추는 영어 낱말이 보이는 앞면에서만 뜹니다 — 완료/빈 화면에는 없습니다. */
   const speakButton=document.getElementById('review-speak');
   speakButton.hidden=!record;
+  renderSimpleWordCardSpeechToggle();
+  autoSpeakSimpleWordCard(record&&!simpleWordCards.flipped?key:null);
   const card=document.getElementById('review-flip');card.style.removeProperty('transform');card.style.removeProperty('--study-drag');card.removeAttribute('data-direction');card.removeAttribute('data-dragging');card.setAttribute('aria-label',`${record?.word||''}. ${simpleWordCards.flipped?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
 }
 function flipSimpleWordCard(){
@@ -306,28 +311,57 @@ window.addEventListener('keydown',event=>{
   }
 });
 /* 카드의 영어 낱말을 공용 speak() 길로 읽습니다 — 두 번째 TTS 경로를 만들지
-   않고 사전 팝업과 같은 네이티브 브리지/Web Speech 를 재사용합니다. 발음 단추를
-   눌러도 카드가 뒤집히거나 넘어가면 안 되므로(탭/스와이프는 카드 몫) 이벤트
-   전파를 멈춥니다. 발음이 없는 환경이어도 speak() 가 조용히 실패/토스트할 뿐
-   예외를 던지지 않습니다. */
+   않고 사전 팝업과 같은 네이티브 브리지/Web Speech 를 재사용합니다. 기본은
+   앞면이 보일 때 한 번 자동 발음이고, 발음 단추는 다시 듣기가 아니라 켜기/끄기
+   입니다. 선택은 'breeze.cardSpeech' 한 칸에 두어 카드·세션·앱 재시작을 넘어
+   유지합니다(기본 켜짐). 발음 단추를 눌러도 카드가 뒤집히거나 넘어가면 안 되므로
+   (탭/스와이프는 카드 몫) 이벤트 전파를 멈춥니다. */
+const SIMPLE_CARD_SPEECH_KEY='breeze.cardSpeech';
+function simpleCardSpeechEnabled(){return load(SIMPLE_CARD_SPEECH_KEY,true)!==false;}
+function simpleCardSpeechAvailable(){
+  return !!(typeof nativeSpeechHandler==='function'&&nativeSpeechHandler())||!!window.speechSynthesis;
+}
+function renderSimpleWordCardSpeechToggle(){
+  const button=document.getElementById('review-speak'),on=simpleCardSpeechEnabled(),label=on?'발음 켜짐':'발음 꺼짐';
+  button.classList.toggle('muted',!on);
+  button.setAttribute('aria-label',label);button.title=label;
+}
 function speakSimpleWordCard(){
-  if(typeof speak!=='function')return;
+  if(typeof speak!=='function')return false;
   const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
-  if(!record||!record.word)return;
+  if(!record||!record.word)return false;
   speak(record.word,document.getElementById('review-speak'));
+  return true;
+}
+/* 앞면 하나에 자동 발음 한 번. key 가 없으면(뒷면·완료·빈 화면) 표시만 비웁니다.
+   발음을 낼 수 없는 환경에서는 카드마다 토스트가 뜨지 않게 조용히 넘어갑니다. */
+function autoSpeakSimpleWordCard(key){
+  if(!key){simpleCardAutoSpokenKey=null;return;}
+  if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleCardAutoSpokenKey===key)return;
+  simpleCardAutoSpokenKey=key;
+  if(!simpleCardSpeechEnabled()||!simpleCardSpeechAvailable())return;
+  speakSimpleWordCard();
 }
 /* 다음 카드로 넘어갈 때 앞 카드 발음이 이어지지 않게 멈춥니다. speak() 와 같은
    취소 길만 밟고 새 발음은 시작하지 않습니다. */
 function stopSimpleWordCardSpeech(){
   if(typeof cancelSpeak==='function')cancelSpeak();
 }
+function toggleSimpleWordCardSpeech(){
+  const on=!simpleCardSpeechEnabled();
+  save(SIMPLE_CARD_SPEECH_KEY,on);
+  renderSimpleWordCardSpeechToggle();
+  if(!on){stopSimpleWordCardSpeech();return;}
+  /* 다시 켜면 지금 카드를 한 번 읽고, 같은 앞면에서 자동 발음이 또 나지 않게 적어 둡니다. */
+  if(speakSimpleWordCard()&&!simpleWordCards.flipped)simpleCardAutoSpokenKey=ensureSimpleStudySession().queue[0]||null;
+}
 (()=>{
   const button=document.getElementById('review-speak');
-  button.addEventListener('click',event=>{event.stopPropagation();speakSimpleWordCard();});
+  button.addEventListener('click',event=>{event.stopPropagation();toggleSimpleWordCardSpeech();});
   /* role=button 인 카드가 Enter/Space 를 듣기 전에 단추가 먼저 처리하고 전파를
      멈춰, 같은 키가 카드까지 내려가 뒤집히지 않게 합니다. */
   button.addEventListener('keydown',event=>{
-    if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();speakSimpleWordCard();}
+    if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleSimpleWordCardSpeech();}
   });
   /* pointerdown 전파도 멈춰, 카드의 studyCardMotion 드래그가 단추 위에서
      시작되지 않게 합니다(탭이 스와이프로 오인되지 않도록). */
@@ -505,7 +539,7 @@ document.getElementById('review-more').addEventListener('click',()=>{
   openVocabularyReview(!vocabularyReviewView?.state?.session?.practice,!!journey?.milestone&&journey.done>=journey.target);
 });
 function resetVocabularyReviewSurface(){
-  stopSimpleWordCardSpeech();
+  stopSimpleWordCardSpeech();simpleCardAutoSpokenKey=null;
   ++simpleStudyEpoch;simpleCardMotion.reset();
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleWordCards.flipped=false;
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;

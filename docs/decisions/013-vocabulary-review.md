@@ -319,12 +319,25 @@ previous state/history contracts. Browser evidence does not prove native iOS QA.
 ## Flashcard English pronunciation (2026-10-14 KST)
 
 The simple word flashcard's English side (`#review-front`, showing
-`#review-expression`) carries a speaker button `#review-speak` titled and labeled
-`발음 듣기` with a 44px touch target. It reuses the existing `speak()` path from
-`scripts/ui/preferences.js` (native iOS `breezeSpeech` bridge first, Web Speech
-fallback), so no second TTS engine, dependency or auto-play is added. There is no
-existing auto-play setting, so pronunciation is **button-only**: a tap pronounces
-the current card's English word and a further tap replays it.
+`#review-expression`) carries a speaker button `#review-speak` with a 44px touch
+target. It reuses the existing `speak()` path from `scripts/ui/preferences.js`
+(native iOS `breezeSpeech` bridge first, Web Speech fallback), so no second TTS
+engine or dependency is added.
+
+**Revised 2026-10-30 (owner feedback on #310): auto-play with an on/off toggle.**
+Pronunciation is on by default: each time a card's English side is shown (a new
+card, or the same card returning to its English side after a grade), the word is
+spoken once. The button no longer replays; it toggles pronunciation. Turning it
+off calls `cancelSpeak()`, switches to a muted speaker icon (`.muted`) and stops
+auto-play on later cards; turning it on restores the speaker icon and speaks the
+current card once. `aria-label`/`title` read `발음 켜짐` or `발음 꺼짐`. The choice
+is a device preference stored with the existing `load`/`save` helpers under
+`breeze.cardSpeech` (missing = on), so it survives cards, sessions and restarts.
+`simpleCardAutoSpokenKey` records the card already spoken on the current English
+side, so re-renders and flip animations never speak twice; it clears on the
+meaning side, on completion/empty screens and when leaving study. Auto-play runs
+only in the study view, and stays silent (no toast per card) when neither the
+native bridge nor `speechSynthesis` exists.
 
 `speak(text, button)` now takes the button whose `playing` state it toggles
 (default `#p-speak`), and the native `breezeNativeSpeech` handler clears/sets that
@@ -347,8 +360,11 @@ completion/empty states. No vocabulary, star, sync, review or simple-session
 record is read or written by pronunciation.
 
 `verify-flashcard-pronunciation-browser.mjs` stubs Web Speech and asserts the
-spoken word on tap, replay on a second tap, no flip on the speaker tap, a cancel
-on card advance, no-audio no-throw with the card still flipping, and no
-`pageerror`, with before/after light/dark screenshots at phone/tablet/desktop/short
-viewports and no `#v-study` horizontal overflow. `verify-simple-word-cards-browser.mjs`
+default auto-play once per English side (no replay on re-render), toggle off
+stopping audio with the muted icon/label and persisting across a reload, toggle on
+speaking the current card once and resuming auto-play, no speech or button on
+completion/empty screens, no flip on the speaker tap, a cancel on card advance,
+no-audio no-throw with the card still flipping, and no `pageerror`, with on/muted
+light/dark captures at phone/tablet/desktop/short viewports and no `#v-study`
+horizontal overflow. Captures are kept in `docs/screenshots/310/`. `verify-simple-word-cards-browser.mjs`
 still passes. Browser evidence does not prove native iOS silent-switch QA.

@@ -35,73 +35,123 @@ try{
   window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.lang='';this.rate=1;this.voice=null;this.onstart=null;this.onend=null;this.onerror=null;}};
  });
  await page.goto(url);await page.evaluate(()=>homeReady);
- // A saved word card with an English word.
- await page.evaluate(async ()=>{show('vocab');words={one:{word:'thunderhead',ko:'소나기구름',book:'Book',status:2}};saveWords();renderVocab();await openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');
-
- // (a) The speaker button is present on the English side with the right labels.
  const speak=page.locator('#review-speak');
+ const spoken=()=>page.evaluate(()=>window.qaSpoken);
+ const state=()=>speak.evaluate(n=>({muted:n.classList.contains('muted'),label:n.getAttribute('aria-label'),title:n.title,
+  on:getComputedStyle(n.querySelector('.review-speak-on')).display!=='none',off:getComputedStyle(n.querySelector('.review-speak-off')).display!=='none'}));
+ const ON={muted:false,label:'발음 켜짐',title:'발음 켜짐',on:true,off:false},OFF={muted:true,label:'발음 꺼짐',title:'발음 꺼짐',on:false,off:true};
+ const open=async keys=>page.evaluate(async keys=>{if(activeAppView()==='study')closeVocabularyReview();window.qaSpoken=[];words=Object.fromEntries(keys.map(([k,w])=>[k,{word:w,ko:'뜻 '+w,book:'Book',status:2}]));saveWords();renderVocab();await openVocabularyReview();},keys);
+
+ // (1) Default ON: opening a one-card session pronounces the English side exactly once.
+ assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.cardSpeech')),null,'preference should start unset');
+ await open([['one','thunderhead']]);
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 1');
  assert.equal(await speak.isVisible(),true,'speaker button missing on the card front');
- assert.equal(await speak.getAttribute('aria-label'),'발음 듣기');
- assert.equal(await speak.getAttribute('title'),'발음 듣기');
+ assert.deepEqual(await state(),ON);
  const box=await speak.boundingBox();
  assert.ok(box.width>=44&&box.height>=44,'speaker button is smaller than the 44px touch target');
+ assert.deepEqual(await spoken(),['thunderhead'],'default did not auto-play the English side once');
+ // Re-rendering the same front must not replay.
+ await page.evaluate(()=>{renderSimpleWordCards();renderSimpleWordCards();});
+ assert.deepEqual(await spoken(),['thunderhead'],'re-render replayed the word');
+ await page.screenshot({path:`${proof}/on-390x844-light.png`});
 
- // (b) Clicking speaks the card's English word; (c) clicking does not flip the card.
- await speak.click();
- assert.deepEqual(await page.evaluate(()=>window.qaSpoken),['thunderhead'],'first tap did not speak the English word');
- assert.equal(await page.evaluate(()=>simpleWordCards.flipped),false,'speaker tap flipped the card');
- assert.equal(await page.locator('#review-front').isVisible(),true);
- assert.equal(await page.locator('#review-progress').innerText(),'0 / 1','speaker tap advanced progress');
- assert.equal(await page.evaluate(()=>document.getElementById('review-speak').classList.contains('playing')),true,'playing state not reflected on the card button');
-
- // Clicking again replays (a second call to the shared speak path).
- await speak.click();
- assert.deepEqual(await page.evaluate(()=>window.qaSpoken),['thunderhead','thunderhead'],'second tap did not replay');
-
- // (d) Advancing to the next card cancels in-flight speech. Add a second card so
- // a grade actually advances rather than completing.
- // New keys so the simple session restarts with a two-card queue (added words do
- // not expand a started session; a removed key forces a fresh one).
- await page.evaluate(async ()=>{closeVocabularyReview();words={a1:{word:'thunderhead',ko:'소나기구름',book:'Book',status:2},a2:{word:'breeze',ko:'산들바람',book:'Book',status:2}};saveWords();renderVocab();await openVocabularyReview();});
- assert.equal(await page.locator('#review-progress').innerText(),'0 / 2','two-card session did not start');
- const firstWord=await page.locator('#review-expression').innerText();
- await page.locator('#review-speak').click();
- const cancelsBefore=await page.evaluate(()=>window.qaCancels);
+ // Flip, then "again" brings the same single card back to the English side: it plays once more.
  await studyAction(page.locator('#review-flip').press('Enter'),page);
  assert.equal(await page.locator('#review-meaning').isVisible(),true);
- await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(240);
- assert.equal(await page.evaluate(()=>window.qaCancels)>cancelsBefore,true,'advancing the card did not cancel in-flight speech');
- assert.notEqual(await page.locator('#review-expression').innerText(),firstWord,'card did not advance on grade');
- assert.equal(await page.evaluate(()=>document.getElementById('review-speak').classList.contains('playing')),false,'playing state stuck after advancing');
+ assert.deepEqual(await spoken(),['thunderhead'],'flipping to the meaning side replayed');
+ await studyAction(page.keyboard.press('ArrowLeft'),page);await page.waitForTimeout(240);
+ assert.equal(await page.evaluate(()=>simpleWordCards.flipped),false);
+ assert.deepEqual(await spoken(),['thunderhead','thunderhead'],'returning to the English side did not auto-play once');
 
- // (e) With speechSynthesis unavailable, the button must not throw and the card still flips/advances.
- await page.evaluate(()=>{delete window.speechSynthesis;Object.defineProperty(window,'speechSynthesis',{configurable:true,get:()=>undefined});});
+ // (2) Toggle OFF: stops audio, mutes the icon, never flips/advances, no auto-play on later cards.
+ await open([['a1','thunderhead'],['a2','breeze'],['a3','gale']]);
+ assert.deepEqual(await spoken(),['thunderhead']);
+ const cancelsBefore=await page.evaluate(()=>window.qaCancels);
+ await speak.click();
+ assert.equal(await page.evaluate(()=>window.qaCancels)>cancelsBefore,true,'toggle off did not stop current audio');
+ assert.deepEqual(await state(),OFF);
+ assert.equal(await speak.evaluate(n=>n.classList.contains('playing')),false,'playing state stuck after muting');
+ assert.equal(await page.evaluate(()=>simpleWordCards.flipped),false,'speaker tap flipped the card');
+ assert.equal(await page.locator('#review-progress').innerText(),'0 / 3','speaker tap advanced progress');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.cardSpeech')),'false','off choice was not persisted');
+ await page.screenshot({path:`${proof}/off-390x844-light.png`});
+ await page.evaluate(()=>{darkMode=true;applyDark();});await page.waitForTimeout(30);
+ await page.screenshot({path:`${proof}/off-390x844-dark.png`});
+ await page.evaluate(()=>{darkMode=false;applyDark();});
+ await studyAction(page.locator('#review-flip').press('Enter'),page);
+ await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(240);
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 3','card did not advance on grade');
+ assert.deepEqual(await spoken(),['thunderhead'],'muted card auto-played');
+
+ // Persist: reload the app; still muted, still no auto-play.
+ await page.reload();await page.evaluate(()=>homeReady);
+ await page.evaluate(async ()=>{window.qaSpoken=[];show('vocab');await openVocabularyReview();});
+ assert.equal(await speak.isVisible(),true);
+ assert.deepEqual(await state(),OFF,'muted state not restored after reload');
+ assert.deepEqual(await spoken(),[],'auto-played after reload while muted');
+
+ // (3) Toggle ON: icon/label switch back, the current card speaks once, later cards auto-play.
+ const current=await page.locator('#review-expression').innerText();
+ await speak.press('Enter');
+ assert.deepEqual(await state(),ON);
+ assert.equal(await page.evaluate(()=>simpleWordCards.flipped),false,'speaker key flipped the card');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('breeze.cardSpeech')),'true');
+ assert.deepEqual(await spoken(),[current],'re-enabling did not speak the current card once');
+ await page.evaluate(()=>renderSimpleWordCards());
+ assert.deepEqual(await spoken(),[current],'re-enabling then re-render spoke twice');
+ const cancelsAdvance=await page.evaluate(()=>window.qaCancels);
+ await studyAction(page.locator('#review-flip').press('Enter'),page);
+ await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(240);
+ const next=await page.locator('#review-expression').innerText();
+ assert.notEqual(next,current,'card did not advance');
+ assert.equal(await page.evaluate(()=>window.qaCancels)>cancelsAdvance,true,'advancing did not cancel in-flight speech');
+ assert.deepEqual(await spoken(),[current,next],'next card did not auto-play once after re-enabling');
+
+ // Completion screen: no button, no auto-play.
+ await studyAction(page.locator('#review-flip').press('Enter'),page);
+ await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(240);
+ assert.equal(await page.locator('#simple-study-completion').isVisible(),true,'session did not complete');
+ assert.equal(await speak.isVisible(),false,'speaker button visible on the completion screen');
+ assert.deepEqual(await spoken(),[current,next],'completion screen spoke');
+ // Empty screen: no words, no button, no auto-play.
+ await open([]);
+ assert.equal(await speak.isVisible(),false,'speaker button visible on the empty screen');
+ assert.deepEqual(await spoken(),[],'empty screen spoke');
+
+ // (4) No audio: auto-play and toggling never throw, and the card still flips/advances.
+ await page.evaluate(()=>{Object.defineProperty(window,'speechSynthesis',{configurable:true,get:()=>undefined});});
  const errorsBefore=errors.length;
- await page.locator('#review-speak').click();
- await page.waitForTimeout(50);
- assert.equal(errors.length,errorsBefore,'no-audio speaker tap raised a pageerror: '+errors.slice(errorsBefore).join(', '));
+ await open([['n1','thunderhead'],['n2','breeze']]);
+ await speak.click();await speak.click();await page.waitForTimeout(50);
+ assert.deepEqual(await state(),ON);
  assert.equal(await page.evaluate(()=>simpleWordCards.flipped),false,'no-audio speaker tap flipped the card');
  await studyAction(page.locator('#review-flip').press('Enter'),page);
  assert.equal(await page.locator('#review-meaning').isVisible(),true,'card did not flip with no audio available');
  await studyAction(page.keyboard.press('ArrowRight'),page);await page.waitForTimeout(240);
- // Grading advances or completes the session; either way it must not throw.
- assert.equal(errors.length,errorsBefore,'grading with no audio raised a pageerror');
+ assert.equal(await page.locator('#review-progress').innerText(),'1 / 2');
+ assert.equal(errors.length,errorsBefore,'no-audio path raised a pageerror: '+errors.slice(errorsBefore).join(', '));
 
- // Restore the stub and reopen for the before/after screenshots.
+ // Restore the stub; ON/OFF screenshots and overflow checks across layouts.
  await page.evaluate(()=>{
-  const synth={speaking:false,pending:false,paused:false,getVoices:()=>[{lang:'en-US',name:'Test English',voiceURI:'test',default:true,localService:true}],speak(u){window.qaSpoken.push(u.text);if(typeof u.onstart==='function')u.onstart({});},cancel(){window.qaCancels++;},pause(){},resume(){},addEventListener(){},removeEventListener(){}};
+  const synth={speaking:false,pending:false,paused:false,getVoices:()=>[{lang:'en-US',name:'Test English',voiceURI:'test',default:true,localService:true}],speak(u){window.qaSpoken.push(u.text);},cancel(){window.qaCancels++;},pause(){},resume(){},addEventListener(){},removeEventListener(){}};
   Object.defineProperty(window,'speechSynthesis',{configurable:true,get:()=>synth});
  });
- await page.evaluate(async ()=>{closeVocabularyReview();words={one:{word:'thunderhead',ko:'소나기구름',book:'Book',status:2}};saveWords();renderVocab();await openVocabularyReview();});
- for(const [width,height] of [[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true]){
+ await open([['one','thunderhead']]);
+ // Let the earlier no-audio toast expire so it does not cover the captures.
+ await page.waitForTimeout(2800);
+ for(const [width,height] of [[390,844],[820,1180],[1440,900],[844,390]])for(const dark of [false,true])for(const muted of [false,true]){
   await page.setViewportSize({width,height});
   await page.evaluate(value=>{darkMode=value;applyDark();},dark);
-  await page.waitForTimeout(30);
-  assert.equal(await page.locator('#review-speak').isVisible(),true);
+  if((await state()).muted!==muted)await speak.click();
+  // Clean captures: clear the playing flash, an earlier no-audio toast and focus rings.
+  await page.evaluate(()=>{document.getElementById('review-speak').classList.remove('playing');document.getElementById('toast').classList.remove('on');document.activeElement?.blur();});
+  await page.mouse.move(1,1);
+  await page.waitForTimeout(400);
+  assert.equal(await speak.isVisible(),true);
   assert.equal(await page.locator('#v-study').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,`#v-study overflows at ${width}x${height}`);
-  await page.screenshot({path:`${proof}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}.png`,fullPage:true});
+  await page.screenshot({path:`${proof}/${engine.name()}-${width}x${height}-${dark?'dark':'light'}-${muted?'off':'on'}.png`});
  }
  assert.deepEqual(errors,[]);
- console.log(`${engine.name()}: speaker button present, speaks on tap, replays, no flip on tap, cancel on advance, no-audio no-throw, and 8 layouts with no overflow passed`);
+ console.log(`${engine.name()}: default auto-play once, no replay on re-render, toggle off mutes+persists across reload, toggle on resumes, no audio on completion/empty, no-audio no-throw, 16 layouts with no overflow passed`);
 }finally{await browser.close();await new Promise(r=>server.close(r));}

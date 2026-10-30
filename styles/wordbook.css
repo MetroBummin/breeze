@@ -156,7 +156,10 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #vocabulary-review-page #review-speak{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1;flex:none;display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;border:1px solid var(--speak-line);background:var(--speak-bg);color:var(--blue);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
 #vocabulary-review-page #review-speak:hover{background:var(--sky);}
 #vocabulary-review-page #review-speak.playing{background:var(--blue);color:var(--on-color);border-color:var(--blue);}
+#vocabulary-review-page #review-speak.muted{color:var(--sentence-glass-secondary);}
 #review-speak svg{width:20px;height:20px;}
+#review-speak .review-speak-off,#review-speak.muted .review-speak-on{display:none;}
+#review-speak.muted .review-speak-off{display:block;}
 @media(prefers-reduced-motion:reduce){#vocabulary-review-page #review-speak{transition:none;}}
 #review-back:not([hidden]){animation:review-card-turn .2s ease-out;transform-origin:center;}
 @keyframes review-card-turn{from{opacity:.3;transform:rotateY(-18deg);}to{opacity:1;transform:rotateY(0);}}

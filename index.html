@@ -64,7 +64,7 @@
   <link rel="stylesheet" href="styles/dictionary.css?v=c7b494d3">
   <link rel="stylesheet" href="styles/components.css?v=60b839c5">
   <link rel="stylesheet" href="styles/responsive.css?v=8feb0509">
-  <link rel="stylesheet" href="styles/wordbook.css?v=ea12de01">
+  <link rel="stylesheet" href="styles/wordbook.css?v=e10af42e">
   <link rel="stylesheet" href="styles/study-sets.css?v=2fbc3c48">
   <link rel="stylesheet" href="styles/vocabulary-test.css?v=d05f4c68">
   <link rel="stylesheet" href="styles/home-font.css?v=d817d87e">
@@ -129,7 +129,7 @@
   <script defer src="scripts/dictionary/sentence-easy-explanation.js?v=c0f3fdd2"></script>
   <script defer src="scripts/ui/study-motion.js?v=6ba528d8"></script>
   <script defer src="scripts/ui/study-example.js?v=c3f22f9a"></script>
-  <script defer src="scripts/ui/vocabulary-review.js?v=6b3937fd"></script>
+  <script defer src="scripts/ui/vocabulary-review.js?v=4aa8e7c7"></script>
   <script defer src="scripts/ui/wordbook.js?v=3efa429b"></script>
   <script defer src="scripts/core/study-sets.js?v=e8bfd72e"></script>
   <script defer src="scripts/core/study-sets-storage.js?v=6b6f1495"></script>
@@ -522,9 +522,12 @@
       <div id="review-front" class="review-face">
         <p id="review-source"></p>
         <h3 id="review-expression"></h3>
-        <button id="review-speak" type="button" title="발음 듣기" aria-label="발음 듣기">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button id="review-speak" type="button" title="발음 켜짐" aria-label="발음 켜짐">
+          <svg class="review-speak-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+          </svg>
+          <svg class="review-speak-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>
           </svg>
         </button>
         <p id="review-sentence" hidden></p>
