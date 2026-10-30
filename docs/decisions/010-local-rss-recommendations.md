@@ -155,6 +155,35 @@ catalog id returns nothing and does not throw; a cloud-only record falls back
 to reconnecting the reader's own file. The last choice is stored locally at
 `breeze.home-recommend` and is not ranked or uploaded.
 
+### 고전 / 웹소설 / 기사 (2026-10-30)
+
+The toggle beside 추천 now has three tabs, in this order: 고전 (the book rail
+above, the default), 웹소설 (the three author-permitted Royal Road works), and
+기사 (the external RSS row). All three paint the same `#casual-rail`; only the
+기사 tab calls `appendRssCards`, and only the 고전 tab asks for the remote
+classics catalog. Stored values migrate: `'articles'` stays 기사, the old
+`'books'` and anything unknown open 고전. Reading a 기사 card still saves it
+through the preview CTA (`commitArticleDraft`), so it then appears in 내 책.
+
+Home order is 추천, then 내 책 (books and 글 together with a 전체/책/글
+filter). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
+this device's open times: opened, unfinished items first (most recent first),
+then the rest by when they were opened, then never-opened items by when they
+were added. The 내 책 page (`#v-longform`) and the 글 page use the same
+order (`compareRecentReading`), so a book is first in both places. Both sections are grids: 2 columns on a phone, 3 from 700px,
+4 from 1024px. Book and web-novel covers keep their 2:3 shape so nothing is
+cropped. The floating resume pill and + stay as they were.
+
+웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429), Chasing
+Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW), and
+The Unexpected Engagement of the Marvelous Mr. Penn by R. K. Goff (Royal Road
+54508, first 10 chapters only, Royal Road link only). Each card shows the
+English title, its Korean reading, and the exact-case author. Ids and titles
+were checked on 2026-10-30 against Royal Road's syndication feed. Ar'Kendrithyst
+(Royal Road 26727) is by Arcs, not R. K. Goff, and is not listed. Remote-only classics show a Korean title from the
+bundled `CLASSIC_KO_TITLES` map (keyed by English title) when the catalog row
+carries no `koTitle`.
+
 Holmes, Alice, and Gatsby cards open through `openLongReadPreviewOrReader`.
 `CLASSICS` is empty, so no bundled EPUB is offered. Personal library cards
 still do not enter the article rail. The bundled Holmes offers are not placed

@@ -40,7 +40,9 @@ try{
       assert.equal(await page.locator('#shelf .longread').count(),0,'Home long-form shelf offers the Gutenberg catalog');
       await page.evaluate(()=>show('longform'));
       assert.equal(await page.locator('#longform-grid .longread').count(),0,'Unstarted offers stay out of the owned grid');
-      assert.deepEqual(await page.locator('#longform-recommend-rail .longread').evaluateAll(nodes=>nodes.map(node=>node.querySelector('.bt').textContent)),
+      assert.deepEqual(await page.locator('#longform-recommend-rail .longread').evaluateAll(nodes=>nodes.map(node=>
+        // The visible .bt is the Korean display title; order is checked by record.
+        offeredLongReads().find(read=>read.id===node.getAttribute('data-longread-id'))?.title)),
         expectedOrder,`${engine.name()} library Long Reads order is wrong`);
       assert.equal(await page.locator('#longform-recommend-rail .longread img.cover').count(),expectedOrder.length,'Library is missing a bundled cover');
       assert.equal(await page.locator('#longform-recommend .longread[data-longread-id="backroom-homeward-bound"]').count(),0,'Dormant Backrooms was offered to a new reader');
