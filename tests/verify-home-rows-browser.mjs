@@ -1,4 +1,5 @@
-// Home: 추천 (고전 / 웹소설 / 기사) on top, 내 책 below, both 2-column grids on a phone.
+// Home: 추천 (고전 / 웹소설 / 기사) on top as a horizontal scrolling carousel,
+// 내 책 below as a 2-column grid on a phone (3 from 700px, 4 from 1024px).
 // Deterministic: every request outside the local server is aborted.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -67,15 +68,23 @@ try{
       assert.deepEqual(frames,classicFrame,'Web-novel covers use the classic cover frame');
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
 
-      // Two columns on a phone; covers keep their 2:3 shape (nothing cropped).
-      const grid=await page.evaluate(()=>{
-        const cards=[...document.querySelectorAll('#casual-rail .webnovel')].map(card=>card.getBoundingClientRect());
-        const cover=document.querySelector('#casual-rail .webnovel .cover').getBoundingClientRect();
-        return {sameRow:Math.round(cards[0].top)===Math.round(cards[1].top),side:cards[1].left>cards[0].right,ratio:cover.height/cover.width,
-          columns:getComputedStyle(document.getElementById('casual-rail')).gridTemplateColumns.split(' ').length};
+      // 추천 is a horizontal carousel: the rail is a flex row that overflows
+      // sideways (scrollWidth > clientWidth with the cards side by side), it is
+      // NOT a grid, and it scrolls along x only (no vertical hijack).
+      const rail=await page.evaluate(()=>{
+        const node=document.getElementById('casual-rail');
+        const style=getComputedStyle(node);
+        const cards=[...node.querySelectorAll('.webnovel')].map(card=>card.getBoundingClientRect());
+        return {display:style.display,overflowX:style.overflowX,
+          scrollable:node.scrollWidth>node.clientWidth,
+          sameRow:Math.round(cards[0].top)===Math.round(cards[1].top),
+          side:cards[1].left>cards[0].right};
       });
-      assert.equal(grid.columns,2);assert.equal(grid.sameRow,true);assert.equal(grid.side,true);
-      assert.ok(Math.abs(grid.ratio-1.5)<.02,`cover ratio ${grid.ratio}`);
+      assert.equal(rail.display,'flex','추천 rail is a flex carousel, not a grid');
+      assert.ok(['auto','scroll'].includes(rail.overflowX),`overflow-x ${rail.overflowX}`);
+      assert.equal(rail.scrollable,true,'추천 rail overflows sideways');
+      assert.equal(rail.sameRow,true,'추천 cards stay on one row');
+      assert.equal(rail.side,true,'추천 cards sit side by side');
       assert.deepEqual(await page.locator('#casual-rail .webnovel').evaluateAll(nodes=>nodes.map(node=>[node.querySelector('.bt').textContent,node.querySelector('.ko').textContent,node.querySelector('.author').textContent])),
         [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','마블러스 미스터 펜의 뜻밖의 약혼','R. K. Goff']]);
       const bun=await openPreview(page,'cinnamon-bun');
@@ -151,6 +160,6 @@ try{
       assert.equal(await page.locator('#home-resume-title').textContent(),'Finished book','The pill opens the last opened book');
       await page.close();
     }finally{await browser.close();}
-    console.log(`${engine.name()}: 추천 grid with 고전/웹소설/기사, web-novel sheets, 내 책 grid in recent order passed`);
+    console.log(`${engine.name()}: 추천 carousel with 고전/웹소설/기사, web-novel sheets, 내 책 grid in recent order passed`);
   }
 }finally{server.close();}

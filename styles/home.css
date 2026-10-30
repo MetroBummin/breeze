@@ -448,46 +448,28 @@
   }
 }
 
-/* ---- Home grids: 추천 and 내 책 (2026-10-30) ----
-   Both Home sections are grids, not sideways rails: 2 columns on a phone,
-   3 on a tablet in portrait, 4 from 1024px. Book covers keep their 2:3 shape,
-   so a 768 × 1152 cover is shown whole (object-fit:cover on the same ratio
-   crops nothing). These rules sit after the rail rules above on purpose and
-   reuse their specificity; the 서재 recommend rail (#longform-recommend-rail)
-   stays a sideways rail. */
-#v-home :is(#casual-rail,#shelf){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px;
+/* ---- Home grid: 내 책 (2026-10-30; 추천 reverted to carousel 2026-10-30) ----
+   내 책 (#shelf) is a grid, not a sideways rail: 2 columns on a phone, 3 on a
+   tablet in portrait, 4 from 1024px. Book covers keep their 2:3 shape, so a
+   768 × 1152 cover is shown whole (object-fit:cover on the same ratio crops
+   nothing). 추천 (#casual-rail) is deliberately NOT in these rules: it stays
+   the horizontal scrolling carousel defined by the rail rules above (per owner
+   feedback correcting #307). The 서재 recommend rail (#longform-recommend-rail)
+   also stays a sideways rail. */
+#v-home #shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px;
   margin:0;padding:0 0 8px;overflow:visible;scroll-snap-type:none;scroll-padding-left:0;}
-#v-home #casual-rail > :is(.casual,.home-recommend-book,.rss-loading),
 #v-home #shelf > :is(.home-regular-tile,.home-add-tile){
   flex:none;width:auto;min-width:0;max-width:none;scroll-snap-align:none;}
-/* The cover height is 1.5 × the card's own width (container units), the same
-   2:3 shape as aspect-ratio. WebKit sized the grid rows from a stale cover
-   height after a resize when the image carried aspect-ratio itself. */
-#v-home #casual-rail > .home-recommend-book{display:flex;flex-direction:column;position:relative;aspect-ratio:auto;height:auto;transition:none;container-type:inline-size;}
-#v-home #casual-rail > .home-recommend-book .cover{order:0;flex:none;width:100%;height:calc(100cqw * 1.5);aspect-ratio:auto;border-radius:14px;object-fit:cover;object-position:center;}
-/* A cover still loading keeps its 2:3 slot, so the grid below never jumps. */
-#v-home #casual-rail > .home-recommend-book .cover[hidden]{display:block;visibility:hidden;}
-#v-home #casual-rail > .home-recommend-book .bt{order:1;margin-top:9px;font:600 15px/1.3 var(--ui);white-space:normal;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
-#v-home #casual-rail > .home-recommend-book .ko{order:2;min-width:0;margin:2px 1px 0;color:var(--settings-ink);
-  font:500 12.5px/1.3 var(--ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#v-home #casual-rail > .home-recommend-book .ko:empty{display:none;}
-#v-home #casual-rail > .home-recommend-book .author{order:3;margin-right:56px;}
-#v-home #casual-rail > .home-recommend-book:not(:has(.get)) .author{margin-right:1px;}
-#v-home #casual-rail > .home-recommend-book .get{position:absolute;right:0;bottom:0;margin:0 1px 0 0;}
-#v-home #casual-rail .rss-card .ct{left:12px;right:12px;bottom:13px;font-size:15px;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;}
-#v-home #casual-rail .rss-card .src{padding:11px 12px;}
 #v-home #shelf > .home-regular-tile > .bookcard,
 #v-home #shelf > .home-regular-tile > .casual,
 #v-home #shelf > .home-add-tile > .bookcard.add,
 #v-home #shelf > .home-add-tile > .casual.add,
 #v-home #shelf > .home-add-tile > .casual.add .thumb{aspect-ratio:2/3;}
 @media (min-width:700px){
-  #v-home :is(#casual-rail,#shelf){grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;}
+  #v-home #shelf{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;}
 }
 @media (min-width:1024px){
-  #v-home :is(#casual-rail,#shelf){grid-template-columns:repeat(4,minmax(0,1fr));}
+  #v-home #shelf{grid-template-columns:repeat(4,minmax(0,1fr));}
 }
 
 /* Quiet typographic jackets when no real cover is available. */

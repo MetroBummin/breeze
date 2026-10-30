@@ -170,9 +170,23 @@ filter). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is 
 this device's open times: opened, unfinished items first (most recent first),
 then the rest by when they were opened, then never-opened items by when they
 were added. The 내 책 page (`#v-longform`) and the 글 page use the same
-order (`compareRecentReading`), so a book is first in both places. Both sections are grids: 2 columns on a phone, 3 from 700px,
-4 from 1024px. Book and web-novel covers keep their 2:3 shape so nothing is
-cropped. The floating resume pill and + stay as they were.
+order (`compareRecentReading`), so a book is first in both places. 추천 is a
+horizontal scrolling carousel of cards (the pre-#307 style): the selected tab's
+items run in one sideways row that scrolls smoothly on iPhone and iPad with no
+vertical hijack. 내 책 is a grid: 2 columns on a phone, 3 from 700px, 4 from
+1024px. Book and web-novel covers keep their 2:3 shape so nothing is cropped.
+The floating resume pill and + stay as they were.
+
+#### 추천 back to a carousel (2026-10-30, follow-up to #307)
+
+#307 briefly made 추천 a 2-column grid alongside 내 책. Per owner feedback that
+was wrong: 추천 is a horizontal carousel again, exactly as before #307, while
+내 책 stays the grid above. This is CSS-only — `#casual-rail` falls back to the
+rail rules (`display:flex; overflow-x:auto; scroll-snap-type:x`), and only
+`#shelf` keeps `display:grid`. Everything else #307 introduced is kept: the
+고전/웹소설/기사 toggle, the three web novels and their new covers
+(`assets/webnovels/covers/*.webp`), and article→내 책 saving
+(`commitArticleDraft`).
 
 웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429), Chasing
 Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW), and

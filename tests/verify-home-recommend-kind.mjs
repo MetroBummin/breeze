@@ -62,13 +62,21 @@ test('book captions sit under the picture inside the article card box',()=>{
   assert.doesNotMatch(block,/#[0-9a-fA-F]{3,8}/,'Book rail styling introduces a new color');
 });
 
-test('Home 추천 and 내 책 are 2-column grids on a phone with whole 2:3 covers',()=>{
-  assert.match(homeCss,/#v-home :is\(#casual-rail,#shelf\)\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/@media \(min-width:700px\)\{\s*#v-home :is\(#casual-rail,#shelf\)\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/@media \(min-width:1024px\)\{\s*#v-home :is\(#casual-rail,#shelf\)\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book \.cover\{[^}]*height:calc\(100cqw \* 1\.5\)/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book\{[^}]*container-type:inline-size/);
-  const grid=homeCss.slice(homeCss.indexOf('/* ---- Home grids'),homeCss.indexOf('/* Quiet typographic jackets'));
+test('추천 is a horizontal carousel; 내 책 is a 2-column grid on a phone with whole 2:3 covers',()=>{
+  // 추천 (#casual-rail) reverts to the pre-#307 sideways rail: flex + overflow-x,
+  // scroll snapped, touch-smooth, no visible scrollbar — and no vertical hijack.
+  assert.match(homeCss,/#casual-rail, \.casual-rail, #longform-recommend-rail\{display:flex;[^}]*overflow-x:auto;[^}]*scroll-snap-type:x proximity/);
+  assert.match(homeCss,/#casual-rail, \.casual-rail, #longform-recommend-rail\{[\s\S]*?-webkit-overflow-scrolling:touch; scrollbar-width:none;\}/);
+  // No rule turns the #casual-rail container itself into a grid.
+  assert.doesNotMatch(homeCss,/#v-home :is\(#casual-rail,#shelf\)\{display:grid/);
+  assert.doesNotMatch(homeCss,/#(v-home )?#?casual-rail\{[^}]*display:grid/);
+  // 내 책 (#shelf) is the grid: 2 columns on a phone, 3 from 700px, 4 from 1024px.
+  assert.match(homeCss,/#v-home #shelf\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(homeCss,/@media \(min-width:700px\)\{\s*#v-home #shelf\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(homeCss,/@media \(min-width:1024px\)\{\s*#v-home #shelf\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  // The 내 책 covers keep their 2:3 shape.
+  assert.match(homeCss,/#v-home #shelf > \.home-regular-tile > \.bookcard,[\s\S]*?\{aspect-ratio:2\/3;\}/);
+  const grid=homeCss.slice(homeCss.indexOf('/* ---- Home grid'),homeCss.indexOf('/* Quiet typographic jackets'));
   assert.doesNotMatch(grid,/:\s*#[0-9a-fA-F]{3,8}\b/,'Home grid introduces a new color');
 });
 
