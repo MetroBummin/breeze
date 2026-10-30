@@ -5,8 +5,8 @@
  * This regression docks the toolbar on each edge and asserts the mini pill
  * stays anchored to the word and the expanded surface stays inside the viewport.
  *
- * Chromium-only in-sandbox (WebKit binary unavailable offline); CI runs both
- * engines via BREEZE_QA_ENGINE. Synthetic touch is not Pencil proof.
+ * CI runs both engines via BREEZE_QA_ENGINE (chromium|webkit). Synthetic
+ * touch is not Pencil proof.
  */
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
@@ -25,15 +25,29 @@ const baseline=process.env.BREEZE_SIDE_PILL_BASELINE==='1';
 mkdirSync(output,{recursive:true});
 
 // "Before" proof is produced against the pre-fix placement without touching the
-// working tree: when BREEZE_SIDE_PILL_BASELINE=1 the server serves the HEAD
-// (pre-FEAT-002) copy of the two placement sources instead of the files on
-// disk. The working tree keeps the fix at all times.
-const baselineSources=baseline?{
-  '/scripts/dictionary/dictionary.js':gitShow('scripts/dictionary/dictionary.js'),
-  '/scripts/dictionary/sentence.js':gitShow('scripts/dictionary/sentence.js'),
-}:{};
-function gitShow(path){
-  return execFileSync('git',['show',`HEAD:${path}`],{cwd:root,maxBuffer:8*1024*1024});
+// working tree: when BREEZE_SIDE_PILL_BASELINE=1 the server serves the two
+// placement sources from the base revision instead of the files on disk. HEAD
+// cannot be the baseline: once the fix is committed (and in CI, where HEAD is
+// the PR merge commit) HEAD already contains it. The base revision is
+// BREEZE_SIDE_PILL_BASELINE_REF (CI passes the PR base SHA), otherwise the
+// merge-base of HEAD with origin/<GITHUB_BASE_REF or main>.
+const placementSources=['scripts/dictionary/dictionary.js','scripts/dictionary/sentence.js'];
+const git=args=>execFileSync('git',args,{cwd:root,maxBuffer:8*1024*1024});
+function baselineRevision(){
+  const explicit=process.env.BREEZE_SIDE_PILL_BASELINE_REF;
+  if(explicit)return git(['rev-parse','--verify',`${explicit}^{commit}`]).toString().trim();
+  const branch=`origin/${process.env.GITHUB_BASE_REF||'main'}`;
+  return git(['merge-base','HEAD',branch]).toString().trim();
+}
+const baselineRev=baseline?baselineRevision():null;
+const baselineSources=baseline?Object.fromEntries(placementSources.map(path=>[`/${path}`,git(['show',`${baselineRev}:${path}`])])):{};
+if(baseline){
+  // A baseline identical to the fixed sources cannot reproduce anything; fail
+  // with the cause instead of a misleading "bug not reproduced" at the end.
+  const lookupRegion=/function lookupSafeRegion\(/;
+  assert.ok(!lookupRegion.test(baselineSources['/scripts/dictionary/dictionary.js'].toString()),
+    `baseline revision ${baselineRev} already contains the side-dock fix; set BREEZE_SIDE_PILL_BASELINE_REF to a pre-fix commit`);
+  console.log(`baseline placement sources from ${baselineRev}`);
 }
 
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.woff2':'font/woff2'};
@@ -62,6 +76,16 @@ const viewports=[
 ];
 const edges=['left','right','top','bottom'];
 const sideEdges=new Set(['left','right']);
+
+// Wait until the element has no finite animation still running (infinite
+// spinners/aurora loops never finish and are not layout motion).
+async function settled(page,selector){
+  await page.waitForFunction(selector=>{
+    const node=document.querySelector(selector);
+    return node&&node.getAnimations({subtree:true}).every(animation=>
+      animation.playState!=='running'||animation.effect?.getTiming().iterations===Infinity);
+  },selector);
+}
 
 let checks=0,baselineBugHits=0;
 try{
@@ -138,6 +162,8 @@ try{
           });
           await page.touchscreen.tap(tap.x,tap.y);
           await page.waitForFunction(()=>!document.querySelector('#word-peek').hidden);
+          // Measure the settled pill, not its 120ms entry animation frame.
+          await settled(page,'#word-peek');
 
           const name=`${engine.name()}-${edge}-${viewport.name}-${tone}-${baseline?'before':'after'}`;
           await page.screenshot({path:resolve(output,`${name}.png`)});
@@ -195,7 +221,10 @@ try{
           // Open the expanded word detail surface and assert it is unclipped.
           await page.evaluate(()=>expandWordDetail());
           await page.waitForFunction(()=>document.getElementById('panel').classList.contains('on'));
-          await page.waitForTimeout(80);
+          // The pill-to-detail morph runs 280ms; measuring mid-morph reads a
+          // scaled shell (pill-sized rect). Wait for the final, unscaled layout.
+          await page.waitForFunction(()=>wordMorphAnimation===null&&!document.getElementById('panel').classList.contains('morphing'));
+          await settled(page,'#panel');
           const panel=await page.evaluate(()=>{
             const vw=window.visualViewport?window.visualViewport.width:innerWidth;
             const vh=window.visualViewport?window.visualViewport.height:innerHeight;
@@ -238,5 +267,4 @@ try{
   // screenshots prove nothing. Fail if the pre-fix build placed everything well.
   if(baseline)assert.ok(baselineBugHits>0,'baseline (pre-fix) run must reproduce the side-dock offset/clip bug');
   console.log(`${engine.name()}: side-dock lookup pill placement ${baseline?`baseline captured (${baselineBugHits} bug reproductions)`:`passed (${checks} side-dock checks)`}`);
-  if(engine===chromium)console.log('WebKit not executed in-sandbox (binary unavailable offline); CI runs it via BREEZE_QA_ENGINE=webkit.');
 }finally{server.close();}
