@@ -111,7 +111,7 @@ function harness(){
     activeAppView:()=>'home',
   });
   vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}function localReadAt(id){return readAt[id]||0;}function posOf(id){return positions[id]||{p:0,t:0};}var WEBNOVEL_PROGRESS_KEY="breeze.webnovel-progress.v1",MYBOOKS_FILTER_KEY="breeze.mybooks-filter";',context);
-  for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards','byRecentlyRead'])
+  for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards','compareRecentReading','recentReadingEntry','byRecentlyRead'])
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};

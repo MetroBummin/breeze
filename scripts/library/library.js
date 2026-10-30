@@ -130,11 +130,20 @@ function rowLooksCasual(meta){
   return CASUAL_KINDS.has((meta||{}).kind||'');
 }
 
-/* 최근에 읽던 것이 앞에 옵니다. 한 번도 열지 않은 것은 그 뒤에, 넣은 순서로.
-   읽던 책을 늘 첫 칸에서 찾을 수 있으면 정렬 단추가 필요 없습니다. */
+/* 열어 보고 아직 다 읽지 않은 것이 맨 앞(가장 최근 것부터), 그다음 나머지를
+   최근에 연 순서로, 한 번도 열지 않은 것은 넣은 순서로 둡니다. 홈의 '내 책'과
+   서재가 이 한 규칙을 함께 씁니다. 읽던 책을 늘 첫 칸에서 찾을 수 있으면 정렬
+   단추가 필요 없습니다. */
+function compareRecentReading(a,b){
+  const reading=entry=>entry.readAt>0&&entry.progress<1?1:0;
+  return reading(b)-reading(a)||b.readAt-a.readAt||b.addedAt-a.addedAt;
+}
+function recentReadingEntry(book){
+  return {readAt:localReadAt(book.id),addedAt:Number(book.addedAt)||0,progress:Number(posOf(book.id).p)||0};
+}
 function byRecentlyRead(list){
-  return list.slice().sort((a,b) =>
-    localReadAt(b.id)-localReadAt(a.id) || (b.addedAt||0)-(a.addedAt||0));
+  return list.map(book=>({book,...recentReadingEntry(book)}))
+    .sort(compareRecentReading).map(entry=>entry.book);
 }
 function casualBooks(){ return byRecentlyRead(books.filter(isCasual)); }
 function longformBooks(){ return byRecentlyRead(books.filter(book => !isCasual(book))); }
@@ -684,8 +693,7 @@ function myBooksEntries(filter){
       add({key:'cloudcasual:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')},
         row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
   }
-  const reading=entry=>entry.readAt>0&&entry.progress<1?1:0;
-  entries.sort((a,b)=>reading(b)-reading(a)||b.readAt-a.readAt||b.addedAt-a.addedAt);
+  entries.sort(compareRecentReading);
   return entries.map(entry=>entry.spec);
 }
 function renderHome(){

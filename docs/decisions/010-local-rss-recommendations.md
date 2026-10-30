@@ -169,7 +169,8 @@ Home order is 추천, then 내 책 (books and 글 together with a 전체/책/글
 filter). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
 this device's open times: opened, unfinished items first (most recent first),
 then the rest by when they were opened, then never-opened items by when they
-were added. Both sections are grids: 2 columns on a phone, 3 from 700px,
+were added. The 내 책 page (`#v-longform`) and the 글 page use the same
+order (`compareRecentReading`), so a book is first in both places. Both sections are grids: 2 columns on a phone, 3 from 700px,
 4 from 1024px. Book and web-novel covers keep their 2:3 shape so nothing is
 cropped. The floating resume pill and + stay as they were.
 
