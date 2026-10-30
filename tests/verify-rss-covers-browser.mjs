@@ -6,6 +6,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const photo=readFileSync(resolve(root,'assets/samples/starship-1.jpg'));
@@ -67,6 +68,7 @@ try{
       const requests=[],failures=[],consoleErrors=[];
       page.on('requestfailed',request=>failures.push({url:request.url(),method:request.method(),resourceType:request.resourceType(),error:request.failure()?.errorText}));
       page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
+      await page.addInitScript(enableHomeArticles);
       await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await page.route('**/*',async route=>{
         const request=route.request(),url=request.url(),parsed=new URL(url);

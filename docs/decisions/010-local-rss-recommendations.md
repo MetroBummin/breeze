@@ -2,6 +2,11 @@
 
 2026-09-25. Base: `0b1b6bb`. Scope: Home's RSS recommendation rail only.
 
+**Status: dormant since 2026-10-30.** The Home 기사 tab is hidden and Home
+does not request RSS. The code below is kept as it is and is turned back on
+with `HOME_ARTICLES: true` in `config.js`. See
+[기사 tab dormant](#기사-tab-dormant-2026-10-30).
+
 ## Product contract
 
 - Recommend external RSS entries, never insert personal books, saved links, or
@@ -161,29 +166,31 @@ The toggle beside 추천 now has three tabs, in this order: 고전 (the book rai
 above, the default), 웹소설 (the three author-permitted Royal Road works), and
 기사 (the external RSS row). All three paint the same `#casual-rail`; only the
 기사 tab calls `appendRssCards`, and only the 고전 tab asks for the remote
-classics catalog. Stored values migrate: `'articles'` stays 기사, the old
+classics catalog. Stored values migrate: `'articles'` stays 기사 (it opens 고전 while 기사 is dormant, below), the old
 `'books'` and anything unknown open 고전. Reading a 기사 card still saves it
 through the preview CTA (`commitArticleDraft`), so it then appears in 내 책.
 
-Home order is 추천, then 내 책 (books and 글 together in one grid, with no
-filter; the header is just the 내 책 title and its chevron to `#v-longform`). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
+Home order is 추천, then 내 책 (books and 글 together in one sideways row, with
+no filter; the header is just the 내 책 title and its chevron to `#v-longform`). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
 this device's open times: opened, unfinished items first (most recent first),
 then the rest by when they were opened, then never-opened items by when they
 were added. The 내 책 page (`#v-longform`) and the 글 page use the same
-order (`compareRecentReading`), so a book is first in both places. 추천 is a
-horizontal scrolling carousel of cards (the pre-#307 style): the selected tab's
-items run in one sideways row that scrolls smoothly on iPhone and iPad with no
-vertical hijack. 내 책 is a grid: 2 columns on a phone, 3 from 700px, 4 from
-1024px. Book and web-novel covers keep their 2:3 shape so nothing is cropped.
-The floating resume pill and + stay as they were.
+order (`compareRecentReading`), so a book is first in both places. On Home
+both rows are horizontal scrolling carousels (the pre-#307 style): the selected
+추천 tab's items, and 내 책, each run in one sideways row that scrolls on iPhone
+and iPad with no vertical hijack. The grid is the full library behind the 내 책
+chevron (`#v-longform #longform-grid`): 2 columns on a phone, 3 from 700px, 4
+from 1024px. Web-novel covers keep their 2:3 shape so nothing is cropped. The
+floating resume pill and + stay as they were.
 
 #### 추천 back to a carousel (2026-10-30, follow-up to #307)
 
 #307 briefly made 추천 a 2-column grid alongside 내 책. Per owner feedback that
-was wrong: 추천 is a horizontal carousel again, exactly as before #307, while
-내 책 stays the grid above. This is CSS-only — `#casual-rail` falls back to the
-rail rules (`display:flex; overflow-x:auto; scroll-snap-type:x`), and only
-`#shelf` keeps `display:grid`. Everything else #307 introduced is kept: the
+was wrong: 추천 is a horizontal carousel again, exactly as before #307. A later
+correction made 내 책 on Home a carousel too, and moved the grid to the full
+library (`#v-longform`). This is CSS-only. `#casual-rail` and `#shelf` fall back
+to the rail rules (`display:flex; overflow-x:auto; scroll-snap-type:x`), and
+`#v-longform #longform-grid` is the 2/3/4-column grid. Everything else #307 introduced is kept: the
 고전/웹소설/기사 toggle, the three web novels and their new covers
 (`assets/webnovels/covers/*.webp`), and article→내 책 saving
 (`commitArticleDraft`).
@@ -194,7 +201,31 @@ Per owner feedback, the 전체/책/글 toggle next to the 내 책 header is gone
 내 책 always shows every book and article together, in `compareRecentReading`
 order, with a single 파일 추가 tile at the end. The 추천 toggle is now the only
 `.home-kind` control on Home. The old `breeze.mybooks-filter` value is no
-longer read; a stored value is simply ignored.
+longer read; a stored value is simply ignored. The full library does not add a
+책/글 filter of its own.
+
+#### 기사 tab dormant (2026-10-30)
+
+Per owner feedback, the 추천 toggle is 고전 / 웹소설 only. The 기사 tab and
+the RSS code are dormant, not deleted:
+
+- `homeArticlesEnabled()` in `library.js` reads `BREEZE_CONFIG.HOME_ARTICLES`.
+  It is unset, so it is false.
+- The 기사 button stays in `index.html` with `hidden`, and
+  `syncHomeRecommendToggle` keeps it hidden while the flag is off. Arrow keys
+  skip it.
+- A stored `breeze.home-recommend` of `'articles'` opens 고전, and the stored
+  value is not overwritten, so the choice comes back if the tab is turned on.
+  `setHomeRecommendKind('articles')` lands on 고전.
+- `renderHome` calls `renderHomeArticles` (and so `appendRssCards` →
+  `loadRss`) only when the flag is on. Nothing else on Home starts RSS: the
+  Article Preview close handler in `rss.js` returns early while dormant, and
+  the pull-to-refresh `rssPage` bump only changes a counter.
+- Articles the user already saved are ordinary 글 records and stay in 내 책.
+
+To turn it back on, add `HOME_ARTICLES: true` to `config.js`. The browser
+checks of the RSS row (`tests/verify-rss-*-browser.mjs` and others) turn it on
+with `tests/helpers/home-articles.mjs`.
 
 웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429), Chasing
 Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW), and

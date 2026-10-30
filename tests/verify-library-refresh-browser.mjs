@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.woff2':'font/woff2'};
@@ -24,6 +25,7 @@ try{
    const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
    const errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));
    await page.route('**/*',r=>r.request().url().startsWith(url)?r.continue():r.abort());
+   await page.addInitScript(enableHomeArticles);
    await page.addInitScript(()=>{
      localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
      localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));

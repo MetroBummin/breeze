@@ -1568,6 +1568,8 @@ function appendRssCards(rail, force){
 // Dismissing Preview returns to the same Home without repainting its rail.
 // Resume canceled photo work from current metadata, without loading feeds.
 if(typeof document!=='undefined')document.getElementById?.('article-preview')?.addEventListener('close',()=>{
+  // The Home 기사 tab is dormant unless config turns it on; then no photo work.
+  if(typeof homeArticlesEnabled==='function'&&!homeArticlesEnabled())return;
   const rail=document.getElementById('casual-rail');
   if(!rail?.isConnected||!rail.closest('#v-home.on')||document.getElementById('article-preview').hasAttribute('open'))return;
   rssCoverWatch(rssCoverBegin(rail),[...rail.querySelectorAll('.rss-card')],rssCands.flat());

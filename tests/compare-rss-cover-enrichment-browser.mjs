@@ -8,6 +8,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const proof=process.env.BREEZE_RSS_ENRICHMENT_PROOF||'/tmp/breeze-rss-enrichment-comparison';
@@ -57,6 +58,7 @@ try{
     const html=fixture.html;
     const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),calls=[];
     try{
+      await context.addInitScript(enableHomeArticles);
       await context.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await context.route('**/*',async route=>{
         const raw=route.request().url(),url=new URL(raw);

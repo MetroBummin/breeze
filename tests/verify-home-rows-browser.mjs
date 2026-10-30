@@ -1,5 +1,6 @@
-// Home: 추천 (고전 / 웹소설 / 기사) on top as a horizontal scrolling carousel,
-// 내 책 below as a 2-column grid on a phone (3 from 700px, 4 from 1024px).
+// Home: 추천 (고전 / 웹소설; 기사 is dormant) on top and 내 책 below, both as
+// horizontal scrolling carousels. The 내 책 chevron opens the full library,
+// which is the 2-column grid on a phone (3 from 700px, 4 from 1024px).
 // Deterministic: every request outside the local server is aborted.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -51,6 +52,9 @@ try{
       assert.equal(await page.locator('#home-recommend-title').textContent(),'추천');
       assert.deepEqual(await page.locator('#home-recommend-kind button').evaluateAll(nodes=>nodes.map(node=>[node.textContent,node.getAttribute('aria-pressed')])),
         [['고전','true'],['웹소설','false'],['기사','false']]);
+      // 기사 is dormant: the button is kept in the markup but hidden.
+      assert.deepEqual(await page.locator('#home-recommend-kind button').evaluateAll(nodes=>nodes.filter(node=>node.offsetParent!==null).map(node=>node.textContent)),
+        ['고전','웹소설']);
       assert.ok(await page.locator('#casual-rail [data-longread-id]').count()>0,'고전 is the default tab');
 
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
@@ -114,13 +118,13 @@ try{
       assert.deepEqual(penn.links,['Royal Road 원문'],'Mr. Penn has no monetized link');
       await page.locator('#article-preview .ap-close').click();
 
-      await page.locator('#home-recommend-kind [data-kind="articles"]').click();
-      assert.equal(await page.evaluate(()=>load('breeze.home-recommend')),'articles');
-      assert.equal(await page.locator('#casual-rail .webnovel,#casual-rail [data-longread-id]').count(),0);
-      assert.ok(await page.locator('#casual-rail :is(.rss-card,.rss-loading)').count()+await page.locator('#home-feed-empty:not([hidden])').count()>0,
-        '기사 asks the RSS recommendations');
-      // Arrow keys move along 고전 / 웹소설 / 기사.
-      await page.locator('#home-recommend-kind [data-kind="articles"]').focus();
+      // A stored 기사 choice opens 고전 while 기사 is dormant, and nothing asks RSS.
+      await page.evaluate(()=>{save('breeze.home-recommend','articles');setHomeRecommendKind('articles');renderHome();});
+      assert.equal(await page.evaluate(()=>homeRecommendKind()),'classics');
+      assert.equal(await page.locator('#casual-rail :is(.rss-card,.rss-loading)').count(),0,'Home asked RSS while 기사 is dormant');
+      assert.ok(await page.locator('#casual-rail [data-longread-id]').count()>0);
+      // Arrow keys move along 고전 / 웹소설 only.
+      await page.locator('#home-recommend-kind [data-kind="webnovels"]').focus();
       await page.keyboard.press('ArrowRight');
       assert.equal(await page.evaluate(()=>homeRecommendKind()),'classics');
 
@@ -140,26 +144,32 @@ try{
       const top=await page.evaluate(()=>[...document.querySelectorAll('#v-home > section:not([hidden])')].map(node=>node.getBoundingClientRect().top));
       assert.ok(top[0]<top[1],'추천 sits above 내 책');
       const shelf=await page.evaluate(()=>{
-        const tiles=[...document.querySelectorAll('#shelf > .home-regular-tile')].map(tile=>tile.getBoundingClientRect());
-        return {columns:getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length,
-          sameRow:Math.round(tiles[0].top)===Math.round(tiles[1].top),nextRow:tiles[2].top>tiles[0].bottom};
+        const node=document.getElementById('shelf');
+        const tiles=[...node.querySelectorAll(':scope > .home-regular-tile')].map(tile=>tile.getBoundingClientRect());
+        return {display:getComputedStyle(node).display,scrollable:node.scrollWidth>node.clientWidth,
+          oneRow:tiles.every(tile=>Math.round(tile.top)===Math.round(tiles[0].top))};
       });
-      assert.deepEqual(shelf,{columns:2,sameRow:true,nextRow:true},'내 책 is a 2-column grid');
+      assert.deepEqual(shelf,{display:'flex',scrollable:true,oneRow:true},'내 책 on Home is a horizontal carousel');
       // 내 책 has no 전체/책/글 filter: only the title and its chevron to the library.
       assert.equal(await page.locator('#longform .home-kind,#mybooks-filter').count(),0);
       assert.equal(await page.locator('#longform .sec-head .section-link').count(),1);
-      // Wider screens use more columns.
+      // The chevron opens the full library, which is the grid: 2, 3 and 4 columns.
+      await page.locator('#longform .sec-head .section-link').click();
+      await page.waitForFunction(()=>document.getElementById('v-longform').classList.contains('on'));
+      const columns=()=>page.evaluate(()=>getComputedStyle(document.getElementById('longform-grid')).gridTemplateColumns.split(' ').length);
+      assert.equal(await columns(),2);
       await page.setViewportSize({width:820,height:1180});
-      assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),3);
+      assert.equal(await columns(),3);
       await page.setViewportSize({width:1180,height:820});
-      assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),4);
+      assert.equal(await columns(),4);
       await page.setViewportSize({width:390,height:844});
+      await page.evaluate(()=>show('home'));
       // The floating resume pill and + stay.
       assert.equal(await page.locator('#home-resume').isVisible(),true);
       assert.equal(await page.locator('#home-add').isVisible(),true);
       assert.equal(await page.locator('#home-resume-title').textContent(),'Finished book','The pill opens the last opened book');
       await page.close();
     }finally{await browser.close();}
-    console.log(`${engine.name()}: 추천 carousel with 고전/웹소설/기사, web-novel sheets, 내 책 grid in recent order passed`);
+    console.log(`${engine.name()}: 추천 carousel with 고전/웹소설 (기사 dormant), web-novel sheets, 내 책 carousel in recent order, library grid passed`);
   }
 }finally{server.close();}

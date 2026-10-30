@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const server=createServer((req,res)=>{
@@ -22,6 +23,7 @@ try{
     try{
       for(const [width,height] of [[320,568],[390,844],[820,1024],[1280,800]]){
         const page=await browser.newPage({viewport:{width,height},serviceWorkers:'block'});
+        await page.addInitScript(enableHomeArticles);
         await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
         let calls=0;
         await page.route('**/*',route=>{

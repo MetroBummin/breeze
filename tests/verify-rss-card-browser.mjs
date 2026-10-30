@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const image=readFileSync(resolve(root,'assets/favicon/icon-512.png'));
@@ -28,6 +29,7 @@ try{
     const browser=await engine.launch(engine===chromium && process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
     try{
       const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
+      await page.addInitScript(enableHomeArticles);
       await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await page.route('**/*',route=>{
         const url=route.request().url();

@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const server=createServer((req,res)=>{
@@ -22,6 +23,7 @@ try{
     try{
       const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
       await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
+      await page.addInitScript(enableHomeArticles);
       await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
       await page.goto(url);
       await page.evaluate(()=>homeReady);
@@ -51,13 +53,14 @@ try{
         positions={'saved-short':{t:10,p:.2},'saved-long':{t:20,p:.4}};
         renderHome();
       });
-      /* 홈은 위에서부터 추천(고전/웹소설/기사) · 내 책입니다. 이어 읽기·가볍게
-         읽기 줄은 없고, 그 글은 '내 책'(#shelf)에 전체/책/글 거르개로 깔립니다. */
+      /* 홈은 위에서부터 추천 · 내 책입니다. 이어 읽기·가볍게 읽기 줄은 없고, 그
+         글은 '내 책'(#shelf) 가로 줄에 책과 함께 깔립니다. 이 검사는 잠재운 기사
+         칸(HOME_ARTICLES)을 켜고 돕니다. */
       assert.deepEqual(await page.locator('#v-home > section').evaluateAll(nodes=>nodes.map(node=>node.id)),
         ['casuals','longform'],'Home section order changed');
       assert.equal(await page.locator('#home-casuals,#home-casual-rail,#webnovels').count(),0,'Old home rows are gone');
       assert.equal(await page.locator('#casual-rail [data-home-key^="book:"]').count(),0,'Saved book entered recommendation');
-      // 전체(기본) 거르개에서는 책과 글이 한 레일(#shelf)에 함께 뜹니다.
+      // 책과 글이 한 레일(#shelf)에 함께 뜹니다.
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"]').count(),1);
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-short"]').count(),1);
       assert.equal(await page.locator('#shelf .bar,#shelf .now-ring').count(),0);
@@ -89,7 +92,7 @@ try{
         assert.deepEqual(dimensions[0],dimensions[1],`${engine.name()} ${width}px tile mismatch`);
         assert.deepEqual(dimensions[2],dimensions[3],`${engine.name()} ${width}px cover mismatch`);
       }
-      // 내 책에는 거르개가 없고, 책(saved-long)과 글(saved-short)이 한 격자에 함께 보입니다.
+      // 내 책에는 거르개가 없고, 책(saved-long)과 글(saved-short)이 한 가로 줄에 함께 보입니다.
       assert.equal(await page.locator('#mybooks-filter,[data-mybooks]').count(),0);
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),1);

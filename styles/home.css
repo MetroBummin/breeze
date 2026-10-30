@@ -448,28 +448,17 @@
   }
 }
 
-/* ---- Home grid: 내 책 (2026-10-30; 추천 reverted to carousel 2026-10-30) ----
-   내 책 (#shelf) is a grid, not a sideways rail: 2 columns on a phone, 3 on a
-   tablet in portrait, 4 from 1024px. Book covers keep their 2:3 shape, so a
-   768 × 1152 cover is shown whole (object-fit:cover on the same ratio crops
-   nothing). 추천 (#casual-rail) is deliberately NOT in these rules: it stays
-   the horizontal scrolling carousel defined by the rail rules above (per owner
-   feedback correcting #307). The 서재 recommend rail (#longform-recommend-rail)
-   also stays a sideways rail. */
-#v-home #shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px;
-  margin:0;padding:0 0 8px;overflow:visible;scroll-snap-type:none;scroll-padding-left:0;}
-#v-home #shelf > :is(.home-regular-tile,.home-add-tile){
-  flex:none;width:auto;min-width:0;max-width:none;scroll-snap-align:none;}
-#v-home #shelf > .home-regular-tile > .bookcard,
-#v-home #shelf > .home-regular-tile > .casual,
-#v-home #shelf > .home-add-tile > .bookcard.add,
-#v-home #shelf > .home-add-tile > .casual.add,
-#v-home #shelf > .home-add-tile > .casual.add .thumb{aspect-ratio:2/3;}
+/* ---- 내 책 library grid (2026-10-30) ----
+   On Home both rows are sideways carousels (the rail rules above): 추천
+   (#casual-rail) and 내 책 (#shelf), as before #307. The grid lives in the
+   full library (#v-longform, opened by the 내 책 chevron): 2 columns on a
+   phone, 3 from 700px, 4 from 1024px. */
+#v-longform #longform-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 @media (min-width:700px){
-  #v-home #shelf{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;}
+  #v-longform #longform-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;}
 }
 @media (min-width:1024px){
-  #v-home #shelf{grid-template-columns:repeat(4,minmax(0,1fr));}
+  #v-longform #longform-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
 }
 
 /* Quiet typographic jackets when no real cover is available. */

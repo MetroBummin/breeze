@@ -704,8 +704,8 @@ assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
 assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
   'Home recommendation must be the plain 추천 heading');
-assert.match(index, /id="home-recommend-kind"[\s\S]*?data-kind="classics"[\s\S]*?data-kind="webnovels"[\s\S]*?data-kind="articles"/,
-  'The 추천 toggle must be 고전 / 웹소설 / 기사, in that order');
+assert.match(index, /id="home-recommend-kind"[\s\S]*?data-kind="classics"[\s\S]*?data-kind="webnovels"[\s\S]*?data-kind="articles"[^>]*\shidden[\s>]/,
+  'The 추천 toggle must be 고전 / 웹소설, with the dormant 기사 button kept but hidden');
 assert.match(index, /<section id="casuals"[\s\S]*?<section id="longform"/,
   'Home order must be 추천, then 내 책');
 assert.doesNotMatch(index, /id="continue(?:-rail)?"/,

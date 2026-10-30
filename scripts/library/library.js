@@ -486,11 +486,22 @@ function homeBookSpec(book,casual){
       slot.textContent=label;
     }};
 }
-/* 추천 줄의 세 칸: 고전(기본) · 웹소설 · 기사. 예전 두 칸 시절의 'books'는
-   고전으로, 'articles'는 그대로 기사 칸으로 이어집니다. 모르는 값은 고전입니다. */
+/* 추천 줄의 칸: 고전(기본) · 웹소설. 기사(RSS) 칸은 잠재워 두었습니다
+   (docs/decisions/010-local-rss-recommendations.md). 코드는 그대로 두고
+   config.js 의 HOME_ARTICLES:true 한 줄로 다시 켭니다. 꺼져 있는 동안 기사 단추는
+   숨고, 저장된 'articles' 값은 지우지 않은 채 고전으로 읽으며, 홈은 RSS 를 한 번도
+   부르지 않습니다. 이미 저장한 기사는 내 책에 그대로 있습니다. 예전 두 칸 시절의
+   'books'는 고전으로 이어집니다. 모르는 값은 고전입니다. */
+function homeArticlesEnabled(){
+  return typeof window!=='undefined'&&window.BREEZE_CONFIG?.HOME_ARTICLES===true;
+}
+function homeRecommendKindValue(value){
+  if(value==='webnovels')return value;
+  if(value==='articles'&&homeArticlesEnabled())return value;
+  return 'classics';
+}
 function homeRecommendKind(){
-  const value=load('breeze.home-recommend','classics');
-  return value==='articles'||value==='webnovels'?value:'classics';
+  return homeRecommendKindValue(load('breeze.home-recommend','classics'));
 }
 /* A started catalog book is one library record. Bundled text keeps the catalog
    id on longReadId, a bundled EPUB keeps it on classicId, and a copy migrated
@@ -527,13 +538,14 @@ function syncHomeRecommendToggle(){
   if(!group)return;
   const kind=homeRecommendKind();
   group.querySelectorAll('button').forEach(button=>{
+    if(button.dataset.kind==='articles')button.hidden=!homeArticlesEnabled();
     button.setAttribute('aria-pressed',button.dataset.kind===kind?'true':'false');
   });
   if(group.dataset.bound)return;
   group.dataset.bound='true';
   group.addEventListener('keydown',event=>{
     if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
-    const buttons=[...group.querySelectorAll('button')];
+    const buttons=[...group.querySelectorAll('button')].filter(button=>!button.hidden);
     const index=buttons.findIndex(button=>button===document.activeElement);
     if(index<0)return;
     event.preventDefault();
@@ -543,7 +555,7 @@ function syncHomeRecommendToggle(){
   });
 }
 function setHomeRecommendKind(kind){
-  const next=kind==='articles'||kind==='webnovels'?kind:'classics';
+  const next=homeRecommendKindValue(kind);
   if(next===homeRecommendKind()){syncHomeRecommendToggle();return;}
   save('breeze.home-recommend',next);
   const rail=document.getElementById('casual-rail');
@@ -663,7 +675,8 @@ function renderHomeArticles(rail){
   if(typeof appendRssCards==='function')appendRssCards(rail);
 }
 /* ================= 내 책 =================
-   추천 아래 한 칸입니다. 책과 글이 거르개 없이 같은 격자에 함께 깔립니다.
+   추천 아래 한 줄입니다. 책과 글이 거르개 없이 같은 가로 줄에 함께 깔립니다
+   (격자는 머리글 링크로 가는 서재 화면에 있습니다).
    순서는 이 기기에서 연 시각입니다: 열어 보고 아직
    다 읽지 않은 것이 맨 앞(가장 최근 것부터), 그다음 나머지를 최근에 연
    순서로, 한 번도 열지 않은 것은 넣은 순서로 둡니다. 따로 '이어 읽기' 줄을
@@ -693,7 +706,7 @@ function renderHome(){
   const kind=homeRecommendKind();
   if(kind==='classics')renderHomeRecommendBooks(rail);
   else if(kind==='webnovels')renderHomeWebNovels(rail);
-  else renderHomeArticles(rail);
+  else if(kind==='articles'&&homeArticlesEnabled())renderHomeArticles(rail);
   const shelf=document.getElementById('shelf');
   const specs=myBooksEntries();
   specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});

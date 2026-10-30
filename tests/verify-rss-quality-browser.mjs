@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 import {VERSION} from '../server/rss-quality/jev.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 let testMode='off';
@@ -20,6 +21,7 @@ try{for(const engine of engines){
   const browser=await engine.launch(engine===chromium && process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
   try{
     const page=await browser.newPage({serviceWorkers:'block'});
+    await page.addInitScript(enableHomeArticles);
     await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));
       const original=window.setTimeout;window.setTimeout=(fn,delay,...args)=>original(fn,delay===20000?1000:delay,...args);
     });
