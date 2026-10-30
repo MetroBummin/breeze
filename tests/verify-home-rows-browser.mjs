@@ -54,7 +54,7 @@ try{
 
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
       assert.equal(await page.evaluate(()=>load('breeze.home-recommend')),'webnovels');
-      await page.waitForFunction(()=>[...document.querySelectorAll('#casual-rail .webnovel img.cover')].filter(image=>image.naturalWidth===768).length===2);
+      await page.waitForFunction(()=>[...document.querySelectorAll('#casual-rail .webnovel img.cover')].filter(image=>image.naturalWidth===768).length===3);
       assert.equal(await page.locator('#casual-rail [data-longread-id],#casual-rail .rss-card').count(),0);
       // Web-novel cards share the classic card frame.
       const frames=await page.evaluate(()=>{
@@ -77,7 +77,7 @@ try{
       assert.equal(grid.columns,2);assert.equal(grid.sameRow,true);assert.equal(grid.side,true);
       assert.ok(Math.abs(grid.ratio-1.5)<.02,`cover ratio ${grid.ratio}`);
       assert.deepEqual(await page.locator('#casual-rail .webnovel').evaluateAll(nodes=>nodes.map(node=>[node.querySelector('.bt').textContent,node.querySelector('.ko').textContent,node.querySelector('.author').textContent])),
-        [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled']]);
+        [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','마블러스 미스터 펜의 뜻밖의 약혼','R. K. Goff']]);
       const bun=await openPreview(page,'cinnamon-bun');
       assert.equal(bun.kind,'webnovel');
       assert.equal(bun.source,'RavensDagger');
@@ -97,6 +97,12 @@ try{
       assert.equal(sun.source,'InadvisablyCompelled');
       assert.deepEqual(sun.links,['Royal Road 원문','Kindle 판']);
       assert.doesNotMatch(sun.text,/vampire|뱀파이어|흡혈/i);
+      await page.locator('#article-preview .ap-close').click();
+      const penn=await openPreview(page,'mr-penn');
+      assert.equal(penn.title,'The Unexpected Engagement of the Marvelous Mr. Penn');
+      assert.equal(penn.source,'R. K. Goff');
+      assert.equal(penn.rows.length,10,'R. K. Goff: first 10 chapters only');
+      assert.deepEqual(penn.links,['Royal Road 원문'],'Mr. Penn has no monetized link');
       await page.locator('#article-preview .ap-close').click();
 
       await page.locator('#home-recommend-kind [data-kind="articles"]').click();

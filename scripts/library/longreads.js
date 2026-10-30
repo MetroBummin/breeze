@@ -1206,11 +1206,11 @@ async function restoreMissingLongReadCovers(){
    - 'Chasing Sunlight' by InadvisablyCompelled: shows BOTH its Royal Road
      page and its Kindle edition. The intro stays plot-only and uses no
      blood-drinking-creature label (or its Korean equivalents) anywhere.
-   - R. K. Goff's work (first 10 chapters only, credit exactly 'R. K. Goff')
-     is not listed yet. The story it was filed under, Ar'Kendrithyst
-     (royalroad.com/fiction/26727), is written by Arcs, not R. K. Goff, so it
-     stays off Home until the owner confirms which R. K. Goff story was
-     permitted. Any work credited to R. K. Goff must list at most 10 chapters. */
+   - 'The Unexpected Engagement of the Marvelous Mr. Penn' by R. K. Goff
+     (royalroad.com/fiction/54508, author profile royalroad.com/profile/255768):
+     first 10 chapters only, credit exactly 'R. K. Goff', Royal Road link
+     only. (Ar'Kendrithyst, royalroad.com/fiction/26727, is by Arcs, not
+     R. K. Goff, and is not listed.) */
 function webNovelPlaceholderChapters(count){
   // No scraping, no bundled body: each chapter is a '곧 공개' placeholder.
   const chapters=[];
@@ -1239,6 +1239,17 @@ const WEB_NOVELS = [
     kindleUrl:'https://www.amazon.com/dp/B0CPYXGYNW',
     cover:'assets/webnovels/covers/chasing-sunlight.webp', free:true, monetization:'none',
     intro:'하늘에 빛이 없는 세계. 사람들은 끝없는 어둠 속에서 불빛을 지키며 삽니다. 노련한 탐험가 조너선 하이츠는 햇빛을 본 적이 있다고 말하고, 그 빛을 다시 보려고 비행선 엔데버호에 원정대를 태워 아무도 가지 않는 동쪽으로 떠납니다. 쥘 베른의 모험과 러브크래프트의 기이함이 섞인 이야기예요.',
+    chapters:webNovelPlaceholderChapters(10),
+  },
+  {
+    id:'mr-penn',
+    title:'The Unexpected Engagement of the Marvelous Mr. Penn',
+    koTitle:'마블러스 미스터 펜의 뜻밖의 약혼',
+    koSubtitle:'1899년, 신사 도둑과 영문 모를 청첩장',
+    author:'R. K. Goff', credit:'R. K. Goff',
+    royalRoadUrl:'https://www.royalroad.com/fiction/54508/the-unexpected-engagement-of-the-marvelous-mr',
+    cover:'assets/webnovels/covers/mr-penn.webp', free:true, monetization:'none',
+    intro:'1899년 5월, 도시 곳곳의 집에 봉투 백오십 통이 배달됩니다. 레이디 엘리너 서스와 이름난 신사 도둑 라이스 펜의 결혼식 청첩장이에요. 신문은 들썩이고 엘리너의 아버지는 펄쩍 뛰지만, 정작 엘리너는 그 사람을 만난 적도 없다고 말합니다. 신문 투고와 편지로 시작하는 유쾌한 추리 소설이에요. 앞의 10화만 소개합니다.',
     chapters:webNovelPlaceholderChapters(10),
   },
 ];

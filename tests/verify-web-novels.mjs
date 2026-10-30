@@ -28,7 +28,7 @@ function workText(work){
 
 test('web novels: author-permitted, free-forever works, no monetization', () => {
   assert.ok(Array.isArray(WEB_NOVELS), 'WEB_NOVELS must be an array');
-  assert.deepEqual(Array.from(WEB_NOVELS, work => work.id), ['cinnamon-bun', 'chasing-sunlight']);
+  assert.deepEqual(Array.from(WEB_NOVELS, work => work.id), ['cinnamon-bun', 'chasing-sunlight', 'mr-penn']);
   for(const work of WEB_NOVELS){
     assert.equal(work.free, true, `${work.id} must be free:true`);
     assert.equal(work.monetization, 'none', `${work.id} must declare monetization 'none'`);
@@ -53,13 +53,20 @@ test('Royal Road links use the verified fiction ids', () => {
   assert.equal(byId('cinnamon-bun').royalRoadUrl, 'https://www.royalroad.com/fiction/31429/cinnamon-bun');
   assert.equal(byId('chasing-sunlight').royalRoadUrl, 'https://www.royalroad.com/fiction/73475/chasing-sunlight');
   assert.equal(byId('chasing-sunlight').kindleUrl, 'https://www.amazon.com/dp/B0CPYXGYNW');
+  assert.equal(byId('mr-penn').royalRoadUrl, 'https://www.royalroad.com/fiction/54508/the-unexpected-engagement-of-the-marvelous-mr');
 });
 
-/* Ar'Kendrithyst (Royal Road 26727) is by Arcs, not R. K. Goff. The R. K. Goff
-   slot waits for the owner to name the permitted story; when it returns it
-   keeps the rules below. */
-test('R. K. Goff rules: never paired with Ar\'Kendrithyst; at most 10 chapters, exact credit', () => {
+/* The permitted R. K. Goff work is The Unexpected Engagement of the Marvelous
+   Mr. Penn (Royal Road 54508). Ar'Kendrithyst (Royal Road 26727) is by Arcs. */
+test('R. K. Goff: Mr. Penn, first 10 chapters only, exact credit, Royal Road link only', () => {
   assert.doesNotMatch(JSON.stringify(WEB_NOVELS), /Kendrithyst/i);
+  const penn = byId('mr-penn');
+  assert.ok(penn, 'Mr. Penn must exist');
+  assert.equal(penn.title, 'The Unexpected Engagement of the Marvelous Mr. Penn');
+  assert.equal(penn.chapters.length, 10);
+  const urls = Object.values(penn).filter(v => typeof v === 'string' && /^https?:/.test(v));
+  assert.deepEqual(urls, [penn.royalRoadUrl], 'Mr. Penn may expose only its Royal Road link');
+  assert.deepEqual(Array.from(WEB_NOVELS.filter(work => /goff/i.test(work.author + work.credit)), work => work.id), ['mr-penn']);
   for(const work of WEB_NOVELS.filter(work => /goff/i.test(work.author + work.credit))){
     assert.equal(work.credit, 'R. K. Goff');
     assert.equal(work.author, 'R. K. Goff');

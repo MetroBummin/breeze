@@ -174,13 +174,13 @@ order (`compareRecentReading`), so a book is first in both places. Both sections
 4 from 1024px. Book and web-novel covers keep their 2:3 shape so nothing is
 cropped. The floating resume pill and + stay as they were.
 
-웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429) and Chasing
-Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW). Each
-card shows the English title, its Korean reading, and the exact-case author.
-Ids were checked on 2026-10-30 against Royal Road's syndication feed. The
-R. K. Goff slot is empty for now: Ar'Kendrithyst (Royal Road 26727) is by
-Arcs, not R. K. Goff, so it is not shown until the owner names the R. K. Goff
-story that was permitted. Remote-only classics show a Korean title from the
+웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429), Chasing
+Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW), and
+The Unexpected Engagement of the Marvelous Mr. Penn by R. K. Goff (Royal Road
+54508, first 10 chapters only, Royal Road link only). Each card shows the
+English title, its Korean reading, and the exact-case author. Ids and titles
+were checked on 2026-10-30 against Royal Road's syndication feed. Ar'Kendrithyst
+(Royal Road 26727) is by Arcs, not R. K. Goff, and is not listed. Remote-only classics show a Korean title from the
 bundled `CLASSIC_KO_TITLES` map (keyed by English title) when the catalog row
 carries no `koTitle`.
 

@@ -10,6 +10,11 @@
 //     a world without daylight, toward a sunlight nobody believes in. Near
 //     black night, one low warm glow in the east, a line-drawn airship, and a
 //     thin brass chart frame with compass ticks.
+//   - The Unexpected Engagement of the Marvelous Mr. Penn (R. K. Goff): a
+//     comic 1899 mystery that opens with 150 wedding invitations nobody asked
+//     for, then letters to a newspaper. Ivory card stock, oxblood ink, a
+//     double engraved frame like a formal invitation, a sealed envelope with
+//     a wax seal, and the long title set as invitation lines.
 // Author names keep their exact case. The authors' own cover art is never
 // used or imitated; every shape below is drawn here from plain SVG lines.
 // Run: node tools/make-webnovel-covers.mjs (needs Playwright Chromium).
@@ -43,6 +48,10 @@ const cinnamon = {
 };
 const night = {
   ink: '#F1DEB4', brass: '#C7A266', dim: 'rgba(199,162,102,.38)', sky: '#0D111D', skyLow: '#1B2134', glow: '#E9A75A',
+};
+
+const invitation = {
+  ink: '#5A1E24', soft: '#9C6A52', paper: '#F7F0E2', paperDeep: '#ECE0C8', seal: '#8E2A2E',
 };
 
 const COVERS = [
@@ -106,6 +115,45 @@ const COVERS = [
         </g>
       </svg>
       <h1>Chasing<br>Sunlight</h1><div class="rule"></div><div class="author">InadvisablyCompelled</div>`,
+  },
+  {
+    id: 'mr-penn', title: 'The Unexpected Engagement of the Marvelous Mr. Penn', author: 'R. K. Goff',
+    css: `
+      body{background:radial-gradient(ellipse 90% 70% at 50% 45%,${invitation.paper} 0%,${invitation.paper} 55%,${invitation.paperDeep} 100%);color:${invitation.ink};}
+      .frame{position:absolute;inset:50px;border:2px solid ${invitation.soft};}
+      .frame::after{content:"";position:absolute;inset:10px;border:1px solid ${invitation.soft};opacity:.75;}
+      svg{position:absolute;left:0;top:0;width:768px;height:1152px;}
+      .lines{position:absolute;left:0;right:0;top:470px;text-align:center;}
+      .small{font-size:40px;font-weight:500;letter-spacing:.06em;color:${invitation.soft};line-height:1.25;}
+      .big{font-size:92px;font-weight:600;line-height:1.02;letter-spacing:-.01em;font-variation-settings:'opsz' 144;}
+      .lines .small + .big{margin-top:2px;}
+      .lines .big + .small{margin-top:8px;}
+      .author{position:absolute;left:0;right:0;bottom:118px;text-align:center;font-weight:500;
+        font-size:36px;letter-spacing:.08em;color:${invitation.ink};}`,
+    body: `<div class="frame"></div>
+      <svg viewBox="0 0 768 1152" aria-hidden="true">
+        <g fill="none" stroke="${invitation.soft}" stroke-width="2" stroke-linecap="round">
+          ${[[90, 90, 1, 1], [678, 90, -1, 1], [90, 1062, 1, -1], [678, 1062, -1, -1]].map(([x, y, sx, sy]) =>
+            `<path d="M${x} ${y + sy * 46} C${x} ${y + sy * 14} ${x + sx * 14} ${y} ${x + sx * 46} ${y}"/><circle cx="${x + sx * 14}" cy="${y + sy * 14}" r="4" fill="${invitation.soft}"/>`).join('')}
+        </g>
+        <g fill="none" stroke="${invitation.ink}" stroke-width="3" stroke-linejoin="round">
+          <rect x="244" y="190" width="280" height="184" rx="4" fill="${invitation.paper}"/>
+          <path d="M244 190 L384 292 L524 190"/>
+          <path d="M244 374 L352 280 M524 374 L416 280" opacity=".45"/>
+        </g>
+        <circle cx="384" cy="292" r="30" fill="${invitation.seal}"/>
+        <circle cx="384" cy="292" r="21" fill="none" stroke="${invitation.paper}" stroke-width="2" opacity=".75"/>
+        <text x="384" y="303" text-anchor="middle" font-family="F" font-size="30" fill="${invitation.paper}">P</text>
+        <path d="M300 420 H468" stroke="${invitation.soft}" stroke-width="1.5"/>
+        <path d="M384 410 l8 10 -8 10 -8 -10 Z" fill="${invitation.soft}"/>
+      </svg>
+      <div class="lines">
+        <div class="small">The Unexpected</div>
+        <div class="big">Engagement</div>
+        <div class="small">of the</div>
+        <div class="big">Marvelous<br>Mr. Penn</div>
+      </div>
+      <div class="author">R. K. Goff</div>`,
   },
 ];
 
