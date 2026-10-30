@@ -412,6 +412,9 @@ function miniToast(msg){
    1순위: 사전이 주는 원어민 녹음(mp3)   2순위: 기기 내장 음성(TTS)
    앱(Capacitor)으로 옮길 때도 이 함수 안쪽만 교체하면 됩니다.            */
 let curAudio = null, speakGeneration = 0;
+/* 재생 중 표시를 받는 단추. 단어 카드는 다시 그려져도 같은 id를 쓰므로 늦게 온
+   시작/끝 알림이 새 단추에 그대로 닿습니다. */
+let speakButtonId = 'p-speak';
 function nativeSpeechHandler(){
   const webkit=/** @type {any} */ (window).webkit;
   return webkit&&webkit.messageHandlers&&webkit.messageHandlers.breezeSpeech;
@@ -444,7 +447,7 @@ window.addEventListener('breezeNativeSpeech', event=>{
     console.error('[BreezeSpeech]',detail);
   }else console.info('[BreezeSpeech]',detail);
   if(Number(detail.generation)!==speakGeneration) return;
-  const btn=document.getElementById('p-speak');
+  const btn=document.getElementById(speakButtonId);
   if(detail.state==='start') btn&&btn.classList.add('playing');
   if(detail.state==='end'||detail.state==='cancel'||detail.state==='error')
     btn&&btn.classList.remove('playing');
@@ -453,9 +456,23 @@ window.addEventListener('breezeNativeSpeech', event=>{
     showNativeSpeechDiagnostic(detail);
   }
 });
-function speak(text){
-  const btn = document.getElementById('p-speak');
-  const mark = on => btn && btn.classList.toggle('playing', on);
+function speechAvailable(){
+  return !!nativeSpeechHandler() || typeof window.speechSynthesis!=='undefined' && typeof SpeechSynthesisUtterance!=='undefined';
+}
+/* 재생 중인 발음을 바로 끊습니다. 세대를 올려 늦게 온 알림이 다음 카드의
+   단추를 건드리지 못하게 합니다. 재생 중이 아니면 아무 일도 하지 않습니다. */
+function stopSpeech(){
+  const generation=++speakGeneration;
+  document.getElementById(speakButtonId)?.classList.remove('playing');
+  try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
+  try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
+  const native=nativeSpeechHandler();
+  if(native){ try{ native.postMessage({command:'cancel',generation}); }catch(e){} }
+}
+function speak(text,buttonId='p-speak'){
+  if(speakButtonId!==buttonId) document.getElementById(speakButtonId)?.classList.remove('playing');
+  speakButtonId=buttonId;
+  const mark = on => document.getElementById(buttonId)?.classList.toggle('playing', on);
   const generation=++speakGeneration;
   try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}

@@ -36,3 +36,15 @@ Native failures carry a stable stage (`bridge-postMessage`, `audio-session-categ
 - Actual audibility, silent-switch behavior, Bluetooth output, and foreground return remain physical-device checks.
 - Build 108 established the category-stage failure but did not expose the underlying `NSError`, so no single removed option is recorded as the confirmed cause.
 - The next Archive is build 109 so its copied diagnostic can be distinguished from the failed Build 108 result.
+
+## Word flashcards (2026-10-30, #309)
+
+The study-set card (`#study-sets-flashcard`) and the All Words card (`#review-flip`) show one speaker button on the English side. It calls the same `speak()` as the lookup panel, so iOS still goes through `breezeSpeech` and `AVSpeechSynthesizer` with the `.playback` session above. That means the silent switch behaves the same as for lookup pronunciation, and browsers still use Web Speech. No new audio path, dictionary MP3 or TTS service is added.
+
+- Button only. Breeze has no auto-play setting, so a card never speaks by itself.
+- `speak(text, buttonId)` takes the id of the button that shows the playing state. Cards re-render on flip and keep the same id, so late start/end events reach the current button.
+- `stopSpeech()` raises the generation and sends the existing native `cancel` command (or `speechSynthesis.cancel()`). Grading, undo, leaving the study screen and showing a different word all call it. Flipping the same card does not.
+- When neither Web Speech nor the native bridge exists, the button is hidden and the card works as before.
+- A tap on the speaker never flips the card. A drag that starts on it still swipes or scrolls the card and does not play audio.
+
+`tests/verify-study-card-speech-browser.mjs` covers Web Speech, a stubbed native bridge and the no-engine case in both card surfaces. Actual audibility and the silent switch remain physical-device checks.

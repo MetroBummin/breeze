@@ -316,3 +316,16 @@ html:has(#v-memory-set.study-set-test-keyboard),body:has(#v-memory-set.study-set
 @media(prefers-reduced-motion:reduce){.study-set-test-leave-action:active{transform:none;}}
 @media(max-width:359px){.study-set-test-hero,.study-set-test-card{padding:22px 16px;border-radius:22px;}.study-set-test-count{font-size:52px;}.study-set-test-count-total{font-size:18px;}.study-set-test-score{font-size:36px;}}
 @media(max-height:560px){.study-set-test-setup,.study-set-test-result,.study-set-test-session{gap:12px;padding-top:0;margin-top:0;}.study-set-test-card{padding:22px 18px;}.study-set-test-records{max-height:120px;}.study-set-test-hero{padding:20px 18px 16px;}}
+
+/* Card pronunciation: the lookup panel's #p-speak circle (34px visual, 44px
+   touch target per DESIGN.md). On the swipe cards it sits at the bottom centre
+   so the middle of the card stays a flip target; the card reserves its row. */
+.study-card-speak{position:relative;flex:none;align-self:center;width:34px;height:34px;margin:12px auto 0;padding:0;border-radius:50%;border:1px solid var(--speak-line);background:var(--speak-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;}
+.study-card-speak::after{content:'';position:absolute;inset:-5px;border-radius:50%;}
+.study-card-speak[hidden]{display:none;}
+.study-card-speak:hover{background:var(--sky);}
+.study-card-speak.playing{background:var(--blue);color:var(--on-color);border-color:var(--blue);}
+.study-card-speak:focus-visible{outline:2px solid var(--blue);outline-offset:3px;}
+:is(.study-session-stack .study-sets-flashcard,.simple-word-cards #review-flip) .study-card-speak{position:absolute;left:0;right:0;bottom:clamp(14px,3vh,24px);margin:0 auto;}
+.study-session-stack .study-sets-flashcard:has(>.study-card-speak:not([hidden])),.simple-word-cards #review-flip:has(.study-card-speak:not([hidden])){padding-bottom:calc(clamp(14px,3vh,24px) + 54px);}
+@media(prefers-reduced-motion:reduce){.study-card-speak{transition:none;}}

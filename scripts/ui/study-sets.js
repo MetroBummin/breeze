@@ -524,6 +524,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
 }
 function closeStudySets(fromHistory=false){
   if(!studySetsIsOpen())return;
+  studyCardSpeechStop();
   studySetsCloseEditMenu(false,true);
   studySetsUI.swipeClose?.();
   studySetsUI.allWordsList?.dispose();studySetsUI.allWordsList=null;
@@ -858,6 +859,7 @@ function renderStudySets(focus=true){
   ui.shareButton.hidden=!showShare;ui.editButton.hidden=!showMenu;ui.editSurface.hidden=!showShare;ui.editSlot.hidden=!showShare;
   ui.editSlot.classList.toggle('is-pair',showMenu);ui.editSurface.classList.toggle('is-pair',showMenu);
   if(!ui.editOpen){ui.editButton.setAttribute('aria-label','세트 편집');ui.editSurface.style.width=(showMenu?88:44)+'px';ui.editSurface.style.height='44px';ui.editSurface.style.borderRadius='22px';}
+  if(ui.screen!=='study')studyCardSpeechStop();
   ui.swipeClose?.();ui.allWordsList?.dispose();ui.allWordsList=null;ui.body.classList.remove('study-session-body','study-set-test-body');studySetsParkSearch();studySetsParkStars();ui.body.replaceChildren();ui.footer.replaceChildren();ui.footer.hidden=true;ui.back.hidden=['list','directory'].includes(ui.screen);
   const titles={all:'전체 단어',directory:'학습하기',list:'학습 세트',create:'새 학습 세트',excluded:'제외한 단어',rename:'이름 변경',books:'책 추가',delete:'학습 세트 삭제','test-setup':'테스트',test:'테스트','test-result':'결과'};
   ui.title.textContent=titles[ui.screen]||set?.name||'학습 세트';
@@ -1553,7 +1555,7 @@ function studySetsBegin(id,restart,stars){
 function renderStudySetsStudy(set){
   const body=studySetsUI.body,view=BreezeStudySets.view(studySetsUI.state,set.id);
   body.classList.add('study-session-body');
-  const undo=()=>studySetsMutate(state=>BreezeStudySets.undo(state,set.id,Date.now()),()=>{studySetsUI.notice='';});
+  const undo=()=>{studyCardSpeechStop();return studySetsMutate(state=>BreezeStudySets.undo(state,set.id,Date.now()),()=>{studySetsUI.notice='';});};
   const undoButton=studySetsButton('되돌리기',undo,'study-session-undo');undoButton.id='study-sets-study-undo';undoButton.hidden=true;undoButton.disabled=!set.session?.answers.length;
   if(view.status==='complete'){
     const complete=studySetsNode('div','study-sets-complete');
@@ -1571,6 +1573,7 @@ function renderStudySetsStudy(set){
   // Word/meaning only until the owner explicitly approves example display again.
   const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.revealed?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
+  const speaker=document.createElement('button');speaker.id='study-sets-speak';card.append(studyCardSpeaker(speaker,view.card.word));
   const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?meaningText:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
   stack.append(card);body.append(stack);
   const hint=studySetsNode('p','study-session-hint','탭하여 정답 확인');hint.hidden=view.revealed;hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
@@ -1578,13 +1581,13 @@ function renderStudySetsStudy(set){
   const reveal=()=>{if(busy||view.revealed)return;studySetsMutate(state=>BreezeStudySets.reveal(state,set.id,view.token),()=>{studySetsUI.notice='';});};
   const grade=async outcome=>{
     if(busy||studySetsUI.mutating||!view.revealed||!card.isConnected)return;
-    busy=true;undoButton.disabled=true;card.dataset.direction=outcome;
+    busy=true;undoButton.disabled=true;card.dataset.direction=outcome;studyCardSpeechStop();
     await studySetsMutate(state=>BreezeStudySets.grade(state,set.id,view.token,outcome,Date.now()),()=>{studySetsUI.notice='';},null,motion.exit(outcome==='remembered'?1:-1));
     if(card.isConnected){motion.reset();busy=false;undoButton.disabled=!set.session?.answers.length;}
   };
   const motion=studyCardMotion(card,{ready:()=>view.revealed,enabled:()=>!busy&&!studySetsUI.mutating,reveal,grade});
   card.addEventListener('keydown',event=>{
-    if(['Enter',' '].includes(event.key)){event.preventDefault();reveal();}
+    if(['Enter',' '].includes(event.key)&&event.target===card){event.preventDefault();reveal();}
     if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();grade(event.key==='ArrowLeft'?'repeat':'remembered');}
   });
   requestAnimationFrame(()=>{

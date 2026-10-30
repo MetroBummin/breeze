@@ -205,6 +205,11 @@ function renderReviewIntervals(view){
       button.setAttribute('aria-label',`${button.querySelector('span').textContent}: ${button.title}, 다음 복습 ${label}`);
     }
 }
+function reviewCardSpeaker(word){
+  const button=/** @type {HTMLButtonElement} */(document.getElementById('review-speak'));
+  if(!word){studyCardSpeechStop();button.hidden=true;return;}
+  studyCardSpeaker(button,word);
+}
 function renderSimpleWordCards(){
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleCardMotion.reset();
   const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
@@ -230,6 +235,7 @@ function renderSimpleWordCards(){
   /** @type {HTMLButtonElement} */(document.getElementById('simple-word-previous')).disabled=!session.history.length;
   document.getElementById('simple-word-previous').hidden=true;
   for(const id of ['simple-word-next','simple-word-again'])/** @type {HTMLButtonElement} */(document.getElementById(id)).disabled=!record||!simpleWordCards.flipped;
+  reviewCardSpeaker(record?.word);
   if(record){
     document.getElementById('review-expression').textContent=record.word;
     document.getElementById('review-back-expression').textContent=record.word;
@@ -267,7 +273,7 @@ async function gradeSimpleWordCard(outcome){
   simpleStudyBusy=true;
   const token=SimpleStudySession.token(ensureSimpleStudySession()),epoch=simpleStudyEpoch;
   let next;
-  const card=document.getElementById('review-flip');card.dataset.direction=outcome==='remember'?'remembered':'repeat';
+  const card=document.getElementById('review-flip');card.dataset.direction=outcome==='remember'?'remembered':'repeat';studyCardSpeechStop();
   const handoff=simpleCardMotion.exit(outcome==='remember'?1:-1);
   try{
     const current=await loadSimpleStudySession();
@@ -283,7 +289,7 @@ async function gradeSimpleWordCard(outcome){
 }
 async function undoSimpleWordCard(){
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleStudyBusy)return;
-  simpleStudyBusy=true;const epoch=simpleStudyEpoch;
+  simpleStudyBusy=true;const epoch=simpleStudyEpoch;studyCardSpeechStop();
   try{const current=await loadSimpleStudySession(),next=SimpleStudySession.undo(current);
     if(epoch!==simpleStudyEpoch||activeAppView()!=='study'||next===current)return;
     await commitSimpleStudySession(next);
@@ -345,6 +351,7 @@ function renderVocabularyReview(view,focus=true){
   document.getElementById('review-pending').hidden=!!view.card;
   document.getElementById('review-pending').textContent=reviewWaitingText(view);
   const status=document.getElementById('review-status');status.textContent='';
+  reviewCardSpeaker(view.card?.word);
   if(view.card){
     document.getElementById('review-expression').textContent=view.card.word;
     document.getElementById('review-back-expression').textContent=view.card.word;
@@ -471,7 +478,7 @@ document.getElementById('review-more').addEventListener('click',()=>{
   openVocabularyReview(!vocabularyReviewView?.state?.session?.practice,!!journey?.milestone&&journey.done>=journey.target);
 });
 function resetVocabularyReviewSurface(){
-  ++simpleStudyEpoch;simpleCardMotion.reset();
+  ++simpleStudyEpoch;simpleCardMotion.reset();studyCardSpeechStop();
   clearTimeout(simpleStudyTimer);simpleStudyBusy=false;simpleWordCards.flipped=false;
   vocabularyReviewRevealed=false;document.getElementById('review-meaning').hidden=true;
 }
@@ -508,7 +515,7 @@ function flipVocabularyReview(){
 }
 document.getElementById('review-flip').addEventListener('click',flipVocabularyReview);
 document.getElementById('review-flip').addEventListener('keydown',event=>{
-  if(event.key==='Enter'||event.key===' '){event.preventDefault();flipVocabularyReview();}
+  if((event.key==='Enter'||event.key===' ')&&event.target===event.currentTarget){event.preventDefault();flipVocabularyReview();}
 });
 function gradeVocabularyReview(outcome){
   if(!ADVANCED_VOCABULARY_REVIEW_ENABLED)return;

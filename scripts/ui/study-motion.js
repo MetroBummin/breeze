@@ -33,6 +33,43 @@ function studyReleaseVelocity(samples,now){
 function studyCardScroller(card){
   return card.closest('.study-sets-body')||card.closest('#vocabulary-review-page');
 }
+/* Card pronunciation. The English side owns one speaker button; it reuses the
+   lookup panel's speak() path (iOS AVSpeechSynthesizer bridge, Web Speech in
+   browsers), so the audio session and silent-switch behaviour stay the same.
+   Button only: there is no auto-play setting to follow. Moving to another card
+   stops the previous word; flipping the same card does not. */
+const STUDY_CARD_SPEAKER_SVG='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+let studyCardSpeechWord='';
+function studyCardSpeechStop(){
+  if(studyCardSpeechWord&&typeof stopSpeech==='function')stopSpeech();
+  studyCardSpeechWord='';
+}
+function studyCardSpeaker(button,word){
+  const text=String(word||'').trim();
+  if(studyCardSpeechWord&&studyCardSpeechWord!==text)studyCardSpeechStop();
+  if(!button.dataset.studyCardControl){
+    button.dataset.studyCardControl='speak';button.type='button';button.classList.add('study-card-speak');button.innerHTML=STUDY_CARD_SPEAKER_SVG;
+    // studyCardMotion keeps drags from here as card swipes; taps land here.
+    button.addEventListener('click',event=>{
+      event.stopPropagation();
+      const spoken=button.dataset.word||'';
+      if(!spoken||button.hidden||typeof speak!=='function')return;
+      studyCardSpeechWord=spoken;
+      try{speak(spoken,button.id);}catch(error){console.warn('[BreezeSpeech] card',error);}
+    });
+    // Enter/Space activate the button only; arrow keys still grade the card.
+    button.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' ')event.stopPropagation();});
+  }
+  button.dataset.word=text;
+  // No engine (no Web Speech, no native bridge): no dead control on the card.
+  button.hidden=!text||typeof speechAvailable!=='function'||!speechAvailable();
+  button.title='발음 듣기';button.setAttribute('aria-label',`${text} 발음 듣기`);
+  if(studyCardSpeechWord!==text)button.classList.remove('playing');
+  return button;
+}
+function studyCardControlTarget(event){
+  return event.target instanceof Element&&!!event.target.closest('[data-study-card-control]');
+}
 function studyCardMotion(card,{ready,reveal,grade,enabled=()=>true}){
   let x=0,drag=null,stop=null,flight=null,suppress=false;
   const paint=value=>{x=value;card.style.transform=`translateX(${x}px) rotate(${Math.max(-12,Math.min(12,x/35))}deg)`;card.style.setProperty('--study-drag',String(Math.min(1,Math.abs(x)/120)));};
@@ -104,10 +141,13 @@ function studyCardMotion(card,{ready,reveal,grade,enabled=()=>true}){
     const reversed=velocity*x<0&&Math.abs(velocity)>.2;
     if(!canceled&&current.axis==='x'&&ready()&&!reversed&&Math.abs(current.dx)>=36&&Math.abs(x+velocity*130)>=threshold){card.dataset.releaseVelocity=String(velocity);grade(x>0?'remembered':'repeat');}
     else if(current.axis==='x'||x)settle(canceled?0:velocity);
-    else if(!canceled&&event.pointerType==='touch'&&!current.axis&&event.target instanceof Node&&card.contains(event.target)){suppress=true;reveal();}
+    else if(!canceled&&event.pointerType==='touch'&&!current.axis&&event.target instanceof Node&&card.contains(event.target)&&!studyCardControlTarget(event)){suppress=true;reveal();}
   };
   card.addEventListener('pointerup',event=>finish(event,false));card.addEventListener('pointercancel',event=>finish(event,true));
   card.addEventListener('lostpointercapture',event=>{if(event.target===card&&drag?.id===event.pointerId)finish(event,true);});
-  card.addEventListener('click',event=>{if(suppress&&event.detail!==0){suppress=false;event.preventDefault();event.stopImmediatePropagation();return;}reveal();});
+  // A drag that starts on a card control still swipes/scrolls the card; only
+  // a plain tap reaches the control. Capture runs before the control's handler.
+  card.addEventListener('click',event=>{if(suppress&&event.detail!==0&&studyCardControlTarget(event)){suppress=false;event.preventDefault();event.stopPropagation();}},true);
+  card.addEventListener('click',event=>{if(studyCardControlTarget(event))return;if(suppress&&event.detail!==0){suppress=false;event.preventDefault();event.stopImmediatePropagation();return;}reveal();});
   return {exit,reset,settle};
 }
