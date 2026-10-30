@@ -145,9 +145,9 @@ try{
           sameRow:Math.round(tiles[0].top)===Math.round(tiles[1].top),nextRow:tiles[2].top>tiles[0].bottom};
       });
       assert.deepEqual(shelf,{columns:2,sameRow:true,nextRow:true},'내 책 is a 2-column grid');
-      await page.locator('#mybooks-filter [data-mybooks="casuals"]').click();
-      assert.deepEqual(await page.locator('#shelf [data-home-key^="book:"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.homeKey)),['book:newer']);
-      await page.locator('#mybooks-filter [data-mybooks="all"]').click();
+      // 내 책 has no 전체/책/글 filter: only the title and its chevron to the library.
+      assert.equal(await page.locator('#longform .home-kind,#mybooks-filter').count(),0);
+      assert.equal(await page.locator('#longform .sec-head .section-link').count(),1);
       // Wider screens use more columns.
       await page.setViewportSize({width:820,height:1180});
       assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),3);

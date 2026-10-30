@@ -37,9 +37,11 @@ test('추천 is the heading and 고전/웹소설/기사 is its toggle, in that o
   assert.deepEqual(order,['casuals','longform'],'추천 on top, 내 책 below, no 이어 읽기 row');
   assert.match(shellCss,/#v-home :is\(#casuals,#longform\) > \.sec-head\{[^}]*height:30px/);
   assert.match(shellCss,/#v-home #home-recommend-title\{[^}]*color:var\(--settings-ink\)/);
-  // One toggle look for 추천 and 내 책.
-  assert.match(index,/id="mybooks-filter" class="home-kind"/);
+  // 추천 has the only toggle; 내 책 is just its title link, no 전체/책/글 filter.
   assert.match(index,/id="home-recommend-kind" class="home-kind"/);
+  assert.doesNotMatch(index,/mybooks-filter|data-mybooks=|setMyBooksFilter/);
+  assert.equal([...index.matchAll(/class="home-kind"/g)].length,1,'Only 추천 has a toggle');
+  assert.match(index,/<section id="longform">\s*<div class="sec-head">\s*<h2><button class="section-link" type="button" aria-label="내 책 모아보기" onclick="show\('longform'\)">[\s\S]*?<path d="m9 5 7 7-7 7"\/><\/svg><\/button><\/h2>\s*<\/div>\s*<div id="shelf"><\/div>/);
   assert.match(shellCss,/#v-home \.home-kind\{[^}]*border:1px solid var\(--settings-line\)[^}]*border-radius:7px/);
   assert.match(shellCss,/#v-home \.home-kind button\[aria-pressed="true"\]\{[^}]*background:var\(--settings-close\)[^}]*color:var\(--settings-ink\)/);
   assert.match(shellCss,/#v-home \.home-kind button\{[^}]*color:var\(--settings-muted\)[^}]*font:600 12\.5px/);
@@ -81,12 +83,12 @@ test('추천 is a horizontal carousel; 내 책 is a 2-column grid on a phone wit
 });
 
 function harness(){
-  /* 홈 아래줄은 '내 책' 하나로 합쳐졌습니다(#shelf 한 레일 + 전체/책/글 거르개).
+  /* 홈 아래줄은 '내 책' 하나로 합쳐졌습니다(#shelf 한 격자, 거르개 없음).
      가볍게 읽기(home-casual-rail) 섹션은 없어졌고, 고전과 내 책 사이에 웹소설
      줄(#webnovel-rail)이 들어옵니다. */
   const {document}=parseHTML(`<div id="home-recommend-kind" role="group"><button type="button" data-kind="classics" aria-pressed="true">고전</button><button type="button" data-kind="webnovels" aria-pressed="false">웹소설</button><button type="button" data-kind="articles" aria-pressed="false">기사</button></div>
     <div id="casual-rail"></div><p id="home-feed-empty"></p>
-    <section id="longform"><div id="mybooks-filter"><button data-mybooks="all" aria-pressed="true"></button><button data-mybooks="books" aria-pressed="false"></button><button data-mybooks="casuals" aria-pressed="false"></button></div></section>
+    <section id="longform"></section>
     <div id="shelf"></div>
     <span id="longform-cnt"></span><div id="longform-grid"></div><div id="longform-empty" hidden></div>
     <section id="longform-recommend" hidden><h2 id="longform-recommend-title">추천</h2><div id="longform-recommend-rail"></div></section>`);
@@ -105,7 +107,6 @@ function harness(){
     homeRegularTile(card){const tile=document.createElement('div');tile.className='home-regular-tile';tile.append(card);return tile;},
     homeAddTile(card){const tile=document.createElement('div');tile.className='home-add-tile';tile.append(card);return tile;},
     longformAddCard(){const card=document.createElement('button');card.className='bookcard add';return card;},
-    casualAddCard:()=>document.createElement('button'),
     // The 기사 tab paints RSS through this spy; other tabs must never call it.
     appendRssCards(rail){rss.push(rail.id);rail.dataset.rssStamp='articles';const card=document.createElement('article');card.className='casual rss-card';rail.append(card);},
     openLongReadPreviewOrReader(read){opened.push(read.id);},
@@ -118,12 +119,12 @@ function harness(){
     openWebNovelPreview(work){opened.push('webnovel:'+work.id);},
     activeAppView:()=>'home',
   });
-  vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}function localReadAt(id){return readAt[id]||0;}function posOf(id){return positions[id]||{p:0,t:0};}var WEBNOVEL_PROGRESS_KEY="breeze.webnovel-progress.v1",MYBOOKS_FILTER_KEY="breeze.mybooks-filter";',context);
+  vm.runInContext('var libraryFolder="";function currentLibraryFolder(){return libraryFolder;}function localReadAt(id){return readAt[id]||0;}function posOf(id){return positions[id]||{p:0,t:0};}var WEBNOVEL_PROGRESS_KEY="breeze.webnovel-progress.v1";',context);
   for(const name of ['el','fillCard','accessibleLibraryCard','classicForMeta','reconcileHomeCards','compareRecentReading','recentReadingEntry','byRecentlyRead'])
     vm.runInContext(extractFunction(library,name),context);
   vm.runInContext(readFileSync(resolve(root,'scripts/library/longreads.js'),'utf8'),context);
   context.importClassic=classic=>{books.unshift({id:'imported-'+classic.id,classicId:classic.id,kind:'epub',title:classic.title,author:classic.author});return Promise.resolve();};
-  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','webNovelProgress','webNovelChapterAt','webNovelProgressLabel','webNovelCard','renderHomeWebNovels','renderHomeArticles','myBooksEntries','myBooksFilter','setMyBooksFilter','syncMyBooksFilter','renderHome','renderLongformRecommend','renderLongformLibrary'])
+  for(const name of ['homeRecommendCatalogOwned','homeRecommendKind','homeRecommendReads','offeredLongReads','longReadOfferStamp','homeRecommendClassics','syncHomeRecommendToggle','setHomeRecommendKind','clearHomeRssCards','homeRecommendLongReadCard','homeRecommendClassicCard','openHomeRecommendClassic','renderHomeRecommendBooks','webNovelProgress','webNovelChapterAt','webNovelProgressLabel','webNovelCard','renderHomeWebNovels','renderHomeArticles','myBooksEntries','renderHome','renderLongformRecommend','renderLongformLibrary'])
     vm.runInContext(extractFunction(library,name),context);
   return {context,books,opened,rss,store,document};
 }
@@ -188,7 +189,7 @@ test('the toggle switches the one rail between 고전, 웹소설 and 기사',()=
   assert.equal(rss.length,1);
 });
 
-test('내 책 puts opened, unfinished books first, then the rest by when they were opened',()=>{
+test('내 책 shows books and articles together: opened, unfinished first, then the rest by when they were opened',()=>{
   const {context:c,books,document,store}=harness();
   books.push({id:'old',kind:'pdf',title:'Old',addedAt:5},{id:'new',kind:'article',title:'New',addedAt:1},
     {id:'done',kind:'epub',title:'Done',addedAt:2},{id:'never',kind:'epub',title:'Never',addedAt:9},{id:'never2',kind:'epub',title:'Never 2',addedAt:3});
@@ -198,9 +199,11 @@ test('내 책 puts opened, unfinished books first, then the rest by when they we
   assert.equal(document.getElementById('continue'),null,'No separate 이어 읽기 row');
   const order=()=>[...document.querySelectorAll('#shelf [data-book-id]')].map(node=>node.dataset.bookId);
   assert.deepEqual(order(),['new','old','done','never','never2']);
+  // A filter value left over from the old 전체/책/글 toggle is ignored.
   store.set('breeze.mybooks-filter','books');
   c.renderHome();
-  assert.deepEqual(order(),['old','done','never','never2']);
+  assert.deepEqual(order(),['new','old','done','never','never2']);
+  assert.equal(document.querySelectorAll('#shelf > .home-add-tile > .bookcard.add').length,1,'One 파일 추가 tile');
 });
 
 test('the rail shows friendly Korean titles while ids and English titles still match ownership',()=>{

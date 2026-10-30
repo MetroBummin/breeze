@@ -254,13 +254,6 @@ function casualCard(book, current, showProgress=true, canManage=true){
   return wireBookCard(card, book, canManage);
 }
 
-function casualAddCard(){
-  const card = el('div', 'casual add');
-  card.innerHTML = `<div class="thumb"><div class="plus">+</div>
-    <div class="lbl">기사 URL<br>또는 붙여넣기</div></div>`;
-  card.onclick = () => openAddModal('casual');
-  return card;
-}
 /* 서버에만 있는 원서. 짧은 글은 저절로 오가므로 여기 나오지 않습니다.
    "이 기기에서만 지운" 책도 나오지 않습니다 — 서버 사본을 남기기로 하고 서가에서
    치운 것인데, 흐린 카드로 도로 올라오면 지운 적이 없는 것과 같습니다. */
@@ -670,29 +663,25 @@ function renderHomeArticles(rail){
   if(typeof appendRssCards==='function')appendRssCards(rail);
 }
 /* ================= 내 책 =================
-   추천 아래 한 칸입니다. 책과 글이 같은 격자에 깔리고, 전체/책/글 거르개로
-   한쪽만 볼 수 있습니다. 순서는 이 기기에서 연 시각입니다: 열어 보고 아직
+   추천 아래 한 칸입니다. 책과 글이 거르개 없이 같은 격자에 함께 깔립니다.
+   순서는 이 기기에서 연 시각입니다: 열어 보고 아직
    다 읽지 않은 것이 맨 앞(가장 최근 것부터), 그다음 나머지를 최근에 연
    순서로, 한 번도 열지 않은 것은 넣은 순서로 둡니다. 따로 '이어 읽기' 줄을
    두지 않아도 읽던 책이 첫 칸에 있습니다. 머리글 링크는 서재(#v-longform)로
    갑니다. */
-function myBooksEntries(filter){
+function myBooksEntries(){
   const entries=[];
   const add=(spec,readAt,addedAt,progress)=>entries.push({spec,readAt:Number(readAt)||0,addedAt:Number(addedAt)||0,progress:Number(progress)||0});
-  if(filter!=='casuals'){
-    for(const book of books.filter(book=>!isCasual(book)))add(homeBookSpec(book,false),localReadAt(book.id),book.addedAt,posOf(book.id).p);
-    for(const row of serverOnlyBooks())
-      add({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')},
-        row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
-    if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())
-      add({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')},0,0,0);
-  }
-  if(filter!=='books'){
-    for(const book of books.filter(isCasual))add(homeBookSpec(book,true),localReadAt(book.id),book.addedAt,posOf(book.id).p);
-    for(const row of serverOnlyCasuals())
-      add({key:'cloudcasual:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')},
-        row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
-  }
+  for(const book of books.filter(book=>!isCasual(book)))add(homeBookSpec(book,false),localReadAt(book.id),book.addedAt,posOf(book.id).p);
+  for(const row of serverOnlyBooks())
+    add({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')},
+      row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
+  if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())
+    add({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')},0,0,0);
+  for(const book of books.filter(isCasual))add(homeBookSpec(book,true),localReadAt(book.id),book.addedAt,posOf(book.id).p);
+  for(const row of serverOnlyCasuals())
+    add({key:'cloudcasual:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')},
+      row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
   entries.sort(compareRecentReading);
   return entries.map(entry=>entry.spec);
 }
@@ -705,36 +694,10 @@ function renderHome(){
   if(kind==='classics')renderHomeRecommendBooks(rail);
   else if(kind==='webnovels')renderHomeWebNovels(rail);
   else renderHomeArticles(rail);
-  syncMyBooksFilter();
-  const filter=myBooksFilter(),shelf=document.getElementById('shelf');
-  const specs=myBooksEntries(filter);
-  specs.push({key:'add',stamp:filter,create:()=>homeAddTile(filter==='casuals'?casualAddCard():longformAddCard(),filter==='casuals'?'글 추가':'파일 추가')});
+  const shelf=document.getElementById('shelf');
+  const specs=myBooksEntries();
+  specs.push({key:'add',stamp:'',create:()=>homeAddTile(longformAddCard(),'파일 추가')});
   reconcileHomeCards(shelf,specs);
-}
-
-/* ================= '내 책' 거르개 =================
-   한 줄에 책과 글이 섞여 있으니, 보고 싶은 쪽만 고르는 작은 띠를 둡니다.
-   전체(기본)·책·글 셋뿐이고, 고른 값은 localStorage 에 남습니다. 모양은
-   추천 줄의 고전/웹소설/기사 띠(.home-kind)와 같습니다. */
-const MYBOOKS_FILTER_KEY='breeze.mybooks-filter';
-function myBooksFilter(){
-  const value=load(MYBOOKS_FILTER_KEY,'all');
-  return value==='books'||value==='casuals'?value:'all';
-}
-function setMyBooksFilter(next){
-  const value=next==='books'||next==='casuals'?next:'all';
-  if(value===myBooksFilter()){syncMyBooksFilter();return;}
-  save(MYBOOKS_FILTER_KEY,value);
-  syncMyBooksFilter();
-  if(typeof activeAppView==='function'&&activeAppView()==='home')renderHome();
-}
-function syncMyBooksFilter(){
-  const current=myBooksFilter();
-  document.querySelectorAll('#mybooks-filter button').forEach(button=>{
-    const on=button.getAttribute('data-mybooks')===current;
-    button.setAttribute('aria-pressed',on?'true':'false');
-    button.classList.toggle('on',on);
-  });
 }
 
 /* 두 라이브러리는 같은 카드를 격자에만 다시 깔 뿐입니다. 홈은 "무엇을 읽지"에

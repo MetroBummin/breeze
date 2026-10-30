@@ -165,8 +165,8 @@ classics catalog. Stored values migrate: `'articles'` stays 기사, the old
 `'books'` and anything unknown open 고전. Reading a 기사 card still saves it
 through the preview CTA (`commitArticleDraft`), so it then appears in 내 책.
 
-Home order is 추천, then 내 책 (books and 글 together with a 전체/책/글
-filter). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
+Home order is 추천, then 내 책 (books and 글 together in one grid, with no
+filter; the header is just the 내 책 title and its chevron to `#v-longform`). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is ordered by
 this device's open times: opened, unfinished items first (most recent first),
 then the rest by when they were opened, then never-opened items by when they
 were added. The 내 책 page (`#v-longform`) and the 글 page use the same
@@ -187,6 +187,14 @@ rail rules (`display:flex; overflow-x:auto; scroll-snap-type:x`), and only
 고전/웹소설/기사 toggle, the three web novels and their new covers
 (`assets/webnovels/covers/*.webp`), and article→내 책 saving
 (`commitArticleDraft`).
+
+#### 내 책 filter removed (2026-10-30)
+
+Per owner feedback, the 전체/책/글 toggle next to the 내 책 header is gone.
+내 책 always shows every book and article together, in `compareRecentReading`
+order, with a single 파일 추가 tile at the end. The 추천 toggle is now the only
+`.home-kind` control on Home. The old `breeze.mybooks-filter` value is no
+longer read; a stored value is simply ignored.
 
 웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429), Chasing
 Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW), and

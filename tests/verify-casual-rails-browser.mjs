@@ -89,17 +89,10 @@ try{
         assert.deepEqual(dimensions[0],dimensions[1],`${engine.name()} ${width}px tile mismatch`);
         assert.deepEqual(dimensions[2],dimensions[3],`${engine.name()} ${width}px cover mismatch`);
       }
-      // 전체 거르개에서 책(saved-long)과 글(saved-short)이 한 줄에 함께 보입니다.
+      // 내 책에는 거르개가 없고, 책(saved-long)과 글(saved-short)이 한 격자에 함께 보입니다.
+      assert.equal(await page.locator('#mybooks-filter,[data-mybooks]').count(),0);
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
       assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),1);
-      // 책 거르개: 긴 글만. 글 거르개: 가벼운 글만.
-      await page.evaluate(()=>setMyBooksFilter('books'));
-      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),1);
-      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),0);
-      await page.evaluate(()=>setMyBooksFilter('casuals'));
-      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved book'}).count(),0);
-      assert.equal(await page.locator('#shelf .home-regular-title').filter({hasText:'Saved story'}).count(),1);
-      await page.evaluate(()=>setMyBooksFilter('all'));
       assert.equal(await page.locator('#shelf .home-cover-meta').filter({hasText:'Author'}).count(),1);
       assert.equal(await page.locator('#shelf [data-home-key="book:saved-long"] .bookcard.editorial-cover .cover-art').count(),1);
       const coverText=await page.locator('#shelf [data-home-key="book:saved-long"] .bookcard').evaluate(card=>{

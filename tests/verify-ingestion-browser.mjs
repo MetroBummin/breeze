@@ -237,7 +237,7 @@ try{
    assert.equal(await page.evaluate(async()=>{
      const book=books.find(item=>item.sourceUrl==='https://content.example/reddit-article');
      if(!book||book.transient||!(await bookAll()).some(item=>item.id===book.id))return 'not saved';
-     save('breeze.mybooks-filter','all');renderHome();
+     renderHome();
      return document.querySelector(`#shelf [data-home-key="book:${book.id}"]`)?'shelf':'missing from 내 책';
    }),'shelf');
    await page.evaluate(async entry=>{
