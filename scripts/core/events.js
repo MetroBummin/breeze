@@ -238,20 +238,18 @@ function eventFlushSoon(delay){
     eventTimer=setTimeout(()=>{eventTimer=0;eventFlush();},delay);
   }catch(e){eventFlush();}
 }
-function eventFlush(){
-  if(eventFlushing||!eventQueue.length)return Promise.resolve();
-  const batch=eventQueue.splice(0,8);
+function eventConfig(){
   let url='',key='';
   try{
     const config=globalThis.BREEZE_CONFIG||{};
     url=typeof config.SB_URL==='string'?config.SB_URL:(typeof SB_URL==='string'?SB_URL:'');
     key=typeof config.SB_KEY==='string'?config.SB_KEY:(typeof SB_KEY==='string'?SB_KEY:'');
-  }catch(e){return Promise.resolve();}
-  if(!url||!key||typeof fetch!=='function')return Promise.resolve();
-  eventFlushing=true;
-  // Only the internal flush awaits the async token lookup; trackEvent() stays
-  // fire-and-forget so callers never block on getSession().
-  return Promise.resolve().then(()=>eventAccessToken()).then(token=>fetch(url.replace(/\/$/,'')+'/rest/v1/product_events',{
+  }catch(e){return null;}
+  if(!url||!key||typeof fetch!=='function')return null;
+  return {url:url.replace(/\/$/,''),key:key};
+}
+function eventDispatch(url,key,token,batch){
+  return fetch(url+'/rest/v1/product_events',{
     method:'POST',
     keepalive:true,
     headers:{
@@ -261,7 +259,39 @@ function eventFlush(){
       Prefer:'return=minimal'
     },
     body:JSON.stringify(batch)
-  })).then(response=>{
+  });
+}
+// eventFlush() normally resolves the bearer via the async getSession()-preferred
+// eventAccessToken() so a signed-in reader's JWT reaches the server. On the
+// pagehide/unload path we cannot afford to await a microtask: the event loop may
+// never resume to dispatch the keepalive fetch, dropping the final queued event
+// (commonly app_open). Passing unload=true takes a synchronous fast path that
+// resolves the token from the synchronous eventStoredToken() (falling back to
+// the anon key) and fires the fetch in the same tick, so the last event is not
+// lost during teardown.
+function eventFlush(unload){
+  if(eventFlushing||!eventQueue.length)return Promise.resolve();
+  const batch=eventQueue.splice(0,8);
+  const cfg=eventConfig();
+  if(!cfg)return Promise.resolve();
+  if(unload){
+    // Synchronous dispatch: build the bearer from the already-synchronous
+    // stored token (or the anon key) and send immediately, with no await.
+    eventFlushing=true;
+    try{
+      const token=eventStoredToken();
+      const result=eventDispatch(cfg.url,cfg.key,token,batch);
+      eventNoteSent(batch.length);
+      const done=result&&typeof result.then==='function'
+        ?result.then(()=>{}).catch(()=>{})
+        :Promise.resolve();
+      return done.then(()=>{eventFlushing=false;}).catch(()=>{eventFlushing=false;});
+    }catch(e){eventFlushing=false;return Promise.resolve();}
+  }
+  eventFlushing=true;
+  // Only the internal flush awaits the async token lookup; trackEvent() stays
+  // fire-and-forget so callers never block on getSession().
+  return Promise.resolve().then(()=>eventAccessToken()).then(token=>eventDispatch(cfg.url,cfg.key,token,batch)).then(response=>{
     eventFlushing=false;
     if(response&&response.ok){
       eventNoteSent(batch.length);
@@ -293,6 +323,6 @@ function trackEvent(name,props){
 try{captureLandingUtm();}catch(e){}
 try{
   if(typeof window!=='undefined'&&window.addEventListener){
-    window.addEventListener('pagehide',()=>{try{eventFlush();}catch(e){}});
+    window.addEventListener('pagehide',()=>{try{eventFlush(true);}catch(e){}});
   }
 }catch(e){}

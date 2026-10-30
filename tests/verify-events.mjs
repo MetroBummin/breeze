@@ -180,6 +180,43 @@ test('a logged-out reader still inserts with the anon key and no user_id',async(
   assert.equal(body[0].referrer,undefined);
 });
 
+test('a pagehide flush dispatches synchronously from the stored token',async()=>{
+  // getSession() would resolve a JWT, but the unload path must NOT await it:
+  // if it did, the keepalive fetch would be deferred to a microtask that may
+  // never run during teardown. We record whether getSession was consulted and
+  // assert the fetch fired in the same synchronous tick.
+  let sessionAsked=false;
+  const sb={auth:{getSession:async()=>{sessionAsked=true;return {data:{session:{access_token:'async-jwt'}}};}}};
+  const {context,memory,calls}=install({sb});
+  // Seed a synchronous localStorage session token (sb-<ref>-auth-token).
+  memory.set('sb-example-auth-token',JSON.stringify({access_token:'stored-jwt',expires_at:Math.floor(Date.now()/1000)+3600}));
+  context.trackEvent('app_open');
+  // Drain the debounced timer so the event is queued, then flush as on unload.
+  const pending=context.eventFlush(true);
+  // Synchronous: the fetch is recorded before any awaited microtask resumes.
+  assert.equal(calls.length,1);
+  assert.equal(sessionAsked,false);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer stored-jwt');
+  assert.equal(calls[0].init.keepalive,true);
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].name,'app_open');
+  assert.equal(body[0].user_id,undefined);
+  await pending;
+});
+
+test('a pagehide flush with no stored token falls back to the anon key synchronously',async()=>{
+  let sessionAsked=false;
+  const sb={auth:{getSession:async()=>{sessionAsked=true;return {data:{session:{access_token:'async-jwt'}}};}}};
+  const {context,calls}=install({sb});
+  context.trackEvent('app_open');
+  const pending=context.eventFlush(true);
+  assert.equal(calls.length,1);
+  assert.equal(sessionAsked,false);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer anon-key');
+  assert.equal(calls[0].init.keepalive,true);
+  await pending;
+});
+
 test('the app wires each funnel event through the logger',()=>{
   const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
   const index=read('index.html');
