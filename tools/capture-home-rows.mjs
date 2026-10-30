@@ -1,6 +1,8 @@
 // Captures the Home rows QA screenshots into docs/qa/home-rows-20261030/.
 // The 기사 tab shows the live public RSS recommendations, so this needs network.
 // Run: node tools/capture-home-rows.mjs
+// OUT=docs/qa/<dir> writes somewhere else (the #311 rail shots use
+// docs/qa/home-rail-20261030).
 import {mkdirSync, readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve, extname} from 'node:path';
@@ -8,7 +10,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium, webkit} from 'playwright';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const out = resolve(root, 'docs/qa/home-rows-20261030');
+const out = resolve(root, process.env.OUT || 'docs/qa/home-rows-20261030');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.png':'image/png','.woff2':'font/woff2','.txt':'text/plain'};
 const server = createServer((req, res) => {
   try{
@@ -65,7 +67,7 @@ async function setKind(page, kind){
 // Per device: the full Home on each 추천 tab, then the web-novel sheet.
 const browser = await (process.env.BROWSER === 'webkit' ? webkit : chromium).launch();
 try{
-  for(const [device, viewport, dark] of [['iphone', {width:390, height:844}, false], ['iphone', {width:390, height:844}, true], ['ipad', {width:820, height:1180}, false]]){
+  for(const [device, viewport, dark] of [['iphone', {width:390, height:844}, false], ['iphone', {width:390, height:844}, true], ['ipad', {width:820, height:1180}, false], ['ipad', {width:820, height:1180}, true]]){
     const context = await browser.newContext({viewport, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light', serviceWorkers: 'block', locale: 'ko-KR'});
     await context.addInitScript(isDark => {
       localStorage.setItem('breeze.onboarding.v1', JSON.stringify('done'));

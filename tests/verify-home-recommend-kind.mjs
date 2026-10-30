@@ -62,14 +62,18 @@ test('book captions sit under the picture inside the article card box',()=>{
   assert.doesNotMatch(block,/#[0-9a-fA-F]{3,8}/,'Book rail styling introduces a new color');
 });
 
-test('Home 추천 and 내 책 are 2-column grids on a phone with whole 2:3 covers',()=>{
-  assert.match(homeCss,/#v-home :is\(#casual-rail,#shelf\)\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/@media \(min-width:700px\)\{\s*#v-home :is\(#casual-rail,#shelf\)\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/@media \(min-width:1024px\)\{\s*#v-home :is\(#casual-rail,#shelf\)\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book \.cover\{[^}]*height:calc\(100cqw \* 1\.5\)/);
-  assert.match(homeCss,/#v-home #casual-rail > \.home-recommend-book\{[^}]*container-type:inline-size/);
-  const grid=homeCss.slice(homeCss.indexOf('/* ---- Home grids'),homeCss.indexOf('/* Quiet typographic jackets'));
-  assert.doesNotMatch(grid,/:\s*#[0-9a-fA-F]{3,8}\b/,'Home grid introduces a new color');
+test('Home 추천 is a sideways rail and 내 책 is a 2-column grid',()=>{
+  assert.match(homeCss,/#v-home #shelf\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(homeCss,/@media \(min-width:700px\)\{\s*#v-home #shelf\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(homeCss,/@media \(min-width:1024px\)\{\s*#v-home #shelf\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  // No rule turns the 추천 rail into a grid again.
+  assert.doesNotMatch(homeCss,/#v-home :is\([^)]*#casual-rail[^)]*\)\{display:grid/);
+  assert.doesNotMatch(homeCss,/#v-home #casual-rail\{[^}]*display:grid/);
+  assert.match(homeCss,/#v-home #casual-rail\{[^}]*overflow-y:hidden[^}]*overscroll-behavior-x:contain/);
+  assert.match(homeCss,/> \.home-recommend-book \.ko:empty\{display:none;\}/);
+  const block=homeCss.slice(homeCss.indexOf('/* ---- Home: 추천 is a sideways rail'),homeCss.indexOf('/* Quiet typographic jackets'));
+  assert.ok(block.length>0);
+  assert.doesNotMatch(block,/:\s*#[0-9a-fA-F]{3,8}\b/,'Home layout introduces a new color');
 });
 
 function harness(){

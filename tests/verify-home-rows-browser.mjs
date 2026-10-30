@@ -1,4 +1,4 @@
-// Home: 추천 (고전 / 웹소설 / 기사) on top, 내 책 below, both 2-column grids on a phone.
+// Home: 추천 (고전 / 웹소설 / 기사) on top as a sideways rail, 내 책 below as a 2-column grid.
 // Deterministic: every request outside the local server is aborted.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -56,26 +56,43 @@ try{
       assert.equal(await page.evaluate(()=>load('breeze.home-recommend')),'webnovels');
       await page.waitForFunction(()=>[...document.querySelectorAll('#casual-rail .webnovel img.cover')].filter(image=>image.naturalWidth===768).length===3);
       assert.equal(await page.locator('#casual-rail [data-longread-id],#casual-rail .rss-card').count(),0);
-      // Web-novel cards share the classic card frame.
+      // Web-novel cards are the same size as classic cards (one more caption line).
       const frames=await page.evaluate(()=>{
         const size=node=>{const rect=node.getBoundingClientRect();return [Math.round(rect.width),Math.round(rect.height)];};
-        return size(document.querySelector('#casual-rail .webnovel .cover'));
+        return size(document.querySelector('#casual-rail .webnovel'));
       });
       await page.locator('#home-recommend-kind [data-kind="classics"]').click();
       await page.waitForFunction(()=>{const image=document.querySelector('#casual-rail [data-longread-id] img.cover');return image&&!image.hidden&&image.naturalWidth>0;});
-      const classicFrame=await page.locator('#casual-rail [data-longread-id] .cover').first().evaluate(node=>{const rect=node.getBoundingClientRect();return [Math.round(rect.width),Math.round(rect.height)];});
-      assert.deepEqual(frames,classicFrame,'Web-novel covers use the classic cover frame');
+      const classicFrame=await page.locator('#casual-rail [data-longread-id]').first().evaluate(node=>{const rect=node.getBoundingClientRect();return [Math.round(rect.width),Math.round(rect.height)];});
+      assert.deepEqual(frames,classicFrame,'Web-novel cards use the classic card size');
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
 
-      // Two columns on a phone; covers keep their 2:3 shape (nothing cropped).
-      const grid=await page.evaluate(()=>{
-        const cards=[...document.querySelectorAll('#casual-rail .webnovel')].map(card=>card.getBoundingClientRect());
-        const cover=document.querySelector('#casual-rail .webnovel .cover').getBoundingClientRect();
-        return {sameRow:Math.round(cards[0].top)===Math.round(cards[1].top),side:cards[1].left>cards[0].right,ratio:cover.height/cover.width,
-          columns:getComputedStyle(document.getElementById('casual-rail')).gridTemplateColumns.split(' ').length};
+      // One sideways row on a phone, cards the size of the classic rail cards.
+      const rail=await page.evaluate(()=>{
+        const node=document.getElementById('casual-rail');
+        const cards=[...node.querySelectorAll('.webnovel')].map(card=>card.getBoundingClientRect());
+        const style=getComputedStyle(node);
+        return {display:style.display,overflowX:style.overflowX,overflowY:style.overflowY,
+          oneRow:cards.every(card=>Math.round(card.top)===Math.round(cards[0].top)),
+          side:cards[1].left>cards[0].right,scrolls:node.scrollWidth>node.clientWidth,
+          width:Math.round(cards[0].width),expected:Math.round(innerWidth*.61)};
       });
-      assert.equal(grid.columns,2);assert.equal(grid.sameRow,true);assert.equal(grid.side,true);
-      assert.ok(Math.abs(grid.ratio-1.5)<.02,`cover ratio ${grid.ratio}`);
+      assert.deepEqual({display:rail.display,overflowX:rail.overflowX,overflowY:rail.overflowY,oneRow:rail.oneRow,side:rail.side,scrolls:rail.scrolls},
+        {display:'flex',overflowX:'auto',overflowY:'hidden',oneRow:true,side:true,scrolls:true},'추천 is a sideways rail');
+      assert.ok(Math.abs(rail.width-rail.expected)<=1,`card width ${rail.width} vs 61vw ${rail.expected}`);
+      // A sideways scroll moves the rail; the page stays where it was.
+      const moved=await page.evaluate(async()=>{
+        const node=document.getElementById('casual-rail'),before=scrollY;
+        node.scrollBy({left:200,behavior:'instant'});
+        await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
+        return {left:node.scrollLeft>0,page:scrollY===before};
+      });
+      assert.deepEqual(moved,{left:true,page:true});
+      // Switching tabs starts the rail at its first card.
+      await page.locator('#home-recommend-kind [data-kind="classics"]').click();
+      assert.equal(await page.evaluate(()=>document.getElementById('casual-rail').scrollLeft),0);
+      await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
+      await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .webnovel').length===3);
       assert.deepEqual(await page.locator('#casual-rail .webnovel').evaluateAll(nodes=>nodes.map(node=>[node.querySelector('.bt').textContent,node.querySelector('.ko').textContent,node.querySelector('.author').textContent])),
         [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','마블러스 미스터 펜의 뜻밖의 약혼','R. K. Goff']]);
       const bun=await openPreview(page,'cinnamon-bun');
@@ -142,6 +159,7 @@ try{
       // Wider screens use more columns.
       await page.setViewportSize({width:820,height:1180});
       assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),3);
+      assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('casual-rail')).display),'flex','추천 stays a rail on iPad');
       await page.setViewportSize({width:1180,height:820});
       assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('shelf')).gridTemplateColumns.split(' ').length),4);
       await page.setViewportSize({width:390,height:844});
@@ -151,6 +169,6 @@ try{
       assert.equal(await page.locator('#home-resume-title').textContent(),'Finished book','The pill opens the last opened book');
       await page.close();
     }finally{await browser.close();}
-    console.log(`${engine.name()}: 추천 grid with 고전/웹소설/기사, web-novel sheets, 내 책 grid in recent order passed`);
+    console.log(`${engine.name()}: 추천 rail with 고전/웹소설/기사, web-novel sheets, 내 책 grid in recent order passed`);
   }
 }finally{server.close();}

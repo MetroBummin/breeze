@@ -170,9 +170,17 @@ filter). There is no separate 이어 읽기 or 가볍게 읽기 row. 내 책 is 
 this device's open times: opened, unfinished items first (most recent first),
 then the rest by when they were opened, then never-opened items by when they
 were added. The 내 책 page (`#v-longform`) and the 글 page use the same
-order (`compareRecentReading`), so a book is first in both places. Both sections are grids: 2 columns on a phone, 3 from 700px,
-4 from 1024px. Book and web-novel covers keep their 2:3 shape so nothing is
-cropped. The floating resume pill and + stay as they were.
+order (`compareRecentReading`), so a book is first in both places.
+
+추천 is one sideways rail (`#casual-rail`), the same rail and card size as
+before #307: about 61vw per card on a phone, 38vw from 761px, four across from
+900px. All three tabs use it, and switching tabs scrolls it back to the first
+card. The rail scrolls on the x axis only (`overflow-y:hidden`,
+`overscroll-behavior-x:contain`), so a vertical swipe on a card scrolls the
+page. Web-novel cards add a Korean-reading line under the title inside the same
+card box. 내 책 (`#shelf`) is a grid: 2 columns on a phone, 3 from 700px,
+4 from 1024px, with 2:3 covers. (#307 briefly made 추천 a grid too; #311 put
+the rail back.) The floating resume pill and + stay as they were.
 
 웹소설 lists Cinnamon Bun by RavensDagger (Royal Road 31429), Chasing
 Sunlight by InadvisablyCompelled (Royal Road 73475, Kindle B0CPYXGYNW), and

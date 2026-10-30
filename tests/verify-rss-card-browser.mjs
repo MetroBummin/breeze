@@ -96,18 +96,16 @@ try{
         refreshFeedRails();
       });
       await page.waitForFunction(()=>document.querySelectorAll('#casual-rail .rss-card:not([hidden])').length>=6);
-      // 추천 is a grid (docs/decisions/010): later cards wrap into rows below
-      // the first instead of hiding behind a horizontal scroll.
-      const homeGrid=await page.evaluate(()=>{
-        const rail=document.getElementById('casual-rail'),box=rail.getBoundingClientRect();
+      // 추천 is a sideways rail (docs/decisions/010): later cards sit to the
+      // right on the same row and are reached by scrolling the rail.
+      const homeScroll=await page.evaluate(()=>{
+        const rail=document.getElementById('casual-rail');
         const cards=[...rail.querySelectorAll('.rss-card:not([hidden])')].map(card=>card.getBoundingClientRect());
-        const last=cards.at(-1);
-        return {overflow:rail.scrollWidth-rail.clientWidth,
-          inside:cards.every(card=>card.left>=box.left-1&&card.right<=box.right+1),
-          below:last.top>cards[0].bottom};
+        rail.scrollLeft=rail.scrollWidth;
+        return {scrollLeft:rail.scrollLeft,oneRow:cards.every(card=>Math.round(card.top)===Math.round(cards[0].top))};
       });
-      assert.deepEqual({overflow:homeGrid.overflow<=1,inside:homeGrid.inside,below:homeGrid.below},
-        {overflow:true,inside:true,below:true},`Home rail did not lay later cards out in grid rows ${JSON.stringify(homeGrid)}`);
+      assert(homeScroll.scrollLeft>100,'Home rail did not reach later cards');
+      assert.equal(homeScroll.oneRow,true,'Home rail wrapped cards into rows');
       // Refresh must reset a later card, including after DOM replacement/snap.
       await page.evaluate(async()=>{
         loadBooks=async()=>{};
