@@ -272,7 +272,8 @@ function longReadSceneKey(book,image){
 /* Holmes stays one block, in the order printed on originalTitle. A later
    book cannot land between them. Dated books from before the first Holmes
    story stay in front; later books and books without a year follow the block.
-   Same year keeps title order, which puts Scandal ahead of the Red-Headed League. */
+   Same year keeps title order, which puts Scandal ahead of the Red-Headed League.
+   Frankenstein is then moved to the front. Every other book keeps this order. */
 function classicPublicationYear(read){
   const match=String(read&&read.originalTitle||'').match(/\((\d{4})\)/);
   return match?Number(match[1]):null;
@@ -301,7 +302,10 @@ function orderClassicReads(reads){
     if(anchor!=null&&published!=null&&published<anchor) before.push(read);
     else after.push(read);
   }
-  return before.concat(holmes, after);
+  const ordered=before.concat(holmes, after);
+  const first=ordered.findIndex(read=>read.id==='frankenstein');
+  if(first<=0) return ordered;
+  return [ordered[first],...ordered.slice(0,first),...ordered.slice(first+1)];
 }
 /* A catalog entry replaces the bundled copy, so a later server edit of the
    text or hook does not wait for an app release. Offline, the local file

@@ -177,6 +177,21 @@ test('고전 is the default tab; while 기사 is dormant a saved 기사 or 책 c
   assert.equal(rss.length,0,'Home never asks RSS while 기사 is dormant');
 });
 
+test('a saved 웹소설 choice opens 고전 on the next launch, and choosing it again applies for this visit',()=>{
+  const {context:c,store,document}=harness();
+  store.set('breeze.home-recommend','webnovels');
+  assert.equal(c.homeRecommendKind(),'classics');
+  c.renderHome();
+  assert.equal(document.querySelector('#home-recommend-kind [data-kind="classics"]').getAttribute('aria-pressed'),'true');
+  assert.equal(document.querySelector('#home-recommend-kind [data-kind="webnovels"]').getAttribute('aria-pressed'),'false');
+  assert.equal(document.querySelectorAll('#casual-rail .webnovel').length,0);
+  assert.ok(document.querySelectorAll('#casual-rail [data-longread-id]').length>0);
+  assert.equal(store.get('breeze.home-recommend'),'webnovels','The saved choice is kept');
+  c.setHomeRecommendKind('webnovels');
+  assert.equal(c.homeRecommendKind(),'webnovels');
+  assert.equal(document.querySelectorAll('#casual-rail .webnovel').length,3);
+});
+
 test('the toggle switches the one rail between 고전 and 웹소설 without RSS',()=>{
   const {context:c,rss,store,document,opened}=harness();
   c.renderHome();

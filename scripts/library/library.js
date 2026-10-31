@@ -513,8 +513,17 @@ function homeRecommendKindValue(value){
   if(value==='articles'&&homeArticlesEnabled())return value;
   return 'classics';
 }
+// Empty until the reader uses the toggle. A reload starts again on 고전.
+let homeRecommendSession='';
 function homeRecommendKind(){
-  return homeRecommendKindValue(load('breeze.home-recommend','classics'));
+  // A choice made with the toggle lasts for this visit. The next launch opens
+  // 고전 again, including when the saved choice is 웹소설. A dormant 기사
+  // value stays stored and is still read as 고전.
+  if(typeof homeRecommendSession!=='undefined'&&homeRecommendSession)
+    return homeRecommendKindValue(homeRecommendSession);
+  const stored=load('breeze.home-recommend','classics');
+  if(stored==='webnovels')return 'classics';
+  return homeRecommendKindValue(stored);
 }
 /* A started catalog book is one library record. Bundled text keeps the catalog
    id on longReadId, a bundled EPUB keeps it on classicId, and a copy migrated
@@ -570,6 +579,7 @@ function syncHomeRecommendToggle(){
 function setHomeRecommendKind(kind){
   const next=homeRecommendKindValue(kind);
   if(next===homeRecommendKind()){syncHomeRecommendToggle();return;}
+  homeRecommendSession=next;
   save('breeze.home-recommend',next);
   const rail=document.getElementById('casual-rail');
   if(rail){delete rail.dataset.homeUserScrolled;rail.scrollLeft=0;}

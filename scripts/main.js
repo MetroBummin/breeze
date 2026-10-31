@@ -28,9 +28,9 @@ homeReady.then(()=>startSharedFileImports());
 homeReady.then(()=>{ if(typeof startAo3Inbox==='function') startAo3Inbox(); });
 // Fill formerly text-only bundled covers after Home appears; never block reading.
 homeReady.then(()=>restoreMissingLongReadCovers());
-/* A saved 기사 or 웹소설 choice must not request the classics catalog. RSS
-   discovery treats any other origin as a leak. The 고전 tab and the longform
-   library ask for it. */
+/* Each launch opens 고전, so a saved 웹소설 choice still asks for the classics
+   catalog. A saved 기사 choice does too while that tab is dormant. RSS
+   discovery treats any other origin as a leak. The longform library asks too. */
 function paintHome(){
   renderHome();
   if(typeof homeRecommendKind==='function'&&homeRecommendKind()==='classics'&&typeof refreshRemoteClassics==='function')
