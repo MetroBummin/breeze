@@ -1007,15 +1007,30 @@ is in screen pixels at any zoom.
   The stroke still starts where the pen landed.
 - Lift: on raw samples, `finish()` drops (a) wobble around the resting point
   (all later samples within 2 px of it, wandering or turning ≥45°), (b) a
-  tail of at most 2 segments and 6 px that turns ≥50°, and (c) a final
-  segment ≥4 px and ≥2.5× the median of the 3 before it that turns ≥30°
-  (the hand flicking off). The same short-turn rule removes a pen-down skid.
-  A turn only counts when it is ≥2.5× the body's own turn just before it, so
-  a small o or c that keeps curving is not trimmed, and ㄱ-style corners,
-  which have long legs, are kept. When something is trimmed, the stroke is
-  re-flattened once from the kept samples, so the end can move slightly at
-  lift. Strokes without a hook keep exactly their live geometry. That keeps
-  the existing preview = stored = repainted contract.
+  hook: a tail of at most 3 segments and 12 px whose first segment already
+  leaves the body (≥25°) and whose chord turns ≥45°, and (c) a flick: a
+  final segment ≥4 px and ≥2.5× the median of the 3 before it that turns
+  ≥30°. The longest qualifying hook wins. The body direction is the 3 px of
+  samples just before the candidate tail and never includes it. A turn only
+  counts when it is ≥2.5× the body's own turn just before. A body that is one
+  straight segment at least 8 px long, and at least twice the tail, sets no
+  baseline, because a corner farther back is not curvature. The body before
+  the tail must be at least 8 px and twice the tail. A small o or c keeps
+  curving, so it is not trimmed. A ㄱ/ㄴ arm drawn at writing speed spans more
+  than 3 samples or 12 px, so the corner is kept; that relies on WebKit
+  delivering a touchmove per frame. Dots and short dashes are below the 8 px
+  body minimum.
+- Pen-down: if the landing point lies on the body's backward line (within
+  1.5 px) and only the next 1-3 samples (≤12 px out) wander ≥2 px off it,
+  those samples are dropped and the stroke still starts where the pen
+  landed. Otherwise the same hook rule as at lift is read from the start.
+  When something is trimmed, the stroke is re-flattened once from the kept
+  samples, so the ends can move at lift. Strokes without a hook keep exactly
+  their live geometry, which keeps the preview = stored = repainted contract.
+- The first version (6 px, 2 segments, body measured including the tail's
+  first segment) missed most realistic 5-7 px two-sample hooks in owner QA
+  (`hook-repro.mjs`, `shoot.mjs`). Those cases, plus must-not-trim
+  counter-cases, are now harness tests.
 - I chose targeted trimming over a blanket moving average on the ends. An
   average also rounds deliberate small ends and would change every stroke at
   lift, for a hook problem that only some strokes have.

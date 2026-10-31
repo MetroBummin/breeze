@@ -798,3 +798,52 @@ test('sync: the public stroke carries tool and pressure; legacy pens are unchang
   assert.deepEqual(plain(sync.inkPublicStroke({id,tool:'pencil',color:'#3b3b3b',width:2,points:[[1,2],[3,4]],pressure:[0.4,0.5]})),
     {id,color:'#3b3b3b',width:2,points:[[1,2],[3,4]],tool:'pencil',pressure:[0.4,0.5]});
 });
+// Owner QA repros (CSS px, unit=1): realistic 2-3 sample hooks of 5-12 px.
+const smoothed=(points,unit=1)=>{const g=geometry(),s=g.createSmoother(points[0],{unit});for(const p of points.slice(1))s.add(p);return plain(s.finish());};
+const near=(a,b,tolerance=1e-6)=>Math.hypot(a[0]-b[0],a[1]-b[1])<=tolerance;
+test('ends: ㄱ with a 2-sample left flick at lift loses the flick, keeps the corner',()=>{
+  const p=[[0,0],[-2,3]];for(let i=1;i<=12;i++)p.push([100*i/12,0]);for(let i=1;i<=12;i++)p.push([100,70*i/12]);
+  p.push([97,72],[94,73]);
+  const out=smoothed(p);
+  assert.ok(near(out.at(-1),[100,70]),JSON.stringify(out.slice(-3)));
+  assert.ok(out.some(q=>near(q,[100,0])),'the corner itself stays');
+  assert.deepEqual(out[0],[0,0],'the stroke starts where the pen landed');
+  assert.ok(out.every(([x,y])=>x>=0&&y>=0&&(y===0||x===100)),'the pen-down skid is gone too: '+JSON.stringify(out.slice(0,3)));
+});
+test('ends: a straight line ending in a 2-sample up-turn, or a 1-sample back-hook, ends straight',()=>{
+  const line=()=>Array.from({length:51},(_,i)=>[400*i/50,0]);
+  assert.ok(near(smoothed([...line(),[402,-3],[403,-6]]).at(-1),[400,0]));
+  assert.ok(near(smoothed([...line(),[398,-4]]).at(-1),[400,0]));
+  const three=smoothed([...line(),[403,-2],[405,-5],[406,-9]]);
+  assert.ok(near(three.at(-1),[400,0]),'a 3-segment 11 px hook is dropped');
+  assert.ok(three.every(([,y])=>Math.abs(y)<1e-9));
+});
+test('ends: realistic pen-down skids of 2-3 samples are dropped',()=>{
+  const out=smoothed([[0,0],[-3,-3],[-4,-4],...Array.from({length:30},(_,i)=>[(i+1)*6-4,-4])]);
+  assert.ok(near(out[0],[-4,-4]),JSON.stringify(out.slice(0,3)));
+  const down=smoothed([[0,0],[4,-2],[2,1],...Array.from({length:12},(_,i)=>[2,1+(i+1)*6])]);
+  assert.ok(near(down[0],[2,1]),JSON.stringify(down.slice(0,3)));
+});
+test('ends: must not trim deliberate shapes',()=>{
+  const keep=(name,p)=>{const out=smoothed(p);assert.ok(near(out.at(-1),p.at(-1))&&near(out[0],p[0]),`${name}: ${JSON.stringify([out[0],out.at(-1)])}`);};
+  keep('small o',Array.from({length:26},(_,i)=>{const a=i*Math.PI/12*0.95;return [100+8*Math.cos(a),100+8*Math.sin(a)];}));
+  keep('c',Array.from({length:16},(_,i)=>{const a=Math.PI/4+i*Math.PI*1.5/15;return [20*Math.cos(a),20*Math.sin(a)];}));
+  keep('dense curl',[...Array.from({length:60},(_,i)=>[i,0]),...Array.from({length:24},(_,i)=>{const a=(i+1)*Math.PI/24;return [59+15*Math.sin(a),15-15*Math.cos(a)];})]);
+  // ㄱ/ㄴ whose second arm is longer than a hook, even when drawn in few samples.
+  keep('ㄱ 15px arm in 3 samples',[...Array.from({length:13},(_,i)=>[i*5,0]),[60,5],[60,10],[60,15]]);
+  keep('ㄱ 20px arm at writing speed',[...Array.from({length:21},(_,i)=>[i*3,0]),...Array.from({length:10},(_,i)=>[60,(i+1)*2])]);
+  keep('ㄴ',[...Array.from({length:12},(_,i)=>[0,i*6]),...Array.from({length:12},(_,i)=>[(i+1)*6,66])]);
+  keep('L start (arm first)',[[0,0],[0,5],[0,10],[0,15],...Array.from({length:12},(_,i)=>[(i+1)*5,15])]);
+  keep('short dash',[[0,0],[2,0],[4,0],[6,0]]);
+  keep('short bent dash',[[0,0],[2,0],[4,0],[5,3]]);
+  assert.deepEqual(smoothed([[5,5]]),[[5,5]],'dot');
+  assert.deepEqual(smoothed([[5,5],[5.5,5.4],[5.2,4.8]]),[[5,5]],'jittery dot');
+});
+test('ends: a skid before a long straight lead-in is dropped even if a sharp arch follows',()=>{
+  const p=[[0,0],[-3,-3],[-4,-4]];
+  for(let i=0;i<=60;i++){const t=i/60;p.push([t*180+12*Math.sin(t*Math.PI*6),-26*Math.sin(t*Math.PI*6+Math.PI/2)]);}
+  p.push([p.at(-1)[0]-2,p.at(-1)[1]+3],[p.at(-1)[0]-5,p.at(-1)[1]+6]);
+  const out=smoothed(p);
+  assert.deepEqual(out[0],[-4,-4],JSON.stringify(out.slice(0,3)));
+  assert.ok(near(out.at(-1),p.at(-3)),'the lift flick of the last arch is dropped too');
+});

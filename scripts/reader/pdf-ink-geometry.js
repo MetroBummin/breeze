@@ -139,27 +139,55 @@ const BreezeInkGeometry = (()=>{
     return {vector:[points[end][0]-points[start][0],points[end][1]-points[start][1]],length,start};
   }
   const pathLength=(points,from,to)=>{let length=0;for(let i=from+1;i<=to;i++)length+=distance(points[i-1],points[i]);return length;};
-  /* How sharply points[start..end] turns away from the body before it, and
-     the body's own turn over the same span just before that. A curve that
-     keeps turning (small o, c) has both large; a hook turns only at the end. */
+  const vector=(points,a,b)=>[points[b][0]-points[a][0],points[b][1]-points[a][1]];
+  const bodySpan=3; // CSS px of body measured just before a candidate tail.
+  /* How sharply points[start..end] turns away from the body before it. The
+     body direction uses only samples up to points[start], never the tail.
+     `baseline` is the body's own turn just before that: a curve that keeps
+     turning (small o, c) has it large, a hook turns only at the end. */
   function endTurn(points,start,end,unit){
-    const tail=pathLength(points,start,end),span=Math.max(tail,2*unit);
-    const body=bodyBefore(points,start,span);
+    const span=bodySpan*unit,body=bodyBefore(points,start,span);
     if(body.start===start)return null;
-    const before=bodyBefore(points,body.start,span);
+    const before=bodyBefore(points,body.start,Math.max(span,body.length)),tail=pathLength(points,start,end);
+    // A sparse body can be one long straight segment. Its far end is a
+    // corner, not curvature next to the tail, so it sets no baseline.
+    const straight=body.start===start-1&&body.length>=Math.max(8*unit,2*tail);
     return {tail,prefix:pathLength(points,0,start),
-      angle:turn(body.vector,[points[end][0]-points[start][0],points[end][1]-points[start][1]]),
-      baseline:before.start===body.start?0:turn(before.vector,body.vector)};
+      angle:turn(body.vector,vector(points,start,end)),
+      first:turn(body.vector,vector(points,start,start+1)),
+      baseline:before.start===body.start||straight?0:turn(before.vector,body.vector)};
   }
   const sudden=(t,angle)=>t.angle>=angle&&t.angle>=2.5*t.baseline;
+  /* Samples to drop at one end (points ordered toward that end): a tail of
+     at most 3 segments and 12 CSS px whose first segment already leaves the
+     body (>=25 deg) and whose chord turns >=45 deg, suddenly. The longest
+     such tail wins. A deliberate arm drawn at writing speed spans more than
+     3 samples or 12 px, so ㄱ/ㄴ corners with longer arms are kept. */
+  function hookLength(points,unit,{flick=false}={}){
+    const n=points.length;
+    if(n<4)return 0;
+    for(let segments=3;segments>=1;segments--){
+      const start=n-1-segments;if(start<1)continue;
+      const t=endTurn(points,start,n-1,unit);
+      if(!t||t.prefix<Math.max(2*t.tail,8*unit))continue;
+      if(t.tail<=12*unit&&t.first>=25&&sudden(t,45))return segments;
+    }
+    if(flick&&n>=6){
+      // A flick: one last segment much faster than the body that turns.
+      const t=endTurn(points,n-2,n-1,unit);
+      const lengths=[1,2,3].map(j=>distance(points[n-2-j],points[n-1-j])).sort((x,y)=>x-y);
+      if(t&&t.prefix>=Math.max(2*t.tail,8*unit)&&t.tail>=4*unit&&t.tail>=2.5*lengths[1]&&sudden(t,30))return 1;
+    }
+    return 0;
+  }
   /* Lift-time 삐침 removal on raw samples. Mid-stroke samples are never
-     touched; only wobble around the resting point, a short sudden turned
-     tail, or a fast sudden turned final segment is dropped. Thresholds are
-     CSS pixels (`unit` PDF units each). Returns the number of samples kept. */
+     touched: only wobble around the resting point, a short sudden hook, or a
+     fast turned final segment is dropped. Thresholds are CSS pixels (`unit`
+     PDF units each). Returns the number of samples kept. */
   function trimTail(samples,unit){
     const points=samples.map(s=>s.p),n=points.length;
     if(n<4)return n;
-    const hook=6*unit,rest=2*unit;
+    const rest=2*unit;
     // The earliest resting sample k that every later sample stays near.
     let k=n-1;
     for(let i=n-2,path=0;i>0&&path<=4*rest;i--){
@@ -170,29 +198,28 @@ const BreezeInkGeometry = (()=>{
       const t=endTurn(points,k,n-1,unit),net=distance(points[k],points[n-1]);
       if(t&&t.prefix>=2*rest&&(t.tail>1.5*net+epsilon||sudden(t,45)))return k+1;
     }
-    for(let segments=2;segments>=1;segments--){ // The longer hook first.
-      const start=n-1-segments;if(start<1)continue;
-      const t=endTurn(points,start,n-1,unit);
-      if(!t||t.prefix<2*t.tail)continue;
-      if(t.tail<=hook&&sudden(t,50))return start+1;
-      if(segments===1&&n>=5){
-        // A flick: the last segment is much faster than the body and turns.
-        const lengths=[1,2,3].map(j=>distance(points[n-2-j],points[n-1-j])).sort((x,y)=>x-y);
-        if(t.tail>=4*unit&&t.tail>=2.5*lengths[1]&&sudden(t,30))return start+1;
-      }
-    }
-    return n;
+    return n-hookLength(points,unit,{flick:true});
   }
-  // Pen-down skid: the same short sudden-turn rule, read from the start.
+  /* Pen-down skid. If the landing point lies on the body's backward line
+     (within 1.5 px) and only the next 1-3 samples (<=12 px out) wander 2 px
+     or more off it, drop just those:
+     the stroke still starts where the pen landed. Otherwise apply the same
+     short sudden-hook rule as at lift, read from the start. Returns
+     {skip:[from,to)} sample indices to drop. */
   function trimHead(samples,unit){
-    const points=samples.map(s=>s.p).reverse(),n=points.length;
-    if(n<4)return 0;
-    for(let segments=2;segments>=1;segments--){
-      const start=n-1-segments;if(start<1)continue;
-      const t=endTurn(points,start,n-1,unit);
-      if(t&&t.prefix>=2*t.tail&&t.tail<=6*unit&&sudden(t,50))return segments;
+    const points=samples.map(s=>s.p),n=points.length;
+    for(let k=3;k>=1;k--){
+      if(n<k+4)continue;
+      const anchor=points[k+1];let ahead=k+1;
+      while(ahead<n-1&&distance(anchor,points[ahead])<bodySpan*unit)ahead++;
+      const u=vector(points,k+1,ahead),length=Math.hypot(...u);
+      if(length<bodySpan*unit||pathLength(points,k+1,n-1)<8*unit)continue;
+      const along=p=>((p[0]-anchor[0])*u[0]+(p[1]-anchor[1])*u[1])/length;
+      const off=p=>Math.abs((p[0]-anchor[0])*u[1]-(p[1]-anchor[1])*u[0])/length;
+      if(along(points[0])>0||off(points[0])>1.5*unit||pathLength(points,0,k)>12*unit)continue;
+      if(Math.max(...points.slice(1,k+1).map(off))>=2*unit)return {skip:[1,k+1]};
     }
-    return 0;
+    return {skip:[0,hookLength(points.slice().reverse(),unit)]};
   }
   /* Stroke input: a dead zone at pen-down, smoothed pressure, the curve above,
      and lift-time end stabilization. `unit` is PDF units per CSS pixel.
@@ -259,7 +286,8 @@ const BreezeInkGeometry = (()=>{
         let samples=raw;
         if(anchored){
           const end=trimTail(samples,unit);samples=samples.slice(0,end);
-          const head=trimHead(samples,unit);samples=samples.slice(head);
+          const [from,to]=trimHead(samples,unit).skip;
+          if(to>from)samples=samples.slice(0,from).concat(samples.slice(to));
         }
         if(samples!==raw&&samples.length!==raw.length){
           const rebuilt=createCurve(samples[0].p,pressure?samples[0].e:null);
