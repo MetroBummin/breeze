@@ -115,7 +115,7 @@ body:has(#article-preview[open]){overflow:hidden;}
 #article-preview[data-kind="webnovel"] .ap-subtitle{margin-bottom:8px;}
 .ap-subtitle{margin:0 0 18px;color:var(--sentence-glass-muted);font:500 14px/1.5 var(--ui);}
 .ap-subtitle[hidden]{display:none;}
-.ap-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;}
+.ap-links{display:flex;flex-wrap:wrap;gap:12px 14px;margin:0 0 10px;}
 .ap-links a{color:inherit;text-underline-offset:3px;font-weight:600;}
 .ap-chapters{margin:2px 0 12px;scroll-margin-top:60px;}
 .ap-chapters[hidden]{display:none;}

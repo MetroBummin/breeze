@@ -529,6 +529,16 @@ async function openBook(b,options={}){
      숨기는 게 아니라, 그 앞에서 끝내는 편이 낫습니다 — AI 도 한도도 쓰지 않습니다. */
   if(!b.transient&&b.longReadId!=='backroom-homeward-bound') warmDict();
   document.getElementById('rtitle').textContent = b.title;
+  let englishTitle=document.getElementById('rtitle-en');
+  if(b.webNovelId&&b.originalTitle&&b.originalTitle!==b.title){
+    if(!englishTitle){
+      englishTitle=document.createElement('p');
+      englishTitle.id='rtitle-en';
+      document.getElementById('rtitle').after(englishTitle);
+    }
+    englishTitle.hidden=false;
+    englishTitle.textContent=b.originalTitle;
+  }else if(englishTitle) englishTitle.hidden=true;
   document.getElementById('readpill-title').textContent = b.title;
   document.getElementById('readpill-title').setAttribute('aria-label',b.title+' · 컨트롤 펼치기');
   /* 기사에는 연결할 "원본 파일"이 없습니다. 사진과 소제목까지 담아 오지만

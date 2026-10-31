@@ -86,7 +86,8 @@ try{
       await page.locator('#home-recommend-kind [data-kind="classics"]').click();
       await page.waitForFunction(()=>{const image=document.querySelector('#casual-rail [data-longread-id] img.cover');return image&&!image.hidden&&image.naturalWidth>0;});
       const classicFrame=await page.locator('#casual-rail [data-longread-id] .cover').first().evaluate(node=>{const rect=node.getBoundingClientRect();return [Math.round(rect.width),Math.round(rect.height)];});
-      assert.deepEqual(frames,classicFrame,'Web-novel covers use the classic cover frame');
+      assert.equal(frames[0],classicFrame[0],'Web-novel cards keep the classic cover width');
+      assert.ok(frames[1]>200&&frames[1]<classicFrame[1],'The English subtitle sits under the Korean title');
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
 
       // 추천 is a horizontal carousel: the rail is a flex row that overflows
@@ -107,57 +108,64 @@ try{
       assert.equal(rail.sameRow,true,'추천 cards stay on one row');
       assert.equal(rail.side,true,'추천 cards sit side by side');
       assert.deepEqual(await page.locator('#casual-rail .webnovel').evaluateAll(nodes=>nodes.map(node=>[node.querySelector('.bt').textContent,node.querySelector('.ko').textContent,node.querySelector('.author').textContent])),
-        [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','마블러스 미스터 펜의 뜻밖의 약혼','R. K. Goff']]);
+        [['시나몬 번','Cinnamon Bun','RavensDagger'],['체이싱 선라이트','Chasing Sunlight','InadvisablyCompelled'],['마블러스 미스터 펜의 뜻밖의 약혼','The Unexpected Engagement of the Marvelous Mr. Penn','R. K. Goff']]);
       const bun=await openPreview(page,'cinnamon-bun');
       assert.equal(bun.kind,'webnovel');
       assert.equal(bun.source,'RavensDagger');
-      assert.equal(bun.title,'Cinnamon Bun');
-      assert.equal(bun.subtitle,'시나몬 번 · 청소와 다정함으로 세상을 구하는 모험');
+      assert.equal(bun.title,'시나몬 번');
+      assert.equal(bun.subtitle,'Cinnamon Bun');
       assert.deepEqual(bun.image,[768,'contain'],'The sheet shows the whole cover');
       assert.equal(bun.rows.length,10);
-      assert.deepEqual(bun.rows[0],['1화','곧 공개']);
-      assert.ok(bun.rows.every(([,state])=>state==='곧 공개'));
-      assert.deepEqual(bun.links,['Royal Road 원문'],'Cinnamon Bun has no monetized link');
+      assert.deepEqual(bun.rows[0],['1화','읽기']);
+      assert.ok(bun.rows.every(([,state])=>state==='읽기'));
+      assert.deepEqual(bun.links,['원문 보기 · Royal Road'],'Cinnamon Bun has no monetized link');
       assert.equal(bun.start,'1화 보기');
       assert.equal(bun.startClass,'ap-start','The chapter button keeps the existing start-button class');
       assert.equal(bun.summaryHeading,'짧게 살펴보기');
-      assert.deepEqual(bun.order,['ap-source','ap-title','ap-subtitle','ap-chapters','ap-summary-card','ap-details']);
+      assert.deepEqual(bun.order,['ap-source','ap-title','ap-subtitle','ap-links','ap-chapters','ap-summary-card','ap-details']);
       const bunFit=await chapterListFits(page);
       assert.equal(bunFit.scrollTop,0);
       assert.equal(bunFit.visible,true,'The first three chapters fit above the button without scrolling');
       assert.match(bunFit.heading,/회차/);
       assert.match(bunFit.heading,/전체 10화 ›/);
       await page.locator('#article-preview .ap-start').click();
-      assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
-      assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'1화 보기 does not navigate while chapter 1 is unavailable');
-      const opened=await page.evaluate(()=>{
-        const work=WEB_NOVELS.find(item=>item.id==='cinnamon-bun');
-        const chapter=work.chapters.find(item=>item.n===1);
-        chapter.available=true;chapter.url='https://example.com/cinnamon-1';
-        const seen=[];const original=window.open;
-        window.open=url=>{seen.push(String(url));return null;};
-        document.querySelector('#article-preview .ap-start').click();
-        document.querySelector('#article-preview .ap-chapter-row').click();
-        window.open=original;chapter.available=false;delete chapter.url;
-        return seen;
+      await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on')&&!document.querySelector('#article-preview').open&&document.getElementById('rtext').innerText.length>400);
+      const reader=await page.evaluate(()=>({
+        title:document.getElementById('rtitle').textContent,
+        english:document.getElementById('rtitle-en')&&document.getElementById('rtitle-en').textContent,
+        pill:document.getElementById('readpill-title').textContent,
+        text:document.getElementById('rtext').innerText,
+        shelf:document.querySelector('#shelf .home-regular-title')&&document.querySelector('#shelf .home-regular-title').textContent,
+        shelfEn:document.querySelector('#shelf .home-regular-subtitle')&&document.querySelector('#shelf .home-regular-subtitle').textContent,
+      }));
+      assert.equal(reader.title,'시나몬 번');
+      assert.equal(reader.english,'Cinnamon Bun');
+      assert.equal(reader.pill,'시나몬 번');
+      assert.match(reader.text,/Chapter One - Like You've Seen a Ghost/);
+      assert.doesNotMatch(reader.text,/Stolen from its original source|A note from /i);
+      assert.equal(reader.shelf,'시나몬 번');
+      assert.equal(reader.shelfEn,'Cinnamon Bun');
+      await page.evaluate(async()=>{
+        await bookDel('webnovel:cinnamon-bun:1');
+        books=books.filter(book=>book.id!=='webnovel:cinnamon-bun:1');
+        delete positions['webnovel:cinnamon-bun:1'];
+        show('home');
       });
-      assert.deepEqual(opened,['https://example.com/cinnamon-1','https://example.com/cinnamon-1'],'1화 보기 uses the chapter-1 row path');
-      await page.locator('#article-preview .ap-chapter-row').first().evaluate(row=>row.click());
-      assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
-      assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'A 곧 공개 chapter does not navigate');
-      await page.locator('#article-preview .ap-close').click();
+      await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
       const sun=await openPreview(page,'chasing-sunlight');
-      assert.equal(sun.title,'Chasing Sunlight');
+      assert.equal(sun.title,'체이싱 선라이트');
+      assert.equal(sun.subtitle,'Chasing Sunlight');
       assert.equal(sun.source,'InadvisablyCompelled');
-      assert.deepEqual(sun.links,['Royal Road 원문','Kindle 판']);
+      assert.deepEqual(sun.links,['원문 보기 · Royal Road','Amazon Kindle']);
       assert.doesNotMatch(sun.text,/vampire|뱀파이어|흡혈/i);
       await page.locator('#article-preview .ap-close').click();
       const penn=await openPreview(page,'mr-penn');
-      assert.equal(penn.title,'The Unexpected Engagement of the Marvelous Mr. Penn');
+      assert.equal(penn.title,'마블러스 미스터 펜의 뜻밖의 약혼');
+      assert.equal(penn.subtitle,'The Unexpected Engagement of the Marvelous Mr. Penn');
       assert.equal(penn.source,'R. K. Goff');
       assert.equal(penn.rows.length,10,'R. K. Goff: first 10 chapters only');
       assert.equal(penn.start,'1화 보기');
-      assert.deepEqual(penn.links,['Royal Road 원문'],'Mr. Penn has no monetized link');
+      assert.deepEqual(penn.links,['원문 보기 · Royal Road'],'Mr. Penn has no monetized link');
       const pennFit=await chapterListFits(page);
       assert.equal(pennFit.visible,true,'Mr. Penn’s first three chapters fit on an iPhone sheet');
       assert.match(pennFit.heading,/전체 10화 ›/);

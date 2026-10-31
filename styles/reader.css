@@ -277,6 +277,9 @@
     padding:calc(env(safe-area-inset-top) + 24px) var(--readpad,26px) 50vh;}
   #rtitle{font-family:var(--serif); font-size:clamp(24px,3.4vw,30px); color:var(--ink); padding-bottom:18px; overflow-wrap:anywhere;
     border-bottom:1px solid var(--line); margin-bottom:8px;}
+  #rtitle:has(+ #rtitle-en:not([hidden])){padding-bottom:4px;border-bottom:0;margin-bottom:0;}
+  #rtitle-en{margin:0 0 8px;padding-bottom:14px;border-bottom:1px solid var(--line);color:var(--soft,var(--settings-muted));font:500 14px/1.45 var(--ui);overflow-wrap:anywhere;}
+  #rtitle-en[hidden]{display:none;}
   /* 기사에는 연결할 원본 파일이 없습니다. 원문으로 가는 길만 남겨 둡니다. */
   #rsource,#rdiscovery{display:block; font-size:12.5px; color:var(--soft2); text-decoration:none; margin:-2px 0 8px;}
   #rsource:hover,#rdiscovery:hover{color:var(--blue);}

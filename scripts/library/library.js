@@ -474,8 +474,15 @@ function homeBookSpec(book,casual){
   // Long-form cards do not display reading time; avoid scanning their full text.
   const stamp=JSON.stringify([book.title,book.cover,book.coverUpdatedAt,book.site,book.author,book.kind,posOf(book.id).p===1,casual?readMinutes(book):null]);
   return {key:'book:'+book.id,stamp,
-    create:()=>homeRegularTile(casual?casualCard(book,null,false,false):bookCard(book,null,false),
-      book.title,casual?(book.site||'내 글'):(book.author||'내 책')),
+    create:()=>{
+      const tile=homeRegularTile(casual?casualCard(book,null,false,false):bookCard(book,null,false),
+        book.title,casual?(book.site||'내 글'):(book.author||'내 책'));
+      if(!casual&&book.webNovelId&&book.originalTitle&&book.originalTitle!==book.title){
+        const english=el('div','home-regular-subtitle',book.originalTitle);
+        tile.querySelector('.home-regular-title')?.after(english);
+      }
+      return tile;
+    },
     update:tile=>{
       if(casual)return;
       // Progress is mutable text on a retained cover, not a reason to replace it.
@@ -640,16 +647,16 @@ function webNovelCard(work){
   card.dataset.webnovelId=work.id;
   card.innerHTML='<img class="cover" alt=""><div class="bt"></div><div class="ko"></div><div class="author"></div>';
   const title=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title;
-  const korean=typeof webNovelKoreanLine==='function'?webNovelKoreanLine(work):(work.koTitle||'');
+  const english=typeof webNovelEnglishTitle==='function'?webNovelEnglishTitle(work):(work.title||'');
   const credit=work.credit||work.author||'';
-  fillCard(card,{'.bt':title,'.ko':work.koTitle||'','.author':credit});
+  fillCard(card,{'.bt':title,'.ko':english,'.author':credit});
   const image=card.querySelector('.cover');
   image.onload=()=>card.classList.add('has-cover');
   if(work.cover)image.src=work.cover;
   const label=webNovelProgressLabel(work);
   if(label)card.append(el('div','get',label));
-  card.title=[work.title,korean,credit].filter(Boolean).join(' · ');
-  accessibleLibraryCard(card,[title,work.koTitle,credit].filter(Boolean).join(' · '));
+  card.title=[title,english,credit].filter(Boolean).join(' · ');
+  accessibleLibraryCard(card,[title,english,credit].filter(Boolean).join(' · '));
   card.onclick=()=>{if(typeof openWebNovelPreview==='function')openWebNovelPreview(work);};
   return card;
 }

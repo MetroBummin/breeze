@@ -2,7 +2,7 @@
    node:fs)만 씁니다 — linkedom/playwright 없이 샌드박스에서 바로 돕니다.
 
    scripts/library/longreads.js 를 그대로 한 번 실행해서 WEB_NOVELS 를 꺼내 옵니다.
-   본문 긁어오기/번들링은 없고, 모든 회차는 available:false 의 '곧 공개' 자리입니다. */
+   1화부터 10화까지만 본문이 묶여 있고, 그 뒤 회차는 없습니다. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
@@ -37,11 +37,18 @@ test('web novels: author-permitted, free-forever works, no monetization', () => 
       `${work.id} must link to its Royal Road original`);
     assert.ok(Array.isArray(work.chapters) && work.chapters.length > 0,
       `${work.id} must carry a chapters[] shape`);
-    // No scraping / no bundled chapter text: every chapter is a '곧 공개' placeholder.
+    assert.equal(work.chapters.length, 10, `${work.id} bundles the first 10 chapters only`);
     for(const chapter of work.chapters){
-      assert.equal(chapter.available, false, `${work.id} chapter ${chapter.n} must be a placeholder (available:false)`);
-      assert.ok(!chapter.content, `${work.id} chapter ${chapter.n} must not bundle body text`);
+      assert.equal(chapter.available, true, `${work.id} chapter ${chapter.n} is readable`);
+      assert.equal(chapter.file, `assets/webnovels/text/${work.id}/${String(chapter.n).padStart(2,'0')}.txt`);
+      assert.ok(!chapter.content, `${work.id} chapter ${chapter.n} keeps its text in the file, not the catalog`);
+      const text = readFileSync(root + chapter.file, 'utf8');
+      assert.ok(text.length > 2000, `${work.id} chapter ${chapter.n} has story text`);
+      assert.match(text, /^Chapter /, `${work.id} chapter ${chapter.n} keeps its chapter title`);
+      assert.doesNotMatch(text, /taken without authorization|not rightfully on Amazon|Stolen from its original source|report any sightings|A note from /i,
+        `${work.id} chapter ${chapter.n} still has site chrome or a hidden line`);
     }
+    assert.equal(existsSync(root + `assets/webnovels/text/${work.id}/11.txt`), false, `${work.id} has no 11th chapter`);
     // Real English title plus a Korean reading; no placeholder titles.
     assert.ok(work.title && work.koTitle && work.koSubtitle, `${work.id} needs title, koTitle and koSubtitle`);
     assert.doesNotMatch(JSON.stringify(work), /연재작/, `${work.id} carries a placeholder title`);

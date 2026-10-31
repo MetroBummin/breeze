@@ -1186,11 +1186,10 @@ async function restoreMissingLongReadCovers(){
 }
 /* ================= 웹소설 (Web novels) =================
    Author-permitted Royal Road works, free forever, with NO ads and NO
-   monetization on Breeze. We do NOT scrape or bundle any chapter body text:
-   every chapter is a placeholder (available:false, '곧 공개') and the
-   work -> chapters[] shape is ready for real content to drop in later with
-   no UI change. The home card and the in-preview chapter list read this one
-   const; nothing here starts a Reader until a chapter has real content.
+   monetization on Breeze. The first 10 chapters of each work are bundled as
+   plain text (assets/webnovels/text) and open in the Reader through the same
+   TXT path as the other built-in books. Nothing past chapter 10 is included.
+   The home card and the in-preview chapter list read this one const.
 
    Titles, authors and links were checked on 2026-10-30 against Royal Road's
    own feed (royalroad.com/fiction/syndication/<id> returns the story title)
@@ -1214,10 +1213,13 @@ async function restoreMissingLongReadCovers(){
      first 10 chapters only, credit exactly 'R. K. Goff', Royal Road link
      only. (Ar'Kendrithyst, royalroad.com/fiction/26727, is by Arcs, not
      R. K. Goff, and is not listed.) */
-function webNovelPlaceholderChapters(count){
-  // No scraping, no bundled body: each chapter is a '곧 공개' placeholder.
+function webNovelBundledChapters(id){
+  // First 10 chapters only. The story text lives next to the other bundled books.
   const chapters=[];
-  for(let n=1;n<=count;n++)chapters.push({n,title:n+'화',available:false});
+  for(let n=1;n<=10;n++){
+    const file='assets/webnovels/text/'+id+'/'+String(n).padStart(2,'0')+'.txt';
+    chapters.push({n,title:n+'화',available:true,file});
+  }
   return chapters;
 }
 const WEB_NOVELS = [
@@ -1230,7 +1232,7 @@ const WEB_NOVELS = [
     royalRoadUrl:'https://www.royalroad.com/fiction/31429/cinnamon-bun',
     cover:'assets/webnovels/covers/cinnamon-bun.webp', free:true, monetization:'none',
     intro:"게임 퀘스트 창에 뜬 '수락' 버튼. 16살 브로콜리는 별생각 없이 그걸 누른다. 눈을 떠 보니 낯선 판타지 세계, 손에 들린 건 칼이 아니라 먼지떨이. 직업은 시나몬 번, 첫 스킬은 청소. 이걸로 대체 어떻게 살아남으라는 걸까? 그런데 이상하게도, 적이어야 할 해골이 하나둘 그녀의 친구가 되기 시작한다.",
-    chapters:webNovelPlaceholderChapters(10),
+    chapters:webNovelBundledChapters('cinnamon-bun'),
   },
   {
     id:'chasing-sunlight',
@@ -1242,7 +1244,7 @@ const WEB_NOVELS = [
     kindleUrl:'https://www.amazon.com/dp/B0CPYXGYNW',
     cover:'assets/webnovels/covers/chasing-sunlight.webp', free:true, monetization:'none',
     intro:'태양은 전설일 뿐인 세계. 하늘은 언제나 캄캄하고, 불빛이 꺼지면 끝이다. 그런데 한 노련한 탐험가가 조용히 말한다. "나는 햇빛을 봤다." 미친 소리일까, 진실일까? 답을 찾아 비행선 엔데버호는 동쪽 어둠으로 떠난다.',
-    chapters:webNovelPlaceholderChapters(10),
+    chapters:webNovelBundledChapters('chasing-sunlight'),
   },
   {
     id:'mr-penn',
@@ -1253,15 +1255,20 @@ const WEB_NOVELS = [
     royalRoadUrl:'https://www.royalroad.com/fiction/54508/the-unexpected-engagement-of-the-marvelous-mr',
     cover:'assets/webnovels/covers/mr-penn.webp', free:true, monetization:'none',
     intro:'1899년 5월, 도시 곳곳에 동시에 도착한 청첩장 150통. 신랑은 신사 도둑 라이스 펜, 신부는 레이디 엘리너. 문제는 하나, 엘리너는 그 남자를 만난 적이 없다. 대체 누가, 왜 이런 일을 꾸민 걸까?',
-    chapters:webNovelPlaceholderChapters(10),
+    chapters:webNovelBundledChapters('mr-penn'),
   },
 ];
 function webNovelDefinition(id){
   return typeof WEB_NOVELS==='undefined'?null:(WEB_NOVELS.find(work=>work&&work.id===id)||null);
 }
-/* 카드와 시트의 큰 제목은 영어 원제 그대로, 그 아래 한 줄에 한국어 읽기와 소개를 둡니다. */
+/* 큰 제목은 한국어 읽기, 그 아래 작은 줄은 영어 원제입니다. 소개(koSubtitle)는
+   제목 줄에 다시 붙이지 않습니다. 한국어 제목이 없으면 영어 원제를 씁니다. */
 function webNovelDisplayTitle(work){
-  return (work&&work.title)||'';
+  return (work&&(work.koTitle||work.title))||'';
+}
+function webNovelEnglishTitle(work){
+  if(!work||!work.title)return '';
+  return work.koTitle&&work.koTitle!==work.title?work.title:'';
 }
 function webNovelKoreanLine(work){
   if(!work)return '';
