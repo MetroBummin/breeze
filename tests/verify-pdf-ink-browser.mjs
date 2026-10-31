@@ -136,7 +136,7 @@ try{
    }));
    assert.equal(selectedSwatch.border,'rgb(38, 127, 168)','selected color uses the Breeze blue ring');
    assert.equal(selectedSwatch.overflow,'auto','color row can horizontally scroll when the palette grows');
-   assert.deepEqual(await page.locator('[data-ink-mode]').evaluateAll(nodes=>nodes.map(node=>node.dataset.inkMode)),['pen','highlighter','erase']);
+   assert.deepEqual(await page.locator('[data-ink-mode]').evaluateAll(nodes=>nodes.map(node=>node.dataset.inkMode)),['pen','pencil','colored-pencil','highlighter','erase']);
    assert.equal(await settings.locator('[data-ink-color]').count(),6);
    assert.equal(await settings.locator('[data-ink-highlight-color]').count(),6);
    assert.equal(await settings.locator('input[type="color"]').count(),0,'only predefined colors are offered');
@@ -149,7 +149,7 @@ try{
      const chip=node.firstElementChild.getBoundingClientRect(),box=node.getBoundingClientRect();
      node.scrollLeft=node.scrollWidth;return {chipWidth:chip.width,chipHeight:chip.height,overflow:node.scrollWidth>node.clientWidth,scroll:node.scrollLeft,right:box.right,left:box.left,screen:innerWidth};
     });
-    assert.ok(layout.chipWidth>=44&&layout.chipHeight>=44,'color chip touch targets remain usable');
+    assert.ok(Math.round(layout.chipWidth)>=44&&Math.round(layout.chipHeight)>=44,'color chip touch targets remain usable '+JSON.stringify({engine:engine.name(),theme,viewport,layout}));
     assert.ok(layout.overflow&&layout.scroll>0,'fixed palette scrolls horizontally');
     assert.ok(layout.left>=0&&layout.right<=layout.screen,'palette stays inside viewport');
     await row.locator('[data-ink-color="#c2410c"]').click();

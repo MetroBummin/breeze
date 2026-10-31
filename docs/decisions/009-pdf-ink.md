@@ -987,3 +987,117 @@ A finger long-press (about 400ms; moving more than about 8px cancels it; touch p
 While the finger is down the circle follows with a short spring and a slight stretch along the motion. Two faint discs sit just behind it so it reads as several controls being carried; they are not extra copies left along the path. Reduced motion turns the stretch and the spring lag off and snaps immediately. Release chooses the nearest of the left, right, top, and bottom edges from the finger, the way Picture in Picture chooses a side, then the row unfolds along that edge. Side edges stack the same controls vertically. The bottom edge is the original row. There is no snap outline. The choice is remembered in `localStorage` under `breeze.pdfInk.dock`, separate from the tool preference record, so a color change cannot clear it.
 
 The ink settings popover opens away from the parked edge. The page sidebar still opens from the left screen edge. Aa opens downward when its button is in the top half of the screen and rightward when its button is in the left half; the ordinary bottom-right button still opens upward and leftward. Native Pencil hit testing excludes the moving circle.
+
+## No 삐침, 필압, a fixed undo group and textured pencils (2026-11-01)
+
+Four user-approved changes. The pen decisions above stay as they were: iOS
+tells pen from finger, the 0.75 s palm-rest Lookup stays, a page move never
+erases a stroke, there is no pre-draw confirmation, only the highlighter uses
+overlap redraw, and SVG point text is rounded to 2 decimals. Nothing here adds
+latency: the live tip still reaches the latest sample on every move. All
+evidence is synthetic (deterministic harness and Chromium/WebKit with
+Touch-like objects carrying `touchType:'stylus'` and `force`), not physical
+Apple Pencil or Android pen acceptance.
+
+**삐침 (hooks) at pen-down and pen-up.** `createSmoother` now takes `unit`
+(PDF units per CSS pixel, from the cached page bounds), so every threshold
+is in screen pixels at any zoom.
+- Pen-down: samples within 2 CSS px of the first point are a dead zone. They
+  are drawn live (the tip follows them) but never become stroke geometry.
+  The stroke still starts where the pen landed.
+- Lift: on raw samples, `finish()` drops (a) wobble around the resting point
+  (all later samples within 2 px of it, wandering or turning ≥45°), (b) a
+  tail of at most 2 segments and 6 px that turns ≥50°, and (c) a final
+  segment ≥4 px and ≥2.5× the median of the 3 before it that turns ≥30°
+  (the hand flicking off). The same short-turn rule removes a pen-down skid.
+  A turn only counts when it is ≥2.5× the body's own turn just before it, so
+  a small o or c that keeps curving is not trimmed, and ㄱ-style corners,
+  which have long legs, are kept. When something is trimmed, the stroke is
+  re-flattened once from the kept samples, so the end can move slightly at
+  lift. Strokes without a hook keep exactly their live geometry. That keeps
+  the existing preview = stored = repainted contract.
+- I chose targeted trimming over a blanket moving average on the ends. An
+  average also rounds deliberate small ends and would change every stroke at
+  lift, for a hook problem that only some strokes have.
+
+**필압 (pressure).** The 필압 switch, plus 약/보통/강 sensitivity, sits in the
+pen, 연필 and 색연필 option panels. It is one shared setting stored in the
+existing `__breeze_pdf_ink_tools_v1__` record (`pressure`, `pressureLevel`).
+**It defaults to OFF.** With it off, a pen stroke is exactly today's v1
+record and constant-width polyline. Users who report that pressure makes
+lines look blurry (Apple Pencil Pro) keep the look they have, and turning it
+on is an explicit choice. The highlighter never records pressure.
+- Input: `Touch.force` on iPad, `PointerEvent.pressure` on Android (with
+  coalesced samples). Missing or zero force is ignored. The lift sample's
+  force is never used. The starting pressure is the median of the samples
+  after the first one, which removes the touch-down spike. After that,
+  pressure is smoothed (EMA 0.35) and limited to 0.08 per sample, so the
+  width cannot flicker.
+- Stored as an optional `pressure` array parallel to `points`, holding
+  effective pressure (after `0.5+(√force−0.5)×gain`, gain 0.5/1/1.6) rounded
+  to 2 decimals. A later sensitivity change never alters saved strokes.
+  Points are unchanged: still `[x,y]` at full precision. A build that predates
+  this field still accepts the stroke and draws it at its constant width. A
+  contact that never reports force stores no `pressure` field.
+- Rendering: pen width = width × (0.3 + 1.4 × pressure), so the nominal
+  width falls at pressure 0.5. The outline is one filled `<path>`: the union
+  of circles at the ends and bends plus the tangent quad between neighbouring
+  points, all wound the same way so the nonzero fill has no holes at
+  self-overlaps. The live preview appends settled points only and redraws
+  just the tail. Eraser hit-testing uses the per-segment width, and erased
+  fragments split the `pressure` array with interpolation at the cuts.
+- Sync: `inkPublicStroke` now carries `pressure` and was already carrying
+  `tool`. The server stores opaque JSON. Pressure adds about 5 bytes per
+  point against the existing 24,000-byte per-stroke cap.
+
+**Toolbar.** `#pdf-ink-tools` now holds a `.ink-pill-tools` strip (pen, 연필,
+색연필, highlighter, eraser), a thin `.ink-pill-history-separator`, and a
+`.ink-pill-history` group (이전/다음). Only the strip scrolls
+(`overflow-x:auto`). The toolbar itself no longer scrolls, so undo/redo stay
+in place. On the side dock the strip stacks vertically and scrolls
+vertically on short screens. The pill look, the 44 px targets, the themes
+and the read/write button are unchanged. The earlier separators inside the
+toolbar were always hidden in writing mode and are removed. On an unsupported
+390 px phone width the strip has almost no room, but undo/redo are never
+clipped. Phones never get writing tools.
+
+**연필 / 색연필.** These are new tools with `tool:'pencil'` and
+`tool:'colored-pencil'`, each with fixed palettes (4 and 8 colors) and 3
+widths, and they persist like the other tools. They reuse v1 page records,
+the serialized writer, undo/redo, partial erase, sync and validation, and
+validation rejects colors and widths outside their palettes. Older builds
+reject these records. A page that holds them reads as unsupported on a
+downgraded build, and sync rows that fail `accept` are skipped there and
+never tombstoned. The smooth pen is unchanged.
+- Rendering stays in the existing SVG layer, with no per-page canvas. One
+  64×64 periodic value-noise field (24 PDF units square) is generated once.
+  The first time a tool/coverage-level/color combination is used, it is
+  turned into a colored, alpha-only tile and placed as an SVG `<pattern>`
+  (`patternUnits=userSpaceOnUse`) in one shared hidden `#pdf-ink-defs` SVG.
+  After that, every stroke on every page reuses the same tile. Because the
+  pattern is anchored to page coordinates, strokes over the same place hit
+  the same grain. Each stroke draws at partial opacity, so repeated strokes
+  build up darker while the paper's low spots stay light. That is the
+  stamp-like effect, without per-stamp elements.
+- Pressure picks one of three coverage levels (grain threshold and
+  opacity), with hysteresis so a steady hand does not flip between them.
+  A pencil stroke is a `<g data-ink-tool>` holding one polyline per run of
+  equal coverage. With 필압 off, the middle level is used. Width stays
+  constant.
+- I rejected per-stroke `<mask>` (an offscreen pass per stroke) and a
+  per-page canvas (a second ink surface beside the SVG and its eraser and
+  paint caches). Without canvas (the harness), the pencils fall back to plain
+  translucent color with the same geometry.
+- Pencils keep drawing order with pen paths. Highlighter groups stay
+  underneath, and a live highlighter is inserted before the first
+  non-highlighter element.
+
+Tests: `tests/verify-pdf-ink-regressions.mjs` covers hook removal (jitter +
+flick, short hooks at both ends, rest wobble, curves and corners kept, zoom
+scaling), 필압 off/on, spikes, no-force contacts, pressure erase/undo,
+the highlighter, pencil save/erase/undo, validation and the sync payload.
+`tests/verify-pdf-ink-pen-browser.mjs` (in `npm run test:pdf-ink`) checks in
+Chromium and WebKit: toolbar structure, scrolling and divider at 5 viewports
+in light/dark; rendered thickness off vs on; preference reload; the hook
+stroke; and pencil grain, build-up, pattern reuse, pressure coverage,
+reload, erase, undo and redo.

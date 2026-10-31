@@ -63,6 +63,8 @@ function inkPublicStroke(stroke){
   if(stroke.tool)body.tool=stroke.tool;
   if(stroke.opacity!=null)body.opacity=stroke.opacity;
   if(typeof stroke.strokeId==='string')body.strokeId=stroke.strokeId;
+  // Per-point pen/pencil pressure (2026-11-01). Older readers ignore it.
+  if(Array.isArray(stroke.pressure))body.pressure=stroke.pressure.slice();
   return body;
 }
 function inkStrokeBytes(stroke){

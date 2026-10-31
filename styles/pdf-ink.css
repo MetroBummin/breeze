@@ -35,6 +35,12 @@ body.dark .pdf-source-page > .pdf-ink-layer{mix-blend-mode:normal;}
 #readpill .ink-pill-separator{flex:none;width:1px;height:22px;margin-inline:4px;
   background:color-mix(in srgb,var(--sentence-glass-ink) 18%,transparent);}
 #readpill .ink-pill-mode-separator{display:none;}
+/* Drawing tools scroll inside their own strip; undo/redo stay put after a thin divider. */
+#readpill .ink-pill-tools,#readpill .ink-pill-history{display:flex;align-items:center;gap:inherit;flex:none;}
+#readpill.ink-pill-active .ink-pill-tools{flex:0 1 auto;min-width:0;height:44px;overflow-x:auto;overflow-y:hidden;
+  overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+#readpill .ink-pill-tools::-webkit-scrollbar{display:none;}
+#readpill .ink-pill-history-separator{margin-inline:2px;}
 #readpill .ink-pill-toolbar .ink-pill-control:focus-visible,
 #readpill .ink-pill-entry:focus-visible,#readpill .ink-pill-mini:focus-visible{
   outline:2px solid color-mix(in srgb,var(--sentence-glass-ink) 58%,transparent);outline-offset:1px;}
@@ -79,28 +85,32 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 #pdf-ink-settings[hidden],#pdf-ink-settings [hidden]{display:none;}
 #pdf-ink-settings .ink-setting-label{font:600 12px/1.4 var(--ui);color:var(--sentence-glass-secondary);margin:0 0 8px;}
 #pdf-ink-settings .ink-setting-row{display:flex;gap:8px;}
-#pdf-ink-settings :is(.ink-colors,.ink-highlight-colors){margin:0 -2px 14px;padding:2px;overflow-x:auto;
+#pdf-ink-settings .ink-colors-row{margin:0 -2px 14px;padding:2px;overflow-x:auto;
   scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}
-#pdf-ink-settings :is(.ink-colors,.ink-highlight-colors)::-webkit-scrollbar{display:none;}
+#pdf-ink-settings .ink-colors-row::-webkit-scrollbar{display:none;}
 #pdf-ink-settings button{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:7px;
   min-width:0;min-height:56px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;
   font:500 11px/1.2 var(--ui);cursor:pointer;touch-action:manipulation;}
 #pdf-ink-settings button[aria-pressed="true"]{background:var(--sentence-glass-action);border-color:var(--sentence-glass-line);}
 #pdf-ink-settings button:focus-visible{outline:2px solid var(--brand-strong);outline-offset:2px;}
 #pdf-ink-settings i{display:block;flex:none;}
-#pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color]){flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;
+#pdf-ink-settings .ink-colors-row>button{flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;
   padding:5px;border:2px solid transparent;border-radius:50%;background:transparent;}
-#pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color])[aria-pressed="true"]{background:transparent;border-color:var(--brand-strong);
+#pdf-ink-settings .ink-colors-row>button[aria-pressed="true"]{background:transparent;border-color:var(--brand-strong);
   box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 18%,transparent);}
-#pdf-ink-settings :is([data-ink-color],[data-ink-highlight-color]) i{width:24px;height:24px;border-radius:50%;
+#pdf-ink-settings .ink-colors-row>button i{width:24px;height:24px;border-radius:50%;
   background:var(--ink-option);box-shadow:inset 0 0 0 1px color-mix(in srgb,#000 12%,transparent);}
-#pdf-ink-settings :is(.ink-widths,.ink-highlight-widths){gap:8px;}
-#pdf-ink-settings :is([data-ink-width],[data-ink-highlight-width]){min-height:44px;padding:7px 10px;gap:0;}
-#pdf-ink-settings :is(.ink-widths,.ink-highlight-widths) i{width:30px;height:var(--ink-option);border-radius:999px;background:currentColor;}
+#pdf-ink-settings .ink-widths-row{gap:8px;}
+#pdf-ink-settings .ink-widths-row>button{min-height:44px;padding:7px 10px;gap:0;}
+#pdf-ink-settings .ink-widths-row i{width:30px;height:var(--ink-option);border-radius:999px;background:currentColor;}
 #pdf-ink-settings .ink-radii i{width:var(--ink-option);height:var(--ink-option);border-radius:50%;border:1px solid currentColor;background:var(--sentence-glass-action);}
 #pdf-ink-settings .ink-undo-setting{display:flex;align-items:center;gap:12px;margin-top:12px;font:500 12px/1.5 var(--ui);}
 #pdf-ink-settings .ink-undo-setting span{flex:1;}
-#pdf-ink-settings #ink-two-finger-undo{position:relative;flex:0 0 46px;width:46px;height:44px;min-height:44px;padding:0;border:0;background:transparent;}
+#pdf-ink-settings :is(#ink-two-finger-undo,.ink-pressure-setting .ink-pressure-switch){position:relative;flex:0 0 46px;width:46px;height:44px;min-height:44px;padding:0;border:0;background:transparent;}
+#pdf-ink-settings .ink-pressure-setting{margin-top:12px;}
+#pdf-ink-settings .ink-pressure-levels{margin-top:8px;}
+#pdf-ink-settings .ink-pressure-levels[hidden]{display:none;}
+#pdf-ink-settings .ink-pressure-levels>button{min-height:44px;font:600 12px/1.2 var(--ui);}
 @keyframes ink-settings-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){#pdf-ink-settings{animation:none;}}
 .pdf-ink-eraser-cursor{fill:rgba(255,255,255,.35);stroke:#666;stroke-width:.8;pointer-events:none;}
@@ -191,6 +201,20 @@ html body.ink-dock-side #readpill.ink-pill-active .ink-pill-toolbar{
   overflow:visible !important;
   gap:4px !important;
 }
+html body.ink-dock-side #readpill.ink-pill-active :is(.ink-pill-tools,.ink-pill-history){
+  flex-direction:column;
+  flex:none;
+  width:44px;
+  height:auto;
+}
+/* The side column scrolls its tools vertically on short screens instead. */
+html body.ink-dock-side #readpill.ink-pill-active .ink-pill-tools{
+  max-height:max(140px,calc(100dvh - 340px));
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+html body.ink-dock-side #readpill .ink-pill-history-separator{width:22px;height:1px;margin:2px 0;}
 html body:is(.ink-dock-side,.ink-dock-top) #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){
   position:fixed !important;
   left:0 !important;
