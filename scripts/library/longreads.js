@@ -1193,8 +1193,8 @@ async function restoreMissingLongReadCovers(){
 
    Titles, authors and links were checked on 2026-10-30 against Royal Road's
    own feed (royalroad.com/fiction/syndication/<id> returns the story title)
-   and the Kindle store page. `title` is the real English title; `koTitle` is
-   its Korean reading and `koSubtitle` a short Korean line about the story.
+   and the Kindle store page. `title` is the English title shown everywhere;
+   `koSubtitle` is only a short Korean line about the story, not a second title.
 
    Covers are supplied ORIGINAL art made for Breeze (movie-poster style),
    delivered as bytes and verified by exact sha256 — they are NOT the authors'
@@ -1226,7 +1226,6 @@ const WEB_NOVELS = [
   {
     id:'cinnamon-bun',
     title:'Cinnamon Bun',
-    koTitle:'시나몬 번',
     koSubtitle:'청소와 다정함으로 세상을 구하는 모험',
     author:'RavensDagger', credit:'RavensDagger',
     royalRoadUrl:'https://www.royalroad.com/fiction/31429/cinnamon-bun',
@@ -1237,7 +1236,6 @@ const WEB_NOVELS = [
   {
     id:'chasing-sunlight',
     title:'Chasing Sunlight',
-    koTitle:'체이싱 선라이트',
     koSubtitle:'햇빛을 찾아 어둠 너머로 떠나는 비행선 탐험',
     author:'InadvisablyCompelled', credit:'InadvisablyCompelled',
     royalRoadUrl:'https://www.royalroad.com/fiction/73475/chasing-sunlight',
@@ -1249,7 +1247,6 @@ const WEB_NOVELS = [
   {
     id:'mr-penn',
     title:'The Unexpected Engagement of the Marvelous Mr. Penn',
-    koTitle:'마블러스 미스터 펜의 뜻밖의 약혼',
     koSubtitle:'1899년, 신사 도둑과 영문 모를 청첩장',
     author:'R. K. Goff', credit:'R. K. Goff',
     royalRoadUrl:'https://www.royalroad.com/fiction/54508/the-unexpected-engagement-of-the-marvelous-mr',
@@ -1261,14 +1258,10 @@ const WEB_NOVELS = [
 function webNovelDefinition(id){
   return typeof WEB_NOVELS==='undefined'?null:(WEB_NOVELS.find(work=>work&&work.id===id)||null);
 }
-/* 큰 제목은 한국어 읽기, 그 아래 작은 줄은 영어 원제입니다. 소개(koSubtitle)는
-   제목 줄에 다시 붙이지 않습니다. 한국어 제목이 없으면 영어 원제를 씁니다. */
+/* 카드·미리보기·리더의 큰 제목은 영어 원제 하나입니다. 그 아래에 같은 제목을
+   한 번 더 두지 않습니다. */
 function webNovelDisplayTitle(work){
-  return (work&&(work.koTitle||work.title))||'';
-}
-function webNovelEnglishTitle(work){
-  if(!work||!work.title)return '';
-  return work.koTitle&&work.koTitle!==work.title?work.title:'';
+  return (work&&work.title)||'';
 }
 function webNovelKoreanLine(work){
   if(!work)return '';

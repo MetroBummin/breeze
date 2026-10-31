@@ -50,7 +50,8 @@ test('web novels: author-permitted, free-forever works, no monetization', () => 
     }
     assert.equal(existsSync(root + `assets/webnovels/text/${work.id}/11.txt`), false, `${work.id} has no 11th chapter`);
     // Real English title plus a Korean reading; no placeholder titles.
-    assert.ok(work.title && work.koTitle && work.koSubtitle, `${work.id} needs title, koTitle and koSubtitle`);
+    assert.ok(work.title && work.koSubtitle, `${work.id} needs an English title and a Korean blurb`);
+    assert.equal(work.koTitle, undefined, `${work.id} does not keep a Korean title`);
     assert.doesNotMatch(JSON.stringify(work), /연재작/, `${work.id} carries a placeholder title`);
   }
 });

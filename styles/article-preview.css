@@ -111,7 +111,8 @@ body:has(#article-preview[open]){overflow:hidden;}
 }
 #article-preview[data-kind="webnovel"] .ap-content{padding-top:12px;}
 #article-preview[data-kind="webnovel"] .ap-source{margin-bottom:6px;}
-#article-preview[data-kind="webnovel"] .ap-title{margin-bottom:6px;font-size:clamp(20px,3.4vw,26px);}
+#article-preview[data-kind="webnovel"] .ap-title{margin-bottom:6px;font-size:clamp(20px,3.4vw,26px);
+  overflow-wrap:break-word;word-break:normal;}
 #article-preview[data-kind="webnovel"] .ap-subtitle{margin-bottom:8px;}
 .ap-subtitle{margin:0 0 18px;color:var(--sentence-glass-muted);font:500 14px/1.5 var(--ui);}
 .ap-subtitle[hidden]{display:none;}

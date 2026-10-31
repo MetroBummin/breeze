@@ -478,8 +478,7 @@ async function openWebNovelChapter(work,chapter){
       if(!paras.length) throw new Error('empty');
       book={
         id,
-        title:typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):(work.koTitle||work.title),
-        originalTitle:work.title,
+        title:typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title,
         author:work.credit||work.author||'',
         kind:'txt',
         paras,
@@ -556,9 +555,8 @@ function openWebNovelPreview(work){
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(work.id);
   dialog.querySelector('.ap-source').textContent=work.credit||work.author||'';
   dialog.querySelector('.ap-title').textContent=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title;
-  const english=typeof webNovelEnglishTitle==='function'?webNovelEnglishTitle(work):'';
-  articlePreviewSubtitle.textContent=english;
-  articlePreviewSubtitle.hidden=!english;
+  articlePreviewSubtitle.textContent='';
+  articlePreviewSubtitle.hidden=true;
   articlePreviewPaint({summaryKo:work.intro||''});articlePreviewMetadataState('ready');
   // Intro + author credit + original links. Royal Road for all; Kindle ONLY
   // when the work carries a kindleUrl (Chasing Sunlight).

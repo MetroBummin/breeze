@@ -188,9 +188,9 @@ test('the toggle switches the one rail between 고전 and 웹소설 without RSS'
   // Breeze-made typographic covers, never empty cards.
   for(const card of novels)
     assert.match(card.querySelector('img.cover').getAttribute('src'),new RegExp('^assets/webnovels/covers/'+card.dataset.webnovelId+'\\.webp$'));
-  // Korean title on the card, the English original under it, exact-case author.
+  // English title on the card, no second title line, exact-case author.
   assert.deepEqual(novels.map(card=>[card.querySelector('.bt').textContent,card.querySelector('.ko').textContent,card.querySelector('.author').textContent]),
-    [['시나몬 번','Cinnamon Bun','RavensDagger'],['체이싱 선라이트','Chasing Sunlight','InadvisablyCompelled'],['마블러스 미스터 펜의 뜻밖의 약혼','The Unexpected Engagement of the Marvelous Mr. Penn','R. K. Goff']]);
+    [['Cinnamon Bun','','RavensDagger'],['Chasing Sunlight','','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','','R. K. Goff']]);
   assert.doesNotMatch(document.getElementById('casual-rail').textContent,/연재작|Ar'Kendrithyst/);
   novels[1].click();
   assert.equal(opened.at(-1),'webnovel:chasing-sunlight');
