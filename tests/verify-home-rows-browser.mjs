@@ -35,7 +35,24 @@ async function openPreview(page,id){
     rows:[...dialog.querySelectorAll('.ap-chapter-row')].map(row=>[row.querySelector('.ap-chapter-title').textContent,row.querySelector('.ap-chapter-state').textContent]),
     links:[...dialog.querySelectorAll('.ap-links a')].map(link=>link.textContent),
     text:dialog.textContent,
+    start:dialog.querySelector('.ap-start').textContent,
+    startClass:dialog.querySelector('.ap-start').className,
+    summaryHeading:dialog.querySelector('.ap-summary-heading').textContent,
+    order:[...dialog.querySelector('.ap-content').children].map(node=>node.className.split(' ')[0]),
   }));
+}
+async function chapterListFits(page){
+  return page.locator('#article-preview').evaluate(dialog=>{
+    const scroll=dialog.querySelector('.ap-scroll');
+    const button=dialog.querySelector('.ap-start').getBoundingClientRect();
+    const scrollRect=scroll.getBoundingClientRect();
+    const rows=[...dialog.querySelectorAll('.ap-chapter-row')].slice(0,3).map(row=>row.getBoundingClientRect());
+    return {
+      scrollTop:scroll.scrollTop,
+      visible:rows.length===3&&rows.every(rect=>rect.height>20&&rect.top>=scrollRect.top-1&&rect.bottom<=button.top+1),
+      heading:dialog.querySelector('.ap-chapters-heading').innerText.replace(/\s+/g,' ').trim(),
+    };
+  });
 }
 
 try{
@@ -101,6 +118,30 @@ try{
       assert.deepEqual(bun.rows[0],['1화','곧 공개']);
       assert.ok(bun.rows.every(([,state])=>state==='곧 공개'));
       assert.deepEqual(bun.links,['Royal Road 원문'],'Cinnamon Bun has no monetized link');
+      assert.equal(bun.start,'1화 보기');
+      assert.equal(bun.startClass,'ap-start','The chapter button keeps the existing start-button class');
+      assert.equal(bun.summaryHeading,'짧게 살펴보기');
+      assert.deepEqual(bun.order,['ap-source','ap-title','ap-subtitle','ap-chapters','ap-summary-card','ap-details']);
+      const bunFit=await chapterListFits(page);
+      assert.equal(bunFit.scrollTop,0);
+      assert.equal(bunFit.visible,true,'The first three chapters fit above the button without scrolling');
+      assert.match(bunFit.heading,/회차/);
+      assert.match(bunFit.heading,/전체 10화 ›/);
+      await page.locator('#article-preview .ap-start').click();
+      assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
+      assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'1화 보기 does not navigate while chapter 1 is unavailable');
+      const opened=await page.evaluate(()=>{
+        const work=WEB_NOVELS.find(item=>item.id==='cinnamon-bun');
+        const chapter=work.chapters.find(item=>item.n===1);
+        chapter.available=true;chapter.url='https://example.com/cinnamon-1';
+        const seen=[];const original=window.open;
+        window.open=url=>{seen.push(String(url));return null;};
+        document.querySelector('#article-preview .ap-start').click();
+        document.querySelector('#article-preview .ap-chapter-row').click();
+        window.open=original;chapter.available=false;delete chapter.url;
+        return seen;
+      });
+      assert.deepEqual(opened,['https://example.com/cinnamon-1','https://example.com/cinnamon-1'],'1화 보기 uses the chapter-1 row path');
       await page.locator('#article-preview .ap-chapter-row').first().evaluate(row=>row.click());
       assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
       assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'A 곧 공개 chapter does not navigate');
@@ -115,7 +156,11 @@ try{
       assert.equal(penn.title,'The Unexpected Engagement of the Marvelous Mr. Penn');
       assert.equal(penn.source,'R. K. Goff');
       assert.equal(penn.rows.length,10,'R. K. Goff: first 10 chapters only');
+      assert.equal(penn.start,'1화 보기');
       assert.deepEqual(penn.links,['Royal Road 원문'],'Mr. Penn has no monetized link');
+      const pennFit=await chapterListFits(page);
+      assert.equal(pennFit.visible,true,'Mr. Penn’s first three chapters fit on an iPhone sheet');
+      assert.match(pennFit.heading,/전체 10화 ›/);
       await page.locator('#article-preview .ap-close').click();
 
       // A stored 기사 choice opens 고전 while 기사 is dormant, and nothing asks RSS.

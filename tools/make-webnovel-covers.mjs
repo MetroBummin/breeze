@@ -12,9 +12,9 @@
 // has been intentionally removed.
 //
 // Expected covers (768 × 1152 WebP, q85):
-//   cinnamon-bun.webp     221094 bytes  593bf962401d696b17da22b0b7a0802b708e4515c3088c176ef2fb1aeb24cd2e
-//   chasing-sunlight.webp 118820 bytes  fac5dd6eb00cd80fd17239c99c015a062470b3a4c28c82f02124da9000e33c83
-//   mr-penn.webp          146670 bytes  dde62d063ae60076b8bf884c517f1d3f69d70b42ec8e964b1b1f0cb19e6093ff
+//   cinnamon-bun.webp     288744 bytes  b6a5adcbe1134c60c0c96be2160a75ee5dff0ce9d555ae3268e3799094ab0e7c
+//   chasing-sunlight.webp 139112 bytes  39286a47142b3debd91aef6258b651434836ac12c74794b2ba1649bc4c242fbe
+//   mr-penn.webp          207338 bytes  d3307389ea10d06a039149b6b3e51915f0ee195141e31c562ac417a8841d9828
 
 console.log('make-webnovel-covers: retired — covers are supplied original art verified by sha256; nothing to generate. See assets/webnovels/covers/README.md.');
 process.exit(0);

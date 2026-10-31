@@ -437,21 +437,25 @@ function openLongReadPreview(read){
 /* ================= 웹소설 미리보기 =================
    같은 #article-preview 시트를 그대로 씁니다. 따로 띄우는 화면은 없습니다.
    dataset.kind='webnovel' 로 표시하고, 소개·작가 표기·원문 링크를 채운 뒤
-   시트 안(.ap-scroll)에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 주소가
+   제목·소개 바로 아래에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 주소가
    있는 회차(available && url)는 원문을 열고, 아직 없는 회차는 '곧 공개' 로
-   표시하고 이동하지 않습니다. */
+   표시하고 이동하지 않습니다. 하단 버튼은 1화를 그 같은 경로로 엽니다. */
 const articlePreviewChapters=document.createElement('section');
 articlePreviewChapters.className='ap-chapters';articlePreviewChapters.hidden=true;
 articlePreviewChapters.setAttribute('aria-label','회차 목록');
-articlePreviewDetails.after(articlePreviewChapters);
 /* 웹소설의 영어 원제 아래에 두는 한국어 한 줄(읽기 · 소개). 다른 미리보기에서는 숨깁니다. */
 const articlePreviewSubtitle=document.createElement('p');
 articlePreviewSubtitle.className='ap-subtitle';articlePreviewSubtitle.hidden=true;
 articlePreviewDialog.querySelector('.ap-title').after(articlePreviewSubtitle);
+articlePreviewSubtitle.after(articlePreviewChapters);
 function webNovelPreviewLink(label,url){
   const link=document.createElement('a');
   link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label;
   return link;
+}
+function webNovelChapterOne(work){
+  const chapters=Array.isArray(work&&work.chapters)?work.chapters:[];
+  return chapters.find(chapter=>chapter&&Number(chapter.n)===1)||null;
 }
 function openWebNovelChapter(work,chapter){
   // No scraping and no bundled text yet: a placeholder chapter never navigates.
@@ -462,10 +466,22 @@ function openWebNovelChapter(work,chapter){
 function renderWebNovelChapters(work){
   const list=articlePreviewChapters;
   list.replaceChildren();
-  const heading=document.createElement('div');
-  heading.className='ap-chapters-heading';heading.textContent='회차';
-  list.append(heading);
   const chapters=Array.isArray(work.chapters)?work.chapters:[];
+  const heading=document.createElement('div');
+  heading.className='ap-chapters-heading';
+  const label=document.createElement('span');
+  label.className='ap-chapters-label';
+  label.textContent='회차';
+  const all=document.createElement('button');
+  all.type='button';
+  all.className='ap-chapters-all';
+  all.textContent='전체 '+chapters.length+'화 ›';
+  all.onclick=()=>{
+    const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    list.scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});
+  };
+  heading.append(label,all);
+  list.append(heading);
   for(const chapter of chapters){
     const row=document.createElement('button');
     row.type='button';
@@ -510,9 +526,11 @@ function openWebNovelPreview(work){
   const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
   if(work.cover){image.src=work.cover;image.hidden=false;image.onerror=()=>{image.hidden=true;};}
   else{image.hidden=true;image.removeAttribute('src');}
-  // No single-book CTA for a web novel: chapters are the entry points.
+  // Same entry as the chapter-1 row. The top X still closes the sheet.
+  // An unavailable chapter keeps this button enabled and shows the row's status.
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
-  start.onclick=()=>articlePreviewClose();start.disabled=false;start.textContent='닫기';start.removeAttribute('aria-busy');
+  start.onclick=()=>openWebNovelChapter(work,webNovelChapterOne(work));
+  start.disabled=false;start.textContent='1화 보기';start.removeAttribute('aria-busy');
   articlePreviewStatus('');dialog.querySelector('.ap-scroll').scrollTop=0;
   dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
 }
