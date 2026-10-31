@@ -42,3 +42,7 @@ New catalog cards and imports use these covers. Existing bundled books lacking
 covers receive their catalog cover asynchronously after Home appears. Existing
 saved/custom covers are preserved; source text and reading identity are never
 replaced. The Backrooms cover and its licensing record are unchanged.
+
+Web-novel covers live separately in
+[`assets/webnovels/covers/README.md`](../../webnovels/covers/README.md) and are
+original art made for Breeze, pinned by sha256.
