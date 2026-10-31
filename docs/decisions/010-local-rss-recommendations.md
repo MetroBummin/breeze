@@ -209,6 +209,17 @@ order, with a single 파일 추가 tile at the end. The 추천 toggle is now the
 longer read; a stored value is simply ignored. The full library does not add a
 책/글 filter of its own.
 
+#### The full library is the whole 내 책 (2026-10-31)
+
+The chevron view (`#v-longform`) lists the same items as the Home 내 책
+carousel: books, saved articles and pasted text, server-only books and
+articles, and book-cloud rows. Both come from one list, `myBooksEntries()`,
+sorted by `compareRecentReading`, so the order is the same in both places. The
+library passes `library=true` to get cards that can be managed. The header
+count covers every card shown and uses a neutral counter (`3개`, not `3권`).
+When a book category is selected, only books in that category are shown,
+because articles use their own categories on the 글 page.
+
 #### 기사 tab dormant (2026-10-30)
 
 Per owner feedback, the 추천 toggle is 고전 / 웹소설 only. The 기사 tab and

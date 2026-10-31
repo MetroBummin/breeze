@@ -146,6 +146,23 @@ body.dark #v-vocab .memory-wordmark{background-image:url(../assets/brand/wordmar
 #review-grade small{font:400 11px/1.3 var(--ui);color:var(--sentence-glass-secondary);}
 #review-grade{margin-top:16px;}
 #review-reveal{margin-top:16px;}
+/* English pronunciation reuses the shared speak() path. The button is a plain
+   outline speaker in the card's secondary icon ink (the same ink as the star
+   buttons), with no circle or fill, pinned to the card's top-right corner. The
+   44px touch target sits 12px in from the corner, so the 22px glyph lines up
+   with the card's 24px top/side inset and stays clear of the centered tap/flip
+   area. Muted keeps the same spot and shape in a lighter gray with a slash.
+   Three ids so the generic `#vocabulary-review-page button:not(#review-close)`
+   pill rule never paints a border or background on it. */
+#review-flip{position:relative;}
+#vocabulary-review-page #review-flip #review-speak{position:absolute;top:12px;right:12px;z-index:1;flex:none;display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:12px;background:transparent;box-shadow:none;color:var(--sentence-glass-secondary);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:color .15s,opacity .15s;}
+#vocabulary-review-page #review-flip #review-speak.playing{color:var(--sentence-glass-ink);}
+#vocabulary-review-page #review-flip #review-speak.muted{color:color-mix(in srgb,var(--sentence-glass-secondary) 55%,transparent);}
+#vocabulary-review-page #review-flip #review-speak:focus-visible{outline:2px solid var(--sentence-glass-secondary);outline-offset:-2px;}
+#review-speak svg{width:22px;height:22px;}
+#review-speak .review-speak-off,#review-speak.muted .review-speak-on{display:none;}
+#review-speak.muted .review-speak-off{display:block;}
+@media(prefers-reduced-motion:reduce){#vocabulary-review-page #review-flip #review-speak{transition:none;}}
 #review-back:not([hidden]){animation:review-card-turn .2s ease-out;transform-origin:center;}
 @keyframes review-card-turn{from{opacity:.3;transform:rotateY(-18deg);}to{opacity:1;transform:rotateY(0);}}
 @media(prefers-reduced-motion:reduce){#review-back:not([hidden]){animation:none;}}

@@ -131,7 +131,7 @@ try{
       // 내 책: opened, unfinished items first (most recent first), then the rest.
       await page.evaluate(async()=>{
         const make=(id,title,kind)=>({id,title,kind,author:'Writer',site:'Example',paras:[title,'Body text for '+title+'.'],addedAt:1});
-        const list=[make('older','Older book','txt'),make('newer','Newer article','paste'),make('finished','Finished book','txt'),make('fresh','Never opened','txt')];
+        const list=[make('older','Older book','txt'),{...make('newer','Newer article','article'),sourceUrl:'https://example.com/newer'},make('finished','Finished book','txt'),make('fresh','Never opened','txt')];
         for(const book of list)await bookPut(book);
         books=list;
         positions={older:{p:.3,t:1},newer:{p:.2,t:2},finished:{p:1,t:3}};
@@ -156,6 +156,14 @@ try{
       // The chevron opens the full library, which is the grid: 2, 3 and 4 columns.
       await page.locator('#longform .sec-head .section-link').click();
       await page.waitForFunction(()=>document.getElementById('v-longform').classList.contains('on'));
+      // The library is the full 내 책: the saved article from the Home carousel is
+      // there too, in the same order, and the count covers every card.
+      const homeOrder=await page.evaluate(()=>[...document.querySelectorAll('#shelf [data-local-book]')].map(node=>node.dataset.localBook));
+      assert.deepEqual(await page.locator('#longform-grid [data-local-book]').evaluateAll(nodes=>nodes.map(node=>node.dataset.localBook)),homeOrder,
+        'The chevron grid lists the same books and articles as Home 내 책');
+      assert.ok(homeOrder.includes('newer'),'The saved article is in Home 내 책');
+      assert.equal(await page.locator('#longform-grid .casual[data-local-book="newer"]').count(),1,'The saved article is in the chevron grid');
+      assert.equal(await page.locator('#longform-cnt').textContent(),'4개');
       const columns=()=>page.evaluate(()=>getComputedStyle(document.getElementById('longform-grid')).gridTemplateColumns.split(' ').length);
       assert.equal(await columns(),2);
       await page.setViewportSize({width:820,height:1180});

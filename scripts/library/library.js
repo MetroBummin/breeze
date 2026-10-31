@@ -682,19 +682,29 @@ function renderHomeArticles(rail){
    순서로, 한 번도 열지 않은 것은 넣은 순서로 둡니다. 따로 '이어 읽기' 줄을
    두지 않아도 읽던 책이 첫 칸에 있습니다. 머리글 링크는 서재(#v-longform)로
    갑니다. */
-function myBooksEntries(){
+/* library=true 는 머리글 링크로 가는 서재(#v-longform)가 같은 목록을 관리할
+   수 있는 카드로 다시 깔 때 씁니다. 서재에서 책 카테고리를 고르면 그 카테고리의
+   책만 남고, 글은 카테고리가 따로라 '전체 서재'에서만 함께 나옵니다. */
+function myBooksEntries(library=false){
   const entries=[];
+  const folder=library?currentLibraryFolder('longform'):'';
+  const inFolder=id=>!library||folderMatches(id,'longform');
   const add=(spec,readAt,addedAt,progress)=>entries.push({spec,readAt:Number(readAt)||0,addedAt:Number(addedAt)||0,progress:Number(progress)||0});
-  for(const book of books.filter(book=>!isCasual(book)))add(homeBookSpec(book,false),localReadAt(book.id),book.addedAt,posOf(book.id).p);
-  for(const row of serverOnlyBooks())
-    add({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')},
+  const bookSpec=(book,casual)=>library?{key:'book:'+book.id,create:()=>casual
+    ?homeRegularTile(casualCard(book,null,false),book.title,book.site||'내 글',true)
+    :homeRegularTile(bookCard(book,null),book.title,book.author||'내 책',true)}:homeBookSpec(book,casual);
+  for(const book of books.filter(book=>!isCasual(book)&&inFolder(book.id)))add(bookSpec(book,false),localReadAt(book.id),book.addedAt,posOf(book.id).p);
+  for(const row of serverOnlyBooks().filter(row=>inFolder(row.book_id)))
+    add({key:'cloud:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudBookCard(row,library),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')},
       row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
   if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())
     add({key:'bookcloud:'+row.bookId,stamp:JSON.stringify([row.title,row.author,row.locator]),create:()=>homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책')},0,0,0);
-  for(const book of books.filter(isCasual))add(homeBookSpec(book,true),localReadAt(book.id),book.addedAt,posOf(book.id).p);
-  for(const row of serverOnlyCasuals())
-    add({key:'cloudcasual:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,false),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')},
-      row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
+  if(!folder){
+    for(const book of books.filter(isCasual))add(bookSpec(book,true),localReadAt(book.id),book.addedAt,posOf(book.id).p);
+    for(const row of serverOnlyCasuals())
+      add({key:'cloudcasual:'+row.book_id,stamp:JSON.stringify(row),create:()=>homeRegularTile(cloudCasualCard(row,library),row.meta?.title||'(제목 없음)',row.meta?.site||'내 글')},
+        row.meta?.position?.t,row.meta?.addedAt,row.meta?.position?.p);
+  }
   entries.sort(compareRecentReading);
   return entries.map(entry=>entry.spec);
 }
@@ -744,25 +754,23 @@ function renderLongformRecommend(offered){
     create:()=>homeRecommendLongReadCard(read),
   })));
 }
+/* 머리글 링크로 오는 내 책 전체입니다. 홈의 내 책 줄과 같은 목록(책과 글)을
+   같은 순서로 격자에 깝니다. 수는 보이는 카드 전부를 셉니다. */
 function renderLongformLibrary(){
   renderFolderControls();
   renderLibraryStorageNotice();
-  const longform = folderBooks(longformBooks(),'longform');
   const grid = document.getElementById('longform-grid');
   if(!grid) return;
   const empty = document.getElementById('longform-empty');
-  document.getElementById('longform-cnt').textContent = longform.length ? `${longform.length}권` : '';
+  const specs = myBooksEntries(true);
+  document.getElementById('longform-cnt').textContent = specs.length ? `${specs.length}개` : '';
   grid.innerHTML = '';
-  longform.forEach(book => grid.appendChild(homeRegularTile(bookCard(book,null),book.title,book.author||'내 책',true)));
-  const cloud = serverOnlyBooks().filter(row=>folderMatches(row.book_id,'longform'));
-  cloud.forEach(row => grid.appendChild(homeRegularTile(cloudBookCard(row),row.meta?.title||'(제목 없음)',row.meta?.author||'내 책')));
-  if(typeof bookCloudLibraryRows==='function')for(const row of bookCloudLibraryRows())grid.appendChild(homeRegularTile(bookCloudCard(row),row.title||'(제목 없음)',row.author||'내 책'));
+  specs.forEach(spec => grid.appendChild(spec.create()));
   const offered = currentLibraryFolder('longform')?[]:offeredLongReads();
   renderLongformRecommend(offered);
   grid.appendChild(homeAddTile(longformAddCard(),'파일 추가'));
-  const linked=typeof bookCloudLibraryRows==='function'?bookCloudLibraryRows().length:0;
-  empty.hidden = longform.length > 0 || offered.length > 0 || cloud.length > 0 || linked>0;
-  empty.innerHTML = '아직 넣어 둔 책이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
+  empty.hidden = specs.length > 0 || offered.length > 0;
+  empty.innerHTML = '아직 넣어 둔 책이나 글이 없어요.<br>PDF·EPUB 파일을 끌어다 놓아 보세요.';
 }
 
 /* ================= 하나뿐인 추가 시트 =================

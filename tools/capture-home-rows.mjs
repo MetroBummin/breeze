@@ -29,7 +29,7 @@ async function seed(page){
   await page.evaluate(async() => {
     const speckled = LONG_READS.find(read => read.id === 'sherlock-holmes-speckled-band');
     const started = await importLongRead(speckled);
-    const article = {id:'qa-article', kind:'paste', title:'How Octopuses Taste With Their Arms', site:'Breeze',
+    const article = {id:'qa-article', kind:'article', sourceUrl:'https://example.com/octopus', title:'How Octopuses Taste With Their Arms', site:'Breeze',
       paras:['How Octopuses Taste With Their Arms', 'Octopuses sense chemicals through the suckers on their arms.'], addedAt:Date.now()};
     await bookPut(article); books.unshift(article);
     positions[started.id] = {p:.42, t:Date.now() - 2000};

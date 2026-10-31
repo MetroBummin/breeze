@@ -990,6 +990,19 @@ assert.match(readerCss,/--control-bottom:max\(8px,env\(safe-area-inset-bottom\)\
   'Shared bottom offset must preserve safe-area clearance and desktop breathing room');
 assert.match(dictionaryCss, /#p-speak\{[^}]*touch-action:manipulation/,
   'Rapid pronunciation taps can leak into browser double-tap zoom');
+/* 단어 플래시카드의 발음 단추는 영어 앞면(#review-front)에 서고, 사전 팝업의
+   #p-speak 와 같은 발음 토큰/재생 표시를 공유합니다(새 TTS 경로 없이 speak()
+   재사용). 기본은 자동 발음, 단추는 켜기/끄기라 켜짐/꺼짐 두 그림이
+   마크업과 CSS에 함께 있어야 합니다. */
+assert.match(index, /id="review-front"[\s\S]*?id="review-expression"[\s\S]*?id="review-speak"[\s\S]*?발음 켜짐[\s\S]*?class="review-speak-on"[\s\S]*?class="review-speak-off"[\s\S]*?<\/button>/,
+  'The flashcard pronunciation toggle (on/muted icons) left the English side of the review card');
+const wordbookCss = readFileSync(resolve(root, 'styles/wordbook.css'), 'utf8');
+assert.match(wordbookCss, /#review-speak\{[^}]*touch-action:manipulation/,
+  'Rapid flashcard pronunciation taps can leak into browser double-tap zoom');
+assert.match(wordbookCss, /#review-speak\.playing\{/,
+  'The flashcard pronunciation button lost its playing state styling');
+assert.match(wordbookCss, /#review-speak\.muted \.review-speak-off\{display:block/,
+  'The muted flashcard pronunciation toggle no longer shows the muted speaker icon');
 assert.doesNotMatch(index,/id="aa-ink-undo(?:-row)?"/,'Writing-only undo preference remains in Reader Aa');
 assert.doesNotMatch(index, /id="pdfzoomfabs"/,
   'The old floating PDF zoom control was not removed');

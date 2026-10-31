@@ -315,3 +315,64 @@ subsequent decision and a separate implementation change.
 algorithm result, source metadata, CSV/data retention and 20 light/dark layouts.
 Existing completion/reentry and explicitly opted-in prototype tests retain their
 previous state/history contracts. Browser evidence does not prove native iOS QA.
+
+## Flashcard English pronunciation (2026-10-14 KST)
+
+The simple word flashcard's English side (`#review-front`, showing
+`#review-expression`) carries a speaker button `#review-speak` with a 44px touch
+target. It reuses the existing `speak()` path from `scripts/ui/preferences.js`
+(native iOS `breezeSpeech` bridge first, Web Speech fallback), so no second TTS
+engine or dependency is added.
+
+**Revised 2026-10-30 (owner feedback on #310): auto-play with an on/off toggle.**
+Pronunciation is on by default: each time a card's English side is shown (a new
+card, or the same card returning to its English side after a grade), the word is
+spoken once. The button no longer replays; it toggles pronunciation. Turning it
+off calls `cancelSpeak()`, switches to a muted speaker icon (`.muted`) and stops
+auto-play on later cards; turning it on restores the speaker icon and speaks the
+current card once. `aria-label`/`title` read `발음 켜짐` or `발음 꺼짐`. The choice
+is a device preference stored with the existing `load`/`save` helpers under
+`breeze.cardSpeech` (missing = on), so it survives cards, sessions and restarts.
+`simpleCardAutoSpokenKey` records the card already spoken on the current English
+side, so re-renders and flip animations never speak twice; it clears on the
+meaning side, on completion/empty screens and when leaving study. Auto-play runs
+only in the study view, and stays silent (no toast per card) when neither the
+native bridge nor `speechSynthesis` exists.
+
+`speak(text, button)` now takes the button whose `playing` state it toggles
+(default `#p-speak`), and the native `breezeNativeSpeech` handler clears/sets that
+same tracked button. All decision 001 invariants are unchanged: an incrementing
+generation cancels the prior utterance so repeated taps never overlap, acceptance
+is not shown as audible success, and native setup failure clears the playing
+state. `cancelSpeak()` runs the same generation/cancel path (incremented
+generation, audio and `speechSynthesis.cancel`, native `{command:'cancel'}`) so
+in-flight pronunciation stops when the card changes (grade, undo, restart, reset,
+and leaving study), and audio from the previous card never bleeds into the next.
+
+**Revised 2026-10-30 (owner feedback on #310): look and position.** The button is
+a plain outline speaker in the card's secondary icon ink (`--sentence-glass-secondary`,
+the same ink as the star buttons), with no circle, border or fill. It sits in the
+card's top-right corner (`top:12px; right:12px` on `#review-flip`, so the 22px glyph
+lines up with the card's 24px inset) and keeps the 44px touch target. Muted keeps the
+same spot and shape, with a slash/× in a lighter gray. Playing switches to the
+primary card ink.
+
+The speaker button sits above the card's large centered tap/flip area and stops
+its own click/keydown/pointerdown propagation, so tapping it only pronounces and
+never flips or advances the card; flip and swipe stay owned by the card's
+`studyCardMotion` and are never blocked or awaited on audio. With
+`window.speechSynthesis` unavailable the button neither throws nor sticks in a
+playing state, and the card still flips and advances (graceful no-audio). The
+button is shown only when a card with a word is present and hidden on the
+completion/empty states. No vocabulary, star, sync, review or simple-session
+record is read or written by pronunciation.
+
+`verify-flashcard-pronunciation-browser.mjs` stubs Web Speech and asserts the
+default auto-play once per English side (no replay on re-render), toggle off
+stopping audio with the muted icon/label and persisting across a reload, toggle on
+speaking the current card once and resuming auto-play, no speech or button on
+completion/empty screens, no flip on the speaker tap, a cancel on card advance,
+no-audio no-throw with the card still flipping, and no `pageerror`, with on/muted
+light/dark captures at phone/tablet/desktop/short viewports and no `#v-study`
+horizontal overflow. Captures are kept in `docs/screenshots/310/`. `verify-simple-word-cards-browser.mjs`
+still passes. Browser evidence does not prove native iOS silent-switch QA.

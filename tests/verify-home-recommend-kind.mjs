@@ -123,7 +123,8 @@ function harness({articles=false}={}){
     renderFolderControls(){},folderBooks:list=>list,folderMatches:()=>true,
     bookCard(book){const card=document.createElement('div');card.className='bookcard owned';card.dataset.localBook=book.id;return card;},
     cloudBookCard(){return document.createElement('div');},
-    cloudCasualCard(){return document.createElement('div');},
+    casualCard(book){const card=document.createElement('div');card.className='casual';card.dataset.localBook=book.id;return card;},
+    cloudCasualCard(row){const card=document.createElement('div');card.className='casual cloud';card.dataset.cloudBook=row.book_id;return card;},
     openWebNovelPreview(work){opened.push('webnovel:'+work.id);},
     activeAppView:()=>'home',
     window:{BREEZE_CONFIG:articles?{HOME_ARTICLES:true}:{}},
@@ -370,7 +371,7 @@ test('long-form offers use the 추천 rail and the same catalog ownership as Hom
   assert.ok(libraryOfferIds(document).includes('alice-in-wonderland'));
   books.push({id:'saved-holmes',kind:'txt',title:'My Holmes',author:'Arthur Conan Doyle',longReadId:'sherlock-holmes-speckled-band'});
   c.renderLongformLibrary();
-  assert.equal(document.getElementById('longform-cnt').textContent,'1권');
+  assert.equal(document.getElementById('longform-cnt').textContent,'1개');
   assert.ok(document.querySelector('#longform-grid [data-local-book="saved-holmes"]'));
   assert.equal(libraryOfferIds(document).includes('sherlock-holmes-speckled-band'),false);
   assert.ok(libraryOfferIds(document).includes('sherlock-holmes-scandal-in-bohemia'));
@@ -395,5 +396,24 @@ test('long-form offers use the 추천 rail and the same catalog ownership as Hom
     books.push({id:'lib-'+id,kind:'txt',title:id,longReadId:id});
   c.renderLongformLibrary();
   assert.equal(section.hidden,true);
-  assert.equal(document.getElementById('longform-cnt').textContent,'7권');
+  assert.equal(document.getElementById('longform-cnt').textContent,'7개');
+});
+
+test('the 내 책 library lists books and saved articles in the Home order',()=>{
+  const {context:c,books,document}=harness();
+  books.push({id:'book-a',kind:'txt',title:'Book A',addedAt:1},{id:'article-b',kind:'article',title:'Article B',site:'Example',addedAt:2});
+  c.readAt['book-a']=10;c.readAt['article-b']=20;
+  c.positions['book-a']={p:.4,t:10};c.positions['article-b']={p:.2,t:20};
+  c.sbUser={};
+  c.serverOnlyCasuals=()=>[{book_id:'cloud-c',meta:{kind:'article',title:'Cloud C',addedAt:3}}];
+  c.renderHome();
+  c.renderLongformLibrary();
+  const ids=node=>node.dataset.localBook||node.dataset.cloudBook||node.dataset.bookId;
+  assert.deepEqual([...document.querySelectorAll('#longform-grid [data-local-book],#longform-grid [data-cloud-book]')].map(ids),['article-b','book-a','cloud-c']);
+  assert.equal(document.getElementById('longform-cnt').textContent,'3개');
+  // A book category keeps only books; articles have their own categories.
+  c.libraryFolder='school';
+  c.renderLongformLibrary();
+  assert.deepEqual([...document.querySelectorAll('#longform-grid [data-local-book],#longform-grid [data-cloud-book]')].map(ids),['book-a']);
+  assert.equal(document.getElementById('longform-cnt').textContent,'1개');
 });
