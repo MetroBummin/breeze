@@ -448,18 +448,17 @@
   }
 }
 
-/* ---- 내 책 library grid (2026-10-30) ----
+/* ---- Home carousels and the 내 책 library grid (2026-10-30) ----
    On Home both rows are sideways carousels (the rail rules above): 추천
-   (#casual-rail) and 내 책 (#shelf), as before #307. The grid lives in the
-   full library (#v-longform, opened by the 내 책 chevron): 2 columns on a
-   phone, 3 from 700px, 4 from 1024px. */
-#v-longform #longform-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-@media (min-width:700px){
-  #v-longform #longform-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 16px;}
-}
-@media (min-width:1024px){
-  #v-longform #longform-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
-}
+   (#casual-rail) and 내 책 (#shelf), as before #307. The grid is the full
+   library (#v-longform #longform-grid, opened by the 내 책 chevron) and uses
+   the shared library grid rule above, the same cards as #casual-grid:
+   2 columns on a phone, 3 on a tablet, 4 on a wide screen.
+   A web-novel card has the classic card's frame: cover, title, author. Its
+   Korean line (.ko) would add a third caption row inside the 3:4 card and
+   shrink the cover, so the carousel leaves it out; the Korean title stays in
+   the card's label and in the preview sheet's subtitle. */
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book .ko{display:none;}
 
 /* Quiet typographic jackets when no real cover is available. */
 .editorial-cover .cover-art{position:absolute;left:50%;top:19%;width:76%;height:43%;

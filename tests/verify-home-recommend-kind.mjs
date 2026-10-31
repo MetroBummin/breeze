@@ -65,7 +65,7 @@ test('book captions sit under the picture inside the article card box',()=>{
   assert.doesNotMatch(block,/#[0-9a-fA-F]{3,8}/,'Book rail styling introduces a new color');
 });
 
-test('추천 and 내 책 are horizontal carousels on Home; the full library is the 2/3/4-column grid',()=>{
+test('추천 and 내 책 are horizontal carousels on Home; the full library is the shared library grid',()=>{
   // 추천 (#casual-rail) reverts to the pre-#307 sideways rail: flex + overflow-x,
   // scroll snapped, touch-smooth, no visible scrollbar — and no vertical hijack.
   assert.match(homeCss,/#casual-rail, \.casual-rail, #longform-recommend-rail\{display:flex;[^}]*overflow-x:auto;[^}]*scroll-snap-type:x proximity/);
@@ -77,11 +77,15 @@ test('추천 and 내 책 are horizontal carousels on Home; the full library is t
   assert.match(homeCss,/#v-home #shelf\{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;/);
   assert.match(homeCss,/#v-home #shelf > \.home-regular-tile\{\s*flex:0 0 170px;/);
   assert.doesNotMatch(homeCss,/#v-home[^{,]*#shelf[^{]*\{[^}]*display:grid/,'No rule turns Home 내 책 into a grid');
-  // The full library behind the chevron is the grid: 2 columns, 3 from 700px, 4 from 1024px.
-  assert.match(homeCss,/#v-longform #longform-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
-  assert.match(homeCss,/@media \(min-width:700px\)\{\s*#v-longform #longform-grid\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  assert.match(homeCss,/@media \(min-width:1024px\)\{\s*#v-longform #longform-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  const grid=homeCss.slice(homeCss.indexOf('/* ---- 내 책 library grid'),homeCss.indexOf('/* Quiet typographic jackets'));
+  // The full library behind the chevron is the grid it shares with the 글 page:
+  // the same card width on both pages, 2 columns on a phone. The browser check
+  // counts 2, 3 and 4 columns at phone, tablet and desktop widths.
+  assert.match(homeCss,/#v-casuals #casual-grid,#v-longform #longform-grid\{\s*display:grid;grid-template-columns:repeat\(auto-fill,min\(41vw,190px\)\)/);
+  assert.match(homeCss,/@media \(max-width:600px\)\{\s*#v-casuals #casual-grid,#v-longform #longform-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
+  assert.doesNotMatch(homeCss,/(^|\n)\s*#v-longform #longform-grid\{grid-template-columns/,'The library grid has no rule of its own that the 글 page lacks');
+  // A web-novel card keeps the classic card's caption rows, so its cover frame matches.
+  assert.match(homeCss,/:is\(#v-home #casual-rail, #v-longform #longform-recommend-rail\) > \.home-recommend-book \.ko\{display:none;\}/);
+  const grid=homeCss.slice(homeCss.indexOf('/* ---- Home carousels and the 내 책 library grid'),homeCss.indexOf('/* Quiet typographic jackets'));
   assert.ok(grid.length>0);
   assert.doesNotMatch(grid,/:\s*#[0-9a-fA-F]{3,8}\b/,'Library grid introduces a new color');
 });

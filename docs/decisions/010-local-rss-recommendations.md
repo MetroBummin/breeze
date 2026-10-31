@@ -179,8 +179,13 @@ order (`compareRecentReading`), so a book is first in both places. On Home
 both rows are horizontal scrolling carousels (the pre-#307 style): the selected
 추천 tab's items, and 내 책, each run in one sideways row that scrolls on iPhone
 and iPad with no vertical hijack. The grid is the full library behind the 내 책
-chevron (`#v-longform #longform-grid`): 2 columns on a phone, 3 from 700px, 4
-from 1024px. Web-novel covers keep their 2:3 shape so nothing is cropped. The
+chevron (`#v-longform #longform-grid`). It uses the library grid rule it already
+shared with the 글 page (`#casual-grid`): columns of `min(41vw,190px)`, so 2
+columns on a phone (171px at 390), 3 on a tablet, 4 on a wide screen. Both
+library pages keep the same card size. In the 추천 carousel a web-novel card has
+the classic card's frame (cover, title, author); its Korean line (`.ko`) is not
+shown there, because a third caption row inside the 3:4 card shrank the cover.
+The Korean title stays in the card's label and the preview sheet's subtitle. The
 floating resume pill and + stay as they were.
 
 #### 추천 back to a carousel (2026-10-30, follow-up to #307)
@@ -190,7 +195,7 @@ was wrong: 추천 is a horizontal carousel again, exactly as before #307. A late
 correction made 내 책 on Home a carousel too, and moved the grid to the full
 library (`#v-longform`). This is CSS-only. `#casual-rail` and `#shelf` fall back
 to the rail rules (`display:flex; overflow-x:auto; scroll-snap-type:x`), and
-`#v-longform #longform-grid` is the 2/3/4-column grid. Everything else #307 introduced is kept: the
+`#v-longform #longform-grid` keeps the shared 2/3/4-column library grid. Everything else #307 introduced is kept: the
 고전/웹소설/기사 toggle, the three web novels and their new covers
 (`assets/webnovels/covers/*.webp`), and article→내 책 saving
 (`commitArticleDraft`).

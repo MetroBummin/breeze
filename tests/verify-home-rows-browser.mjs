@@ -1,6 +1,6 @@
 // Home: 추천 (고전 / 웹소설; 기사 is dormant) on top and 내 책 below, both as
 // horizontal scrolling carousels. The 내 책 chevron opens the full library,
-// which is the 2-column grid on a phone (3 from 700px, 4 from 1024px).
+// which is the 2-column grid on a phone (3 on a tablet, 4 on a wide screen).
 // Deterministic: every request outside the local server is aborted.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
