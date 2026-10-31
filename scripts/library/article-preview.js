@@ -165,6 +165,7 @@ function articlePreviewClose(cancelOpening=true){
   articlePreviewDialog.dataset.preparing='false';
   articlePreviewDialog.dataset.kind='article';
   if(typeof articlePreviewChapters!=='undefined'){articlePreviewChapters.hidden=true;articlePreviewChapters.textContent='';}
+  articlePreviewDialog.querySelector('.ap-links')?.remove();
   if(typeof articlePreviewSubtitle!=='undefined'){articlePreviewSubtitle.hidden=true;articlePreviewSubtitle.textContent='';}
   articlePreviewGeneration++;
   articlePreviewBook=null;
@@ -437,40 +438,102 @@ function openLongReadPreview(read){
 /* ================= 웹소설 미리보기 =================
    같은 #article-preview 시트를 그대로 씁니다. 따로 띄우는 화면은 없습니다.
    dataset.kind='webnovel' 로 표시하고, 소개·작가 표기·원문 링크를 채운 뒤
-   시트 안(.ap-scroll)에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 주소가
+   제목·소개 바로 아래에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 주소가
    있는 회차(available && url)는 원문을 열고, 아직 없는 회차는 '곧 공개' 로
-   표시하고 이동하지 않습니다. */
+   표시하고 이동하지 않습니다. 하단 버튼은 1화를 그 같은 경로로 엽니다. */
 const articlePreviewChapters=document.createElement('section');
 articlePreviewChapters.className='ap-chapters';articlePreviewChapters.hidden=true;
 articlePreviewChapters.setAttribute('aria-label','회차 목록');
-articlePreviewDetails.after(articlePreviewChapters);
 /* 웹소설의 영어 원제 아래에 두는 한국어 한 줄(읽기 · 소개). 다른 미리보기에서는 숨깁니다. */
 const articlePreviewSubtitle=document.createElement('p');
 articlePreviewSubtitle.className='ap-subtitle';articlePreviewSubtitle.hidden=true;
 articlePreviewDialog.querySelector('.ap-title').after(articlePreviewSubtitle);
+articlePreviewSubtitle.after(articlePreviewChapters);
 function webNovelPreviewLink(label,url){
   const link=document.createElement('a');
   link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label;
   return link;
 }
-function openWebNovelChapter(work,chapter){
-  // No scraping and no bundled text yet: a placeholder chapter never navigates.
-  // A chapter that later carries its original url opens there.
-  if(chapter&&chapter.available&&chapter.url){window.open(chapter.url,'_blank','noopener,noreferrer');return;}
-  articlePreviewStatus('곧 공개될 회차예요.');
+function webNovelChapterOne(work){
+  const chapters=Array.isArray(work&&work.chapters)?work.chapters:[];
+  return chapters.find(chapter=>chapter&&Number(chapter.n)===1)||null;
+}
+function webNovelChapterBookId(work,chapter){
+  return 'webnovel:'+(work&&work.id)+':'+(chapter&&chapter.n);
+}
+async function openWebNovelChapter(work,chapter){
+  // A chapter with bundled text opens in the Reader. A placeholder never navigates.
+  if(!(chapter&&chapter.available&&chapter.file)){
+    articlePreviewStatus('곧 공개될 회차예요.');
+    return;
+  }
+  const id=webNovelChapterBookId(work,chapter);
+  let book=typeof books!=='undefined'&&books.find(item=>item&&item.id===id);
+  try{
+    if(!book){
+      const response=await fetch(chapter.file);
+      if(!response.ok) throw new Error('chapter');
+      const text=await response.text();
+      const paras=parseTXT(text,{preserveParagraphs:true});
+      if(!paras.length) throw new Error('empty');
+      book={
+        id,
+        title:typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title,
+        author:work.credit||work.author||'',
+        kind:'txt',
+        paras,
+        formatting:null,
+        sourceMap:null,
+        webNovelId:work.id,
+        webNovelChapter:chapter.n,
+        longReadId:id,
+        sourceUrl:work.royalRoadUrl||'',
+        site:'Royal Road',
+        addedAt:Date.now(),
+        textAvailable:true,
+        fingerprint:typeof bookContentFingerprint==='function'?bookContentFingerprint(paras):'',
+      };
+      await bookPut(book);
+      books.unshift(book);
+      if(typeof applyLongReadCover==='function'&&work.cover) await applyLongReadCover({id,cover:work.cover});
+    }
+    if(typeof webNovelProgress==='function'&&typeof save==='function'){
+      const progress=webNovelProgress();
+      progress[work.id]=chapter.n;
+      save(WEBNOVEL_PROGRESS_KEY,progress);
+    }
+    articlePreviewClose();
+    if(typeof renderHome==='function') renderHome();
+    return openBook(book);
+  }catch(error){
+    console.error(error);
+    articlePreviewStatus('회차를 열지 못했어요.');
+  }
 }
 function renderWebNovelChapters(work){
   const list=articlePreviewChapters;
   list.replaceChildren();
-  const heading=document.createElement('div');
-  heading.className='ap-chapters-heading';heading.textContent='회차';
-  list.append(heading);
   const chapters=Array.isArray(work.chapters)?work.chapters:[];
+  const heading=document.createElement('div');
+  heading.className='ap-chapters-heading';
+  const label=document.createElement('span');
+  label.className='ap-chapters-label';
+  label.textContent='회차';
+  const all=document.createElement('button');
+  all.type='button';
+  all.className='ap-chapters-all';
+  all.textContent='전체 '+chapters.length+'화 ›';
+  all.onclick=()=>{
+    const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    list.scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});
+  };
+  heading.append(label,all);
+  list.append(heading);
   for(const chapter of chapters){
     const row=document.createElement('button');
     row.type='button';
     row.className='ap-chapter-row';
-    const available=!!(chapter.available&&chapter.url);
+    const available=!!(chapter.available&&(chapter.file||chapter.url));
     if(!available){row.classList.add('is-soon');row.setAttribute('aria-disabled','true');}
     const label=document.createElement('span');
     label.className='ap-chapter-title';
@@ -492,8 +555,8 @@ function openWebNovelPreview(work){
   dialog.querySelector('.ap-art').innerHTML=coverArtwork(work.id);
   dialog.querySelector('.ap-source').textContent=work.credit||work.author||'';
   dialog.querySelector('.ap-title').textContent=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title;
-  articlePreviewSubtitle.textContent=typeof webNovelKoreanLine==='function'?webNovelKoreanLine(work):(work.koTitle||'');
-  articlePreviewSubtitle.hidden=!articlePreviewSubtitle.textContent;
+  articlePreviewSubtitle.textContent='';
+  articlePreviewSubtitle.hidden=true;
   articlePreviewPaint({summaryKo:work.intro||''});articlePreviewMetadataState('ready');
   // Intro + author credit + original links. Royal Road for all; Kindle ONLY
   // when the work carries a kindleUrl (Chasing Sunlight).
@@ -503,16 +566,18 @@ function openWebNovelPreview(work){
   credit.textContent=(work.credit||work.author||'')+' · 작가 공개 무료 연재';
   articlePreviewDetails.append(credit);
   const links=document.createElement('div');links.className='ap-links';
-  if(work.royalRoadUrl)links.append(webNovelPreviewLink('Royal Road 원문',work.royalRoadUrl));
-  if(work.kindleUrl)links.append(webNovelPreviewLink('Kindle 판',work.kindleUrl));
-  articlePreviewDetails.append(links);
+  if(work.royalRoadUrl)links.append(webNovelPreviewLink('원문 보기 · Royal Road',work.royalRoadUrl));
+  if(work.kindleUrl)links.append(webNovelPreviewLink('Amazon Kindle',work.kindleUrl));
+  articlePreviewSubtitle.after(links);
   renderWebNovelChapters(work);
   const image=/** @type {HTMLImageElement} */(dialog.querySelector('.ap-hero img'));
   if(work.cover){image.src=work.cover;image.hidden=false;image.onerror=()=>{image.hidden=true;};}
   else{image.hidden=true;image.removeAttribute('src');}
-  // No single-book CTA for a web novel: chapters are the entry points.
+  // Same entry as the chapter-1 row. The top X still closes the sheet.
+  // An unavailable chapter keeps this button enabled and shows the row's status.
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
-  start.onclick=()=>articlePreviewClose();start.disabled=false;start.textContent='닫기';start.removeAttribute('aria-busy');
+  start.onclick=()=>openWebNovelChapter(work,webNovelChapterOne(work));
+  start.disabled=false;start.textContent='1화 보기';start.removeAttribute('aria-busy');
   articlePreviewStatus('');dialog.querySelector('.ap-scroll').scrollTop=0;
   dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
 }

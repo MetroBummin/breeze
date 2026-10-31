@@ -640,16 +640,15 @@ function webNovelCard(work){
   card.dataset.webnovelId=work.id;
   card.innerHTML='<img class="cover" alt=""><div class="bt"></div><div class="ko"></div><div class="author"></div>';
   const title=typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title;
-  const korean=typeof webNovelKoreanLine==='function'?webNovelKoreanLine(work):(work.koTitle||'');
   const credit=work.credit||work.author||'';
-  fillCard(card,{'.bt':title,'.ko':work.koTitle||'','.author':credit});
+  fillCard(card,{'.bt':title,'.ko':'','.author':credit});
   const image=card.querySelector('.cover');
   image.onload=()=>card.classList.add('has-cover');
   if(work.cover)image.src=work.cover;
   const label=webNovelProgressLabel(work);
   if(label)card.append(el('div','get',label));
-  card.title=[work.title,korean,credit].filter(Boolean).join(' · ');
-  accessibleLibraryCard(card,[title,work.koTitle,credit].filter(Boolean).join(' · '));
+  card.title=[title,credit].filter(Boolean).join(' · ');
+  accessibleLibraryCard(card,[title,credit].filter(Boolean).join(' · '));
   card.onclick=()=>{if(typeof openWebNovelPreview==='function')openWebNovelPreview(work);};
   return card;
 }

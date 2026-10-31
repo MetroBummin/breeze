@@ -35,7 +35,24 @@ async function openPreview(page,id){
     rows:[...dialog.querySelectorAll('.ap-chapter-row')].map(row=>[row.querySelector('.ap-chapter-title').textContent,row.querySelector('.ap-chapter-state').textContent]),
     links:[...dialog.querySelectorAll('.ap-links a')].map(link=>link.textContent),
     text:dialog.textContent,
+    start:dialog.querySelector('.ap-start').textContent,
+    startClass:dialog.querySelector('.ap-start').className,
+    summaryHeading:dialog.querySelector('.ap-summary-heading').textContent,
+    order:[...dialog.querySelector('.ap-content').children].map(node=>node.className.split(' ')[0]),
   }));
+}
+async function chapterListFits(page){
+  return page.locator('#article-preview').evaluate(dialog=>{
+    const scroll=dialog.querySelector('.ap-scroll');
+    const button=dialog.querySelector('.ap-start').getBoundingClientRect();
+    const scrollRect=scroll.getBoundingClientRect();
+    const rows=[...dialog.querySelectorAll('.ap-chapter-row')].slice(0,3).map(row=>row.getBoundingClientRect());
+    return {
+      scrollTop:scroll.scrollTop,
+      visible:rows.length===3&&rows.every(rect=>rect.height>20&&rect.top>=scrollRect.top-1&&rect.bottom<=button.top+1),
+      heading:dialog.querySelector('.ap-chapters-heading').innerText.replace(/\s+/g,' ').trim(),
+    };
+  });
 }
 
 try{
@@ -90,32 +107,73 @@ try{
       assert.equal(rail.sameRow,true,'추천 cards stay on one row');
       assert.equal(rail.side,true,'추천 cards sit side by side');
       assert.deepEqual(await page.locator('#casual-rail .webnovel').evaluateAll(nodes=>nodes.map(node=>[node.querySelector('.bt').textContent,node.querySelector('.ko').textContent,node.querySelector('.author').textContent])),
-        [['Cinnamon Bun','시나몬 번','RavensDagger'],['Chasing Sunlight','체이싱 선라이트','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','마블러스 미스터 펜의 뜻밖의 약혼','R. K. Goff']]);
+        [['Cinnamon Bun','','RavensDagger'],['Chasing Sunlight','','InadvisablyCompelled'],['The Unexpected Engagement of the Marvelous Mr. Penn','','R. K. Goff']]);
       const bun=await openPreview(page,'cinnamon-bun');
       assert.equal(bun.kind,'webnovel');
       assert.equal(bun.source,'RavensDagger');
       assert.equal(bun.title,'Cinnamon Bun');
-      assert.equal(bun.subtitle,'시나몬 번 · 청소와 다정함으로 세상을 구하는 모험');
+      assert.equal(bun.subtitle,'');
       assert.deepEqual(bun.image,[768,'contain'],'The sheet shows the whole cover');
       assert.equal(bun.rows.length,10);
-      assert.deepEqual(bun.rows[0],['1화','곧 공개']);
-      assert.ok(bun.rows.every(([,state])=>state==='곧 공개'));
-      assert.deepEqual(bun.links,['Royal Road 원문'],'Cinnamon Bun has no monetized link');
-      await page.locator('#article-preview .ap-chapter-row').first().evaluate(row=>row.click());
-      assert.equal(await page.locator('#article-preview .ap-status').textContent(),'곧 공개될 회차예요.');
-      assert.equal(await page.evaluate(()=>!!document.querySelector('#article-preview').open&&!document.getElementById('v-read').classList.contains('on')),true,'A 곧 공개 chapter does not navigate');
-      await page.locator('#article-preview .ap-close').click();
+      assert.deepEqual(bun.rows[0],['1화','읽기']);
+      assert.ok(bun.rows.every(([,state])=>state==='읽기'));
+      assert.deepEqual(bun.links,['원문 보기 · Royal Road'],'Cinnamon Bun has no monetized link');
+      assert.equal(bun.start,'1화 보기');
+      assert.equal(bun.startClass,'ap-start','The chapter button keeps the existing start-button class');
+      assert.equal(bun.summaryHeading,'짧게 살펴보기');
+      assert.deepEqual(bun.order,['ap-source','ap-title','ap-subtitle','ap-links','ap-chapters','ap-summary-card','ap-details']);
+      const bunFit=await chapterListFits(page);
+      assert.equal(bunFit.scrollTop,0);
+      assert.equal(bunFit.visible,true,'The first three chapters fit above the button without scrolling');
+      assert.match(bunFit.heading,/회차/);
+      assert.match(bunFit.heading,/전체 10화 ›/);
+      await page.locator('#article-preview .ap-start').click();
+      await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on')&&!document.querySelector('#article-preview').open&&document.getElementById('rtext').innerText.length>400);
+      const reader=await page.evaluate(()=>({
+        title:document.getElementById('rtitle').textContent,
+        english:document.getElementById('rtitle-en'),
+        pill:document.getElementById('readpill-title').textContent,
+        text:document.getElementById('rtext').innerText,
+        shelf:document.querySelector('#shelf .home-regular-title')&&document.querySelector('#shelf .home-regular-title').textContent,
+        shelfEn:document.querySelector('#shelf .home-regular-subtitle'),
+      }));
+      assert.equal(reader.title,'Cinnamon Bun');
+      assert.equal(reader.english,null);
+      assert.equal(reader.pill,'Cinnamon Bun');
+      assert.match(reader.text,/Chapter One - Like You've Seen a Ghost/);
+      assert.doesNotMatch(reader.text,/Stolen from its original source|A note from /i);
+      assert.equal(reader.shelf,'Cinnamon Bun');
+      assert.equal(reader.shelfEn,null);
+      await page.evaluate(async()=>{
+        await bookDel('webnovel:cinnamon-bun:1');
+        books=books.filter(book=>book.id!=='webnovel:cinnamon-bun:1');
+        delete positions['webnovel:cinnamon-bun:1'];
+        show('home');
+      });
+      await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
       const sun=await openPreview(page,'chasing-sunlight');
       assert.equal(sun.title,'Chasing Sunlight');
+      assert.equal(sun.subtitle,'');
       assert.equal(sun.source,'InadvisablyCompelled');
-      assert.deepEqual(sun.links,['Royal Road 원문','Kindle 판']);
+      assert.deepEqual(sun.links,['원문 보기 · Royal Road','Amazon Kindle']);
       assert.doesNotMatch(sun.text,/vampire|뱀파이어|흡혈/i);
       await page.locator('#article-preview .ap-close').click();
       const penn=await openPreview(page,'mr-penn');
       assert.equal(penn.title,'The Unexpected Engagement of the Marvelous Mr. Penn');
+      assert.equal(penn.subtitle,'');
+      const pennFitBox=await page.locator('#article-preview').evaluate(dialog=>{
+        const title=dialog.querySelector('.ap-title').getBoundingClientRect();
+        const box=dialog.getBoundingClientRect();
+        return title.left>=box.left-1&&title.right<=box.right+1&&title.height>28;
+      });
+      assert.equal(pennFitBox,true,'Mr. Penn’s English title wraps inside the sheet');
       assert.equal(penn.source,'R. K. Goff');
       assert.equal(penn.rows.length,10,'R. K. Goff: first 10 chapters only');
-      assert.deepEqual(penn.links,['Royal Road 원문'],'Mr. Penn has no monetized link');
+      assert.equal(penn.start,'1화 보기');
+      assert.deepEqual(penn.links,['원문 보기 · Royal Road'],'Mr. Penn has no monetized link');
+      const pennFit=await chapterListFits(page);
+      assert.equal(pennFit.visible,true,'Mr. Penn’s first three chapters fit on an iPhone sheet');
+      assert.match(pennFit.heading,/전체 10화 ›/);
       await page.locator('#article-preview .ap-close').click();
 
       // A stored 기사 choice opens 고전 while 기사 is dormant, and nothing asks RSS.

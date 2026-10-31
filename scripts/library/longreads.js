@@ -1186,16 +1186,15 @@ async function restoreMissingLongReadCovers(){
 }
 /* ================= 웹소설 (Web novels) =================
    Author-permitted Royal Road works, free forever, with NO ads and NO
-   monetization on Breeze. We do NOT scrape or bundle any chapter body text:
-   every chapter is a placeholder (available:false, '곧 공개') and the
-   work -> chapters[] shape is ready for real content to drop in later with
-   no UI change. The home card and the in-preview chapter list read this one
-   const; nothing here starts a Reader until a chapter has real content.
+   monetization on Breeze. The first 10 chapters of each work are bundled as
+   plain text (assets/webnovels/text) and open in the Reader through the same
+   TXT path as the other built-in books. Nothing past chapter 10 is included.
+   The home card and the in-preview chapter list read this one const.
 
    Titles, authors and links were checked on 2026-10-30 against Royal Road's
    own feed (royalroad.com/fiction/syndication/<id> returns the story title)
-   and the Kindle store page. `title` is the real English title; `koTitle` is
-   its Korean reading and `koSubtitle` a short Korean line about the story.
+   and the Kindle store page. `title` is the English title shown everywhere;
+   `koSubtitle` is only a short Korean line about the story, not a second title.
 
    Covers are supplied ORIGINAL art made for Breeze (movie-poster style),
    delivered as bytes and verified by exact sha256 — they are NOT the authors'
@@ -1214,52 +1213,53 @@ async function restoreMissingLongReadCovers(){
      first 10 chapters only, credit exactly 'R. K. Goff', Royal Road link
      only. (Ar'Kendrithyst, royalroad.com/fiction/26727, is by Arcs, not
      R. K. Goff, and is not listed.) */
-function webNovelPlaceholderChapters(count){
-  // No scraping, no bundled body: each chapter is a '곧 공개' placeholder.
+function webNovelBundledChapters(id){
+  // First 10 chapters only. The story text lives next to the other bundled books.
   const chapters=[];
-  for(let n=1;n<=count;n++)chapters.push({n,title:n+'화',available:false});
+  for(let n=1;n<=10;n++){
+    const file='assets/webnovels/text/'+id+'/'+String(n).padStart(2,'0')+'.txt';
+    chapters.push({n,title:n+'화',available:true,file});
+  }
   return chapters;
 }
 const WEB_NOVELS = [
   {
     id:'cinnamon-bun',
     title:'Cinnamon Bun',
-    koTitle:'시나몬 번',
     koSubtitle:'청소와 다정함으로 세상을 구하는 모험',
     author:'RavensDagger', credit:'RavensDagger',
     royalRoadUrl:'https://www.royalroad.com/fiction/31429/cinnamon-bun',
     cover:'assets/webnovels/covers/cinnamon-bun.webp', free:true, monetization:'none',
     intro:"게임 퀘스트 창에 뜬 '수락' 버튼. 16살 브로콜리는 별생각 없이 그걸 누른다. 눈을 떠 보니 낯선 판타지 세계, 손에 들린 건 칼이 아니라 먼지떨이. 직업은 시나몬 번, 첫 스킬은 청소. 이걸로 대체 어떻게 살아남으라는 걸까? 그런데 이상하게도, 적이어야 할 해골이 하나둘 그녀의 친구가 되기 시작한다.",
-    chapters:webNovelPlaceholderChapters(10),
+    chapters:webNovelBundledChapters('cinnamon-bun'),
   },
   {
     id:'chasing-sunlight',
     title:'Chasing Sunlight',
-    koTitle:'체이싱 선라이트',
     koSubtitle:'햇빛을 찾아 어둠 너머로 떠나는 비행선 탐험',
     author:'InadvisablyCompelled', credit:'InadvisablyCompelled',
     royalRoadUrl:'https://www.royalroad.com/fiction/73475/chasing-sunlight',
     kindleUrl:'https://www.amazon.com/dp/B0CPYXGYNW',
     cover:'assets/webnovels/covers/chasing-sunlight.webp', free:true, monetization:'none',
     intro:'태양은 전설일 뿐인 세계. 하늘은 언제나 캄캄하고, 불빛이 꺼지면 끝이다. 그런데 한 노련한 탐험가가 조용히 말한다. "나는 햇빛을 봤다." 미친 소리일까, 진실일까? 답을 찾아 비행선 엔데버호는 동쪽 어둠으로 떠난다.',
-    chapters:webNovelPlaceholderChapters(10),
+    chapters:webNovelBundledChapters('chasing-sunlight'),
   },
   {
     id:'mr-penn',
     title:'The Unexpected Engagement of the Marvelous Mr. Penn',
-    koTitle:'마블러스 미스터 펜의 뜻밖의 약혼',
     koSubtitle:'1899년, 신사 도둑과 영문 모를 청첩장',
     author:'R. K. Goff', credit:'R. K. Goff',
     royalRoadUrl:'https://www.royalroad.com/fiction/54508/the-unexpected-engagement-of-the-marvelous-mr',
     cover:'assets/webnovels/covers/mr-penn.webp', free:true, monetization:'none',
     intro:'1899년 5월, 도시 곳곳에 동시에 도착한 청첩장 150통. 신랑은 신사 도둑 라이스 펜, 신부는 레이디 엘리너. 문제는 하나, 엘리너는 그 남자를 만난 적이 없다. 대체 누가, 왜 이런 일을 꾸민 걸까?',
-    chapters:webNovelPlaceholderChapters(10),
+    chapters:webNovelBundledChapters('mr-penn'),
   },
 ];
 function webNovelDefinition(id){
   return typeof WEB_NOVELS==='undefined'?null:(WEB_NOVELS.find(work=>work&&work.id===id)||null);
 }
-/* 카드와 시트의 큰 제목은 영어 원제 그대로, 그 아래 한 줄에 한국어 읽기와 소개를 둡니다. */
+/* 카드·미리보기·리더의 큰 제목은 영어 원제 하나입니다. 그 아래에 같은 제목을
+   한 번 더 두지 않습니다. */
 function webNovelDisplayTitle(work){
   return (work&&work.title)||'';
 }

@@ -454,11 +454,12 @@
    library (#v-longform #longform-grid, opened by the 내 책 chevron) and uses
    the shared library grid rule above, the same cards as #casual-grid:
    2 columns on a phone, 3 on a tablet, 4 on a wide screen.
-   A web-novel card has the classic card's frame: cover, title, author. Its
-   Korean line (.ko) would add a third caption row inside the 3:4 card and
-   shrink the cover, so the carousel leaves it out; the Korean title stays in
-   the card's label and in the preview sheet's subtitle. */
+   A web-novel card has the classic card's frame: cover, English title, author.
+   The title stays inside the card: two lines, then an ellipsis. */
 :is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book .ko{display:none;}
+:is(#v-home #casual-rail, #v-longform #longform-recommend-rail) > .home-recommend-book.webnovel .bt{
+  white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  line-clamp:2;overflow:hidden;text-overflow:ellipsis;overflow-wrap:anywhere;}
 
 /* Quiet typographic jackets when no real cover is available. */
 .editorial-cover .cover-art{position:absolute;left:50%;top:19%;width:76%;height:43%;

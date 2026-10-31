@@ -99,17 +99,32 @@ body:has(#article-preview[open]){overflow:hidden;}
 /* ---- 웹소설 미리보기: 시트 안의 회차 목록 ----
    따로 띄우는 화면 없이 같은 시트(.ap-scroll) 안에 1화·2화… 를 눌러지는 줄로
    깝니다. 새 흐림/장식 이모지 없이 기존 preview surface 토큰만 씁니다. */
-/* 표지는 2:3 그대로 보입니다(잘리지 않게 contain). */
-#article-preview[data-kind="webnovel"] .ap-hero img{object-fit:contain;}
-#article-preview[data-kind="webnovel"] .ap-hero{height:min(40dvh,340px);min-height:160px;}
-#article-preview[data-kind="webnovel"] .ap-title{margin-bottom:6px;}
+/* 표지는 2:3 그대로, 시트보다 작게 가운데에 둡니다. 제목 아래에 회차가 바로 보이게. */
+#article-preview[data-kind="webnovel"] .ap-hero{
+  height:auto;min-height:0;background:transparent;display:flex;justify-content:center;
+  padding:16px 56px 0;}
+#article-preview[data-kind="webnovel"] .ap-hero img{
+  width:auto;max-width:100%;height:auto;max-height:min(28dvh,228px);object-fit:contain;}
+@media(max-height:740px){
+  #article-preview[data-kind="webnovel"] .ap-hero{padding-top:12px;}
+  #article-preview[data-kind="webnovel"] .ap-hero img{max-height:132px;}
+}
+#article-preview[data-kind="webnovel"] .ap-content{padding-top:12px;}
+#article-preview[data-kind="webnovel"] .ap-source{margin-bottom:6px;}
+#article-preview[data-kind="webnovel"] .ap-title{margin-bottom:6px;font-size:clamp(20px,3.4vw,26px);
+  overflow-wrap:break-word;word-break:normal;}
+#article-preview[data-kind="webnovel"] .ap-subtitle{margin-bottom:8px;}
 .ap-subtitle{margin:0 0 18px;color:var(--sentence-glass-muted);font:500 14px/1.5 var(--ui);}
 .ap-subtitle[hidden]{display:none;}
-.ap-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;}
+.ap-links{display:flex;flex-wrap:wrap;gap:12px 14px;margin:0 0 10px;}
 .ap-links a{color:inherit;text-underline-offset:3px;font-weight:600;}
-.ap-chapters{margin:18px 0 4px;}
+.ap-chapters{margin:2px 0 12px;scroll-margin-top:60px;}
 .ap-chapters[hidden]{display:none;}
-.ap-chapters-heading{margin:0 0 8px;color:var(--sentence-glass-muted);font:600 12px/1.4 var(--ui);}
+.ap-chapters-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:44px;margin:0 0 4px;color:var(--sentence-glass-ink);font:600 14px/1.4 var(--ui);}
+.ap-chapters-all{position:relative;flex:none;margin:0;padding:10px 2px;border:0;background:none;
+  color:var(--selection-ink);font:600 13px/1.3 var(--ui);cursor:pointer;}
+.ap-chapters-all::before{content:'';position:absolute;inset:-6px -8px;}
 .ap-chapter-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
   box-sizing:border-box;min-height:44px;margin:0;padding:11px 14px;border:1px solid var(--sentence-glass-line-soft);
   border-radius:14px;background:var(--sentence-glass-action);color:var(--sentence-glass-ink);
