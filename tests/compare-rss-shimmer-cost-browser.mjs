@@ -8,6 +8,7 @@ import {execFileSync} from 'node:child_process';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_RSS_SHIMMER_COST_PROOF||'/tmp/breeze-rss-shimmer-cost';
@@ -79,6 +80,7 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));base=`http://127.0.0.
 const results=[];
 async function start(browser,test){
   const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+  await context.addInitScript(enableHomeArticles);
   await context.addInitScript(options=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
     localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));

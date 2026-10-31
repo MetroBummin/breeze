@@ -8,6 +8,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 import {createCatalogService} from '../server/rss-catalog/service.mjs';
 import {catalogHandler} from '../server/rss-catalog/handler.mjs';
@@ -65,6 +66,7 @@ const result={units:'UTF-8 response body bytes, uncompressed; independent per-re
 const browser=await engine.launch(engine===chromium&&process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
 async function contextFor(version,profile,storage={}){
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),calls=[],attempts=[],errors=[];
+ await context.addInitScript(enableHomeArticles);
  await context.addInitScript(values=>{
   localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));for(const [key,value] of Object.entries(values))localStorage.setItem(key,value);
   window.benchTimes={firstCard:null};

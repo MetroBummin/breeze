@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 import {FEEDS} from '../server/rss-quality/feeds.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const proof=process.env.BREEZE_HYBRID_PROOF||'/tmp/breeze-catalog-browser-proof/hybrid';
@@ -55,6 +56,7 @@ async function session({storage={},fail=false}={}){
   const context=await browser.newContext({viewport:{width:820,height:1024},serviceWorkers:'block',reducedMotion:'reduce'});
   context.setDefaultTimeout(10000);
   const h={context,fail,catalogGate:deferred(),bodyGate:deferred(),bodyStarted:deferred(),failedImage:deferred(),dictReady:deferred(),dictRequests:[],selectedReadUrl:'',calls:[],direct:[],images:[],unexpected:[],errors:[]};sessions.push(h);
+  await context.addInitScript(enableHomeArticles);
   await context.addInitScript(values=>{
     localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
     localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));

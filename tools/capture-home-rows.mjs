@@ -1,5 +1,6 @@
 // Captures the Home rows QA screenshots into docs/qa/home-rows-20261030/.
-// The 기사 tab shows the live public RSS recommendations, so this needs network.
+// The 기사 tab is dormant (decision 010), so Home makes no RSS requests and the
+// shots need no network beyond the local server.
 // Run: node tools/capture-home-rows.mjs
 import {mkdirSync, readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
@@ -28,7 +29,7 @@ async function seed(page){
   await page.evaluate(async() => {
     const speckled = LONG_READS.find(read => read.id === 'sherlock-holmes-speckled-band');
     const started = await importLongRead(speckled);
-    const article = {id:'qa-article', kind:'paste', title:'How Octopuses Taste With Their Arms', site:'Breeze',
+    const article = {id:'qa-article', kind:'article', sourceUrl:'https://example.com/octopus', title:'How Octopuses Taste With Their Arms', site:'Breeze',
       paras:['How Octopuses Taste With Their Arms', 'Octopuses sense chemicals through the suckers on their arms.'], addedAt:Date.now()};
     await bookPut(article); books.unshift(article);
     positions[started.id] = {p:.42, t:Date.now() - 2000};
@@ -75,15 +76,19 @@ try{
     await page.goto(base); await page.evaluate(() => homeReady);
     await seed(page);
     const prefix = `${device}-${dark ? 'dark' : 'light'}`;
-    for(const kind of ['classics', 'webnovels', 'articles']){
+    for(const kind of ['classics', 'webnovels']){
       await setKind(page, kind);
-      if(kind === 'articles')
-        await page.waitForFunction(() => document.querySelectorAll('#casual-rail .rss-card').length >= 2
-          && !document.querySelector('#casual-rail :is(.rss-loading,.rss-cover-pending)'), null, {timeout: 60000})
-          .catch(() => console.warn('No live RSS card arrived; the 기사 shot shows the loading state.'));
       await page.evaluate(() => scrollTo(0, 0));
       await shoot(page, `${prefix}-home-${kind}.png`, null, true);
     }
+    // The 내 책 chevron opens the full library grid.
+    await page.locator('#longform .sec-head .section-link').click();
+    await page.waitForFunction(() => document.getElementById('v-longform').classList.contains('on'));
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(400);
+    await page.screenshot({path: resolve(out, `${prefix}-library-grid.png`), clip: {x: 0, y: 0, ...viewport}});
+    console.log(`${prefix}-library-grid.png`);
+    await page.evaluate(() => show('home'));
     await setKind(page, 'webnovels');
     await page.locator('#casual-rail .webnovel[data-webnovel-id="chasing-sunlight"]').click();
     await page.waitForFunction(() => document.querySelector('#article-preview').open);

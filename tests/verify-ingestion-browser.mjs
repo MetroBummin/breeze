@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from './helpers/bounded-playwright.mjs';
+import {enableHomeArticles} from './helpers/home-articles.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const server=createServer((req,res)=>{try{
   const requested=new URL(req.url,'http://localhost').pathname;
@@ -22,6 +23,7 @@ try{
  for(const engine of [chromium,webkit].filter(engine=>!process.env.BREEZE_QA_ENGINE||engine.name()===process.env.BREEZE_QA_ENGINE)){
   const browser=await engine.launch({executablePath:engine===chromium?process.env.BREEZE_BROWSER_EXECUTABLE:undefined});try{
    const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
+   await page.addInitScript(enableHomeArticles);
    await page.addInitScript(()=>{localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));localStorage.setItem('breeze.home-recommend',JSON.stringify('articles'));});
    await page.route('**/*',route=>{
     const url=route.request().url();
@@ -237,7 +239,7 @@ try{
    assert.equal(await page.evaluate(async()=>{
      const book=books.find(item=>item.sourceUrl==='https://content.example/reddit-article');
      if(!book||book.transient||!(await bookAll()).some(item=>item.id===book.id))return 'not saved';
-     save('breeze.mybooks-filter','all');renderHome();
+     renderHome();
      return document.querySelector(`#shelf [data-home-key="book:${book.id}"]`)?'shelf':'missing from 내 책';
    }),'shelf');
    await page.evaluate(async entry=>{

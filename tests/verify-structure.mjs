@@ -704,21 +704,21 @@ assert.match(librarySource, /homeRegularTile\(bookCard\(book,null\)/,
 assert.match(index, /id="casual-rail"/, 'The Casuals rail is missing from home');
 assert.match(index, /id="home-recommend-title"[^>]*>추천<\/h2>/,
   'Home recommendation must be the plain 추천 heading');
-assert.match(index, /id="home-recommend-kind"[\s\S]*?data-kind="classics"[\s\S]*?data-kind="webnovels"[\s\S]*?data-kind="articles"/,
-  'The 추천 toggle must be 고전 / 웹소설 / 기사, in that order');
+assert.match(index, /id="home-recommend-kind"[\s\S]*?data-kind="classics"[\s\S]*?data-kind="webnovels"[\s\S]*?data-kind="articles"[^>]*\shidden[\s>]/,
+  'The 추천 toggle must be 고전 / 웹소설, with the dormant 기사 button kept but hidden');
 assert.match(index, /<section id="casuals"[\s\S]*?<section id="longform"/,
   'Home order must be 추천, then 내 책');
 assert.doesNotMatch(index, /id="continue(?:-rail)?"/,
   'The separate 이어 읽기 row is back; 내 책 already opens with the books being read');
 /* 가볍게 읽기(home-casuals) 줄은 '내 책' 줄에 합쳐졌습니다. 홈 맨 아래줄은
    '내 책'이고, 머리글 셰브런은 그 한 줄만 서재(#v-longform)로
-   넘깁니다. 전체/책/글 거르개가 그 머리글 오른쪽에 붙습니다. */
+   넘깁니다. 내 책에는 거르개가 없습니다 — 책과 글이 한 격자에 함께 깔립니다. */
 assert.doesNotMatch(index, /onclick="show\('casuals'\)"/,
   'The removed home 가볍게 읽기 chevron still points at the Casuals view');
 assert.match(index, /class="section-link"[^>]*aria-label="내 책 모아보기"[^>]*onclick="show\('longform'\)"/,
   'The 내 책 heading lost its shelf chevron');
-assert.match(index, /id="mybooks-filter"[\s\S]*?data-mybooks="all"[\s\S]*?data-mybooks="books"[\s\S]*?data-mybooks="casuals"/,
-  'The 내 책 section lost its 전체/책/글 filter');
+assert.doesNotMatch(index, /mybooks-filter|data-mybooks=/,
+  'The removed 전체/책/글 filter is back on the 내 책 header');
 assert.match(index, /id="v-longform"/, 'The long-form library view is missing');
 assert.match(librarySource, /function renderLongformLibrary/,
   'Nothing fills the long-form library view');
