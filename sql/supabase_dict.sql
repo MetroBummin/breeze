@@ -152,6 +152,12 @@ create index if not exists dict_events_action_idx on public.dict_events (action,
 create index if not exists dict_events_user_idx   on public.dict_events (user_id, at desc);
 -- 아래 질의는 전부 "낱말별로 묶어 세기" 입니다.
 create index if not exists dict_events_word_idx   on public.dict_events (word, action);
+-- record_dict_ai_usage 의 on conflict ((meta->>'request_id'),(meta->>'attempt'))
+-- where telemetry_version='2' 추론이 쓰는 부분 유니크 인덱스. 이 줄이 없으면
+-- 모든 호출이 42P10 으로 실패해 dict_events 에 한 줄도 쌓이지 않습니다.
+create unique index if not exists dict_events_telemetry_request_attempt
+  on public.dict_events ((meta->>'request_id'), (meta->>'attempt'))
+  where meta->>'telemetry_version' = '2';
 drop index if exists public.dict_events_fp_idx;
 alter table public.dict_events
   drop column if exists clicked,

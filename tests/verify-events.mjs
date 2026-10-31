@@ -24,16 +24,19 @@ function install(options={}){
   const context={
     localStorage,URL,URLSearchParams,JSON,Date,Math,Number,String,Object,Array,
     Promise,setTimeout,clearTimeout,crypto,console,
-    location:{search:options.search||'',protocol:'https:'},
+    location:{search:options.search||'',hash:options.hash||'',protocol:'https:'},
+    document:{referrer:options.referrer||''},
     BREEZE_CONFIG:{SB_URL:'https://example.supabase.co',SB_KEY:'anon-key'},
     fetch:async(url,init)=>{
       calls.push({url,init});
       if(fetchError)throw fetchError;
+      if(options.respond)return options.respond(url,init,calls.length);
       return {ok:options.ok!==false,status:options.ok===false?500:201};
     }
   };
   context.globalThis=context;
   context.window=context;
+  if(options.sb)context.sb=options.sb;
   vm.createContext(context);
   vm.runInContext(readFileSync(new URL('../scripts/core/events.js',import.meta.url),'utf8'),context,{filename:'events.js'});
   return {context,memory,calls,failFetch(error){fetchError=error;},failStorage(){storageError=true;}};
@@ -114,6 +117,107 @@ test('batches inserts, dedupes milestones, and attaches the first-touch UTM',asy
   assert.equal(JSON.stringify(body).includes('secret'),false);
 });
 
+test('captures first-touch UTM from the hash when the search is empty',async()=>{
+  const {context,memory,calls}=install({
+    hash:'#/app?utm_source=toss&utm_medium=webview&utm_campaign=261030-x&utm_content=c1'
+  });
+  context.captureLandingUtm();
+  assert.deepEqual(JSON.parse(memory.get('breeze.events.utm')),{
+    utm_source:'toss',utm_medium:'webview',utm_campaign:'261030-x',utm_content:'c1'
+  });
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].utm_source,'toss');
+  assert.equal(body[0].utm_medium,'webview');
+});
+
+test('captures a sanitized first-touch referrer, immutably, and attaches it',async()=>{
+  const {context,memory,calls}=install({referrer:'https://www.google.com/search?q=secret+query'});
+  context.captureLandingUtm();
+  // Only the origin survives; the query/path that could carry PII is dropped.
+  assert.equal(JSON.parse(memory.get('breeze.events.ref')),'https://www.google.com');
+  // First touch is immutable: a later referrer does not overwrite it.
+  context.document.referrer='https://evil.example.com';
+  context.captureLandingUtm();
+  assert.equal(JSON.parse(memory.get('breeze.events.ref')),'https://www.google.com');
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].referrer,'https://www.google.com');
+});
+
+test('drops an over-long or unsanitary referrer rather than storing it',()=>{
+  const long='https://'+'a'.repeat(200)+'.example.com';
+  const {context,memory}=install({referrer:long});
+  context.captureLandingUtm();
+  assert.equal(memory.has('breeze.events.ref'),false);
+
+  const bad=install({referrer:'android-app://com.sneaky app/with spaces'});
+  bad.context.captureLandingUtm();
+  assert.equal(bad.memory.has('breeze.events.ref'),false);
+});
+
+test('a signed-in session sends the session JWT, not the anon key',async()=>{
+  const sb={auth:{getSession:async()=>({data:{session:{access_token:'signed-in-jwt'}}})}};
+  const {context,calls}=install({sb});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer signed-in-jwt');
+  assert.equal(calls[0].init.headers.apikey,'anon-key');
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].user_id,undefined);
+});
+
+test('a logged-out reader still inserts with the anon key and no user_id',async()=>{
+  const {context,calls}=install();
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer anon-key');
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].user_id,undefined);
+  assert.equal(body[0].referrer,undefined);
+});
+
+test('a pagehide flush dispatches synchronously from the stored token',async()=>{
+  // getSession() would resolve a JWT, but the unload path must NOT await it:
+  // if it did, the keepalive fetch would be deferred to a microtask that may
+  // never run during teardown. We record whether getSession was consulted and
+  // assert the fetch fired in the same synchronous tick.
+  let sessionAsked=false;
+  const sb={auth:{getSession:async()=>{sessionAsked=true;return {data:{session:{access_token:'async-jwt'}}};}}};
+  const {context,memory,calls}=install({sb});
+  // Seed a synchronous localStorage session token (sb-<ref>-auth-token).
+  memory.set('sb-example-auth-token',JSON.stringify({access_token:'stored-jwt',expires_at:Math.floor(Date.now()/1000)+3600}));
+  context.trackEvent('app_open');
+  // Drain the debounced timer so the event is queued, then flush as on unload.
+  const pending=context.eventFlush(true);
+  // Synchronous: the fetch is recorded before any awaited microtask resumes.
+  assert.equal(calls.length,1);
+  assert.equal(sessionAsked,false);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer stored-jwt');
+  assert.equal(calls[0].init.keepalive,true);
+  const body=JSON.parse(calls[0].init.body);
+  assert.equal(body[0].name,'app_open');
+  assert.equal(body[0].user_id,undefined);
+  await pending;
+});
+
+test('a pagehide flush with no stored token falls back to the anon key synchronously',async()=>{
+  let sessionAsked=false;
+  const sb={auth:{getSession:async()=>{sessionAsked=true;return {data:{session:{access_token:'async-jwt'}}};}}};
+  const {context,calls}=install({sb});
+  context.trackEvent('app_open');
+  const pending=context.eventFlush(true);
+  assert.equal(calls.length,1);
+  assert.equal(sessionAsked,false);
+  assert.equal(calls[0].init.headers.Authorization,'Bearer anon-key');
+  assert.equal(calls[0].init.keepalive,true);
+  await pending;
+});
+
 test('the app wires each funnel event through the logger',()=>{
   const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
   const index=read('index.html');
@@ -132,4 +236,70 @@ test('the app wires each funnel event through the logger',()=>{
   const detected=dictionary.slice(dictionary.indexOf('function saveDetectedExpression'),dictionary.indexOf('async function loadCachedLook'));
   assert.match(detected,/trackEvent\('first_lookup_success'\)/);
   assert.match(dictionary,/trackEvent\('vocab_save',\{first:true\}\)/);
+});
+
+// Production product_events has no referrer column until
+// 20261030130000_product_events_referrer.sql is applied. PostgREST then answers
+// 400 PGRST204 for any batch that carries referrer.
+function schemaWithoutReferrer(){
+  return (url,init)=>{
+    const rows=JSON.parse(init.body);
+    if(rows.some(row=>'referrer' in row)){
+      return {ok:false,status:400,json:async()=>({
+        code:'PGRST204',details:null,hint:null,
+        message:"Could not find the 'referrer' column of 'product_events' in the schema cache"
+      })};
+    }
+    return {ok:true,status:201};
+  };
+}
+
+test('without the referrer column, retries once without referrer and stops sending it',async()=>{
+  const {context,memory,calls}=install({referrer:'https://www.google.com/x',respond:schemaWithoutReferrer()});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,2);
+  assert.equal(JSON.parse(calls[0].init.body)[0].referrer,'https://www.google.com');
+  const retried=JSON.parse(calls[1].init.body);
+  assert.equal(retried[0].name,'app_open');
+  assert.equal('referrer' in retried[0],false);
+  assert.equal(JSON.parse(memory.get('breeze.events.sent')).n,1);
+
+  // Later batches this session go out without referrer on the first try.
+  context.trackEvent('first_word_tap');
+  await context.eventFlush();
+  assert.equal(calls.length,3);
+  assert.equal('referrer' in JSON.parse(calls[2].init.body)[0],false);
+
+  // The stored first-touch value is kept for when the column exists.
+  assert.equal(JSON.parse(memory.get('breeze.events.ref')),'https://www.google.com');
+});
+
+test('other 400s are not retried as a missing referrer column',async()=>{
+  const {context,calls}=install({referrer:'https://www.google.com',respond:()=>({
+    ok:false,status:400,json:async()=>({code:'23514',message:'new row violates check constraint "product_events_referrer_chk"'})
+  })});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls.length,1);
+});
+
+test('once the column exists, referrer keeps flowing, including on pagehide',async()=>{
+  const {context,calls}=install({referrer:'https://www.google.com'});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(JSON.parse(calls[0].init.body)[0].referrer,'https://www.google.com');
+  context.trackEvent('first_word_tap');
+  await context.eventFlush(true);
+  assert.equal(JSON.parse(calls[1].init.body)[0].referrer,'https://www.google.com');
+});
+
+test('a pagehide flush before the column is confirmed omits referrer',async()=>{
+  // The unload path cannot read the response to retry, so it must not risk a
+  // PGRST204 that would drop the final batch.
+  const {context,calls}=install({referrer:'https://www.google.com',respond:schemaWithoutReferrer()});
+  context.trackEvent('app_open');
+  await context.eventFlush(true);
+  assert.equal(calls.length,1);
+  assert.equal('referrer' in JSON.parse(calls[0].init.body)[0],false);
 });

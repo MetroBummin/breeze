@@ -116,6 +116,9 @@ create unique index dict_events_telemetry_request_attempt
   where meta->>'telemetry_version' = '2';`);
 await db.exec(readFileSync(new URL('../supabase/migrations/20261021120000_dict_lookup_hedge_meta.sql',import.meta.url),'utf8'));
 await db.exec(readFileSync(new URL('../supabase/migrations/20261021193000_dict_lookup_reject_meta.sql',import.meta.url),'utf8'));
+// The real fix ships the partial unique index and the lookup_type enrichment in
+// this migration. pglite does not speak `notify`, so strip that trailing line.
+await db.exec(readFileSync(new URL('../supabase/migrations/20261030120000_dict_events_telemetry_index.sql',import.meta.url),'utf8').replace(/notify pgrst[^;]*;/,''));
 const request='11111111-1111-4111-8111-111111111111';
 const usage={input_tokens:3,output_tokens:2,thinking_tokens:0,total_tokens:5,cached_input_tokens:0,cache_creation_input_tokens:0,tool_input_tokens:0,hedged:true,winner:'openrouter',loser:'failed'};
 const stored=await db.query(`select public.record_dict_ai_usage($1,1,'look','openrouter','deepseek/deepseek-v4-flash-0731',200,1200,'api_ok',$2::jsonb) as id`,[request,JSON.stringify(usage)]);
@@ -127,11 +130,13 @@ assert.equal(row.usage_available,true);
 assert.equal(row.hedged,true);
 assert.equal(row.winner,'openrouter');
 assert.equal(row.loser,'failed');
+assert.equal(row.lookup_type,'word','a look lookup is tagged as a word lookup');
 assert.equal(row.ai_usage.input_tokens,3);
 assert.equal(row.ai_usage.hedged,undefined);
 const sentence=await db.query(`select public.record_dict_ai_usage($1,1,'explain','openrouter','deepseek/deepseek-v4-flash-0731',200,400,'api_ok',$2::jsonb) as id`,['22222222-2222-4222-8222-222222222222',JSON.stringify({input_tokens:4,output_tokens:1,thinking_tokens:0,total_tokens:5,cached_input_tokens:0,cache_creation_input_tokens:0,tool_input_tokens:0})]);
 const sentenceMeta=(await db.query(`select meta from public.dict_events where id=$1`,[sentence.rows[0].id])).rows[0].meta;
 assert.equal(Object.hasOwn(sentenceMeta,'hedged'),false);
+assert.equal(sentenceMeta.lookup_type,'sentence','an explain lookup is tagged as a sentence lookup');
 assert.equal(sentenceMeta.usage_available,true);
 assert.equal(sentenceMeta.ai_usage.input_tokens,4);
 const failed=await db.query(`select public.record_dict_ai_usage($1,2,'look','gemini','gemini-3.5-flash-lite',null,8000,'timeout',$2::jsonb) as id`,[request,JSON.stringify({hedged:true,winner:null,loser:'aborted'})]);

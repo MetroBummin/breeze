@@ -5,6 +5,8 @@ const BREEZE_APP_VERSION='1.9.9';
 const BREEZE_ONBOARDING_VERSION='v1';
 const EVENT_UTM_KEYS=['utm_source','utm_medium','utm_campaign','utm_content'];
 const EVENT_UTM_KEY='breeze.events.utm';
+const EVENT_REF_KEY='breeze.events.ref';
+const EVENT_REF_CAP=128;
 const EVENT_OPEN_KEY='breeze.events.app-open-day';
 const EVENT_ONCE_KEY='breeze.events.once';
 const EVENT_SENT_KEY='breeze.events.sent';
@@ -51,20 +53,77 @@ function parseEventUtm(search){
   }catch(e){}
   return out;
 }
+function sanitizeReferrer(raw){
+  // Keep only a short origin/host form. We never store the path or query of a
+  // referrer, which could carry PII; the CHECK on product_events.referrer uses
+  // the same character class and 128-char cap.
+  try{
+    const text=String(raw||'').trim();
+    if(!text)return '';
+    let origin='';
+    try{
+      const u=new URL(text);
+      // Keep only web origins. A non-http scheme or an unparseable referrer is
+      // dropped rather than salvaged, so no odd app-scheme value is stored.
+      if(u.protocol==='https:'||u.protocol==='http:')origin=u.protocol+'//'+u.host;
+    }catch(e){origin='';}
+    origin=String(origin||'');
+    // Reject (do not truncate) anything past the cap: a sliced host is a bogus
+    // value, and the CHECK on product_events.referrer caps at 128 too.
+    if(origin.length>EVENT_REF_CAP)return '';
+    return /^[A-Za-z0-9._:/~-]{1,128}$/.test(origin)?origin:'';
+  }catch(e){return '';}
+}
+// First-touch acquisition capture. captureLandingUtm() runs once at module load
+// (in the app shell), reading utm_* and a sanitized document.referrer and
+// pinning them immutably in localStorage. The channels differ by surface:
+//   * web app: the landing query string is on location.search.
+//   * hash routing / some webviews: params survive only after '#', so we fall
+//     back to location.hash when the search is empty.
+//   * native Capacitor / Toss webviews: these open the app shell without the
+//     landing query string at all, so location.search/hash are usually empty;
+//     document.referrer is the only acquisition signal that may be present.
+// Precedence is search, then hash, then referrer. We never fabricate values: if
+// none are present, nothing is stored and the fields stay empty as before.
 function captureLandingUtm(search){
   try{
     const existing=eventStoreGet(EVENT_UTM_KEY);
+    let haveUtm=false;
     if(existing&&typeof existing==='object'&&!Array.isArray(existing)){
-      for(let i=0;i<EVENT_UTM_KEYS.length;i++)if(typeof existing[EVENT_UTM_KEYS[i]]==='string')return existing;
+      for(let i=0;i<EVENT_UTM_KEYS.length;i++)if(typeof existing[EVENT_UTM_KEYS[i]]==='string'){haveUtm=true;break;}
     }
-    let source=search;
-    if(source==null){
-      try{source=typeof location!=='undefined'&&location?location.search:'';}catch(e){source='';}
+    let parsed=haveUtm?existing:null;
+    if(!haveUtm){
+      let source=search;
+      if(source==null){
+        try{source=typeof location!=='undefined'&&location?location.search:'';}catch(e){source='';}
+      }
+      parsed=parseEventUtm(source);
+      if(!Object.keys(parsed).length){
+        // Hash-based routing / webviews sometimes carry utm after '#'.
+        let hash='';
+        try{hash=search==null&&typeof location!=='undefined'&&location?String(location.hash||''):'';}catch(e){hash='';}
+        if(hash){
+          const hashQuery=hash.indexOf('?')>=0?hash.slice(hash.indexOf('?')):hash.replace(/^#/,'');
+          parsed=parseEventUtm(hashQuery);
+        }
+      }
+      if(Object.keys(parsed).length)eventStoreSet(EVENT_UTM_KEY,parsed);
     }
-    const parsed=parseEventUtm(source);
-    if(Object.keys(parsed).length)eventStoreSet(EVENT_UTM_KEY,parsed);
-    return parsed;
+    captureLandingReferrer();
+    return parsed||{};
   }catch(e){return {};}
+}
+function captureLandingReferrer(){
+  try{
+    const existing=eventStoreGet(EVENT_REF_KEY);
+    if(typeof existing==='string')return existing;
+    let raw='';
+    try{raw=typeof document!=='undefined'&&document?String(document.referrer||''):'';}catch(e){raw='';}
+    const ref=sanitizeReferrer(raw);
+    if(ref)eventStoreSet(EVENT_REF_KEY,ref);
+    return ref;
+  }catch(e){return '';}
 }
 function eventDeviceId(){
   let id='';
@@ -118,7 +177,7 @@ function eventMarkOnce(name){
   eventStoreSet(EVENT_ONCE_KEY,flags);
   return true;
 }
-function eventAccessToken(){
+function eventStoredToken(){
   try{
     const config=globalThis.BREEZE_CONFIG||{};
     const url=typeof config.SB_URL==='string'?config.SB_URL:'';
@@ -130,6 +189,28 @@ function eventAccessToken(){
     if(typeof parsed.expires_at==='number'&&parsed.expires_at*1000<Date.now()+15000)return '';
     return token;
   }catch(e){return '';}
+}
+// Bearer token for the events insert. Prefer the live Supabase client session
+// (the same source as scripts/library/book-cloud.js) so a signed-in reader's
+// JWT reaches the server and the product_events trigger sets user_id =
+// auth.uid(). The raw localStorage 'sb-<ref>-auth-token' is only a fallback for
+// when the live client is unavailable; it is stale or absent on iOS often
+// enough that relying on it alone left user_id null. Logged-out readers resolve
+// to no token here and fall back to the anon key in eventFlush.
+async function eventAccessToken(){
+  try{
+    // sync.js declares `let sb`, a script-scope global that is not a window
+    // property, so read the shared binding directly instead of window.sb.
+    const client=typeof sb!=='undefined'?sb:null;
+    const getSession=client&&client.auth&&typeof client.auth.getSession==='function'?client.auth.getSession.bind(client.auth):null;
+    if(getSession){
+      const result=await getSession();
+      const token=result&&result.data&&result.data.session&&typeof result.data.session.access_token==='string'
+        ?result.data.session.access_token:'';
+      if(token)return token;
+    }
+  }catch(e){}
+  return eventStoredToken();
 }
 function eventRow(name,props){
   const cleaned=eventProps(name,props);
@@ -149,6 +230,8 @@ function eventRow(name,props){
     const key=EVENT_UTM_KEYS[i];
     if(utm&&typeof utm[key]==='string')row[key]=utm[key];
   }
+  const ref=eventStoreGet(EVENT_REF_KEY);
+  if(typeof ref==='string'&&ref)row.referrer=ref;
   return row;
 }
 function eventFlushSoon(delay){
@@ -157,19 +240,46 @@ function eventFlushSoon(delay){
     eventTimer=setTimeout(()=>{eventTimer=0;eventFlush();},delay);
   }catch(e){eventFlush();}
 }
-function eventFlush(){
-  if(eventFlushing||!eventQueue.length)return Promise.resolve();
-  const batch=eventQueue.splice(0,8);
+function eventConfig(){
   let url='',key='';
   try{
     const config=globalThis.BREEZE_CONFIG||{};
     url=typeof config.SB_URL==='string'?config.SB_URL:(typeof SB_URL==='string'?SB_URL:'');
     key=typeof config.SB_KEY==='string'?config.SB_KEY:(typeof SB_KEY==='string'?SB_KEY:'');
-  }catch(e){return Promise.resolve();}
-  if(!url||!key||typeof fetch!=='function')return Promise.resolve();
-  eventFlushing=true;
-  const token=eventAccessToken();
-  return Promise.resolve().then(()=>fetch(url.replace(/\/$/,'')+'/rest/v1/product_events',{
+  }catch(e){return null;}
+  if(!url||!key||typeof fetch!=='function')return null;
+  return {url:url.replace(/\/$/,''),key:key};
+}
+// Whether the server has the product_events.referrer column: 'unknown' until a
+// send with referrer answers, 'ok' once one is accepted, 'missing' once
+// PostgREST rejects the column. Lives for this page session only, so the
+// column is picked up again on the next launch after the migration lands.
+let eventReferrerReady='unknown';
+function eventHasReferrer(batch){
+  for(let i=0;i<batch.length;i++)if(batch[i]&&Object.prototype.hasOwnProperty.call(batch[i],'referrer'))return true;
+  return false;
+}
+function eventWithoutReferrer(batch){
+  if(!eventHasReferrer(batch))return batch;
+  return batch.map(row=>{
+    const copy={};
+    for(const key in row)if(key!=='referrer')copy[key]=row[key];
+    return copy;
+  });
+}
+// PostgREST answers an unknown insert column with 400 and code PGRST204
+// ("Could not find the 'referrer' column of 'product_events' in the schema
+// cache"). Postgres itself would say 42703. Anything else is not ours to retry.
+function eventIsMissingReferrer(response){
+  if(!response||response.status!==400||typeof response.json!=='function')return Promise.resolve(false);
+  return Promise.resolve().then(()=>response.json()).then(body=>{
+    const code=body&&typeof body.code==='string'?body.code:'';
+    const text=body?String(body.message||'')+' '+String(body.details||''):'';
+    return (code==='PGRST204'||code==='42703')&&/referrer/.test(text);
+  }).catch(()=>false);
+}
+function eventDispatch(url,key,token,batch){
+  return fetch(url+'/rest/v1/product_events',{
     method:'POST',
     keepalive:true,
     headers:{
@@ -179,9 +289,60 @@ function eventFlush(){
       Prefer:'return=minimal'
     },
     body:JSON.stringify(batch)
-  })).then(response=>{
+  });
+}
+// eventFlush() normally resolves the bearer via the async getSession()-preferred
+// eventAccessToken() so a signed-in reader's JWT reaches the server. On the
+// pagehide/unload path we cannot afford to await a microtask: the event loop may
+// never resume to dispatch the keepalive fetch, dropping the final queued event
+// (commonly app_open). Passing unload=true takes a synchronous fast path that
+// resolves the token from the synchronous eventStoredToken() (falling back to
+// the anon key) and fires the fetch in the same tick, so the last event is not
+// lost during teardown.
+function eventFlush(unload){
+  if(eventFlushing||!eventQueue.length)return Promise.resolve();
+  const batch=eventQueue.splice(0,8);
+  const cfg=eventConfig();
+  if(!cfg)return Promise.resolve();
+  if(unload){
+    // Synchronous dispatch: build the bearer from the already-synchronous
+    // stored token (or the anon key) and send immediately, with no await.
+    eventFlushing=true;
+    try{
+      const token=eventStoredToken();
+      // We cannot read the response here, so only send referrer once this
+      // session has seen the server accept it.
+      const result=eventDispatch(cfg.url,cfg.key,token,eventReferrerReady==='ok'?batch:eventWithoutReferrer(batch));
+      eventNoteSent(batch.length);
+      const done=result&&typeof result.then==='function'
+        ?result.then(()=>{}).catch(()=>{})
+        :Promise.resolve();
+      return done.then(()=>{eventFlushing=false;}).catch(()=>{eventFlushing=false;});
+    }catch(e){eventFlushing=false;return Promise.resolve();}
+  }
+  eventFlushing=true;
+  // Only the internal flush awaits the async token lookup; trackEvent() stays
+  // fire-and-forget so callers never block on getSession().
+  let sent=eventReferrerReady==='missing'?eventWithoutReferrer(batch):batch;
+  let token='';
+  return Promise.resolve().then(()=>eventAccessToken()).then(value=>{
+    token=value;
+    return eventDispatch(cfg.url,cfg.key,token,sent);
+  }).then(response=>{
+    if(response&&response.ok||!eventHasReferrer(sent))return response;
+    return eventIsMissingReferrer(response).then(missing=>{
+      if(!missing)return response;
+      // The product_events.referrer column (migration
+      // 20261030130000_product_events_referrer.sql) is not applied yet. Keep
+      // the events: retry once without referrer and stop sending it this session.
+      eventReferrerReady='missing';
+      sent=eventWithoutReferrer(batch);
+      return eventDispatch(cfg.url,cfg.key,token,sent);
+    });
+  }).then(response=>{
     eventFlushing=false;
     if(response&&response.ok){
+      if(eventHasReferrer(sent))eventReferrerReady='ok';
       eventNoteSent(batch.length);
       if(eventQueue.length)return eventFlush();
     }
@@ -211,6 +372,6 @@ function trackEvent(name,props){
 try{captureLandingUtm();}catch(e){}
 try{
   if(typeof window!=='undefined'&&window.addEventListener){
-    window.addEventListener('pagehide',()=>{try{eventFlush();}catch(e){}});
+    window.addEventListener('pagehide',()=>{try{eventFlush(true);}catch(e){}});
   }
 }catch(e){}
