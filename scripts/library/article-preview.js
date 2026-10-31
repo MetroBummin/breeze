@@ -438,7 +438,7 @@ function openLongReadPreview(read){
 /* ================= 웹소설 미리보기 =================
    같은 #article-preview 시트를 그대로 씁니다. 따로 띄우는 화면은 없습니다.
    dataset.kind='webnovel' 로 표시하고, 소개·작가 표기·원문 링크를 채운 뒤
-   제목·소개 바로 아래에 1화·2화… 회차 목록을 눌러지는 줄로 깝니다. 주소가
+   짧게 살펴보기를 먼저 두고 그 아래에 1화·2화… 회차 목록을 깝니다. 주소가
    있는 회차(available && url)는 원문을 열고, 아직 없는 회차는 '곧 공개' 로
    표시하고 이동하지 않습니다. 하단 버튼은 1화를 그 같은 경로로 엽니다. */
 const articlePreviewChapters=document.createElement('section');
@@ -448,7 +448,8 @@ articlePreviewChapters.setAttribute('aria-label','회차 목록');
 const articlePreviewSubtitle=document.createElement('p');
 articlePreviewSubtitle.className='ap-subtitle';articlePreviewSubtitle.hidden=true;
 articlePreviewDialog.querySelector('.ap-title').after(articlePreviewSubtitle);
-articlePreviewSubtitle.after(articlePreviewChapters);
+/* 짧게 살펴보기 다음에 회차. 제목·작가·원문 링크는 그 위에 그대로 둡니다. */
+articlePreviewSummaryCard.after(articlePreviewChapters);
 function webNovelPreviewLink(label,url){
   const link=document.createElement('a');
   link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label;

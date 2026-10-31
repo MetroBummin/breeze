@@ -233,6 +233,8 @@ the RSS code are dormant, not deleted:
 - A stored `breeze.home-recommend` of `'articles'` opens 고전, and the stored
   value is not overwritten, so the choice comes back if the tab is turned on.
   `setHomeRecommendKind('articles')` lands on 고전.
+- Each launch opens 고전. A saved `'webnovels'` choice stays in storage but is
+  not applied until the reader chooses 웹소설 again during that visit.
 - `renderHome` calls `renderHomeArticles` (and so `appendRssCards` →
   `loadRss`) only when the flag is on. Nothing else on Home starts RSS: the
   Article Preview close handler in `rss.js` returns early while dormant, and

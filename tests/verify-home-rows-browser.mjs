@@ -41,18 +41,27 @@ async function openPreview(page,id){
     order:[...dialog.querySelector('.ap-content').children].map(node=>node.className.split(' ')[0]),
   }));
 }
-async function chapterListFits(page){
+async function previewSections(page){
   return page.locator('#article-preview').evaluate(dialog=>{
-    const scroll=dialog.querySelector('.ap-scroll');
-    const button=dialog.querySelector('.ap-start').getBoundingClientRect();
-    const scrollRect=scroll.getBoundingClientRect();
-    const rows=[...dialog.querySelectorAll('.ap-chapter-row')].slice(0,3).map(row=>row.getBoundingClientRect());
+    const summary=dialog.querySelector('.ap-summary-card');
+    const chapters=dialog.querySelector('.ap-chapters');
     return {
-      scrollTop:scroll.scrollTop,
-      visible:rows.length===3&&rows.every(rect=>rect.height>20&&rect.top>=scrollRect.top-1&&rect.bottom<=button.top+1),
+      scrollTop:dialog.querySelector('.ap-scroll').scrollTop,
+      before:!!(summary&&chapters&&(summary.compareDocumentPosition(chapters)&Node.DOCUMENT_POSITION_FOLLOWING)),
+      blurb:dialog.querySelector('.ap-summary').textContent,
       heading:dialog.querySelector('.ap-chapters-heading').innerText.replace(/\s+/g,' ').trim(),
     };
   });
+}
+async function shotBlurbAndChapters(page,path){
+  await page.evaluate(()=>{
+    const dialog=document.querySelector('#article-preview');
+    const scroll=dialog.querySelector('.ap-scroll');
+    const heading=dialog.querySelector('.ap-chapters-heading');
+    const port=scroll.getBoundingClientRect();
+    scroll.scrollTop+=heading.getBoundingClientRect().top-(port.top+port.height*0.58);
+  });
+  await page.locator('#article-preview').screenshot({path});
 }
 
 try{
@@ -60,7 +69,12 @@ try{
     const browser=await engine.launch(engine===chromium&&process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});
     try{
       const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
-      await page.addInitScript(()=>localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done')));
+      const pageErrors=[];
+      page.on('pageerror',error=>pageErrors.push(error.message));
+      await page.addInitScript(()=>{
+        localStorage.setItem('breeze.onboarding.v1',JSON.stringify('done'));
+        localStorage.setItem('breeze.home-recommend',JSON.stringify('webnovels'));
+      });
       await page.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());
       await page.goto(base);await page.evaluate(()=>homeReady);
 
@@ -73,6 +87,12 @@ try{
       assert.deepEqual(await page.locator('#home-recommend-kind button').evaluateAll(nodes=>nodes.filter(node=>node.offsetParent!==null).map(node=>node.textContent)),
         ['고전','웹소설']);
       assert.ok(await page.locator('#casual-rail [data-longread-id]').count()>0,'고전 is the default tab');
+      assert.equal(await page.evaluate(()=>load('breeze.home-recommend')),'webnovels');
+      assert.equal(await page.evaluate(()=>homeRecommendKind()),'classics','Each open shows 고전 even when 웹소설 was saved');
+      await page.waitForFunction(()=>{const image=document.querySelector('#casual-rail [data-longread-id] img.cover');return image&&!image.hidden&&image.naturalWidth>0;});
+      const shots='/opt/cursor/artifacts/webnovel-blurb-classics';
+      mkdirSync(shots,{recursive:true});
+      await page.screenshot({path:`${shots}/home-classics-on-load.png`});
 
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
       assert.equal(await page.evaluate(()=>load('breeze.home-recommend')),'webnovels');
@@ -121,12 +141,16 @@ try{
       assert.equal(bun.start,'1화 보기');
       assert.equal(bun.startClass,'ap-start','The chapter button keeps the existing start-button class');
       assert.equal(bun.summaryHeading,'짧게 살펴보기');
-      assert.deepEqual(bun.order,['ap-source','ap-title','ap-subtitle','ap-links','ap-chapters','ap-summary-card','ap-details']);
-      const bunFit=await chapterListFits(page);
+      assert.deepEqual(bun.order,['ap-source','ap-title','ap-subtitle','ap-links','ap-summary-card','ap-chapters','ap-details']);
+      const bunFit=await previewSections(page);
       assert.equal(bunFit.scrollTop,0);
-      assert.equal(bunFit.visible,true,'The first three chapters fit above the button without scrolling');
+      assert.equal(bunFit.before,true,'짧게 살펴보기 stays above 회차');
+      assert.equal(bunFit.blurb,await page.evaluate(()=>WEB_NOVELS.find(work=>work.id==='cinnamon-bun').intro));
       assert.match(bunFit.heading,/회차/);
       assert.match(bunFit.heading,/전체 10화 ›/);
+      await shotBlurbAndChapters(page,`${shots}/cinnamon-bun-blurb-then-chapters.png`);
+      await page.evaluate(()=>{const scroll=document.querySelector('#article-preview .ap-scroll');scroll.scrollTop=scroll.scrollHeight;});
+      await page.locator('#article-preview').screenshot({path:`${shots}/cinnamon-bun-preview-bottom.png`});
       await page.locator('#article-preview .ap-start').click();
       await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on')&&!document.querySelector('#article-preview').open&&document.getElementById('rtext').innerText.length>400);
       const reader=await page.evaluate(()=>({
@@ -156,9 +180,9 @@ try{
       await chapterButton.waitFor({state:'visible'});
       assert.match(await chapterButton.getAttribute('aria-label'),/회차/);
       assert.equal(await chapterButton.getAttribute('aria-expanded'),'false');
-      const shots='/opt/cursor/artifacts/webnovel-one-entry';
-      mkdirSync(shots,{recursive:true});
-      await page.screenshot({path:`${shots}/reader-chapter-button.png`});
+      const readerShots='/opt/cursor/artifacts/webnovel-one-entry';
+      mkdirSync(readerShots,{recursive:true});
+      await page.screenshot({path:`${readerShots}/reader-chapter-button.png`});
       await chapterButton.click();
       await page.waitForFunction(()=>document.getElementById('pdf-page-button').getAttribute('aria-expanded')==='true'&&document.querySelectorAll('#pdf-thumbnail-strip .webnovel-chapter').length===10);
       const sidebar=await page.evaluate(()=>({
@@ -181,7 +205,7 @@ try{
       await page.evaluate(()=>setThemePreference('dark'));
       assert.equal(await page.locator('#pdf-thumbnail-strip .pdf-thumbnail-jump[aria-current="true"]').textContent(),'2화');
       await page.evaluate(()=>setThemePreference('light'));
-      await page.screenshot({path:`${shots}/reader-chapter-sidebar.png`});
+      await page.screenshot({path:`${readerShots}/reader-chapter-sidebar.png`});
       await page.evaluate(()=>{closePdfNavigation();show('home');});
       await page.locator('#longform').scrollIntoViewIfNeeded();
       await page.waitForFunction(()=>/2화/.test(document.querySelector('#shelf [data-home-key="book:webnovel:cinnamon-bun"] .prog')?.textContent||''));
@@ -197,12 +221,12 @@ try{
       assert.match(webNovelShelf.resume,/Cinnamon Bun · 2화 · \d+% · 이어서 읽기/);
       assert.match(webNovelShelf.percent,/^2화 · \d+%$/);
       assert.match(webNovelShelf.recommend,/2화 읽는 중/);
-      await page.screenshot({path:`${shots}/my-books-one-entry.png`});
+      await page.screenshot({path:`${readerShots}/my-books-one-entry.png`});
       await page.locator('#longform .sec-head .section-link').click();
       await page.waitForFunction(()=>document.getElementById('v-longform').classList.contains('on'));
       assert.equal(await page.locator('#longform-cnt').textContent(),'1개');
       assert.equal(await page.locator('#longform-grid [data-local-book="webnovel:cinnamon-bun"]').count(),1);
-      await page.screenshot({path:`${shots}/my-books-grid-one-entry.png`});
+      await page.screenshot({path:`${readerShots}/my-books-grid-one-entry.png`});
       await page.evaluate(()=>show('home'));
       await page.locator('#home-resume').click();
       await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on')&&document.getElementById('rtext').innerText.includes('Chapter Two'));
@@ -220,6 +244,10 @@ try{
       });
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
       const sun=await openPreview(page,'chasing-sunlight');
+      const sunSections=await previewSections(page);
+      assert.equal(sunSections.before,true);
+      assert.equal(sunSections.blurb,await page.evaluate(()=>WEB_NOVELS.find(work=>work.id==='chasing-sunlight').intro));
+      await shotBlurbAndChapters(page,`${shots}/chasing-sunlight-blurb-then-chapters.png`);
       assert.equal(sun.title,'Chasing Sunlight');
       assert.equal(sun.subtitle,'');
       assert.equal(sun.source,'InadvisablyCompelled');
@@ -239,8 +267,9 @@ try{
       assert.equal(penn.rows.length,10,'R. K. Goff: first 10 chapters only');
       assert.equal(penn.start,'1화 보기');
       assert.deepEqual(penn.links,['원문 보기 · Royal Road'],'Mr. Penn has no monetized link');
-      const pennFit=await chapterListFits(page);
-      assert.equal(pennFit.visible,true,'Mr. Penn’s first three chapters fit on an iPhone sheet');
+      const pennFit=await previewSections(page);
+      assert.equal(pennFit.before,true,'Mr. Penn’s short blurb stays above the chapter list');
+      assert.equal(pennFit.blurb,await page.evaluate(()=>WEB_NOVELS.find(work=>work.id==='mr-penn').intro));
       assert.match(pennFit.heading,/전체 10화 ›/);
       await page.locator('#article-preview .ap-close').click();
 
@@ -302,6 +331,7 @@ try{
       assert.equal(await page.locator('#home-resume').isVisible(),true);
       assert.equal(await page.locator('#home-add').isVisible(),true);
       assert.equal(await page.locator('#home-resume-title').textContent(),'Finished book','The pill opens the last opened book');
+      assert.deepEqual(pageErrors,[],'The page threw: '+pageErrors.join('\n'));
       await page.close();
     }finally{await browser.close();}
     console.log(`${engine.name()}: 추천 carousel with 고전/웹소설 (기사 dormant), web-novel sheets, 내 책 carousel in recent order, library grid passed`);

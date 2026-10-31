@@ -350,7 +350,7 @@ async function goEpubNavigationPage(nav,index){
 function installEpubNavigationContact(){
   const strip=document.getElementById('pdf-thumbnail-strip');
   strip.addEventListener('pointerdown',event=>{
-    const nav=pdfNavigation;if(nav?.session.kind==='epub'&&event.isPrimary!==false)nav.contact={id:event.pointerId};
+    const nav=pdfNavigation;if(nav?.session?.kind==='epub'&&event.isPrimary!==false)nav.contact={id:event.pointerId};
   },{capture:true,passive:true});
   const finish=event=>{
     const nav=pdfNavigation,contact=nav?.contact;if(!contact||contact.id!==event.pointerId)return;
@@ -366,7 +366,7 @@ function installEpubNavigationContact(){
   document.addEventListener('pointercancel',finish,{capture:true,passive:true});
 }
 function paintEpubThumbnails(){
-  const nav=pdfNavigation;if(!nav||nav.session.kind!=='epub'||!nav.track)return;
+  const nav=pdfNavigation;if(!nav||nav.session?.kind!=='epub'||!nav.track)return;
   if(nav.contact!=null)return;
   const start=Math.max(0,Math.floor(nav.strip.scrollTop/nav.cellHeight)-1);
   const end=Math.min(nav.visiblePages.length,Math.ceil((nav.strip.scrollTop+nav.strip.clientHeight)/nav.cellHeight)+1);

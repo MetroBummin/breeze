@@ -66,8 +66,7 @@ try {
   await page.evaluate(() => save('breeze.home-recommend', 'webnovels'));
   await page.reload();
   await page.evaluate(() => homeReady);
-  assert.equal(await page.evaluate(() => remoteClassicCatalogReads().length), 0, 'A saved 웹소설 choice fetched the classics catalog');
-  await page.locator('#home-recommend-kind [data-kind="classics"]').click();
+  assert.equal(await page.evaluate(() => homeRecommendKind()), 'classics', 'A saved 웹소설 choice still opens 고전');
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
   assert.equal(bookFetches, 0, 'The catalog fetch downloaded the novel');
 
