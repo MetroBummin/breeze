@@ -96,15 +96,52 @@ async function goPdfPage(n,{keepNavigation=false}={}){
   if(!currentPdfSession(session)||token!==readerModeChangeToken)return;
   saveReadingState();updatePfill(true);updatePdfNavigationControls();
 }
+function webNovelNavigationWork(){
+  if(typeof curBook==='undefined'||!curBook||!curBook.webNovelId||currentReaderMode==='original')return null;
+  if(typeof webNovelDefinition!=='function')return null;
+  const work=webNovelDefinition(curBook.webNovelId);
+  return work&&Array.isArray(work.chapters)&&work.chapters.length?work:null;
+}
 function updatePdfNavigationControls(measuredAnchor){
   const button=document.getElementById('pdf-page-button');if(!button)return;
-  const pdfReady=currentReaderMode==='original'&&currentPdfSession();
-  const epubReady=currentEpubNavigationSession(),ready=!!(pdfReady||epubReady);
+  const work=webNovelNavigationWork();
+  const pdfReady=currentReaderMode==='original'&&!!currentPdfSession();
+  const epubReady=!!currentEpubNavigationSession(),pageNav=!!(pdfReady||epubReady),ready=pageNav||!!work;
   if(button.hidden===ready)button.hidden=!ready;
   const control=document.getElementById('pdf-page-control');if(control.hidden===ready)control.hidden=!ready;
   const directionRow=document.getElementById('aa-pdf-direction');if(directionRow.hidden===!!pdfReady)directionRow.hidden=!pdfReady;
-  const bookmarks=document.getElementById('pdf-bookmarks-only');if(bookmarks.hidden===ready)bookmarks.hidden=!ready;
-  const panel=document.getElementById('pdf-page-navigation'),label=epubReady?'EPUB 페이지 탐색':'PDF 페이지 탐색';
+  const bookmarks=document.getElementById('pdf-bookmarks-only');if(bookmarks.hidden===pageNav)bookmarks.hidden=!pageNav;
+  const panel=document.getElementById('pdf-page-navigation');
+  const stripLabel=document.getElementById('pdf-thumbnail-strip');
+  const fold=document.getElementById('pdf-navigation-toggle');
+  if(work){
+    const n=Number(curBook.webNovelChapter)||1;
+    const aria=`${n}화, 회차`;
+    if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);
+    if(button.title!=='회차')button.title='회차';
+    if(panel.getAttribute('aria-label')!=='회차')panel.setAttribute('aria-label','회차');
+    if(stripLabel&&stripLabel.getAttribute('aria-label')!=='회차 목록')stripLabel.setAttribute('aria-label','회차 목록');
+    if(fold){
+      if(fold.getAttribute('aria-label')!=='회차 접기')fold.setAttribute('aria-label','회차 접기');
+      if(fold.title!=='회차 접기')fold.title='회차 접기';
+    }
+    if(pdfNavigation&&pdfNavigation.kind!=='webnovel')closePdfNavigation();
+    if(pdfNavigation&&pdfNavigation.kind==='webnovel'){
+      const current=String(n);
+      for(const jump of pdfNavigation.strip.querySelectorAll('.pdf-thumbnail-jump')){
+        const on=String(jump.dataset.webnovelChapter===current);
+        if(jump.getAttribute('aria-current')!==on)jump.setAttribute('aria-current',on);
+      }
+    }
+    return;
+  }
+  if(button.title==='회차')button.removeAttribute('title');
+  if(stripLabel&&stripLabel.getAttribute('aria-label')!=='페이지 썸네일')stripLabel.setAttribute('aria-label','페이지 썸네일');
+  if(fold){
+    if(fold.getAttribute('aria-label')!=='페이지 탐색 접기')fold.setAttribute('aria-label','페이지 탐색 접기');
+    if(fold.title!=='페이지 탐색 접기')fold.title='페이지 탐색 접기';
+  }
+  const label=epubReady?'EPUB 페이지 탐색':'PDF 페이지 탐색';
   if(panel.getAttribute('aria-label')!==label)panel.setAttribute('aria-label',label);
   if(lastPdfDirectionState!==studyPrefs.direction){
     for(const direction of ['vertical','horizontal'])document.querySelector(`[data-pdf-direction="${direction}"]`)?.setAttribute('aria-pressed',String(studyPrefs.direction===direction));
@@ -157,7 +194,7 @@ function closePdfNavigation({release=false}={}){
   const nav=pdfNavigation,strip=nav.strip,restoreFocus=panel.contains(document.activeElement);
   nav.generation=pdfNavigationGeneration;nav.contact=null;
   for(const cell of strip.querySelectorAll('.pdf-thumbnail[data-rendered]'))if(!cell.querySelector('canvas'))delete cell.dataset.rendered;
-  if(release)nav.session.navigationPreview=null;
+  if(release&&nav.session)nav.session.navigationPreview=null;
   setPdfNavigationMotionStart(false);
   control.classList.add('pdf-navigation-closing');panel.inert=true;
   document.getElementById('pdf-page-button')?.setAttribute('aria-expanded','false');
@@ -170,15 +207,61 @@ function closePdfNavigation({release=false}={}){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)finish();
   else pdfNavigationCloseTimer=setTimeout(finish,220);
 }
+function buildWebNovelNavigation(focusCurrent=true){
+  const nav=pdfNavigation,work=webNovelNavigationWork();
+  if(!nav||nav.kind!=='webnovel'||!work)return;
+  const current=Number(curBook.webNovelChapter)||0;
+  nav.strip.replaceChildren();
+  const track=document.createElement('div');
+  track.className='pdf-thumbnail-track webnovel-chapter-track';
+  nav.strip.append(track);nav.track=track;
+  for(const chapter of work.chapters){
+    const n=Number(chapter.n);
+    const cell=document.createElement('div');
+    cell.className='pdf-thumbnail webnovel-chapter';
+    const jump=document.createElement('button');
+    jump.type='button';
+    jump.className='pdf-thumbnail-jump';
+    jump.dataset.webnovelChapter=String(n);
+    const title=chapter.title||(n+'화');
+    jump.textContent=title;
+    jump.setAttribute('aria-label',title+' 열기');
+    jump.setAttribute('aria-current',String(n===current));
+    const available=!!(chapter.available&&chapter.file);
+    if(!available)jump.disabled=true;
+    jump.onclick=()=>{
+      if(!available||pdfNavigation!==nav)return;
+      const same=curBook&&curBook.webNovelId===work.id&&Number(curBook.webNovelChapter)===n;
+      closePdfNavigation();
+      if(!same&&typeof openWebNovelChapter==='function')void openWebNovelChapter(work,chapter);
+    };
+    cell.append(jump);track.append(cell);
+  }
+  if(focusCurrent){
+    const currentButton=track.querySelector('[aria-current="true"]');
+    if(currentButton&&typeof currentButton.scrollIntoView==='function')currentButton.scrollIntoView({block:'nearest'});
+  }
+  updatePdfNavigationControls();
+}
 function togglePdfNavigation(){
   if(pdfNavigation){closePdfNavigation();return;}
-  if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||BreezePdfInk.busy()||originalPinchBusy())return;
+  const work=webNovelNavigationWork();
+  if(work){if(typeof readerPositionPending==='function'&&readerPositionPending())return;}
+  else if(currentReaderMode!=='original'||(!currentPdfSession()&&!currentEpubNavigationSession())||readerPositionPending()||BreezePdfInk.busy()||originalPinchBusy())return;
   setPdfNavigationMotionStart(true);
   if(pdfNavigationCloseTimer){clearTimeout(pdfNavigationCloseTimer);pdfNavigationCloseTimer=null;}
   document.getElementById('pdf-page-control').classList.remove('pdf-navigation-closing');
   closePanel();closeSentence();closeAa();expandReaderChrome();
   const settings=document.getElementById('pdf-ink-settings');if(settings)settings.hidden=true;
   const panel=document.getElementById('pdf-page-navigation'),strip=document.getElementById('pdf-thumbnail-strip');
+  if(work){
+    pdfNavigation={kind:'webnovel',strip,generation:++pdfNavigationGeneration};
+    panel.hidden=false;panel.inert=false;
+    document.getElementById('pdf-page-button').setAttribute('aria-expanded','true');
+    pinReaderChrome(true,'page-navigation');
+    buildWebNovelNavigation(true);
+    return;
+  }
   pdfNavigation=originalSession.navigationPreview||{session:originalSession,strip,bookmarksOnly:false,pages:[]};
   pdfNavigation.generation=++pdfNavigationGeneration;
   originalSession.navigationPreview=pdfNavigation;
@@ -403,7 +486,8 @@ function layoutPdfThumbnails(nav){
 }
 function paintPdfThumbnails(){
   syncPdfNavigationScrollbar();
-  if(pdfNavigation?.session.kind==='epub'){paintEpubThumbnails();return;}
+  if(pdfNavigation?.kind==='webnovel')return;
+  if(pdfNavigation?.session?.kind==='epub'){paintEpubThumbnails();return;}
   const nav=pdfNavigation;if(!nav||!currentPdfSession(nav.session))return;
   const currentPage=pdfCurrentPage();
   if(nav.width!==nav.strip.clientWidth)layoutPdfThumbnails(nav);
@@ -602,7 +686,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(!event.defaultPrevented&&event.target instanceof Element
         &&!event.target.closest('#pdf-page-control')&&!readerSurfaceFor(event))closePdfNavigation();
   },true);
-  document.getElementById('pdf-bookmarks-only').onclick=()=>{if(pdfNavigation){pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;if(pdfNavigation.session.kind==='epub')buildEpubNavigation(true);else buildPdfNavigation(true);}};
+  document.getElementById('pdf-bookmarks-only').onclick=()=>{if(!pdfNavigation||!pdfNavigation.session)return;pdfNavigation.bookmarksOnly=!pdfNavigation.bookmarksOnly;if(pdfNavigation.session.kind==='epub')buildEpubNavigation(true);else buildPdfNavigation(true);};
   document.getElementById('pdf-thumbnail-strip').addEventListener('scroll',paintPdfThumbnails,{passive:true});
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&pdfNavigation&&!document.querySelector('dialog[open]')){
@@ -615,7 +699,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   const resize=new ResizeObserver(entries=>{
     if(entries.some(entry=>entry.target.id!=='pdf-thumbnail-strip'))positionPdfInkSettings();
-    if(pdfNavigation?.session.kind==='epub'&&entries.some(entry=>entry.target.id!=='readpill')){buildEpubNavigation(false);}
+    if(pdfNavigation?.session?.kind==='epub'&&entries.some(entry=>entry.target.id!=='readpill')){buildEpubNavigation(false);}
     if(pdfNavigation&&currentPdfSession(pdfNavigation.session)&&entries.some(entry=>entry.target.id!=='readpill')){
       paintPdfThumbnails();
       pdfNavigation.track.querySelectorAll('.pdf-thumbnail').forEach(alignPdfBookmark);

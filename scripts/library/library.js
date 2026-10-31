@@ -175,12 +175,19 @@ function nowReadingIn(list){
   return byRecentlyRead(opened)[0].id;
 }
 /* 테두리와 진행도 글귀 하나로 표시합니다. 카드 위에 배지를 얹으면 지은이나
-   출처 줄을 가려 버립니다. */
+   출처 줄을 가려 버립니다. 웹소설은 그 진행도 앞에 읽고 있는 회차를 붙입니다. */
+function webNovelChapterLabel(book){
+  if(!book||!book.webNovelId)return '';
+  const n=Number(book.webNovelChapter);
+  return Number.isFinite(n)&&n>=1?Math.floor(n)+'화':'';
+}
 function nowReadingLabel(book, current){
   const position = posOf(book.id);
   const percent = position.t ? readingPercent(position.p)+'% 읽음' : '';
-  if(book.id !== current) return percent;
-  return percent ? '이어서 · '+percent : '이어서 읽기';
+  const chapter = typeof webNovelChapterLabel==='function'?webNovelChapterLabel(book):'';
+  const progress = [chapter, percent].filter(Boolean).join(' · ');
+  if(book.id !== current) return progress;
+  return progress ? '이어서 · '+progress : '이어서 읽기';
 }
 
 /* 표지 사진은 IndexedDB에 있습니다. 다른 기기에서 받은 기사면 `bookImageBlob`이
@@ -213,7 +220,8 @@ function wireBookCard(card, book, canManage=true){
     const badge=document.getElementById('readpill').querySelector('.completion-badge').cloneNode(true);
     if(badge instanceof HTMLElement){badge.hidden=false;badge.classList.add('library-completion');card.append(badge);}
   }
-  accessibleLibraryCard(card,book.title,canManage?()=>openEditSheet(books.find(item=>item.id===book.id)||book):null);
+  const chapterLabel=typeof webNovelChapterLabel==='function'?webNovelChapterLabel(book):'';
+  accessibleLibraryCard(card,[book.title,chapterLabel].filter(Boolean).join(' · '),canManage?()=>openEditSheet(books.find(item=>item.id===book.id)||book):null);
   card.dataset.localBook=book.id;
   const currentBook=()=>books.find(item=>item.id===book.id)||book;
   const pressed = canManage?attachLongPress(card, ()=>openEditSheet(currentBook())):()=>false;
@@ -481,9 +489,14 @@ function homeBookSpec(book,casual){
       // Progress is mutable text on a retained cover, not a reason to replace it.
       const card=tile.querySelector('.bookcard'),label=nowReadingLabel(book,null);
       let slot=card.querySelector('.prog');
-      if(!label){slot?.remove();return;}
-      if(!slot){slot=el('div','prog');card.append(slot);}
-      slot.textContent=label;
+      if(!label){slot?.remove();}
+      else{
+        if(!slot){slot=el('div','prog');card.append(slot);}
+        slot.textContent=label;
+      }
+      const chapter=typeof webNovelChapterLabel==='function'?webNovelChapterLabel(book):'';
+      const name=[book.title,chapter].filter(Boolean).join(' · ');
+      if(card.getAttribute('aria-label')!==name)card.setAttribute('aria-label',name);
     }};
 }
 /* 추천 줄의 칸: 고전(기본) · 웹소설. 기사(RSS) 칸은 잠재워 두었습니다
@@ -1218,8 +1231,12 @@ function renderHomeResume(){
   document.getElementById('home-resume-title').textContent=book ? book.title : 'Welcome to Breeze';
   const progress=book ? Math.max(0,Math.min(1,Number(posOf(book.id).p)||0)) : 0;
   document.getElementById('home-resume-progress').style.transform=`scaleX(${progress})`;
-  document.getElementById('home-resume-percent').textContent=book ? `${readingPercent(progress)}%` : '';
+  const chapter=book&&typeof webNovelChapterLabel==='function'?webNovelChapterLabel(book):'';
+  const percent=book?readingPercent(progress)+'%':'';
+  document.getElementById('home-resume-percent').textContent=book?(chapter?chapter+' · '+percent:percent):'';
   updateCompletionBadge(button,progress,book ? book.id : '');
   button.disabled=!book;
-  button.setAttribute('aria-label',book ? book.title+` · ${readingPercent(progress)}% · `+(progress===1 ? (uiLang==='ko' ? '완독 · ' : 'Completed · ') : '')+(uiLang==='ko' ? '이어서 읽기' : 'Continue reading') : 'Welcome to Breeze');
+  const action=book&&progress===1?(uiLang==='ko'?'완독 · ':'Completed · '):'';
+  const verb=uiLang==='ko'?'이어서 읽기':'Continue reading';
+  button.setAttribute('aria-label',book?[book.title,chapter,percent].filter(Boolean).join(' · ')+' · '+action+verb:'Welcome to Breeze');
 }

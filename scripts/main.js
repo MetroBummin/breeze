@@ -13,6 +13,7 @@ const homeReady=loadBooks().then(async()=>{
   await bootDurableMigration();
   migrateLibraryFolders();
   if(typeof migrateBundledClassics==='function') await migrateBundledClassics();
+  if(typeof migrateWebNovelEntries==='function') await migrateWebNovelEntries();
   await maybeShowOnboarding();
   // The first-time guide owns the visible overlay. Do not build hidden Home
   // recommendation cards or start their image/feed work behind the guide.

@@ -458,44 +458,66 @@ function webNovelChapterOne(work){
   const chapters=Array.isArray(work&&work.chapters)?work.chapters:[];
   return chapters.find(chapter=>chapter&&Number(chapter.n)===1)||null;
 }
-function webNovelChapterBookId(work,chapter){
-  return 'webnovel:'+(work&&work.id)+':'+(chapter&&chapter.n);
+async function readWebNovelChapterText(chapter){
+  const response=await fetch(chapter.file);
+  if(!response.ok) throw new Error('chapter');
+  const text=await response.text();
+  const paras=parseTXT(text,{preserveParagraphs:true});
+  if(!paras.length) throw new Error('empty');
+  return paras;
+}
+function resetWebNovelChapterPosition(id){
+  if(typeof positions==='undefined'||typeof save!=='function'||typeof LS_POS==='undefined')return;
+  positions[id]={p:0,t:Date.now(),y:0,dy:0,pi:0,mode:'text',original:null};
+  save(LS_POS,positions);
 }
 async function openWebNovelChapter(work,chapter){
   // A chapter with bundled text opens in the Reader. A placeholder never navigates.
+  // Every chapter of a novel is the same 내 책 row. A new chapter replaces that
+  // row's text and starts at the top; the same chapter keeps its saved place.
   if(!(chapter&&chapter.available&&chapter.file)){
     articlePreviewStatus('곧 공개될 회차예요.');
     return;
   }
-  const id=webNovelChapterBookId(work,chapter);
-  let book=typeof books!=='undefined'&&books.find(item=>item&&item.id===id);
+  const id=typeof webNovelBookId==='function'?webNovelBookId(work):'webnovel:'+(work&&work.id);
   try{
-    if(!book){
-      const response=await fetch(chapter.file);
-      if(!response.ok) throw new Error('chapter');
-      const text=await response.text();
-      const paras=parseTXT(text,{preserveParagraphs:true});
-      if(!paras.length) throw new Error('empty');
-      book={
-        id,
-        title:typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title,
-        author:work.credit||work.author||'',
-        kind:'txt',
-        paras,
-        formatting:null,
-        sourceMap:null,
-        webNovelId:work.id,
-        webNovelChapter:chapter.n,
-        longReadId:id,
-        sourceUrl:work.royalRoadUrl||'',
-        site:'Royal Road',
-        addedAt:Date.now(),
-        textAvailable:true,
-        fingerprint:typeof bookContentFingerprint==='function'?bookContentFingerprint(paras):'',
-      };
-      await bookPut(book);
-      books.unshift(book);
-      if(typeof applyLongReadCover==='function'&&work.cover) await applyLongReadCover({id,cover:work.cover});
+    if(typeof migrateWebNovelEntries==='function'&&typeof books!=='undefined'
+        &&books.some(item=>item&&String(item.id||'').startsWith('webnovel:'+work.id+':')))
+      await migrateWebNovelEntries();
+    let book=typeof books!=='undefined'&&books.find(item=>item&&item.id===id);
+    const same=!!(book&&Number(book.webNovelChapter)===Number(chapter.n));
+    if(!same){
+      const paras=await readWebNovelChapterText(chapter);
+      const fingerprint=typeof bookContentFingerprint==='function'?bookContentFingerprint(paras):'';
+      if(!book){
+        book={
+          id,
+          title:typeof webNovelDisplayTitle==='function'?webNovelDisplayTitle(work):work.title,
+          author:work.credit||work.author||'',
+          kind:'txt',
+          paras,
+          formatting:null,
+          sourceMap:null,
+          webNovelId:work.id,
+          webNovelChapter:chapter.n,
+          longReadId:id,
+          sourceUrl:work.royalRoadUrl||'',
+          site:'Royal Road',
+          addedAt:Date.now(),
+          textAvailable:true,
+          fingerprint,
+        };
+        await bookPut(book);
+        books.unshift(book);
+        if(typeof applyLongReadCover==='function'&&work.cover) await applyLongReadCover({id,cover:work.cover});
+      }else{
+        Object.assign(book,{
+          paras,formatting:null,sourceMap:null,fingerprint,
+          webNovelId:work.id,webNovelChapter:chapter.n,longReadId:id,
+        });
+        await bookPut(book);
+        resetWebNovelChapterPosition(id);
+      }
     }
     if(typeof webNovelProgress==='function'&&typeof save==='function'){
       const progress=webNovelProgress();
@@ -503,11 +525,13 @@ async function openWebNovelChapter(work,chapter){
       save(WEBNOVEL_PROGRESS_KEY,progress);
     }
     articlePreviewClose();
+    if(typeof closePdfNavigation==='function')closePdfNavigation();
     if(typeof renderHome==='function') renderHome();
     return openBook(book);
   }catch(error){
     console.error(error);
-    articlePreviewStatus('회차를 열지 못했어요.');
+    if(articlePreviewDialog.open)articlePreviewStatus('회차를 열지 못했어요.');
+    else if(typeof toast==='function')toast('회차를 열지 못했어요.');
   }
 }
 function renderWebNovelChapters(work){
@@ -578,8 +602,10 @@ function openWebNovelPreview(work){
   const start=/** @type {HTMLButtonElement} */(dialog.querySelector('.ap-start'));
   start.onclick=()=>openWebNovelChapter(work,webNovelChapterOne(work));
   start.disabled=false;start.textContent='1화 보기';start.removeAttribute('aria-busy');
-  articlePreviewStatus('');dialog.querySelector('.ap-scroll').scrollTop=0;
+  articlePreviewStatus('');
   dialog.showModal();dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});
+  // showModal can scroll the previously focused chapter row back into view.
+  dialog.querySelector('.ap-scroll').scrollTop=0;
 }
 const articlePreviewStatusNode=document.createElement('p');
 articlePreviewStatusNode.className='ap-status';articlePreviewStatusNode.setAttribute('role','status');
