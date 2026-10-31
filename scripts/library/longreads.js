@@ -1267,6 +1267,87 @@ function webNovelKoreanLine(work){
   if(!work)return '';
   return [work.koTitle,work.koSubtitle].filter(Boolean).join(' · ');
 }
+/* One library row per novel. Chapters replace that row's text; they do not
+   add another 내 책 card. Older builds stored webnovel:<id>:<chapter>. */
+function webNovelBookId(work){
+  return 'webnovel:'+(work&&work.id||'');
+}
+function webNovelLibraryNovelId(book){
+  if(!book)return '';
+  if(book.webNovelId)return String(book.webNovelId);
+  const match=/^webnovel:([^:]+)(?::\d+)?$/.exec(String(book.id||''));
+  return match?match[1]:'';
+}
+function webNovelEntryChapter(book){
+  const stored=Number(book&&book.webNovelChapter);
+  if(Number.isFinite(stored)&&stored>=1)return Math.floor(stored);
+  const match=/^webnovel:[^:]+:(\d+)$/.exec(String(book&&book.id||''));
+  return match?Number(match[1]):1;
+}
+function webNovelEntryRecency(book){
+  const pos=typeof posOf==='function'?posOf(book.id):(typeof positions!=='undefined'&&positions[book.id])||{};
+  const read=typeof localReadAt==='function'?Number(localReadAt(book.id))||0:0;
+  return Math.max(Number(pos&&pos.t)||0,read);
+}
+async function migrateWebNovelEntries(){
+  if(typeof books==='undefined'||!Array.isArray(books))return;
+  const groups=new Map();
+  for(const book of books){
+    const novelId=webNovelLibraryNovelId(book);
+    if(!novelId||typeof webNovelDefinition!=='function'||!webNovelDefinition(novelId))continue;
+    if(!groups.has(novelId))groups.set(novelId,[]);
+    groups.get(novelId).push(book);
+  }
+  for(const [novelId,group] of groups){
+    try{
+      const stable=webNovelBookId({id:novelId});
+      const ready=group.length===1&&group[0].id===stable&&group[0].webNovelId===novelId
+        &&group[0].longReadId===stable&&webNovelEntryChapter(group[0])>=1;
+      if(ready)continue;
+      const winner=group.slice().sort((a,b)=>{
+        const delta=webNovelEntryRecency(b)-webNovelEntryRecency(a);
+        if(delta)return delta;
+        const chapter=webNovelEntryChapter(b)-webNovelEntryChapter(a);
+        if(chapter)return chapter;
+        return (Number(b.addedAt)||0)-(Number(a.addedAt)||0);
+      })[0];
+      const chapter=webNovelEntryChapter(winner);
+      const next={...winner,id:stable,webNovelId:novelId,webNovelChapter:chapter,longReadId:stable};
+      if(typeof positions!=='undefined'){
+        const kept=winner.id===stable?positions[stable]:positions[winner.id];
+        if(kept)positions[stable]=kept;
+        for(const book of group)if(book.id!==stable)delete positions[book.id];
+        if(typeof save==='function'&&typeof LS_POS!=='undefined')save(LS_POS,positions);
+      }
+      if(typeof localReadTimes!=='undefined'){
+        const kept=winner.id===stable?localReadTimes[stable]:localReadTimes[winner.id];
+        if(kept)localReadTimes[stable]=kept;
+        for(const book of group)if(book.id!==stable)delete localReadTimes[book.id];
+        if(typeof save==='function'&&typeof LOCAL_READ_KEY!=='undefined')save(LOCAL_READ_KEY,localReadTimes);
+      }
+      if(typeof bookPut==='function')await bookPut(next);
+      for(const book of group){
+        if(book.id===stable)continue;
+        if(typeof bookDel==='function')await bookDel(book.id);
+        if(typeof imgDel==='function'&&book.cover&&book.cover!==next.cover){
+          try{await imgDel(book.cover);}catch(error){/* The merged row keeps its own cover. */}
+        }
+      }
+      books=books.filter(book=>!group.includes(book));
+      books.unshift(next);
+      if(typeof HOME_RESUME_KEY!=='undefined'&&typeof load==='function'&&typeof save==='function'){
+        const resume=load(HOME_RESUME_KEY,null);
+        if(group.some(book=>book.id===resume))save(HOME_RESUME_KEY,stable);
+      }
+      if(typeof webNovelProgress==='function'&&typeof WEBNOVEL_PROGRESS_KEY!=='undefined'&&typeof save==='function'){
+        const progress=webNovelProgress();
+        if(progress[novelId]!==chapter){progress[novelId]=chapter;save(WEBNOVEL_PROGRESS_KEY,progress);}
+      }
+    }catch(error){
+      console.warn('웹소설 서재 항목을 합치지 못했습니다:',error&&error.message);
+    }
+  }
+}
 
 /* 원격 목록(catalog.json)에만 있는 고전도 익숙한 한국어 제목으로 보이게 하는
    표입니다. 열쇠는 영어 제목(소문자)입니다. 목록 줄이 koTitle 을 싣고 오면

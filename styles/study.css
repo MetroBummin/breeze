@@ -87,6 +87,15 @@ body.chrome-hidden #reader-navigation #readback{transform:none;}
 .pdf-thumbnail-more{padding:0;}
 .pdf-thumbnail-more svg circle{r:var(--control-more-dot-radius);}
 .pdf-thumbnail-jump[aria-current=true] span{color:var(--sentence-glass-ink);font-weight:600;}
+/* Chapter rows reuse the page sidebar. They flow in the strip instead of the
+   absolute page-thumbnail grid, and the current chapter uses the sidebar's
+   selected surface. PDF and EPUB thumbnails keep their own track. */
+#pdf-page-navigation[aria-label="회차"] .pdf-navigation-head::before{content:"회차";font:600 13px var(--ui);color:var(--sentence-glass-ink);padding-left:8px;}
+.pdf-thumbnail-track.webnovel-chapter-track{display:flex;flex-direction:column;gap:4px;height:auto;}
+.pdf-thumbnail-track.webnovel-chapter-track>.pdf-thumbnail{position:relative;left:auto;right:auto;}
+.webnovel-chapter .pdf-thumbnail-jump{min-height:44px;box-sizing:border-box;padding:10px 12px;border-radius:12px;font:500 14px var(--ui);color:var(--sentence-glass-ink);}
+.webnovel-chapter .pdf-thumbnail-jump[aria-current=true]{background:var(--sentence-glass-action);font-weight:600;}
+.webnovel-chapter .pdf-thumbnail-jump:disabled{opacity:.45;cursor:default;}
 .pdf-thumbnail-jump canvas{display:block;max-width:100%;object-fit:contain;}
 .pdf-thumbnail-jump span{font:500 9px var(--ui);line-height:12px;color:var(--sentence-glass-muted);}
 .pdf-thumbnail-bookmark{position:absolute;right:0;top:0;width:var(--control-side-size);height:var(--control-row-height);border:0;background:transparent;color:var(--sentence-glass-secondary);display:grid;place-items:start center;padding:0;cursor:pointer;}

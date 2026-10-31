@@ -3,7 +3,7 @@
 // which is the 2-column grid on a phone (3 on a tablet, 4 on a wide screen).
 // Deterministic: every request outside the local server is aborted.
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {mkdirSync,readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {resolve,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -144,10 +144,78 @@ try{
       assert.doesNotMatch(reader.text,/Stolen from its original source|A note from /i);
       assert.equal(reader.shelf,'Cinnamon Bun');
       assert.equal(reader.shelfEn,null);
+      assert.equal(await page.evaluate(()=>books.filter(book=>String(book.id).startsWith('webnovel:cinnamon-bun')).map(book=>book.id).join(',')),'webnovel:cinnamon-bun');
+      await page.evaluate(()=>show('home'));
+      await page.locator('#casual-rail .webnovel[data-webnovel-id="cinnamon-bun"]').click();
+      await page.waitForFunction(()=>document.querySelector('#article-preview').open);
+      await page.locator('#article-preview .ap-chapter-row').nth(1).click();
+      await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on')&&document.getElementById('rtext').innerText.includes('Chapter Two'));
+      const opened=await page.evaluate(()=>books.filter(book=>String(book.id).startsWith('webnovel:')).map(book=>({id:book.id,chapter:book.webNovelChapter})));
+      assert.deepEqual(opened,[{id:'webnovel:cinnamon-bun',chapter:2}],'Chapter 2 updates the same 내 책 entry');
+      const chapterButton=page.locator('#pdf-page-button');
+      await chapterButton.waitFor({state:'visible'});
+      assert.match(await chapterButton.getAttribute('aria-label'),/회차/);
+      assert.equal(await chapterButton.getAttribute('aria-expanded'),'false');
+      const shots='/opt/cursor/artifacts/webnovel-one-entry';
+      mkdirSync(shots,{recursive:true});
+      await page.screenshot({path:`${shots}/reader-chapter-button.png`});
+      await chapterButton.click();
+      await page.waitForFunction(()=>document.getElementById('pdf-page-button').getAttribute('aria-expanded')==='true'&&document.querySelectorAll('#pdf-thumbnail-strip .webnovel-chapter').length===10);
+      const sidebar=await page.evaluate(()=>({
+        label:document.getElementById('pdf-page-navigation').getAttribute('aria-label'),
+        chapters:[...document.querySelectorAll('#pdf-thumbnail-strip .pdf-thumbnail-jump')].map(node=>node.textContent),
+        current:document.querySelector('#pdf-thumbnail-strip .pdf-thumbnail-jump[aria-current="true"]').textContent,
+        bookmarksHidden:document.getElementById('pdf-bookmarks-only').hidden,
+      }));
+      assert.equal(sidebar.label,'회차');
+      assert.deepEqual(sidebar.chapters,['1화','2화','3화','4화','5화','6화','7화','8화','9화','10화']);
+      assert.equal(sidebar.current,'2화');
+      assert.equal(sidebar.bookmarksHidden,true,'Chapter sidebar hides PDF bookmark filtering');
+      for(const size of [{width:390,height:500},{width:390,height:844},{width:768,height:1024},{width:1280,height:800}]){
+        await page.setViewportSize(size);
+        const box=await page.locator('#pdf-page-control').boundingBox();
+        assert.ok(box&&box.width>40&&box.height>40,`sidebar has a box at ${size.width}x${size.height}: ${JSON.stringify(box)}`);
+        assert.ok(box.x>=-16&&box.y>=-2&&box.x+box.width<=size.width+2&&box.y+box.height<=size.height+2,`sidebar stays on screen at ${size.width}x${size.height}: ${JSON.stringify(box)}`);
+      }
+      await page.setViewportSize({width:390,height:844});
+      await page.evaluate(()=>setThemePreference('dark'));
+      assert.equal(await page.locator('#pdf-thumbnail-strip .pdf-thumbnail-jump[aria-current="true"]').textContent(),'2화');
+      await page.evaluate(()=>setThemePreference('light'));
+      await page.screenshot({path:`${shots}/reader-chapter-sidebar.png`});
+      await page.evaluate(()=>{closePdfNavigation();show('home');});
+      await page.locator('#longform').scrollIntoViewIfNeeded();
+      await page.waitForFunction(()=>/2화/.test(document.querySelector('#shelf [data-home-key="book:webnovel:cinnamon-bun"] .prog')?.textContent||''));
+      const webNovelShelf=await page.evaluate(()=>({
+        keys:[...document.querySelectorAll('#shelf [data-home-key^="book:webnovel:"]')].map(node=>node.dataset.homeKey),
+        prog:document.querySelector('#shelf [data-home-key="book:webnovel:cinnamon-bun"] .prog')?.textContent||'',
+        resume:document.getElementById('home-resume').getAttribute('aria-label'),
+        percent:document.getElementById('home-resume-percent').textContent,
+        recommend:document.querySelector('#casual-rail .webnovel[data-webnovel-id="cinnamon-bun"] .get')?.textContent||'',
+      }));
+      assert.deepEqual(webNovelShelf.keys,['book:webnovel:cinnamon-bun']);
+      assert.match(webNovelShelf.prog,/2화/);
+      assert.match(webNovelShelf.resume,/Cinnamon Bun · 2화 · \d+% · 이어서 읽기/);
+      assert.match(webNovelShelf.percent,/^2화 · \d+%$/);
+      assert.match(webNovelShelf.recommend,/2화 읽는 중/);
+      await page.screenshot({path:`${shots}/my-books-one-entry.png`});
+      await page.locator('#longform .sec-head .section-link').click();
+      await page.waitForFunction(()=>document.getElementById('v-longform').classList.contains('on'));
+      assert.equal(await page.locator('#longform-cnt').textContent(),'1개');
+      assert.equal(await page.locator('#longform-grid [data-local-book="webnovel:cinnamon-bun"]').count(),1);
+      await page.screenshot({path:`${shots}/my-books-grid-one-entry.png`});
+      await page.evaluate(()=>show('home'));
+      await page.locator('#home-resume').click();
+      await page.waitForFunction(()=>document.getElementById('v-read').classList.contains('on')&&document.getElementById('rtext').innerText.includes('Chapter Two'));
+      await page.locator('#pdf-page-button').click();
+      await page.waitForFunction(()=>document.getElementById('pdf-page-button').getAttribute('aria-expanded')==='true');
+      await page.locator('#pdf-thumbnail-strip .pdf-thumbnail-jump[data-webnovel-chapter="3"]').click();
+      await page.waitForFunction(()=>Number(curBook.webNovelChapter)===3&&document.getElementById('rtext').innerText.includes('Chapter Three'));
+      assert.equal(await page.evaluate(()=>books.filter(book=>String(book.id).startsWith('webnovel:')).length),1,'Choosing another chapter stays on the same entry');
       await page.evaluate(async()=>{
-        await bookDel('webnovel:cinnamon-bun:1');
-        books=books.filter(book=>book.id!=='webnovel:cinnamon-bun:1');
-        delete positions['webnovel:cinnamon-bun:1'];
+        await bookDel('webnovel:cinnamon-bun');
+        books=books.filter(book=>book.id!=='webnovel:cinnamon-bun');
+        delete positions['webnovel:cinnamon-bun'];
+        delete localReadTimes['webnovel:cinnamon-bun'];
         show('home');
       });
       await page.locator('#home-recommend-kind [data-kind="webnovels"]').click();
