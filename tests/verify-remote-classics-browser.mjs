@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {mkdirSync, readFileSync} from 'node:fs';
+import {mkdirSync, readFileSync, existsSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {extname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -56,6 +56,11 @@ try {
     }
     if (url.endsWith('/classics/pride-and-prejudice/cover.webp'))
       return route.fulfill({status: 200, contentType: 'image/webp', body: cover});
+    const classicCover=url.match(/\/classics\/([^/]+)\/cover\.webp$/);
+    if(classicCover){
+      const file=resolve(root, `server/classics/${classicCover[1]}/cover.webp`);
+      if(existsSync(file)) return route.fulfill({status: 200, contentType: 'image/webp', body: readFileSync(file)});
+    }
     return route.abort();
   });
 
@@ -68,6 +73,15 @@ try {
   await page.evaluate(() => homeReady);
   assert.equal(await page.evaluate(() => homeRecommendKind()), 'classics', 'A saved 웹소설 choice still opens 고전');
   await page.waitForFunction(bookId => remoteClassicCatalogReads().some(read => read.id === bookId), id);
+  await page.waitForFunction(() => {
+    const first=document.querySelector('#casual-rail .home-recommend-book');
+    const image=first&&first.querySelector('img.cover');
+    return first&&first.dataset.longreadId==='frankenstein'&&image&&image.naturalWidth>0&&document.getElementById('casual-rail').scrollLeft<=1;
+  });
+  assert.equal(await page.locator('#casual-rail .home-recommend-book').first().locator('.bt').textContent(), '프랑켄슈타인');
+  assert.equal(await page.locator('#home-recommend-kind [data-kind="classics"]').getAttribute('aria-pressed'), 'true');
+  mkdirSync('/opt/cursor/artifacts/webnovel-blurb-classics', {recursive: true});
+  await page.screenshot({path: '/opt/cursor/artifacts/webnovel-blurb-classics/home-frankenstein-first.png'});
   assert.equal(bookFetches, 0, 'The catalog fetch downloaded the novel');
 
   await page.locator('#home-recommend-kind [data-kind="classics"]').click();

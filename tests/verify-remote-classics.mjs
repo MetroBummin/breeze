@@ -495,8 +495,8 @@ test('the shelf groups Holmes by publication year',async()=>{
   const {context}=harness(async()=>new Response(JSON.stringify(catalog),{status:200,headers:{'content-type':'application/json'}}));
   await context.refreshRemoteClassics();
   assert.deepEqual(Array.from(context.orderClassicReads(context.pendingLongReads().concat(context.classicCatalogOffers())), read=>read.title),[
-    'Pride and Prejudice',
     'Frankenstein',
+    'Pride and Prejudice',
     'Great Expectations',
     "Alice's Adventures in Wonderland",
     'Little Women',
