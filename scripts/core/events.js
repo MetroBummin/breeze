@@ -2,7 +2,9 @@
    failed send is dropped. Rows live in public.product_events for 90 days.
    Prefer: return=minimal so an insert does not ship the row back. */
 const BREEZE_APP_VERSION='1.9.9';
-const BREEZE_ONBOARDING_VERSION='v1';
+// tools/stamp-version.mjs writes the shell build hash here. It is the same
+// value as sw.js VERSION. Older rows used the fixed 'v1'.
+const BREEZE_ONBOARDING_VERSION='62e73d40';
 const EVENT_UTM_KEYS=['utm_source','utm_medium','utm_campaign','utm_content'];
 const EVENT_UTM_KEY='breeze.events.utm';
 const EVENT_REF_KEY='breeze.events.ref';
@@ -13,8 +15,19 @@ const EVENT_SENT_KEY='breeze.events.sent';
 const EVENT_DEVICE_CAP=48;
 const EVENT_NAMES={
   app_open:1,onboarding_start:1,onboarding_step_complete:1,onboarding_step_skip:1,
+  onboarding_choice:1,first_word_tap:1,first_lookup_success:1,vocab_save:1,
+  onboarding_closed:1,onboarding_intro_play:1,onboarding_word_pill:1,landing_view:1
+};
+// Names the server accepted before the onboarding-quality migration. A batch
+// that mixes in a newer name is retried without those rows when the check
+// constraint still rejects them, so the older events are not dropped.
+const EVENT_LEGACY={
+  app_open:1,onboarding_start:1,onboarding_step_complete:1,onboarding_step_skip:1,
   onboarding_choice:1,first_word_tap:1,first_lookup_success:1,vocab_save:1
 };
+const EVENT_OPTIONAL={referrer:1,browser:1,in_app:1};
+const EVENT_BROWSERS={chrome:1,safari:1,firefox:1,edge:1,samsung:1,opera:1,other:1};
+const EVENT_IN_APP={kakao:1,instagram:1,naver:1};
 let eventQueue=[];
 let eventTimer=0;
 let eventFlushing=false;
@@ -141,6 +154,35 @@ function eventDeviceId(){
   }
   return id;
 }
+function carryAppSearch(href, search){
+  const target=String(href||'');
+  const query=String(search||'');
+  if(!query||query==='?')return target;
+  if(target!=='../'&&target!=='/')return target;
+  if(target.indexOf('?')>=0)return target;
+  return target+query;
+}
+function eventUserAgent(){
+  try{return typeof navigator!=='undefined'&&navigator?String(navigator.userAgent||''):'';}catch(e){return '';}
+}
+function eventInApp(ua){
+  const text=String(ua||'');
+  if(/KAKAOTALK/i.test(text))return 'kakao';
+  if(/Instagram/i.test(text))return 'instagram';
+  if(/NAVER/i.test(text))return 'naver';
+  return '';
+}
+function eventBrowserFamily(ua){
+  const text=String(ua||'');
+  if(!text)return '';
+  if(/Edg\/|EdgA\/|EdgiOS\//.test(text))return 'edge';
+  if(/SamsungBrowser\//.test(text))return 'samsung';
+  if(/Firefox\/|FxiOS\//.test(text))return 'firefox';
+  if(/OPR\/|Opera\//.test(text))return 'opera';
+  if(/Chrome\/|CriOS\/|Chromium\//.test(text))return 'chrome';
+  if(/Safari\//.test(text))return 'safari';
+  return 'other';
+}
 function eventPlatform(){
   try{
     const cap=globalThis.Capacitor;
@@ -166,7 +208,16 @@ function eventProps(name,props){
     if(!/^[a-z0-9_-]{1,24}$/.test(choice))return null;
     return {choice:choice};
   }
+  if(name==='onboarding_closed'){
+    const step=String(props.step||'').slice(0,24);
+    if(!/^[a-z0-9_-]{1,24}$/.test(step))return null;
+    const reason=String(props.reason||'').slice(0,24);
+    if(!/^(?:esc|back|hidden|pagehide|dismiss)$/.test(reason))return null;
+    const ms=Math.max(0,Math.min(3600000,Math.round(Number(props.ms)||0)));
+    return {step:step,ms:ms,reason:reason};
+  }
   if(name==='vocab_save')return {first:true};
+  if(name==='onboarding_intro_play'||name==='onboarding_word_pill'||name==='landing_view')return {};
   return {};
 }
 function eventMarkOnce(name){
@@ -190,6 +241,10 @@ function eventStoredToken(){
     return token;
   }catch(e){return '';}
 }
+// A token getSession() already resolved. pagehide cannot await getSession, and
+// the stored sb-*-auth-token is often missing on iOS, so the unload path
+// keeps the token this page has already seen.
+let eventLiveToken='';
 // Bearer token for the events insert. Prefer the live Supabase client session
 // (the same source as scripts/library/book-cloud.js) so a signed-in reader's
 // JWT reaches the server and the product_events trigger sets user_id =
@@ -207,10 +262,13 @@ async function eventAccessToken(){
       const result=await getSession();
       const token=result&&result.data&&result.data.session&&typeof result.data.session.access_token==='string'
         ?result.data.session.access_token:'';
-      if(token)return token;
+      if(token){eventLiveToken=token;return token;}
+      eventLiveToken='';
     }
   }catch(e){}
-  return eventStoredToken();
+  const stored=eventStoredToken();
+  if(stored)eventLiveToken=stored;
+  return stored;
 }
 function eventRow(name,props){
   const cleaned=eventProps(name,props);
@@ -232,6 +290,11 @@ function eventRow(name,props){
   }
   const ref=eventStoreGet(EVENT_REF_KEY);
   if(typeof ref==='string'&&ref)row.referrer=ref;
+  const ua=eventUserAgent();
+  const browser=eventBrowserFamily(ua);
+  const inApp=eventInApp(ua);
+  if(EVENT_BROWSERS[browser])row.browser=browser;
+  if(EVENT_IN_APP[inApp])row.in_app=inApp;
   return row;
 }
 function eventFlushSoon(delay){
@@ -250,33 +313,65 @@ function eventConfig(){
   if(!url||!key||typeof fetch!=='function')return null;
   return {url:url.replace(/\/$/,''),key:key};
 }
-// Whether the server has the product_events.referrer column: 'unknown' until a
-// send with referrer answers, 'ok' once one is accepted, 'missing' once
-// PostgREST rejects the column. Lives for this page session only, so the
-// column is picked up again on the next launch after the migration lands.
-let eventReferrerReady='unknown';
-function eventHasReferrer(batch){
-  for(let i=0;i<batch.length;i++)if(batch[i]&&Object.prototype.hasOwnProperty.call(batch[i],'referrer'))return true;
-  return false;
+// Optional columns and new event names ship before their migration is applied.
+// This page remembers what the server rejected so a later batch still inserts.
+// 'unknown' until a send answers, 'extended' once a new event name is accepted,
+// 'legacy' once the name check rejects one.
+let eventNamesReady='unknown';
+const eventMissingColumns={};
+const eventOptionalOk={};
+function eventStripRow(row,unload){
+  const copy={};
+  for(const key in row){
+    if(eventMissingColumns[key])continue;
+    if(unload&&EVENT_OPTIONAL[key]&&!eventOptionalOk[key])continue;
+    copy[key]=row[key];
+  }
+  return copy;
 }
-function eventWithoutReferrer(batch){
-  if(!eventHasReferrer(batch))return batch;
-  return batch.map(row=>{
-    const copy={};
-    for(const key in row)if(key!=='referrer')copy[key]=row[key];
-    return copy;
-  });
+function eventPrepare(batch,unload){
+  const rows=[];
+  for(let i=0;i<batch.length;i++){
+    if(eventNamesReady==='legacy'&&!EVENT_LEGACY[batch[i].name])continue;
+    rows.push(eventStripRow(batch[i],unload));
+  }
+  return rows;
+}
+function eventUnloadGroups(batch){
+  if(eventNamesReady==='extended')return [eventPrepare(batch,true)];
+  const legacy=[],novel=[];
+  for(let i=0;i<batch.length;i++){
+    const row=eventStripRow(batch[i],true);
+    if(EVENT_LEGACY[batch[i].name])legacy.push(row);
+    else if(eventNamesReady!=='legacy')novel.push(row);
+  }
+  const groups=[];
+  if(legacy.length)groups.push(legacy);
+  if(novel.length)groups.push(novel);
+  return groups;
+}
+function eventNoteAccepted(rows){
+  for(let i=0;i<rows.length;i++){
+    for(const key in EVENT_OPTIONAL){
+      if(Object.prototype.hasOwnProperty.call(rows[i],key))eventOptionalOk[key]=1;
+    }
+    if(!EVENT_LEGACY[rows[i].name])eventNamesReady='extended';
+  }
 }
 // PostgREST answers an unknown insert column with 400 and code PGRST204
 // ("Could not find the 'referrer' column of 'product_events' in the schema
-// cache"). Postgres itself would say 42703. Anything else is not ours to retry.
-function eventIsMissingReferrer(response){
-  if(!response||response.status!==400||typeof response.json!=='function')return Promise.resolve(false);
+// cache"). Postgres itself would say 42703. A name the check constraint does
+// not list yet is 23514 product_events_name_chk. Anything else is not retried.
+function eventSchemaMiss(response){
+  if(!response||response.status!==400||typeof response.json!=='function')return Promise.resolve(null);
   return Promise.resolve().then(()=>response.json()).then(body=>{
     const code=body&&typeof body.code==='string'?body.code:'';
     const text=body?String(body.message||'')+' '+String(body.details||''):'';
-    return (code==='PGRST204'||code==='42703')&&/referrer/.test(text);
-  }).catch(()=>false);
+    if(code==='23514'&&/product_events_name_chk/.test(text))return {legacy:true};
+    if(code!=='PGRST204'&&code!=='42703')return null;
+    const quoted=text.match(/'([A-Za-z0-9_]+)' column/)||text.match(/"([A-Za-z0-9_]+)"/);
+    return quoted?{column:quoted[1]}:null;
+  }).catch(()=>null);
 }
 function eventDispatch(url,key,token,batch){
   return fetch(url+'/rest/v1/product_events',{
@@ -296,56 +391,65 @@ function eventDispatch(url,key,token,batch){
 // pagehide/unload path we cannot afford to await a microtask: the event loop may
 // never resume to dispatch the keepalive fetch, dropping the final queued event
 // (commonly app_open). Passing unload=true takes a synchronous fast path that
-// resolves the token from the synchronous eventStoredToken() (falling back to
-// the anon key) and fires the fetch in the same tick, so the last event is not
-// lost during teardown.
+// uses the token already resolved this page (else the stored token, else the
+// anon key) and fires the fetch in the same tick.
 function eventFlush(unload){
-  if(eventFlushing||!eventQueue.length)return Promise.resolve();
+  if(!eventQueue.length)return Promise.resolve();
+  // An in-flight flush already took its batch. pagehide must still send whatever
+  // was queued after that, or the close event is left behind when the page dies.
+  if(eventFlushing&&!unload)return Promise.resolve();
   const batch=eventQueue.splice(0,8);
   const cfg=eventConfig();
   if(!cfg)return Promise.resolve();
   if(unload){
-    // Synchronous dispatch: build the bearer from the already-synchronous
-    // stored token (or the anon key) and send immediately, with no await.
-    eventFlushing=true;
     try{
-      const token=eventStoredToken();
-      // We cannot read the response here, so only send referrer once this
-      // session has seen the server accept it.
-      const result=eventDispatch(cfg.url,cfg.key,token,eventReferrerReady==='ok'?batch:eventWithoutReferrer(batch));
-      eventNoteSent(batch.length);
-      const done=result&&typeof result.then==='function'
-        ?result.then(()=>{}).catch(()=>{})
-        :Promise.resolve();
-      return done.then(()=>{eventFlushing=false;}).catch(()=>{eventFlushing=false;});
-    }catch(e){eventFlushing=false;return Promise.resolve();}
+      const token=eventLiveToken||eventStoredToken();
+      const groups=eventUnloadGroups(batch);
+      let result=Promise.resolve();
+      for(let i=0;i<groups.length;i++){
+        if(!groups[i].length)continue;
+        const pending=eventDispatch(cfg.url,cfg.key,token,groups[i]);
+        result=pending&&typeof pending.then==='function'?pending.then(()=>{},()=>{}):result;
+      }
+      if(groups.length)eventNoteSent(batch.length);
+      return result;
+    }catch(e){return Promise.resolve();}
   }
   eventFlushing=true;
   // Only the internal flush awaits the async token lookup; trackEvent() stays
   // fire-and-forget so callers never block on getSession().
-  let sent=eventReferrerReady==='missing'?eventWithoutReferrer(batch):batch;
+  let sent=eventPrepare(batch,false);
+  let tries=0;
   let token='';
+  let skipped=false;
+  const send=()=>eventDispatch(cfg.url,cfg.key,token,sent);
+  const attempt=()=>{
+    if(!sent.length){skipped=true;return Promise.resolve(null);}
+    return send().then(response=>{
+      if(!response||response.ok||tries>=2)return response;
+      return eventSchemaMiss(response).then(miss=>{
+        if(!miss)return response;
+        tries++;
+        if(miss.column)eventMissingColumns[miss.column]=1;
+        if(miss.legacy)eventNamesReady='legacy';
+        const next=eventPrepare(batch,false);
+        if(!next.length){skipped=true;return response;}
+        if(JSON.stringify(next)===JSON.stringify(sent))return response;
+        sent=next;
+        return attempt();
+      });
+    });
+  };
   return Promise.resolve().then(()=>eventAccessToken()).then(value=>{
     token=value;
-    return eventDispatch(cfg.url,cfg.key,token,sent);
-  }).then(response=>{
-    if(response&&response.ok||!eventHasReferrer(sent))return response;
-    return eventIsMissingReferrer(response).then(missing=>{
-      if(!missing)return response;
-      // The product_events.referrer column (migration
-      // 20261030130000_product_events_referrer.sql) is not applied yet. Keep
-      // the events: retry once without referrer and stop sending it this session.
-      eventReferrerReady='missing';
-      sent=eventWithoutReferrer(batch);
-      return eventDispatch(cfg.url,cfg.key,token,sent);
-    });
+    return attempt();
   }).then(response=>{
     eventFlushing=false;
-    if(response&&response.ok){
-      if(eventHasReferrer(sent))eventReferrerReady='ok';
-      eventNoteSent(batch.length);
-      if(eventQueue.length)return eventFlush();
+    if(!skipped&&response&&response.ok){
+      eventNoteAccepted(sent);
+      eventNoteSent(sent.length);
     }
+    if((skipped||(response&&response.ok))&&eventQueue.length)return eventFlush();
   }).catch(()=>{eventFlushing=false;});
 }
 function trackEvent(name,props){
@@ -373,5 +477,8 @@ try{captureLandingUtm();}catch(e){}
 try{
   if(typeof window!=='undefined'&&window.addEventListener){
     window.addEventListener('pagehide',()=>{try{eventFlush(true);}catch(e){}});
+    // Defer scripts, including sync.js, have finished by load, so sb exists
+    // and a quick pagehide can still attach the signed-in user.
+    window.addEventListener('load',()=>{try{eventAccessToken();}catch(e){}});
   }
 }catch(e){}
