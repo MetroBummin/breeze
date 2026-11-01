@@ -213,3 +213,12 @@ https://playwright.dev/docs/release-notes#version-164
 Final-commit complete CI must pass after this tooling change. These results are
 browser-engine evidence with a controlled OCR bridge, not physical airplane
 mode,56-page native process restart or physical retry-tap acceptance.
+
+## Marketing version 2.0.0 (2026-11-01)
+
+1.9.9 is already approved, so App Store Connect will not take another 1.9.9
+binary (errors 90186/90062 on builds 384/385). App and Share Debug/Release
+`MARKETING_VERSION` move to 2.0.0. The checked-in build counter stays 300, and
+the cloud bootstrap still replaces it with `CI_BUILD_NUMBER`. Android
+`versionName` follows the same release. The checked-in Play version code stays 2.
+Xcode Cloud assigns the next counter, so this baseline is not that upload number.

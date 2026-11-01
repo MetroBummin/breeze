@@ -4,7 +4,7 @@ import {pathToFileURL} from 'node:url';
 
 export function validateBuildNumber(value) {
   assert.match(value ?? '', /^[1-9]\d{0,17}$/, 'Build number must be a positive integer of at most 18 digits');
-  assert.ok(BigInt(value) > 271n, '1.9.9 build number must exceed existing TestFlight build 271');
+  assert.ok(BigInt(value) > 271n, '2.0.0 build number must exceed existing TestFlight build 271');
   return value;
 }
 
@@ -21,7 +21,7 @@ export function verifyRelease(project, expectedBuild = '300') {
     assert.equal(builds.length, 1, 'Missing or duplicate build number');
     validateBuildNumber(builds[0][1]);
     assert.equal(builds[0][1], expectedBuild, 'App and extension build numbers must match expected build');
-    assert.deepEqual(versions.map(m => m[1]), ['1.9.9'], 'Marketing version must remain 1.9.9');
+    assert.deepEqual(versions.map(m => m[1]), ['2.0.0'], 'Marketing version must remain 2.0.0');
   }
 }
 
@@ -42,5 +42,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   } else {
     verifyRelease(project, process.env.CI_BUILD_NUMBER ?? '300');
   }
-  console.log(`Breeze and Share Extension: 1.9.9 (${process.env.CI_BUILD_NUMBER ?? '300'})`);
+  console.log(`Breeze and Share Extension: 2.0.0 (${process.env.CI_BUILD_NUMBER ?? '300'})`);
 }
