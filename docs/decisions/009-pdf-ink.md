@@ -1216,16 +1216,17 @@ with a higher floor, so it is waxier than graphite and still not a flat pen.
 The centerline is still the smoothed polyline.
 
 Handwriting at a fitted iPad page (about 2.6 device pixels per PDF unit)
-showed that tooth was still too fine: the bites were under a unit across,
-about one device pixel, so a letter looked like a soft gray pen. The graphite
-mask is now a 16-unit page-locked tile. Holes are 1.8–3.5 units across,
-several device pixels, punched after the specks so they stay open. The edge
-has no continuous floor, only specks, so it cannot fill those gaps back in.
-Light pressure leaves the floor faint; heavy pressure darkens the graphite
-and does not close the holes. The pattern origin is the page, so strokes
-through the same place share the tooth. Colored lead keeps a higher floor.
-The pen is not part of this mask. One pattern and one mask per page, tool,
-and color; no filter and no per-stroke raster.
+showed the first tooth was about one device pixel, so a letter looked like a
+soft gray pen. A coarser pass then cut holes 1.8–3.5 units across through a
+0.34 floor. That read as pencil, and the owner said it had become too light:
+the whole stroke was washed out. The graphite floor is now solid white in the
+mask, and from a normal writing force upward the element opacity is 1, so the
+core is the chosen color. Eight smaller holes (about 0.6–1.4 units) speckle
+that core and nick the edge. The edge still has no floor, only specks, so the
+silhouette stays broken without a gray halo. Light pressure uses the low
+opacity steps and stays lighter. The pattern origin is the page. Colored lead
+stays a little more even. The pen is not part of this mask. One pattern and
+one mask per page, tool, and color; no filter and no per-stroke raster.
 
 **Pressure and tilt on the pencil only.** Pencil darkness follows contact
 force even when the pen's 필압 switch is off. That switch was the way to

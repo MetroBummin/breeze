@@ -89,16 +89,15 @@ const BreezePdfInk = (()=>{
   }
   /* Graphite tooth, one mask per page/tool/color, anchored to page coordinates
      (userSpaceOnUse) so the same place on the paper always hits the same tooth.
-     A fitted iPad page is about 2.6 device pixels per PDF unit. The holes are
-     2–3.5 units across, several device pixels, so they stay visible at that
-     scale, including on the thin width. Nothing here is a filter or a per-stroke
-     raster. */
+     The core floor is solid, so a normal-pressure line is the chosen color.
+     Grain is smaller speckle and a broken edge, not a gray wash. Light pressure
+     stays lighter. No filter and no per-stroke raster. */
   const grainTile=16,grainSteps=8;
   const grainLook={
-    // Element opacity. Light pressure leaves the floor faint so the gaps
-    // dominate; heavy pressure fills the graphite but does not close the holes.
-    pencil:{core:[0.34,0.44,0.54,0.64,0.74,0.84,0.92,0.98],edge:[0.28,0.34,0.4,0.46,0.52,0.58,0.66,0.74],
-      width:[0.9,0.94,0.97,1,1.03,1.06,1.1,1.14],edgeWidth:2.05},
+    // Light steps stay pale. From a normal writing force upward the core is
+    // the color itself; the mask only nicks it.
+    pencil:{core:[0.4,0.52,0.64,0.76,0.88,0.96,1,1],edge:[0.2,0.28,0.36,0.44,0.52,0.6,0.68,0.76],
+      width:[0.9,0.94,0.97,1,1.03,1.06,1.1,1.14],edgeWidth:1.62},
     'colored-pencil':{core:[0.4,0.48,0.55,0.62,0.68,0.74,0.8,0.84],edge:[0.14,0.16,0.18,0.2,0.22,0.23,0.25,0.27],
       width:[0.97,0.98,0.99,1,1.01,1.03,1.04,1.06],edgeWidth:1.22}
   };
@@ -111,18 +110,18 @@ const BreezePdfInk = (()=>{
     for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));
     return node;
   }
-  /* Luminance mask locked to the page. White is graphite, black is a gap.
-     Graphite holes are larger than the thin width, so a light stroke breaks.
-     The edge has no continuous floor: only specks, so it cannot heal the core.
-     Colored lead stays waxier (higher floor, smaller bites). */
+  /* Luminance mask locked to the page. White is graphite, black is a nick.
+     Graphite's floor is solid. A few small holes speckle the core and break
+     the edge; they are not big enough to turn the stroke gray. The edge has
+     no floor, only specks. Colored lead stays a little more even. */
   function grainSpec(tool,part){
     const edge=part==='edge',colored=tool==='colored-pencil';
     if(edge)return colored
-      ?{floor:0.1,holes:3,specks:5,holeR:[0.4,0.75],speckR:[0.45,0.9],hole:0.4,speck:0.65}
-      :{floor:0,holes:5,specks:10,holeR:[0.8,1.45],speckR:[0.75,1.6],hole:0.95,speck:0.95};
+      ?{floor:0.15,holes:2,specks:4,holeR:[0.35,0.6],speckR:[0.4,0.75],hole:0.35,speck:0.6}
+      :{floor:0,holes:3,specks:8,holeR:[0.4,0.75],speckR:[0.45,1],hole:0.75,speck:1};
     return colored
-      ?{floor:0.7,holes:6,specks:8,holeR:[0.45,0.95],speckR:[0.4,0.85],hole:0.45,speck:0.75}
-      :{floor:0.34,holes:12,specks:11,holeR:[0.9,1.75],speckR:[0.6,1.3],hole:0.96,speck:1};
+      ?{floor:0.88,holes:5,specks:6,holeR:[0.35,0.7],speckR:[0.3,0.6],hole:0.4,speck:0.7}
+      :{floor:1,holes:8,specks:0,holeR:[0.32,0.68],speckR:[0.3,0.5],hole:0.62,speck:0};
   }
   function mountGrain(svg,tool,part,color){
     if(!svg||!color)return null;
