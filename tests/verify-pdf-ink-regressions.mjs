@@ -780,7 +780,9 @@ test('pencils: stored with their tool, drawn as grouped runs, erased and undone'
     const cores=group.children.filter(node=>node.getAttribute('data-ink-part')==='core');
     assert.ok(cores.length>=2,'pressure changes grain coverage along the stroke');
     assert.ok(new Set(cores.map(node=>node.getAttribute('opacity'))).size>=2);
-    assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))<1));
+    // A firm graphite core is the color itself (opacity 1). The edge stays below 1.
+    assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))>0&&Number(run.getAttribute('opacity'))<=1));
+    assert.ok(group.children.filter(node=>node.getAttribute('data-ink-part')==='edge').every(node=>Number(node.getAttribute('opacity'))<1));
     assert.ok(group.children.some(node=>node.getAttribute('data-ink-part')==='edge'),'a softer edge sits under the core');
     assert.equal(cores[0].getAttribute('stroke'),pick);
     assert.match(cores[0].getAttribute('mask'),new RegExp(`^url\\(#pdf-ink-grain-p\\d+-${tool}-core-`));
