@@ -110,7 +110,7 @@ try{
     });
     const label=`${engine.name()} ${theme} ${viewport.width}x${viewport.height}`;
     assert.deepEqual(bar.children,['ink-pill-tools','ink-pill-separator ink-pill-history-separator','ink-pill-history'],label);
-    assert.deepEqual(bar.stripTools,['pen','pencil','colored-pencil','highlighter','erase'],label);
+    assert.deepEqual(bar.stripTools,['pen','pencil','highlighter','erase'],label);
     assert.deepEqual(bar.historyButtons,['undo','redo'],label);
     assert.equal(bar.stripOverflow,'auto',`${label}: tools strip scrolls horizontally`);
     assert.equal(bar.historyOverflow,'visible');assert.notEqual(bar.barOverflow,'auto',`${label}: the toolbar itself never scrolls`);
@@ -163,7 +163,7 @@ try{
    await page.reload();await open();
    assert.equal(await page.locator(`${layer} path[data-ink-tool="pen"]`).getAttribute('d'),outline,'pressure outline reloads exactly');
    assert.equal(await page.locator(`${layer} polyline`).count(),1,'the earlier constant stroke is unchanged');
-   for(const tool of ['pen','pencil','colored-pencil']){
+   for(const tool of ['pen','pencil']){
     await openSettings(tool);
     assert.equal(await page.locator(`[data-ink-panel="${tool}"] [data-ink-pressure]`).getAttribute('aria-pressed'),'true',`${tool}: 필압 persisted`);
     assert.equal(await page.locator(`[data-ink-panel="${tool}"] [data-ink-pressure-level="strong"]`).getAttribute('aria-pressed'),'true');
@@ -202,13 +202,14 @@ try{
     return layers.map(layer=>{const diff=layer.map((v,i)=>base[i]-v),all=stats(diff.filter((_,i)=>footprint[i])),inner=stats(diff.filter((_,i)=>core[i]));
      return {pixels:footprint.filter(Boolean).length,mean:all.mean,core:inner.mean,variation:inner.variation};});
    },[blank,...marked]);
-   for(const [tool,colorAttr,colorValue] of [['pencil','pencil-color','#1f1f1f'],['colored-pencil','colored-pencil-color','#3a7bd5']]){
-    await openSettings(tool);
-    assert.ok(await page.locator(`[data-ink-panel="${tool}"] [data-ink-${colorAttr}]`).count()>=4,'color options');
-    assert.equal(await page.locator(`[data-ink-panel="${tool}"] [data-ink-${tool}-width]`).count(),3,'width options');
-    await page.locator(`[data-ink-${colorAttr}="${colorValue}"]`).click();
-    await page.locator(`[data-ink-panel="${tool}"] [data-ink-${tool}-width]`).last().click();
-    const pressureSwitch=page.locator(`[data-ink-panel="${tool}"] [data-ink-pressure]`);
+   // One 연필 button: graphite saves tool:'pencil', a picked color saves the colored-pencil look.
+   for(const [tool,colorValue] of [['pencil','#1f1f1f'],['colored-pencil','#3a7bd5']]){
+    await openSettings('pencil');
+    assert.equal(await page.locator('[data-ink-panel="pencil"] [data-ink-pencil-color]').count(),10,'graphite + colored-pencil palette');
+    assert.equal(await page.locator('[data-ink-panel="pencil"] [data-ink-pencil-width]').count(),3,'width options');
+    await page.locator(`[data-ink-pencil-color="${colorValue}"]`).click();
+    await page.locator('[data-ink-panel="pencil"] [data-ink-pencil-width]').last().click();
+    const pressureSwitch=page.locator('[data-ink-panel="pencil"] [data-ink-pressure]');
     if(await pressureSwitch.getAttribute('aria-pressed')==='true')await pressureSwitch.click(); // 필압 off: one coverage level
     await closeSettings();
     const y=tool==='pencil'?.2:.7,blank=await capture(y);
@@ -244,11 +245,13 @@ try{
     if(proof)await page.screenshot({path:resolve(proof,`pen-${tool}-${engine.name()}.png`)});
    }
    // 필압 on for the pencil: pressure changes coverage along the stroke.
-   await openSettings('pencil');await page.locator('[data-ink-panel="pencil"] [data-ink-pressure]').click();await closeSettings();
+   await openSettings('pencil');await page.locator('[data-ink-pencil-color="#3b3b3b"]').click();
+   await page.locator('[data-ink-panel="pencil"] [data-ink-pressure]').click();await closeSettings();
    assert.equal(await page.locator('[data-ink-panel="pencil"] [data-ink-pressure]').getAttribute('aria-pressed'),'true');
    const lightBlank=await capture(.85,.22,.4),darkBlank=await capture(.85,.62,.78);
    await stroke(line(.85,Array.from({length:40},(_,i)=>i<16?.05:.98),.2,.8));await saved();
    const runs=await page.locator(`${layer} g[data-ink-tool="pencil"]`).last().locator('polyline').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('opacity')));
+   if(process.env.DBG)console.log('DBG',JSON.stringify((await storedStrokes()).slice(-2).map(s=>({tool:s.tool,color:s.color,width:s.width,p:s.pressure?.slice(0,30)}))));
    assert.ok(new Set(runs).size>=2,`pressure changes pencil coverage ${JSON.stringify(runs)}`);
    const [light]=await darkening(lightBlank,await capture(.85,.22,.4)),[dark]=await darkening(darkBlank,await capture(.85,.62,.78));
    assert.ok(dark.mean*dark.pixels>1.5*light.mean*light.pixels,`more pressure covers more grain, darker ${JSON.stringify({light,dark})}`);

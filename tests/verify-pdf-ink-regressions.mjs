@@ -14,7 +14,7 @@ const storeSource=readFileSync(resolve(root,'scripts/reader/pdf-ink-store.js'),'
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
-function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false,nativeProxy=false}={}){
+function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false,nativeProxy=false,preferences=null}={}){
   const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
   let resolveCapabilities;
   const capabilityPromise=new Promise(resolve=>{resolveCapabilities=resolve;});
@@ -74,13 +74,15 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
     setTimeout(fn,ms){timers.set(++timerId,{fn,at:now+ms});return timerId;},clearTimeout(id){timers.delete(id);},
-    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
+    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,
+    ...(preferences?{localStorage:{getItem:()=>JSON.stringify(preferences),setItem(){}}}:{}),console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
   if(nativeProxy){context.window.Capacitor.Plugins={BreezePdfPlatform:context.window.Capacitor.registerPlugin()};delete context.window.Capacitor.registerPlugin;}
   const needle='  return {\n    available:supported,';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';androidTablet=${pending?false:tablet};pages.set(state.key,state);},
       valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,supported,pointerInk,
       setPressure(on,level='normal'){pressureOn=on;pressureLevel=level;},
+      setPencilColor(value){pencilColor=value;},prefs(){return {lastTool,pencilColor,pencilWidth};},
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     available:supported,`);
   vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+storeSource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
@@ -767,10 +769,12 @@ test('pressure: the highlighter never records pressure',async()=>{
   assert.equal('pressure' in f.state.strokes[0],false);
 });
 test('pencils: stored with their tool, drawn as grouped runs, erased and undone',async()=>{
-  for(const tool of ['pencil','colored-pencil']){
-    const f=fixture();f.qa.setMode(tool);f.qa.setPressure(true);
+  // One 연필 tool: graphite saves tool:'pencil', a color saves the colored-pencil look.
+  for(const [tool,pick] of [['pencil','#3b3b3b'],['colored-pencil','#3a7bd5']]){
+    const f=fixture();f.qa.setMode('pencil');f.qa.setPencilColor(pick);f.qa.setPressure(true);
     await forceStroke(f,Array.from({length:30},(_,i)=>[20+i*8,100,i<15?0.1:0.95]));
-    const stroke=f.state.strokes[0];assert.equal(stroke.tool,tool);assert.equal(stroke.pressure.length,stroke.points.length);
+    const stroke=f.state.strokes[0];assert.equal(stroke.tool,tool);assert.equal(stroke.color,pick);assert.equal(stroke.pressure.length,stroke.points.length);
+    assert.equal(stroke.width,tool==='pencil'?2:3,'the middle width step maps onto each look');
     const group=f.svg.children[0];assert.equal(group.tagName,'g');assert.equal(group.getAttribute('data-ink-tool'),tool);
     assert.ok(group.children.length>=2,'pressure changes grain coverage along the stroke');
     assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))<1));
@@ -781,6 +785,25 @@ test('pencils: stored with their tool, drawn as grouped runs, erased and undone'
     f.qa.history(true);await tick();assert.deepEqual(plain(f.state.strokes),original);
     f.qa.history(false);await tick();assert.deepEqual(f.stored.get(f.state.key).strokes,plain(f.state.strokes));
   }
+});
+test('연필 color: the 색연필 tool is gone, saved 색연필 strokes and preferences still work',async()=>{
+  const f=fixture();
+  f.qa.setMode('colored-pencil');assert.equal(f.qa.active(),null);
+  // A legacy 색연필 stroke renders with its own grain and passes validation unchanged.
+  const legacy={id:'00000000-0000-4000-8000-0000000000aa',tool:'colored-pencil',color:'#d6619a',width:5,points:[[10,10],[60,10]]};
+  assert.equal(f.qa.valid({version:1,strokes:[legacy]}),true);
+  f.qa.setMode('pencil');f.qa.setPencilColor('#d6619a');
+  await forceStroke(f,Array.from({length:10},(_,i)=>[20+i*10,100,0.5]));
+  const fresh=f.state.strokes.at(-1);
+  assert.equal(fresh.tool,'colored-pencil');assert.equal(fresh.color,'#d6619a');
+  const drawn=f.svg.children.at(-1);assert.equal(drawn.getAttribute('data-ink-tool'),'colored-pencil');
+  // No canvas in this harness, so the flat-color fallback; the browser test checks the grain.
+  assert.match(drawn.children[0].getAttribute('stroke'),/^(#d6619a|url\(#pdf-ink-grain-colored-pencil-\d-d6619a\))$/);
+});
+test('연필 color: a saved 색연필 preference becomes 연필 with that color',()=>{
+  const prefs={tool:'colored-pencil',coloredPencilColor:'#3f9b4f',pencilColor:'#3b3b3b',pencilWidth:3.5};
+  const f=fixture({preferences:prefs});
+  assert.deepEqual(plain(f.qa.prefs()),{lastTool:'pencil',pencilColor:'#3f9b4f',pencilWidth:3.5});
 });
 test('pencils: validation rejects foreign colors, widths and bad pressure',()=>{
   const f=fixture(),valid=s=>f.qa.valid({version:1,strokes:[s]});

@@ -1133,3 +1133,26 @@ in light/dark; rendered thickness off vs on; preference reload; the hook
 stroke; and pencil darkness, evenness (core variation below 0.2 with a subtle
 grain above 0.01), build-up, pattern reuse, pressure coverage, reload,
 erase, undo and redo, plus divider contrast.
+
+### 색연필 folded into 연필 (2026-11-01)
+
+The owner asked for one 연필 button with a color option, like the pen,
+instead of separate 연필 and 색연필 buttons. The toolbar strip is now pen,
+연필, highlighter, eraser; the scroll, the divider and the fixed 이전/다음 group
+are unchanged. The 연필 icon is unchanged while the owner chooses a new one.
+
+- **Palette.** 연필 offers 흑연 `#3b3b3b` (default), 진한 흑연 `#1f1f1f`, then the
+  eight former 색연필 colors. It uses the same swatch row and the same
+  per-tool memory (`pencilColor`, `pencilWidth`) as the pen.
+- **Stored type follows the color.** A graphite color saves `tool:'pencil'`;
+  any other color saves `tool:'colored-pencil'` with the matching step of the
+  색연필 widths (1.5 / 3 / 5 for 얇게 / 보통 / 굵게). So a new colored stroke is
+  byte-for-byte the same kind of record the 색연필 button wrote, and it uses
+  the colored-pencil grain. No stored data is rewritten.
+- **Saved 색연필 strokes** keep `tool:'colored-pencil'`. Validation,
+  rendering, erasing, undo and sync are unchanged for them, so they look
+  and sync exactly as before. `#2f5fa8` and `#b03a3a` graphite-look pencil
+  strokes stay valid but are no longer offered in the palette.
+- **Preferences.** A saved `tool:'colored-pencil'` preference opens as 연필
+  with the saved 색연필 color. `colored-pencil` is no longer a selectable mode.
+- Compatibility notes above (older builds and pencil strokes) are unchanged.

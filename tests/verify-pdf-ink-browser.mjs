@@ -136,7 +136,7 @@ try{
    }));
    assert.equal(selectedSwatch.border,'rgb(38, 127, 168)','selected color uses the Breeze blue ring');
    assert.equal(selectedSwatch.overflow,'auto','color row can horizontally scroll when the palette grows');
-   assert.deepEqual(await page.locator('[data-ink-mode]').evaluateAll(nodes=>nodes.map(node=>node.dataset.inkMode)),['pen','pencil','colored-pencil','highlighter','erase']);
+   assert.deepEqual(await page.locator('[data-ink-mode]').evaluateAll(nodes=>nodes.map(node=>node.dataset.inkMode)),['pen','pencil','highlighter','erase']);
    assert.equal(await settings.locator('[data-ink-color]').count(),6);
    assert.equal(await settings.locator('[data-ink-highlight-color]').count(),6);
    assert.equal(await settings.locator('input[type="color"]').count(),0,'only predefined colors are offered');
