@@ -14,7 +14,7 @@ const storeSource=readFileSync(resolve(root,'scripts/reader/pdf-ink-store.js'),'
 const plain=x=>JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function geometry(){return vm.runInNewContext(geometrySource+'\nBreezeInkGeometry;');}
-function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false,nativeProxy=false}={}){
+function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer,platform='android',tablet=true,pending=false,nativeProxy=false,preferences=null}={}){
   const frames=new Map(),listeners=new Map(),observers=[],posted=[],stored=new Map(),writes=[];
   let resolveCapabilities;
   const capabilityPromise=new Promise(resolve=>{resolveCapabilities=resolve;});
@@ -74,12 +74,15 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
     cancelGesture:()=>{},closePanel:()=>{},closeSentence:()=>{},resumeOriginalPdfPaint:()=>{},
     curBook:{id:'fixture'},originalLoadToken:1,registerReaderSurface(){},
     setTimeout(fn,ms){timers.set(++timerId,{fn,at:now+ms});return timerId;},clearTimeout(id){timers.delete(id);},
-    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
+    crypto,structuredClone(){throw new Error('Completed ink must not be deeply cloned before IDB put');},queueMicrotask,
+    ...(preferences?{localStorage:{getItem:()=>JSON.stringify(preferences),setItem(){}}}:{}),console:{warn(){}},performance:{now:()=>now,timeOrigin:performance.timeOrigin}};
   if(nativeProxy){context.window.Capacitor.Plugins={BreezePdfPlatform:context.window.Capacitor.registerPlugin()};delete context.window.Capacitor.registerPlugin;}
   const needle='  return {\n    available:supported,';assert.ok(source.includes(needle),'test hook must bind to production engine');
   const instrumented=source.replace(needle,`  return {
     qa:{configure(s,state){session=s;mode='pen';androidTablet=${pending?false:tablet};pages.set(state.key,state);},
       valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,supported,pointerInk,
+      setPressure(on,level='normal'){pressureOn=on;pressureLevel=level;},
+      setPencilColor(value){pencilColor=value;},prefs(){return {lastTool,pencilColor,pencilWidth};},
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     available:supported,`);
   vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+storeSource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
@@ -676,4 +679,194 @@ test('writing dock: nearest edge, touch hold, and Pencil exclusion',()=>{
  assert.match(pageHtml,/id="aa-ink-dock" hidden/);
  assert.match(pageHtml,/필기모드 컨트롤 이동/);
  assert.match(readFileSync(resolve(root,'scripts/reader/pdf-navigation.js'),'utf8'),/dataset\.inkDock/);
+});
+
+// 2026-11-01: 삐침 removal, 필압 and textured pencils.
+const forceContact=(f,x,y,force)=>({...f.contact(x,y),force});
+async function forceStroke(f,samples,end=samples.at(-1)){
+  f.qa.touchStart(f.event('touchstart',[forceContact(f,...samples[0])]));
+  for(const s of samples.slice(1))f.qa.touchMove(f.event('touchmove',[forceContact(f,...s)]));
+  f.qa.touchEnd(f.event('touchend',[],[forceContact(f,end[0],end[1],0)]));await tick();
+}
+test('ends: pen-down jitter and a fast lift flick leave no hook',()=>{
+  const g=geometry(),s=g.createSmoother([100,100],{unit:1});
+  for(const p of [[100.6,99.5],[99.6,100.4],[100.3,100.2]])s.add(p); // touch-down jitter
+  for(let x=105;x<=200;x+=5)s.add([x,100]);
+  s.add([215,85]); // the hand flicks off as the pen lifts
+  const points=plain(s.finish());
+  assert.deepEqual(points[0],[100,100],'the stroke still starts where the pen landed');
+  assert.ok(points.every(([x,y])=>Math.abs(y-100)<1e-9),JSON.stringify(points));
+  assert.ok(points.at(-1)[0]<=200&&points.at(-1)[0]>=199,'the flick segment is dropped, not the line');
+});
+test('ends: short sudden hooks at both ends are dropped; wobble at rest too',()=>{
+  const g=geometry(),hook=g.createSmoother([0,0]);
+  hook.add([0,3]);hook.add([4,4]);for(let x=8;x<=60;x+=4)hook.add([x,4]);hook.add([62,1]);
+  const points=plain(hook.finish());
+  assert.deepEqual(points[0],[0,3],'pen-down skid removed');assert.deepEqual(points.at(-1),[60,4],'lift hook removed');
+  const rest=g.createSmoother([0,0]);for(let x=4;x<=60;x+=4)rest.add([x,0]);
+  for(const p of [[60.8,0.9],[59.6,1.2],[60.4,-0.8]])rest.add(p);
+  assert.deepEqual(plain(rest.finish()).at(-1),[60,0]);
+});
+test('ends: curves, letters and deliberate corners are not trimmed',()=>{
+  const g=geometry(),circle=g.createSmoother([108,100]);
+  const raw=Array.from({length:24},(_,i)=>{const a=(i+1)*Math.PI/12*0.95;return [100+8*Math.cos(a),100+8*Math.sin(a)];});
+  raw.forEach(p=>circle.add(p));assert.deepEqual(plain(circle.finish()).at(-1),plain(raw.at(-1)),'a small o keeps its end');
+  const corner=g.createSmoother([0,0]);for(let x=5;x<=40;x+=5)corner.add([x,0]);for(let y=5;y<=40;y+=5)corner.add([40,y]);
+  assert.deepEqual(plain(corner.finish()).at(-1),[40,40],'ㄱ keeps its vertical');
+  const slow=g.createSmoother([0,0]);for(let x=1;x<=40;x+=0.5)slow.add([x,0]);
+  assert.deepEqual(plain(slow.finish()).at(-1),[40,0],'a slow straight ending is not shortened');
+});
+test('ends: thresholds follow zoom (CSS pixels, not PDF units)',()=>{
+  const g=geometry(),base=g.createSmoother([0,0],{unit:1}),zoomed=g.createSmoother([0,0],{unit:0.25});
+  for(const s of [base,zoomed]){s.add([0.6,0]);s.add([1.2,0]);}
+  assert.deepEqual(plain(base.finish()),[[0,0]],'1.2 CSS px of jitter is a dot');
+  assert.deepEqual(plain(zoomed.finish()).at(-1),[1.2,0],'the same units are 4.8 CSS px at 4x zoom');
+});
+test('pressure: off stores exactly the constant-width v1 pen',async()=>{
+  const f=fixture();await forceStroke(f,[[20,20,0.2],[70,45,0.9],[120,20,0.1]]);
+  const stroke=f.state.strokes[0];assert.equal('pressure' in stroke,false);
+  assert.deepEqual(Object.keys(stroke).sort(),['color','id','points','width']);
+  assert.equal(f.svg.children[0].tagName,'polyline');assert.equal(f.svg.children[0].getAttribute('stroke-width'),'1.5');
+});
+test('pressure: on varies stored pressure and outline width with force, smoothly',async()=>{
+  const f=fixture();f.qa.setPressure(true);
+  const samples=Array.from({length:30},(_,i)=>[20+i*8,100,i<15?0.15:0.9]);
+  await forceStroke(f,samples);
+  const stroke=f.state.strokes[0];
+  assert.equal(stroke.pressure.length,stroke.points.length);
+  assert.ok(stroke.pressure.every(v=>v>=0&&v<=1&&Math.round(v*100)/100===v),'two decimals');
+  assert.ok(Math.max(...stroke.pressure)-Math.min(...stroke.pressure)>0.3,JSON.stringify(stroke.pressure));
+  for(let i=1;i<stroke.pressure.length;i++)assert.ok(Math.abs(stroke.pressure[i]-stroke.pressure[i-1])<=0.081,'no flicker');
+  const element=f.svg.children[0];assert.equal(element.tagName,'path');assert.equal(element.getAttribute('fill'),stroke.color);
+  const g=geometry(),widths=stroke.points.map((_,i)=>g.widthAt(stroke,i));
+  assert.ok(Math.max(...widths)>1.5*Math.min(...widths));
+  assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+});
+test('pressure: down/up spikes do not reach the stored pressure',async()=>{
+  const f=fixture();f.qa.setPressure(true);
+  const samples=[[20,100,1],[21,100,0.3],[25,100,0.3],...Array.from({length:12},(_,i)=>[30+i*6,100,0.3])];
+  await forceStroke(f,samples);
+  const pressure=f.state.strokes[0].pressure;
+  assert.ok(Math.max(...pressure)-Math.min(...pressure)<0.02,JSON.stringify(pressure));
+});
+test('pressure: a contact with no force reports stores no pressure field',async()=>{
+  const f=fixture();f.qa.setPressure(true);await f.stroke([[20,20],[70,45],[120,20]]);
+  assert.equal('pressure' in f.state.strokes[0],false);assert.equal(f.svg.children[0].tagName,'polyline');
+});
+test('pressure: partial erase splits pressure with the points; undo restores it',async()=>{
+  const f=fixture();f.qa.setPressure(true);
+  await forceStroke(f,Array.from({length:30},(_,i)=>[20+i*8,100,0.1+i*0.03]));
+  const original=plain(f.state.strokes);
+  f.qa.setMode('erase');await f.stroke([[130,70],[130,130]]);
+  assert.equal(f.state.strokes.length,2);
+  for(const part of f.state.strokes)assert.equal(part.pressure.length,part.points.length);
+  assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+  f.qa.history(true);await tick();assert.deepEqual(plain(f.state.strokes),original);
+});
+test('pressure: the highlighter never records pressure',async()=>{
+  const f=fixture();f.qa.setPressure(true);f.qa.setMode('highlighter');
+  await forceStroke(f,[[20,100,0.2],[150,100,0.9],[280,100,0.5]]);
+  assert.equal('pressure' in f.state.strokes[0],false);
+});
+test('pencils: stored with their tool, drawn as grouped runs, erased and undone',async()=>{
+  // One 연필 tool: graphite saves tool:'pencil', a color saves the colored-pencil look.
+  for(const [tool,pick] of [['pencil','#3b3b3b'],['colored-pencil','#3a7bd5']]){
+    const f=fixture();f.qa.setMode('pencil');f.qa.setPencilColor(pick);f.qa.setPressure(true);
+    await forceStroke(f,Array.from({length:30},(_,i)=>[20+i*8,100,i<15?0.1:0.95]));
+    const stroke=f.state.strokes[0];assert.equal(stroke.tool,tool);assert.equal(stroke.color,pick);assert.equal(stroke.pressure.length,stroke.points.length);
+    assert.equal(stroke.width,tool==='pencil'?2:3,'the middle width step maps onto each look');
+    const group=f.svg.children[0];assert.equal(group.tagName,'g');assert.equal(group.getAttribute('data-ink-tool'),tool);
+    assert.ok(group.children.length>=2,'pressure changes grain coverage along the stroke');
+    assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))<1));
+    assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
+    const original=plain(f.state.strokes);
+    f.qa.setMode('erase');await f.stroke([[130,70],[130,130]]);
+    assert.equal(f.state.strokes.length,2);assert.ok(f.state.strokes.every(s=>s.tool===tool));
+    f.qa.history(true);await tick();assert.deepEqual(plain(f.state.strokes),original);
+    f.qa.history(false);await tick();assert.deepEqual(f.stored.get(f.state.key).strokes,plain(f.state.strokes));
+  }
+});
+test('연필 color: the 색연필 tool is gone, saved 색연필 strokes and preferences still work',async()=>{
+  const f=fixture();
+  f.qa.setMode('colored-pencil');assert.equal(f.qa.active(),null);
+  // A legacy 색연필 stroke renders with its own grain and passes validation unchanged.
+  const legacy={id:'00000000-0000-4000-8000-0000000000aa',tool:'colored-pencil',color:'#d6619a',width:5,points:[[10,10],[60,10]]};
+  assert.equal(f.qa.valid({version:1,strokes:[legacy]}),true);
+  f.qa.setMode('pencil');f.qa.setPencilColor('#d6619a');
+  await forceStroke(f,Array.from({length:10},(_,i)=>[20+i*10,100,0.5]));
+  const fresh=f.state.strokes.at(-1);
+  assert.equal(fresh.tool,'colored-pencil');assert.equal(fresh.color,'#d6619a');
+  const drawn=f.svg.children.at(-1);assert.equal(drawn.getAttribute('data-ink-tool'),'colored-pencil');
+  // No canvas in this harness, so the flat-color fallback; the browser test checks the grain.
+  assert.match(drawn.children[0].getAttribute('stroke'),/^(#d6619a|url\(#pdf-ink-grain-colored-pencil-\d-d6619a\))$/);
+});
+test('연필 color: a saved 색연필 preference becomes 연필 with that color',()=>{
+  const prefs={tool:'colored-pencil',coloredPencilColor:'#3f9b4f',pencilColor:'#3b3b3b',pencilWidth:3.5};
+  const f=fixture({preferences:prefs});
+  assert.deepEqual(plain(f.qa.prefs()),{lastTool:'pencil',pencilColor:'#3f9b4f',pencilWidth:3.5});
+});
+test('pencils: validation rejects foreign colors, widths and bad pressure',()=>{
+  const f=fixture(),valid=s=>f.qa.valid({version:1,strokes:[s]});
+  const pencil={tool:'pencil',color:'#3b3b3b',width:2,points:[[1,1],[2,2]]};
+  assert.equal(valid(pencil),true);assert.equal(valid({...pencil,tool:'colored-pencil',color:'#d64545',width:3}),true);
+  for(const changed of [{color:'#d64545'},{width:1.5},{opacity:0.5},{pressure:[0.5]},{pressure:[0.5,2]},{pressure:'x'}])
+    assert.equal(valid({...pencil,...changed}),false,JSON.stringify(changed));
+  assert.equal(valid({color:'#111111',width:1.5,points:[[1,1],[2,2]],pressure:[0.2,0.4]}),true);
+  assert.equal(valid({tool:'highlighter',color:'#ffe34d',width:12,opacity:0.3,points:[[1,1]],pressure:[0.5]}),false);
+});
+test('sync: the public stroke carries tool and pressure; legacy pens are unchanged',()=>{
+  const sync=vm.runInNewContext(readFileSync(resolve(root,'scripts/library/ink-sync.js'),'utf8')+'\n({inkPublicStroke});',{window:{addEventListener(){}},crypto});
+  const id='00000000-0000-4000-8000-000000000001';
+  assert.deepEqual(plain(sync.inkPublicStroke({id,color:'#111111',width:1.5,points:[[1,2]]})),{id,color:'#111111',width:1.5,points:[[1,2]]});
+  assert.deepEqual(plain(sync.inkPublicStroke({id,tool:'pencil',color:'#3b3b3b',width:2,points:[[1,2],[3,4]],pressure:[0.4,0.5]})),
+    {id,color:'#3b3b3b',width:2,points:[[1,2],[3,4]],tool:'pencil',pressure:[0.4,0.5]});
+});
+// Owner QA repros (CSS px, unit=1): realistic 2-3 sample hooks of 5-12 px.
+const smoothed=(points,unit=1)=>{const g=geometry(),s=g.createSmoother(points[0],{unit});for(const p of points.slice(1))s.add(p);return plain(s.finish());};
+const near=(a,b,tolerance=1e-6)=>Math.hypot(a[0]-b[0],a[1]-b[1])<=tolerance;
+test('ends: ㄱ with a 2-sample left flick at lift loses the flick, keeps the corner',()=>{
+  const p=[[0,0],[-2,3]];for(let i=1;i<=12;i++)p.push([100*i/12,0]);for(let i=1;i<=12;i++)p.push([100,70*i/12]);
+  p.push([97,72],[94,73]);
+  const out=smoothed(p);
+  assert.ok(near(out.at(-1),[100,70]),JSON.stringify(out.slice(-3)));
+  assert.ok(out.some(q=>near(q,[100,0])),'the corner itself stays');
+  assert.deepEqual(out[0],[0,0],'the stroke starts where the pen landed');
+  assert.ok(out.every(([x,y])=>x>=0&&y>=0&&(y===0||x===100)),'the pen-down skid is gone too: '+JSON.stringify(out.slice(0,3)));
+});
+test('ends: a straight line ending in a 2-sample up-turn, or a 1-sample back-hook, ends straight',()=>{
+  const line=()=>Array.from({length:51},(_,i)=>[400*i/50,0]);
+  assert.ok(near(smoothed([...line(),[402,-3],[403,-6]]).at(-1),[400,0]));
+  assert.ok(near(smoothed([...line(),[398,-4]]).at(-1),[400,0]));
+  const three=smoothed([...line(),[403,-2],[405,-5],[406,-9]]);
+  assert.ok(near(three.at(-1),[400,0]),'a 3-segment 11 px hook is dropped');
+  assert.ok(three.every(([,y])=>Math.abs(y)<1e-9));
+});
+test('ends: realistic pen-down skids of 2-3 samples are dropped',()=>{
+  const out=smoothed([[0,0],[-3,-3],[-4,-4],...Array.from({length:30},(_,i)=>[(i+1)*6-4,-4])]);
+  assert.ok(near(out[0],[-4,-4]),JSON.stringify(out.slice(0,3)));
+  const down=smoothed([[0,0],[4,-2],[2,1],...Array.from({length:12},(_,i)=>[2,1+(i+1)*6])]);
+  assert.ok(near(down[0],[2,1]),JSON.stringify(down.slice(0,3)));
+});
+test('ends: must not trim deliberate shapes',()=>{
+  const keep=(name,p)=>{const out=smoothed(p);assert.ok(near(out.at(-1),p.at(-1))&&near(out[0],p[0]),`${name}: ${JSON.stringify([out[0],out.at(-1)])}`);};
+  keep('small o',Array.from({length:26},(_,i)=>{const a=i*Math.PI/12*0.95;return [100+8*Math.cos(a),100+8*Math.sin(a)];}));
+  keep('c',Array.from({length:16},(_,i)=>{const a=Math.PI/4+i*Math.PI*1.5/15;return [20*Math.cos(a),20*Math.sin(a)];}));
+  keep('dense curl',[...Array.from({length:60},(_,i)=>[i,0]),...Array.from({length:24},(_,i)=>{const a=(i+1)*Math.PI/24;return [59+15*Math.sin(a),15-15*Math.cos(a)];})]);
+  // ㄱ/ㄴ whose second arm is longer than a hook, even when drawn in few samples.
+  keep('ㄱ 15px arm in 3 samples',[...Array.from({length:13},(_,i)=>[i*5,0]),[60,5],[60,10],[60,15]]);
+  keep('ㄱ 20px arm at writing speed',[...Array.from({length:21},(_,i)=>[i*3,0]),...Array.from({length:10},(_,i)=>[60,(i+1)*2])]);
+  keep('ㄴ',[...Array.from({length:12},(_,i)=>[0,i*6]),...Array.from({length:12},(_,i)=>[(i+1)*6,66])]);
+  keep('L start (arm first)',[[0,0],[0,5],[0,10],[0,15],...Array.from({length:12},(_,i)=>[(i+1)*5,15])]);
+  keep('short dash',[[0,0],[2,0],[4,0],[6,0]]);
+  keep('short bent dash',[[0,0],[2,0],[4,0],[5,3]]);
+  assert.deepEqual(smoothed([[5,5]]),[[5,5]],'dot');
+  assert.deepEqual(smoothed([[5,5],[5.5,5.4],[5.2,4.8]]),[[5,5]],'jittery dot');
+});
+test('ends: a skid before a long straight lead-in is dropped even if a sharp arch follows',()=>{
+  const p=[[0,0],[-3,-3],[-4,-4]];
+  for(let i=0;i<=60;i++){const t=i/60;p.push([t*180+12*Math.sin(t*Math.PI*6),-26*Math.sin(t*Math.PI*6+Math.PI/2)]);}
+  p.push([p.at(-1)[0]-2,p.at(-1)[1]+3],[p.at(-1)[0]-5,p.at(-1)[1]+6]);
+  const out=smoothed(p);
+  assert.deepEqual(out[0],[-4,-4],JSON.stringify(out.slice(0,3)));
+  assert.ok(near(out.at(-1),p.at(-3)),'the lift flick of the last arch is dropped too');
 });
