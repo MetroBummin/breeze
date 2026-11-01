@@ -1166,3 +1166,65 @@ green and yellow only swap places, so green is first. A saved
 `highlightColor` preference still wins, so owners who picked yellow (or any
 color) keep it; only new or unset settings change. Stored strokes keep their
 own color and are not rewritten.
+
+### Stroke-end trim is a switch, and the pencil reads as graphite (2026-11-01)
+
+Owner TestFlight note on iPad, Apple Pencil, in the PDF reader. Two asks.
+Saved strokes are not rewritten. The pen's width, color, pressure curve and
+live smoothing are unchanged. `ready/` and `server/ready/` are untouched.
+
+**What the tail snap was.** It is not a line cap and not 필압. Every stroke
+ends in `createSmoother.finish()`. That pass looks at the raw samples for a
+short hook, rest wobble, or a fast turned last segment, drops the tail, and
+rebuilds the quadratic from what remains. The live stroke is the settled
+curve plus a straight segment to the real tip. Rebuilding replaces that tip
+on the next paint, which is the snap a moment after the pencil lifts. A
+Pencil lift often qualifies: WebKit's touchend sample and the last slow
+samples sit inside the 2px rest window, or the last segment is long enough
+and turned enough to count as a flick. So ordinary strokes moved, not only
+hooks. Round caps (`stroke-linecap: round`) never change at lift. There is
+no 단/둥글/직 control. The three bars under 두께 are 얇게/보통/굵게. 약/보통/강
+is pressure sensitivity. The pill switch in the recording is 필압. It changes
+pen width from force. It does not move the tail.
+
+**끝 다듬기, default off.** The same trim is now a switch in the pen and
+연필 menus, stored on the existing `__breeze_pdf_ink_tools_v1__` record as
+`endTrim`. Off commits the live curve, including a flick. On is the previous
+trimmer, unchanged, including the tests that require it. The 2px pen-down
+dead zone stays either way: those samples were never part of the live stroke,
+so keeping them out does not move a tail the hand already saw. Highlighter
+strokes use the same finisher, so they follow the same switch. I defaulted
+it off. The trimmer was meant to be invisible except on a real hook, and on
+a Pencil it is not. The reference app keeps the same cleanup behind an
+explicit switch. Off is the stroke that was on screen while drawing, which
+is the preview = stored contract. People who want hooks cut can turn it on.
+Strokes already saved were trimmed when they were written and stay as stored.
+
+**Pencil tooth.** The previous grain was a soft PNG tile (coverage floor
+about 0.76) in a separate 0×0 `#pdf-ink-defs` SVG, painted with
+`stroke="url(#…)"`. At a normal page fit that tile is a flat gray: the
+contrast is below what survives antialiasing on a 2-unit stroke, and WebKit
+drops the PNG alpha, so the same stroke paints as a smooth line. A standalone
+WebKit page showed the old tile as a uniform gray stroke and a luminance
+mask in the stroke's own SVG as a rough one. The pencil is now a solid
+color masked by that tooth. The mask lives in the page SVG's `<defs>`
+(reconcile leaves `<defs>` in place). White is graphite, partial black is
+paper. The floor stays high and the bites are smaller than the stroke, so
+the mark stays a line. A slightly wider, fainter stroke under it roughens
+the edge. Repeated strokes still build up. Colored lead uses the same mask
+with a higher floor, so it is waxier than graphite and still not a flat pen.
+The centerline is still the smoothed polyline.
+
+**Pressure and tilt on the pencil only.** Pencil darkness follows contact
+force even when the pen's 필압 switch is off. That switch was the way to
+keep the pen at a constant width; a pencil that ignores force is the solid
+line from the note. The pen panel still has the switch, default off, and
+shows 약/보통/강 only while it is on. The pencil panel always shows those
+three as sensitivity (one shared `pressureLevel`) and does not offer an off
+state. Apple Pencil `altitudeAngle` (and pointer `tiltX`/`tiltY` when the
+pen is actually tilted) lightens the stored pressure: the side of the lead
+shades, an upright point does not. Missing tilt leaves force unchanged.
+Width stays the pencil's chosen width, with only a small pressure scale, so
+the line does not wobble. A contact with no force stores no `pressure`
+field, same as before. Old pencil strokes with no `pressure` render at the
+middle step of the new tooth.
