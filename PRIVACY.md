@@ -161,7 +161,12 @@ lookup에만 사용합니다.
 
 - 기기 표시 (`breeze.device`)
 - 로그인해 있으면 계정 id. 없으면 비웁니다
-- 앱 버전, 웹·iOS·Android, 온보딩 버전 (지금 안내는 `v1`)
+- 앱 버전, 웹·iOS·Android, 온보딩 버전. 온보딩 버전은 그 빌드의 해시 8자입니다.
+  예전 기록은 `v1` 로 남아 있습니다
+- 브라우저 종류. `chrome`, `safari`, `firefox`, `edge`, `samsung`, `opera`,
+  `other` 중 하나입니다. User-Agent 원문은 남기지 않습니다
+- 카카오톡·인스타그램·네이버 앱 안에서 열었으면 `kakao`, `instagram`, `naver`.
+  그 밖에는 비웁니다
 - 이 기기가 처음 들어온 주소에 있던 `utm_source`, `utm_medium`, `utm_campaign`,
   `utm_content`. 한 번 적히면 다음 주소로 바뀌지 않고, 없는 값은 비웁니다
 - 처음 들어올 때의 유입 출처(`referrer`) — 바로 앞 페이지 주소의 **도메인 부분만**
@@ -181,6 +186,10 @@ lookup에만 사용합니다.
 | `first_word_tap` | 읽는 화면에서 단어를 처음 눌렀을 때. 안내 영상 안의 동작은 세지 않습니다 |
 | `first_lookup_success` | 그 단어의 뜻을 처음 받아 왔을 때 |
 | `vocab_save` | 단어장에 뜻을 처음 저장했을 때. `first` 는 항상 참이고, 그 다음 저장은 남기지 않습니다 |
+| `onboarding_closed` | 안내를 끝내지 않고 떠날 때. 그때의 단계, 안내를 연 뒤 지난 시간, 떠난 이유(`esc`, `back`, `hidden`, `pagehide`, `dismiss`)를 적습니다. 한 번 연 안내에서는 한 번만 남깁니다 |
+| `onboarding_intro_play` | 안내 첫 카드의 영상이 실제로 재생될 때. 한 번 연 안내에서는 한 번 |
+| `onboarding_word_pill` | 안내 첫 카드에서 단어를 누르는 탭을 할 때. 한 번 연 안내에서는 한 번 |
+| `landing_view` | 소개 페이지를 열 때 |
 
 이 표는 방문자와 로그인한 사람이 읽을 수 없습니다. 넣기만 됩니다. 한 기기가
 하루에 넣을 수 있는 양과, 서비스 전체가 하루에 받을 수 있는 양에는 상한이

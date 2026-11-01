@@ -1,14 +1,15 @@
 /* ================= 랜딩 =================
  *
- * 이 파일은 앱과 아무것도 나눠 갖지 않습니다. 앱의 사전도, 저장소도, 손짓
- * 판정기도 부르지 않습니다 — 여기 있는 것은 아래 상자에 적어 둔 낱말들과 문장
- * 둘이 전부이고, 서버로 나가는 요청은 하나도 없습니다. 두 문장에 나오는
- * 일반 낱말은(상표 `Breeze` 포함) 예외 없이 전부 눌립니다 — 특정 낱말만
- * 되는 것처럼 보이면 안 되기 때문입니다.
+ * 이 파일은 앱의 사전도, 저장소도, 손짓 판정기도 부르지 않습니다 — 낱말과
+ * 문장은 아래 상자에 있고, 두 문장에 나오는 일반 낱말은(상표 `Breeze` 포함)
+ * 예외 없이 전부 눌립니다. 서버로 나가는 요청은 페이지를 연 사실
+ * (`landing_view`) 하나입니다.
  *
  * 그런데 화면에 뜨는 창은 진짜 그 창입니다. 단어창도 시트도 문장 창도 앱의
  * CSS 를 그대로 링크해서 씁니다(index.html). 랜딩에서 눌러 본 방식이 앱에서
- * 그대로 통해야 하므로, 손짓의 기준도 앱과 같은 수를 씁니다:
+ * 그대로 통해야 하므로, 손짓의 기준도 앱과 같은 수를 씁니다.
+ * 이 페이지가 서버로 보내는 것은 도착을 적는 `landing_view` 하나뿐입니다.
+ * 단어 뜻은 아래 상자에 있고, 사전을 부르지 않습니다.
  *
  *     꾹 누르기 750ms · 흔들림 10px   (scripts/reader/gesture.js 의
  *                                       GESTURE_HOLD_MS · GESTURE_SLOP)
@@ -74,6 +75,27 @@ const LP_COPY = {
           '<span class="w" data-w="the">the</span> ' +
           '<span class="w" data-w="rest">rest</span>.' },
 };
+
+function lpCarryAppQuery(){
+  let search='';
+  try{search=location.search||'';}catch(e){return;}
+  const apply=typeof carryAppSearch==='function'
+    ?carryAppSearch
+    :(href,query)=>{
+      const target=String(href||'');
+      if(!query||query==='?'||(target!=='../'&&target!=='/')||target.indexOf('?')>=0)return target;
+      return target+query;
+    };
+  for(const node of document.querySelectorAll('a[href="../"],a[href="/"],a[href^="../?"],a[href^="/?"]')){
+    const href=node.getAttribute('href')||'';
+    const base=href.split('?')[0];
+    if(base!=='../'&&base!=='/')continue;
+    const next=apply(base,search);
+    if(next&&next!==href)node.setAttribute('href',next);
+  }
+}
+try{lpCarryAppQuery();}catch(e){}
+try{if(typeof trackEvent==='function')trackEvent('landing_view');}catch(e){}
 
 const $ = id => document.getElementById(id);
 const lpSent = n => document.querySelector('.lp-sentence[data-s="' + n + '"]');

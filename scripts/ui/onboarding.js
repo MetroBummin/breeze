@@ -147,6 +147,30 @@ function onboardingStepMs(session){
 function trackOnboardingFinish(session){
   if(typeof trackEvent==='function')trackEvent('onboarding_step_complete',{step:'finish',ms:onboardingStepMs(session)});
 }
+function noteOnboardingIntro(session){
+  if(!session||session.introNoted)return;
+  session.introNoted=true;
+  if(typeof trackEvent==='function')trackEvent('onboarding_intro_play');
+}
+function noteOnboardingWordPill(session){
+  if(!session||session.wordPillNoted||onboardingCardIndex()!==0)return;
+  session.wordPillNoted=true;
+  if(typeof trackEvent==='function')trackEvent('onboarding_word_pill');
+}
+function noteOnboardingClosed(session,reason,unload){
+  if(session&&!session.closedNoted){
+    const step=onboardingStepName(session);
+    if(step){
+      if(reason!=='esc'&&reason!=='back'&&reason!=='hidden'&&reason!=='pagehide'&&reason!=='dismiss')reason='dismiss';
+      session.closedNoted=true;
+      const ms=Math.max(0,Math.min(3600000,Date.now()-(session.openedAt||session.stepAt||Date.now())));
+      if(typeof trackEvent==='function')trackEvent('onboarding_closed',{step:step,ms:ms,reason:reason});
+    }
+  }
+  // pagehide still has to send a close that visibility hidden already queued.
+  // A hidden page throttles the logger's timer, so flush now in either case.
+  if(typeof eventFlush==='function')eventFlush(!!unload);
+}
 function noteOnboardingCard(session){
   const index=onboardingCardIndex();
   if(index===session.card)return;
@@ -218,6 +242,7 @@ function bindOnboardingGestures(session){
     const dx=x-origin.x,dy=y-origin.y;
     if(origin.target.closest('button,a,input,.onboard-fan'))return;
     if(Math.hypot(dx,dy)<14){
+      if(onboardingCardIndex()===0)noteOnboardingWordPill(session);
       if(onboardingCardIndex()<2)nudge(1);
       return;
     }
@@ -255,7 +280,7 @@ function bindOnboardingGestures(session){
     return (x,y)=>{
       const dx=x-origin.x,dy=y-origin.y;
       if(origin.target.closest('button,a,input,.onboard-fan'))return;
-      if(Math.hypot(dx,dy)<14){if(onboardingCardIndex()<2)nudge(1);return;}
+      if(Math.hypot(dx,dy)<14){if(onboardingCardIndex()===0)noteOnboardingWordPill(session);if(onboardingCardIndex()<2)nudge(1);return;}
       if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){nudge(dy<0?1:-1);return;}
       if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){
         primeOnboardingVideo(session,onboardingCardIndex(origin.left)+(dx<0?1:-1));
@@ -496,7 +521,7 @@ function startOnboarding(replay){
   const session={replay:!!replay,
     previousView:activeAppView(),controller:new AbortController(),focus:document.activeElement,inert:[],
     motion:matchMedia('(prefers-reduced-motion: reduce)'),importController:null,observer:null,theme:null,fanW:0,fanH:0,
-    depthFrame:0,settleTimer:0,playSettleTimer:0,watchTimer:0,playToken:0,mediaCard:-1,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),
+    depthFrame:0,settleTimer:0,playSettleTimer:0,watchTimer:0,playToken:0,mediaCard:-1,gestureTimer:0,scrollTimer:0,gesture:null,fanEls:[],layoutDepth:null,bookIndex:1,busy:false,card:0,stepAt:Date.now(),openedAt:Date.now(),
     scrollY:window.scrollY||0};
   onboardingSession=session;
   if(typeof trackEvent==='function')trackEvent('onboarding_start',{replay:!!replay});
@@ -519,7 +544,7 @@ function startOnboarding(replay){
     // Hide the poster once the clip is really running. 'timeupdate' covers
     // a 'playing' that fired before this card was the target; the paused
     // check keeps a rewind's timeupdate from uncovering a stopped clip.
-    const reveal=()=>{
+    const reveal=event=>{
       if(video.paused)return;
       const poster=onboardingPoster(video);
       // A play() already in flight can land after reduced motion or a
@@ -530,6 +555,9 @@ function startOnboarding(replay){
         return;
       }
       if(poster)poster.hidden=true;
+      // Card 1's clip actually started. A loop's later 'playing' is ignored.
+      // 'timeupdate' only uncovers the poster; it is not a second start.
+      if(event&&event.type==='playing'&&video===onboardingVideos()[0])noteOnboardingIntro(session);
     };
     video.addEventListener('playing',reveal,{signal});
     video.addEventListener('timeupdate',reveal,{signal});
@@ -543,7 +571,11 @@ function startOnboarding(replay){
   wrap.addEventListener('scroll',syncOnboardingDots,{passive:true,signal});
   wrap.addEventListener('scroll',()=>{noteOnboardingCard(session);queueOnboardingPlaybackSettle(session);},{passive:true,signal});
   wrap.addEventListener('scrollend',()=>settleOnboardingVideos(session),{signal});
-  document.addEventListener('visibilitychange',()=>settleOnboardingVideos(session),{signal});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)noteOnboardingClosed(session,'hidden');
+    settleOnboardingVideos(session);
+  },{signal});
+  window.addEventListener('pagehide',()=>{noteOnboardingClosed(session,'pagehide',true);},{signal,capture:true});
   document.getElementById('onboard-skip').addEventListener('click',()=>{
     if(typeof trackEvent==='function'){const step=onboardingStepName(session);if(step)trackEvent('onboarding_step_skip',{step,ms:onboardingStepMs(session)});}
     if(typeof trackEvent==='function')trackEvent('onboarding_choice',{choice:'skip'});
@@ -591,7 +623,7 @@ function startOnboarding(replay){
   // keyboard equivalent of a swipe; there are no prev/next buttons.
   document.addEventListener('keydown',event=>{
     event.stopPropagation();
-    if(event.key==='Escape'){event.preventDefault();endOnboarding(false);return;}
+    if(event.key==='Escape'){event.preventDefault();endOnboarding(false,true,'esc');return;}
     if(event.key==='ArrowLeft'||event.key==='ArrowRight'){
       event.preventDefault();
       const card=wrap.querySelector(/** @type {'article'} */('.onboard-card'));
@@ -606,7 +638,7 @@ function startOnboarding(replay){
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
     }
   },{signal,capture:true});
-  window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false);},{signal,capture:true});
+  window.addEventListener('popstate',event=>{event.stopImmediatePropagation();endOnboarding(false,true,'back');},{signal,capture:true});
   session.theme=new MutationObserver(()=>{
     if(activeAppView()!==session.previousView)endOnboarding(false);
   });
@@ -614,9 +646,10 @@ function startOnboarding(replay){
   for(const view of document.querySelectorAll('.view'))session.theme.observe(view,{attributes:true,attributeFilter:['class']});
   document.getElementById('onboard-skip').focus({preventScroll:true});
 }
-function endOnboarding(remember,returnToPrevious=true){
+function endOnboarding(remember,returnToPrevious=true,reason){
   const session=onboardingSession;
   if(!session)return;
+  if(!remember)noteOnboardingClosed(session,reason||'dismiss');
   onboardingSession=null;
   session.importController?.abort();
   session.controller.abort();

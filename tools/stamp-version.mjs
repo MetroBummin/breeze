@@ -16,6 +16,21 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const eventsFile = resolve(root, 'scripts/core/events.js');
+const eventsVersion = /const BREEZE_ONBOARDING_VERSION='[^']*';/;
+// The shell hash is written into events.js. Hold the token at 00000000 while
+// hashing index.html, then write the hash back, so the value does not chase
+// itself. sw.js VERSION and this constant stay the same 8 characters.
+function setOnboardingVersion(version){
+  const source = readFileSync(eventsFile, 'utf8');
+  if(!eventsVersion.test(source)){
+    console.error('scripts/core/events.js is missing BREEZE_ONBOARDING_VERSION.');
+    process.exit(1);
+  }
+  const updated = source.replace(eventsVersion, `const BREEZE_ONBOARDING_VERSION='${version}';`);
+  if(updated !== source) writeFileSync(eventsFile, updated);
+}
+setOnboardingVersion('00000000');
 // Deferred app code must belong to the same generation as its loader. Update
 // these URLs first so the loader's own HTML hash changes with its dependencies.
 const lazyFile=resolve(root,'scripts/core/lazy-lib.js');
@@ -73,8 +88,19 @@ if(existsSync(worker)){
   const stampedWorker = source.replace(line, `const VERSION = '${version}';`);
   if(stampedWorker !== source) writeFileSync(worker, stampedWorker);
   console.log(`Service worker ${version}${stampedWorker === source ? ' (변경 없음)' : ''}`);
+  setOnboardingVersion(version);
+  const restamped = readFileSync(page, 'utf8').replace(local, (all, head, path, tail) => {
+    if(!/\.(?:js|css)$/.test(path)&&!/(?:^|\/)assets\/favicon\/[^/]+\.(?:png|svg|ico)$/.test(path)) return all;
+    try{
+      return `${head}${path}?v=${shortHash(path)}${tail}`;
+    }catch(error){
+      return all;
+    }
+  });
+  if(restamped !== readFileSync(page, 'utf8')) writeFileSync(page, restamped);
 }
 
+local.lastIndex=0;
 for(const entry of ['landing/index.html','support/index.html']){
   const target=resolve(root,entry),source=readFileSync(target,'utf8');
   const updated=source.replace(local,(all,head,path,tail)=>{

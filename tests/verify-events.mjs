@@ -36,6 +36,7 @@ function install(options={}){
   };
   context.globalThis=context;
   context.window=context;
+  if(options.ua)context.navigator={userAgent:options.ua,webdriver:false};
   if(options.sb)context.sb=options.sb;
   vm.createContext(context);
   vm.runInContext(readFileSync(new URL('../scripts/core/events.js',import.meta.url),'utf8'),context,{filename:'events.js'});
@@ -105,7 +106,7 @@ test('batches inserts, dedupes milestones, and attaches the first-touch UTM',asy
   for(const row of body){
     assert.equal(row.app_version,'1.9.9');
     assert.equal(row.platform,'web');
-    assert.equal(row.onboarding_version,'v1');
+    assert.equal(row.onboarding_version,onboardingVersion());
     assert.equal(row.utm_source,'x');
     assert.equal(row.utm_medium,'reply');
     assert.equal(row.utm_campaign,'261026-test');
@@ -228,6 +229,20 @@ test('the app wires each funnel event through the logger',()=>{
   assert.match(onboarding,/trackEvent\('onboarding_step_complete'/);
   assert.match(onboarding,/trackEvent\('onboarding_step_skip'/);
   assert.match(onboarding,/trackEvent\('onboarding_choice',\{choice:'import'\}\)/);
+  assert.match(onboarding,/trackEvent\('onboarding_closed'/);
+  assert.match(onboarding,/trackEvent\('onboarding_intro_play'/);
+  assert.match(onboarding,/trackEvent\('onboarding_word_pill'/);
+  assert.match(onboarding,/endOnboarding\(false,true,'esc'\)/);
+  assert.match(onboarding,/endOnboarding\(false,true,'back'\)/);
+  assert.match(onboarding,/noteOnboardingClosed\(session,'hidden'\)/);
+  assert.match(onboarding,/noteOnboardingClosed\(session,'pagehide',true\)/);
+  const landing=read('landing/landing.js');
+  const landingHtml=read('landing/index.html');
+  assert.match(landing,/trackEvent\('landing_view'\)/);
+  assert.match(landingHtml,/src="\.\.\/scripts\/core\/events\.js/);
+  assert.match(landingHtml,/href\+search/);
+  assert.doesNotMatch(read('sitemap.xml'),/breeze\.io\.kr\/</);
+  assert.match(read('sitemap.xml'),/breeze\.io\.kr\/landing\//);
   const dictionary=read('scripts/dictionary/dictionary.js');
   assert.match(dictionary,/trackEvent\('first_word_tap'\)/);
   assert.match(dictionary,/trackEvent\('first_lookup_success'\)/);
@@ -292,6 +307,123 @@ test('once the column exists, referrer keeps flowing, including on pagehide',asy
   context.trackEvent('first_word_tap');
   await context.eventFlush(true);
   assert.equal(JSON.parse(calls[1].init.body)[0].referrer,'https://www.google.com');
+});
+
+function onboardingVersion(){
+  return readFileSync(new URL('../scripts/core/events.js',import.meta.url),'utf8')
+    .match(/const BREEZE_ONBOARDING_VERSION='([^']+)'/)[1];
+}
+function shellVersion(){
+  return readFileSync(new URL('../sw.js',import.meta.url),'utf8')
+    .match(/const VERSION = '([^']+)'/)[1];
+}
+
+test('onboarding_version is the shell build hash',()=>{
+  const version=onboardingVersion();
+  assert.match(version,/^[a-f0-9]{8}$/);
+  assert.equal(version,shellVersion());
+});
+
+test('carries the landing query onto the app root link',()=>{
+  const {context}=install();
+  assert.equal(context.carryAppSearch('../','?utm_source=x&utm_medium=reply&ref=keep'),'../?utm_source=x&utm_medium=reply&ref=keep');
+  assert.equal(context.carryAppSearch('../',''),'../');
+  assert.equal(context.carryAppSearch('../support/','?utm_source=x'),'../support/');
+  assert.equal(context.carryAppSearch('../?utm_source=old','?utm_source=new'),'../?utm_source=old');
+});
+
+test('records the browser family and the in-app browser, not the raw UA',async()=>{
+  const kakao=install({ua:'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36 KAKAOTALK/10.7.1'});
+  kakao.context.trackEvent('app_open');
+  await kakao.context.eventFlush();
+  const kakaoRow=JSON.parse(kakao.calls[0].init.body)[0];
+  assert.equal(kakaoRow.browser,'chrome');
+  assert.equal(kakaoRow.in_app,'kakao');
+  assert.equal(JSON.stringify(kakaoRow).includes('KAKAOTALK'),false);
+
+  const naver=install({ua:'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 NAVER(inapp; search; 720; 11.8.2)'});
+  naver.context.trackEvent('app_open');
+  await naver.context.eventFlush();
+  const naverRow=JSON.parse(naver.calls[0].init.body)[0];
+  assert.equal(naverRow.browser,'other');
+  assert.equal(naverRow.in_app,'naver');
+
+  const instagram=install({ua:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Instagram 302.0.0.0'});
+  instagram.context.trackEvent('app_open');
+  await instagram.context.eventFlush();
+  assert.equal(JSON.parse(instagram.calls[0].init.body)[0].in_app,'instagram');
+
+  const safari=install({ua:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15'});
+  safari.context.trackEvent('app_open');
+  await safari.context.eventFlush();
+  const safariRow=JSON.parse(safari.calls[0].init.body)[0];
+  assert.equal(safariRow.browser,'safari');
+  assert.equal(safariRow.in_app,undefined);
+});
+
+test('keeps a closed event and drops an unknown column without losing the row',async()=>{
+  const {context,calls}=install({respond:(url,init)=>{
+    const rows=JSON.parse(init.body);
+    if(rows.some(row=>'browser' in row)){
+      return {ok:false,status:400,json:async()=>({
+        code:'PGRST204',message:"Could not find the 'browser' column of 'product_events' in the schema cache"
+      })};
+    }
+    return {ok:true,status:201};
+  },ua:'Mozilla/5.0 Chrome/120.0.0.0 Safari/537.36'});
+  context.trackEvent('onboarding_closed',{step:'word',ms:1500,reason:'esc',sentence:'secret sentence'});
+  await context.eventFlush();
+  assert.equal(calls.length,2);
+  assert.equal(JSON.parse(calls[0].init.body)[0].browser,'chrome');
+  const kept=JSON.parse(calls[1].init.body)[0];
+  assert.equal(kept.name,'onboarding_closed');
+  assert.deepEqual(kept.props,{step:'word',ms:1500,reason:'esc'});
+  assert.equal('browser' in kept,false);
+  assert.equal(JSON.stringify(kept).includes('secret'),false);
+});
+
+test('a rejected new event name is retried without that row',async()=>{
+  const {context,calls}=install({respond:(url,init)=>{
+    const rows=JSON.parse(init.body);
+    if(rows.some(row=>row.name==='landing_view')){
+      return {ok:false,status:400,json:async()=>({
+        code:'23514',message:'new row violates check constraint "product_events_name_chk"'
+      })};
+    }
+    return {ok:true,status:201};
+  }});
+  context.trackEvent('app_open');
+  context.trackEvent('landing_view');
+  await context.eventFlush();
+  assert.equal(calls.length,2);
+  assert.deepEqual(JSON.parse(calls[1].init.body).map(row=>row.name),['app_open']);
+});
+
+test('a pagehide flush keeps a session token getSession already resolved',async()=>{
+  const sb={auth:{getSession:async()=>({data:{session:{access_token:'live-jwt'}}})}};
+  const {context,calls}=install({sb});
+  context.trackEvent('app_open');
+  await context.eventFlush();
+  assert.equal(calls[0].init.headers.Authorization,'Bearer live-jwt');
+  context.trackEvent('first_word_tap');
+  const pending=context.eventFlush(true);
+  assert.equal(calls[1].init.headers.Authorization,'Bearer live-jwt');
+  await pending;
+});
+
+test('the analysis migration excludes the owner by user id and device',()=>{
+  const sql=readFileSync(new URL('../supabase/migrations/20261101120000_product_events_onboarding_quality.sql',import.meta.url),'utf8');
+  const historic=readFileSync(new URL('../supabase/migrations/20261026054149_product_events.sql',import.meta.url),'utf8');
+  assert.match(sql,/lower\(u\.id::text\) like 'f3553df5%'/);
+  assert.match(sql,/owner_devices/);
+  assert.match(sql,/is_test_device/);
+  assert.match(sql,/'8a1d89eb'/);
+  assert.match(sql,/'d1b96fd8'/);
+  assert.match(sql,/'996df2bd'/);
+  assert.match(sql,/onboarding_closed/);
+  assert.match(sql,/grant select on public\.product_events_analysis to service_role/);
+  assert.doesNotMatch(sql,/grant select on public\.product_events_analysis to anon/);
+  assert.match(historic,/lower\(u\.email\) like 'f3553df5%'/);
 });
 
 test('a pagehide flush before the column is confirmed omits referrer',async()=>{
