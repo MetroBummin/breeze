@@ -4,7 +4,7 @@
 const BREEZE_APP_VERSION='1.9.9';
 // tools/stamp-version.mjs writes the shell build hash here. It is the same
 // value as sw.js VERSION. Older rows used the fixed 'v1'.
-const BREEZE_ONBOARDING_VERSION='62e73d40';
+const BREEZE_ONBOARDING_VERSION='7b9942af';
 const EVENT_UTM_KEYS=['utm_source','utm_medium','utm_campaign','utm_content'];
 const EVENT_UTM_KEY='breeze.events.utm';
 const EVENT_REF_KEY='breeze.events.ref';

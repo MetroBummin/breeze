@@ -987,3 +987,182 @@ A finger long-press (about 400ms; moving more than about 8px cancels it; touch p
 While the finger is down the circle follows with a short spring and a slight stretch along the motion. Two faint discs sit just behind it so it reads as several controls being carried; they are not extra copies left along the path. Reduced motion turns the stretch and the spring lag off and snaps immediately. Release chooses the nearest of the left, right, top, and bottom edges from the finger, the way Picture in Picture chooses a side, then the row unfolds along that edge. Side edges stack the same controls vertically. The bottom edge is the original row. There is no snap outline. The choice is remembered in `localStorage` under `breeze.pdfInk.dock`, separate from the tool preference record, so a color change cannot clear it.
 
 The ink settings popover opens away from the parked edge. The page sidebar still opens from the left screen edge. Aa opens downward when its button is in the top half of the screen and rightward when its button is in the left half; the ordinary bottom-right button still opens upward and leftward. Native Pencil hit testing excludes the moving circle.
+
+## No 삐침, 필압, a fixed undo group and textured pencils (2026-11-01)
+
+Four user-approved changes. The pen decisions above stay as they were: iOS
+tells pen from finger, the 0.75 s palm-rest Lookup stays, a page move never
+erases a stroke, there is no pre-draw confirmation, only the highlighter uses
+overlap redraw, and SVG point text is rounded to 2 decimals. Nothing here adds
+latency: the live tip still reaches the latest sample on every move. All
+evidence is synthetic (deterministic harness and Chromium/WebKit with
+Touch-like objects carrying `touchType:'stylus'` and `force`), not physical
+Apple Pencil or Android pen acceptance.
+
+**삐침 (hooks) at pen-down and pen-up.** `createSmoother` now takes `unit`
+(PDF units per CSS pixel, from the cached page bounds), so every threshold
+is in screen pixels at any zoom.
+- Pen-down: samples within 2 CSS px of the first point are a dead zone. They
+  are drawn live (the tip follows them) but never become stroke geometry.
+  The stroke still starts where the pen landed.
+- Lift: on raw samples, `finish()` drops (a) wobble around the resting point
+  (all later samples within 2 px of it, wandering or turning ≥45°), (b) a
+  hook: a tail of at most 3 segments and 12 px whose first segment already
+  leaves the body (≥25°) and whose chord turns ≥45°, and (c) a flick: a
+  final segment ≥4 px and ≥2.5× the median of the 3 before it that turns
+  ≥30°. The longest qualifying hook wins. The body direction is the 3 px of
+  samples just before the candidate tail and never includes it. A turn only
+  counts when it is ≥2.5× the body's own turn just before. A body that is one
+  straight segment at least 8 px long, and at least twice the tail, sets no
+  baseline, because a corner farther back is not curvature. The body before
+  the tail must be at least 8 px and twice the tail. A small o or c keeps
+  curving, so it is not trimmed. A ㄱ/ㄴ arm drawn at writing speed spans more
+  than 3 samples or 12 px, so the corner is kept; that relies on WebKit
+  delivering a touchmove per frame. Dots and short dashes are below the 8 px
+  body minimum.
+- Pen-down: if the landing point lies on the body's backward line (within
+  1.5 px) and only the next 1-3 samples (≤12 px out) wander ≥2 px off it,
+  those samples are dropped and the stroke still starts where the pen
+  landed. Otherwise the same hook rule as at lift is read from the start.
+  When something is trimmed, the stroke is re-flattened once from the kept
+  samples, so the ends can move at lift. Strokes without a hook keep exactly
+  their live geometry, which keeps the preview = stored = repainted contract.
+- The first version (6 px, 2 segments, body measured including the tail's
+  first segment) missed most realistic 5-7 px two-sample hooks in owner QA
+  (`hook-repro.mjs`, `shoot.mjs`). Those cases, plus must-not-trim
+  counter-cases, are now harness tests.
+- I chose targeted trimming over a blanket moving average on the ends. An
+  average also rounds deliberate small ends and would change every stroke at
+  lift, for a hook problem that only some strokes have.
+
+**필압 (pressure).** The 필압 switch, plus 약/보통/강 sensitivity, sits in the
+pen, 연필 and 색연필 option panels. It is one shared setting stored in the
+existing `__breeze_pdf_ink_tools_v1__` record (`pressure`, `pressureLevel`).
+**It defaults to OFF.** With it off, a pen stroke is exactly today's v1
+record and constant-width polyline. Users who report that pressure makes
+lines look blurry (Apple Pencil Pro) keep the look they have, and turning it
+on is an explicit choice. The highlighter never records pressure.
+- Input: `Touch.force` on iPad, `PointerEvent.pressure` on Android (with
+  coalesced samples). Missing or zero force is ignored. The lift sample's
+  force is never used. The starting pressure is the median of the samples
+  after the first one, which removes the touch-down spike. After that,
+  pressure is smoothed (EMA 0.35) and limited to 0.08 per sample, so the
+  width cannot flicker.
+- Stored as an optional `pressure` array parallel to `points`, holding
+  effective pressure (after `0.5+(√force−0.5)×gain`, gain 0.5/1/1.6) rounded
+  to 2 decimals. A later sensitivity change never alters saved strokes.
+  Points are unchanged: still `[x,y]` at full precision. A build that predates
+  this field still accepts the stroke and draws it at its constant width. A
+  contact that never reports force stores no `pressure` field.
+- Rendering: pen width = width × (0.3 + 1.4 × pressure), so the nominal
+  width falls at pressure 0.5. The outline is one filled `<path>`: the union
+  of circles at the ends and bends plus the tangent quad between neighbouring
+  points, all wound the same way so the nonzero fill has no holes at
+  self-overlaps. The live preview appends settled points only and redraws
+  just the tail. Eraser hit-testing uses the per-segment width, and erased
+  fragments split the `pressure` array with interpolation at the cuts.
+- Sync: `inkPublicStroke` now carries `pressure` and was already carrying
+  `tool`. The server stores opaque JSON. Pressure adds about 5 bytes per
+  point against the existing 24,000-byte per-stroke cap.
+
+**Toolbar.** `#pdf-ink-tools` now holds a `.ink-pill-tools` strip (pen, 연필,
+색연필, highlighter, eraser), a thin `.ink-pill-history-separator`, and a
+`.ink-pill-history` group (이전/다음). Only the strip scrolls
+(`overflow-x:auto`). The toolbar itself no longer scrolls, so undo/redo stay
+in place. On the side dock the strip stacks vertically and scrolls
+vertically on short screens. The pill look, the 44 px targets, the themes
+and the read/write button are unchanged. The earlier separators inside the
+toolbar were always hidden in writing mode and are removed. On an unsupported
+390 px phone width the strip has almost no room, but undo/redo are never
+clipped. Phones never get writing tools.
+- Owner review found the first divider (18% ink on transparent) nearly
+  invisible over PDF text seen through the pill. It is now a 1 px line, 28 px
+  tall (28 px wide on the side dock), mixed opaque at 55% ink over the glass
+  colour, with a soft glass-coloured `box-shadow` backing that masks the
+  text right behind it. The browser test requires a contrast of at least
+  2.5:1 against the glass in both themes. The old line measured 1.4:1.
+
+**연필 / 색연필.** These are new tools with `tool:'pencil'` and
+`tool:'colored-pencil'`, each with fixed palettes (4 and 8 colors) and 3
+widths, and they persist like the other tools. They reuse v1 page records,
+the serialized writer, undo/redo, partial erase, sync and validation, and
+validation rejects colors and widths outside their palettes. Older builds
+reject these records. A page that holds them reads as unsupported on a
+downgraded build, and sync rows that fail `accept` are skipped there and
+never tombstoned. The smooth pen is unchanged.
+- Rendering stays in the existing SVG layer, with no per-page canvas. One
+  64×64 periodic value-noise field (24 PDF units square) is generated once.
+  The first time a tool/coverage-level/color combination is used, it is
+  turned into a colored, alpha-only tile and placed as an SVG `<pattern>`
+  (`patternUnits=userSpaceOnUse`) in one shared hidden `#pdf-ink-defs` SVG.
+  After that, every stroke on every page reuses the same tile. Because the
+  pattern is anchored to page coordinates, strokes over the same place hit
+  the same grain. Each stroke draws at partial opacity, so repeated strokes
+  build up darker while the paper's low spots stay light. That is the
+  stamp-like effect, without per-stamp elements.
+- Owner review found the first texture too grey and speckled (hard
+  threshold grain with a per-texel octave, so edges broke up). The tile now
+  targets a soft 4B look. The grain uses only 8/16/32-cell octaves, so there
+  is no per-texel speckle. Each level has a coverage floor (pencil 0.55 /
+  0.76 / 0.87, 색연필 0.58 / 0.78 / 0.88), and the grain only fills in
+  the rest with a smoothstep. Edges are therefore solid, and grain shows
+  mainly at light pressure. Opacity is higher (pencil 0.78 / 0.86 / 0.92,
+  색연필 0.82 / 0.88 / 0.94), which makes 색연필 saturated instead of
+  pinkish. It stays below 1, so overlap still builds up. Palettes, widths
+  and the stored format are unchanged.
+- Pressure picks one of three coverage levels (grain threshold and
+  opacity), with hysteresis so a steady hand does not flip between them.
+  A pencil stroke is a `<g data-ink-tool>` holding one polyline per run of
+  equal coverage. With 필압 off, the middle level is used. Width stays
+  constant.
+- I rejected per-stroke `<mask>` (an offscreen pass per stroke) and a
+  per-page canvas (a second ink surface beside the SVG and its eraser and
+  paint caches). Without canvas (the harness), the pencils fall back to plain
+  translucent color with the same geometry.
+- Pencils keep drawing order with pen paths. Highlighter groups stay
+  underneath, and a live highlighter is inserted before the first
+  non-highlighter element.
+
+Tests: `tests/verify-pdf-ink-regressions.mjs` covers hook removal (jitter +
+flick, short hooks at both ends, rest wobble, curves and corners kept, zoom
+scaling), 필압 off/on, spikes, no-force contacts, pressure erase/undo,
+the highlighter, pencil save/erase/undo, validation and the sync payload.
+`tests/verify-pdf-ink-pen-browser.mjs` (in `npm run test:pdf-ink`) checks in
+Chromium and WebKit: toolbar structure, scrolling and divider at 5 viewports
+in light/dark; rendered thickness off vs on; preference reload; the hook
+stroke; and pencil darkness, evenness (core variation below 0.2 with a subtle
+grain above 0.01), build-up, pattern reuse, pressure coverage, reload,
+erase, undo and redo, plus divider contrast.
+
+### 색연필 folded into 연필 (2026-11-01)
+
+The owner asked for one 연필 button with a color option, like the pen,
+instead of separate 연필 and 색연필 buttons. The toolbar strip is now pen,
+연필, highlighter, eraser; the scroll, the divider and the fixed 이전/다음 group
+are unchanged. The 연필 icon is unchanged while the owner chooses a new one.
+
+- **Palette.** 연필 offers 흑연 `#3b3b3b` (default), 진한 흑연 `#1f1f1f`, then the
+  eight former 색연필 colors. It uses the same swatch row and the same
+  per-tool memory (`pencilColor`, `pencilWidth`) as the pen.
+- **Stored type follows the color.** A graphite color saves `tool:'pencil'`;
+  any other color saves `tool:'colored-pencil'` with the matching step of the
+  색연필 widths (1.5 / 3 / 5 for 얇게 / 보통 / 굵게). So a new colored stroke is
+  byte-for-byte the same kind of record the 색연필 button wrote, and it uses
+  the colored-pencil grain. No stored data is rewritten.
+- **Saved 색연필 strokes** keep `tool:'colored-pencil'`. Validation,
+  rendering, erasing, undo and sync are unchanged for them, so they look
+  and sync exactly as before. `#2f5fa8` and `#b03a3a` graphite-look pencil
+  strokes stay valid but are no longer offered in the palette.
+- **Preferences.** A saved `tool:'colored-pencil'` preference opens as 연필
+  with the saved 색연필 color. `colored-pencil` is no longer a selectable mode.
+- Compatibility notes above (older builds and pencil strokes) are unchanged.
+
+### Highlighter default is green (2026-11-01)
+
+The highlighter now starts on green `#91df80` instead of yellow `#ffe34d`.
+Yellow clashed with the saved-word mark (`#FFE28A`, `--saved1` / `--mark1`),
+so a highlight looked like a saved word. The palette keeps all six colors;
+green and yellow only swap places, so green is first. A saved
+`highlightColor` preference still wins, so owners who picked yellow (or any
+color) keep it; only new or unset settings change. Stored strokes keep their
+own color and are not rewritten.
