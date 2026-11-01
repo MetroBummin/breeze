@@ -1215,6 +1215,18 @@ the edge. Repeated strokes still build up. Colored lead uses the same mask
 with a higher floor, so it is waxier than graphite and still not a flat pen.
 The centerline is still the smoothed polyline.
 
+Handwriting at a fitted iPad page (about 2.6 device pixels per PDF unit)
+showed that tooth was still too fine: the bites were under a unit across,
+about one device pixel, so a letter looked like a soft gray pen. The graphite
+mask is now a 16-unit page-locked tile. Holes are 1.8–3.5 units across,
+several device pixels, punched after the specks so they stay open. The edge
+has no continuous floor, only specks, so it cannot fill those gaps back in.
+Light pressure leaves the floor faint; heavy pressure darkens the graphite
+and does not close the holes. The pattern origin is the page, so strokes
+through the same place share the tooth. Colored lead keeps a higher floor.
+The pen is not part of this mask. One pattern and one mask per page, tool,
+and color; no filter and no per-stroke raster.
+
 **Pressure and tilt on the pencil only.** Pencil darkness follows contact
 force even when the pen's 필압 switch is off. That switch was the way to
 keep the pen at a constant width; a pencil that ignores force is the solid

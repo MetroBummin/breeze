@@ -87,20 +87,20 @@ const BreezePdfInk = (()=>{
     if(!(typeof raw==='number'&&raw>0))return Math.max(0.05,0.42*shade);
     return Math.max(0.02,Math.min(1,raw*shade));
   }
-  /* Graphite tooth, drawn as vectors inside the page SVG. A PNG pattern in a
-     separate 0×0 SVG does not reliably paint in WebKit (the stroke's url(#id)
-     does not cross SVG documents, and pattern-image alpha is often dropped,
-     so the mark comes out flat). Speckles are sized like the stroke, not like
-     a sub-pixel noise field, so the tooth survives antialiasing at normal zoom.
-     One core tile and one sparser edge tile per page, tool and color. */
-  const grainTile=6,grainSteps=8;
+  /* Graphite tooth, one mask per page/tool/color, anchored to page coordinates
+     (userSpaceOnUse) so the same place on the paper always hits the same tooth.
+     A fitted iPad page is about 2.6 device pixels per PDF unit. The holes are
+     2–3.5 units across, several device pixels, so they stay visible at that
+     scale, including on the thin width. Nothing here is a filter or a per-stroke
+     raster. */
+  const grainTile=16,grainSteps=8;
   const grainLook={
-    // Element opacity. The mask supplies the tooth, so these stay high enough
-    // that a stroke reads as a line and low enough that another pass gets darker.
-    pencil:{core:[0.42,0.5,0.58,0.66,0.74,0.82,0.9,0.97],edge:[0.22,0.24,0.26,0.28,0.3,0.32,0.34,0.36],
-      width:[0.9,0.94,0.97,1,1.03,1.06,1.1,1.14],edgeWidth:1.38},
+    // Element opacity. Light pressure leaves the floor faint so the gaps
+    // dominate; heavy pressure fills the graphite but does not close the holes.
+    pencil:{core:[0.34,0.44,0.54,0.64,0.74,0.84,0.92,0.98],edge:[0.28,0.34,0.4,0.46,0.52,0.58,0.66,0.74],
+      width:[0.9,0.94,0.97,1,1.03,1.06,1.1,1.14],edgeWidth:2.05},
     'colored-pencil':{core:[0.4,0.48,0.55,0.62,0.68,0.74,0.8,0.84],edge:[0.14,0.16,0.18,0.2,0.22,0.23,0.25,0.27],
-      width:[0.97,0.98,0.99,1,1.01,1.03,1.04,1.06],edgeWidth:1.18}
+      width:[0.97,0.98,0.99,1,1.01,1.03,1.04,1.06],edgeWidth:1.22}
   };
   const grainSvgKey=new WeakMap(),grainReady=new WeakMap();
   let grainSerial=0;
@@ -111,13 +111,18 @@ const BreezePdfInk = (()=>{
     for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));
     return node;
   }
-  /* A luminance mask: white keeps graphite, black opens paper. The floor is
-     high, and the bites are smaller than the stroke, so the mark stays a line
-     with tooth instead of a row of dots. */
+  /* Luminance mask locked to the page. White is graphite, black is a gap.
+     Graphite holes are larger than the thin width, so a light stroke breaks.
+     The edge has no continuous floor: only specks, so it cannot heal the core.
+     Colored lead stays waxier (higher floor, smaller bites). */
   function grainSpec(tool,part){
     const edge=part==='edge',colored=tool==='colored-pencil';
-    if(edge)return {floor:colored?0.35:0.42,bites:colored?4:7,clumps:colored?5:8,bite:0.28,clump:0.45};
-    return {floor:colored?0.9:0.8,bites:colored?8:14,clumps:colored?8:12,bite:colored?0.28:0.5,clump:0.55};
+    if(edge)return colored
+      ?{floor:0.1,holes:3,specks:5,holeR:[0.4,0.75],speckR:[0.45,0.9],hole:0.4,speck:0.65}
+      :{floor:0,holes:5,specks:10,holeR:[0.8,1.45],speckR:[0.75,1.6],hole:0.95,speck:0.95};
+    return colored
+      ?{floor:0.7,holes:6,specks:8,holeR:[0.45,0.95],speckR:[0.4,0.85],hole:0.45,speck:0.75}
+      :{floor:0.34,holes:12,specks:11,holeR:[0.9,1.75],speckR:[0.6,1.3],hole:0.96,speck:1};
   }
   function mountGrain(svg,tool,part,color){
     if(!svg||!color)return null;
@@ -135,14 +140,16 @@ const BreezePdfInk = (()=>{
       if(svg.firstChild&&svg.insertBefore)svg.insertBefore(defs,svg.firstChild);else svg.append(defs);
     }
     const spec=grainSpec(tool,part),random=grainRandom(grainHash(tool+'|'+part+'|'+color));
-    const pattern=grainShape('pattern',{id:id+'-pat',patternUnits:'userSpaceOnUse',width:grainTile,height:grainTile});
-    pattern.append(grainShape('rect',{width:grainTile,height:grainTile,fill:'#fff',opacity:spec.floor}));
-    for(let i=0;i<spec.bites;i++)pattern.append(grainShape('circle',{
+    const between=(span,lo)=>((span[0]+random()*(span[1]-span[0]))).toFixed(2);
+    const pattern=grainShape('pattern',{id:id+'-pat',patternUnits:'userSpaceOnUse',width:grainTile,height:grainTile,x:'0',y:'0'});
+    if(spec.floor>0)pattern.append(grainShape('rect',{width:grainTile,height:grainTile,fill:'#fff',opacity:spec.floor}));
+    for(let i=0;i<spec.specks;i++)pattern.append(grainShape('circle',{
       cx:(random()*grainTile).toFixed(2),cy:(random()*grainTile).toFixed(2),
-      r:(0.22+random()*0.55).toFixed(2),fill:'#000',opacity:(spec.bite*(0.55+random()*0.45)).toFixed(2)}));
-    for(let i=0;i<spec.clumps;i++)pattern.append(grainShape('circle',{
+      r:between(spec.speckR),fill:'#fff',opacity:(spec.speck*(0.62+random()*0.38)).toFixed(2)}));
+    // Holes last, so a speck cannot fill a gap. The gap stays on the page.
+    for(let i=0;i<spec.holes;i++)pattern.append(grainShape('circle',{
       cx:(random()*grainTile).toFixed(2),cy:(random()*grainTile).toFixed(2),
-      r:(0.18+random()*0.42).toFixed(2),fill:'#fff',opacity:(spec.clump*(0.5+random()*0.5)).toFixed(2)}));
+      r:between(spec.holeR),fill:'#000',opacity:(spec.hole*(0.82+random()*0.18)).toFixed(2)}));
     const mask=grainShape('mask',{id,maskUnits:'userSpaceOnUse',maskContentUnits:'userSpaceOnUse'});
     mask.append(grainShape('rect',{x:-50,y:-50,width:4000,height:4000,fill:`url(#${id}-pat)`}));
     defs.append(pattern,mask);ready.add(id);return id;
