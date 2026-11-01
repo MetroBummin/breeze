@@ -96,6 +96,13 @@ try{
       stripOverflow:css(strip).overflowX,historyOverflow:css(history).overflowX,barOverflow:css(tools).overflowX,
       scrollable:strip.scrollWidth>strip.clientWidth,scrolled:strip.scrollLeft,barScroll:tools.scrollLeft,
       before,after,strip:box(strip),divider:box(divider),dividerDisplay:css(divider).display,dividerColor:css(divider).backgroundColor,
+      dividerContrast:(()=>{ // WCAG contrast of the line against the pill's solid glass colour.
+       const c=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
+       const glass=css(document.body).getPropertyValue('--sentence-glass-solid').trim();
+       const rgb=(...layers)=>{for(const value of layers){c.fillStyle=value;c.fillRect(0,0,1,1);}return [...c.getImageData(0,0,1,1).data.slice(0,3)];};
+       const lum=v=>{const [r,g,b]=v.map(x=>{x/=255;return x<=.03928?x/12.92:((x+.055)/1.055)**2.4;});return .2126*r+.7152*g+.0722*b;};
+       const a=lum(rgb(glass,css(divider).backgroundColor)),b=lum(rgb(glass));
+       return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);})(),dividerShadow:css(divider).boxShadow,
       targets:[...tools.querySelectorAll('.ink-pill-control')].every(b=>Math.round(b.getBoundingClientRect().width)===44&&Math.round(b.getBoundingClientRect().height)===44),
       bar:box(tools),
       toggle,toggleVisible:css(document.querySelector('[data-ink-toggle]')).visibility==='visible',screen:{w:innerWidth,h:innerHeight}};
@@ -110,6 +117,8 @@ try{
     assert.equal(bar.barScroll,0);
     assert.notEqual(bar.dividerDisplay,'none');assert.ok(bar.divider.width<=2&&bar.divider.height>=16,`${label}: thin vertical divider ${JSON.stringify(bar.divider)}`);
     assert.notEqual(bar.dividerColor,'rgba(0, 0, 0, 0)');
+    assert.ok(bar.dividerContrast>=2.5,`${label}: divider reads against the glass (contrast ${bar.dividerContrast.toFixed(2)})`);
+    assert.notEqual(bar.dividerShadow,'none',`${label}: divider has a soft backing over page text`);
     assert.ok(bar.divider.left>=bar.strip.right-1&&bar.divider.right<=bar.before.left+1,`${label}: divider sits between tools and history`);
     assert.deepEqual(bar.after,bar.before,`${label}: scrolling the tools leaves undo/redo in place`);
     assert.ok(bar.targets,`${label}: 44px targets`);
@@ -186,10 +195,12 @@ try{
      const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const x=c.getContext('2d');x.drawImage(image,0,0);
      const d=x.getImageData(0,0,c.width,c.height).data,l=[];for(let i=0;i<d.length;i+=4)l.push((d[i]+d[i+1]+d[i+2])/3);return l;};
     const base=await decode(blank),layers=await Promise.all(marked.map(decode)),last=layers.at(-1);
-    const footprint=base.map((v,i)=>v-last[i]>12);
-    return layers.map(layer=>{const diff=layer.map((v,i)=>base[i]-v).filter((_,i)=>footprint[i]);
-     const mean=diff.reduce((a,b)=>a+b,0)/(diff.length||1),deviation=Math.sqrt(diff.reduce((a,b)=>a+(b-mean)**2,0)/(diff.length||1));
-     return {pixels:diff.length,mean,variation:deviation/(mean||1)};});
+    const footprint=base.map((v,i)=>v-last[i]>12),peak=Math.max(...base.map((v,i)=>v-last[i]));
+    // The core leaves out anti-aliased edge pixels, so its spread is the grain itself.
+    const core=base.map((v,i)=>v-last[i]>=peak*.75);
+    const stats=values=>{const mean=values.reduce((a,b)=>a+b,0)/(values.length||1),deviation=Math.sqrt(values.reduce((a,b)=>a+(b-mean)**2,0)/(values.length||1));return {mean,variation:deviation/(mean||1)};};
+    return layers.map(layer=>{const diff=layer.map((v,i)=>base[i]-v),all=stats(diff.filter((_,i)=>footprint[i])),inner=stats(diff.filter((_,i)=>core[i]));
+     return {pixels:footprint.filter(Boolean).length,mean:all.mean,core:inner.mean,variation:inner.variation};});
    },[blank,...marked]);
    for(const [tool,colorAttr,colorValue] of [['pencil','pencil-color','#1f1f1f'],['colored-pencil','colored-pencil-color','#3a7bd5']]){
     await openSettings(tool);
@@ -206,8 +217,9 @@ try{
     const once=await capture(y);
     await stroke(pencilLine);await stroke(pencilLine);await saved();
     const [single,triple]=await darkening(blank,once,await capture(y));
-    assert.ok(single.pixels>100&&single.mean>15,`${tool} marks the paper ${JSON.stringify(single)}`);
-    assert.ok(single.variation>0.2,`${tool} catches only on the grain ${JSON.stringify(single)}`);
+    // Soft 4B look: dark, dense and even, with only a light paper grain.
+    assert.ok(single.pixels>100&&single.mean>(tool==='pencil'?110:65),`${tool} marks the paper darkly ${JSON.stringify(single)}`);
+    assert.ok(single.variation>0.01&&single.variation<0.2,`${tool} is even with a subtle grain ${JSON.stringify(single)}`);
     assert.ok(triple.mean>single.mean*1.3,`${tool} builds up darker ${JSON.stringify({single,triple})}`);
     const group=page.locator(`${layer} g[data-ink-tool="${tool}"]`);
     assert.equal(await group.count(),3);

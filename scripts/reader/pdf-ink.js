@@ -54,14 +54,17 @@ const BreezePdfInk = (()=>{
      page coordinates. Strokes over the same place hit the same grain, so
      repeated strokes build up darker while the paper's low spots stay light. */
   const grainSize=64,grainUnits=24,grainPatterns=new Map();
-  const grainLevels={pencil:{threshold:[0.58,0.42,0.26],soft:0.16,floor:0,opacity:[0.5,0.68,0.85]},
-    'colored-pencil':{threshold:[0.48,0.3,0.12],soft:0.3,floor:0.08,opacity:[0.55,0.72,0.9]}};
+  // Soft 4B look: each level has a dense floor of coverage, and the grain only
+  // takes a little off it, more at light pressure. Partial opacity keeps
+  // overlap building up darker.
+  const grainLevels={pencil:{threshold:[0.6,0.45,0.3],soft:0.5,floor:[0.55,0.76,0.87],opacity:[0.78,0.86,0.92]},
+    'colored-pencil':{threshold:[0.55,0.4,0.25],soft:0.5,floor:[0.58,0.78,0.88],opacity:[0.82,0.88,0.94]}};
   let grainField=null,grainDefs=null;
   function grainNoise(){
     if(grainField)return grainField;
     const field=new Float32Array(grainSize*grainSize);let seed=0x2f6b1d3;
     const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return (seed>>>0)/4294967296;};
-    for(const [cells,weight] of [[8,0.2],[16,0.3],[64,0.5]]){ // 64: per-texel tooth, no visible repeat
+    for(const [cells,weight] of [[8,0.35],[16,0.4],[32,0.25]]){ // soft tooth, no per-texel speckle
       const lattice=Array.from({length:cells*cells},random);
       const value=(x,y)=>lattice[(y%cells)*cells+(x%cells)];
       for(let y=0;y<grainSize;y++)for(let x=0;x<grainSize;x++){
@@ -85,8 +88,9 @@ const BreezePdfInk = (()=>{
       const context=canvas.getContext('2d'),image=context.createImageData(grainSize,grainSize),field=grainNoise(),style=grainLevels[tool];
       const rgb=[1,3,5].map(i=>parseInt(ink.slice(i,i+2),16)),threshold=style.threshold[level];
       for(let i=0;i<field.length;i++){
-        const coverage=Math.max(style.floor,Math.min(1,(field[i]-threshold)/style.soft));
-        image.data.set([...rgb,Math.round(255*Math.max(0,coverage))],i*4);
+        const t=Math.max(0,Math.min(1,(field[i]-threshold)/style.soft)),floor=style.floor[level];
+        const coverage=floor+(1-floor)*t*t*(3-2*t);
+        image.data.set([...rgb,Math.round(255*coverage)],i*4);
       }
       context.putImageData(image,0,0);
       if(!grainDefs){

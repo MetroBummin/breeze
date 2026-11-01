@@ -40,7 +40,11 @@ body.dark .pdf-source-page > .pdf-ink-layer{mix-blend-mode:normal;}
 #readpill.ink-pill-active .ink-pill-tools{flex:0 1 auto;min-width:0;height:44px;overflow-x:auto;overflow-y:hidden;
   overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 #readpill .ink-pill-tools::-webkit-scrollbar{display:none;}
-#readpill .ink-pill-history-separator{margin-inline:2px;}
+/* The boundary must read over PDF text seen through the glass: a 1px line at
+   higher contrast, with a soft solid backing on both sides that masks the text. */
+#readpill .ink-pill-history-separator{height:28px;margin-inline:3px;border-radius:1px;
+  background:color-mix(in srgb,var(--sentence-glass-ink) 55%,var(--sentence-glass-solid));
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--sentence-glass-solid) 85%,transparent),0 0 6px 3px color-mix(in srgb,var(--sentence-glass-solid) 70%,transparent);}
 #readpill .ink-pill-toolbar .ink-pill-control:focus-visible,
 #readpill .ink-pill-entry:focus-visible,#readpill .ink-pill-mini:focus-visible{
   outline:2px solid color-mix(in srgb,var(--sentence-glass-ink) 58%,transparent);outline-offset:1px;}
@@ -214,7 +218,7 @@ html body.ink-dock-side #readpill.ink-pill-active .ink-pill-tools{
   overflow-y:auto;
   overscroll-behavior:contain;
 }
-html body.ink-dock-side #readpill .ink-pill-history-separator{width:22px;height:1px;margin:2px 0;}
+html body.ink-dock-side #readpill .ink-pill-history-separator{width:28px;height:1px;margin:3px 0;}
 html body:is(.ink-dock-side,.ink-dock-top) #pdf-page-control:is(:has(#pdf-page-button[aria-expanded=true]),.pdf-navigation-closing){
   position:fixed !important;
   left:0 !important;

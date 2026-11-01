@@ -1075,6 +1075,12 @@ and the read/write button are unchanged. The earlier separators inside the
 toolbar were always hidden in writing mode and are removed. On an unsupported
 390 px phone width the strip has almost no room, but undo/redo are never
 clipped. Phones never get writing tools.
+- Owner review found the first divider (18% ink on transparent) nearly
+  invisible over PDF text seen through the pill. It is now a 1 px line, 28 px
+  tall (28 px wide on the side dock), mixed opaque at 55% ink over the glass
+  colour, with a soft glass-coloured `box-shadow` backing that masks the
+  text right behind it. The browser test requires a contrast of at least
+  2.5:1 against the glass in both themes. The old line measured 1.4:1.
 
 **연필 / 색연필.** These are new tools with `tool:'pencil'` and
 `tool:'colored-pencil'`, each with fixed palettes (4 and 8 colors) and 3
@@ -1094,6 +1100,16 @@ never tombstoned. The smooth pen is unchanged.
   the same grain. Each stroke draws at partial opacity, so repeated strokes
   build up darker while the paper's low spots stay light. That is the
   stamp-like effect, without per-stamp elements.
+- Owner review found the first texture too grey and speckled (hard
+  threshold grain with a per-texel octave, so edges broke up). The tile now
+  targets a soft 4B look. The grain uses only 8/16/32-cell octaves, so there
+  is no per-texel speckle. Each level has a coverage floor (pencil 0.55 /
+  0.76 / 0.87, 색연필 0.58 / 0.78 / 0.88), and the grain only fills in
+  the rest with a smoothstep. Edges are therefore solid, and grain shows
+  mainly at light pressure. Opacity is higher (pencil 0.78 / 0.86 / 0.92,
+  색연필 0.82 / 0.88 / 0.94), which makes 색연필 saturated instead of
+  pinkish. It stays below 1, so overlap still builds up. Palettes, widths
+  and the stored format are unchanged.
 - Pressure picks one of three coverage levels (grain threshold and
   opacity), with hysteresis so a steady hand does not flip between them.
   A pencil stroke is a `<g data-ink-tool>` holding one polyline per run of
@@ -1114,5 +1130,6 @@ the highlighter, pencil save/erase/undo, validation and the sync payload.
 `tests/verify-pdf-ink-pen-browser.mjs` (in `npm run test:pdf-ink`) checks in
 Chromium and WebKit: toolbar structure, scrolling and divider at 5 viewports
 in light/dark; rendered thickness off vs on; preference reload; the hook
-stroke; and pencil grain, build-up, pattern reuse, pressure coverage,
-reload, erase, undo and redo.
+stroke; and pencil darkness, evenness (core variation below 0.2 with a subtle
+grain above 0.01), build-up, pattern reuse, pressure coverage, reload,
+erase, undo and redo, plus divider contrast.
