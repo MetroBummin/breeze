@@ -222,13 +222,17 @@ const BreezeInkGeometry = (()=>{
     return {skip:[0,hookLength(points.slice().reverse(),unit)]};
   }
   /* Stroke input: a dead zone at pen-down, smoothed pressure, the curve above,
-     and lift-time end stabilization. `unit` is PDF units per CSS pixel.
+     and optional lift-time end stabilization. `unit` is PDF units per CSS pixel.
      `force` is the raw contact pressure (0..1, missing/0 = unknown); `map`
      turns it into stored effective pressure. Without `pressure:true` no
      pressure is recorded and the geometry is unchanged.
+     `ends:true` trims a short hook, rest wobble, or lift flick and rebuilds
+     the curve, which moves the tail after the pen lifts. The product default
+     is off (`ends:false`): finish() commits the live curve unchanged. The
+     pen-down dead zone stays either way; those samples were never geometry.
      @param {number[]} first
-     @param {{unit?:number,pressure?:boolean,force?:number,map?:(v:number)=>number}} [options] */
-  function createSmoother(first,{unit=1,pressure=false,force=undefined,map=v=>v}={}){
+     @param {{unit?:number,pressure?:boolean,force?:number,map?:(v:number)=>number,ends?:boolean}} [options] */
+  function createSmoother(first,{unit=1,pressure=false,force=undefined,map=v=>v,ends=false}={}){
     const dead=2*unit,raw=[];
     const forces=[];
     let sawForce=false,current=0.5,anchored=false,tip=first.slice(),tipPressure;
@@ -283,16 +287,18 @@ const BreezeInkGeometry = (()=>{
         if(!anchored&&pressure&&forces.length){
           const sample=forces.slice().sort((a,b)=>a-b);curve.setFirstPressure(sample[Math.floor((sample.length-1)/2)]);
         }
-        let samples=raw;
-        if(anchored){
+        if(ends&&anchored){
+          let samples=raw;
           const end=trimTail(samples,unit);samples=samples.slice(0,end);
           const [from,to]=trimHead(samples,unit).skip;
           if(to>from)samples=samples.slice(0,from).concat(samples.slice(to));
-        }
-        if(samples!==raw&&samples.length!==raw.length){
-          const rebuilt=createCurve(samples[0].p,pressure?samples[0].e:null);
-          for(const s of samples.slice(1))rebuilt.add(s.p,s.e);
-          curve=rebuilt;
+          // Rebuilding is what moves the tail: the live stroke was the previous
+          // curve plus a straight tip, and a trimmed sample list is a new curve.
+          if(samples.length!==raw.length&&samples.length){
+            const rebuilt=createCurve(samples[0].p,pressure?samples[0].e:null);
+            for(const s of samples.slice(1))rebuilt.add(s.p,s.e);
+            curve=rebuilt;
+          }
         }
         curve.finish();
         return curve.points.slice();

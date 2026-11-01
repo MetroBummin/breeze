@@ -27,6 +27,8 @@ const BreezePdfInk = (()=>{
   let pencilColor=pencilPalette[0],pencilWidth=pencilWidths[1];
   // Off by default: off is exactly the constant-width pen people already use.
   let pressureOn=false,pressureLevel='normal';
+  // Lift-time tail trim. Off commits the stroke that was on screen while drawing.
+  let endTrim=false;
   try{
     const prefs=JSON.parse(localStorage.getItem(preferenceKey)||'null');
     if(prefs){
@@ -39,6 +41,7 @@ const BreezePdfInk = (()=>{
       if(pencilWidths.includes(prefs.pencilWidth))pencilWidth=prefs.pencilWidth;
       if(typeof prefs.pressure==='boolean')pressureOn=prefs.pressure;
       if(Object.hasOwn(pressureGains,prefs.pressureLevel))pressureLevel=prefs.pressureLevel;
+      if(typeof prefs.endTrim==='boolean')endTrim=prefs.endTrim;
       if(tools.includes(prefs.tool))lastTool=prefs.tool;
       // The separate 색연필 tool was folded into 연필: carry its last color over.
       else if(prefs.tool==='colored-pencil'){
@@ -49,7 +52,7 @@ const BreezePdfInk = (()=>{
   }catch{} // Tool preferences never block reading or loading existing ink.
   function savePreferences(){
     try{localStorage.setItem(preferenceKey,JSON.stringify({tool:lastTool,color,width,eraserRadius,highlightColor,highlightWidth,highlightOpacity,
-      pencilColor,pencilWidth,pressure:pressureOn,pressureLevel}));}catch{}
+      pencilColor,pencilWidth,pressure:pressureOn,pressureLevel,endTrim}));}catch{}
   }
   // A new 연필 stroke: graphite keeps tool:'pencil'; a color picks the
   // colored-pencil rendering and the matching colored width step.
@@ -61,66 +64,94 @@ const BreezePdfInk = (()=>{
   // Raw contact force (0..1) -> stored effective pressure. sqrt spreads the
   // light range where writing actually happens; the gain sets sensitivity.
   function pressureMap(gain){return force=>0.5+(Math.sqrt(force)-0.5)*gain;}
-  /* Paper grain for the pencils: one small periodic noise field, turned into
-     one colored tile per tool/coverage level/color the first time it is used,
-     then reused by every stroke on every page as an SVG pattern anchored to
-     page coordinates. Strokes over the same place hit the same grain, so
-     repeated strokes build up darker while the paper's low spots stay light. */
-  const grainSize=64,grainUnits=24,grainPatterns=new Map();
-  // Soft 4B look: each level has a dense floor of coverage, and the grain only
-  // takes a little off it, more at light pressure. Partial opacity keeps
-  // overlap building up darker.
-  const grainLevels={pencil:{threshold:[0.6,0.45,0.3],soft:0.5,floor:[0.55,0.76,0.87],opacity:[0.78,0.86,0.92]},
-    'colored-pencil':{threshold:[0.55,0.4,0.25],soft:0.5,floor:[0.58,0.78,0.88],opacity:[0.82,0.88,0.94]}};
-  let grainField=null,grainDefs=null;
-  function grainNoise(){
-    if(grainField)return grainField;
-    const field=new Float32Array(grainSize*grainSize);let seed=0x2f6b1d3;
-    const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return (seed>>>0)/4294967296;};
-    for(const [cells,weight] of [[8,0.35],[16,0.4],[32,0.25]]){ // soft tooth, no per-texel speckle
-      const lattice=Array.from({length:cells*cells},random);
-      const value=(x,y)=>lattice[(y%cells)*cells+(x%cells)];
-      for(let y=0;y<grainSize;y++)for(let x=0;x<grainSize;x++){
-        const gx=x*cells/grainSize,gy=y*cells/grainSize,x0=Math.floor(gx),y0=Math.floor(gy);
-        const sx=(gx-x0)*(gx-x0)*(3-2*(gx-x0)),sy=(gy-y0)*(gy-y0)*(3-2*(gy-y0));
-        const top=value(x0,y0)+(value(x0+1,y0)-value(x0,y0))*sx,bottom=value(x0,y0+1)+(value(x0+1,y0+1)-value(x0,y0+1))*sx;
-        field[y*grainSize+x]+=weight*(top+(bottom-top)*sy);
+  /* Pencil darkness from the contact. Apple Pencil reports altitudeAngle
+     (0 flat on the glass, π/2 upright). Pointer pens report tiltX/tiltY
+     degrees from upright. The side of the lead shades lighter; an upright
+     point stays at the raw force. Missing tilt leaves force unchanged.
+     A number is already a force. */
+  function graphiteForce(sample){
+    if(sample==null||typeof sample==='number')return sample;
+    const raw=typeof sample.force==='number'?sample.force:typeof sample.pressure==='number'?sample.pressure:undefined;
+    let flat=0,tilted=false;
+    const alt=sample.altitudeAngle;
+    if(typeof alt==='number'&&Number.isFinite(alt)){tilted=true;flat=1-Math.min(1,Math.max(0,alt/(Math.PI/2)));}
+    else{
+      const tx=sample.tiltX,ty=sample.tiltY;
+      if(typeof tx==='number'||typeof ty==='number'){
+        const mag=Math.hypot(tx||0,ty||0);
+        if(mag>0.5){tilted=true;flat=Math.min(1,mag/60);}
       }
     }
-    let min=Infinity,max=-Infinity;for(const v of field){min=Math.min(min,v);max=Math.max(max,v);}
-    for(let i=0;i<field.length;i++)field[i]=(field[i]-min)/(max-min||1);
-    return grainField=field;
+    if(!tilted)return typeof raw==='number'?raw:undefined;
+    const shade=1-0.62*flat;
+    if(!(typeof raw==='number'&&raw>0))return Math.max(0.05,0.42*shade);
+    return Math.max(0.02,Math.min(1,raw*shade));
   }
-  function grainPattern(tool,level,ink){
-    const key=tool+'|'+level+'|'+ink;
-    if(grainPatterns.has(key))return grainPatterns.get(key);
-    let id=null;
-    try{
-      if(typeof document.createElement!=='function')throw new Error('no canvas');
-      const canvas=document.createElement('canvas');canvas.width=canvas.height=grainSize;
-      const context=canvas.getContext('2d'),image=context.createImageData(grainSize,grainSize),field=grainNoise(),style=grainLevels[tool];
-      const rgb=[1,3,5].map(i=>parseInt(ink.slice(i,i+2),16)),threshold=style.threshold[level];
-      for(let i=0;i<field.length;i++){
-        const t=Math.max(0,Math.min(1,(field[i]-threshold)/style.soft)),floor=style.floor[level];
-        const coverage=floor+(1-floor)*t*t*(3-2*t);
-        image.data.set([...rgb,Math.round(255*coverage)],i*4);
-      }
-      context.putImageData(image,0,0);
-      if(!grainDefs){
-        grainDefs=document.createElementNS(ns,'svg');grainDefs.id='pdf-ink-defs';
-        grainDefs.setAttribute('aria-hidden','true');grainDefs.setAttribute('width','0');grainDefs.setAttribute('height','0');
-        grainDefs.setAttribute('style','position:absolute;width:0;height:0;overflow:hidden;pointer-events:none');
-        grainDefs.append(document.createElementNS(ns,'defs'));document.body.append(grainDefs);
-      }
-      const pattern=document.createElementNS(ns,'pattern'),tile=document.createElementNS(ns,'image');
-      id=`pdf-ink-grain-${tool}-${level}-${ink.slice(1)}`;
-      pattern.id=id;pattern.setAttribute('patternUnits','userSpaceOnUse');
-      pattern.setAttribute('width',String(grainUnits));pattern.setAttribute('height',String(grainUnits));
-      tile.setAttribute('href',canvas.toDataURL('image/png'));tile.setAttribute('width',String(grainUnits));
-      tile.setAttribute('height',String(grainUnits));tile.setAttribute('preserveAspectRatio','none');
-      pattern.append(tile);grainDefs.firstChild.append(pattern);
-    }catch{id=null;} // No canvas: plain translucent color, same geometry.
-    grainPatterns.set(key,id);return id;
+  /* Graphite tooth, one mask per page/tool/color, anchored to page coordinates
+     (userSpaceOnUse) so the same place on the paper always hits the same tooth.
+     The core floor is solid, so a normal-pressure line is the chosen color.
+     Grain is smaller speckle and a broken edge, not a gray wash. Light pressure
+     stays lighter. No filter and no per-stroke raster. */
+  const grainTile=16,grainSteps=8;
+  const grainLook={
+    // Light steps stay pale. From a normal writing force upward the core is
+    // the color itself; the mask only nicks it.
+    pencil:{core:[0.4,0.52,0.64,0.76,0.88,0.96,1,1],edge:[0.2,0.28,0.36,0.44,0.52,0.6,0.68,0.76],
+      width:[0.9,0.94,0.97,1,1.03,1.06,1.1,1.14],edgeWidth:1.62},
+    'colored-pencil':{core:[0.4,0.48,0.55,0.62,0.68,0.74,0.8,0.84],edge:[0.14,0.16,0.18,0.2,0.22,0.23,0.25,0.27],
+      width:[0.97,0.98,0.99,1,1.01,1.03,1.04,1.06],edgeWidth:1.22}
+  };
+  const grainSvgKey=new WeakMap(),grainReady=new WeakMap();
+  let grainSerial=0;
+  const grainRandom=seed=>{let s=seed>>>0;return ()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};};
+  function grainHash(text){let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);return h>>>0;}
+  function grainShape(tag,attrs){
+    const node=document.createElementNS(ns,tag);
+    for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));
+    return node;
+  }
+  /* Luminance mask locked to the page. White is graphite, black is a nick.
+     Graphite's floor is solid. A few small holes speckle the core and break
+     the edge; they are not big enough to turn the stroke gray. The edge has
+     no floor, only specks. Colored lead stays a little more even. */
+  function grainSpec(tool,part){
+    const edge=part==='edge',colored=tool==='colored-pencil';
+    if(edge)return colored
+      ?{floor:0.15,holes:2,specks:4,holeR:[0.35,0.6],speckR:[0.4,0.75],hole:0.35,speck:0.6}
+      :{floor:0,holes:3,specks:8,holeR:[0.4,0.75],speckR:[0.45,1],hole:0.75,speck:1};
+    return colored
+      ?{floor:0.88,holes:5,specks:6,holeR:[0.35,0.7],speckR:[0.3,0.6],hole:0.4,speck:0.7}
+      :{floor:1,holes:8,specks:0,holeR:[0.32,0.68],speckR:[0.3,0.5],hole:0.62,speck:0};
+  }
+  function mountGrain(svg,tool,part,color){
+    if(!svg||!color)return null;
+    let key=grainSvgKey.get(svg);
+    if(!key){key='p'+(++grainSerial);grainSvgKey.set(svg,key);}
+    const id=`pdf-ink-grain-${key}-${tool}-${part}-${color.slice(1)}`;
+    let ready=grainReady.get(svg);
+    if(!ready){ready=new Set();grainReady.set(svg,ready);}
+    if(ready.has(id))return id;
+    const defsTag=n=>n&&(n.tagName||n.localName||'').toLowerCase()==='defs';
+    let defs=typeof svg.querySelector==='function'?svg.querySelector('defs'):[...svg.children||[]].find(defsTag);
+    if(defs&&!defsTag(defs))defs=[...svg.children||[]].find(defsTag)||null;
+    if(!defs){
+      defs=document.createElementNS(ns,'defs');
+      if(svg.firstChild&&svg.insertBefore)svg.insertBefore(defs,svg.firstChild);else svg.append(defs);
+    }
+    const spec=grainSpec(tool,part),random=grainRandom(grainHash(tool+'|'+part+'|'+color));
+    const between=(span,lo)=>((span[0]+random()*(span[1]-span[0]))).toFixed(2);
+    const pattern=grainShape('pattern',{id:id+'-pat',patternUnits:'userSpaceOnUse',width:grainTile,height:grainTile,x:'0',y:'0'});
+    if(spec.floor>0)pattern.append(grainShape('rect',{width:grainTile,height:grainTile,fill:'#fff',opacity:spec.floor}));
+    for(let i=0;i<spec.specks;i++)pattern.append(grainShape('circle',{
+      cx:(random()*grainTile).toFixed(2),cy:(random()*grainTile).toFixed(2),
+      r:between(spec.speckR),fill:'#fff',opacity:(spec.speck*(0.62+random()*0.38)).toFixed(2)}));
+    // Holes last, so a speck cannot fill a gap. The gap stays on the page.
+    for(let i=0;i<spec.holes;i++)pattern.append(grainShape('circle',{
+      cx:(random()*grainTile).toFixed(2),cy:(random()*grainTile).toFixed(2),
+      r:between(spec.holeR),fill:'#000',opacity:(spec.hole*(0.82+random()*0.18)).toFixed(2)}));
+    const mask=grainShape('mask',{id,maskUnits:'userSpaceOnUse',maskContentUnits:'userSpaceOnUse'});
+    mask.append(grainShape('rect',{x:-50,y:-50,width:4000,height:4000,fill:`url(#${id}-pat)`}));
+    defs.append(pattern,mask);ready.add(id);return id;
   }
   const ns='http://www.w3.org/2000/svg';
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
@@ -328,8 +359,14 @@ const BreezePdfInk = (()=>{
       settings.querySelectorAll(`${option.row} button`).forEach(button=>button.setAttribute('aria-pressed',String(button.dataset[key]===value)));
     }
     settings.querySelectorAll('[data-ink-pressure]').forEach(button=>{button.classList.toggle('on',pressureOn);button.setAttribute('aria-pressed',String(pressureOn));});
-    settings.querySelectorAll('.ink-pressure-levels').forEach(row=>{row.hidden=!pressureOn;});
+    settings.querySelectorAll('[data-ink-panel]').forEach(panel=>{
+      const row=panel.querySelector('.ink-pressure-levels');if(!row)return;
+      // Pencil darkness always follows force. The pen's 필압 switch stays off
+      // until the reader asks for variable width.
+      row.hidden=panel.dataset.inkPanel==='pencil'?false:!pressureOn;
+    });
     settings.querySelectorAll('[data-ink-pressure-level]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inkPressureLevel===pressureLevel)));
+    settings.querySelectorAll('[data-ink-end]').forEach(button=>{button.classList.toggle('on',endTrim);button.setAttribute('aria-pressed',String(endTrim));});
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.inkMode===settingsTool)));
   }
   function closeSettings(){if(settingsTool){settingsTool=null;updateSettings();}}
@@ -401,12 +438,16 @@ const BreezePdfInk = (()=>{
     pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
     settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
     settings.setAttribute('role','dialog');
-    // 필압 is one setting shared by the pen and both pencils.
-    const pressureBlock='<div class="ink-undo-setting ink-pressure-setting"><span>필압</span><button type="button" class="ink-pressure-switch" data-ink-pressure aria-label="필압" aria-pressed="false"><i aria-hidden="true"></i></button></div>'
-      +'<div class="ink-setting-row ink-pressure-levels" role="group" aria-label="필압 세기">'
+    // 필압 sensitivity is shared. The pen also has an off switch (variable width
+    // is opt-in). Pencil darkness always uses the level. 끝 다듬기 is the
+    // lift-time tail trim, shared, default off.
+    const pressureLevels='<div class="ink-setting-row ink-pressure-levels" role="group" aria-label="필압 세기">'
       +[['soft','약'],['normal','보통'],['strong','강']].map(([level,label])=>`<button type="button" data-ink-pressure-level="${level}" aria-label="필압 세기: ${label}">${label}</button>`).join('')+'</div>';
-    const drawPanel=(tool,prefix,label)=>`<div data-ink-panel="${tool}" hidden><div class="ink-setting-row ink-colors-row ${prefix}-colors" role="group" aria-label="${label} 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths-row ${prefix}-widths" role="group" aria-label="${label} 두께"></div>${pressureBlock}</div>`;
-    settings.innerHTML=drawPanel('pen','ink','펜').replace(' hidden>','>')+drawPanel('pencil','ink-pencil','연필')
+    const pressureSwitch='<div class="ink-undo-setting ink-pressure-setting"><span>필압</span><button type="button" class="ink-pressure-switch" data-ink-pressure aria-label="필압" aria-pressed="false"><i aria-hidden="true"></i></button></div>';
+    const endSwitch='<div class="ink-undo-setting ink-end-setting"><span>끝 다듬기</span><button type="button" class="ink-end-switch" data-ink-end aria-label="끝 다듬기" aria-pressed="false"><i aria-hidden="true"></i></button></div>';
+    const drawPanel=(tool,prefix,label,extra)=>`<div data-ink-panel="${tool}" hidden><div class="ink-setting-row ink-colors-row ${prefix}-colors" role="group" aria-label="${label} 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths-row ${prefix}-widths" role="group" aria-label="${label} 두께"></div>${extra}</div>`;
+    settings.innerHTML=drawPanel('pen','ink','펜',pressureSwitch+pressureLevels+endSwitch).replace(' hidden>','>')
+      +drawPanel('pencil','ink-pencil','연필','<div class="ink-setting-label">필압</div>'+pressureLevels+endSwitch)
       +'<div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii" role="group" aria-label="지우개 크기"></div><div class="ink-undo-setting" id="ink-two-finger-undo-row"><span>두 손가락 더블탭 실행 취소</span><button id="ink-two-finger-undo" type="button" aria-label="두 손가락 더블탭 실행 취소" aria-pressed="false"><i aria-hidden="true"></i></button></div></div>';
     settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-row ink-colors-row ink-highlight-colors" role="group" aria-label="형광펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths-row ink-highlight-widths" role="group" aria-label="형광펜 두께"></div></div>');
     const options=(kind,values,labels)=>{
@@ -426,6 +467,7 @@ const BreezePdfInk = (()=>{
     options('highlightColor',highlightColors,['노랑','연두','민트','하늘','분홍','보라']);options('highlightWidth',highlightWidths,['보통','굵게']);
     settings.querySelectorAll('button[data-ink-pressure]').forEach(/** @param {HTMLElement} button */ button=>{button.onclick=()=>{cancel();pressureOn=!pressureOn;savePreferences();update();};});
     settings.querySelectorAll('button[data-ink-pressure-level]').forEach(/** @param {HTMLElement} button */ button=>{button.onclick=()=>{cancel();pressureLevel=button.dataset.inkPressureLevel;savePreferences();update();};});
+    settings.querySelectorAll('button[data-ink-end]').forEach(/** @param {HTMLElement} button */ button=>{button.onclick=()=>{cancel();endTrim=!endTrim;savePreferences();update();};});
     inkTools.querySelectorAll('[data-ink-mode]').forEach(button=>{button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',settings.id);});
     document.getElementById('readchrome').append(settings);
     document.getElementById('ink-two-finger-undo').onclick=toggleTwoFingerUndo;
@@ -541,8 +583,11 @@ const BreezePdfInk = (()=>{
   function changed(state){state.revision++;state.dirty=true;void persist(state);}
   function reconcileInkChildren(parent,children){
     const keep=new Set(children);
-    for(const child of [...parent.children])if(!keep.has(child))child.remove();
+    const defs=node=>(node?.tagName||node?.localName||'').toLowerCase()==='defs';
+    // Grain patterns live in <defs> on this page SVG. Reconcile must not drop them.
+    for(const child of [...parent.children])if(!defs(child)&&!keep.has(child))child.remove();
     let cursor=parent.firstChild;
+    while(cursor&&defs(cursor))cursor=cursor.nextSibling;
     for(const child of children){
       if(child===cursor)cursor=cursor.nextSibling;
       else parent.insertBefore(child,cursor);
@@ -556,7 +601,7 @@ const BreezePdfInk = (()=>{
     const oldGroups=state.inkGroups||new Map(),groups=new Map(),pens=[];
     for(const stroke of state.strokes){
       let element=previous.get(stroke);
-      if(!element){element=path(stroke);if(stroke.tool==='highlighter')element.setAttribute('opacity','1');}
+      if(!element){element=path(stroke,state.svg);if(stroke.tool==='highlighter')element.setAttribute('opacity','1');}
       next.set(stroke,element);
       if(stroke.tool!=='highlighter'){pens.push(element);continue;} // Pen and pencils keep drawing order.
       const id=stroke.strokeId||stroke;
@@ -575,23 +620,33 @@ const BreezePdfInk = (()=>{
     state.inkPaths=next;state.inkGroups=new Map([...groups].map(([id,entry])=>[id,entry.group]));
   }
   function pencilLevel(e,current){
-    // Pressure picks one of three grain coverages, with hysteresis so a
-    // steady hand does not flip between them.
-    if(e==null)return 1;
-    const edges=[0.36,0.68],base=e<edges[0]?0:e<edges[1]?1:2;
-    if(current!=null&&base!==current&&Math.abs(e-edges[Math.min(base,current)])<0.05)return current;
-    return base;
+    // Eight coverage steps. Hysteresis keeps a steady hand on one step so the
+    // darkness does not flicker, without a hard three-way jump.
+    if(e==null)return 4;
+    const band=Math.max(0,Math.min(grainSteps-1,Math.floor(e*grainSteps-1e-9)));
+    if(current!=null&&band!==current&&Math.abs(e-(Math.min(band,current)+1)/grainSteps)<0.035)return current;
+    return band;
   }
-  function pencilRuns(group,stroke){
-    // One polyline per stretch of equal coverage; neighbours share a point.
+  function pencilRuns(group,stroke,svg){
+    // A faint wide stroke under a denser core. The wide stroke's sparse tooth
+    // sticks out past the core, so the edge is uneven and semi-transparent.
+    // The centerline is still the smoothed polyline.
+    const look=grainLook[stroke.tool];
+    const coreId=mountGrain(svg,stroke.tool,'core',stroke.color);
+    const edgeId=mountGrain(svg,stroke.tool,'edge',stroke.color);
     const runs=[];let current=null,lastText='';
-    function run(level){
-      const element=document.createElementNS(ns,'polyline'),pattern=grainPattern(stroke.tool,level,stroke.color);
-      element.setAttribute('fill','none');element.setAttribute('stroke',pattern?`url(#${pattern})`:stroke.color);
-      element.setAttribute('stroke-width',String(stroke.width));element.setAttribute('opacity',String(grainLevels[stroke.tool].opacity[level]));
+    function line(mask,width,opacity,part){
+      const element=document.createElementNS(ns,'polyline');
+      element.setAttribute('fill','none');element.setAttribute('stroke',stroke.color);
+      if(mask)element.setAttribute('mask',`url(#${mask})`);
+      element.setAttribute('stroke-width',String(Math.round(width*100)/100));element.setAttribute('opacity',String(opacity));
       element.setAttribute('stroke-linecap','round');element.setAttribute('stroke-linejoin','round');
-      group.append(element);
-      current={level,text:lastText,element,shown:''};runs.push(current);
+      element.setAttribute('data-ink-part',part);group.append(element);return element;
+    }
+    function run(level){
+      const edge=line(edgeId,stroke.width*look.edgeWidth,look.edge[level],'edge');
+      const core=line(coreId,stroke.width*look.width[level],look.core[level],'core');
+      current={level,text:lastText,edge,core,shown:''};runs.push(current);
     }
     return {
       push(p,e){
@@ -605,7 +660,7 @@ const BreezePdfInk = (()=>{
         for(const item of runs){
           let text=item===current&&extra.length?item.text+' '+extra.map(BreezeInkGeometry.svgPoint).join(' '):item.text;
           text=text.trim();if(text&&!text.includes(' '))text=text+' '+text; // A tap is a round dot.
-          if(item.shown!==text){item.shown=text;item.element.setAttribute('points',text);}
+          if(item.shown!==text){item.shown=text;item.edge.setAttribute('points',text);item.core.setAttribute('points',text);}
         }
       }
     };
@@ -614,9 +669,9 @@ const BreezePdfInk = (()=>{
     const group=document.createElementNS(ns,'g');group.setAttribute('data-ink-tool',stroke.tool);
     return group;
   }
-  function path(stroke){
+  function path(stroke,svg){
     if(pencilTools.includes(stroke.tool)){
-      const group=pencilGroup(stroke),runs=pencilRuns(group,stroke);
+      const group=pencilGroup(stroke),runs=pencilRuns(group,stroke,svg);
       stroke.points.forEach((p,i)=>runs.push(p,stroke.pressure?.[i]));
       runs.show();return group;
     }
@@ -755,9 +810,12 @@ const BreezePdfInk = (()=>{
       :mode==='pencil'?{id:crypto.randomUUID(),...pencilStroke(),points:[p]}
       :{id:crypto.randomUUID(),color,width,points:[p]};
     // Pressure never applies to the highlighter. Thresholds are CSS pixels.
-    const pressure=pressureOn&&mode!=='highlighter'&&mode!=='erase';
+    // Pencil darkness always follows force and tilt. The 필압 switch only
+    // gates the pen's variable width. Highlighter stays constant.
+    const drawPencil=mode==='pencil';
+    const pressure=mode!=='highlighter'&&mode!=='erase'&&(drawPencil||pressureOn);
     active={id:pen.identifier,pointerId,state,bounds,tool:mode,before:state.strokes.slice(),stroke,
-      preview:null,render:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p,{unit:state.width/bounds.width,pressure,force:pen.force,map:pressureMap(pressureGains[pressureLevel])}):null};
+      preview:null,render:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p,{unit:state.width/bounds.width,pressure,force:drawPencil?graphiteForce(pen):pen.force,map:pressureMap(pressureGains[pressureLevel]),ends:endTrim}):null};
     trace('stroke/start',event);
     updateHistoryControls();
     if(active.tool==='erase'){erase(state,p);showEraser(p);}
@@ -772,7 +830,7 @@ const BreezePdfInk = (()=>{
     // serialized once, so a move costs the new tail rather than the stroke.
     const {stroke,smoother}=current;
     if(pencilTools.includes(stroke.tool)){
-      const group=pencilGroup(stroke),runs=pencilRuns(group,stroke);let used=0;
+      const group=pencilGroup(stroke),runs=pencilRuns(group,stroke,current.state.svg);let used=0;
       current.preview=group;
       current.render=()=>{
         const live=smoother.live();
@@ -810,9 +868,9 @@ const BreezePdfInk = (()=>{
     const pen=Array.from(event.changedTouches).find(t=>t.identifier===active.id);
     if(!pen)return; // A moving/lifting palm cannot append or finish Pencil ink.
     if(!event.cancelable){trace('move/noncancelable-commit',event);finishStroke();return;}
-    extendStroke(point(pen,active.state,active.bounds),event,pen.force);
+    extendStroke(point(pen,active.state,active.bounds),event,pen);
   }
-  function extendStroke(p,event,force){
+  function extendStroke(p,event,sample){
     if(!p.every(Number.isFinite))return;
     const previous=active.stroke.points.at(-1);
     const size=[active.state.width,active.state.height];
@@ -835,6 +893,7 @@ const BreezePdfInk = (()=>{
       showEraser(p);
     }else{
       active.stroke.points.push(p);
+      const force=sample==null?undefined:active.tool==='pencil'?graphiteForce(sample):typeof sample==='number'?sample:sample.force??sample.pressure;
       active.smoother.add(p,force);
       active.render();
     }
@@ -885,7 +944,7 @@ const BreezePdfInk = (()=>{
       // Retain movement/lift beyond the starting paper. pointerType 'pen' is
       // the admission; a companion Touch that cannot be prevented cancels.
       try{event.target.setPointerCapture?.(event.pointerId);}catch{}
-      beginStroke({identifier:event.pointerId,target:event.target,clientX:event.clientX,clientY:event.clientY,force:event.pressure},event,event.pointerId);
+      beginStroke({identifier:event.pointerId,target:event.target,clientX:event.clientX,clientY:event.clientY,force:event.pressure,tiltX:event.tiltX,tiltY:event.tiltY,altitudeAngle:event.altitudeAngle},event,event.pointerId);
       return;
     }
     if(active?.pointerId!==event.pointerId)return;
@@ -897,7 +956,7 @@ const BreezePdfInk = (()=>{
     for(const sample of [...samples,event]){
       if(!active)break;
       // A lift reports no pressure; the pressure already drawn is kept.
-      extendStroke(point(sample,active.state,active.bounds),event,event.type==='pointerup'?undefined:sample.pressure);
+      extendStroke(point(sample,active.state,active.bounds),event,event.type==='pointerup'?undefined:sample);
     }
     if(event.type==='pointerup'&&active)finishStroke();
   }

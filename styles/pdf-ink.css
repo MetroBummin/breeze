@@ -110,7 +110,7 @@ body.chrome-hidden #readpill.ink-pill-ready:not(.ink-pill-active) .ink-pill-entr
 #pdf-ink-settings .ink-radii i{width:var(--ink-option);height:var(--ink-option);border-radius:50%;border:1px solid currentColor;background:var(--sentence-glass-action);}
 #pdf-ink-settings .ink-undo-setting{display:flex;align-items:center;gap:12px;margin-top:12px;font:500 12px/1.5 var(--ui);}
 #pdf-ink-settings .ink-undo-setting span{flex:1;}
-#pdf-ink-settings :is(#ink-two-finger-undo,.ink-pressure-setting .ink-pressure-switch){position:relative;flex:0 0 46px;width:46px;height:44px;min-height:44px;padding:0;border:0;background:transparent;}
+#pdf-ink-settings :is(#ink-two-finger-undo,.ink-pressure-setting .ink-pressure-switch,.ink-end-setting .ink-end-switch){position:relative;flex:0 0 46px;width:46px;height:44px;min-height:44px;padding:0;border:0;background:transparent;}
 #pdf-ink-settings .ink-pressure-setting{margin-top:12px;}
 #pdf-ink-settings .ink-pressure-levels{margin-top:8px;}
 #pdf-ink-settings .ink-pressure-levels[hidden]{display:none;}

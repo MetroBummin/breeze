@@ -82,7 +82,8 @@ function fixture({pointer=false,nativeIPad=!pointer,touchPoints=5,native=pointer
     qa:{configure(s,state){session=s;mode='pen';androidTablet=${pending?false:tablet};pages.set(state.key,state);},
       valid,setMode,publishNativeScope,touchStart,touchMove,touchEnd,history,persist,supported,pointerInk,
       setPressure(on,level='normal'){pressureOn=on;pressureLevel=level;},
-      setPencilColor(value){pencilColor=value;},prefs(){return {lastTool,pencilColor,pencilWidth};},
+      setEndTrim(on){endTrim=!!on;},
+      setPencilColor(value){pencilColor=value;},prefs(){return {lastTool,pencilColor,pencilWidth,endTrim};},
       active(){return active;},undo(){return undoStack;},redo(){return redoStack;}},
     available:supported,`);
   vm.createContext(context);vm.runInContext(pdfSource+'\n'+geometrySource+'\n'+storeSource+'\n'+instrumented+'\nglobalThis.engine=BreezePdfInk;',context);
@@ -689,7 +690,7 @@ async function forceStroke(f,samples,end=samples.at(-1)){
   f.qa.touchEnd(f.event('touchend',[],[forceContact(f,end[0],end[1],0)]));await tick();
 }
 test('ends: pen-down jitter and a fast lift flick leave no hook',()=>{
-  const g=geometry(),s=g.createSmoother([100,100],{unit:1});
+  const g=geometry(),s=g.createSmoother([100,100],{unit:1,ends:true});
   for(const p of [[100.6,99.5],[99.6,100.4],[100.3,100.2]])s.add(p); // touch-down jitter
   for(let x=105;x<=200;x+=5)s.add([x,100]);
   s.add([215,85]); // the hand flicks off as the pen lifts
@@ -699,11 +700,11 @@ test('ends: pen-down jitter and a fast lift flick leave no hook',()=>{
   assert.ok(points.at(-1)[0]<=200&&points.at(-1)[0]>=199,'the flick segment is dropped, not the line');
 });
 test('ends: short sudden hooks at both ends are dropped; wobble at rest too',()=>{
-  const g=geometry(),hook=g.createSmoother([0,0]);
+  const g=geometry(),hook=g.createSmoother([0,0],{ends:true});
   hook.add([0,3]);hook.add([4,4]);for(let x=8;x<=60;x+=4)hook.add([x,4]);hook.add([62,1]);
   const points=plain(hook.finish());
   assert.deepEqual(points[0],[0,3],'pen-down skid removed');assert.deepEqual(points.at(-1),[60,4],'lift hook removed');
-  const rest=g.createSmoother([0,0]);for(let x=4;x<=60;x+=4)rest.add([x,0]);
+  const rest=g.createSmoother([0,0],{ends:true});for(let x=4;x<=60;x+=4)rest.add([x,0]);
   for(const p of [[60.8,0.9],[59.6,1.2],[60.4,-0.8]])rest.add(p);
   assert.deepEqual(plain(rest.finish()).at(-1),[60,0]);
 });
@@ -775,9 +776,16 @@ test('pencils: stored with their tool, drawn as grouped runs, erased and undone'
     await forceStroke(f,Array.from({length:30},(_,i)=>[20+i*8,100,i<15?0.1:0.95]));
     const stroke=f.state.strokes[0];assert.equal(stroke.tool,tool);assert.equal(stroke.color,pick);assert.equal(stroke.pressure.length,stroke.points.length);
     assert.equal(stroke.width,tool==='pencil'?2:3,'the middle width step maps onto each look');
-    const group=f.svg.children[0];assert.equal(group.tagName,'g');assert.equal(group.getAttribute('data-ink-tool'),tool);
-    assert.ok(group.children.length>=2,'pressure changes grain coverage along the stroke');
-    assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))<1));
+    const group=[...f.svg.children].find(node=>node.tagName==='g');assert.equal(group.getAttribute('data-ink-tool'),tool);
+    const cores=group.children.filter(node=>node.getAttribute('data-ink-part')==='core');
+    assert.ok(cores.length>=2,'pressure changes grain coverage along the stroke');
+    assert.ok(new Set(cores.map(node=>node.getAttribute('opacity'))).size>=2);
+    // A firm graphite core is the color itself (opacity 1). The edge stays below 1.
+    assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))>0&&Number(run.getAttribute('opacity'))<=1));
+    assert.ok(group.children.filter(node=>node.getAttribute('data-ink-part')==='edge').every(node=>Number(node.getAttribute('opacity'))<1));
+    assert.ok(group.children.some(node=>node.getAttribute('data-ink-part')==='edge'),'a softer edge sits under the core');
+    assert.equal(cores[0].getAttribute('stroke'),pick);
+    assert.match(cores[0].getAttribute('mask'),new RegExp(`^url\\(#pdf-ink-grain-p\\d+-${tool}-core-`));
     assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
     const original=plain(f.state.strokes);
     f.qa.setMode('erase');await f.stroke([[130,70],[130,130]]);
@@ -797,13 +805,61 @@ test('연필 color: the 색연필 tool is gone, saved 색연필 strokes and pref
   const fresh=f.state.strokes.at(-1);
   assert.equal(fresh.tool,'colored-pencil');assert.equal(fresh.color,'#d6619a');
   const drawn=f.svg.children.at(-1);assert.equal(drawn.getAttribute('data-ink-tool'),'colored-pencil');
-  // No canvas in this harness, so the flat-color fallback; the browser test checks the grain.
-  assert.match(drawn.children[0].getAttribute('stroke'),/^(#d6619a|url\(#pdf-ink-grain-colored-pencil-\d-d6619a\))$/);
+  assert.equal(drawn.children[0].getAttribute('stroke'),'#d6619a');
+  assert.match(drawn.children[0].getAttribute('mask'),/^url\(#pdf-ink-grain-p\d+-colored-pencil-edge-d6619a\)$/);
+  assert.match(drawn.children[1].getAttribute('mask'),/^url\(#pdf-ink-grain-p\d+-colored-pencil-core-d6619a\)$/);
+  assert.equal(f.svg.querySelector('defs')?.children.length>0,true,'the tooth lives in this page SVG');
 });
 test('연필 color: a saved 색연필 preference becomes 연필 with that color',()=>{
   const prefs={tool:'colored-pencil',coloredPencilColor:'#3f9b4f',pencilColor:'#3b3b3b',pencilWidth:3.5};
   const f=fixture({preferences:prefs});
-  assert.deepEqual(plain(f.qa.prefs()),{lastTool:'pencil',pencilColor:'#3f9b4f',pencilWidth:3.5});
+  assert.deepEqual(plain(f.qa.prefs()),{lastTool:'pencil',pencilColor:'#3f9b4f',pencilWidth:3.5,endTrim:false});
+});
+test('ends: off keeps a lift flick; on drops it and rebuilds the tail',()=>{
+  const flick=()=>{const points=[[0,0]];for(let x=8;x<=120;x+=8)points.push([x,0]);points.push([138,-16]);return points;};
+  const kept=geometry();
+  const off=kept.createSmoother(flick()[0],{ends:false});
+  for(const p of flick().slice(1))off.add(p);
+  assert.deepEqual(plain(off.finish()).at(-1),[138,-16],'off commits the live tip');
+  const on=kept.createSmoother(flick()[0],{unit:1,ends:true});
+  for(const p of flick().slice(1))on.add(p);
+  const trimmed=plain(on.finish());
+  assert.ok(trimmed.at(-1)[0]<=120&&Math.abs(trimmed.at(-1)[1])<1e-6,JSON.stringify(trimmed.slice(-2)));
+});
+test('ends: the switch defaults off, and on restores the trim for a new stroke only',async()=>{
+  // Stay on the page. A negative coordinate is clipped by the input path, which
+  // is a different mechanism from lift-time trimming.
+  const flick=[[20,100]];for(let x=28;x<=140;x+=8)flick.push([x,100]);flick.push([158,84]);
+  const off=fixture();
+  await off.stroke(flick);
+  const kept=off.state.strokes[0].points.at(-1);
+  assert.ok(Math.hypot(kept[0]-158,kept[1]-84)<1e-6,JSON.stringify(kept));
+  assert.equal(off.qa.prefs().endTrim,false);
+  const on=fixture();on.qa.setEndTrim(true);
+  await on.stroke(flick);
+  const end=on.state.strokes[0].points.at(-1);
+  assert.ok(end[0]<=140.01&&Math.abs(end[1]-100)<1e-6,JSON.stringify(end));
+});
+test('pencil: force and tilt darken graphite even when the pen 필압 switch is off',async()=>{
+  const upright=fixture();upright.qa.setMode('pencil');
+  assert.equal(upright.qa.prefs().endTrim,false);
+  const samples=(alt,force)=>Array.from({length:16},(_,i)=>[20+i*12,80,force,alt]);
+  const draw=async(f,rows)=>{
+    const touch=([x,y,force,alt])=>({...f.contact(x,y),force,altitudeAngle:alt});
+    f.qa.touchStart(f.event('touchstart',[touch(rows[0])]));
+    for(const row of rows.slice(1))f.qa.touchMove(f.event('touchmove',[touch(row)]));
+    f.qa.touchEnd(f.event('touchend',[],[{...touch(rows.at(-1)),force:0}]));await tick();
+  };
+  await draw(upright,samples(Math.PI/2,0.85));
+  const hard=upright.state.strokes[0];
+  assert.equal(hard.tool,'pencil');assert.equal(hard.pressure.length,hard.points.length);
+  assert.ok(hard.pressure.every(v=>v>0.55),JSON.stringify(hard.pressure));
+  const pen=fixture();await forceStroke(pen,samples(Math.PI/2,0.85).map(([x,y,force])=>[x,y,force]));
+  assert.equal('pressure' in pen.state.strokes[0],false,'the pen switch still defaults off');
+  const flat=fixture();flat.qa.setMode('pencil');
+  await draw(flat,samples(0.15,0.85));
+  const shade=flat.state.strokes[0].pressure;
+  assert.ok(Math.max(...shade)<Math.min(...hard.pressure)-0.15,`tilt lightens ${JSON.stringify({shade,hard:hard.pressure})}`);
 });
 test('pencils: validation rejects foreign colors, widths and bad pressure',()=>{
   const f=fixture(),valid=s=>f.qa.valid({version:1,strokes:[s]});
@@ -822,7 +878,7 @@ test('sync: the public stroke carries tool and pressure; legacy pens are unchang
     {id,color:'#3b3b3b',width:2,points:[[1,2],[3,4]],tool:'pencil',pressure:[0.4,0.5]});
 });
 // Owner QA repros (CSS px, unit=1): realistic 2-3 sample hooks of 5-12 px.
-const smoothed=(points,unit=1)=>{const g=geometry(),s=g.createSmoother(points[0],{unit});for(const p of points.slice(1))s.add(p);return plain(s.finish());};
+const smoothed=(points,unit=1)=>{const g=geometry(),s=g.createSmoother(points[0],{unit,ends:true});for(const p of points.slice(1))s.add(p);return plain(s.finish());};
 const near=(a,b,tolerance=1e-6)=>Math.hypot(a[0]-b[0],a[1]-b[1])<=tolerance;
 test('ends: ㄱ with a 2-sample left flick at lift loses the flick, keeps the corner',()=>{
   const p=[[0,0],[-2,3]];for(let i=1;i<=12;i++)p.push([100*i/12,0]);for(let i=1;i<=12;i++)p.push([100,70*i/12]);
