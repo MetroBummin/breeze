@@ -373,7 +373,7 @@ const BreezePdfInk = (()=>{
     for(const [tool,path] of [
       ['pen',pencil],
       ['pencil','M5.2 18.8 6.6 14 15.3 5.3a2 2 0 0 1 2.9 0l.5.5a2 2 0 0 1 0 2.9L10 17.4l-4.8 1.4ZM6.6 14l3.4 3.4M13.9 6.7l3.4 3.4M5.2 18.8l1.1-.3'],
-      ['highlighter','m9 14 7-10 5 4-8 9-4-3Zm0 0-4 5 4 1 4-3M3 22h13'],
+      ['highlighter','M16.57 3.94L20.86 8.23L13.71 15.39L9.41 11.09ZM9.41 11.09L7.46 13.05L11.75 17.34L13.71 15.39M7.46 13.05L4.21 16.3L11.75 17.34'],
       ['erase','M7.2 20.4 3.8 17a2 2 0 0 1 0-2.8l9.8-9.8a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8l-9.4 9.4H7.2ZM8.7 10.7l6.1 6.1M7.2 20.4H21']
     ]){
       const button=inkControl(toolLabels[tool],path);button.dataset.inkMode=tool;
