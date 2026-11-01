@@ -1156,3 +1156,13 @@ are unchanged. The 연필 icon is unchanged while the owner chooses a new one.
 - **Preferences.** A saved `tool:'colored-pencil'` preference opens as 연필
   with the saved 색연필 color. `colored-pencil` is no longer a selectable mode.
 - Compatibility notes above (older builds and pencil strokes) are unchanged.
+
+### Highlighter default is green (2026-11-01)
+
+The highlighter now starts on green `#91df80` instead of yellow `#ffe34d`.
+Yellow clashed with the saved-word mark (`#FFE28A`, `--saved1` / `--mark1`),
+so a highlight looked like a saved word. The palette keeps all six colors;
+green and yellow only swap places, so green is first. A saved
+`highlightColor` preference still wins, so owners who picked yellow (or any
+color) keep it; only new or unset settings change. Stored strokes keep their
+own color and are not rewritten.

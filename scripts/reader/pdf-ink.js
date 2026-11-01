@@ -7,7 +7,7 @@
    Synthetic browser tests do not establish Android hardware acceptance. */
 const BreezePdfInk = (()=>{
   const colors=['#111111','#2864c5','#c43d3d','#15803d','#7c3aed','#c2410c'], widths=[0.75,1.5,3];
-  const eraserRadii=[4,8,16],highlightColors=['#ffe34d','#91df80','#2dd4bf','#38bdf8','#f472b6','#a78bfa'],highlightWidths=[12,20],highlightOpacity=0.3;
+  const eraserRadii=[4,8,16],highlightColors=['#91df80','#ffe34d','#2dd4bf','#38bdf8','#f472b6','#a78bfa'],highlightWidths=[12,20],highlightOpacity=0.3;
   // Textured pencils (2026-11-01). One 연필 tool with a color option: the
   // graphite colors save tool:'pencil', any other color saves
   // tool:'colored-pencil' (the 색연필 look). Both stored types stay valid and

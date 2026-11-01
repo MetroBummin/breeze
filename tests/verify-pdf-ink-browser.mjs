@@ -494,12 +494,14 @@ try{
    const highlighter=page.locator('[data-ink-mode="highlighter"]');
    assert.equal(await settings.isVisible(),false);await highlighter.click();assert.equal(await settings.isVisible(),true);
    await page.locator('[data-ink-highlight-width="20"]').click();
+   assert.equal(await settings.locator('[data-ink-highlight-color="#91df80"]').getAttribute('aria-pressed'),'true','green is the default highlighter color (yellow clashed with saved-word marks)');
    await page.evaluate(()=>{readerScrollTo(0);expandReaderChrome();});await page.waitForTimeout(400);
    const line=await page.evaluate(()=>{const boxes=originalSession.wordBoxes.get(1),b=boxes[0],same=boxes.filter(x=>x.line===b.line);return {x:b.x,y:b.y+b.h/2,right:Math.max(...same.map(x=>x.x+x.w))};});
    await stroke([[line.x,line.y],[line.right,line.y],[line.x,line.y]]);
    await page.waitForFunction(()=>document.querySelector('#pdf-ink-status [role=status]').textContent==='저장됨');
    const highlight=page.locator('[data-page="1"] .pdf-ink-layer g[data-ink-tool="highlighter"]').last();
    assert.equal(await highlight.getAttribute('opacity'),'0.3');
+   assert.equal(await highlight.locator('polyline').getAttribute('stroke'),'#91df80');
    const savedPath=await highlight.locator('polyline').getAttribute('points');
    assert.equal(await highlight.locator('polyline').getAttribute('stroke-width'),'20');
    const clip=await page.evaluate(({x,y,right})=>{const r=originalSession.pages[0].getBoundingClientRect();return {x:Math.floor(r.left+x*r.width)-1,y:Math.floor(r.top+y*r.height)-10,width:Math.ceil((right-x)*r.width)+2,height:20};},line);
