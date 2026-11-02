@@ -77,7 +77,7 @@ async function reserve(config: R2Config, admin: Admin, userId: string, body: any
   const row = found.row;
   if (row && row.object_key !== objectKey) return bookCloudJson({ ok: false, error: "forbidden" }, 403);
   if (row?.status === "deleted" && row.tombstone !== acknowledged)
-    return bookCloudJson({ ok: false, error: "tombstone" }, 409);
+    return bookCloudJson({ ok: false, error: "tombstone", tombstone: String(row.tombstone || "") }, 409);
   if (row?.status === "ready" && Number(row.byte_size) === size)
     return bookCloudJson({ ok: true, ready: true });
   if (!row || row.status === "deleted") {
@@ -148,6 +148,8 @@ async function remove(config: R2Config, admin: Admin, userId: string, body: any,
   const row = found.row;
   if (!row) return bookCloudJson({ ok: true, removed: true });
   if (row.object_key !== objectKey) return bookCloudJson({ ok: false, error: "forbidden" }, 403);
+  if (row.status === "deleted")
+    return bookCloudJson({ ok: true, removed: true, tombstone: String(row.tombstone || "") });
   try {
     const deleted = await r2Fetch(config, "DELETE", objectKey, fetchImpl);
     if (!(deleted.ok || deleted.status === 404)) return bookCloudJson({ ok: false, error: "delete_failed" }, 502);

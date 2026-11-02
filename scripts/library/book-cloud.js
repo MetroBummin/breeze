@@ -182,20 +182,76 @@ function renderBookCloudToggle(book){
   toggle.onclick=()=>{if(!toggle.disabled)void bookCloudSetLink(book,!(book.bookCloudLink&&book.bookCloudLink.on));};
   row.append(copy,toggle);host.before(row);
 }
+function bookCloudAssignTombstone(book,tombstone){
+  if(!book||tombstone==null)return false;
+  const link=book.bookCloudLink||{};
+  const next=String(tombstone);
+  if(String(link.tombstone||'')===next)return false;
+  book.bookCloudLink={on:!!link.on,tombstone:next};
+  return true;
+}
+async function bookCloudSaveTombstone(book,tombstone){
+  if(!bookCloudAssignTombstone(book,tombstone))return;
+  if(typeof bookPut==='function')await bookPut(book);
+}
+function bookCloudWriteUploadTombstone(userId,bookId,tombstone){
+  const latest=bookCloudReadOutbox(userId);
+  const queued=latest.uploads[bookId];
+  if(!queued)return;
+  queued.tombstone=tombstone;
+  bookCloudWriteOutbox(userId,latest);
+}
+async function bookCloudKeepQueuedTombstone(bookId,tombstone){
+  const userId=bookCloudUserId();
+  if(userId)bookCloudWriteUploadTombstone(userId,bookId,tombstone);
+  if(typeof books==='undefined')return;
+  const book=books.find(item=>bookCloudHash(item)===bookId);
+  if(book)await bookCloudSaveTombstone(book,tombstone);
+}
+/* A deleted row's tombstone is the one reserve must acknowledge. The copy in
+   the outbox can be empty or older than the server, including entries queued
+   before this device learned to store the value. */
+async function bookCloudHealQueuedTombstone(bookId,entry){
+  const remote=bookCloudCatalog.find(row=>row&&row.book_id===bookId);
+  if(!remote||remote.status!=='deleted')return;
+  const next=String(remote.tombstone||'');
+  if(next===String(entry.tombstone||''))return;
+  entry.tombstone=next;
+  await bookCloudKeepQueuedTombstone(bookId,next);
+}
+async function bookCloudAdoptTombstone(bookId,entry,session,hint){
+  let refreshed=false;
+  try{refreshed=await bookCloudRefresh(session)===true;}catch{refreshed=false;}
+  if(!bookCloudCurrent(session))return null;
+  const remote=bookCloudCatalog.find(row=>row&&row.book_id===bookId);
+  let next=null;
+  if(refreshed&&remote&&remote.status==='deleted')next=String(remote.tombstone||'');
+  else if(hint!=null)next=String(hint);
+  if(next==null||next===String(entry.tombstone||''))return null;
+  entry.tombstone=next;
+  await bookCloudKeepQueuedTombstone(bookId,next);
+  return next;
+}
 async function bookCloudSetLink(book,on){
   if(!bookCloudEnabled()||!bookCloudFileBook(book)||!bookCloudUserId())return;
   if(on){
-    const remote=bookCloudCatalog.find(row=>row.book_id===bookCloudHash(book));
-    const tombstone=remote&&remote.status==='deleted'?String(remote.tombstone||''):'';
+    const session=bookCloudSession();
+    let refreshed=false;
+    try{refreshed=await bookCloudRefresh(session)===true;}catch{refreshed=false;}
+    if(!bookCloudCurrent(session))return;
+    const bookId=bookCloudHash(book);
+    const remote=bookCloudCatalog.find(row=>row&&row.book_id===bookId);
+    const stored=book.bookCloudLink&&book.bookCloudLink.tombstone||'';
+    const tombstone=refreshed&&remote&&remote.status==='deleted'?String(remote.tombstone||''):refreshed?'':String(stored||'');
     book.bookCloudLink={on:true,tombstone};
     if(typeof bookPut==='function')await bookPut(book);
     const userId=bookCloudUserId(),box=bookCloudReadOutbox(userId);
-    delete box.removes[bookCloudHash(book)];
-    box.uploads[bookCloudHash(book)]={kind:book.kind,title:book.title||'',author:book.author||'',tombstone};
+    delete box.removes[bookId];
+    box.uploads[bookId]={kind:book.kind,title:book.title||'',author:book.author||'',tombstone};
     bookCloudWriteOutbox(userId,box);
     bookCloudQueuePosition(book);
     bookCloudLinkedNote(book);renderBookCloudToggle(book);
-    if(typeof resumeBookInk==='function')resumeBookInk(bookCloudHash(book));
+    if(typeof resumeBookInk==='function')resumeBookInk(bookId);
     toast('다른 기기와 이 책을 연동해요');
     return syncBookCloud();
   }
@@ -228,7 +284,7 @@ async function bookCloudPost(op,body,session){
   if(!bookCloudCurrent(session))return {ok:false,error:'stale'};
   try{return await response.json();}catch{return {ok:false,error:'bad_response'};}
 }
-async function bookCloudSendUpload(bookId,entry,session){
+async function bookCloudSendUpload(bookId,entry,session,retried){
   const book=(typeof books==='undefined'?[]:books).find(item=>bookCloudHash(item)===bookId&&item.bookCloudLink&&item.bookCloudLink.on);
   if(!book||typeof originalGetForBook!=='function')return false;
   const record=await originalGetForBook(book);
@@ -246,6 +302,18 @@ async function bookCloudSendUpload(bookId,entry,session){
   if(!reserved||reserved.ok===false){
     if(reserved&&reserved.error==='book_cap')toast('연동할 수 있는 책은 40권까지예요');
     else if(reserved&&reserved.error==='byte_cap')toast('연동할 수 있는 용량은 2GB까지예요');
+    else if(reserved&&reserved.error==='tombstone'){
+      if(!retried){
+        const next=await bookCloudAdoptTombstone(bookId,entry,session,reserved.tombstone);
+        if(!bookCloudCurrent(session))return false;
+        if(next!=null)return bookCloudSendUpload(bookId,entry,session,true);
+      }else if(reserved.tombstone!=null&&String(reserved.tombstone)!==String(entry.tombstone||'')){
+        entry.tombstone=String(reserved.tombstone);
+        await bookCloudKeepQueuedTombstone(bookId,entry.tombstone);
+      }
+      if(!bookCloudCurrent(session))return false;
+      toast('연동을 다시 켜지 못했어요. 잠시 후 다시 시도해 주세요');
+    }
     return false;
   }
   if(reserved.ready)return true;
@@ -259,7 +327,7 @@ async function bookCloudSendUpload(bookId,entry,session){
 }
 async function bookCloudSendRemove(bookId,session){
   const result=await bookCloudPost('remove',{bookId},session);
-  return !!(result&&result.ok);
+  return result&&result.ok?result:null;
 }
 async function bookCloudSendPosition(bookId,entry,session){
   const userId=bookCloudUserId();
@@ -341,6 +409,7 @@ async function bookCloudRefresh(session){
   bookCloudCatalog=listed&&listed.data||[];
   bookCloudStorePositionRows(placed&&placed.data);
   if(typeof renderAllBookViews==='function')renderAllBookViews();
+  return !!(listed&&!listed.error&&Array.isArray(listed.data));
 }
 /* Home and the library keep a fresh copy of every device's place. An open
    book jumps only when that copy is newer and this device has not moved. */
@@ -426,12 +495,19 @@ async function syncBookCloud(){
     const linkedNow=new Set();
     for(const bookId of Object.keys(box.removes)){
       if(!bookCloudCurrent(session))return false;
-      if(await bookCloudSendRemove(bookId,session)){delete box.removes[bookId];done.removes.add(bookId);}
+      const removed=await bookCloudSendRemove(bookId,session);
+      if(!removed)continue;
+      delete box.removes[bookId];done.removes.add(bookId);
+      if(removed.tombstone==null||typeof books==='undefined')continue;
+      const book=books.find(item=>bookCloudHash(item)===bookId);
+      if(book)await bookCloudSaveTombstone(book,removed.tombstone);
     }
     for(const bookId of Object.keys(box.uploads)){
       if(!bookCloudCurrent(session))return false;
       if(box.removes[bookId])continue;
-      if(await bookCloudSendUpload(bookId,box.uploads[bookId],session)){delete box.uploads[bookId];done.uploads.add(bookId);linkedNow.add(bookId);}
+      const entry=box.uploads[bookId];
+      await bookCloudHealQueuedTombstone(bookId,entry);
+      if(await bookCloudSendUpload(bookId,entry,session)){delete box.uploads[bookId];done.uploads.add(bookId);linkedNow.add(bookId);}
     }
     if(typeof flushBookInkSoon==='function')flushBookInkSoon();
     for(const bookId of Object.keys(box.positions)){
@@ -535,6 +611,7 @@ async function forgetBookCloud(book){
   if(!bookCloudCurrent(session))return false;
   if(removed){
     delete box.removes[bookId];bookCloudWriteOutbox(userId,box);
+    if(removed.tombstone!=null)bookCloudAssignTombstone(book,removed.tombstone);
     if(typeof forgetBookInk==='function')void forgetBookInk(bookId);
     return true;
   }
