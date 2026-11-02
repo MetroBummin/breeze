@@ -64,6 +64,72 @@ test('download and remove refuse a book id that is not owned',async()=>{
   assert.equal((await remove.json()).removed,true);
 });
 
+function cloudRow(patch){
+  return {
+    user_id:user,book_id:book,byte_size:10,object_key:user+'/'+book,
+    status:'ready',tombstone:'',kind:'epub',title:'Sample',author:'',
+    ...patch
+  };
+}
+function statefulAdmin(row){
+  const updates=[];
+  const admin={
+    auth:{getUser:async()=>({data:{user:{id:user}}})},
+    from(table){
+      const query={
+        eq(){return query;},
+        maybeSingle:async()=>table==='book_cloud'?{data:{...row}}:{data:null},
+        then(resolve,reject){return Promise.resolve({data:[]}).then(resolve,reject);}
+      };
+      return {
+        select(){return query;},
+        insert:async()=>({}),
+        update(patch){
+          if(table==='book_cloud'){updates.push({...patch});Object.assign(row,patch);}
+          return query;
+        },
+        delete(){return query;}
+      };
+    }
+  };
+  return {admin,updates};
+}
+
+test('a duplicate delete keeps the same tombstone',async()=>{
+  const row=cloudRow();
+  const {admin,updates}=statefulAdmin(row);
+  let deleted=0;
+  const fetchImpl=async()=>{deleted++;return new Response(null,{status:204});};
+  const first=await handleBookCloud(request({op:'remove',bookId:book}),env(ready),admin,fetchImpl);
+  const firstBody=await first.json();
+  assert.equal(first.status,200);
+  assert.equal(firstBody.removed,true);
+  assert.match(firstBody.tombstone,/^[0-9a-f-]{36}$/);
+  const second=await handleBookCloud(request({op:'remove',bookId:book}),env(ready),admin,fetchImpl);
+  const secondBody=await second.json();
+  assert.equal(second.status,200);
+  assert.equal(secondBody.tombstone,firstBody.tombstone);
+  assert.equal(updates.length,1);
+  assert.equal(deleted,1);
+  assert.equal(row.tombstone,firstBody.tombstone);
+  assert.equal(row.status,'deleted');
+});
+
+test('reserve reports the current tombstone and accepts it on the next try',async()=>{
+  const row=cloudRow({status:'deleted',tombstone:'keep-me',byte_size:0});
+  const {admin,updates}=statefulAdmin(row);
+  const rejected=await handleBookCloud(request({op:'reserve',bookId:book,size:12,kind:'epub',title:'Sample',acknowledgedTombstone:''}),env(ready),admin,async()=>{throw new Error('no put');});
+  assert.equal(rejected.status,409);
+  assert.deepEqual(await rejected.json(),{ok:false,error:'tombstone',tombstone:'keep-me'});
+  assert.equal(updates.length,0);
+  const accepted=await handleBookCloud(request({op:'reserve',bookId:book,size:12,kind:'epub',title:'Sample',acknowledgedTombstone:'keep-me'}),env(ready),admin,async()=>{throw new Error('no put');});
+  const body=await accepted.json();
+  assert.equal(accepted.status,200);
+  assert.equal(body.ok,true);
+  assert.equal(updates.at(-1).tombstone,'keep-me');
+  assert.equal(updates.at(-1).status,'pending');
+});
+
 test('account deletion is a no-op when the table is missing and fails closed when objects exist without R2',async()=>{
   const missing={from(){return {select:()=>({eq:async()=>({error:{code:'42P01',message:'book_cloud does not exist'}})})};}};
   assert.deepEqual(await deleteAccountBookCloud(missing,env({}),user),{ok:true});

@@ -19,7 +19,13 @@ row. Another signed-in device of the same account can
 download the original with a 10-minute signed URL, check the full SHA-256, and
 open it with the existing importers. Caps are 40 books and 2 GiB
 (2,147,483,648 bytes). Turning the link off, deleting the book, or deleting the
-account removes that account's server original. There is no end-to-end
+account removes that account's server original. That delete keeps one
+tombstone, and a second delete returns the same value. This device stores it
+on the book. Turning the link back on sends the tombstone from a fresh cloud
+row, or the stored one when that read fails. A reserve that answers `409`
+with `error: "tombstone"` is retried once with the current tombstone. The
+body also includes that tombstone. If the retry still fails, the reader sees
+"연동을 다시 켜지 못했어요. 잠시 후 다시 시도해 주세요". There is no end-to-end
 encryption, no cross-account sharing, and no DRM removal in this phase.
 
 A bundled catalog story (`longReadId`) stays text without a stored original

@@ -92,6 +92,130 @@ test('turning the link off removes the server copy and keeps the local book',asy
   assert.equal(context.saved,book);
 });
 
+function armCloudOriginal(context){
+  const bytes=new Uint8Array([1,2,3,4]);
+  context.originalGetForBook=async()=>({blob:new Blob([bytes])});
+  context.rawFileHash=async()=>hash;
+}
+function cloudBook(){
+  return {id:'file-'+hash.slice(0,32),kind:'pdf',title:'Sample',sourceHash:hash,original:{hash},bookCloudLink:{on:true,tombstone:'old'}};
+}
+
+test('turning sync off then on reserves with the tombstone from that delete',async()=>{
+  const stored=boot({flag:true});
+  armCloudOriginal(stored.context);
+  stored.context.bookCloudCatalog=[{book_id:hash,status:'ready',tombstone:'',kind:'pdf',title:'Sample',author:'',byte_size:4}];
+  stored.context.sb.from=()=>({select:async()=>({error:{message:'offline'}})});
+  const reserves=[];
+  stored.context.bookCloudPost=async(op,body)=>{
+    if(op==='remove')return {ok:true,removed:true,tombstone:'gone-1'};
+    if(op==='reserve'){reserves.push(body.acknowledgedTombstone);return {ok:true,ready:true};}
+    return {ok:true};
+  };
+  const book=cloudBook();
+  stored.context.books=[book];
+  await stored.context.bookCloudSetLink(book,false);
+  assert.equal(book.bookCloudLink.on,false);
+  assert.equal(book.bookCloudLink.tombstone,'gone-1');
+  await stored.context.bookCloudSetLink(book,true);
+  assert.equal(book.bookCloudLink.on,true);
+  assert.deepEqual(reserves,['gone-1']);
+  assert.equal(stored.context.bookCloudReadOutbox(user).uploads[hash],undefined);
+
+  const refreshed=boot({flag:true});
+  armCloudOriginal(refreshed.context);
+  refreshed.context.bookCloudCatalog=[{book_id:hash,status:'ready',tombstone:'',kind:'pdf',title:'Sample',author:'',byte_size:4}];
+  refreshed.context.sb.from=table=>({select:async()=>table==='book_cloud'
+    ?{data:[{book_id:hash,status:'deleted',tombstone:'server-t',kind:'pdf',title:'Sample',author:'',byte_size:0}]}
+    :{data:[]}});
+  const sent=[];
+  refreshed.context.bookCloudPost=async(op,body)=>{
+    if(op==='remove')return {ok:true,removed:true};
+    if(op==='reserve'){sent.push(body.acknowledgedTombstone);return {ok:true,ready:true};}
+    return {ok:true};
+  };
+  const again=cloudBook();
+  again.bookCloudLink={on:true,tombstone:''};
+  refreshed.context.books=[again];
+  await refreshed.context.bookCloudSetLink(again,false);
+  assert.equal(again.bookCloudLink.tombstone,'');
+  await refreshed.context.bookCloudSetLink(again,true);
+  assert.deepEqual(sent,['server-t']);
+  assert.equal(again.bookCloudLink.tombstone,'server-t');
+  assert.equal(refreshed.context.bookCloudReadOutbox(user).uploads[hash],undefined);
+});
+
+test('a stuck queue entry recovers an empty or stale tombstone',async()=>{
+  for(const stale of ['','old']){
+    const {context}=boot({flag:true});
+    armCloudOriginal(context);
+    const reserves=[];
+    context.bookCloudPost=async(op,body)=>{
+      if(op==='reserve'){reserves.push(body.acknowledgedTombstone);return {ok:true,ready:true};}
+      return {ok:true};
+    };
+    context.sb.from=table=>({select:async()=>table==='book_cloud'
+      ?{data:[{book_id:hash,status:'deleted',tombstone:'server-t',kind:'pdf',title:'Sample',author:'',byte_size:0}]}
+      :{data:[]}});
+    const book=cloudBook();
+    book.bookCloudLink={on:true,tombstone:stale};
+    context.books=[book];
+    context.bookCloudWriteOutbox(user,{version:1,uploads:{[hash]:{kind:'pdf',title:'Sample',author:'',tombstone:stale}},positions:{},removes:{}});
+    assert.equal(await context.syncBookCloud(),true,JSON.stringify(stale));
+    assert.deepEqual(reserves,['server-t'],JSON.stringify(stale));
+    assert.equal(book.bookCloudLink.tombstone,'server-t',JSON.stringify(stale));
+    assert.equal(context.bookCloudReadOutbox(user).uploads[hash],undefined,JSON.stringify(stale));
+  }
+});
+
+test('a tombstone conflict refetches, retries once, and tells the reader if it still fails',async()=>{
+  const recovered=boot({flag:true});
+  armCloudOriginal(recovered.context);
+  let reads=0;
+  recovered.context.sb.from=table=>({select:async()=>{
+    if(table!=='book_cloud')return {data:[]};
+    reads++;
+    if(reads===1)return {data:[{book_id:hash,status:'ready',tombstone:'',kind:'pdf',title:'Sample',author:'',byte_size:4}]};
+    return {data:[{book_id:hash,status:'deleted',tombstone:'server-t',kind:'pdf',title:'Sample',author:'',byte_size:0}]};
+  }});
+  const reserves=[];
+  recovered.context.bookCloudPost=async(op,body)=>{
+    if(op!=='reserve')return {ok:true};
+    reserves.push(body.acknowledgedTombstone);
+    if(reserves.length===1)return {ok:false,error:'tombstone'};
+    return {ok:true,ready:true};
+  };
+  const book=cloudBook();
+  book.bookCloudLink={on:true,tombstone:''};
+  recovered.context.books=[book];
+  recovered.context.bookCloudWriteOutbox(user,{version:1,uploads:{[hash]:{kind:'pdf',title:'Sample',author:'',tombstone:''}},positions:{},removes:{}});
+  assert.equal(await recovered.context.syncBookCloud(),true);
+  assert.deepEqual(reserves,['','server-t']);
+  assert.equal(recovered.toasts.includes('연동을 다시 켜지 못했어요. 잠시 후 다시 시도해 주세요'),false);
+  assert.equal(recovered.context.bookCloudReadOutbox(user).uploads[hash],undefined);
+
+  const failed=boot({flag:true});
+  armCloudOriginal(failed.context);
+  failed.context.sb.from=table=>({select:async()=>table==='book_cloud'
+    ?{data:[{book_id:hash,status:'ready',tombstone:'',kind:'pdf',title:'Sample',author:'',byte_size:4}]}
+    :{data:[]}});
+  const attempts=[];
+  failed.context.bookCloudPost=async(op,body)=>{
+    if(op!=='reserve')return {ok:true};
+    attempts.push(body.acknowledgedTombstone);
+    return {ok:false,error:'tombstone',tombstone:attempts.length===1?'from-409':'still-wrong'};
+  };
+  const stuck=cloudBook();
+  stuck.bookCloudLink={on:true,tombstone:''};
+  failed.context.books=[stuck];
+  failed.context.bookCloudWriteOutbox(user,{version:1,uploads:{[hash]:{kind:'pdf',title:'Sample',author:'',tombstone:''}},positions:{},removes:{}});
+  assert.equal(await failed.context.syncBookCloud(),true);
+  assert.deepEqual(attempts,['','from-409']);
+  assert.equal(failed.context.bookCloudReadOutbox(user).uploads[hash].tombstone,'still-wrong');
+  assert.equal(stuck.bookCloudLink.tombstone,'still-wrong');
+  assert.deepEqual(failed.toasts,['연동을 다시 켜지 못했어요. 잠시 후 다시 시도해 주세요']);
+});
+
 test('a mismatched download is not opened',async()=>{
   const {context,toasts}=boot({flag:true});
   let opened=false;
