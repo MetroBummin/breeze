@@ -7,9 +7,13 @@ const BreezeInkGeometry = (()=>{
   const round2=v=>Math.round(v*100)/100;
   const svgPoint=p=>round2(p[0])+','+round2(p[1]);
   // Stored `pressure` is the effective pressure after the sensitivity curve,
-  // so a later sensitivity change never alters saved strokes. Only pens vary
-  // width; pencils use pressure for grain coverage instead.
-  const penWidthFactor=e=>0.3+1.4*e;
+  // so a later sensitivity change never alters saved strokes. Only a pen
+  // varies width. A saved pencil stroke stays at its stored width.
+  // A normal Apple Pencil force of about 0.1–0.4 becomes effective pressure
+  // near 0.32–0.65 after the sqrt map. The selected width is the floor.
+  // The previous 0.3+1.4e curve put that width at 0.5, so ordinary writing
+  // rendered thinner than the constant-width pen from before 필압.
+  const penWidthFactor=e=>1+1.05*Math.max(0,(e??0.5)-0.32);
   const pressured=stroke=>Array.isArray(stroke.pressure)&&(stroke.tool===undefined||stroke.tool==='pen');
   function widthAt(stroke,i){
     return pressured(stroke)?stroke.width*penWidthFactor(stroke.pressure[i]??0.5):stroke.width;

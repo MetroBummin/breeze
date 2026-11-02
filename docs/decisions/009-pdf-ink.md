@@ -1241,3 +1241,38 @@ Width stays the pencil's chosen width, with only a small pressure scale, so
 the line does not wobble. A contact with no force stores no `pressure`
 field, same as before. Old pencil strokes with no `pressure` render at the
 middle step of the new tooth.
+
+### Shared thickness, the pen floor, and removing the pencil (2026-11-02)
+
+Owner TestFlight note after #326 and #329, then again on the first fix: every
+tool looked thinner, and the scratch pencil looked like a dashed line. Saved
+stroke records are not rewritten. `ready/` and `server/ready/` are untouched.
+
+**What the reader actually paints.** The same PDF, the same iPad-sized WebKit
+window (834×1194, pixel ratio 2), and stylus force like an Apple Pencil, on
+`4ba8d3bf` (before #326) and on the TestFlight commit `4149dd42`. The page
+scale is the same: viewBox 612, CSS width 782, 1.28 CSS px per PDF unit.
+`vector-effect` on the ink is `none`. A 12-unit highlighter is 15px tall in
+both builds. The eraser cursor (`r` 8) is 20.4px across in both. A pen with
+필압 off is 3px tall in both (the 1.5-unit stroke plus antialiasing). The
+ink layer did not change coordinate scale, and highlighter and eraser units
+did not change. The one thinner mark is the pen with 필압 on and a light
+force of 0.15: 2px, against the old constant 3px.
+
+**Pen curve.** `0.3+1.4×pressure` makes the selected width at effective
+pressure 0.5. A Pencil force of 0.1–0.4 is stored near 0.32–0.65 after
+`0.5+(√force−0.5)×gain`, so ordinary writing landed below the old width.
+The factor is now `1+1.05×max(0, pressure−0.32)`. At or below that light
+writing pressure the stroke is the selected width. Harder pressure only
+adds thickness. 필압 off is still the constant-width polyline. Saved
+pressure numbers are unchanged; they display with this floor.
+
+**Pencil tool removed.** The owner dropped 연필. The toolbar is pen,
+highlighter, and eraser. Stamp and grain drawing is gone, and no new
+stroke is saved as pencil. A page that already holds `tool:'pencil'` or
+`tool:'colored-pencil'` still loads. Each of those strokes is one solid
+polyline in its saved color and width; stored pressure does not change
+that width. Erase, undo, and sync keep the same records. A saved tool
+choice of pencil or 색연필 opens the pen. Pencil color and width in the
+preference record are not read. Highlighter widths and eraser radii are
+unchanged.
