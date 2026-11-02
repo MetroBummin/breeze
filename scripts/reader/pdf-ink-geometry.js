@@ -9,7 +9,11 @@ const BreezeInkGeometry = (()=>{
   // Stored `pressure` is the effective pressure after the sensitivity curve,
   // so a later sensitivity change never alters saved strokes. Only pens vary
   // width; pencils use pressure for grain coverage instead.
-  const penWidthFactor=e=>0.3+1.4*e;
+  // A normal Apple Pencil force of about 0.1–0.4 becomes effective pressure
+  // near 0.32–0.65 after the sqrt map. The selected width is the floor.
+  // The previous 0.3+1.4e curve put that width at 0.5, so ordinary writing
+  // rendered thinner than the constant-width pen from before 필압.
+  const penWidthFactor=e=>1+1.05*Math.max(0,(e??0.5)-0.32);
   const pressured=stroke=>Array.isArray(stroke.pressure)&&(stroke.tool===undefined||stroke.tool==='pen');
   function widthAt(stroke,i){
     return pressured(stroke)?stroke.width*penWidthFactor(stroke.pressure[i]??0.5):stroke.width;
@@ -353,74 +357,66 @@ const BreezeInkGeometry = (()=>{
     stroke.points.forEach((p,i)=>outline.push(p,widthAt(stroke,i)/2));
     return outline.text();
   }
-  // Page-anchored graphite. A luminance mask of sub-pixel holes paints as a
-  // smooth pen at a fitted iPad page (~2.5 device px per PDF unit). These are
-  // short strokes in PDF units, so the scratches stay visible when the page
-  // scales. The same place on the paper always breaks the same way. Pressure
-  // changes how many scratches land and how dark they are. It does not apply
-  // the pen's width curve. `colored` is the waxier 색연필 lead.
-  function pencilHash(x,y){
-    let h=(Math.imul(x|0,0x45d9f3b)+Math.imul((y|0)^0x9e3779b9,0x119de1f3))>>>0;
-    h=Math.imul(h^(h>>>16),0x7feb352d);
-    return ((h^(h>>>15))>>>0)/4294967296;
+  // Canvas-locked paper tooth. Same idea as MyPaint's gridmap input: the
+  // pattern sticks to the page, not to the direction of the stroke. Two
+  // octaves, cells of 7 and 3 PDF units, so the grain is several device
+  // pixels at a fitted iPad page instead of a one-pixel mask hole.
+  const fade=t=>t*t*(3-2*t);
+  function lattice(ix,iy){
+    let h=(Math.imul(ix|0,374761393)+Math.imul(iy|0,668265263))>>>0;
+    h=Math.imul(h^(h>>>13),1274126177);
+    return ((h^(h>>>16))>>>0)/4294967296;
   }
-  function pencilTooth(points,pressures,width,colored){
-    const w=Math.max(0.2,typeof width==='number'&&width>0?width:1);
-    const step=colored?1.7:1.9,cell=0.8;
-    const marks=[];
+  function paperGrain(x,y){
+    const sample=s=>{
+      const px=x/s,py=y/s,x0=Math.floor(px),y0=Math.floor(py);
+      const fx=fade(px-x0),fy=fade(py-y0);
+      const a=lattice(x0,y0),b=lattice(x0+1,y0),c=lattice(x0,y0+1),d=lattice(x0+1,y0+1);
+      return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy;
+    };
+    return sample(7)*0.7+sample(3)*0.3;
+  }
+  /* Overlapping dabs, the libmypaint stamp (dabs per radius, opacity from
+     pressure, grain multiplied per dab). Spacing is a fraction of the radius
+     so neighbours cover each other: the mark stays a line, and the grain
+     only changes how dark each stamp is. Radius stays near the selected
+     width; pressure mostly adds darkness and a little width. `colored` is
+     the waxier lead (higher opaque floor, less radius jitter). */
+  function pencilDabs(points,pressures,width,colored){
+    const w=Math.max(0.4,typeof width==='number'&&width>0?width:1);
+    const base=w/2,spacing=Math.max(0.28,base/(colored?2.4:2.6));
+    const dabs=[];
+    if(!points||!points.length)return dabs;
     const eAt=i=>typeof pressures?.[i]==='number'?pressures[i]:0.55;
-    function scratch(p,tx,ty,len,sw,opacity){
-      marks.push({
-        a:[p[0]-tx*len/2,p[1]-ty*len/2],
-        b:[p[0]+tx*len/2,p[1]+ty*len/2],
-        width:round2(Math.max(0.12,sw)),
-        opacity:round2(Math.max(0.28,Math.min(0.92,opacity)))
+    function dab(p,e){
+      const g=paperGrain(p[0],p[1]);
+      const radius=base*(0.9+0.28*Math.min(1,Math.max(0,e)))*(colored?0.78+0.4*g:0.62+0.55*g);
+      const opaque=(colored?0.3:0.24)+(colored?0.4:0.55)*Math.min(1,Math.max(0,e));
+      const alpha=opaque*(colored?0.4+0.6*g:0.22+0.78*g);
+      dabs.push({
+        cx:round2(p[0]),cy:round2(p[1]),
+        rx:round2(Math.max(0.12,radius*(colored?1:0.92+0.2*(1-g)))),
+        ry:round2(Math.max(0.12,radius)),
+        opacity:round2(Math.max(0.14,Math.min(0.9,alpha)))
       });
     }
-    function place(p,ux,uy,nx,ny,e){
-      const ix=Math.floor(p[0]/cell),iy=Math.floor(p[1]/cell);
-      const q=pencilHash(ix,iy),q2=pencilHash(ix+11,iy-5),q3=pencilHash(iy+2,ix-9);
-      // Skipped samples are shorter than the step, so the paper shows through.
-      // At a normal force about one sample in seven is a hole.
-      const hole=q>(colored?0.92+0.06*e:0.8+0.12*e);
-      if(hole)return;
-      const ang=(q2-0.5)*(colored?0.35:0.9);
-      const c=Math.cos(ang),s=Math.sin(ang);
-      const tx=ux*c-uy*s,ty=ux*s+uy*c;
-      const off=(q3-0.5)*w*(colored?0.1:0.34);
-      const len=(colored?1.15:0.7)+(colored?1.2:1.35)*q2;
-      const sw=w*((colored?0.42:0.26)+(colored?0.36:0.5)*q3);
-      const opacity=(colored?0.42:0.34)+(colored?0.36:0.48)*e;
-      const at=[p[0]+nx*off,p[1]+ny*off];
-      scratch(at,tx,ty,len,sw,opacity*(0.7+0.3*q2));
-      // A thinner whisker across the lead. This is the part that is not a pen.
-      if(!colored&&q2>0.34){
-        const whisk=0.45+1.15*q3;
-        scratch(p,-ny,nx,whisk,w*(0.12+0.14*q),opacity*0.8);
-      }
-    }
-    if(!points||!points.length)return marks;
-    const first=points[0],second=points[1]||first;
-    let ux=second[0]-first[0],uy=second[1]-first[1],len0=Math.hypot(ux,uy);
-    if(len0<epsilon){ux=1;uy=0;len0=1;}else{ux/=len0;uy/=len0;}
-    place(first,ux,uy,-uy,ux,eAt(0));
-    if(points.length===1){place(first,uy,-ux,ux,uy,eAt(0));return marks;}
-    let prev=first,carried=0;
+    dab(points[0],eAt(0));
+    if(points.length===1){dab([points[0][0]+base*0.22,points[0][1]],eAt(0));return dabs;}
+    let prev=points[0],prevE=eAt(0),carried=0;
     for(let i=1;i<points.length;i++){
-      const to=points[i],dx=to[0]-prev[0],dy=to[1]-prev[1],len=Math.hypot(dx,dy);
+      const to=points[i],e=eAt(i),dx=to[0]-prev[0],dy=to[1]-prev[1],len=Math.hypot(dx,dy);
       if(len<epsilon)continue;
-      const ux=dx/len,uy=dy/len,nx=-uy,ny=ux,e=eAt(i);
-      let dist=step-carried;
-      while(dist<=len+epsilon){
-        place([prev[0]+ux*dist,prev[1]+uy*dist],ux,uy,nx,ny,e);
-        dist+=step;
+      let dist=spacing-carried;
+      while(dist<=len){
+        const t=dist/len;
+        dab([prev[0]+dx*t,prev[1]+dy*t],prevE+(e-prevE)*t);
+        dist+=spacing;
       }
-      carried=len-(dist-step);
+      carried=len-(dist-spacing);
       if(carried<0)carried=0;
-      if(carried>0.35){place(to,ux,uy,nx,ny,e);carried=0;}
-      prev=to;
+      prev=to;prevE=e;
     }
-    return marks;
+    return dabs;
   }
-  return {eraseStroke,createSmoother,createOutline,outlinePath,svgPoint,widthAt,penWidthFactor,pressured,pencilTooth};
+  return {eraseStroke,createSmoother,createOutline,outlinePath,svgPoint,widthAt,penWidthFactor,pressured,pencilDabs,paperGrain};
 })();

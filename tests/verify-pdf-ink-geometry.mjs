@@ -46,21 +46,26 @@ test('highlighter and eraser widths ignore pen pressure',()=>{
  const ends=[4,8,16].map(r=>eraseStroke(stroke([[0,0],[100,0]]),[50,0],[50,0],r)[0].points.at(-1)[0]);
  assert.deepEqual(ends.map(v=>Math.round(v)),[45,41,33]);
 });
-test('pencil tooth is scratchy, page-stable, and not a pressure-scaled pen',()=>{
+test('pencil dabs overlap into a grainy line and do not shrink below the selected width',()=>{
  const pts=[];for(let x=0;x<=180;x+=3)pts.push([x,40]);
- const mid=geometry.pencilTooth(pts,pts.map(()=>0.55),2,false);
- const light=geometry.pencilTooth(pts,pts.map(()=>0.1),2,false);
- const hard=geometry.pencilTooth(pts,pts.map(()=>0.95),2,false);
- const again=geometry.pencilTooth(pts,pts.map(()=>0.55),2,false);
- assert.deepEqual(again,mid);
- assert.ok(mid.length>40);
- const widths=mid.map(m=>m.width);
- assert.ok(Math.max(...widths)>Math.min(...widths)*1.8,'scratches are not one width');
- assert.ok(Math.max(...widths)>1.1&&Math.max(...widths)<=2,'the body stays near the selected width');
- assert.ok(hard.length>light.length*1.05);
- assert.ok(hard.reduce((s,m)=>s+m.opacity,0)/hard.length>light.reduce((s,m)=>s+m.opacity,0)/light.length+0.15);
- const colored=geometry.pencilTooth(pts,pts.map(()=>0.55),3,true);
- assert.ok(colored.length>0&&colored.every(m=>m.width<=3));
+ const mid=geometry.pencilDabs(pts,pts.map(()=>0.55),2,false);
+ const light=geometry.pencilDabs(pts,pts.map(()=>0.15),2,false);
+ const hard=geometry.pencilDabs(pts,pts.map(()=>0.95),2,false);
+ assert.deepEqual(geometry.pencilDabs(pts,pts.map(()=>0.55),2,false),mid);
+ assert.ok(mid.length>80,'stamps are dense, not a dashed stroke');
+ const covered=Array.from({length:40},(_,i)=>{
+  const x=10+i*4;
+  return mid.filter(d=>Math.hypot(d.cx-x,d.cy-40)<=d.ry+0.05).length;
+ });
+ assert.ok(covered.filter(n=>n>=2).length>34,'neighbouring dabs cover the same paper');
+ const opacities=mid.map(d=>d.opacity);
+ assert.ok(Math.max(...opacities)-Math.min(...opacities)>0.15,'page grain changes darkness');
+ assert.ok(Math.max(...mid.map(d=>d.ry))<=1.4,'dabs stay near the selected radius');
+ assert.ok(hard.reduce((s,d)=>s+d.opacity,0)/hard.length>light.reduce((s,d)=>s+d.opacity,0)/light.length+0.12);
+ assert.equal(geometry.penWidthFactor(0.2),1,'a light stored pressure is the selected pen width');
+ assert.ok(geometry.penWidthFactor(0.9)>geometry.penWidthFactor(0.2));
+ const colored=geometry.pencilDabs(pts,pts.map(()=>0.55),3,true);
+ assert.ok(colored.length>40&&colored.every(d=>d.ry<=2));
 });
 test('rotated sweeps keep every segment outside the capsule',()=>{
  const s=stroke([[0,0],[100,100]]),parts=eraseStroke(s,[20,80],[80,20],4);

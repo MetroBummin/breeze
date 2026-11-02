@@ -554,27 +554,21 @@ const BreezePdfInk = (()=>{
     state.inkPaths=next;state.inkGroups=new Map([...groups].map(([id,entry])=>[id,entry.group]));
   }
   function paintPencil(group,stroke,points,pressures){
-    const marks=BreezeInkGeometry.pencilTooth(points,pressures,stroke.width,stroke.tool==='colored-pencil');
+    const dabs=BreezeInkGeometry.pencilDabs(points,pressures,stroke.width,stroke.tool==='colored-pencil');
     const kids=[...group.children];
-    marks.forEach((mark,i)=>{
+    dabs.forEach((dab,i)=>{
       let element=kids[i];
-      if(!element||element.tagName.toLowerCase()!=='polyline'){
-        element=document.createElementNS(ns,'polyline');
-        element.setAttribute('fill','none');
-        element.setAttribute('stroke',stroke.color);
-        element.setAttribute('stroke-linecap','round');
-        element.setAttribute('stroke-linejoin','round');
-        element.setAttribute('data-ink-part','tooth');
-          group.append(element);
+      if(!element||element.tagName.toLowerCase()!=='ellipse'){
+        element=document.createElementNS(ns,'ellipse');
+        element.setAttribute('fill',stroke.color);
+        element.setAttribute('data-ink-part','dab');
+        group.append(element);
       }
-      const text=BreezeInkGeometry.svgPoint(mark.a)+' '+BreezeInkGeometry.svgPoint(mark.b);
-      if(element.getAttribute('points')!==text)element.setAttribute('points',text);
-      const sw=String(mark.width),op=String(mark.opacity);
-      if(element.getAttribute('stroke-width')!==sw)element.setAttribute('stroke-width',sw);
-      if(element.getAttribute('opacity')!==op)element.setAttribute('opacity',op);
-      if(element.getAttribute('stroke')!==stroke.color)element.setAttribute('stroke',stroke.color);
+      const set=(name,value)=>{const text=String(value);if(element.getAttribute(name)!==text)element.setAttribute(name,text);};
+      set('cx',dab.cx);set('cy',dab.cy);set('rx',dab.rx);set('ry',dab.ry);set('opacity',dab.opacity);
+      if(element.getAttribute('fill')!==stroke.color)element.setAttribute('fill',stroke.color);
     });
-    while(group.children.length>marks.length)group.children[group.children.length-1].remove();
+    while(group.children.length>dabs.length)group.children[group.children.length-1].remove();
   }
   function pencilGroup(stroke){
     const group=document.createElementNS(ns,'g');group.setAttribute('data-ink-tool',stroke.tool);

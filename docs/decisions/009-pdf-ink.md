@@ -1242,33 +1242,38 @@ the line does not wobble. A contact with no force stores no `pressure`
 field, same as before. Old pencil strokes with no `pressure` render at the
 middle step of the new tooth.
 
-### Highlighter and eraser widths, and a pencil that reads as graphite (2026-11-02)
+### Shared thickness, and a stamped pencil (2026-11-02)
 
-Owner TestFlight note after #326 and #329: highlighter and eraser marks looked
-much thinner, and 연필 looked the same as the pen. Saved strokes are not
-rewritten. Pen width, the pen pressure curve, and pen smoothing are unchanged.
-`ready/` and `server/ready/` are untouched.
+Owner TestFlight note after #326 and #329, then again on the first fix: every
+tool looked thinner, and the scratch pencil looked like a dashed line. Saved
+stroke records are not rewritten. `ready/` and `server/ready/` are untouched.
 
-**Widths.** Compared with `4ba8d3bf` (the commit before #326), highlighter
-widths are still 12 and 20 PDF units and eraser radii are still 4, 8 and 16.
-`필압` never records pressure on those tools, and `widthAt` does not multiply
-them by the pen curve `0.3+1.4×pressure`. A WebKit page fitted like an iPad
-(612-unit page at about 1.28 CSS px per unit, and the same page under a 2.5×
-zoom transform) paints a 12-unit highlighter about 15 CSS px tall and a
-20-unit one about 26 CSS px tall. Those are the selected sizes, not a
-pressure-shrunk pen. The eraser cut is still `radius + strokeWidth/2`, so a
-medium eraser (8) through a 12-unit highlight removes a 28-unit band. A test
-locks both the attributes and that painted highlighter height.
+**What the reader actually paints.** The same PDF, the same iPad-sized WebKit
+window (834×1194, pixel ratio 2), and stylus force like an Apple Pencil, on
+`4ba8d3bf` (before #326) and on the TestFlight commit `4149dd42`. The page
+scale is the same: viewBox 612, CSS width 782, 1.28 CSS px per PDF unit.
+`vector-effect` on the ink is `none`. A 12-unit highlighter is 15px tall in
+both builds. The eraser cursor (`r` 8) is 20.4px across in both. A pen with
+필압 off is 3px tall in both (the 1.5-unit stroke plus antialiasing). The
+ink layer did not change coordinate scale, and highlighter and eraser units
+did not change. The one thinner mark is the pen with 필압 on and a light
+force of 0.15: 2px, against the old constant 3px.
 
-**Pencil.** The v3 tooth was a luminance mask: a solid white floor and eight
-holes about 0.6–1.4 PDF units across. At a fitted iPad page that is one or
-two device pixels, and WebKit paints the stroke as a smooth line. A side-by-side
-capture of the production stroke showed the masked pencil and an unmasked
-stroke of the same width as the same pixels. The mask, including its 4000-unit
-tile rect, is gone. The pencil is now short scratches in PDF units, anchored
-to the page, with real gaps, varying width and varying opacity. Pressure
-changes how many land and how dark they are. It does not use the pen width
-curve. Colored lead uses the same scratches with fewer gaps. Stored
-`tool`, `width`, `color` and `pressure` are unchanged, so a stroke saved
-before this still renders, and a preference saved before this still selects
-the same tool and width.
+**Pen curve.** `0.3+1.4×pressure` makes the selected width at effective
+pressure 0.5. A Pencil force of 0.1–0.4 is stored near 0.32–0.65 after
+`0.5+(√force−0.5)×gain`, so ordinary writing landed below the old width.
+The factor is now `1+1.05×max(0, pressure−0.32)`. At or below that light
+writing pressure the stroke is the selected width. Harder pressure only
+adds thickness. 필압 off is still the constant-width polyline. Saved
+pressure numbers are unchanged; they display with this floor.
+
+**Pencil.** The v3 mask's holes were about one device pixel, so the stroke
+matched the pen. Short separated scratches then read as a dashed line.
+The mark is now MyPaint-style dabs (libmypaint's stamp: several dabs per
+radius, so they overlap into a continuous line; ISC, reimplemented, no
+C copied). Each dab's opacity is pressure times a page-locked grain, the
+same idea as MyPaint's gridmap input and a fabric.js pattern brush: the
+tooth sticks to the paper. The grain cells are 7 and 3 PDF units, large
+enough to see at a fitted page. Tilt still lightens the stored pressure
+through `graphiteForce`. Colored lead uses the same stamps with a higher
+opacity floor. Stored tool, width, color and pressure are unchanged.
