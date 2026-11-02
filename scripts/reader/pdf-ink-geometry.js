@@ -353,5 +353,74 @@ const BreezeInkGeometry = (()=>{
     stroke.points.forEach((p,i)=>outline.push(p,widthAt(stroke,i)/2));
     return outline.text();
   }
-  return {eraseStroke,createSmoother,createOutline,outlinePath,svgPoint,widthAt,penWidthFactor,pressured};
+  // Page-anchored graphite. A luminance mask of sub-pixel holes paints as a
+  // smooth pen at a fitted iPad page (~2.5 device px per PDF unit). These are
+  // short strokes in PDF units, so the scratches stay visible when the page
+  // scales. The same place on the paper always breaks the same way. Pressure
+  // changes how many scratches land and how dark they are. It does not apply
+  // the pen's width curve. `colored` is the waxier 색연필 lead.
+  function pencilHash(x,y){
+    let h=(Math.imul(x|0,0x45d9f3b)+Math.imul((y|0)^0x9e3779b9,0x119de1f3))>>>0;
+    h=Math.imul(h^(h>>>16),0x7feb352d);
+    return ((h^(h>>>15))>>>0)/4294967296;
+  }
+  function pencilTooth(points,pressures,width,colored){
+    const w=Math.max(0.2,typeof width==='number'&&width>0?width:1);
+    const step=colored?1.7:1.9,cell=0.8;
+    const marks=[];
+    const eAt=i=>typeof pressures?.[i]==='number'?pressures[i]:0.55;
+    function scratch(p,tx,ty,len,sw,opacity){
+      marks.push({
+        a:[p[0]-tx*len/2,p[1]-ty*len/2],
+        b:[p[0]+tx*len/2,p[1]+ty*len/2],
+        width:round2(Math.max(0.12,sw)),
+        opacity:round2(Math.max(0.28,Math.min(0.92,opacity)))
+      });
+    }
+    function place(p,ux,uy,nx,ny,e){
+      const ix=Math.floor(p[0]/cell),iy=Math.floor(p[1]/cell);
+      const q=pencilHash(ix,iy),q2=pencilHash(ix+11,iy-5),q3=pencilHash(iy+2,ix-9);
+      // Skipped samples are shorter than the step, so the paper shows through.
+      // At a normal force about one sample in seven is a hole.
+      const hole=q>(colored?0.92+0.06*e:0.8+0.12*e);
+      if(hole)return;
+      const ang=(q2-0.5)*(colored?0.35:0.9);
+      const c=Math.cos(ang),s=Math.sin(ang);
+      const tx=ux*c-uy*s,ty=ux*s+uy*c;
+      const off=(q3-0.5)*w*(colored?0.1:0.34);
+      const len=(colored?1.15:0.7)+(colored?1.2:1.35)*q2;
+      const sw=w*((colored?0.42:0.26)+(colored?0.36:0.5)*q3);
+      const opacity=(colored?0.42:0.34)+(colored?0.36:0.48)*e;
+      const at=[p[0]+nx*off,p[1]+ny*off];
+      scratch(at,tx,ty,len,sw,opacity*(0.7+0.3*q2));
+      // A thinner whisker across the lead. This is the part that is not a pen.
+      if(!colored&&q2>0.34){
+        const whisk=0.45+1.15*q3;
+        scratch(p,-ny,nx,whisk,w*(0.12+0.14*q),opacity*0.8);
+      }
+    }
+    if(!points||!points.length)return marks;
+    const first=points[0],second=points[1]||first;
+    let ux=second[0]-first[0],uy=second[1]-first[1],len0=Math.hypot(ux,uy);
+    if(len0<epsilon){ux=1;uy=0;len0=1;}else{ux/=len0;uy/=len0;}
+    place(first,ux,uy,-uy,ux,eAt(0));
+    if(points.length===1){place(first,uy,-ux,ux,uy,eAt(0));return marks;}
+    let prev=first,carried=0;
+    for(let i=1;i<points.length;i++){
+      const to=points[i],dx=to[0]-prev[0],dy=to[1]-prev[1],len=Math.hypot(dx,dy);
+      if(len<epsilon)continue;
+      const ux=dx/len,uy=dy/len,nx=-uy,ny=ux,e=eAt(i);
+      let dist=step-carried;
+      while(dist<=len+epsilon){
+        place([prev[0]+ux*dist,prev[1]+uy*dist],ux,uy,nx,ny,e);
+        dist+=step;
+      }
+      carried=len-(dist-step);
+      if(carried<0)carried=0;
+      if(carried>0.35){place(to,ux,uy,nx,ny,e);carried=0;}
+      prev=to;
+    }
+    return marks;
+  }
+  return {eraseStroke,createSmoother,createOutline,outlinePath,svgPoint,widthAt,penWidthFactor,pressured,pencilTooth};
 })();

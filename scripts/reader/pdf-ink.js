@@ -87,72 +87,6 @@ const BreezePdfInk = (()=>{
     if(!(typeof raw==='number'&&raw>0))return Math.max(0.05,0.42*shade);
     return Math.max(0.02,Math.min(1,raw*shade));
   }
-  /* Graphite tooth, one mask per page/tool/color, anchored to page coordinates
-     (userSpaceOnUse) so the same place on the paper always hits the same tooth.
-     The core floor is solid, so a normal-pressure line is the chosen color.
-     Grain is smaller speckle and a broken edge, not a gray wash. Light pressure
-     stays lighter. No filter and no per-stroke raster. */
-  const grainTile=16,grainSteps=8;
-  const grainLook={
-    // Light steps stay pale. From a normal writing force upward the core is
-    // the color itself; the mask only nicks it.
-    pencil:{core:[0.4,0.52,0.64,0.76,0.88,0.96,1,1],edge:[0.2,0.28,0.36,0.44,0.52,0.6,0.68,0.76],
-      width:[0.9,0.94,0.97,1,1.03,1.06,1.1,1.14],edgeWidth:1.62},
-    'colored-pencil':{core:[0.4,0.48,0.55,0.62,0.68,0.74,0.8,0.84],edge:[0.14,0.16,0.18,0.2,0.22,0.23,0.25,0.27],
-      width:[0.97,0.98,0.99,1,1.01,1.03,1.04,1.06],edgeWidth:1.22}
-  };
-  const grainSvgKey=new WeakMap(),grainReady=new WeakMap();
-  let grainSerial=0;
-  const grainRandom=seed=>{let s=seed>>>0;return ()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};};
-  function grainHash(text){let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);return h>>>0;}
-  function grainShape(tag,attrs){
-    const node=document.createElementNS(ns,tag);
-    for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));
-    return node;
-  }
-  /* Luminance mask locked to the page. White is graphite, black is a nick.
-     Graphite's floor is solid. A few small holes speckle the core and break
-     the edge; they are not big enough to turn the stroke gray. The edge has
-     no floor, only specks. Colored lead stays a little more even. */
-  function grainSpec(tool,part){
-    const edge=part==='edge',colored=tool==='colored-pencil';
-    if(edge)return colored
-      ?{floor:0.15,holes:2,specks:4,holeR:[0.35,0.6],speckR:[0.4,0.75],hole:0.35,speck:0.6}
-      :{floor:0,holes:3,specks:8,holeR:[0.4,0.75],speckR:[0.45,1],hole:0.75,speck:1};
-    return colored
-      ?{floor:0.88,holes:5,specks:6,holeR:[0.35,0.7],speckR:[0.3,0.6],hole:0.4,speck:0.7}
-      :{floor:1,holes:8,specks:0,holeR:[0.32,0.68],speckR:[0.3,0.5],hole:0.62,speck:0};
-  }
-  function mountGrain(svg,tool,part,color){
-    if(!svg||!color)return null;
-    let key=grainSvgKey.get(svg);
-    if(!key){key='p'+(++grainSerial);grainSvgKey.set(svg,key);}
-    const id=`pdf-ink-grain-${key}-${tool}-${part}-${color.slice(1)}`;
-    let ready=grainReady.get(svg);
-    if(!ready){ready=new Set();grainReady.set(svg,ready);}
-    if(ready.has(id))return id;
-    const defsTag=n=>n&&(n.tagName||n.localName||'').toLowerCase()==='defs';
-    let defs=typeof svg.querySelector==='function'?svg.querySelector('defs'):[...svg.children||[]].find(defsTag);
-    if(defs&&!defsTag(defs))defs=[...svg.children||[]].find(defsTag)||null;
-    if(!defs){
-      defs=document.createElementNS(ns,'defs');
-      if(svg.firstChild&&svg.insertBefore)svg.insertBefore(defs,svg.firstChild);else svg.append(defs);
-    }
-    const spec=grainSpec(tool,part),random=grainRandom(grainHash(tool+'|'+part+'|'+color));
-    const between=(span,lo)=>((span[0]+random()*(span[1]-span[0]))).toFixed(2);
-    const pattern=grainShape('pattern',{id:id+'-pat',patternUnits:'userSpaceOnUse',width:grainTile,height:grainTile,x:'0',y:'0'});
-    if(spec.floor>0)pattern.append(grainShape('rect',{width:grainTile,height:grainTile,fill:'#fff',opacity:spec.floor}));
-    for(let i=0;i<spec.specks;i++)pattern.append(grainShape('circle',{
-      cx:(random()*grainTile).toFixed(2),cy:(random()*grainTile).toFixed(2),
-      r:between(spec.speckR),fill:'#fff',opacity:(spec.speck*(0.62+random()*0.38)).toFixed(2)}));
-    // Holes last, so a speck cannot fill a gap. The gap stays on the page.
-    for(let i=0;i<spec.holes;i++)pattern.append(grainShape('circle',{
-      cx:(random()*grainTile).toFixed(2),cy:(random()*grainTile).toFixed(2),
-      r:between(spec.holeR),fill:'#000',opacity:(spec.hole*(0.82+random()*0.18)).toFixed(2)}));
-    const mask=grainShape('mask',{id,maskUnits:'userSpaceOnUse',maskContentUnits:'userSpaceOnUse'});
-    mask.append(grainShape('rect',{x:-50,y:-50,width:4000,height:4000,fill:`url(#${id}-pat)`}));
-    defs.append(pattern,mask);ready.add(id);return id;
-  }
   const ns='http://www.w3.org/2000/svg';
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
   let session=null, mode='read', active=null, toolbar=null, status=null;
@@ -584,7 +518,7 @@ const BreezePdfInk = (()=>{
   function reconcileInkChildren(parent,children){
     const keep=new Set(children);
     const defs=node=>(node?.tagName||node?.localName||'').toLowerCase()==='defs';
-    // Grain patterns live in <defs> on this page SVG. Reconcile must not drop them.
+    // A page may still carry <defs> from an older paint. Reconcile must not drop them.
     for(const child of [...parent.children])if(!defs(child)&&!keep.has(child))child.remove();
     let cursor=parent.firstChild;
     while(cursor&&defs(cursor))cursor=cursor.nextSibling;
@@ -619,51 +553,28 @@ const BreezePdfInk = (()=>{
     reconcileInkChildren(state.svg,children);
     state.inkPaths=next;state.inkGroups=new Map([...groups].map(([id,entry])=>[id,entry.group]));
   }
-  function pencilLevel(e,current){
-    // Eight coverage steps. Hysteresis keeps a steady hand on one step so the
-    // darkness does not flicker, without a hard three-way jump.
-    if(e==null)return 4;
-    const band=Math.max(0,Math.min(grainSteps-1,Math.floor(e*grainSteps-1e-9)));
-    if(current!=null&&band!==current&&Math.abs(e-(Math.min(band,current)+1)/grainSteps)<0.035)return current;
-    return band;
-  }
-  function pencilRuns(group,stroke,svg){
-    // A faint wide stroke under a denser core. The wide stroke's sparse tooth
-    // sticks out past the core, so the edge is uneven and semi-transparent.
-    // The centerline is still the smoothed polyline.
-    const look=grainLook[stroke.tool];
-    const coreId=mountGrain(svg,stroke.tool,'core',stroke.color);
-    const edgeId=mountGrain(svg,stroke.tool,'edge',stroke.color);
-    const runs=[];let current=null,lastText='';
-    function line(mask,width,opacity,part){
-      const element=document.createElementNS(ns,'polyline');
-      element.setAttribute('fill','none');element.setAttribute('stroke',stroke.color);
-      if(mask)element.setAttribute('mask',`url(#${mask})`);
-      element.setAttribute('stroke-width',String(Math.round(width*100)/100));element.setAttribute('opacity',String(opacity));
-      element.setAttribute('stroke-linecap','round');element.setAttribute('stroke-linejoin','round');
-      element.setAttribute('data-ink-part',part);group.append(element);return element;
-    }
-    function run(level){
-      const edge=line(edgeId,stroke.width*look.edgeWidth,look.edge[level],'edge');
-      const core=line(coreId,stroke.width*look.width[level],look.core[level],'core');
-      current={level,text:lastText,edge,core,shown:''};runs.push(current);
-    }
-    return {
-      push(p,e){
-        const level=pencilLevel(e,current?.level);
-        if(!current||current.level!==level)run(level);
-        const text=BreezeInkGeometry.svgPoint(p);
-        current.text=current.text?current.text+' '+text:text;lastText=text;
-      },
-      show(extra=[],tipPressure){
-        if(!current&&extra.length)run(pencilLevel(tipPressure,null));
-        for(const item of runs){
-          let text=item===current&&extra.length?item.text+' '+extra.map(BreezeInkGeometry.svgPoint).join(' '):item.text;
-          text=text.trim();if(text&&!text.includes(' '))text=text+' '+text; // A tap is a round dot.
-          if(item.shown!==text){item.shown=text;item.edge.setAttribute('points',text);item.core.setAttribute('points',text);}
-        }
+  function paintPencil(group,stroke,points,pressures){
+    const marks=BreezeInkGeometry.pencilTooth(points,pressures,stroke.width,stroke.tool==='colored-pencil');
+    const kids=[...group.children];
+    marks.forEach((mark,i)=>{
+      let element=kids[i];
+      if(!element||element.tagName.toLowerCase()!=='polyline'){
+        element=document.createElementNS(ns,'polyline');
+        element.setAttribute('fill','none');
+        element.setAttribute('stroke',stroke.color);
+        element.setAttribute('stroke-linecap','round');
+        element.setAttribute('stroke-linejoin','round');
+        element.setAttribute('data-ink-part','tooth');
+          group.append(element);
       }
-    };
+      const text=BreezeInkGeometry.svgPoint(mark.a)+' '+BreezeInkGeometry.svgPoint(mark.b);
+      if(element.getAttribute('points')!==text)element.setAttribute('points',text);
+      const sw=String(mark.width),op=String(mark.opacity);
+      if(element.getAttribute('stroke-width')!==sw)element.setAttribute('stroke-width',sw);
+      if(element.getAttribute('opacity')!==op)element.setAttribute('opacity',op);
+      if(element.getAttribute('stroke')!==stroke.color)element.setAttribute('stroke',stroke.color);
+    });
+    while(group.children.length>marks.length)group.children[group.children.length-1].remove();
   }
   function pencilGroup(stroke){
     const group=document.createElementNS(ns,'g');group.setAttribute('data-ink-tool',stroke.tool);
@@ -671,9 +582,9 @@ const BreezePdfInk = (()=>{
   }
   function path(stroke,svg){
     if(pencilTools.includes(stroke.tool)){
-      const group=pencilGroup(stroke),runs=pencilRuns(group,stroke,svg);
-      stroke.points.forEach((p,i)=>runs.push(p,stroke.pressure?.[i]));
-      runs.show();return group;
+      const group=pencilGroup(stroke);
+      paintPencil(group,stroke,stroke.points,stroke.pressure);
+      return group;
     }
     if(BreezeInkGeometry.pressured(stroke)){
       // Pressure pen: one filled outline whose width follows stored pressure.
@@ -830,12 +741,13 @@ const BreezePdfInk = (()=>{
     // serialized once, so a move costs the new tail rather than the stroke.
     const {stroke,smoother}=current;
     if(pencilTools.includes(stroke.tool)){
-      const group=pencilGroup(stroke),runs=pencilRuns(group,stroke,current.state.svg);let used=0;
+      const group=pencilGroup(stroke);
       current.preview=group;
       current.render=()=>{
         const live=smoother.live();
-        for(;used<live.points.length-1;used++)runs.push(live.points[used],live.pressures?.[used]);
-        runs.show(live.points.slice(used).concat([live.tip]),live.tipPressure);
+        const points=live.points.concat([live.tip]);
+        const pressures=(live.pressures||[]).concat([live.tipPressure]);
+        paintPencil(group,stroke,points,live.pressures?pressures:null);
       };
     }else if(pressure&&stroke.tool!=='highlighter'){
       const element=document.createElementNS(ns,'path'),outline=BreezeInkGeometry.createOutline();let used=0;

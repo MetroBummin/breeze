@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {test} from 'node:test';
-const {eraseStroke}=runInNewContext(readFileSync(new URL('../scripts/reader/pdf-ink-geometry.js',import.meta.url),'utf8')+';BreezeInkGeometry;');
+const geometry=runInNewContext(readFileSync(new URL('../scripts/reader/pdf-ink-geometry.js',import.meta.url),'utf8')+';BreezeInkGeometry;');
+const {eraseStroke}=geometry;
 const stroke=points=>({color:'#111111',width:2,points});
 const plain=x=>JSON.parse(JSON.stringify(x,(_,v)=>typeof v==='number'?Math.round(v*1e8)/1e8:v));
 test('tap erases only the covered part and preserves original stroke data',()=>{
@@ -31,6 +32,35 @@ test('dots, complete coverage, misses and tangencies are stable',()=>{
  assert.equal(eraseStroke(line,[-10,0],[20,0],4).length,0);
  assert.equal(eraseStroke(line,[5,5],[5,5],4)[0],line);
  assert.equal(eraseStroke(stroke([[5,5],[5,5]]),[5,5],[5,5],4).length,0);
+});
+test('highlighter and eraser widths ignore pen pressure',()=>{
+ const {widthAt,penWidthFactor}=geometry;
+ const highlight={tool:'highlighter',width:12,pressure:[0.05,0.9],points:[[0,0],[10,0]]};
+ assert.equal(widthAt(highlight,0),12);
+ assert.equal(widthAt(highlight,1),12);
+ assert.equal(widthAt({tool:'pen',width:1.5,pressure:[0.05],points:[[0,0]]},0),1.5*penWidthFactor(0.05));
+ const cut=eraseStroke({tool:'highlighter',color:'#91df80',width:12,points:[[0,0],[100,0]]},[50,0],[50,0],8);
+ assert.equal(cut.length,2);
+ assert.equal(Math.round(cut[0].points.at(-1)[0]*1000)/1000,36);
+ assert.equal(Math.round(cut[1].points[0][0]*1000)/1000,64);
+ const ends=[4,8,16].map(r=>eraseStroke(stroke([[0,0],[100,0]]),[50,0],[50,0],r)[0].points.at(-1)[0]);
+ assert.deepEqual(ends.map(v=>Math.round(v)),[45,41,33]);
+});
+test('pencil tooth is scratchy, page-stable, and not a pressure-scaled pen',()=>{
+ const pts=[];for(let x=0;x<=180;x+=3)pts.push([x,40]);
+ const mid=geometry.pencilTooth(pts,pts.map(()=>0.55),2,false);
+ const light=geometry.pencilTooth(pts,pts.map(()=>0.1),2,false);
+ const hard=geometry.pencilTooth(pts,pts.map(()=>0.95),2,false);
+ const again=geometry.pencilTooth(pts,pts.map(()=>0.55),2,false);
+ assert.deepEqual(again,mid);
+ assert.ok(mid.length>40);
+ const widths=mid.map(m=>m.width);
+ assert.ok(Math.max(...widths)>Math.min(...widths)*1.8,'scratches are not one width');
+ assert.ok(Math.max(...widths)>1.1&&Math.max(...widths)<=2,'the body stays near the selected width');
+ assert.ok(hard.length>light.length*1.05);
+ assert.ok(hard.reduce((s,m)=>s+m.opacity,0)/hard.length>light.reduce((s,m)=>s+m.opacity,0)/light.length+0.15);
+ const colored=geometry.pencilTooth(pts,pts.map(()=>0.55),3,true);
+ assert.ok(colored.length>0&&colored.every(m=>m.width<=3));
 });
 test('rotated sweeps keep every segment outside the capsule',()=>{
  const s=stroke([[0,0],[100,100]]),parts=eraseStroke(s,[20,80],[80,20],4);

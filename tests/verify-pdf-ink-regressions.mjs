@@ -767,7 +767,25 @@ test('pressure: partial erase splits pressure with the points; undo restores it'
 test('pressure: the highlighter never records pressure',async()=>{
   const f=fixture();f.qa.setPressure(true);f.qa.setMode('highlighter');
   await forceStroke(f,[[20,100,0.2],[150,100,0.9],[280,100,0.5]]);
-  assert.equal('pressure' in f.state.strokes[0],false);
+  const stroke=f.state.strokes[0];
+  assert.equal('pressure' in stroke,false);
+  assert.equal(stroke.width,12);
+  const group=f.svg.children.find(n=>n.getAttribute('data-ink-tool')==='highlighter');
+  assert.equal(group.children.find(n=>n.tagName==='polyline').getAttribute('stroke-width'),'12');
+});
+test('highlighter and eraser keep the selected width when pen pressure is on',async()=>{
+  const f=fixture();f.qa.setPressure(true);f.qa.setMode('highlighter');
+  await forceStroke(f,[[20,80,0.05],[260,80,0.95]]);
+  const highlight=f.state.strokes[0];
+  assert.equal(highlight.tool,'highlighter');assert.equal(highlight.width,12);
+  assert.equal('pressure' in highlight,false);
+  const group=f.svg.children.find(n=>n.getAttribute('data-ink-tool')==='highlighter');
+  const line=group.children.find(n=>n.tagName==='polyline');
+  assert.equal(line.getAttribute('stroke-width'),'12');
+  f.qa.setMode('erase');await f.stroke([[140,60],[140,100]]);
+  const gap=f.state.strokes[1].points[0][0]-f.state.strokes[0].points.at(-1)[0];
+  // radius 8 plus half of the 12-unit stroke. The same sum as before pen pressure.
+  assert.ok(Math.abs(gap-28)<1.5,`eraser radius 8 still cuts a highlighter of width 12, gap ${gap}`);
 });
 test('pencils: stored with their tool, drawn as grouped runs, erased and undone',async()=>{
   // One 연필 tool: graphite saves tool:'pencil', a color saves the colored-pencil look.
@@ -777,15 +795,17 @@ test('pencils: stored with their tool, drawn as grouped runs, erased and undone'
     const stroke=f.state.strokes[0];assert.equal(stroke.tool,tool);assert.equal(stroke.color,pick);assert.equal(stroke.pressure.length,stroke.points.length);
     assert.equal(stroke.width,tool==='pencil'?2:3,'the middle width step maps onto each look');
     const group=[...f.svg.children].find(node=>node.tagName==='g');assert.equal(group.getAttribute('data-ink-tool'),tool);
-    const cores=group.children.filter(node=>node.getAttribute('data-ink-part')==='core');
-    assert.ok(cores.length>=2,'pressure changes grain coverage along the stroke');
-    assert.ok(new Set(cores.map(node=>node.getAttribute('opacity'))).size>=2);
-    // A firm graphite core is the color itself (opacity 1). The edge stays below 1.
-    assert.ok(group.children.every(run=>run.tagName==='polyline'&&Number(run.getAttribute('opacity'))>0&&Number(run.getAttribute('opacity'))<=1));
-    assert.ok(group.children.filter(node=>node.getAttribute('data-ink-part')==='edge').every(node=>Number(node.getAttribute('opacity'))<1));
-    assert.ok(group.children.some(node=>node.getAttribute('data-ink-part')==='edge'),'a softer edge sits under the core');
-    assert.equal(cores[0].getAttribute('stroke'),pick);
-    assert.match(cores[0].getAttribute('mask'),new RegExp(`^url\\(#pdf-ink-grain-p\\d+-${tool}-core-`));
+    const marks=group.children.filter(node=>node.getAttribute('data-ink-part')==='tooth');
+    assert.ok(marks.length>8,'the pencil is many scratches, not one smooth stroke');
+    assert.ok(marks.every(node=>node.tagName==='polyline'&&!node.getAttribute('mask')));
+    assert.ok(new Set(marks.map(node=>node.getAttribute('opacity'))).size>=2);
+    const widths=marks.map(node=>Number(node.getAttribute('stroke-width')));
+    assert.ok(Math.max(...widths)>Math.min(...widths)*1.5);
+    assert.ok(Math.max(...widths)<=stroke.width);
+    const mean=list=>list.reduce((s,n)=>s+Number(n.getAttribute('opacity')),0)/list.length;
+    const xOf=node=>Number(node.getAttribute('points').split(',')[0]);
+    assert.ok(mean(marks.filter(n=>xOf(n)>150))>mean(marks.filter(n=>xOf(n)<120))+0.08,'harder pressure is darker');
+    assert.equal(marks[0].getAttribute('stroke'),pick);
     assert.equal(f.qa.valid(f.stored.get(f.state.key)),true);
     const original=plain(f.state.strokes);
     f.qa.setMode('erase');await f.stroke([[130,70],[130,130]]);
@@ -806,9 +826,9 @@ test('연필 color: the 색연필 tool is gone, saved 색연필 strokes and pref
   assert.equal(fresh.tool,'colored-pencil');assert.equal(fresh.color,'#d6619a');
   const drawn=f.svg.children.at(-1);assert.equal(drawn.getAttribute('data-ink-tool'),'colored-pencil');
   assert.equal(drawn.children[0].getAttribute('stroke'),'#d6619a');
-  assert.match(drawn.children[0].getAttribute('mask'),/^url\(#pdf-ink-grain-p\d+-colored-pencil-edge-d6619a\)$/);
-  assert.match(drawn.children[1].getAttribute('mask'),/^url\(#pdf-ink-grain-p\d+-colored-pencil-core-d6619a\)$/);
-  assert.equal(f.svg.querySelector('defs')?.children.length>0,true,'the tooth lives in this page SVG');
+  assert.equal(drawn.children[0].getAttribute('data-ink-part'),'tooth');
+  assert.equal(drawn.children[0].getAttribute('mask'),null);
+  assert.ok(drawn.children.length>4,'saved colored-pencil strokes still render as lead, not a pen line');
 });
 test('연필 color: a saved 색연필 preference becomes 연필 with that color',()=>{
   const prefs={tool:'colored-pencil',coloredPencilColor:'#3f9b4f',pencilColor:'#3b3b3b',pencilWidth:3.5};

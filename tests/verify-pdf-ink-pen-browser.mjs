@@ -237,22 +237,19 @@ try{
     // Graphite at this force is already near its color, so overlap cannot
     // darken it by a large ratio. It must still be dark, speckled, and not
     // lighter when redrawn. Colored lead stays translucent enough to build up.
-    assert.ok(single.pixels>100&&single.mean>(tool==='pencil'?100:30),`${tool} marks the paper ${JSON.stringify(single)}`);
-    assert.ok(single.spread>(tool==='pencil'?0.05:0.08),`${tool} grain is visible across the stroke ${JSON.stringify(single)}`);
-    assert.ok(triple.mean>single.mean*(tool==='pencil'?1.02:1.15),`${tool} builds up darker ${JSON.stringify({single,triple})}`);
+    assert.ok(single.pixels>100&&single.mean>(tool==='pencil'?40:30),`${tool} marks the paper ${JSON.stringify(single)}`);
+    assert.ok(single.variation>0.08&&single.spread>0.12,`${tool} is scratchy, not a smooth pen ${JSON.stringify(single)}`);
+    assert.ok(triple.mean>single.mean*(tool==='pencil'?1.08:1.12),`${tool} builds up darker ${JSON.stringify({single,triple})}`);
     const group=page.locator(`${layer} g[data-ink-tool="${tool}"]`);
     assert.equal(await group.count(),3);
-    const coreLine=group.first().locator('polyline[data-ink-part="core"]').first();
-    assert.equal(await coreLine.getAttribute('stroke'),colorValue);
-    assert.match(await coreLine.getAttribute('mask'),new RegExp(`^url\\(#pdf-ink-grain-p\\d+-${tool}-core-${colorValue.slice(1)}\\)$`));
-    const local=await group.first().locator('polyline').first().evaluate(node=>{
-     const id=node.getAttribute('mask').match(/url\(#([^)]+)\)/)?.[1];
-     return !!node.ownerSVGElement?.querySelector('#'+CSS.escape(id));
-    });
-    assert.equal(local,true,`${tool} grain is painted from this page SVG`);
-    const patterns=await page.locator('.pdf-ink-layer defs pattern').count();
+    const tooth=group.first().locator('polyline[data-ink-part="tooth"]');
+    assert.ok(await tooth.count()>8,`${tool} is many scratches`);
+    assert.equal(await tooth.first().getAttribute('stroke'),colorValue);
+    assert.equal(await tooth.first().getAttribute('mask'),null);
+    const scratchWidths=await tooth.evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('stroke-width'))));
+    assert.ok(Math.max(...scratchWidths)>Math.min(...scratchWidths)*1.5,`${tool} scratches vary in width`);
+    assert.equal(await page.locator('.pdf-ink-layer defs mask, .pdf-ink-layer defs pattern').count(),0,'pencil tooth is geometry, not a mask tile');
     await stroke(line(y+.03,Array(12).fill(.5),.3,.7));await saved();
-    assert.equal(await page.locator('.pdf-ink-layer defs pattern').count(),patterns,'texture tiles are reused, not regenerated per stroke');
     await page.locator('[data-ink-undo]').click();await saved();
     strokes=await storedStrokes();
     const mine=strokes.filter(s=>s.tool===tool);
@@ -272,11 +269,34 @@ try{
    await openSettings('pencil');await page.locator('[data-ink-pencil-color="#3b3b3b"]').click();await closeSettings();
    const lightBlank=await capture(.85,.22,.4),darkBlank=await capture(.85,.62,.78);
    await stroke(line(.85,Array.from({length:40},(_,i)=>i<16?.05:.98),.2,.8));await saved();
-   const runs=await page.locator(`${layer} g[data-ink-tool="pencil"]`).last().locator('polyline[data-ink-part="core"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('opacity')));
+   const runs=await page.locator(`${layer} g[data-ink-tool="pencil"]`).last().locator('polyline[data-ink-part="tooth"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('opacity')));
    if(process.env.DBG)console.log('DBG',JSON.stringify((await storedStrokes()).slice(-2).map(s=>({tool:s.tool,color:s.color,width:s.width,p:s.pressure?.slice(0,30)}))));
    assert.ok(new Set(runs).size>=2,`pressure changes pencil coverage ${JSON.stringify(runs)}`);
    const [light]=await darkening(lightBlank,await capture(.85,.22,.4)),[dark]=await darkening(darkBlank,await capture(.85,.62,.78));
    assert.ok(dark.mean*dark.pixels>1.5*light.mean*light.pixels,`more pressure covers more grain, darker ${JSON.stringify({light,dark})}`);
+
+   // Highlighter and eraser stay at the selected PDF-unit size with 필압 on.
+   await openSettings('highlighter');await page.locator('[data-ink-highlight-width="12"]').click();await closeSettings();
+   const scale=await page.evaluate(()=>{const s=document.querySelector('[data-page="1"] .pdf-ink-layer');return s.getBoundingClientRect().width/s.viewBox.baseVal.width;});
+   const band=async y=>(await page.screenshot({clip:await page.evaluate(y=>{const r=originalSession.pages[0].getBoundingClientRect();return {x:Math.round(r.left+.2*r.width),y:Math.round(r.top+y*r.height-20),width:Math.round(.5*r.width),height:40};},y)})).toString('base64');
+   const pale=(blank,marked)=>page.evaluate(async([blank,marked])=>{
+    const decode=async b64=>{const image=await createImageBitmap(new Blob([Uint8Array.from(atob(b64),c=>c.charCodeAt(0))],{type:'image/png'}));
+     const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const x=c.getContext('2d');x.drawImage(image,0,0);return {w:c.width,h:c.height,d:x.getImageData(0,0,c.width,c.height).data};};
+    const a=await decode(blank),b=await decode(marked);
+    const col=i=>{let n=0;for(let y=0;y<a.h;y++){const k=(y*a.w+i)*4;const d=Math.abs(a.d[k]-b.d[k])+Math.abs(a.d[k+1]-b.d[k+1])+Math.abs(a.d[k+2]-b.d[k+2]);if(d>18)n++;}return n;};
+    let s=0,c=0;for(let i=Math.round(a.w*.15);i<Math.round(a.w*.85);i++){s+=col(i);c++;}return s/c;
+   },[blank,marked]);
+   const blankHi=await band(.05);
+   await mode('highlighter');await stroke(line(.05,Array(14).fill(.2),.25,.75));await saved();
+   const hi=await page.locator(`${layer} [data-ink-tool="highlighter"] polyline`).last();
+   assert.equal(await hi.getAttribute('stroke-width'),'12');
+   assert.equal((await storedStrokes()).at(-1).tool,'highlighter');
+   assert.equal('pressure' in (await storedStrokes()).at(-1),false);
+   const hiPx=await pale(blankHi,await band(.05));
+   assert.ok(Math.abs(hiPx-12*scale)<=Math.max(3,12*scale*0.22),`highlighter 12 paints ${hiPx.toFixed(1)}px, scale ${scale.toFixed(2)} → ${(12*scale).toFixed(1)}`);
+   await openSettings('erase');
+   assert.equal(await page.locator('[data-ink-radius="8"]').getAttribute('aria-pressed'),'true','the saved medium eraser radius is still 8');
+   await closeSettings();
    assert.deepEqual(errors.filter(x=>!x.includes('ResizeObserver loop')),[]);
    console.log(`${engine.name()}: PASS tool strip + fixed undo/redo group (5 viewports, light/dark), 필압 off constant / on varying + persistence, pen-down jitter and lift flick removed, pencil/colored pencil grain + build-up + save/reload/erase/undo/redo`);
   }finally{await context.close();rmSync(profile,{recursive:true,force:true});}

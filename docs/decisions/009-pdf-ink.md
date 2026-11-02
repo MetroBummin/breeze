@@ -1241,3 +1241,34 @@ Width stays the pencil's chosen width, with only a small pressure scale, so
 the line does not wobble. A contact with no force stores no `pressure`
 field, same as before. Old pencil strokes with no `pressure` render at the
 middle step of the new tooth.
+
+### Highlighter and eraser widths, and a pencil that reads as graphite (2026-11-02)
+
+Owner TestFlight note after #326 and #329: highlighter and eraser marks looked
+much thinner, and 연필 looked the same as the pen. Saved strokes are not
+rewritten. Pen width, the pen pressure curve, and pen smoothing are unchanged.
+`ready/` and `server/ready/` are untouched.
+
+**Widths.** Compared with `4ba8d3bf` (the commit before #326), highlighter
+widths are still 12 and 20 PDF units and eraser radii are still 4, 8 and 16.
+`필압` never records pressure on those tools, and `widthAt` does not multiply
+them by the pen curve `0.3+1.4×pressure`. A WebKit page fitted like an iPad
+(612-unit page at about 1.28 CSS px per unit, and the same page under a 2.5×
+zoom transform) paints a 12-unit highlighter about 15 CSS px tall and a
+20-unit one about 26 CSS px tall. Those are the selected sizes, not a
+pressure-shrunk pen. The eraser cut is still `radius + strokeWidth/2`, so a
+medium eraser (8) through a 12-unit highlight removes a 28-unit band. A test
+locks both the attributes and that painted highlighter height.
+
+**Pencil.** The v3 tooth was a luminance mask: a solid white floor and eight
+holes about 0.6–1.4 PDF units across. At a fitted iPad page that is one or
+two device pixels, and WebKit paints the stroke as a smooth line. A side-by-side
+capture of the production stroke showed the masked pencil and an unmasked
+stroke of the same width as the same pixels. The mask, including its 4000-unit
+tile rect, is gone. The pencil is now short scratches in PDF units, anchored
+to the page, with real gaps, varying width and varying opacity. Pressure
+changes how many land and how dark they are. It does not use the pen width
+curve. Colored lead uses the same scratches with fewer gaps. Stored
+`tool`, `width`, `color` and `pressure` are unchanged, so a stroke saved
+before this still renders, and a preference saved before this still selects
+the same tool and width.
