@@ -7,8 +7,8 @@ const BreezeInkGeometry = (()=>{
   const round2=v=>Math.round(v*100)/100;
   const svgPoint=p=>round2(p[0])+','+round2(p[1]);
   // Stored `pressure` is the effective pressure after the sensitivity curve,
-  // so a later sensitivity change never alters saved strokes. Only pens vary
-  // width; pencils use pressure for grain coverage instead.
+  // so a later sensitivity change never alters saved strokes. Only a pen
+  // varies width. A saved pencil stroke stays at its stored width.
   // A normal Apple Pencil force of about 0.1–0.4 becomes effective pressure
   // near 0.32–0.65 after the sqrt map. The selected width is the floor.
   // The previous 0.3+1.4e curve put that width at 0.5, so ordinary writing
@@ -357,66 +357,5 @@ const BreezeInkGeometry = (()=>{
     stroke.points.forEach((p,i)=>outline.push(p,widthAt(stroke,i)/2));
     return outline.text();
   }
-  // Canvas-locked paper tooth. Same idea as MyPaint's gridmap input: the
-  // pattern sticks to the page, not to the direction of the stroke. Two
-  // octaves, cells of 7 and 3 PDF units, so the grain is several device
-  // pixels at a fitted iPad page instead of a one-pixel mask hole.
-  const fade=t=>t*t*(3-2*t);
-  function lattice(ix,iy){
-    let h=(Math.imul(ix|0,374761393)+Math.imul(iy|0,668265263))>>>0;
-    h=Math.imul(h^(h>>>13),1274126177);
-    return ((h^(h>>>16))>>>0)/4294967296;
-  }
-  function paperGrain(x,y){
-    const sample=s=>{
-      const px=x/s,py=y/s,x0=Math.floor(px),y0=Math.floor(py);
-      const fx=fade(px-x0),fy=fade(py-y0);
-      const a=lattice(x0,y0),b=lattice(x0+1,y0),c=lattice(x0,y0+1),d=lattice(x0+1,y0+1);
-      return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy;
-    };
-    return sample(7)*0.7+sample(3)*0.3;
-  }
-  /* Overlapping dabs, the libmypaint stamp (dabs per radius, opacity from
-     pressure, grain multiplied per dab). Spacing is a fraction of the radius
-     so neighbours cover each other: the mark stays a line, and the grain
-     only changes how dark each stamp is. Radius stays near the selected
-     width; pressure mostly adds darkness and a little width. `colored` is
-     the waxier lead (higher opaque floor, less radius jitter). */
-  function pencilDabs(points,pressures,width,colored){
-    const w=Math.max(0.4,typeof width==='number'&&width>0?width:1);
-    const base=w/2,spacing=Math.max(0.28,base/(colored?2.4:2.6));
-    const dabs=[];
-    if(!points||!points.length)return dabs;
-    const eAt=i=>typeof pressures?.[i]==='number'?pressures[i]:0.55;
-    function dab(p,e){
-      const g=paperGrain(p[0],p[1]);
-      const radius=base*(0.9+0.28*Math.min(1,Math.max(0,e)))*(colored?0.78+0.4*g:0.62+0.55*g);
-      const opaque=(colored?0.3:0.24)+(colored?0.4:0.55)*Math.min(1,Math.max(0,e));
-      const alpha=opaque*(colored?0.4+0.6*g:0.22+0.78*g);
-      dabs.push({
-        cx:round2(p[0]),cy:round2(p[1]),
-        rx:round2(Math.max(0.12,radius*(colored?1:0.92+0.2*(1-g)))),
-        ry:round2(Math.max(0.12,radius)),
-        opacity:round2(Math.max(0.14,Math.min(0.9,alpha)))
-      });
-    }
-    dab(points[0],eAt(0));
-    if(points.length===1){dab([points[0][0]+base*0.22,points[0][1]],eAt(0));return dabs;}
-    let prev=points[0],prevE=eAt(0),carried=0;
-    for(let i=1;i<points.length;i++){
-      const to=points[i],e=eAt(i),dx=to[0]-prev[0],dy=to[1]-prev[1],len=Math.hypot(dx,dy);
-      if(len<epsilon)continue;
-      let dist=spacing-carried;
-      while(dist<=len){
-        const t=dist/len;
-        dab([prev[0]+dx*t,prev[1]+dy*t],prevE+(e-prevE)*t);
-        dist+=spacing;
-      }
-      carried=len-(dist-spacing);
-      if(carried<0)carried=0;
-      prev=to;prevE=e;
-    }
-    return dabs;
-  }
-  return {eraseStroke,createSmoother,createOutline,outlinePath,svgPoint,widthAt,penWidthFactor,pressured,pencilDabs,paperGrain};
+  return {eraseStroke,createSmoother,createOutline,outlinePath,svgPoint,widthAt,penWidthFactor,pressured};
 })();

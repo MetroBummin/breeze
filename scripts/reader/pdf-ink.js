@@ -8,23 +8,17 @@
 const BreezePdfInk = (()=>{
   const colors=['#111111','#2864c5','#c43d3d','#15803d','#7c3aed','#c2410c'], widths=[0.75,1.5,3];
   const eraserRadii=[4,8,16],highlightColors=['#91df80','#ffe34d','#2dd4bf','#38bdf8','#f472b6','#a78bfa'],highlightWidths=[12,20],highlightOpacity=0.3;
-  // Textured pencils (2026-11-01). One 연필 tool with a color option: the
-  // graphite colors save tool:'pencil', any other color saves
-  // tool:'colored-pencil' (the 색연필 look). Both stored types stay valid and
-  // render exactly as before. The smooth pen above is unchanged.
+  // The 연필 tool is gone. Saved strokes with these colors and widths still
+  // validate and draw as a solid line. Nothing new is written with these tools.
   const pencilColors=['#3b3b3b','#1f1f1f','#2f5fa8','#b03a3a'],pencilWidths=[1,2,3.5];
   const coloredPencilColors=['#d64545','#e8853a','#e6c229','#3f9b4f','#3a7bd5','#8a5cc7','#d6619a','#7a5230'],coloredPencilWidths=[1.5,3,5];
-  // The 연필 palette: graphite first (default), then the colored-pencil colors.
-  // #2f5fa8/#b03a3a stay readable in saved ink but are no longer offered.
-  const pencilPalette=['#3b3b3b','#1f1f1f',...coloredPencilColors];
-  const tools=['pen','pencil','highlighter','erase'],pencilTools=['pencil','colored-pencil'];
+  const tools=['pen','highlighter','erase'];
   // 필압 sensitivity: gain around the middle of the sqrt pressure curve.
   const pressureGains={soft:0.5,normal:1,strong:1.6};
   const preferenceKey='__breeze_pdf_ink_tools_v1__';
   const undoStack=[],redoStack=[];
   let color=colors[0],width=widths[1],eraserRadius=eraserRadii[1];
   let highlightColor=highlightColors[0],highlightWidth=highlightWidths[0],lastTool='pen';
-  let pencilColor=pencilPalette[0],pencilWidth=pencilWidths[1];
   // Off by default: off is exactly the constant-width pen people already use.
   let pressureOn=false,pressureLevel='normal';
   // Lift-time tail trim. Off commits the stroke that was on screen while drawing.
@@ -37,56 +31,22 @@ const BreezePdfInk = (()=>{
       if(eraserRadii.includes(prefs.eraserRadius))eraserRadius=prefs.eraserRadius;
       if(highlightColors.includes(prefs.highlightColor))highlightColor=prefs.highlightColor;
       if(highlightWidths.includes(prefs.highlightWidth))highlightWidth=prefs.highlightWidth;
-      if(pencilPalette.includes(prefs.pencilColor))pencilColor=prefs.pencilColor;
-      if(pencilWidths.includes(prefs.pencilWidth))pencilWidth=prefs.pencilWidth;
       if(typeof prefs.pressure==='boolean')pressureOn=prefs.pressure;
       if(Object.hasOwn(pressureGains,prefs.pressureLevel))pressureLevel=prefs.pressureLevel;
       if(typeof prefs.endTrim==='boolean')endTrim=prefs.endTrim;
-      if(tools.includes(prefs.tool))lastTool=prefs.tool;
-      // The separate 색연필 tool was folded into 연필: carry its last color over.
-      else if(prefs.tool==='colored-pencil'){
-        lastTool='pencil';
-        if(coloredPencilColors.includes(prefs.coloredPencilColor))pencilColor=prefs.coloredPencilColor;
-      }
+      // 연필 is no longer a tool. A saved pencil or 색연필 choice opens the pen.
+      if(prefs.tool==='pencil'||prefs.tool==='colored-pencil')lastTool='pen';
+      else if(tools.includes(prefs.tool))lastTool=prefs.tool;
     }
   }catch{} // Tool preferences never block reading or loading existing ink.
   function savePreferences(){
     try{localStorage.setItem(preferenceKey,JSON.stringify({tool:lastTool,color,width,eraserRadius,highlightColor,highlightWidth,highlightOpacity,
-      pencilColor,pencilWidth,pressure:pressureOn,pressureLevel,endTrim}));}catch{}
+      pressure:pressureOn,pressureLevel,endTrim}));}catch{}
   }
-  // A new 연필 stroke: graphite keeps tool:'pencil'; a color picks the
-  // colored-pencil rendering and the matching colored width step.
-  const toolColor=tool=>tool==='highlighter'?highlightColor:tool==='pencil'?pencilColor:color;
-  function pencilStroke(){
-    const colored=coloredPencilColors.includes(pencilColor),step=Math.max(0,pencilWidths.indexOf(pencilWidth));
-    return {tool:colored?'colored-pencil':'pencil',color:pencilColor,width:colored?coloredPencilWidths[step]:pencilWidth};
-  }
+  const toolColor=tool=>tool==='highlighter'?highlightColor:color;
   // Raw contact force (0..1) -> stored effective pressure. sqrt spreads the
   // light range where writing actually happens; the gain sets sensitivity.
   function pressureMap(gain){return force=>0.5+(Math.sqrt(force)-0.5)*gain;}
-  /* Pencil darkness from the contact. Apple Pencil reports altitudeAngle
-     (0 flat on the glass, π/2 upright). Pointer pens report tiltX/tiltY
-     degrees from upright. The side of the lead shades lighter; an upright
-     point stays at the raw force. Missing tilt leaves force unchanged.
-     A number is already a force. */
-  function graphiteForce(sample){
-    if(sample==null||typeof sample==='number')return sample;
-    const raw=typeof sample.force==='number'?sample.force:typeof sample.pressure==='number'?sample.pressure:undefined;
-    let flat=0,tilted=false;
-    const alt=sample.altitudeAngle;
-    if(typeof alt==='number'&&Number.isFinite(alt)){tilted=true;flat=1-Math.min(1,Math.max(0,alt/(Math.PI/2)));}
-    else{
-      const tx=sample.tiltX,ty=sample.tiltY;
-      if(typeof tx==='number'||typeof ty==='number'){
-        const mag=Math.hypot(tx||0,ty||0);
-        if(mag>0.5){tilted=true;flat=Math.min(1,mag/60);}
-      }
-    }
-    if(!tilted)return typeof raw==='number'?raw:undefined;
-    const shade=1-0.62*flat;
-    if(!(typeof raw==='number'&&raw>0))return Math.max(0.05,0.42*shade);
-    return Math.max(0.02,Math.min(1,raw*shade));
-  }
   const ns='http://www.w3.org/2000/svg';
   const pages=new Map(); // Loaded pages only; dirty failures survive document closure.
   let session=null, mode='read', active=null, toolbar=null, status=null;
@@ -270,13 +230,11 @@ const BreezePdfInk = (()=>{
       if(button.disabled!==disabled)button.disabled=disabled;
     }
   }
-  const toolLabels={pen:'펜',pencil:'연필',highlighter:'형광펜',erase:'지우개'};
+  const toolLabels={pen:'펜',highlighter:'형광펜',erase:'지우개'};
   // Each settings choice: its row, button dataset key, current value and setter.
   const optionKinds={
     color:{row:'.ink-colors',label:'펜 색상',get:()=>color,set:v=>{color=v;}},
     width:{row:'.ink-widths',label:'펜 두께',get:()=>width,set:v=>{width=v;},size:v=>v*1.6},
-    pencilColor:{row:'.ink-pencil-colors',label:'연필 색상',get:()=>pencilColor,set:v=>{pencilColor=v;}},
-    pencilWidth:{row:'.ink-pencil-widths',label:'연필 두께',get:()=>pencilWidth,set:v=>{pencilWidth=v;},size:v=>v*1.6},
     highlightColor:{row:'.ink-highlight-colors',label:'형광펜 색상',get:()=>highlightColor,set:v=>{highlightColor=v;}},
     highlightWidth:{row:'.ink-highlight-widths',label:'형광펜 두께',get:()=>highlightWidth,set:v=>{highlightWidth=v;},size:v=>v*0.5},
     radius:{row:'.ink-radii',label:'지우개 크기',get:()=>eraserRadius,set:v=>{eraserRadius=v;}}
@@ -295,9 +253,8 @@ const BreezePdfInk = (()=>{
     settings.querySelectorAll('[data-ink-pressure]').forEach(button=>{button.classList.toggle('on',pressureOn);button.setAttribute('aria-pressed',String(pressureOn));});
     settings.querySelectorAll('[data-ink-panel]').forEach(panel=>{
       const row=panel.querySelector('.ink-pressure-levels');if(!row)return;
-      // Pencil darkness always follows force. The pen's 필압 switch stays off
-      // until the reader asks for variable width.
-      row.hidden=panel.dataset.inkPanel==='pencil'?false:!pressureOn;
+      // The pen's 필압 switch stays off until the reader asks for variable width.
+      row.hidden=!pressureOn;
     });
     settings.querySelectorAll('[data-ink-pressure-level]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inkPressureLevel===pressureLevel)));
     settings.querySelectorAll('[data-ink-end]').forEach(button=>{button.classList.toggle('on',endTrim);button.setAttribute('aria-pressed',String(endTrim));});
@@ -343,7 +300,6 @@ const BreezePdfInk = (()=>{
     const strip=document.createElement('div');strip.className='ink-pill-tools';strip.setAttribute('role','group');strip.setAttribute('aria-label','그리기 도구');
     for(const [tool,path] of [
       ['pen',pencil],
-      ['pencil','M5.2 18.8 6.6 14 15.3 5.3a2 2 0 0 1 2.9 0l.5.5a2 2 0 0 1 0 2.9L10 17.4l-4.8 1.4ZM6.6 14l3.4 3.4M13.9 6.7l3.4 3.4M5.2 18.8l1.1-.3'],
       // Highlighter icon: Phosphor Icons 'highlighter' (regular), MIT License,
       // Copyright (c) 2023 Phosphor Icons, scaled from 256 to 24 units.
       // See scripts/vendor/phosphor-icons-LICENSE.txt.
@@ -372,16 +328,13 @@ const BreezePdfInk = (()=>{
     pill.append(inkTools,inkReadSeparator,inkEntry,inkMini);
     settings=document.createElement('div');settings.id='pdf-ink-settings';settings.className='control-glass';settings.hidden=true;
     settings.setAttribute('role','dialog');
-    // 필압 sensitivity is shared. The pen also has an off switch (variable width
-    // is opt-in). Pencil darkness always uses the level. 끝 다듬기 is the
-    // lift-time tail trim, shared, default off.
+    // 필압 is opt-in on the pen. 끝 다듬기 is the lift-time tail trim, default off.
     const pressureLevels='<div class="ink-setting-row ink-pressure-levels" role="group" aria-label="필압 세기">'
       +[['soft','약'],['normal','보통'],['strong','강']].map(([level,label])=>`<button type="button" data-ink-pressure-level="${level}" aria-label="필압 세기: ${label}">${label}</button>`).join('')+'</div>';
     const pressureSwitch='<div class="ink-undo-setting ink-pressure-setting"><span>필압</span><button type="button" class="ink-pressure-switch" data-ink-pressure aria-label="필압" aria-pressed="false"><i aria-hidden="true"></i></button></div>';
     const endSwitch='<div class="ink-undo-setting ink-end-setting"><span>끝 다듬기</span><button type="button" class="ink-end-switch" data-ink-end aria-label="끝 다듬기" aria-pressed="false"><i aria-hidden="true"></i></button></div>';
     const drawPanel=(tool,prefix,label,extra)=>`<div data-ink-panel="${tool}" hidden><div class="ink-setting-row ink-colors-row ${prefix}-colors" role="group" aria-label="${label} 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths-row ${prefix}-widths" role="group" aria-label="${label} 두께"></div>${extra}</div>`;
     settings.innerHTML=drawPanel('pen','ink','펜',pressureSwitch+pressureLevels+endSwitch).replace(' hidden>','>')
-      +drawPanel('pencil','ink-pencil','연필','<div class="ink-setting-label">필압</div>'+pressureLevels+endSwitch)
       +'<div data-ink-panel="erase" hidden><div class="ink-setting-label">지우개 크기</div><div class="ink-setting-row ink-radii" role="group" aria-label="지우개 크기"></div><div class="ink-undo-setting" id="ink-two-finger-undo-row"><span>두 손가락 더블탭 실행 취소</span><button id="ink-two-finger-undo" type="button" aria-label="두 손가락 더블탭 실행 취소" aria-pressed="false"><i aria-hidden="true"></i></button></div></div>';
     settings.insertAdjacentHTML('beforeend','<div data-ink-panel="highlighter" hidden><div class="ink-setting-row ink-colors-row ink-highlight-colors" role="group" aria-label="형광펜 색상"></div><div class="ink-setting-label">두께</div><div class="ink-setting-row ink-widths-row ink-highlight-widths" role="group" aria-label="형광펜 두께"></div></div>');
     const options=(kind,values,labels)=>{
@@ -397,7 +350,6 @@ const BreezePdfInk = (()=>{
       });
     };
     options('color',colors,['검정','파랑','빨강','초록','보라','주황']);options('width',widths,['얇게','보통','굵게']);options('radius',eraserRadii,['작게','보통','크게']);
-    options('pencilColor',pencilPalette,['흑연','진한 흑연','빨강','주황','노랑','초록','파랑','보라','분홍','갈색']);options('pencilWidth',pencilWidths,['얇게','보통','굵게']);
     options('highlightColor',highlightColors,['노랑','연두','민트','하늘','분홍','보라']);options('highlightWidth',highlightWidths,['보통','굵게']);
     settings.querySelectorAll('button[data-ink-pressure]').forEach(/** @param {HTMLElement} button */ button=>{button.onclick=()=>{cancel();pressureOn=!pressureOn;savePreferences();update();};});
     settings.querySelectorAll('button[data-ink-pressure-level]').forEach(/** @param {HTMLElement} button */ button=>{button.onclick=()=>{cancel();pressureLevel=button.dataset.inkPressureLevel;savePreferences();update();};});
@@ -537,7 +489,7 @@ const BreezePdfInk = (()=>{
       let element=previous.get(stroke);
       if(!element){element=path(stroke,state.svg);if(stroke.tool==='highlighter')element.setAttribute('opacity','1');}
       next.set(stroke,element);
-      if(stroke.tool!=='highlighter'){pens.push(element);continue;} // Pen and pencils keep drawing order.
+      if(stroke.tool!=='highlighter'){pens.push(element);continue;} // Pen, and any saved pencil, keep drawing order.
       const id=stroke.strokeId||stroke;
       let entry=groups.get(id);
       if(!entry){
@@ -553,33 +505,7 @@ const BreezePdfInk = (()=>{
     reconcileInkChildren(state.svg,children);
     state.inkPaths=next;state.inkGroups=new Map([...groups].map(([id,entry])=>[id,entry.group]));
   }
-  function paintPencil(group,stroke,points,pressures){
-    const dabs=BreezeInkGeometry.pencilDabs(points,pressures,stroke.width,stroke.tool==='colored-pencil');
-    const kids=[...group.children];
-    dabs.forEach((dab,i)=>{
-      let element=kids[i];
-      if(!element||element.tagName.toLowerCase()!=='ellipse'){
-        element=document.createElementNS(ns,'ellipse');
-        element.setAttribute('fill',stroke.color);
-        element.setAttribute('data-ink-part','dab');
-        group.append(element);
-      }
-      const set=(name,value)=>{const text=String(value);if(element.getAttribute(name)!==text)element.setAttribute(name,text);};
-      set('cx',dab.cx);set('cy',dab.cy);set('rx',dab.rx);set('ry',dab.ry);set('opacity',dab.opacity);
-      if(element.getAttribute('fill')!==stroke.color)element.setAttribute('fill',stroke.color);
-    });
-    while(group.children.length>dabs.length)group.children[group.children.length-1].remove();
-  }
-  function pencilGroup(stroke){
-    const group=document.createElementNS(ns,'g');group.setAttribute('data-ink-tool',stroke.tool);
-    return group;
-  }
   function path(stroke,svg){
-    if(pencilTools.includes(stroke.tool)){
-      const group=pencilGroup(stroke);
-      paintPencil(group,stroke,stroke.points,stroke.pressure);
-      return group;
-    }
     if(BreezeInkGeometry.pressured(stroke)){
       // Pressure pen: one filled outline whose width follows stored pressure.
       const element=document.createElementNS(ns,'path');
@@ -712,15 +638,11 @@ const BreezePdfInk = (()=>{
     const bounds=state.element.getBoundingClientRect(),p=point(pen,state,bounds);
     if(!p.every(Number.isFinite)||p[0]<0||p[1]<0||p[0]>state.width||p[1]>state.height)return;
     const stroke=mode==='highlighter'?{id:crypto.randomUUID(),tool:'highlighter',strokeId:crypto.randomUUID(),color:highlightColor,width:highlightWidth,opacity:highlightOpacity,points:[p]}
-      :mode==='pencil'?{id:crypto.randomUUID(),...pencilStroke(),points:[p]}
       :{id:crypto.randomUUID(),color,width,points:[p]};
-    // Pressure never applies to the highlighter. Thresholds are CSS pixels.
-    // Pencil darkness always follows force and tilt. The 필압 switch only
-    // gates the pen's variable width. Highlighter stays constant.
-    const drawPencil=mode==='pencil';
-    const pressure=mode!=='highlighter'&&mode!=='erase'&&(drawPencil||pressureOn);
+    // Pressure never applies to the highlighter or the eraser. Thresholds are CSS pixels.
+    const pressure=mode!=='highlighter'&&mode!=='erase'&&pressureOn;
     active={id:pen.identifier,pointerId,state,bounds,tool:mode,before:state.strokes.slice(),stroke,
-      preview:null,render:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p,{unit:state.width/bounds.width,pressure,force:drawPencil?graphiteForce(pen):pen.force,map:pressureMap(pressureGains[pressureLevel]),ends:endTrim}):null};
+      preview:null,render:null,smoother:mode!=='erase'?BreezeInkGeometry.createSmoother(p,{unit:state.width/bounds.width,pressure,force:pen.force,map:pressureMap(pressureGains[pressureLevel]),ends:endTrim}):null};
     trace('stroke/start',event);
     updateHistoryControls();
     if(active.tool==='erase'){erase(state,p);showEraser(p);}
@@ -734,16 +656,7 @@ const BreezePdfInk = (()=>{
     // The tip always reaches the latest sample; only settled points are
     // serialized once, so a move costs the new tail rather than the stroke.
     const {stroke,smoother}=current;
-    if(pencilTools.includes(stroke.tool)){
-      const group=pencilGroup(stroke);
-      current.preview=group;
-      current.render=()=>{
-        const live=smoother.live();
-        const points=live.points.concat([live.tip]);
-        const pressures=(live.pressures||[]).concat([live.tipPressure]);
-        paintPencil(group,stroke,points,live.pressures?pressures:null);
-      };
-    }else if(pressure&&stroke.tool!=='highlighter'){
+    if(pressure&&stroke.tool!=='highlighter'){
       const element=document.createElementNS(ns,'path'),outline=BreezeInkGeometry.createOutline();let used=0;
       element.setAttribute('fill',stroke.color);element.setAttribute('data-ink-tool','pen');
       const radius=e=>stroke.width*BreezeInkGeometry.penWidthFactor(e??0.5)/2;
@@ -799,7 +712,7 @@ const BreezePdfInk = (()=>{
       showEraser(p);
     }else{
       active.stroke.points.push(p);
-      const force=sample==null?undefined:active.tool==='pencil'?graphiteForce(sample):typeof sample==='number'?sample:sample.force??sample.pressure;
+      const force=sample==null?undefined:typeof sample==='number'?sample:sample.force??sample.pressure;
       active.smoother.add(p,force);
       active.render();
     }

@@ -1242,7 +1242,7 @@ the line does not wobble. A contact with no force stores no `pressure`
 field, same as before. Old pencil strokes with no `pressure` render at the
 middle step of the new tooth.
 
-### Shared thickness, and a stamped pencil (2026-11-02)
+### Shared thickness, the pen floor, and removing the pencil (2026-11-02)
 
 Owner TestFlight note after #326 and #329, then again on the first fix: every
 tool looked thinner, and the scratch pencil looked like a dashed line. Saved
@@ -1267,13 +1267,12 @@ writing pressure the stroke is the selected width. Harder pressure only
 adds thickness. 필압 off is still the constant-width polyline. Saved
 pressure numbers are unchanged; they display with this floor.
 
-**Pencil.** The v3 mask's holes were about one device pixel, so the stroke
-matched the pen. Short separated scratches then read as a dashed line.
-The mark is now MyPaint-style dabs (libmypaint's stamp: several dabs per
-radius, so they overlap into a continuous line; ISC, reimplemented, no
-C copied). Each dab's opacity is pressure times a page-locked grain, the
-same idea as MyPaint's gridmap input and a fabric.js pattern brush: the
-tooth sticks to the paper. The grain cells are 7 and 3 PDF units, large
-enough to see at a fitted page. Tilt still lightens the stored pressure
-through `graphiteForce`. Colored lead uses the same stamps with a higher
-opacity floor. Stored tool, width, color and pressure are unchanged.
+**Pencil tool removed.** The owner dropped 연필. The toolbar is pen,
+highlighter, and eraser. Stamp and grain drawing is gone, and no new
+stroke is saved as pencil. A page that already holds `tool:'pencil'` or
+`tool:'colored-pencil'` still loads. Each of those strokes is one solid
+polyline in its saved color and width; stored pressure does not change
+that width. Erase, undo, and sync keep the same records. A saved tool
+choice of pencil or 색연필 opens the pen. Pencil color and width in the
+preference record are not read. Highlighter widths and eraser radii are
+unchanged.
