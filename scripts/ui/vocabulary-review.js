@@ -32,6 +32,9 @@ let simpleWordCards={keys:[],index:0,flipped:false};
 /* 지금 보이는 앞면에서 이미 자동 발음한 카드 키. 같은 앞면을 다시 그려도
    두 번 읽지 않고, 뒤집거나 화면을 떠나면 비워 다음 앞면에서 한 번 읽습니다. */
 let simpleCardAutoSpokenKey=null;
+/* 이 앞면에서 재생이 받아들여진 카드. 브라우저가 자동 재생을 거절하면
+   비어 있고, 그때 발음 단추는 끄기가 아니라 재생을 시작합니다. */
+let simpleCardSpeechHeardKey=null;
 let simpleStudyMeanings=new Map(),simpleStudyKeys=[];
 function decodeSimpleStudySession(raw){
   if(raw===null)return null;
@@ -318,6 +321,7 @@ window.addEventListener('keydown',event=>{
    (탭/스와이프는 카드 몫) 이벤트 전파를 멈춥니다. */
 const SIMPLE_CARD_SPEECH_KEY='breeze.cardSpeech';
 function simpleCardSpeechEnabled(){return load(SIMPLE_CARD_SPEECH_KEY,true)!==false;}
+function setSimpleCardSpeechEnabled(on){save(SIMPLE_CARD_SPEECH_KEY,!!on);renderSimpleWordCardSpeechToggle();}
 function simpleCardSpeechAvailable(){
   return !!(typeof nativeSpeechHandler==='function'&&nativeSpeechHandler())||!!window.speechSynthesis;
 }
@@ -330,15 +334,18 @@ function speakSimpleWordCard(){
   if(typeof speak!=='function')return false;
   const session=ensureSimpleStudySession(),key=session.queue[0],record=key?words[key]:null;
   if(!record||!record.word)return false;
-  speak(record.word,document.getElementById('review-speak'));
+  speak(record.word,document.getElementById('review-speak'),()=>{
+    if(ensureSimpleStudySession().queue[0]===key) simpleCardSpeechHeardKey=key;
+  },()=>{ if(simpleCardSpeechHeardKey===key) simpleCardSpeechHeardKey=null; });
   return true;
 }
 /* 앞면 하나에 자동 발음 한 번. key 가 없으면(뒷면·완료·빈 화면) 표시만 비웁니다.
    발음을 낼 수 없는 환경에서는 카드마다 토스트가 뜨지 않게 조용히 넘어갑니다. */
 function autoSpeakSimpleWordCard(key){
-  if(!key){simpleCardAutoSpokenKey=null;return;}
+  if(!key){simpleCardAutoSpokenKey=null;simpleCardSpeechHeardKey=null;return;}
   if(ADVANCED_VOCABULARY_REVIEW_ENABLED||activeAppView()!=='study'||simpleCardAutoSpokenKey===key)return;
   simpleCardAutoSpokenKey=key;
+  simpleCardSpeechHeardKey=null;
   if(!simpleCardSpeechEnabled()||!simpleCardSpeechAvailable())return;
   speakSimpleWordCard();
 }
@@ -348,10 +355,16 @@ function stopSimpleWordCardSpeech(){
   if(typeof cancelSpeak==='function')cancelSpeak();
 }
 function toggleSimpleWordCardSpeech(){
+  const session=ensureSimpleStudySession(),key=session.queue[0];
+  /* 자동 재생이 거절된 카드에서는 첫 탭이 소리를 냅니다. 이미 재생이
+     받아들여진 뒤에는 예전과 같이 끄기만 하고 다시 읽지 않습니다. */
+  if(key&&!simpleWordCards.flipped&&simpleCardSpeechEnabled()&&simpleCardSpeechAvailable()&&simpleCardSpeechHeardKey!==key){
+    speakSimpleWordCard();
+    return;
+  }
   const on=!simpleCardSpeechEnabled();
-  save(SIMPLE_CARD_SPEECH_KEY,on);
-  renderSimpleWordCardSpeechToggle();
-  if(!on){stopSimpleWordCardSpeech();return;}
+  setSimpleCardSpeechEnabled(on);
+  if(!on){stopSimpleWordCardSpeech();simpleCardSpeechHeardKey=null;return;}
   /* 다시 켜면 지금 카드를 한 번 읽고, 같은 앞면에서 자동 발음이 또 나지 않게 적어 둡니다. */
   if(speakSimpleWordCard()&&!simpleWordCards.flipped)simpleCardAutoSpokenKey=ensureSimpleStudySession().queue[0]||null;
 }

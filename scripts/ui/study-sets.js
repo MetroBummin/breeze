@@ -524,6 +524,7 @@ function openStudySets(fromHistory=false,screen='list',setId='',homeEntry=false)
 }
 function closeStudySets(fromHistory=false){
   if(!studySetsIsOpen())return;
+  if(studySetsUI.screen==='study') stopStudySetSpeech();
   studySetsCloseEditMenu(false,true);
   studySetsUI.swipeClose?.();
   studySetsUI.allWordsList?.dispose();studySetsUI.allWordsList=null;
@@ -852,6 +853,7 @@ function renderStudySets(focus=true){
     if(ui.homeEntry){closeStudySets();return;}
     ui.screen=ui.directoryOrigin?'directory':'list';ui.setId='';ui.notice='이 학습 세트가 삭제되었어요.';
   }
+  if(ui.screen!=='study') stopStudySetSpeech();
   studySetsAttachSurface();
   ui.sheet.dataset.screen=ui.screen;
   const showShare=(ui.screen==='detail'&&!!set||ui.screen==='all')&&ui.pageOpen,showMenu=ui.screen==='detail'&&!!set&&ui.pageOpen;
@@ -1550,8 +1552,57 @@ function studySetsBegin(id,restart,stars){
     const entering=studySetsUI.screen!=='study';studySetsUI.screen='study';studySetsUI.setId=id;studySetsUI.notice='';studySetsUI.undo=null;
     if(entering){if(studySetsUI.directoryOrigin)studySetsUI.directoryDepth++;history.pushState({...history.state,studySetsScreen:'study',studySetsDirectoryDepth:studySetsUI.directoryDepth},'');}});
 }
+let studySetSpeechToken='',studySetSpeechHeard='';
+function stopStudySetSpeech(){
+  if(!studySetSpeechToken)return;
+  studySetSpeechToken='';studySetSpeechHeard='';
+  if(typeof cancelSpeak==='function')cancelSpeak();
+}
+function paintStudySetSpeech(button,on){
+  const label=on?'발음 켜짐':'발음 꺼짐';
+  button.classList.toggle('muted',!on);
+  button.setAttribute('aria-label',label);button.title=label;
+}
+const STUDY_SET_SPEAK_ICON='<svg class="review-speak-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="review-speak-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>';
+function bindStudySetSpeech(card,view){
+  const button=document.createElement('button');
+  button.id='study-sets-speak';button.type='button';button.className='study-set-speak';
+  /* The card owns Tab. The grade buttons are the next stops. */
+  button.tabIndex=-1;
+  button.innerHTML=STUDY_SET_SPEAK_ICON;
+  const enabled=()=>typeof simpleCardSpeechEnabled!=='function'||simpleCardSpeechEnabled();
+  const available=()=>typeof simpleCardSpeechAvailable==='function'&&simpleCardSpeechAvailable();
+  paintStudySetSpeech(button,enabled());
+  const speakThis=()=>{
+    if(typeof speak!=='function'||!view.card||!view.card.word)return;
+    speak(view.card.word,button,()=>{if(studySetSpeechToken===view.token)studySetSpeechHeard=view.token;},()=>{if(studySetSpeechHeard===view.token)studySetSpeechHeard='';});
+  };
+  button.addEventListener('pointerdown',event=>event.stopPropagation());
+  button.addEventListener('click',event=>{
+    event.preventDefault();event.stopPropagation();
+    if(enabled()&&available()&&studySetSpeechHeard!==view.token){speakThis();return;}
+    const on=!enabled();
+    if(typeof setSimpleCardSpeechEnabled==='function')setSimpleCardSpeechEnabled(on);
+    else if(typeof save==='function')save('breeze.cardSpeech',on);
+    paintStudySetSpeech(button,on);
+    if(!on){if(typeof cancelSpeak==='function')cancelSpeak();studySetSpeechHeard='';return;}
+    speakThis();
+  });
+  button.addEventListener('keydown',event=>{
+    if(event.key!=='Enter'&&event.key!==' ')return;
+    event.preventDefault();event.stopPropagation();
+    button.dispatchEvent(new MouseEvent('click',{bubbles:false,cancelable:true}));
+  });
+  card.append(button);
+  if(view.token!==studySetSpeechToken){
+    studySetSpeechToken=view.token;studySetSpeechHeard='';
+    if(!view.revealed&&enabled()&&available())speakThis();
+    else if(typeof cancelSpeak==='function')cancelSpeak();
+  }
+}
 function renderStudySetsStudy(set){
   const body=studySetsUI.body,view=BreezeStudySets.view(studySetsUI.state,set.id);
+  if(view.status!=='active'||!view.card) stopStudySetSpeech();
   body.classList.add('study-session-body');
   const undo=()=>studySetsMutate(state=>BreezeStudySets.undo(state,set.id,Date.now()),()=>{studySetsUI.notice='';});
   const undoButton=studySetsButton('되돌리기',undo,'study-session-undo');undoButton.id='study-sets-study-undo';undoButton.hidden=true;undoButton.disabled=!set.session?.answers.length;
@@ -1571,6 +1622,7 @@ function renderStudySetsStudy(set){
   // Word/meaning only until the owner explicitly approves example display again.
   const card=studySetsNode('div','study-sets-flashcard');card.id='study-sets-flashcard';card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('data-study-sets-focus','');card.setAttribute('aria-label',`${view.card.word}. ${view.revealed?meaningText+'. 오른쪽 알아요, 왼쪽 다시 보기':'탭하여 정답 확인'}`);
   const word=studySetsNode('h3','',view.card.word);word.id='study-sets-expression';card.append(word);
+  bindStudySetSpeech(card,view);
   const meaning=studySetsNode('p','study-sets-card-meaning',view.revealed?meaningText:'');meaning.id='study-sets-answer';meaning.hidden=!view.revealed;card.append(meaning);
   stack.append(card);body.append(stack);
   const hint=studySetsNode('p','study-session-hint','탭하여 정답 확인');hint.hidden=view.revealed;hint.setAttribute('aria-live','polite');body.append(hint,undoButton);
@@ -1579,6 +1631,7 @@ function renderStudySetsStudy(set){
   const grade=async outcome=>{
     if(busy||studySetsUI.mutating||!view.revealed||!card.isConnected)return;
     busy=true;undoButton.disabled=true;card.dataset.direction=outcome;
+    if(typeof cancelSpeak==='function')cancelSpeak();
     await studySetsMutate(state=>BreezeStudySets.grade(state,set.id,view.token,outcome,Date.now()),()=>{studySetsUI.notice='';},null,motion.exit(outcome==='remembered'?1:-1));
     if(card.isConnected){motion.reset();busy=false;undoButton.disabled=!set.session?.answers.length;}
   };

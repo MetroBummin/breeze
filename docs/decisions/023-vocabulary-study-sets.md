@@ -614,6 +614,10 @@ timestamp already exists on that set. 전체 단어's simple session stores
 outcomes without a time, so that line is omitted. No new study-time field is
 stored.
 
+A set study card speaks with the same control as 전체 단어. See the
+2026-11-03 note in `docs/decisions/013-vocabulary-review.md`. The card snapshot
+does not gain an audio field.
+
 The shared bottom dock stays. On the set list its center pill opens the set
 viewed most recently on this device. With no remembered set, or after that set
 is deleted, it opens 전체 단어. The id is stored only in localStorage
