@@ -1567,6 +1567,8 @@ const STUDY_SET_SPEAK_ICON='<svg class="review-speak-on" width="22" height="22" 
 function bindStudySetSpeech(card,view){
   const button=document.createElement('button');
   button.id='study-sets-speak';button.type='button';button.className='study-set-speak';
+  /* The card owns Tab. The grade buttons are the next stops. */
+  button.tabIndex=-1;
   button.innerHTML=STUDY_SET_SPEAK_ICON;
   const enabled=()=>typeof simpleCardSpeechEnabled!=='function'||simpleCardSpeechEnabled();
   const available=()=>typeof simpleCardSpeechAvailable==='function'&&simpleCardSpeechAvailable();
