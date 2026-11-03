@@ -409,9 +409,11 @@ function miniToast(msg){
   clearTimeout(miniTimer); miniTimer = setTimeout(()=>t.classList.remove('on'), 1800);
 }
 /* ---- 발음 ----------------------------------------------------------------
-   1순위: 사전이 주는 원어민 녹음(mp3)   2순위: 기기 내장 음성(TTS)
-   앱(Capacitor)으로 옮길 때도 이 함수 안쪽만 교체하면 됩니다.            */
+   기기 음성만 재생합니다. 브라우저에서는 Web Speech, iOS 셸에서는
+   breezeSpeech 브리지입니다. 저장된 단어의 audio/phon 필드는 읽지 않습니다.
+   예전 원어민 mp3는 실패할 때마다 TTS가 뒤에 쌓여서 뺐습니다.            */
 let curAudio = null, speakGeneration = 0;
+let speakResult = null;
 /* speak() 는 재생 중 표시를 누른 단추 하나에만 켭니다. 사전 팝업은 #p-speak,
    단어 카드는 자기 단추를 넘깁니다. 네이티브 'breezeNativeSpeech' 이벤트가
    뒤늦게 돌아왔을 때도 지금 세대를 시작한 단추를 알아야 하므로 여기 적어 둡니다. */
@@ -453,7 +455,13 @@ window.addEventListener('breezeNativeSpeech', event=>{
   }else console.info('[BreezeSpeech]',detail);
   if(Number(detail.generation)!==speakGeneration) return;
   const btn=speakButton;
-  if(detail.state==='start') btn&&btn.classList.add('playing');
+  if(detail.state==='start'){
+    btn&&btn.classList.add('playing');
+    if(speakResult&&speakResult.generation===speakGeneration&&!speakResult.accepted){
+      speakResult.accepted=true;
+      if(typeof speakResult.onAccepted==='function') speakResult.onAccepted();
+    }
+  }
   if(detail.state==='end'||detail.state==='cancel'||detail.state==='error')
     btn&&btn.classList.remove('playing');
   if(detail.state==='error'){
@@ -461,7 +469,7 @@ window.addEventListener('breezeNativeSpeech', event=>{
     showNativeSpeechDiagnostic(detail);
   }
 });
-function speak(text, button){
+function speak(text, button, onAccepted, onBlocked){
   const btn = resolveSpeakButton(button);
   /* 앞 세대가 다른 단추에서 재생 중이었다면 그 표시를 먼저 끕니다 — 취소된
      세대의 뒤늦은 콜백은 세대가 달라 자기 표시를 끄지 못하기 때문입니다. */
@@ -469,6 +477,12 @@ function speak(text, button){
   speakButton = btn;
   const mark = on => btn && btn.classList.toggle('playing', on);
   const generation=++speakGeneration;
+  speakResult={generation,onAccepted,accepted:false};
+  const accept=()=>{
+    if(!speakResult||speakResult.generation!==generation||speakResult.accepted) return;
+    speakResult.accepted=true;
+    if(typeof onAccepted==='function') onAccepted();
+  };
   try{ if(curAudio){ curAudio.pause(); curAudio.removeAttribute('src'); curAudio.load(); curAudio = null; } }catch(e){}
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
   const native=nativeSpeechHandler();
@@ -491,14 +505,24 @@ function speak(text, button){
   if(v) u.voice = v;
   u.onstart = ()=>{ if(generation===speakGeneration) mark(true); };
   u.onend = ()=>{ if(generation===speakGeneration) mark(false); };
+  let blocked=false;
   u.onerror = event=>{
     if(generation!==speakGeneration) return;
     mark(false);
-    if(!event || !/canceled|interrupted/i.test(event.error||'')) toast('발음을 재생하지 못했어요');
+    const reason=event&&event.error||'';
+    if(/canceled|interrupted/i.test(reason)) return;
+    /* 자동 재생이 사용자 손짓 밖에서 막히면 토스트를 띄우지 않습니다.
+       발음 단추가 그 손짓이 됩니다. */
+    if(reason==='not-allowed'){
+      blocked=true;
+      if(speakResult&&speakResult.generation===generation) speakResult.accepted=false;
+      if(typeof onBlocked==='function') onBlocked();
+      return;
+    }
+    toast('발음을 재생하지 못했어요');
   };
-  /* 원어민 mp3는 내려받고 실패하는 동안 뒤늦게 여러 TTS를 쌓았습니다. 발음은
-     사전 정보보다 즉시성이 중요하므로, 기기 음성만 바로 재생합니다. */
   speechSynthesis.speak(u);
+  if(!blocked) accept();
 }
 function speakWord(){
   const w = displayedWord(selKey); if(!w) return;

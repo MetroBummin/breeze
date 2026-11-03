@@ -376,3 +376,22 @@ no-audio no-throw with the card still flipping, and no `pageerror`, with on/mute
 light/dark captures at phone/tablet/desktop/short viewports and no `#v-study`
 horizontal overflow. Captures are kept in `docs/screenshots/310/`. `verify-simple-word-cards-browser.mjs`
 still passes. Browser evidence does not prove native iOS silent-switch QA.
+
+## Saved word sets use the same speaker (proposal, 2026-11-03)
+
+Playback reads the word text only. It does not read `audio`, `phon`, or a
+dictionary recording URL, and a saved word does not need a backfill to be
+spoken. Login does not choose a different speech engine.
+
+전체 단어 already shows `#review-speak`. A custom set's study card did not, so
+opening a saved set had no speaker and never called `speak()`. That card now
+has `#study-sets-speak` with the same on/off preference (`breeze.cardSpeech`),
+the same 44px outline speaker, and the same native-bridge / Web Speech path.
+The control does not write vocabulary or set snapshots.
+
+Web Speech can reject auto-play with `not-allowed` once the click's activation
+has expired (set start and card advance both wait on study storage). That
+rejection is not a toast. The speaker stays on, and the next tap starts speech
+instead of muting. After a speak call is accepted, the tap mutes and does not
+replay, as decided on 2026-10-30. iOS still auto-plays through
+`AVSpeechSynthesizer`, which does not use the browser activation rule.

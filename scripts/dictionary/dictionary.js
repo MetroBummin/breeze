@@ -1341,8 +1341,9 @@ function refreshReaderWords(){
    잘못 잡힌 표제어는 "단어장에서 빼기" 뒤에 원하는 낱말을 다시 누르면 됩니다. */
 
 /* ---- metadata-only English dictionary lookup ----
-   한국어 뜻이나 문맥 판단에는 관여하지 않습니다. 상세 화면에서 실제로 쓰는 IPA,
-   녹음 URL, 영어 정의만 채웁니다. 공유 캐시는 독립적으로 완료하고 카드 반영은 살아 있는 lookup만 합니다. */
+   한국어 뜻이나 문맥 판단에는 관여하지 않습니다. 영어 정의와 IPA만 채웁니다.
+   발음 단추는 이 녹음을 틀지 않고 단어 글자를 기기 음성으로 읽습니다.
+   공유 캐시는 독립적으로 완료하고 카드 반영은 살아 있는 lookup만 합니다. */
 // Public dictionary data has a word-level lifetime, separate from contextual AI.
 // A completed response may warm the cache; it can never recreate a deleted card.
 const englishMetadataRequests=new Map();
