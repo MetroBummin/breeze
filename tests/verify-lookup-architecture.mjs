@@ -9,8 +9,8 @@ const contract=readFileSync(resolve(root,'server/dict/lookup.ts'),'utf8');
 const telemetry=readFileSync(resolve(root,'server/dict/telemetry.ts'),'utf8');
 
 assert.match(server,/OPENROUTER_MODEL="deepseek\/deepseek-v4-flash-0731"/);
-assert.match(contract,/required:\["kind","canonical","members","ko"\]/);
-assert.match(server,/maxTokens:120,schema:LOOK_SCHEMA/);
+assert.match(contract,/required:\["kind","canonical","members","ko","wordKo"\]/);
+assert.match(server,/maxTokens:160,schema:LOOK_SCHEMA/);
 assert.doesNotMatch(server,/DETAIL_SCHEMA|detailPrompt|opDetail|op==="detail"/);
 
 assert.doesNotMatch(server,/JEV_API_KEY|JEV_MODEL|api\.typesafe\.ai|function opJudge|AI_REQUIRED/);
@@ -21,6 +21,8 @@ assert.doesNotMatch(client,/op:'judge'|savedMeaningCandidates|resolveSavedWordCo
 assert.doesNotMatch(client,/op:'route'|op:'phrase'|op:'repair'/);
 assert.match(client,/resolveCurrentLookup/);
 assert.match(client,/lookKey\(w.word,input.sentence,input.clickedIndex\)/);
+assert.match(client,/const lookKey = \(word, sentence, clickedIndex=-1\) =>\n  'l3:'/);
+assert.doesNotMatch(client,/'l2:'/);
 
 assert.match(client,/function expressionFromMini/);
 assert.match(client,/phraseCardKey\(phrase\.canonical\)/);

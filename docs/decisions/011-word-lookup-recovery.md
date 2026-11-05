@@ -272,8 +272,8 @@ and `ko` pass the text checks but the kind or member alignment does not,
 `recoverableLook` builds a word answer: `members` is the tapped index, `kind` is
 `word`, and a single-word canonical is kept as written. A multi-word canonical
 is replaced by the tapped token, because a word headword cannot contain a space.
-The Korean gloss is kept either way. It is already one short sense, and this
-path has no second gloss. The response shape is otherwise unchanged.
+The response shape is otherwise unchanged. As of 2026-11-05 the Korean gloss
+is no longer kept: see "Word-level gloss when the span collapses" below.
 
 That fallback does not win ahead of a clean answer. The attempt is still a
 hedge failure, so the other provider can return a valid expression. The fallback
@@ -289,3 +289,20 @@ hedge only copies `hedged`, `winner`, and `loser`, so
 new keys into the same meta object. Until that migration is applied the insert
 still succeeds and the new keys are dropped. This change does not apply the
 migration or deploy `dict`.
+
+## Word-level gloss when the span collapses (2026-11-05)
+
+A downgraded expression kept the idiom gloss on the tapped token. The same
+mismatch happened when the model returned `kind:"word"` with a clause-sized
+proverb translation. The headword and highlight stayed one word.
+
+The model now returns `wordKo`, the selected token's own short contextual
+gloss, in the same response. No second provider call is added. Output budget
+for a word lookup is 160 tokens. On alignment downgrade the expression `ko`
+is discarded and `wordKo` becomes `ko`. A missing or clause-sized `wordKo`
+fails that attempt instead of saving the idiom. A `kind:"word"` answer whose
+`ko` is three or more Korean eojeols is replaced by a usable `wordKo`. A
+validated expression is unchanged and still saves the expression gloss. The
+client cache key moved from `l2:` to `l3:` so a stored one-word idiom answer
+is fetched again. Server receipts stay keyed by request id and input
+fingerprint. This change does not deploy `dict` or ship an app build.

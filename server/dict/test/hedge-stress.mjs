@@ -25,7 +25,7 @@ const DEADLINE_SLACK_MS=400;
 const WATCHDOG_MS=12000;
 const SENTENCE='The bank flooded.';
 const ANSWER_TEXT=JSON.stringify({kind:'word',canonical:'bank',members:[1],ko:'둑'});
-const INVALID_TEXT=JSON.stringify({kind:'expression',canonical:'upset the apple cart',members:[1],ko:'계획을 망치다'});
+const INVALID_TEXT=JSON.stringify({kind:'expression',canonical:'upset the apple cart',members:[1],ko:'계획을 망치다',wordKo:'사과'});
 
 const args=process.argv.slice(2);
 const flag=(name,fallback)=>{

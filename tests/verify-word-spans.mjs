@@ -135,6 +135,14 @@ const SAMPLES = [
 
 /* ---- 찍기 ------------------------------------------------------------------ */
 Object.assign(context.words, words);
+context.words.squeaky={word:'squeaky',status:1,mark:true};
+const squeakySentence='Tackling these tasks in the order we receive them is behaving as if the squeaky wheel immediately deserves the grease.';
+const squeakyHtml=wordSpans(squeakySentence);
+assert.equal((squeakyHtml.match(/data-w="squeaky"/g)||[]).length,1,'A one-word squeaky card painted more than the tapped token');
+assert.match(squeakyHtml,/class="w s1" data-w="squeaky">squeaky</,'The tapped token lost its saved highlight');
+assert.match(squeakyHtml,/data-w="wheel">wheel</,'The following idiom word was pulled into the squeaky card');
+assert.doesNotMatch(squeakyHtml,/class="w phrase/,'Text, PDF, and EPUB share savedPhraseMatch, so a card without phraseParts must not paint the proverb');
+delete context.words.squeaky;
 const discontinuous=wordSpans('They took the issue into account.');
 assert.equal((discontinuous.match(/data-w="take into account"/g)||[]).length,3,
   'A discontinuous phrase does not highlight exactly its selected tokens');
