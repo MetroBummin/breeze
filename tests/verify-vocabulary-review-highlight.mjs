@@ -71,6 +71,12 @@ test('partial phrases do not fall back to unrelated member highlights',()=>{
   assert.deepEqual(result.marks,[]);
 });
 
+test('a single-word card inside an idiom marks only that word',()=>{
+  const result=highlight({word:'squeaky',clicked:'squeaky',forms:['squeaky'],
+    example:'Tackling these tasks in the order we receive them is behaving as if the squeaky wheel immediately deserves the grease.'});
+  assert.deepEqual(result.marks,['squeaky']);
+});
+
 test('plain words retain saved inflections and whole-word matching',()=>{
   const result=highlight({word:'take',clicked:'took',forms:['take','taken'],
     example:'He took it, then had taken a mistake. Take it.'});

@@ -67,7 +67,8 @@ function noteProvider(trace:AiTrace,provider:WordProvider,note:{rejectReason?:st
 // with the same prompt if DeepSeek fails, or if no valid answer has arrived
 // after HEDGE_DELAY_MS. The first valid answer wins and aborts the other request.
 // A body that fails only member alignment is kept as a tapped-word fallback and
-// used when no provider returns a clean answer. A malformed body is not a fallback.
+// used when no provider returns a clean answer. Its gloss is wordKo, never the
+// expression ko. A malformed body is not a fallback.
 async function askHedgedWord(input:Ask){
   const trace=newAiTrace(input.action);
   let releaseHedge=()=>{};
@@ -252,7 +253,7 @@ async function opLook(body:any,userId:string|null,seeding=false,signal?:AbortSig
   const fingerprint=await lookupFingerprint(input);
   try{
     const generate=async()=>{
-      const out=await ask({action:seeding?"seed":input.retry?"retry":"look",prompt:miniPrompt(input),maxTokens:120,schema:LOOK_SCHEMA,temperature:0.2,signal,validate:value=>{
+      const out=await ask({action:seeding?"seed":input.retry?"retry":"look",prompt:miniPrompt(input),maxTokens:160,schema:LOOK_SCHEMA,temperature:0.2,signal,validate:value=>{
         try{return validateLook(value,input);}
         catch(error){
           const reason=error instanceof Error?error.message:"invalid_fields";

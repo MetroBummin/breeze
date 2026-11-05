@@ -893,8 +893,8 @@ assert.doesNotMatch(index, /id="p-ai-gloss"/,
   'The second, general explanation line is back under the meaning');
 const dictServer=readFileSync(resolve(root,'server/dict/index.ts'),'utf8');
 const dictLookup=readFileSync(resolve(root,'server/dict/lookup.ts'),'utf8');
-assert.match(dictLookup, /required:\["kind","canonical","members","ko"\]/,
-  'The mini lookup no longer returns only lexical identity plus the short Korean meaning');
+assert.match(dictLookup, /required:\["kind","canonical","members","ko","wordKo"\]/,
+  'The mini lookup no longer returns lexical identity, the short Korean meaning, and the tapped-token fallback');
 assert.doesNotMatch(dictServer, /DETAIL_SCHEMA|detailPrompt|opDetail|op==="detail"/,
   'The Edge Function still exposes AI detail enrichment');
 assert.match(dictLookup, /selected_index:/,

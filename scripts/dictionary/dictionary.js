@@ -1415,8 +1415,9 @@ function entryKeys(w){
   const raw = w.clicked || w.word || '';
   return [...new Set([w.word, ...lemmaCands(raw)].filter(Boolean).map(s=>String(s).toLowerCase()))];
 }
+// l3 drops l2 entries that stored an idiom gloss on a single tapped token.
 const lookKey = (word, sentence, clickedIndex=-1) =>
-  'l2:' + String(word||'').toLowerCase() + '|' + sentenceHash(sentence) + '|' + clickedIndex;
+  'l3:' + String(word||'').toLowerCase() + '|' + sentenceHash(sentence) + '|' + clickedIndex;
 
 /* ---- 로그인 전 맛보기 ----
    Breeze 가 남과 다른 점은 "이 문장에서는 이런 뜻" 하나입니다. 그게 로그인 뒤에만
