@@ -20,6 +20,7 @@ on:
       - 'tests/verify-study-create-browser.mjs'
       - 'tests/verify-simple-study-session.mjs'
       - 'tests/verify-study-session-swipe-browser.mjs'
+      - 'tests/verify-study-list-scroll-after-session-browser.mjs'
       - 'tests/capture-app-icon-family.mjs'
       - 'tests/helpers/app-icon-family-scenes.mjs'
       - 'tests/verify-app-icon-family-scenes.mjs'
@@ -85,6 +86,8 @@ jobs:
       - run: node tests/verify-study-sets-touch-browser.mjs
         if: matrix.engine == 'chromium'
       - run: node tests/verify-study-session-swipe-browser.mjs
+        if: matrix.engine == 'chromium'
+      - run: node tests/verify-study-list-scroll-after-session-browser.mjs
         if: matrix.engine == 'chromium'
       - run: node tests/capture-study-store-sources.mjs
         if: matrix.engine == 'chromium'
