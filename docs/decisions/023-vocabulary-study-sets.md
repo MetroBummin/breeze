@@ -259,7 +259,9 @@ on an accepted swipe to expose the next card. The card owns the gesture:
 commits, then the first 10px locks the axis. A horizontal lock freezes the
 page scroll and follows the card; a vertical lock scrolls only when the card
 overflows and calls `preventDefault` on the rest of that gesture. When the
-card fits, the session body sets `overflow-y: hidden`. Vertical scroll,
+card fits, the session body sets `overflow-y: hidden`. The word lists share
+that element, so every render releases the lock and only the study screen sets
+it again. Vertical scroll,
 cancellation, movement before reveal and repeated input cannot grade. Normal layouts show
 direction text and Undo, with no visible rating buttons; keyboard/assistive
 controls remain, and focus reveals their alternatives. Reduced motion preserves
